@@ -1203,11 +1203,12 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   Scope *functionParentScope;
   SymbolType returnType(TY_DYN);
   SymbolType thisType(TY_DYN);
-  if (firstFragmentEntry != nullptr && firstFragmentEntry->getType().is(TY_STRUCT) && firstFragmentEntry->symbolTable->parent) {
+  node->isMethodCall = firstFragmentEntry != nullptr && firstFragmentEntry->getType().isBaseType(TY_STRUCT) &&
+                       firstFragmentEntry->symbolTable->parent;
+  if (node->isMethodCall) {
     // This is a method call
-    node->isMethodCall = true;
     node->thisType = firstFragmentEntry->getType();
-    Scope *structBodyScope = node->thisType.getStructBodyScope();
+    Scope *structBodyScope = node->thisType.getBaseType().getStructBodyScope();
     assert(structBodyScope != nullptr);
     auto [scope, type] = visitMethodCall(node, structBodyScope);
     functionParentScope = scope;
@@ -1230,7 +1231,11 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   // Check if we were able to find a function
   if (!node->calledFunction) {
     // Build error message
-    const std::string functionName = node->functionNameFragments.back();
+    std::string functionName = node->functionNameFragments.back();
+    if (node->isConstructorCall) {
+      functionName += ".";
+      functionName += CTOR_FUNCTION_NAME;
+    }
     ParamList errArgTypes;
     for (const auto &argType : node->argTypes)
       errArgTypes.push_back({argType, false});
@@ -1278,22 +1283,22 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
   // Check if the exported name registry contains that function name
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqFunctionName);
   if (!registryEntry)
-    throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure/struct could not be found");
+    throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION,
+                        "Function/procedure/struct '" + node->functionNameFragments.back() + "' could not be found");
   SymbolTableEntry *symbolEntry = registryEntry->targetEntry;
 
   // Check if the target symbol is a struct -> this must be a constructor call
   std::string knownStructName;
+  std::string functionName = node->functionNameFragments.back();
   if (symbolEntry != nullptr && symbolEntry->getType().is(TY_STRUCT)) {
     const NameRegistryEntry *structRegistryEntry = registryEntry;
     const std::string structName = structRegistryEntry->targetEntry->name;
 
-    // Append the actual function name 'ctor' to the saved names
-    node->functionNameFragments.emplace_back(CTOR_FUNCTION_NAME);
-    node->fqFunctionName += ".";
-    node->fqFunctionName += CTOR_FUNCTION_NAME;
+    // Override function name
+    functionName = CTOR_FUNCTION_NAME;
 
     // Retrieve the name registry entry for the constructor
-    registryEntry = sourceFile->getNameRegistryEntry(node->fqFunctionName);
+    registryEntry = sourceFile->getNameRegistryEntry(node->fqFunctionName + "." + functionName);
     // Check if the constructor was found
     if (!registryEntry)
       throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor");
@@ -1316,7 +1321,6 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
     symbolType = mapLocalTypeToImportedScopeType(functionParentScope, symbolType);
 
   // Retrieve function object
-  const std::string functionName = node->functionNameFragments.back();
   node->calledFunction =
       FunctionManager::matchFunction(functionParentScope, functionName, node->thisType, importedArgTypes, node);
 
@@ -1568,6 +1572,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
           throw SemanticError(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here");
         concreteTemplateTypes.push_back(concreteType);
       }
+      entryType.setTemplateTypes(concreteTemplateTypes);
     }
 
     // Set the struct instance to used, if found
@@ -1576,6 +1581,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     Struct *spiceStruct = StructManager::matchStruct(accessScope, structName, concreteTemplateTypes, node);
     if (spiceStruct)
       spiceStruct->used = true;
+    entryType.setStructBodyScope(spiceStruct->structScope);
 
     return node->setEvaluatedSymbolType(entryType);
   }

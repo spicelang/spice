@@ -105,9 +105,9 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       if (!param.type.getBaseType().is(TY_GENERIC))
         continue;
       // Check if the type is present in the template for generic types
-      const bool found = std::none_of(usedGenericTypes.begin(), usedGenericTypes.end(),
-                                      [&](const GenericType &t) { return t == param.type.getBaseType(); });
-      if (found)
+      const bool found = std::any_of(usedGenericTypes.begin(), usedGenericTypes.end(),
+                                     [&](const GenericType &t) { return t == param.type.getBaseType(); });
+      if (!found)
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic argument type not included in function template types");
     }
@@ -163,7 +163,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      GenericType *genericType = node->structScope->lookupGenericType(templateType.getSubType());
+      GenericType *genericType = node->procScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }

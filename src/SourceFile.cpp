@@ -263,7 +263,7 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
     for (const auto &[importName, sourceFile] : dependencies)
       sourceFile.first->runTypeCheckerSecond();
 
-    if (runNumber >= 10)
+    if (runNumber >= 25)
       throw std::runtime_error("Internal compiler error: Number of type checker runs for one source file exceeded. Please report "
                                "this as a bug on GitHub.");
   } while (typeChecker.reVisitRequested);
