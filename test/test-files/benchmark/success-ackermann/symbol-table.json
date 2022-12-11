@@ -1,137 +1,32 @@
 {
   "captures": [],
-  "children": [
-    {
-      "captures": [],
-      "children": [
-        {
-          "captures": [],
-          "children": [],
-          "name": "if:L2C5",
-          "symbols": []
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "if:L3C5",
-          "symbols": []
-        }
-      ],
-      "name": "ack(int,int): int",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "m",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "declared",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "n",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "declared",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 2,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "main()",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "baseM",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "baseN",
-          "orderIndex": 2,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        }
-      ]
-    }
-  ],
   "symbols": [
     {
+      "codeLoc": "L7C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "ack(int,int): int",
-      "orderIndex": 0,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
-      "state": "initialized",
-      "type": "function"
-    },
-    {
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "main()",
+      "name": "main(int, string[])",
       "orderIndex": 1,
       "specifiers": {
         "const": true,
         "public": false,
         "signed": false
       },
-      "state": "initialized",
+      "state": "destructed",
+      "type": "function"
+    },
+    {
+      "codeLoc": "L1C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "ack:L1",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
       "type": "function"
     }
   ]

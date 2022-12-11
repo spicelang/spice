@@ -1,13 +1,11 @@
 digraph {
  rankdir="TB";
- label="./test-files/generator/arbitrary/success-hello-world/source.spice";
+ label="./test-files/benchmark/success-hello-world/source.spice";
  L1C1_Entry [color="lightgreen",label="Entry"];
  L1C1_MainFctDef [color="lightgreen",label="MainFctDef"];
  L1C1_Entry -> L1C1_MainFctDef;
- L1C15_Scope [color="lightgreen",label="Scope"];
- L1C1_MainFctDef -> L1C15_Scope;
  L2C5_StmtLst [color="lightgreen",label="StmtLst"];
- L1C15_Scope -> L2C5_StmtLst;
+ L1C1_MainFctDef -> L2C5_StmtLst;
  L2C5_Stmt [color="lightgreen",label="Stmt"];
  L2C5_StmtLst -> L2C5_Stmt;
  L2C5_AssignExpr [color="lightgreen",label="AssignExpr"];

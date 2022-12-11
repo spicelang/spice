@@ -122,25 +122,37 @@ public:
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const;
-  [[nodiscard]] bool isPointer() const;
-  [[nodiscard]] bool isPointerOf(SymbolSuperType superType) const;
-  [[nodiscard]] bool isReference() const;
-  [[nodiscard]] bool isReferenceOf(SymbolSuperType superType) const;
-  [[nodiscard]] bool isArray() const;
-  [[nodiscard]] bool isArrayOf(SymbolSuperType superType) const;
-  [[nodiscard]] bool isArrayOf(const SymbolType &symbolType) const;
-  [[nodiscard]] bool is(SymbolSuperType superType) const;
-  [[nodiscard]] bool is(SymbolSuperType superType, const std::string &subType) const;
-  [[nodiscard]] bool isPrimitive() const;
+  [[nodiscard]] inline bool isPointer() const { return getSuperType() == TY_PTR; }
+  [[nodiscard]] inline bool isPointerOf(SymbolSuperType superType) const { return isPointer() && getContainedTy().is(superType); }
+  [[nodiscard]] inline bool isReference() const { return getSuperType() == TY_REF; }
+  [[nodiscard]] inline bool isReferenceOf(SymbolSuperType superType) const {
+    return isReference() && getContainedTy().is(superType);
+  }
+  [[nodiscard]] inline bool isArray() const { return getSuperType() == TY_ARRAY; }
+  [[nodiscard]] inline bool isArrayOf(SymbolSuperType superType) const { return isArray() && getContainedTy().is(superType); }
+  [[nodiscard]] inline bool isArrayOf(const SymbolType &symbolType) const { return isArray() && getContainedTy() == symbolType; }
+  [[nodiscard]] inline bool is(SymbolSuperType superType) const { return getSuperType() == superType; }
+  [[nodiscard]] inline bool is(SymbolSuperType superType, const std::string &subType) const {
+    return getSuperType() == superType && getSubType() == subType;
+  }
+  [[nodiscard]] inline bool isPrimitive() const {
+    return isOneOf({TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL});
+  }
   [[nodiscard]] bool isBaseType(SymbolSuperType superType) const;
-  [[nodiscard]] bool isOneOf(const std::vector<SymbolSuperType> &superTypes) const;
+  [[nodiscard]] inline bool isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
+    const SymbolSuperType superType = getSuperType();
+    return std::any_of(superTypes.begin(), superTypes.end(), [&superType](int type) { return type == superType; });
+  }
   [[nodiscard]] bool isSameContainerTypeAs(const SymbolType &otherType) const;
-  [[nodiscard]] SymbolSuperType getSuperType() const;
-  [[nodiscard]] std::string getSubType() const;
+  [[nodiscard]] inline SymbolSuperType getSuperType() const { return typeChain.back().superType; }
+  [[nodiscard]] inline const std::string &getSubType() const {
+    assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
+    return typeChain.back().subType;
+  }
   [[nodiscard]] SymbolType getBaseType() const;
   void setTemplateTypes(const std::vector<SymbolType> &templateTypes);
   void setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes);
-  [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
+  [[nodiscard]] inline const std::vector<SymbolType> &getTemplateTypes() const { return typeChain.back().templateTypes; }
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] long getArraySize() const;
   void setSigned(bool value = true);

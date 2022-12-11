@@ -1380,7 +1380,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
     }
   }
 
-  const SymbolType arrayType = actualItemType.toArray(node, actualSize);
+  const SymbolType arrayType = actualItemType.is(TY_DYN) ? actualItemType : actualItemType.toArray(node, actualSize);
   return ExprResult{node->setEvaluatedSymbolType(arrayType)};
 }
 
@@ -1492,6 +1492,9 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
             throw SemanticError(node, ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");
         }
       }
+      // Do not allow arrays of dyn
+      if (type.is(TY_DYN))
+        throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
       type = type.toArray(node, typeModifier.hardcodedSize);
       break;
     }

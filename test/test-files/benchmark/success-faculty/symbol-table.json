@@ -1,118 +1,32 @@
 {
   "captures": [],
-  "children": [
-    {
-      "captures": [],
-      "children": [
-        {
-          "captures": [],
-          "children": [],
-          "name": "if:L2C5",
-          "symbols": []
-        }
-      ],
-      "name": "faculty(int): int",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "input",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "declared",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "main()",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "faculty",
-          "orderIndex": 2,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "input",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        }
-      ]
-    }
-  ],
   "symbols": [
     {
+      "codeLoc": "L8C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "faculty(int): int",
-      "orderIndex": 0,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
-      "state": "initialized",
-      "type": "function"
-    },
-    {
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "main()",
+      "name": "main(int, string[])",
       "orderIndex": 1,
       "specifiers": {
         "const": true,
         "public": false,
         "signed": false
       },
-      "state": "initialized",
+      "state": "destructed",
+      "type": "function"
+    },
+    {
+      "codeLoc": "L1C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "faculty:L1",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
       "type": "function"
     }
   ]

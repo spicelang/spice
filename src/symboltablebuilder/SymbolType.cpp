@@ -47,10 +47,6 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
  * @return Array type of the current type
  */
 SymbolType SymbolType::toArray(const ASTNode *node, long size) const {
-  // Do not allow arrays of dyn
-  if (typeChain.back().superType == TY_DYN)
-    throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
-
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_ARRAY, "", {.arraySize = size}, {}, nullptr});
   return SymbolType(newTypeChain);
@@ -166,91 +162,6 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
 }
 
 /**
- * Check is the current type is of type pointer
- *
- * @return Pointer or not
- */
-bool SymbolType::isPointer() const { return getSuperType() == TY_PTR; }
-
-/**
- * Check if the current type is a pointer of a certain super type
- *
- * @param elementSuperType Super type to check for
- * @return Pointer or not
- */
-bool SymbolType::isPointerOf(SymbolSuperType elementSuperType) const {
-  return isPointer() && getContainedTy().is(elementSuperType);
-}
-
-/**
- * Check is the current type is of type reference
- *
- * @return Reference or not
- */
-bool SymbolType::isReference() const { return getSuperType() == TY_REF; }
-
-/**
- * Check if the current type is a reference of a certain super type
- *
- * @param elementSuperType Super type to check for
- * @return Reference or not
- */
-bool SymbolType::isReferenceOf(SymbolSuperType elementSuperType) const {
-  return isReference() && getContainedTy().is(elementSuperType);
-}
-
-/**
- * Check is the current type is of type array
- *
- * @return Array or not
- */
-bool SymbolType::isArray() const { return getSuperType() == TY_ARRAY; }
-
-/**
- * Check if the current type is an array of a certain super type
- *
- * @param elementSuperType Super type to check for
- * @return Array of super type or not
- */
-bool SymbolType::isArrayOf(SymbolSuperType elementSuperType) const { return isArray() && getContainedTy().is(elementSuperType); }
-
-/**
- * Check if the current type is an array of the given type. Array size is ignored.
- *
- * @param otherSymbolType Symbol type
- * @return Array of contained symbol type or not
- */
-bool SymbolType::isArrayOf(const SymbolType &otherSymbolType) const { return isArray() && getContainedTy() == otherSymbolType; }
-
-/**
- * Check if the current type is of a certain super type
- *
- * @param superType Super type to check for
- * @return Applicable or not
- */
-bool SymbolType::is(SymbolSuperType superType) const { return getSuperType() == superType; }
-
-/**
- * Check if the current type is of a certain super type and sub type
- *
- * @param superType Super type to check for
- * @param subType Sub type to check for
- * @return Applicable or not
- */
-bool SymbolType::is(SymbolSuperType superType, const std::string &subType) const {
-  return getSuperType() == superType && getSubType() == subType;
-}
-
-/**
- * Check if the current type is one of the primitive types
- *
- * @return Primitive or not
- */
-bool SymbolType::isPrimitive() const {
-  return isOneOf({TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL});
-}
-
-/**
  * Check if the base type of the current type chain is of a certain super type
  *
  * @param superType Super type to check for
@@ -267,17 +178,6 @@ bool SymbolType::isBaseType(SymbolSuperType superType) const {
 }
 
 /**
- * Check if the current type is amongst a collection of certain super types
- *
- * @param superTypes Vector of super types
- * @return Applicable or not
- */
-bool SymbolType::isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
-  SymbolSuperType superType = getSuperType();
-  return std::any_of(superTypes.begin(), superTypes.end(), [&superType](int type) { return type == superType; });
-}
-
-/**
  * Check if the current type is of the same container type like the other type.
  * Only TY_PTR, TY_REF and TY_ARRAY are considered as container types.
  *
@@ -286,23 +186,6 @@ bool SymbolType::isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
  */
 bool SymbolType::isSameContainerTypeAs(const SymbolType &otherType) const {
   return (is(TY_PTR) && otherType.is(TY_PTR)) || (is(TY_REF) && otherType.is(TY_REF)) || (is(TY_ARRAY) && otherType.is(TY_ARRAY));
-}
-
-/**
- * Retrieve the super type of the current type
- *
- * @return Super type
- */
-SymbolSuperType SymbolType::getSuperType() const { return typeChain.back().superType; }
-
-/**
- * Retrieve the sub type of the current type
- *
- * @return Sub type
- */
-std::string SymbolType::getSubType() const {
-  assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
-  return typeChain.back().subType;
 }
 
 /**
@@ -335,13 +218,6 @@ void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTyp
   assert(isBaseType(TY_STRUCT));
   typeChain.front().templateTypes = templateTypes;
 }
-
-/**
- * Retrieve the list of template types of the current type
- *
- * @return Template types
- */
-const std::vector<SymbolType> &SymbolType::getTemplateTypes() const { return typeChain.back().templateTypes; }
 
 /**
  * Get the name of the symbol type as a string
