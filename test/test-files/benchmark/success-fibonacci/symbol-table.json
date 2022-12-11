@@ -2,20 +2,6 @@
   "captures": [],
   "symbols": [
     {
-      "codeLoc": "L1C1",
-      "isGlobal": true,
-      "isVolatile": false,
-      "name": "fibo(int): int",
-      "orderIndex": 2,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
-      "state": "destructed",
-      "type": "function"
-    },
-    {
       "codeLoc": "L6C1",
       "isGlobal": true,
       "isVolatile": false,
@@ -33,7 +19,7 @@
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "fibo:L1C1",
+      "name": "fibo:L1",
       "orderIndex": 0,
       "specifiers": {
         "const": true,

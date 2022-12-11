@@ -1896,7 +1896,7 @@ std::string ASTBuilder::getIdentifier(antlr4::tree::TerminalNode *terminal) {
   // Print error message
   if (isReserved) {
     const CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), filePath);
-    throw ParserError(codeLoc, RESERVED_KEYWORD, "'" + identifier + "' is a reserved keyword. Please use another name instead.");
+    throw ParserError(codeLoc, RESERVED_KEYWORD, "'" + identifier + "' is a reserved keyword. Please use another name instead");
   }
 
   return identifier;
