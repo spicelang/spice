@@ -415,6 +415,11 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   const GenericType genericType(node->typeName, typeConditions);
   rootScope->insertGenericType(node->typeName, genericType);
 
+  // Check if only one type condition is set
+  if (typeConditions.size() == 1 && !typeConditions.front().is(TY_DYN))
+    sourceFile->compilerOutput.warnings.emplace_back(node->typeAltsLst()->codeLoc, SINGLE_GENERIC_TYPE_CONDITION,
+                                                     "Generic type is locked to one type");
+
   return nullptr;
 }
 
@@ -444,6 +449,10 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
   SymbolTableEntry *globalVarEntry = rootScope->lookupStrict(node->varName);
   assert(globalVarEntry != nullptr);
   globalVarEntry->updateType(globalVarType, false);
+
+  // Check if a value is attached
+  if (!node->constant() && globalVarEntry->specifiers.isConst())
+    throw SemanticError(node, GLOBAL_CONST_WITHOUT_VALUE, "You must specify a value for constant global variables");
 
   return nullptr;
 }

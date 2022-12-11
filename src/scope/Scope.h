@@ -72,11 +72,11 @@ public:
   void insertInterface(const Interface &interface);
 
   // Util
-  [[nodiscard]] std::vector<CompilerWarning> collectWarnings() const;
+  void collectWarnings(std::vector<CompilerWarning> &warnings) const;
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] size_t getLoopNestingDepth() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
-  [[nodiscard]] bool isImportedBy(Scope *askingScope) const;
+  [[nodiscard]] bool isImportedBy(const Scope *askingScope) const;
   [[nodiscard]] nlohmann::json getSymbolTableJSON() const;
 
   // Wrapper methods for symbol table

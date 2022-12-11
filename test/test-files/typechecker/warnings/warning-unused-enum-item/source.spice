@@ -1,10 +1,8 @@
 type Fruit enum {
-    APPLE,
     BANANA,
-    MANGO,
     ORANGE
 }
 
 f<int> main() {
-    printf("Test: %d", Fruit.ORANGE);
+    printf("Test: %d", Fruit::ORANGE);
 }

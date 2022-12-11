@@ -1,6 +1,3 @@
-type UnusedStruct struct {
-    bool f1
-    int* f2
-}
+type UnusedStruct struct {}
 
 f<int> main() {}
