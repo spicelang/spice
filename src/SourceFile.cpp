@@ -186,11 +186,12 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   ImportCollector importCollector(resourceManager, this);
   importCollector.visit(static_cast<EntryNode *>(ast.get()));
 
+  timer.stop();
+
   // Run first part of pipeline for the imported source file
   for (const auto &dependency : dependencies)
     dependency.second.first->runFrontEnd();
 
-  timer.stop();
   printStatusMessage("Import Collector", IO_AST, IO_AST, compilerOutput.times.importCollector);
 }
 
@@ -223,9 +224,6 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
-  Timer timer(&compilerOutput.times.typeCheckerPre);
-  timer.start();
-
   // Type-check all dependencies first
   for (const auto &[importName, sourceFile] : dependencies) {
     // Type-check
@@ -233,6 +231,9 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
     // Merge exported names of the imported file with the existing ones
     mergeNameRegistries(*sourceFile.first, importName);
   }
+
+  Timer timer(&compilerOutput.times.typeCheckerPre);
+  timer.start();
 
   // Then type-check the current file
   TypeChecker typeChecker(resourceManager, this, TC_MODE_PREPARE);
@@ -257,7 +258,9 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
     runNumber++;
 
     // Type-check the current file first, if requested multiple times
+    timer.resume();
     typeChecker.visit(static_cast<EntryNode *>(ast.get()));
+    timer.pause();
 
     // Then type-check all dependencies
     for (const auto &[importName, sourceFile] : dependencies)
@@ -286,12 +289,12 @@ void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
-  Timer timer(&compilerOutput.times.borrowChecker);
-  timer.start();
-
   // Borrow-check all dependencies first
   for (const auto &[importName, sourceFile] : dependencies)
     sourceFile.first->runBorrowChecker();
+
+  Timer timer(&compilerOutput.times.borrowChecker);
+  timer.start();
 
   // Then borrow-check current file
   BorrowChecker borrowChecker(resourceManager, this);
@@ -306,12 +309,12 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
   if (restoredFromCache)
     return;
 
-  Timer timer(&compilerOutput.times.escapeAnalyzer);
-  timer.start();
-
   // Escape-analyze all dependencies first
   for (const auto &[importName, sourceFile] : dependencies)
     sourceFile.first->runEscapeAnalyzer();
+
+  Timer timer(&compilerOutput.times.escapeAnalyzer);
+  timer.start();
 
   // Then escape-analyze current file
   EscapeAnalyzer escapeAnalyzer(resourceManager, this);
@@ -352,12 +355,12 @@ void SourceFile::runIROptimizer() {
   if (restoredFromCache)
     return;
 
-  Timer timer(&compilerOutput.times.irGenerator);
-  timer.start();
-
   // Skip this stage if optimization is disabled
   if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
     return;
+
+  Timer timer(&compilerOutput.times.irGenerator);
+  timer.start();
 
   // Optimize this source file
   IROptimizer irOptimizer(resourceManager, this);

@@ -1,3 +1,3 @@
 f<int> main() {
-    short**[8] s = {};
+    short**[8] _ = {};
 }

@@ -2,7 +2,7 @@
 
 #include "ASTVisitor.h"
 
-#include "AstNodes.h"
+#include <ast/AstNodes.h>
 
 std::any ASTVisitor::visitEntry(EntryNode *node) { return visitChildren(node); }
 

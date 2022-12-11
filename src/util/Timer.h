@@ -16,10 +16,12 @@ public:
     if (timerOutput)
       *timerOutput = 0;
   }
-  void stop() {
+  void stop() { pause(); }
+  void resume() { timeStart = std::chrono::high_resolution_clock::now(); }
+  void pause() {
     timeStop = std::chrono::high_resolution_clock::now();
     if (timerOutput)
-      *timerOutput = getDurationMilliseconds();
+      *timerOutput += getDurationMilliseconds();
   }
   [[nodiscard]] uint64_t getDurationMilliseconds() const {
     const std::chrono::duration<double> duration = timeStop - timeStart;

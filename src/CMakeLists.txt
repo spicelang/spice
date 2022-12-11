@@ -23,14 +23,14 @@ set(SOURCES
         visualizer/CSTVisualizer.cpp
         visualizer/CSTVisualizer.h
         # AST builder
+        ast/AstNodes.cpp
+        ast/ASTNodes.h
         ast/AbstractASTVisitor.cpp
         ast/AbstractASTVisitor.h
         ast/ASTVisitor.cpp
         ast/ASTVisitor.h
         ast/ParallelizableASTVisitor.cpp
         ast/ParallelizableASTVisitor.h
-        ast/AstNodes.cpp
-        ast/ASTNodes.h
         ast/ASTBuilder.cpp
         ast/ASTBuilder.h
         # AST visualizer
