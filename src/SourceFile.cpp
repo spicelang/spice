@@ -480,8 +480,7 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
       dependency.second.first->collectAndPrintWarnings();
   }
   // Collect warnings for this file
-  for (const CompilerWarning &warning : globalScope->collectWarnings())
-    compilerOutput.warnings.push_back(warning);
+  globalScope->collectWarnings(compilerOutput.warnings);
   // Print warnings for this file
   for (const CompilerWarning &warning : compilerOutput.warnings)
     warning.print();

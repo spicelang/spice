@@ -1,3 +1,1 @@
-[Warning] ./test-files/typechecker/warnings/warning-unused-enum-item/source.spice:2:5: Unused enum item: The enum item 'APPLE' is unused
-[Warning] ./test-files/typechecker/warnings/warning-unused-enum-item/source.spice:3:5: Unused enum item: The enum item 'BANANA' is unused
-[Warning] ./test-files/typechecker/warnings/warning-unused-enum-item/source.spice:4:5: Unused enum item: The enum item 'MANGO' is unused
+[Warning] ./test-files/typechecker/warnings/warning-unused-enum-item/source.spice:2:5: Unused enum item: The enum item 'BANANA' is unused

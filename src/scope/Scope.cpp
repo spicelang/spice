@@ -201,20 +201,81 @@ size_t Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
 }
 
 /**
- * Collect all warnings, produces within this scope
+ * Collect all warnings, produced within this scope
  *
+ * @param List of warnings
  * @return Collection of warnings
  */
-std::vector<CompilerWarning> Scope::collectWarnings() const { // NOLINT(misc-no-recursion)
-  std::vector<CompilerWarning> warnings;
+void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // NOLINT(misc-no-recursion)
   // Visit own symbols
+  CompilerWarningType warningType;
+  std::string warningMessage;
   for (const auto &[key, entry] : symbolTable.symbols) {
     // Do not produce a warning if the symbol is used or has a special name
     if (entry.used || entry.name == UNUSED_VARIABLE_NAME)
       continue;
-  }
 
-  return warnings;
+    switch (entry.getType().getSuperType()) {
+    case TY_FUNCTION: {
+      warningType = UNUSED_FUNCTION;
+      warningMessage = "The function '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+      break;
+    }
+    case TY_PROCEDURE: {
+      warningType = UNUSED_PROCEDURE;
+      warningMessage = "The procedure '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+      break;
+    }
+    case TY_STRUCT: {
+      warningType = UNUSED_STRUCT;
+      warningMessage = "The struct '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_INTERFACE: {
+      warningType = UNUSED_INTERFACE;
+      warningMessage = "The interface '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_IMPORT: {
+      warningType = UNUSED_IMPORT;
+      warningMessage = "The import '" + entry.name + "' is unused";
+      break;
+    }
+    case TY_ENUM: {
+      continue; // Do not report unused enums. Only unused enum items are reported
+    }
+    default: {
+      // Check parent scope type
+      switch (type) {
+      case SCOPE_STRUCT: {
+        warningType = UNUSED_FIELD;
+        warningMessage = "The field '" + entry.name + "' is unused";
+        break;
+      }
+      case SCOPE_ENUM: {
+        warningType = UNUSED_ENUM_ITEM;
+        warningMessage = "The enum item '" + entry.name + "' is unused";
+        break;
+      }
+      case SCOPE_FOREACH_BODY: {
+        // Skip idx variables, otherwise fall-through
+        if (entry.name == FOREACH_DEFAULT_IDX_VARIABLE_NAME)
+          continue;
+      }
+      default: {
+        warningType = UNUSED_VARIABLE;
+        warningMessage = "The variable '" + entry.name + "' is unused";
+      }
+      }
+    }
+    }
+
+    // Add warning
+    warnings.emplace_back(entry.getDeclCodeLoc(), warningType, warningMessage);
+  }
+  // Visit children
+  for (const auto &child : children)
+    child.second->collectWarnings(warnings);
 }
 
 /**
@@ -237,7 +298,7 @@ Scope *Scope::searchForScope(const ScopeType &scopeType) {
  *
  * @return Imported / not imported
  */
-bool Scope::isImportedBy(Scope *askingScope) const {
+bool Scope::isImportedBy(const Scope *askingScope) const {
   // Get root scope of the source file where askingScope scope lives
   const Scope *askingRootScope = askingScope;
   while (askingRootScope->type != SCOPE_GLOBAL && askingRootScope->parent)

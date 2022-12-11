@@ -125,6 +125,7 @@ void execTestCase(const TestCase &testCase) {
     }
 
     // Check warnings
+    mainSourceFile.collectAndPrintWarnings();
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_WARNING_OUTPUT, [&]() {
       std::string actualWarningString;
       for (const CompilerWarning &warning : mainSourceFile.compilerOutput.warnings)

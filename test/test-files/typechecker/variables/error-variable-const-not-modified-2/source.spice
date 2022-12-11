@@ -1,4 +1,0 @@
-f<int> main() {
-    const int constVar = 101;
-    constVar++;
-}

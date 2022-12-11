@@ -218,10 +218,16 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   assert(currentScope->type == SCOPE_IF_ELSE_BODY);
 
   // Visit condition
-  SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  AssignExprNode *condition = node->condition();
+  SymbolType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
     throw SemanticError(node->condition(), CONDITION_MUST_BE_BOOL, "If condition must be of type bool");
+
+  // Warning for bool assignment
+  if (condition->hasOperator && condition->op == AssignExprNode::OP_ASSIGN)
+    sourceFile->compilerOutput.warnings.emplace_back(condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
+                                                     "If you want to compare the values, use '=='");
 
   // Visit body
   visit(node->thenBody());
@@ -1231,11 +1237,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   // Check if we were able to find a function
   if (!node->calledFunction) {
     // Build error message
-    std::string functionName = node->functionNameFragments.back();
-    if (node->isConstructorCall) {
-      functionName += ".";
-      functionName += CTOR_FUNCTION_NAME;
-    }
+    const std::string functionName = node->isConstructorCall ? CTOR_FUNCTION_NAME : node->functionNameFragments.back();
     ParamList errArgTypes;
     for (const auto &argType : node->argTypes)
       errArgTypes.push_back({argType, false});
@@ -1417,7 +1419,10 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     const std::string structSignature = Struct::getSignature(structEntry->name, concreteTemplateTypes);
     throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
   }
+
+  // Set struct to used
   spiceStruct->used = true;
+  structEntry->used = true;
 
   // Use scope of concrete substantiation and not the scope of the generic type
   structScope = spiceStruct->structScope;
