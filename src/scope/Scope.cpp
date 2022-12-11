@@ -166,7 +166,7 @@ void Scope::insertInterface(const Interface &interface) {
   interfaces.insert({interface.name, interface});
   // Add symbol table entry for the interface
   SymbolTableEntry *interfaceEntry = insert(interface.name, interface.specifiers, interface.declNode);
-  interfaceEntry->updateType(SymbolType(TY_INTERFACE), true);
+  interfaceEntry->updateType(SymbolType(TY_INTERFACE, interface.name), true);
 }
 
 /**

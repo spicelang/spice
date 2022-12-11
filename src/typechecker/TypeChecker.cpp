@@ -375,6 +375,10 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     // Visit data type
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
 
+    // Infer the type left to right if the right side is an empty array initialization
+    if (rhsTy.isArrayOf(TY_DYN))
+      rhsTy = localVarType;
+
     // Check if type has to be inferred or both types are fixed
     localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy);
 
@@ -1380,7 +1384,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
     }
   }
 
-  const SymbolType arrayType = actualItemType.is(TY_DYN) ? actualItemType : actualItemType.toArray(node, actualSize);
+  const SymbolType arrayType = actualItemType.toArray(node, actualSize);
   return ExprResult{node->setEvaluatedSymbolType(arrayType)};
 }
 
