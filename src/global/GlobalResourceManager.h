@@ -6,6 +6,7 @@
 #include <global/RuntimeModuleManager.h>
 #include <linker/LinkerInterface.h>
 #include <util/ThreadFactory.h>
+#include <util/Timer.h>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -36,6 +37,7 @@ public:
   llvm::LLVMContext context;
   llvm::IRBuilder<> builder = llvm::IRBuilder<>(context);
   llvm::TargetMachine *targetMachine;
+  Timer totalTimer;
   BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
   BS::synced_stream tout;
   std::mutex objectEmitLock;

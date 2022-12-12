@@ -32,6 +32,9 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   // Deduce fileName and fileDir
   fileName = std::filesystem::path(filePath).filename().string();
   fileDir = std::filesystem::path(filePath).parent_path().string();
+
+  if (mainFile)
+    resourceManager.totalTimer.start();
 }
 
 void SourceFile::runLexer() {
@@ -450,6 +453,11 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   // Wait until all compile tasks are done
   if (mainFile)
     resourceManager.threadPool.wait_for_tasks();
+
+  if (mainFile) {
+    resourceManager.totalTimer.stop();
+    std::cout << "Total compile time: " << std::to_string(resourceManager.totalTimer.getDurationMilliseconds()) << " ms\n";
+  }
 }
 
 std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &dependencyName, const std::string &path,

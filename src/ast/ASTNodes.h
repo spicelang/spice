@@ -78,6 +78,8 @@ public:
     return nodes;
   }
 
+  void reserveChildren(size_t numberOfChildren) { children.reserve(numberOfChildren); }
+
   [[nodiscard]] size_t getSymbolTypeIndex() const { // NOLINT(misc-no-recursion)
     if (symbolTypeIndex == SIZE_MAX) {
       if (parent != nullptr)

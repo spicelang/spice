@@ -15,7 +15,9 @@ ASTBuilder::ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourc
 }
 
 std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
-  auto entryNode = dynamic_cast<EntryNode *>(currentNode);
+  auto entryNode = static_cast<EntryNode *>(currentNode);
+  entryNode->reserveChildren(ctx->children.size());
+
   for (const auto &subTree : ctx->children) {
     // Create child for the current node
     antlr4::ParserRuleContext *rule;
@@ -51,7 +53,8 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
 }
 
 std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
-  auto mainFctDefNode = dynamic_cast<MainFctDefNode *>(currentNode);
+  auto mainFctDefNode = static_cast<MainFctDefNode *>(currentNode);
+  mainFctDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(mainFctDefNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -73,7 +76,8 @@ std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
 }
 
 std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
-  auto fctDefNode = dynamic_cast<FctDefNode *>(currentNode);
+  auto fctDefNode = static_cast<FctDefNode *>(currentNode);
+  fctDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(fctDefNode, ctx);
 
   // Extract function name
@@ -110,7 +114,8 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
-  auto procDefNode = dynamic_cast<ProcDefNode *>(currentNode);
+  auto procDefNode = static_cast<ProcDefNode *>(currentNode);
+  procDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(procDefNode, ctx);
 
   // Extract procedure name
@@ -145,7 +150,8 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
-  auto structDefNode = dynamic_cast<StructDefNode *>(currentNode);
+  auto structDefNode = static_cast<StructDefNode *>(currentNode);
+  structDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(structDefNode, ctx);
 
   // Extract struct name
@@ -182,7 +188,8 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
-  auto interfaceDefNode = dynamic_cast<InterfaceDefNode *>(currentNode);
+  auto interfaceDefNode = static_cast<InterfaceDefNode *>(currentNode);
+  interfaceDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(interfaceDefNode, ctx);
 
   // Extract interface name
@@ -206,7 +213,8 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
-  auto enumDefNode = dynamic_cast<EnumDefNode *>(currentNode);
+  auto enumDefNode = static_cast<EnumDefNode *>(currentNode);
+  enumDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(enumDefNode, ctx);
 
   // Extract enum name
@@ -233,7 +241,8 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
-  auto genericTypeDefNode = dynamic_cast<GenericTypeDefNode *>(currentNode);
+  auto genericTypeDefNode = static_cast<GenericTypeDefNode *>(currentNode);
+  genericTypeDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(genericTypeDefNode, ctx);
 
   // Extract type name
@@ -255,7 +264,8 @@ std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx
 }
 
 std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
-  auto globalVarDefNode = dynamic_cast<GlobalVarDefNode *>(currentNode);
+  auto globalVarDefNode = static_cast<GlobalVarDefNode *>(currentNode);
+  globalVarDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(globalVarDefNode, ctx);
 
   // Extract function name
@@ -281,7 +291,8 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
-  auto extDeclNode = dynamic_cast<ExtDeclNode *>(currentNode);
+  auto extDeclNode = static_cast<ExtDeclNode *>(currentNode);
+  extDeclNode->reserveChildren(ctx->children.size());
   saveErrorMessage(extDeclNode, ctx);
 
   // Extract function name
@@ -308,7 +319,8 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 }
 
 std::any ASTBuilder::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
-  auto threadDefNode = dynamic_cast<ThreadDefNode *>(currentNode);
+  auto threadDefNode = static_cast<ThreadDefNode *>(currentNode);
+  threadDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(threadDefNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -327,7 +339,8 @@ std::any ASTBuilder::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
 }
 
 std::any ASTBuilder::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
-  auto unsafeBlockDefNode = dynamic_cast<UnsafeBlockDefNode *>(currentNode);
+  auto unsafeBlockDefNode = static_cast<UnsafeBlockDefNode *>(currentNode);
+  unsafeBlockDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(unsafeBlockDefNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -346,7 +359,8 @@ std::any ASTBuilder::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx
 }
 
 std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
-  auto forLoopNode = dynamic_cast<ForLoopNode *>(currentNode);
+  auto forLoopNode = static_cast<ForLoopNode *>(currentNode);
+  forLoopNode->reserveChildren(ctx->children.size());
   saveErrorMessage(forLoopNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -367,7 +381,8 @@ std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
 }
 
 std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
-  auto forLoopNode = dynamic_cast<ForLoopNode *>(currentNode);
+  auto forLoopNode = static_cast<ForLoopNode *>(currentNode);
+  forLoopNode->reserveChildren(ctx->children.size());
   saveErrorMessage(forLoopNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -388,7 +403,8 @@ std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
 }
 
 std::any ASTBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
-  auto foreachLoopNode = dynamic_cast<ForeachLoopNode *>(currentNode);
+  auto foreachLoopNode = static_cast<ForeachLoopNode *>(currentNode);
+  foreachLoopNode->reserveChildren(ctx->children.size());
   saveErrorMessage(foreachLoopNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -409,7 +425,8 @@ std::any ASTBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
 }
 
 std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
-  auto foreachLoopNode = dynamic_cast<ForeachLoopNode *>(currentNode);
+  auto foreachLoopNode = static_cast<ForeachLoopNode *>(currentNode);
+  foreachLoopNode->reserveChildren(ctx->children.size());
   saveErrorMessage(foreachLoopNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -430,7 +447,8 @@ std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
 }
 
 std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
-  auto whileLoopNode = dynamic_cast<WhileLoopNode *>(currentNode);
+  auto whileLoopNode = static_cast<WhileLoopNode *>(currentNode);
+  whileLoopNode->reserveChildren(ctx->children.size());
   saveErrorMessage(whileLoopNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -451,7 +469,8 @@ std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
 }
 
 std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
-  auto ifStmtNode = dynamic_cast<IfStmtNode *>(currentNode);
+  auto ifStmtNode = static_cast<IfStmtNode *>(currentNode);
+  ifStmtNode->reserveChildren(ctx->children.size());
   saveErrorMessage(ifStmtNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -474,7 +493,8 @@ std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
-  auto elseStmtNode = dynamic_cast<ElseStmtNode *>(currentNode);
+  auto elseStmtNode = static_cast<ElseStmtNode *>(currentNode);
+  elseStmtNode->reserveChildren(ctx->children.size());
   saveErrorMessage(elseStmtNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -496,7 +516,8 @@ std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
-  auto assertStmtNode = dynamic_cast<AssertStmtNode *>(currentNode);
+  auto assertStmtNode = static_cast<AssertStmtNode *>(currentNode);
+  assertStmtNode->reserveChildren(ctx->children.size());
   saveErrorMessage(assertStmtNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -516,7 +537,8 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) {
-  auto blockStmtNode = dynamic_cast<AnonymousBlockStmtNode *>(currentNode);
+  auto blockStmtNode = static_cast<AnonymousBlockStmtNode *>(currentNode);
+  blockStmtNode->reserveChildren(ctx->children.size());
   saveErrorMessage(blockStmtNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -535,7 +557,8 @@ std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtCont
 }
 
 std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
-  auto stmtLstNode = dynamic_cast<StmtLstNode *>(currentNode);
+  auto stmtLstNode = static_cast<StmtLstNode *>(currentNode);
+  stmtLstNode->reserveChildren(ctx->children.size());
   saveErrorMessage(stmtLstNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -573,7 +596,8 @@ std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
-  auto typeLstNode = dynamic_cast<TypeLstNode *>(currentNode);
+  auto typeLstNode = static_cast<TypeLstNode *>(currentNode);
+  typeLstNode->reserveChildren(ctx->children.size());
   saveErrorMessage(typeLstNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -593,7 +617,8 @@ std::any ASTBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
-  auto typeAltsLstNode = dynamic_cast<TypeAltsLstNode *>(currentNode);
+  auto typeAltsLstNode = static_cast<TypeAltsLstNode *>(currentNode);
+  typeAltsLstNode->reserveChildren(ctx->children.size());
   saveErrorMessage(typeAltsLstNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -613,7 +638,8 @@ std::any ASTBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
-  auto argLstDefNode = dynamic_cast<ParamLstNode *>(currentNode);
+  auto argLstDefNode = static_cast<ParamLstNode *>(currentNode);
+  argLstDefNode->reserveChildren(ctx->children.size());
   saveErrorMessage(argLstDefNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -632,7 +658,8 @@ std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
-  auto argLstNode = dynamic_cast<ArgLstNode *>(currentNode);
+  auto argLstNode = static_cast<ArgLstNode *>(currentNode);
+  argLstNode->reserveChildren(ctx->children.size());
   saveErrorMessage(argLstNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -651,7 +678,8 @@ std::any ASTBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
-  auto enumItemLstNode = dynamic_cast<EnumItemLstNode *>(currentNode);
+  auto enumItemLstNode = static_cast<EnumItemLstNode *>(currentNode);
+  enumItemLstNode->reserveChildren(ctx->children.size());
   saveErrorMessage(enumItemLstNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -672,7 +700,8 @@ std::any ASTBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
-  auto enumItemNode = dynamic_cast<EnumItemNode *>(currentNode);
+  auto enumItemNode = static_cast<EnumItemNode *>(currentNode);
+  enumItemNode->reserveChildren(ctx->children.size());
   saveErrorMessage(enumItemNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -688,7 +717,8 @@ std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
 }
 
 std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
-  auto fieldNode = dynamic_cast<FieldNode *>(currentNode);
+  auto fieldNode = static_cast<FieldNode *>(currentNode);
+  fieldNode->reserveChildren(ctx->children.size());
   saveErrorMessage(fieldNode, ctx);
 
   // Extract field name
@@ -712,7 +742,8 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
 }
 
 std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
-  auto signatureNode = dynamic_cast<SignatureNode *>(currentNode);
+  auto signatureNode = static_cast<SignatureNode *>(currentNode);
+  signatureNode->reserveChildren(ctx->children.size());
   saveErrorMessage(signatureNode, ctx);
 
   // Extract method name
@@ -742,7 +773,8 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
 }
 
 std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
-  auto stmtNode = dynamic_cast<StmtNode *>(currentNode);
+  auto stmtNode = static_cast<StmtNode *>(currentNode);
+  stmtNode->reserveChildren(ctx->children.size());
   saveErrorMessage(stmtNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -769,7 +801,8 @@ std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
-  auto declStmtNode = dynamic_cast<DeclStmtNode *>(currentNode);
+  auto declStmtNode = static_cast<DeclStmtNode *>(currentNode);
+  declStmtNode->reserveChildren(ctx->children.size());
   saveErrorMessage(declStmtNode, ctx);
 
   // Extract var name
@@ -796,7 +829,8 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
-  auto specifierLstNode = dynamic_cast<SpecifierLstNode *>(currentNode);
+  auto specifierLstNode = static_cast<SpecifierLstNode *>(currentNode);
+  specifierLstNode->reserveChildren(ctx->children.size());
   saveErrorMessage(specifierLstNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -815,7 +849,8 @@ std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
 }
 
 std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
-  auto specifierNode = dynamic_cast<SpecifierNode *>(currentNode);
+  auto specifierNode = static_cast<SpecifierNode *>(currentNode);
+  specifierNode->reserveChildren(ctx->children.size());
   saveErrorMessage(specifierNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -841,7 +876,8 @@ std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
 }
 
 std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
-  auto importStmtNode = dynamic_cast<ImportStmtNode *>(currentNode);
+  auto importStmtNode = static_cast<ImportStmtNode *>(currentNode);
+  importStmtNode->reserveChildren(ctx->children.size());
   saveErrorMessage(importStmtNode, ctx);
 
   // Extract path
@@ -855,7 +891,8 @@ std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
-  auto returnStmtNode = dynamic_cast<ReturnStmtNode *>(currentNode);
+  auto returnStmtNode = static_cast<ReturnStmtNode *>(currentNode);
+  returnStmtNode->reserveChildren(ctx->children.size());
   saveErrorMessage(returnStmtNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -875,7 +912,8 @@ std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
-  auto breakStmtNode = dynamic_cast<BreakStmtNode *>(currentNode);
+  auto breakStmtNode = static_cast<BreakStmtNode *>(currentNode);
+  breakStmtNode->reserveChildren(ctx->children.size());
   saveErrorMessage(breakStmtNode, ctx);
 
   // Extract number of breaks
@@ -886,7 +924,8 @@ std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
-  auto continueStmtNode = dynamic_cast<ContinueStmtNode *>(currentNode);
+  auto continueStmtNode = static_cast<ContinueStmtNode *>(currentNode);
+  continueStmtNode->reserveChildren(ctx->children.size());
   saveErrorMessage(continueStmtNode, ctx);
 
   // Extract number of continues
@@ -897,7 +936,8 @@ std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
 }
 
 std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
-  auto atomicExprNode = dynamic_cast<AtomicExprNode *>(currentNode);
+  auto atomicExprNode = static_cast<AtomicExprNode *>(currentNode);
+  atomicExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(atomicExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -924,7 +964,8 @@ std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
-  auto printfCallNode = dynamic_cast<PrintfCallNode *>(currentNode);
+  auto printfCallNode = static_cast<PrintfCallNode *>(currentNode);
+  printfCallNode->reserveChildren(ctx->children.size());
   saveErrorMessage(printfCallNode, ctx);
 
   // Extract templated string
@@ -949,7 +990,8 @@ std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
-  auto sizeofCallNode = dynamic_cast<SizeofCallNode *>(currentNode);
+  auto sizeofCallNode = static_cast<SizeofCallNode *>(currentNode);
+  sizeofCallNode->reserveChildren(ctx->children.size());
   saveErrorMessage(sizeofCallNode, ctx);
 
   // Check if type or value
@@ -973,7 +1015,8 @@ std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
-  auto lenCallNode = dynamic_cast<LenCallNode *>(currentNode);
+  auto lenCallNode = static_cast<LenCallNode *>(currentNode);
+  lenCallNode->reserveChildren(ctx->children.size());
   saveErrorMessage(lenCallNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -992,13 +1035,15 @@ std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitTidCall(SpiceParser::TidCallContext *ctx) {
-  auto tidCallNode = dynamic_cast<TidCallNode *>(currentNode);
+  auto tidCallNode = static_cast<TidCallNode *>(currentNode);
+  tidCallNode->reserveChildren(ctx->children.size());
   saveErrorMessage(tidCallNode, ctx);
   return nullptr;
 }
 
 std::any ASTBuilder::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
-  auto joinCallNode = dynamic_cast<JoinCallNode *>(currentNode);
+  auto joinCallNode = static_cast<JoinCallNode *>(currentNode);
+  joinCallNode->reserveChildren(ctx->children.size());
   saveErrorMessage(joinCallNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1017,7 +1062,8 @@ std::any ASTBuilder::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
-  auto assignExprNode = dynamic_cast<AssignExprNode *>(currentNode);
+  auto assignExprNode = static_cast<AssignExprNode *>(currentNode);
+  assignExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(assignExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1044,7 +1090,8 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
-  auto ternaryExprNode = dynamic_cast<TernaryExprNode *>(currentNode);
+  auto ternaryExprNode = static_cast<TernaryExprNode *>(currentNode);
+  ternaryExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(ternaryExprNode, ctx);
 
   // Check if is shortened
@@ -1066,7 +1113,8 @@ std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
-  auto logicalOrExprNode = dynamic_cast<LogicalOrExprNode *>(currentNode);
+  auto logicalOrExprNode = static_cast<LogicalOrExprNode *>(currentNode);
+  logicalOrExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(logicalOrExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1085,7 +1133,8 @@ std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) 
 }
 
 std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
-  auto logicalAndExprNode = dynamic_cast<LogicalAndExprNode *>(currentNode);
+  auto logicalAndExprNode = static_cast<LogicalAndExprNode *>(currentNode);
+  logicalAndExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(logicalAndExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1104,7 +1153,8 @@ std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx
 }
 
 std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
-  auto bitwiseOrExprNode = dynamic_cast<BitwiseOrExprNode *>(currentNode);
+  auto bitwiseOrExprNode = static_cast<BitwiseOrExprNode *>(currentNode);
+  bitwiseOrExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(bitwiseOrExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1123,7 +1173,8 @@ std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) 
 }
 
 std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
-  auto bitwiseXorExprNode = dynamic_cast<BitwiseXorExprNode *>(currentNode);
+  auto bitwiseXorExprNode = static_cast<BitwiseXorExprNode *>(currentNode);
+  bitwiseXorExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(bitwiseXorExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1142,7 +1193,8 @@ std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx
 }
 
 std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
-  auto bitwiseAndExprNode = dynamic_cast<BitwiseAndExprNode *>(currentNode);
+  auto bitwiseAndExprNode = static_cast<BitwiseAndExprNode *>(currentNode);
+  bitwiseAndExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(bitwiseAndExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1161,7 +1213,8 @@ std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx
 }
 
 std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
-  auto equalityExprNode = dynamic_cast<EqualityExprNode *>(currentNode);
+  auto equalityExprNode = static_cast<EqualityExprNode *>(currentNode);
+  equalityExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(equalityExprNode, ctx);
 
   // Extract operator
@@ -1186,7 +1239,8 @@ std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
-  auto relationalExprNode = dynamic_cast<RelationalExprNode *>(currentNode);
+  auto relationalExprNode = static_cast<RelationalExprNode *>(currentNode);
+  relationalExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(relationalExprNode, ctx);
 
   // Extract operator
@@ -1215,7 +1269,8 @@ std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx
 }
 
 std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
-  auto shiftExprNode = dynamic_cast<ShiftExprNode *>(currentNode);
+  auto shiftExprNode = static_cast<ShiftExprNode *>(currentNode);
+  shiftExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(shiftExprNode, ctx);
 
   // Extract operator
@@ -1240,7 +1295,8 @@ std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
-  auto additiveExprNode = dynamic_cast<AdditiveExprNode *>(currentNode);
+  auto additiveExprNode = static_cast<AdditiveExprNode *>(currentNode);
+  additiveExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(additiveExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1263,7 +1319,8 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
-  auto multiplicativeExprNode = dynamic_cast<MultiplicativeExprNode *>(currentNode);
+  auto multiplicativeExprNode = static_cast<MultiplicativeExprNode *>(currentNode);
+  multiplicativeExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(multiplicativeExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1288,7 +1345,8 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
 }
 
 std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
-  auto castExprNode = dynamic_cast<CastExprNode *>(currentNode);
+  auto castExprNode = static_cast<CastExprNode *>(currentNode);
+  castExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(castExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1310,7 +1368,8 @@ std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
-  auto prefixUnaryExprNode = dynamic_cast<PrefixUnaryExprNode *>(currentNode);
+  auto prefixUnaryExprNode = static_cast<PrefixUnaryExprNode *>(currentNode);
+  prefixUnaryExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(prefixUnaryExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1331,7 +1390,8 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
 }
 
 std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
-  auto postfixUnaryExprNode = dynamic_cast<PostfixUnaryExprNode *>(currentNode);
+  auto postfixUnaryExprNode = static_cast<PostfixUnaryExprNode *>(currentNode);
+  postfixUnaryExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(postfixUnaryExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1365,7 +1425,8 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
 }
 
 std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
-  auto atomicExprNode = dynamic_cast<AtomicExprNode *>(currentNode);
+  auto atomicExprNode = static_cast<AtomicExprNode *>(currentNode);
+  atomicExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(atomicExprNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1395,7 +1456,8 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
 }
 
 std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
-  auto valueNode = dynamic_cast<ValueNode *>(currentNode);
+  auto valueNode = static_cast<ValueNode *>(currentNode);
+  valueNode->reserveChildren(ctx->children.size());
   saveErrorMessage(valueNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1421,7 +1483,8 @@ std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
 }
 
 std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
-  auto constantNode = dynamic_cast<ConstantNode *>(currentNode);
+  auto constantNode = static_cast<ConstantNode *>(currentNode);
+  constantNode->reserveChildren(ctx->children.size());
   saveErrorMessage(constantNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1478,7 +1541,8 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
 }
 
 std::any ASTBuilder::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
-  auto fctCallNode = dynamic_cast<FunctionCallNode *>(currentNode);
+  auto fctCallNode = static_cast<FunctionCallNode *>(currentNode);
+  fctCallNode->reserveChildren(ctx->children.size());
   saveErrorMessage(fctCallNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1507,7 +1571,8 @@ std::any ASTBuilder::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
 }
 
 std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
-  auto arrayInitializationNode = dynamic_cast<ArrayInitializationNode *>(currentNode);
+  auto arrayInitializationNode = static_cast<ArrayInitializationNode *>(currentNode);
+  arrayInitializationNode->reserveChildren(ctx->children.size());
   saveErrorMessage(arrayInitializationNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1526,7 +1591,8 @@ std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationCo
 }
 
 std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
-  auto structInstantiationNode = dynamic_cast<StructInstantiationNode *>(currentNode);
+  auto structInstantiationNode = static_cast<StructInstantiationNode *>(currentNode);
+  structInstantiationNode->reserveChildren(ctx->children.size());
   saveErrorMessage(structInstantiationNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1553,7 +1619,8 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
 }
 
 std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
-  auto dataTypeNode = dynamic_cast<DataTypeNode *>(currentNode);
+  auto dataTypeNode = static_cast<DataTypeNode *>(currentNode);
+  dataTypeNode->reserveChildren(ctx->children.size());
   saveErrorMessage(dataTypeNode, ctx);
 
   for (int i = 0; i < ctx->children.size(); i++) {
@@ -1597,7 +1664,8 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
 }
 
 std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
-  auto baseDataTypeNode = dynamic_cast<BaseDataTypeNode *>(currentNode);
+  auto baseDataTypeNode = static_cast<BaseDataTypeNode *>(currentNode);
+  baseDataTypeNode->reserveChildren(ctx->children.size());
   saveErrorMessage(baseDataTypeNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1637,7 +1705,8 @@ std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
 }
 
 std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
-  auto customDataTypeNode = dynamic_cast<CustomDataTypeNode *>(currentNode);
+  auto customDataTypeNode = static_cast<CustomDataTypeNode *>(currentNode);
+  customDataTypeNode->reserveChildren(ctx->children.size());
   saveErrorMessage(customDataTypeNode, ctx);
 
   for (const auto &subTree : ctx->children) {
@@ -1662,7 +1731,8 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
 }
 
 std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
-  auto assignExprNode = dynamic_cast<AssignExprNode *>(currentNode);
+  auto assignExprNode = static_cast<AssignExprNode *>(currentNode);
+  assignExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(assignExprNode, ctx);
 
   assignExprNode->hasOperator = true;
@@ -1697,7 +1767,8 @@ std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
 }
 
 std::any ASTBuilder::visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) {
-  auto prefixUnaryExprNode = dynamic_cast<PrefixUnaryExprNode *>(currentNode);
+  auto prefixUnaryExprNode = static_cast<PrefixUnaryExprNode *>(currentNode);
+  prefixUnaryExprNode->reserveChildren(ctx->children.size());
   saveErrorMessage(prefixUnaryExprNode, ctx);
 
   // Extract assign operator
