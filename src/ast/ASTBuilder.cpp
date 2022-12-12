@@ -515,27 +515,6 @@ std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   return nullptr;
 }
 
-std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
-  auto assertStmtNode = static_cast<AssertStmtNode *>(currentNode);
-  assertStmtNode->reserveChildren(ctx->children.size());
-  saveErrorMessage(assertStmtNode, ctx);
-
-  for (const auto &subTree : ctx->children) {
-    antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
-      currentNode = assertStmtNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
-      assertStmtNode->expressionString = rule->getText();
-    } else
-      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
-
-    if (currentNode != assertStmtNode) {
-      visit(rule);
-      currentNode = assertStmtNode;
-    }
-  }
-  return nullptr;
-}
-
 std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) {
   auto blockStmtNode = static_cast<AnonymousBlockStmtNode *>(currentNode);
   blockStmtNode->reserveChildren(ctx->children.size());
@@ -708,7 +687,7 @@ std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
     if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::IDENTIFIER)
       enumItemNode->itemName = getIdentifier(t1);
     else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::INT_LIT) {
-      enumItemNode->itemValue = parseInt(t2);
+      enumItemNode->itemValue = parseInt(nullptr, t2);
       enumItemNode->hasValue = true;
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -932,6 +911,27 @@ std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
   if (ctx->INT_LIT())
     continueStmtNode->continueTimes = std::stoi(ctx->INT_LIT()->toString());
 
+  return nullptr;
+}
+
+std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
+  auto assertStmtNode = static_cast<AssertStmtNode *>(currentNode);
+  assertStmtNode->reserveChildren(ctx->children.size());
+  saveErrorMessage(assertStmtNode, ctx);
+
+  for (const auto &subTree : ctx->children) {
+    antlr4::ParserRuleContext *rule;
+    if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
+      currentNode = assertStmtNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
+      assertStmtNode->expressionString = rule->getText();
+    } else
+      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    if (currentNode != assertStmtNode) {
+      visit(rule);
+      currentNode = assertStmtNode;
+    }
+  }
   return nullptr;
 }
 
@@ -1496,17 +1496,17 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
     } else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t1->getSymbol()->getType() == SpiceParser::INT_LIT) {
       constantNode->type = ConstantNode::TYPE_INT;
-      constantNode->compileTimeValue.intValue = parseInt(t1);
+      constantNode->compileTimeValue.intValue = parseInt(constantNode, t1);
       constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t2->getSymbol()->getType() == SpiceParser::SHORT_LIT) {
       constantNode->type = ConstantNode::TYPE_SHORT;
-      constantNode->compileTimeValue.shortValue = parseShort(t2);
+      constantNode->compileTimeValue.shortValue = parseShort(constantNode, t2);
       constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t3->getSymbol()->getType() == SpiceParser::LONG_LIT) {
       constantNode->type = ConstantNode::TYPE_LONG;
-      constantNode->compileTimeValue.longValue = parseLong(t3);
+      constantNode->compileTimeValue.longValue = parseLong(constantNode, t3);
       constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t4->getSymbol()->getType() == SpiceParser::CHAR_LIT) {
@@ -1807,28 +1807,28 @@ void ASTBuilder::replaceEscapeChars(std::string &string) {
   CommonUtil::replaceAll(string, "\\?", "\?");
 }
 
-int32_t ASTBuilder::parseInt(antlr4::tree::TerminalNode *terminal) {
+int32_t ASTBuilder::parseInt(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal) {
   std::function<int32_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
     return std::stoi(substr, nullptr, base);
   };
-  return parseNumeric(terminal, cb);
+  return parseNumeric(constantNode, terminal, cb);
 }
-int16_t ASTBuilder::parseShort(antlr4::tree::TerminalNode *terminal) {
+int16_t ASTBuilder::parseShort(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal) {
   std::function<int16_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
     return (int16_t)std::stoi(substr, nullptr, base);
   };
-  return parseNumeric(terminal, cb);
+  return parseNumeric(constantNode, terminal, cb);
 }
 
-int64_t ASTBuilder::parseLong(antlr4::tree::TerminalNode *terminal) {
+int64_t ASTBuilder::parseLong(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal) {
   std::function<int64_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
     return std::stoll(substr, nullptr, base);
   };
-  return parseNumeric(terminal, cb);
+  return parseNumeric(constantNode, terminal, cb);
 }
 
 int8_t ASTBuilder::parseChar(antlr4::tree::TerminalNode *terminal) {
-  std::string input = terminal->toString();
+  const std::string input = terminal->toString();
   if (input.length() == 3) { // Normal char literals
     return input[1];
   } else if (input.length() == 4 && input[1] == '\\') { // Char literals with escape sequence
@@ -1854,11 +1854,11 @@ int8_t ASTBuilder::parseChar(antlr4::tree::TerminalNode *terminal) {
     case '0':
       return '\0';
     default:
-      CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), filePath);
+      const CodeLoc codeLoc(terminal->getSymbol(), filePath);
       throw ParserError(codeLoc, INVALID_CHAR_LITERAL, "Invalid escape sequence " + input);
     }
   } else {
-    CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), filePath);
+    const CodeLoc codeLoc(terminal->getSymbol(), filePath);
     throw ParserError(codeLoc, INVALID_CHAR_LITERAL, "Invalid char literal " + input);
   }
 }
@@ -1870,29 +1870,35 @@ std::string ASTBuilder::parseString(std::string input) {
 }
 
 template <typename T>
-T ASTBuilder::parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb) {
-  std::string input = terminal->toString();
+T ASTBuilder::parseNumeric(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal,
+                           std::function<T(const std::string &, int)> cb) {
+  const std::string input = terminal->toString();
+
+  // Set to signed if the input string ends with 'u'
+  if (constantNode)
+    constantNode->isSigned = input.ends_with('u');
+
   try {
     if (input.length() >= 3) {
-      char c1 = input[0];
-      char c2 = input[1];
-      std::string substr = input.substr(2);
+      const char c1 = input[0];
+      const char c2 = input[1];
+      const std::string subStr = input.substr(2);
       if (c1 == '0') {
         switch (c2) {
         case 'd':
         case 'D':
-          return cb(substr, 10);
+          return cb(subStr, 10);
         case 'b':
         case 'B':
-          return cb(substr, 2);
+          return cb(subStr, 2);
         case 'h':
         case 'H':
         case 'x':
         case 'X':
-          return cb(substr, 16);
+          return cb(subStr, 16);
         case 'o':
         case 'O':
-          return cb(substr, 8);
+          return cb(subStr, 8);
         default:
           return cb(input, 10);
         }
@@ -1900,10 +1906,10 @@ T ASTBuilder::parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T
     }
     return cb(input, 10);
   } catch (std::out_of_range &e) {
-    CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), filePath);
+    const CodeLoc codeLoc(terminal->getSymbol(), filePath);
     throw ParserError(codeLoc, NUMBER_OUT_OF_RANGE, "The provided number is out of range");
   } catch (std::invalid_argument &e) {
-    CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), filePath);
+    const CodeLoc codeLoc(terminal->getSymbol(), filePath);
     throw ParserError(codeLoc, NUMBER_OUT_OF_RANGE, "You tried to parse '" + input + "' as an integer, but it was no integer");
   }
 }
@@ -1945,7 +1951,7 @@ void ASTBuilder::saveErrorMessage(ASTNode *node, const antlr4::ParserRuleContext
   if (inputStream->getText(extendedSourceInterval)[extendedSourceInterval.length() - 1] == '\n')
     extendedSourceInterval.b--;
 
-  std::string lineNumberStr = std::to_string(ctx->start->getLine());
+  const std::string lineNumberStr = std::to_string(ctx->start->getLine());
   indentation += lineNumberStr.length() + 2;
 
   std::stringstream ss;
@@ -1966,7 +1972,7 @@ std::string ASTBuilder::getIdentifier(antlr4::tree::TerminalNode *terminal) {
   isReserved |= std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), identifier) != std::end(RESERVED_KEYWORDS);
   // Print error message
   if (isReserved) {
-    const CodeLoc codeLoc = CodeLoc(terminal->getSymbol(), filePath);
+    const CodeLoc codeLoc(terminal->getSymbol(), filePath);
     throw ParserError(codeLoc, RESERVED_KEYWORD, "'" + identifier + "' is a reserved keyword. Please use another name instead");
   }
 

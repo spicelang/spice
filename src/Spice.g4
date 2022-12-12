@@ -24,7 +24,6 @@ foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
 whileLoop: WHILE assignExpr LBRACE stmtLst RBRACE;
 ifStmt: IF assignExpr LBRACE stmtLst RBRACE elseStmt?;
 elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
-assertStmt: ASSERT assignExpr SEMICOLON;
 anonymousBlockStmt: LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
@@ -45,6 +44,7 @@ importStmt: IMPORT STRING_LIT AS IDENTIFIER SEMICOLON;
 returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INT_LIT?;
 continueStmt: CONTINUE INT_LIT?;
+assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Builtin functions
 builtinCall: printfCall | sizeOfCall | lenCall | tidCall | joinCall;
@@ -72,13 +72,14 @@ prefixUnaryExpr: prefixUnaryOp* postfixUnaryExpr;
 postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS)*;
 atomicExpr: constant | value | IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* | builtinCall | LPAREN assignExpr RPAREN;
 
-// Values and types
+// Values
 value: functionCall | arrayInitialization | structInstantiation | NIL LESS dataType GREATER;
 constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
 functionCall: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (DOT IDENTIFIER)* LPAREN argLst? RPAREN;
 arrayInitialization: LBRACE argLst? RBRACE;
 structInstantiation: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
 
+// Types
 dataType: baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | assignExpr)? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | customDataType;
 customDataType: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)?;
@@ -190,7 +191,9 @@ CHAR_LIT: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
 STRING_LIT: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
 IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
 
-fragment NUM_LIT: [-]?(DEC_LIT | BIN_LIT | HEX_LIT | OCT_LIT);
+fragment NUM_LIT: NUM_LIT_S | NUM_LIT_U;
+fragment NUM_LIT_S: [-](DEC_LIT | BIN_LIT | HEX_LIT | OCT_LIT);
+fragment NUM_LIT_U: (DEC_LIT | BIN_LIT | HEX_LIT | OCT_LIT)[u]?;
 fragment DEC_LIT: ([0][dD])?[0-9]+;
 fragment BIN_LIT: [0][bB][01]+;
 fragment HEX_LIT: [0][xXhH][0-9a-fA-F]+;

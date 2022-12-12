@@ -20,14 +20,16 @@ public:
   explicit DebugInfoGenerator(IRGenerator *irGenerator) : irGenerator(irGenerator) {}
 
   // Public methods
-  void initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir);
+  void initialize(const std::string &sourceFileName, const std::string &sourceFileDir);
+  void finalize();
   [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
   //[[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
   void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
   void generateDeclDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address, size_t argNo = SIZE_MAX,
                              bool moveToPrev = false);
-  void setSourceLocation(ASTNode *node);
+  void setSourceLocation(const ASTNode *node);
+
 private:
   // Private members
   IRGenerator *irGenerator;

@@ -8,7 +8,7 @@
 
 #include <llvm/BinaryFormat/Dwarf.h>
 
-void DebugInfoGenerator::initializeDIBuilder(const std::string &sourceFileName, const std::string &sourceFileDir) {
+void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std::string &sourceFileDir) {
   llvm::Module *module = irGenerator->module;
   llvm::LLVMContext &context = irGenerator->context;
   std::string producerString = "spice version " + std::string(SPICE_VERSION);
@@ -40,6 +40,8 @@ void DebugInfoGenerator::initializeDIBuilder(const std::string &sourceFileName, 
   debugInfo.stringTy = diBuilder->createBasicType("string", 8, llvm::dwarf::DW_ATE_ASCII);
   debugInfo.boolTy = diBuilder->createBasicType("bool", 1, llvm::dwarf::DW_ATE_boolean);
 }
+
+void DebugInfoGenerator::finalize() { diBuilder->finalize(); }
 
 llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const SymbolType &symbolType) const { // NOLINT(misc-no-recursion)
   if (symbolType.isPointer()) {                                                                // Pointer type
@@ -141,7 +143,7 @@ void DebugInfoGenerator::generateDeclDebugInfo(const CodeLoc &codeLoc, const std
     inst->moveBefore(irGenerator->builder.GetInsertPoint()->getPrevNonDebugInstruction());
 }
 
-void DebugInfoGenerator::setSourceLocation(ASTNode *node) {
+void DebugInfoGenerator::setSourceLocation(const ASTNode *node) {
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
 

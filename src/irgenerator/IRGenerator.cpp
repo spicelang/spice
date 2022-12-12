@@ -3,8 +3,10 @@
 #include "IRGenerator.h"
 
 #include <SourceFile.h>
+#include <exception/IRError.h>
 
 #include <llvm/BinaryFormat/Dwarf.h>
+#include <llvm/IR/Verifier.h>
 
 IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : CompilerPass(resourceManager, sourceFile), context(resourceManager.context), builder(resourceManager.builder),
@@ -16,10 +18,27 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
 
   // Initialize debug info generator
   if (cliOptions.generateDebugInfo)
-    diGenerator.initializeDIBuilder(sourceFile->fileName, sourceFile->fileDir);
+    diGenerator.initialize(sourceFile->fileName, sourceFile->fileDir);
 }
 
-std::any IRGenerator::visitEntry(const EntryNode *node) { return nullptr; }
+std::any IRGenerator::visitEntry(const EntryNode *node) {
+  // Generate IR
+  visitChildren(node);
+
+  // Finalize debug info generator
+  if (cliOptions.generateDebugInfo)
+    diGenerator.finalize();
+
+  // Verify module
+  if (!cliOptions.disableVerifier) {
+    std::string output;
+    llvm::raw_string_ostream oss(output);
+    if (llvm::verifyModule(*module, &oss))
+      throw IRError(node->codeLoc, INVALID_MODULE, oss.str());
+  }
+
+  return nullptr;
+}
 
 llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
   if (allocaInsertInst != nullptr) { // If there is already an alloca inst, insert right after that
@@ -32,6 +51,7 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &
     llvm::BasicBlock *currentBlock = builder.GetInsertBlock();
     builder.SetInsertPoint(allocaInsertBlock);
 
+    // Allocate the size of the given LLVM type
     allocaInsertInst = builder.CreateAlloca(llvmType, nullptr, varName);
     allocaInsertInst->setDebugLoc(llvm::DebugLoc());
 

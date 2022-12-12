@@ -121,7 +121,7 @@ public:
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
-  [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const;
+  [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
   [[nodiscard]] inline bool isPointer() const { return getSuperType() == TY_PTR; }
   [[nodiscard]] inline bool isPointerOf(SymbolSuperType superType) const { return isPointer() && getContainedTy().is(superType); }
   [[nodiscard]] inline bool isReference() const { return getSuperType() == TY_REF; }

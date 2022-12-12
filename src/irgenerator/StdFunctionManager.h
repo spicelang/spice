@@ -10,7 +10,7 @@
 class StdFunctionManager {
 public:
   // Constructors
-  explicit StdFunctionManager(GlobalResourceManager &resourceManager, llvm::Module *module)
+  StdFunctionManager(GlobalResourceManager &resourceManager, llvm::Module *module)
       : context(resourceManager.context), builder(resourceManager.builder), module(module) {}
 
   // Public methods for type retrieval
@@ -22,6 +22,8 @@ public:
   [[nodiscard]] llvm::Function *getStackSaveIntrinsic() const;
   [[nodiscard]] llvm::Function *getStackRestoreIntrinsic() const;
   [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
+  [[nodiscard]] llvm::Function *getPthreadSelf() const;
+  [[nodiscard]] llvm::Function *getPthreadJoin() const;
   [[nodiscard]] llvm::Function *getStringGetRawFct() const;
   [[nodiscard]] llvm::Function *getStringCtorStrobjFct() const;
   [[nodiscard]] llvm::Function *getStringCtorStrobjStringFct() const;

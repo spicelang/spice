@@ -10,6 +10,7 @@
 
 // Forward declarations
 class ASTNode;
+class ConstantNode;
 
 #define ERROR_MESSAGE_CONTEXT 20
 const char *const RESERVED_KEYWORDS[8] = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
@@ -40,7 +41,6 @@ public:
   std::any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override;
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
-  std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
   std::any visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) override;
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override;
@@ -59,6 +59,7 @@ public:
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
   std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override;
+  std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
   std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override;
   std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override;
   std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override;
@@ -99,12 +100,13 @@ private:
   antlr4::ANTLRInputStream *inputStream;
 
   // Private methods
-  int32_t parseInt(antlr4::tree::TerminalNode *terminal);
-  int16_t parseShort(antlr4::tree::TerminalNode *terminal);
-  int64_t parseLong(antlr4::tree::TerminalNode *terminal);
+  int32_t parseInt(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal);
+  int16_t parseShort(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal);
+  int64_t parseLong(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal);
   int8_t parseChar(antlr4::tree::TerminalNode *terminal);
   static std::string parseString(std::string input);
-  template <typename T> T parseNumeric(antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
+  template <typename T>
+  T parseNumeric(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
   static void replaceEscapeChars(std::string &string);
   std::string getIdentifier(antlr4::tree::TerminalNode *terminal);
   void saveErrorMessage(ASTNode *node, const antlr4::ParserRuleContext *ctx);

@@ -78,7 +78,7 @@ public:
     return nodes;
   }
 
-  void reserveChildren(size_t numberOfChildren) { children.reserve(numberOfChildren); }
+  inline void reserveChildren(size_t numberOfChildren) { children.reserve(numberOfChildren); }
 
   [[nodiscard]] size_t getSymbolTypeIndex() const { // NOLINT(misc-no-recursion)
     if (symbolTypeIndex == SIZE_MAX) {
@@ -94,7 +94,7 @@ public:
     return symbolType;
   }
 
-  SymbolType getEvaluatedSymbolType() { // NOLINT(misc-no-recursion)
+  [[nodiscard]] SymbolType getEvaluatedSymbolType() const { // NOLINT(misc-no-recursion)
     size_t idx = getSymbolTypeIndex();
     if (!symbolTypes.empty() && !symbolTypes[idx].is(TY_INVALID))
       return symbolTypes.at(idx);
@@ -575,24 +575,6 @@ public:
   Scope *elseBodyScope = nullptr;
 };
 
-// ======================================================== AssertStmtNode =======================================================
-
-class AssertStmtNode : public ASTNode {
-public:
-  // Constructors
-  using ASTNode::ASTNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAssertStmt(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAssertStmt(this); }
-
-  // Public get methods
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-
-  // Public members
-  std::string expressionString;
-};
-
 // ========================================================== ScopeNode ==========================================================
 
 class AnonymousBlockStmtNode : public ASTNode {
@@ -921,6 +903,24 @@ public:
 
   // Public members
   int continueTimes = 1;
+};
+
+// ======================================================== AssertStmtNode =======================================================
+
+class AssertStmtNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAssertStmt(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAssertStmt(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+
+  // Public members
+  std::string expressionString;
 };
 
 // ======================================================== PrintfCallNode =======================================================
@@ -1377,6 +1377,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitValue(this); }
 
   // Public get methods
+  [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
   [[nodiscard]] FunctionCallNode *functionCall() const { return getChild<FunctionCallNode>(); }
   [[nodiscard]] ArrayInitializationNode *arrayInitialization() const { return getChild<ArrayInitializationNode>(); }
   [[nodiscard]] StructInstantiationNode *structInstantiation() const { return getChild<StructInstantiationNode>(); }
@@ -1402,6 +1403,7 @@ public:
 
   // Public members
   PrimitiveValueType type;
+  bool isSigned = true;
 };
 
 // ==================================================== FunctionCallNode =========================================================

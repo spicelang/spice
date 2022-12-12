@@ -13,18 +13,19 @@
 
 enum TypeCheckerMode { TC_MODE_PREPARE, TC_MODE_CHECK };
 
-// For routing through the symbol type as well as the current variable entry
-struct ExprResult {
-  SymbolType type;
-  SymbolTableEntry *entry = nullptr;
-};
-
 /**
  * Jobs:
  * - Ensure that all actual types match the expected types
  * - Perform type inference
  */
 class TypeChecker : private CompilerPass, public ASTVisitor {
+private:
+  // For routing through the symbol type as well as the current variable entry
+  struct ExprResult {
+    SymbolType type;
+    SymbolTableEntry *entry = nullptr;
+  };
+
 public:
   // Constructors
   TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile, TypeCheckerMode typeCheckerMode);
@@ -65,7 +66,6 @@ public:
   std::any visitWhileLoop(WhileLoopNode *node) override;
   std::any visitIfStmt(IfStmtNode *node) override;
   std::any visitElseStmt(ElseStmtNode *node) override;
-  std::any visitAssertStmt(AssertStmtNode *node) override;
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
   std::any visitStmtLst(StmtLstNode *node) override;
   std::any visitParamLst(ParamLstNode *node) override;
@@ -75,6 +75,7 @@ public:
   std::any visitReturnStmt(ReturnStmtNode *node) override;
   std::any visitBreakStmt(BreakStmtNode *node) override;
   std::any visitContinueStmt(ContinueStmtNode *node) override;
+  std::any visitAssertStmt(AssertStmtNode *node) override;
   std::any visitPrintfCall(PrintfCallNode *node) override;
   std::any visitSizeofCall(SizeofCallNode *node) override;
   std::any visitLenCall(LenCallNode *node) override;

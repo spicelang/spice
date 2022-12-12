@@ -38,8 +38,6 @@ std::any ASTVisitor::visitIfStmt(IfStmtNode *node) { return visitChildren(node);
 
 std::any ASTVisitor::visitElseStmt(ElseStmtNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitAssertStmt(AssertStmtNode *node) { return visitChildren(node); }
-
 std::any ASTVisitor::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitStmtLst(StmtLstNode *node) { return visitChildren(node); }
@@ -75,6 +73,8 @@ std::any ASTVisitor::visitReturnStmt(ReturnStmtNode *node) { return visitChildre
 std::any ASTVisitor::visitBreakStmt(BreakStmtNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitContinueStmt(ContinueStmtNode *node) { return visitChildren(node); }
+
+std::any ASTVisitor::visitAssertStmt(AssertStmtNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitPrintfCall(PrintfCallNode *node) { return visitChildren(node); }
 

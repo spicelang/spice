@@ -262,17 +262,6 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   return nullptr;
 }
 
-std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
-  // Visit condition
-  SymbolType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
-
-  // Check if condition evaluates to bool
-  if (!conditionType.is(TY_BOOL))
-    throw SemanticError(node->assignExpr(), ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool");
-
-  return nullptr;
-}
-
 std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Change to anonymous scope body scope
   currentScope = node->bodyScope;
@@ -448,6 +437,17 @@ std::any TypeChecker::visitContinueStmt(ContinueStmtNode *node) {
   const size_t maxBreaks = currentScope->getLoopNestingDepth();
   if (node->continueTimes > maxBreaks)
     throw SemanticError(node, INVALID_CONTINUE_NUMBER, "We can only continue " + std::to_string(maxBreaks) + " time(s) here");
+
+  return nullptr;
+}
+
+std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
+  // Visit condition
+  SymbolType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+
+  // Check if condition evaluates to bool
+  if (!conditionType.is(TY_BOOL))
+    throw SemanticError(node->assignExpr(), ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool");
 
   return nullptr;
 }
@@ -1131,6 +1131,10 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 }
 
 std::any TypeChecker::visitValue(ValueNode *node) {
+  // Constant
+  if (node->constant())
+    return visit(node->constant());
+
   // Function call
   if (node->functionCall())
     return visit(node->functionCall());

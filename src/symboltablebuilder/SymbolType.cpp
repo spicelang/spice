@@ -3,12 +3,11 @@
 #include "SymbolType.h"
 
 #include <stdexcept>
-#include <tuple>
 
 #include <exception/SemanticError.h>
 #include <irgenerator/StdFunctionManager.h>
 #include <model/Struct.h>
-#include <symboltablebuilder/SymbolTable.h>
+#include <scope/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 
 /**
@@ -111,7 +110,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
  * @param accessScope Access scope for structs
  * @return Corresponding LLVM type
  */
-llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *accessScope) const { // NOLINT(misc-no-recursion)
+llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const { // NOLINT(misc-no-recursion)
   assert(!typeChain.empty() && !isOneOf({TY_DYN, TY_INVALID}));
 
   if (is(TY_DOUBLE))
@@ -136,7 +135,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, SymbolTable *acce
     return llvm::Type::getInt1Ty(context);
 
   if (is(TY_STRUCT)) {
-    std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
+    const std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
     SymbolTableEntry *structSymbol = accessScope->lookup(structSignature);
     assert(structSymbol);
     llvm::Type *structType = structSymbol->getStructLLVMType();
