@@ -96,7 +96,6 @@ public:
   virtual std::any visitWhileLoop(const WhileLoopNode *node);
   virtual std::any visitIfStmt(const IfStmtNode *node);
   virtual std::any visitElseStmt(const ElseStmtNode *node);
-  virtual std::any visitAssertStmt(const AssertStmtNode *node);
   virtual std::any visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node);
   virtual std::any visitStmtLst(const StmtLstNode *node);
   virtual std::any visitTypeLst(const TypeLstNode *node);
@@ -115,6 +114,7 @@ public:
   virtual std::any visitReturnStmt(const ReturnStmtNode *node);
   virtual std::any visitBreakStmt(const BreakStmtNode *node);
   virtual std::any visitContinueStmt(const ContinueStmtNode *node);
+  virtual std::any visitAssertStmt(const AssertStmtNode *node);
   virtual std::any visitPrintfCall(const PrintfCallNode *node);
   virtual std::any visitSizeofCall(const SizeofCallNode *node);
   virtual std::any visitLenCall(const LenCallNode *node);

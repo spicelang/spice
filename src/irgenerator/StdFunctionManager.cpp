@@ -33,6 +33,12 @@ llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
   return getProcedure("llvm.memcpy.p0.p0.i64", {ptrTy, ptrTy, builder.getInt64Ty(), builder.getInt1Ty()});
 }
 
+llvm::Function *StdFunctionManager::getPthreadSelf() const { return getFunction("pthread_self", builder.getPtrTy(), {}); }
+
+llvm::Function *StdFunctionManager::getPthreadJoin() const {
+  return getFunction("pthread_join", builder.getInt32Ty(), {builder.getPtrTy(), builder.getPtrTy()});
+}
+
 llvm::Function *StdFunctionManager::getStringGetRawFct() const {
   return getFunction("_mf__String__charptr__getRaw", builder.getPtrTy(), getStrobjType(context)->getPointerTo());
 }
@@ -79,7 +85,7 @@ llvm::Function *StdFunctionManager::getStringMulOpShortFct() const {
 }
 
 llvm::Function *StdFunctionManager::getFunction(const std::string &funcName, llvm::Type *returnType,
-                                                llvm::ArrayRef<llvm::Type *> args, bool varArg) const {
+                                                llvm::ArrayRef<llvm::Type *> args, bool varArg /*=false*/) const {
   llvm::Function *opFct = module->getFunction(funcName);
   if (opFct != nullptr)
     return opFct;
@@ -89,6 +95,6 @@ llvm::Function *StdFunctionManager::getFunction(const std::string &funcName, llv
 }
 
 llvm::Function *StdFunctionManager::getProcedure(const std::string &procName, llvm::ArrayRef<llvm::Type *> args,
-                                                 bool varArg) const {
+                                                 bool varArg /*=false*/) const {
   return getFunction(procName, builder.getVoidTy(), args, varArg);
 }

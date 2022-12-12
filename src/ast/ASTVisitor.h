@@ -24,7 +24,6 @@ public:
   std::any visitWhileLoop(WhileLoopNode *node) override;
   std::any visitIfStmt(IfStmtNode *node) override;
   std::any visitElseStmt(ElseStmtNode *node) override;
-  std::any visitAssertStmt(AssertStmtNode *node) override;
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
   std::any visitStmtLst(StmtLstNode *node) override;
   std::any visitTypeLst(TypeLstNode *node) override;
@@ -43,6 +42,7 @@ public:
   std::any visitReturnStmt(ReturnStmtNode *node) override;
   std::any visitBreakStmt(BreakStmtNode *node) override;
   std::any visitContinueStmt(ContinueStmtNode *node) override;
+  std::any visitAssertStmt(AssertStmtNode *node) override;
   std::any visitPrintfCall(PrintfCallNode *node) override;
   std::any visitSizeofCall(SizeofCallNode *node) override;
   std::any visitLenCall(LenCallNode *node) override;

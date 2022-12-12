@@ -77,6 +77,12 @@ set(SOURCES
         # IR generator
         irgenerator/IRGenerator.cpp
         irgenerator/IRGenerator.h
+        irgenerator/GenTopLevelDefinitions.cpp
+        irgenerator/GenControlStructures.cpp
+        irgenerator/GenStatements.cpp
+        irgenerator/GenBuiltinFunctions.cpp
+        irgenerator/GenExpressions.cpp
+        irgenerator/GenValues.cpp
         irgenerator/StdFunctionManager.cpp
         irgenerator/StdFunctionManager.h
         irgenerator/OpRuleConversionsManager.cpp

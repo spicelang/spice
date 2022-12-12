@@ -1,3 +1,6 @@
-import "std/type/int" as unused;
+//import "std/type/int" as unused;
 
-f<int> main() {}
+f<int> main() {
+    unsigned int t = 12u;
+    printf("%d", t);
+}
