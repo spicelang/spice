@@ -215,7 +215,7 @@ jobs:
           chmod -R +x ./
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v4
         with:
           version: v1.12.3
           args: release --rm-dist
