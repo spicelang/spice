@@ -22,6 +22,7 @@ public:
   [[nodiscard]] llvm::Function *getStackSaveIntrinsic() const;
   [[nodiscard]] llvm::Function *getStackRestoreIntrinsic() const;
   [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
+  [[nodiscard]] llvm::Function *getPthreadCreate() const;
   [[nodiscard]] llvm::Function *getPthreadSelf() const;
   [[nodiscard]] llvm::Function *getPthreadJoin() const;
   [[nodiscard]] llvm::Function *getStringGetRawFct() const;
@@ -43,8 +44,7 @@ private:
   llvm::Module *module;
 
   // Private methods
-  llvm::Function *getFunction(const std::string &funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
+  llvm::Function *getFunction(const char *funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
                               bool varArg = false) const;
-  [[nodiscard]] llvm::Function *getProcedure(const std::string &procName, llvm::ArrayRef<llvm::Type *> args,
-                                             bool varArg = false) const;
+  [[nodiscard]] llvm::Function *getProcedure(const char *procName, llvm::ArrayRef<llvm::Type *> args, bool varArg = false) const;
 };

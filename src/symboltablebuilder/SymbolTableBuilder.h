@@ -40,6 +40,7 @@ public:
   std::any visitForLoop(ForLoopNode *node) override;
   std::any visitForeachLoop(ForeachLoopNode *node) override;
   std::any visitWhileLoop(WhileLoopNode *node) override;
+  std::any visitDoWhileLoop(DoWhileLoopNode *node) override;
   std::any visitIfStmt(IfStmtNode *node) override;
   std::any visitElseStmt(ElseStmtNode *node) override;
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;

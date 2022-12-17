@@ -37,6 +37,7 @@ public:
   std::any visitForLoop(ForLoopNode *ctx) override { return buildNode(ctx); }
   std::any visitForeachLoop(ForeachLoopNode *ctx) override { return buildNode(ctx); }
   std::any visitWhileLoop(WhileLoopNode *ctx) override { return buildNode(ctx); }
+  std::any visitDoWhileLoop(DoWhileLoopNode *ctx) override { return buildNode(ctx); }
   std::any visitIfStmt(IfStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitElseStmt(ElseStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitAssertStmt(AssertStmtNode *ctx) override { return buildNode(ctx); }
@@ -156,6 +157,8 @@ private:
       return "ForeachLoop";
     if (std::is_same<WhileLoopNode, T>())
       return "WhileLoop";
+    if (std::is_same<DoWhileLoopNode, T>())
+      return "DoWhileLoop";
     if (std::is_same<IfStmtNode, T>())
       return "IfStmt";
     if (std::is_same<ElseStmtNode, T>())

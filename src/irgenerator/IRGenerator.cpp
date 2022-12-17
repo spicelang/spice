@@ -61,6 +61,36 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &
   return static_cast<llvm::Value *>(allocaInsertInst);
 }
 
+llvm::BasicBlock *IRGenerator::createBlock(const std::string &blockName, llvm::Function *parentFct /*=nullptr*/) {
+  // Create block
+  llvm::BasicBlock *block = llvm::BasicBlock::Create(context, blockName);
+  // If no parent function were passed, use the current function
+  if (!parentFct)
+    parentFct = builder.GetInsertBlock()->getParent();
+  // Append to current function
+  parentFct->getBasicBlockList().push_back(block);
+  return block;
+}
+
+void IRGenerator::insertJump(llvm::BasicBlock *targetBlock) {
+  if (blockAlreadyTerminated)
+    return;
+  builder.CreateBr(targetBlock);
+  blockAlreadyTerminated = true;
+}
+
+void IRGenerator::insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock) {
+  if (blockAlreadyTerminated)
+    return;
+  builder.CreateCondBr(condition, trueBlock, falseBlock);
+  blockAlreadyTerminated = true;
+}
+
+void IRGenerator::switchToBlock(llvm::BasicBlock *block) {
+  builder.SetInsertPoint(block);
+  blockAlreadyTerminated = false;
+}
+
 std::string IRGenerator::getIRString() const {
   std::string output;
   llvm::raw_string_ostream oss(output);

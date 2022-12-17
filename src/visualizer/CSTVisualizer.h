@@ -40,6 +40,7 @@ public:
   std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override { return buildRule(ctx); }
   std::any visitForeachHead(SpiceParser::ForeachHeadContext *ctx) override { return buildRule(ctx); }
   std::any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override { return buildRule(ctx); }
+  std::any visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) override { return buildRule(ctx); }
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override { return buildRule(ctx); }

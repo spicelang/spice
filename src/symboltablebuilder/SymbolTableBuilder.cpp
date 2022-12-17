@@ -417,6 +417,22 @@ std::any SymbolTableBuilder::visitWhileLoop(WhileLoopNode *node) {
   return nullptr;
 }
 
+std::any SymbolTableBuilder::visitDoWhileLoop(DoWhileLoopNode *node) {
+  // Create scope for the loop body
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_WHILE_BODY, &node->body()->codeLoc);
+
+  // Visit condition
+  visit(node->condition());
+
+  // Visit body
+  visit(node->body());
+
+  // Leave do-while body scope
+  currentScope = node->bodyScope->parent;
+
+  return nullptr;
+}
+
 std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
   // Create scope for the then body
   node->thenBodyScope = currentScope =

@@ -93,6 +93,10 @@ public:
 
   // Public methods
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
+  llvm::BasicBlock *createBlock(const std::string &blockName, llvm::Function *parentFct = nullptr);
+  void insertJump(llvm::BasicBlock *targetBlock);
+  void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
+  void switchToBlock(llvm::BasicBlock *block);
   [[nodiscard]] std::string getIRString() const;
   void dumpIR() const;
 
@@ -105,6 +109,9 @@ private:
   const StdFunctionManager stdFunctionManager;
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);
   Scope *currentScope;
+  std::stack<llvm::BasicBlock *> breakBlocks;
+  std::stack<llvm::BasicBlock *> continueBlocks;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
+  bool blockAlreadyTerminated = false;
 };

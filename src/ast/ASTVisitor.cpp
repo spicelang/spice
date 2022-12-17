@@ -34,6 +34,8 @@ std::any ASTVisitor::visitForeachLoop(ForeachLoopNode *node) { return visitChild
 
 std::any ASTVisitor::visitWhileLoop(WhileLoopNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitDoWhileLoop(DoWhileLoopNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitIfStmt(IfStmtNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitElseStmt(ElseStmtNode *node) { return visitChildren(node); }

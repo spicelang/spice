@@ -20,6 +20,11 @@ bool WhileLoopNode::returnsOnAllControlPaths() const {
   return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
 }
 
+bool DoWhileLoopNode::returnsOnAllControlPaths() const {
+  const AssignExprNode *cond = condition();
+  return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
+}
+
 bool IfStmtNode::returnsOnAllControlPaths() const {
   // An if statement returns on all control paths, if then and else block return on all control paths
   const AssignExprNode *cond = condition();

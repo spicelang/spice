@@ -527,6 +527,29 @@ public:
   Scope *bodyScope = nullptr;
 };
 
+// ======================================================== DoWhileLoopNode ======================================================
+
+class DoWhileLoopNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDoWhileLoop(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDoWhileLoop(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *condition() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "dowhile:" + codeLoc.toString(); }
+  [[nodiscard]] bool returnsOnAllControlPaths() const override;
+
+  // Public members
+  Scope *bodyScope = nullptr;
+};
+
 // ========================================================== IfStmtNode =========================================================
 
 class IfStmtNode : public ASTNode {
