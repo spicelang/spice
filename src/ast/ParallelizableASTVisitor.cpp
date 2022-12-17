@@ -42,6 +42,8 @@ std::any ParallelizableASTVisitor::visitForeachLoop(const ForeachLoopNode *node)
 
 std::any ParallelizableASTVisitor::visitWhileLoop(const WhileLoopNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitDoWhileLoop(const DoWhileLoopNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitIfStmt(const IfStmtNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitElseStmt(const ElseStmtNode *node) { return visitChildren(node); }

@@ -1,0 +1,5 @@
+f<int> main() {
+    do {
+        printf("Test");
+    } while(5.6);
+}

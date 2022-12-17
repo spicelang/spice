@@ -32,3 +32,40 @@ std::any IRGenerator::visitBreakStmt(const BreakStmtNode *node) { return Paralle
 std::any IRGenerator::visitContinueStmt(const ContinueStmtNode *node) {
   return ParallelizableASTVisitor::visitContinueStmt(node);
 }
+
+std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
+  diGenerator.setSourceLocation(node);
+
+  // Only generate assertions with -O0
+  if (cliOptions.optLevel == 0)
+    return nullptr;
+
+  // Create blocks
+  const std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bThen = createBlock("assert.then." + codeLine);
+  llvm::BasicBlock *bEnd = createBlock("assert.end." + codeLine);
+
+  // Visit the assignExpr
+  llvm::Value *condValue = resolveValue(node->assignExpr());
+  llvm::Function *parentFct = builder.GetInsertBlock()->getParent();
+
+  // Create condition check
+  insertCondJump(condValue, bThen, bEnd);
+
+  // Switch to then block
+  switchToBlock(bThen);
+  // Print the exception message
+  const std::string errorMsg = "Assertion failed: Condition '" + node->expressionString + "' evaluated to false.";
+  llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
+  builder.CreateCall(printfFct, builder.CreateGlobalStringPtr(errorMsg));
+  // Generate call to exit()
+  llvm::Function *exitFct = stdFunctionManager.getExitFct();
+  builder.CreateCall(exitFct, builder.getInt32(0));
+  // Create unreachable instruction
+  builder.CreateUnreachable();
+
+  // Switch to exit block
+  switchToBlock(bEnd);
+
+  return nullptr;
+}

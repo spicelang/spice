@@ -39,6 +39,7 @@ public:
   std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override;
   std::any visitForeachHead(SpiceParser::ForeachHeadContext *ctx) override;
   std::any visitWhileLoop(SpiceParser::WhileLoopContext *ctx) override;
+  std::any visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) override;
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
   std::any visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) override;

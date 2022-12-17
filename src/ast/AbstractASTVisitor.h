@@ -21,6 +21,7 @@ class UnsafeBlockDefNode;
 class ForLoopNode;
 class ForeachLoopNode;
 class WhileLoopNode;
+class DoWhileLoopNode;
 class IfStmtNode;
 class ElseStmtNode;
 class AnonymousBlockStmtNode;
@@ -94,6 +95,7 @@ public:
   virtual std::any visitForLoop(ForLoopNode *node) = 0;
   virtual std::any visitForeachLoop(ForeachLoopNode *node) = 0;
   virtual std::any visitWhileLoop(WhileLoopNode *node) = 0;
+  virtual std::any visitDoWhileLoop(DoWhileLoopNode *node) = 0;
   virtual std::any visitIfStmt(IfStmtNode *node) = 0;
   virtual std::any visitElseStmt(ElseStmtNode *node) = 0;
   virtual std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) = 0;

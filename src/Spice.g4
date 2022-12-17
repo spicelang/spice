@@ -22,12 +22,13 @@ forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
 foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
 foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
 whileLoop: WHILE assignExpr LBRACE stmtLst RBRACE;
+doWhileLoop: DO LBRACE stmtLst RBRACE WHILE assignExpr SEMICOLON;
 ifStmt: IF assignExpr LBRACE stmtLst RBRACE elseStmt?;
 elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 anonymousBlockStmt: LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef | anonymousBlockStmt)*;
+stmtLst: (stmt | forLoop | foreachLoop | whileLoop | doWhileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef | anonymousBlockStmt)*;
 typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;
@@ -111,6 +112,7 @@ ELSE: 'else';
 ASSERT: 'assert';
 FOR: 'for';
 FOREACH: 'foreach';
+DO: 'do';
 WHILE: 'while';
 IMPORT: 'import';
 BREAK: 'break';

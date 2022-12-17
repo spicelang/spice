@@ -212,6 +212,26 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   return nullptr;
 }
 
+std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
+  // Change to while body scope
+  currentScope = node->bodyScope;
+  assert(currentScope->type == SCOPE_WHILE_BODY);
+
+  // Visit body
+  visit(node->body());
+
+  // Visit condition
+  SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  // Check if condition evaluates to bool
+  if (!conditionType.is(TY_BOOL))
+    throw SemanticError(node->condition(), CONDITION_MUST_BE_BOOL, "Do-While loop condition must be of type bool");
+
+  // Leave while body scope
+  currentScope = node->bodyScope->parent;
+
+  return nullptr;
+}
+
 std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   // Change to then body scope
   currentScope = node->thenBodyScope;

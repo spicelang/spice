@@ -468,6 +468,28 @@ std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   return nullptr;
 }
 
+std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {
+  auto doWhileLoopNode = static_cast<DoWhileLoopNode *>(currentNode);
+  doWhileLoopNode->reserveChildren(ctx->children.size());
+  saveErrorMessage(doWhileLoopNode, ctx);
+
+  for (const auto &subTree : ctx->children) {
+    antlr4::ParserRuleContext *rule;
+    if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
+      currentNode = doWhileLoopNode->createChild<StmtLstNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
+      currentNode = doWhileLoopNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
+    else
+      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    if (currentNode != doWhileLoopNode) {
+      visit(rule);
+      currentNode = doWhileLoopNode;
+    }
+  }
+  return nullptr;
+}
+
 std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   auto ifStmtNode = static_cast<IfStmtNode *>(currentNode);
   ifStmtNode->reserveChildren(ctx->children.size());
