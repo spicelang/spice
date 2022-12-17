@@ -12,15 +12,6 @@
 class SourceFile;
 
 class IRGenerator : private CompilerPass, public ParallelizableASTVisitor {
-private:
-  // For routing through the symbol type as well as the current variable entry
-  struct ExprResult {
-    llvm::Value *ptr = nullptr;
-    llvm::Value *value = nullptr;
-    llvm::Constant *constant = nullptr;
-    SymbolTableEntry *entry = nullptr;
-  };
-
 public:
   // Constructors
   IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
@@ -48,6 +39,7 @@ public:
   std::any visitForLoop(const ForLoopNode *node) override;
   std::any visitForeachLoop(const ForeachLoopNode *node) override;
   std::any visitWhileLoop(const WhileLoopNode *node) override;
+  std::any visitDoWhileLoop(const DoWhileLoopNode *node) override;
   std::any visitIfStmt(const IfStmtNode *node) override;
   std::any visitElseStmt(const ElseStmtNode *node) override;
   std::any visitAssertStmt(const AssertStmtNode *node) override;
@@ -93,14 +85,20 @@ public:
 
   // Public methods
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
+  llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
+  llvm::Value *resolveAddress(const ASTNode *node, bool storeVolatile = false);
+  [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
+  [[nodiscard]] std::string getIRString() const;
+
+private:
+  // Private methods
   llvm::BasicBlock *createBlock(const std::string &blockName, llvm::Function *parentFct = nullptr);
   void insertJump(llvm::BasicBlock *targetBlock);
   void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   void switchToBlock(llvm::BasicBlock *block);
-  [[nodiscard]] std::string getIRString() const;
-  void dumpIR() const;
+  llvm::Value *copyMemoryShallow(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name = "",
+                                 bool isVolatile = false);
 
-private:
   // Private members
   llvm::LLVMContext &context;
   llvm::IRBuilder<> &builder;

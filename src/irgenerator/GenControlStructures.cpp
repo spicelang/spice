@@ -119,9 +119,118 @@ std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockDefNode *node) {
   return nullptr;
 }
 
-std::any IRGenerator::visitForLoop(const ForLoopNode *node) { return ParallelizableASTVisitor::visitForLoop(node); }
+std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
+  diGenerator.setSourceLocation(node);
 
-std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) { return ParallelizableASTVisitor::visitForeachLoop(node); }
+  // Create blocks
+  const std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bHead = createBlock("for.head." + codeLine);
+  llvm::BasicBlock *bBody = createBlock("for.body." + codeLine);
+  llvm::BasicBlock *bTail = createBlock("for.tail." + codeLine);
+  llvm::BasicBlock *bExit = createBlock("for.exit." + codeLine);
+
+  // Change scope
+  currentScope = node->bodyScope;
+  assert(currentScope != nullptr);
+  breakBlocks.push(bExit);
+  continueBlocks.push(bTail);
+
+  // Init statement
+  visit(node->initDecl());
+  // Create jump from original to head block
+  insertJump(bHead);
+
+  // Switch to head block
+  switchToBlock(bHead);
+  // Condition evaluation
+  llvm::Value *condValue = resolveValue(node->condAssign());
+  // Create conditional jump from head to body or exit block
+  insertCondJump(condValue, bBody, bExit);
+
+  // Switch to body block
+  switchToBlock(bBody);
+  // Visit body
+  visit(node->body());
+  // Create jump from body to tail block
+  insertJump(bTail);
+
+  // Switch to tail block
+  switchToBlock(bTail);
+  // Inc statement
+  visit(node->incAssign());
+  // Create jump from tail to head
+  insertJump(bHead);
+
+  // Switch to exit block
+  switchToBlock(bExit);
+
+  // Pop basic blocks from break and continue stacks
+  breakBlocks.pop();
+  continueBlocks.pop();
+
+  // Change scope back
+  currentScope = node->bodyScope->parent;
+  assert(currentScope != nullptr);
+
+  return nullptr;
+}
+
+std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
+  diGenerator.setSourceLocation(node);
+
+  // Create blocks
+  const std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bHead = createBlock("foreach.head." + codeLine);
+  llvm::BasicBlock *bBody = createBlock("foreach.body." + codeLine);
+  llvm::BasicBlock *bTail = createBlock("foreach.tail." + codeLine);
+  llvm::BasicBlock *bExit = createBlock("foreach.exit." + codeLine);
+
+  // Change scope
+  currentScope = node->bodyScope;
+  assert(currentScope != nullptr);
+  breakBlocks.push(bExit);
+  continueBlocks.push(bTail);
+
+  // Call .reset on iterator
+  // ToDo: implement
+  // Create jump from original to head node
+  insertJump(bHead);
+
+  // Switch to head block
+  switchToBlock(bHead);
+  // Call .isValid on iterator
+  // ToDo: implement
+  llvm::Value *condValue = nullptr;
+  // Create conditional jump from head to body or exit block
+  insertCondJump(condValue, bBody, bExit);
+
+  // Switch to body block
+  switchToBlock(bBody);
+  // Visit body
+  visit(node->body());
+  // Create jump from body to tail block
+  insertJump(bTail);
+
+  // Switch to tail block
+  switchToBlock(bTail);
+  // Call .next on iterator
+  // ToDo: implement
+  // Create jump from tail to head block
+  insertJump(bHead);
+
+  // Switch to exit block
+  switchToBlock(bExit);
+
+  // Pop basic blocks from break and continue stacks
+  breakBlocks.pop();
+  continueBlocks.pop();
+
+  // Change scope back
+  currentScope = node->bodyScope->parent;
+  assert(currentScope != nullptr);
+
+  return nullptr;
+}
 
 std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   diGenerator.setSourceLocation(node);
@@ -157,6 +266,56 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
 
   // Switch to exit block
   switchToBlock(bExit);
+
+  // Pop basic blocks from break and continue stacks
+  breakBlocks.pop();
+  continueBlocks.pop();
+
+  // Change scope back
+  currentScope = node->bodyScope->parent;
+  assert(currentScope != nullptr);
+
+  return nullptr;
+}
+
+std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
+  diGenerator.setSourceLocation(node);
+
+  // Create blocks
+  const std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bBody = createBlock("dowhile.body." + codeLine);
+  llvm::BasicBlock *bFoot = createBlock("dowhile.foot." + codeLine);
+  llvm::BasicBlock *bExit = createBlock("dowhile.exit." + codeLine);
+
+  // Change scope
+  currentScope = node->bodyScope;
+  assert(currentScope != nullptr);
+  breakBlocks.push(bExit);
+  continueBlocks.push(bFoot);
+
+  // Jump to body block
+  insertJump(bBody);
+
+  // Switch to body block
+  switchToBlock(bBody);
+  // Visit body
+  visit(node->body());
+  // Create jump to foot block
+  insertJump(bFoot);
+
+  // Switch to head block
+  switchToBlock(bFoot);
+  // Evaluate condition
+  llvm::Value *condValue = resolveValue(node->condition());
+  // Jump to body or exit block, depending on the condition
+  insertCondJump(condValue, bBody, bExit);
+
+  // Switch to exit block
+  switchToBlock(bExit);
+
+  // Pop basic blocks from break and continue stacks
+  breakBlocks.pop();
+  continueBlocks.pop();
 
   // Change scope back
   currentScope = node->bodyScope->parent;

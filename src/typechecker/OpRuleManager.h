@@ -14,15 +14,16 @@
 class ASTNode;
 class TypeChecker;
 
-// Types: double, int, short, long, byte, char, string, bool
+// Helper macro to get the length of an array
+#define arrayLength(array) sizeof(array) / sizeof(*array)
 
-// Unary operator rule pair: lhs type, result type, unsafe
-typedef std::tuple<uint32_t, uint32_t, bool> UnaryOpRule;
-// Binary operator rule pair: lhs type, rhs type, result type, unsafe
-typedef std::tuple<uint32_t, uint32_t, uint32_t, bool> BinaryOpRule;
+// Unary operator rule:        lhs type, result type, unsafe
+using UnaryOpRule = std::tuple<uint32_t, uint32_t, bool>;
+// Binary operator rule:        lhs type, rhs type, result type, unsafe
+using BinaryOpRule = std::tuple<uint32_t, uint32_t, uint32_t, bool>;
 
 // Assign op rules
-const std::vector<BinaryOpRule> ASSIGN_OP_RULES = {
+const BinaryOpRule ASSIGN_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double = double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int = int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // short = short -> short
@@ -35,7 +36,7 @@ const std::vector<BinaryOpRule> ASSIGN_OP_RULES = {
 };
 
 // Plus equal op rules
-const std::vector<BinaryOpRule> PLUS_EQUAL_OP_RULES = {
+const BinaryOpRule PLUS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double += double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int += int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int += short -> int
@@ -53,7 +54,7 @@ const std::vector<BinaryOpRule> PLUS_EQUAL_OP_RULES = {
 };
 
 // Minus equal op rules
-const std::vector<BinaryOpRule> MINUS_EQUAL_OP_RULES = {
+const BinaryOpRule MINUS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double -= double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int -= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int -= short -> int
@@ -69,7 +70,7 @@ const std::vector<BinaryOpRule> MINUS_EQUAL_OP_RULES = {
 };
 
 // Mul equal op rules
-const std::vector<BinaryOpRule> MUL_EQUAL_OP_RULES = {
+const BinaryOpRule MUL_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double *= double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int *= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int *= short -> int
@@ -87,7 +88,7 @@ const std::vector<BinaryOpRule> MUL_EQUAL_OP_RULES = {
 };
 
 // Div equal op rules
-const std::vector<BinaryOpRule> DIV_EQUAL_OP_RULES = {
+const BinaryOpRule DIV_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double /= double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int /= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int /= short -> int
@@ -102,7 +103,7 @@ const std::vector<BinaryOpRule> DIV_EQUAL_OP_RULES = {
 };
 
 // Rem equal op rules
-const std::vector<BinaryOpRule> REM_EQUAL_OP_RULES = {
+const BinaryOpRule REM_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double %= double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int %= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int %= short -> int
@@ -117,7 +118,7 @@ const std::vector<BinaryOpRule> REM_EQUAL_OP_RULES = {
 };
 
 // Shl equal op rules
-const std::vector<BinaryOpRule> SHL_EQUAL_OP_RULES = {
+const BinaryOpRule SHL_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int <<= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int <<= short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),     // int <<= long -> int
@@ -131,7 +132,7 @@ const std::vector<BinaryOpRule> SHL_EQUAL_OP_RULES = {
 };
 
 // Shr equal op rules
-const std::vector<BinaryOpRule> SHR_EQUAL_OP_RULES = {
+const BinaryOpRule SHR_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int >>= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int >>= short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),     // int >>= long -> int
@@ -145,7 +146,7 @@ const std::vector<BinaryOpRule> SHR_EQUAL_OP_RULES = {
 };
 
 // And equal op rules
-const std::vector<BinaryOpRule> AND_EQUAL_OP_RULES = {
+const BinaryOpRule AND_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int &= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int &= short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),     // int &= long -> int
@@ -159,7 +160,7 @@ const std::vector<BinaryOpRule> AND_EQUAL_OP_RULES = {
 };
 
 // Or equal op rules
-const std::vector<BinaryOpRule> OR_EQUAL_OP_RULES = {
+const BinaryOpRule OR_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int |= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int |= short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),     // int |= long -> int
@@ -173,7 +174,7 @@ const std::vector<BinaryOpRule> OR_EQUAL_OP_RULES = {
 };
 
 // Xor equal op rules
-const std::vector<BinaryOpRule> XOR_EQUAL_OP_RULES = {
+const BinaryOpRule XOR_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int ^= int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int ^= short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),     // int ^= long -> int
@@ -188,17 +189,17 @@ const std::vector<BinaryOpRule> XOR_EQUAL_OP_RULES = {
 };
 
 // Logical and op rules
-const std::vector<BinaryOpRule> LOGICAL_AND_OP_RULES = {
+const BinaryOpRule LOGICAL_AND_OP_RULES[] = {
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false) // bool && bool -> bool
 };
 
 // Logical or op rules
-const std::vector<BinaryOpRule> LOGICAL_OR_OP_RULES = {
+const BinaryOpRule LOGICAL_OR_OP_RULES[] = {
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false) // bool || bool -> bool
 };
 
 // Bitwise and op rules
-const std::vector<BinaryOpRule> BITWISE_AND_OP_RULES = {
+const BinaryOpRule BITWISE_AND_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int & int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false), // short & short -> short
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long & long -> long
@@ -206,7 +207,7 @@ const std::vector<BinaryOpRule> BITWISE_AND_OP_RULES = {
 };
 
 // Bitwise or op rules
-const std::vector<BinaryOpRule> BITWISE_OR_OP_RULES = {
+const BinaryOpRule BITWISE_OR_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int | int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false), // short | short -> short
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long | long -> long
@@ -214,7 +215,7 @@ const std::vector<BinaryOpRule> BITWISE_OR_OP_RULES = {
 };
 
 // Bitwise xor op rules
-const std::vector<BinaryOpRule> BITWISE_XOR_OP_RULES = {
+const BinaryOpRule BITWISE_XOR_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int ^ int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false), // short ^ short -> short
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long ^ long -> long
@@ -222,7 +223,7 @@ const std::vector<BinaryOpRule> BITWISE_XOR_OP_RULES = {
 };
 
 // Equal op rules
-const std::vector<BinaryOpRule> EQUAL_OP_RULES = {
+const BinaryOpRule EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false), // double == double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),    // double == int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),  // double == short -> bool
@@ -253,7 +254,7 @@ const std::vector<BinaryOpRule> EQUAL_OP_RULES = {
 };
 
 // Not equal op rules
-const std::vector<BinaryOpRule> NOT_EQUAL_OP_RULES = {
+const BinaryOpRule NOT_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false), // double != double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),    // double != int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),  // double != short -> bool
@@ -284,7 +285,7 @@ const std::vector<BinaryOpRule> NOT_EQUAL_OP_RULES = {
 };
 
 // Less op rules
-const std::vector<BinaryOpRule> LESS_OP_RULES = {
+const BinaryOpRule LESS_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false), // double < double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),    // double < int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),  // double < short -> bool
@@ -306,7 +307,7 @@ const std::vector<BinaryOpRule> LESS_OP_RULES = {
 };
 
 // Greater op rules
-const std::vector<BinaryOpRule> GREATER_OP_RULES = {
+const BinaryOpRule GREATER_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false), // double > double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),    // double > int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),  // double > short -> bool
@@ -328,7 +329,7 @@ const std::vector<BinaryOpRule> GREATER_OP_RULES = {
 };
 
 // Less equal op rules
-const std::vector<BinaryOpRule> LESS_EQUAL_OP_RULES = {
+const BinaryOpRule LESS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false), // double <= double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),    // double <= int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),  // double <= short -> bool
@@ -350,7 +351,7 @@ const std::vector<BinaryOpRule> LESS_EQUAL_OP_RULES = {
 };
 
 // Greater equal op rules
-const std::vector<BinaryOpRule> GREATER_EQUAL_OP_RULES = {
+const BinaryOpRule GREATER_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_BOOL, false), // double >= double -> bool
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_BOOL, false),    // double >= int -> bool
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_BOOL, false),  // double >= short -> bool
@@ -372,7 +373,7 @@ const std::vector<BinaryOpRule> GREATER_EQUAL_OP_RULES = {
 };
 
 // Shift left op rules
-const std::vector<BinaryOpRule> SHIFT_LEFT_OP_RULES = {
+const BinaryOpRule SHIFT_LEFT_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int << int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int << short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_INT, false),      // int << long -> int
@@ -389,7 +390,7 @@ const std::vector<BinaryOpRule> SHIFT_LEFT_OP_RULES = {
 };
 
 // Shift right op rules
-const std::vector<BinaryOpRule> SHIFT_RIGHT_OP_RULES = {
+const BinaryOpRule SHIFT_RIGHT_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int >> int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),     // int >> short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_INT, false),      // int >> long -> int
@@ -406,7 +407,7 @@ const std::vector<BinaryOpRule> SHIFT_RIGHT_OP_RULES = {
 };
 
 // Plus op rules
-const std::vector<BinaryOpRule> PLUS_OP_RULES = {
+const BinaryOpRule PLUS_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double + double -> double
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // double + int -> double
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // double + short -> double
@@ -429,7 +430,7 @@ const std::vector<BinaryOpRule> PLUS_OP_RULES = {
 };
 
 // Minus op rules
-const std::vector<BinaryOpRule> MINUS_OP_RULES = {
+const BinaryOpRule MINUS_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double - double -> double
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // double - int -> double
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // double - short -> double
@@ -450,7 +451,7 @@ const std::vector<BinaryOpRule> MINUS_OP_RULES = {
 };
 
 // Mul op rules
-const std::vector<BinaryOpRule> MUL_OP_RULES = {
+const BinaryOpRule MUL_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double * double -> double
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // double * int -> double
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // double * short -> double
@@ -477,7 +478,7 @@ const std::vector<BinaryOpRule> MUL_OP_RULES = {
 };
 
 // Div op rules
-const std::vector<BinaryOpRule> DIV_OP_RULES = {
+const BinaryOpRule DIV_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double / double -> double
     BinaryOpRule(TY_DOUBLE, TY_INT, TY_DOUBLE, false),    // double / int -> double
     BinaryOpRule(TY_DOUBLE, TY_SHORT, TY_DOUBLE, false),  // double / short -> double
@@ -498,7 +499,7 @@ const std::vector<BinaryOpRule> DIV_OP_RULES = {
 };
 
 // Rem op rules
-const std::vector<BinaryOpRule> REM_OP_RULES = {
+const BinaryOpRule REM_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // double % double -> double
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int % int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int % short -> int
@@ -512,7 +513,7 @@ const std::vector<BinaryOpRule> REM_OP_RULES = {
 };
 
 // Prefix Minus op rules
-const std::vector<UnaryOpRule> PREFIX_MINUS_OP_RULES = {
+const UnaryOpRule PREFIX_MINUS_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),       // -int -> int
     UnaryOpRule(TY_DOUBLE, TY_DOUBLE, false), // -double -> double
     UnaryOpRule(TY_SHORT, TY_SHORT, false),   // -short -> short
@@ -520,26 +521,26 @@ const std::vector<UnaryOpRule> PREFIX_MINUS_OP_RULES = {
 };
 
 // Prefix Plus-Plus op rules
-const std::vector<UnaryOpRule> PREFIX_PLUS_PLUS_OP_RULES = {
+const UnaryOpRule PREFIX_PLUS_PLUS_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),     // int++ -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // short++ -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // long++ -> long
 };
 
 // Prefix Minus-Minus op rules
-const std::vector<UnaryOpRule> PREFIX_MINUS_MINUS_OP_RULES = {
+const UnaryOpRule PREFIX_MINUS_MINUS_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),     // in-- -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // short-- -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // long-- -> long
 };
 
 // Prefix not op rules
-const std::vector<UnaryOpRule> PREFIX_NOT_OP_RULES = {
+const UnaryOpRule PREFIX_NOT_OP_RULES[] = {
     UnaryOpRule(TY_BOOL, TY_BOOL, false), // !bool -> bool
 };
 
 // Prefix bitwise not op rules
-const std::vector<UnaryOpRule> PREFIX_BITWISE_NOT_OP_RULES = {
+const UnaryOpRule PREFIX_BITWISE_NOT_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),     // ~int -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // ~short -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // ~long -> long
@@ -547,21 +548,21 @@ const std::vector<UnaryOpRule> PREFIX_BITWISE_NOT_OP_RULES = {
 };
 
 // Postfix Plus-Plus op rules
-const std::vector<UnaryOpRule> POSTFIX_PLUS_PLUS_OP_RULES = {
+const UnaryOpRule POSTFIX_PLUS_PLUS_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),     // int++ -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // short++ -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // long++ -> long
 };
 
 // Postfix Minus-Minus op rules
-const std::vector<UnaryOpRule> POSTFIX_MINUS_MINUS_OP_RULES = {
+const UnaryOpRule POSTFIX_MINUS_MINUS_OP_RULES[] = {
     UnaryOpRule(TY_INT, TY_INT, false),     // int++ -> int
     UnaryOpRule(TY_SHORT, TY_SHORT, false), // short++ -> short
     UnaryOpRule(TY_LONG, TY_LONG, false),   // long++ -> long
 };
 
 // Cast op rules
-const std::vector<BinaryOpRule> CAST_OP_RULES = {
+const BinaryOpRule CAST_OP_RULES[] = {
     BinaryOpRule(TY_DOUBLE, TY_DOUBLE, TY_DOUBLE, false), // (double) double -> double
     BinaryOpRule(TY_INT, TY_DOUBLE, TY_INT, false),       // (int) double -> int
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // (int) int -> int
@@ -590,6 +591,10 @@ const std::vector<BinaryOpRule> CAST_OP_RULES = {
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),       // (bool) bool -> bool
 };
 
+/**
+ * Helper class for the TypeChecker to check whether certain operator/type combinations are valid or not and which result type
+ * is produced.
+ */
 class OpRuleManager {
 public:
   // Constructors
@@ -641,10 +646,10 @@ private:
   TypeChecker *typeChecker;
 
   // Private methods
-  static SymbolType validateBinaryOperation(const ASTNode *node, const std::vector<BinaryOpRule> &opRules,
+  static SymbolType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
                                             const std::string &name, const SymbolType &lhs, const SymbolType &rhs);
-  static SymbolType validateUnaryOperation(const ASTNode *node, const std::vector<UnaryOpRule> &opRules, const std::string &name,
-                                           const SymbolType &lhs);
+  static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,
+                                           const std::string &name, const SymbolType &lhs);
   static SemanticError printErrorMessageBinary(const ASTNode *node, const std::string &name, const SymbolType &lhs,
                                                const SymbolType &rhs);
   static SemanticError printErrorMessageUnary(const ASTNode *node, const std::string &name, const SymbolType &lhs);

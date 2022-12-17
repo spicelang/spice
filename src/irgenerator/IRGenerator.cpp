@@ -61,6 +61,130 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &
   return static_cast<llvm::Value *>(allocaInsertInst);
 }
 
+llvm::Value *IRGenerator::resolveValue(const ASTNode *node, Scope *accessScope /*=nullptr*/) {
+  // Set access scope to current scope if nullptr gets passed
+  if (!accessScope)
+    accessScope = currentScope;
+
+  // Visit the given AST node
+  auto exprResult = any_cast<ExprResult>(visit(node));
+
+  // Check if a constant or a value is already present
+  if (exprResult.constant != nullptr)
+    return exprResult.constant;
+  if (exprResult.value != nullptr)
+    return exprResult.value;
+
+  // If not, load the value from the pointer
+  assert(exprResult.ptr != nullptr);
+  llvm::Type *valueTy = node->getEvaluatedSymbolType().toLLVMType(context, accessScope);
+  return builder.CreateLoad(valueTy, exprResult.ptr);
+}
+
+llvm::Value *IRGenerator::resolveAddress(const ASTNode *node, bool storeVolatile /*=false*/) {
+  // Visit the given AST node
+  auto exprResult = any_cast<ExprResult>(visit(node));
+
+  // Check if an address is already present
+  if (exprResult.ptr != nullptr)
+    return exprResult.ptr;
+
+  // If not, store the value or constant
+  llvm::Value *value = exprResult.constant ?: exprResult.value;
+  assert(value != nullptr);
+  llvm::Value *address = insertAlloca(value->getType(), exprResult.entry ? exprResult.entry->name : "");
+  builder.CreateStore(value, address, storeVolatile);
+  return address;
+}
+
+llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symbolType) { // NOLINT(misc-no-recursion)
+  // Double
+  if (symbolType.is(TY_DOUBLE))
+    return llvm::ConstantFP::get(context, llvm::APFloat(0.0));
+
+  // Int
+  if (symbolType.is(TY_INT))
+    return builder.getInt32(0);
+
+  // Short
+  if (symbolType.is(TY_SHORT))
+    return builder.getInt16(0);
+
+  // Long
+  if (symbolType.is(TY_LONG))
+    return builder.getInt64(0);
+
+  // Byte or char
+  if (symbolType.isOneOf({TY_BYTE, TY_CHAR}))
+    return builder.getInt8(0);
+
+  // String
+  if (symbolType.is(TY_STRING))
+    return builder.CreateGlobalStringPtr("", "", 0, module);
+
+  // Bool
+  if (symbolType.is(TY_BOOL))
+    return builder.getFalse();
+
+  // Pointer
+  if (symbolType.is(TY_PTR) || (symbolType.is(TY_ARRAY) && symbolType.getArraySize() == ARRAY_SIZE_DYNAMIC))
+    return llvm::Constant::getNullValue(builder.getPtrTy());
+
+  // Array
+  if (symbolType.is(TY_ARRAY)) {
+    // Get array size
+    const size_t arraySize = symbolType.getArraySize();
+
+    // Get default value for item
+    llvm::Constant *defaultItemValue = getDefaultValueForSymbolType(symbolType.getContainedTy());
+
+    // Retrieve array and item type
+    llvm::Type *itemType = symbolType.getContainedTy().toLLVMType(context, currentScope);
+    llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
+
+    // Create a constant array with n times the default value
+    std::vector<llvm::Constant *> itemConstants(arraySize, defaultItemValue);
+    return llvm::ConstantArray::get(arrayType, itemConstants);
+  }
+
+  // Struct
+  if (symbolType.is(TY_STRUCT)) {
+    // Get struct entry
+    SymbolTableEntry *structEntry = currentScope->lookup(symbolType.getSubType());
+    assert(structEntry != nullptr);
+
+    // Retrieve struct type
+    Scope *structScope = structEntry->getType().getStructBodyScope();
+    assert(structScope != nullptr);
+    const size_t fieldCount = structScope->getFieldCount();
+    auto structType = reinterpret_cast<llvm::StructType *>(structEntry->getType().toLLVMType(context, structScope));
+
+    // Allocate space for the struct in memory
+    llvm::Value *structAddress = insertAlloca(structType);
+
+    // Get default values for all fields of the struct
+    std::vector<llvm::Constant *> fieldConstants;
+    fieldConstants.reserve(fieldCount);
+    for (size_t i = 0; i < fieldCount; i++) {
+      // Get entry of the field
+      SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupByIndex(i);
+      assert(fieldEntry != nullptr);
+
+      // Retrieve default field value
+      llvm::Constant *defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getType());
+
+      // Store the default value at the correct offset
+      llvm::Value *fieldAddress = builder.CreateStructGEP(structType, structAddress, i);
+      builder.CreateStore(defaultFieldValue, fieldAddress);
+
+      fieldConstants.push_back(defaultFieldValue);
+    }
+    return llvm::ConstantStruct::get(structType, fieldConstants);
+  }
+
+  throw std::runtime_error("Internal compiler error: Cannot determine default value for symbol type"); // GCOV_EXCL_LINE
+}
+
 llvm::BasicBlock *IRGenerator::createBlock(const std::string &blockName, llvm::Function *parentFct /*=nullptr*/) {
   // Create block
   llvm::BasicBlock *block = llvm::BasicBlock::Create(context, blockName);
@@ -91,14 +215,26 @@ void IRGenerator::switchToBlock(llvm::BasicBlock *block) {
   blockAlreadyTerminated = false;
 }
 
+llvm::Value *IRGenerator::copyMemoryShallow(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name /*=""*/,
+                                           bool isVolatile /*=false*/) {
+  // Retrieve size to copy
+  const unsigned int typeSize = module->getDataLayout().getTypeSizeInBits(varType);
+
+  // Create values for memcpy intrinsic
+  llvm::Value *structSize = builder.getInt64(typeSize);
+  llvm::Value *copyVolatile = builder.getInt1(isVolatile);
+  llvm::Value *newAddress = insertAlloca(varType, name);
+
+  // Call memcpy intrinsic to execute the shallow copy
+  llvm::Function *memcpyFct = stdFunctionManager.getMemcpyIntrinsic();
+  builder.CreateCall(memcpyFct, {newAddress, oldAddress, structSize, copyVolatile});
+
+  return newAddress;
+}
+
 std::string IRGenerator::getIRString() const {
   std::string output;
   llvm::raw_string_ostream oss(output);
   module->print(oss, nullptr);
   return oss.str();
-}
-
-void IRGenerator::dumpIR() const {
-  module->print(llvm::outs(), nullptr); // GCOV_EXCL_LINE
-  llvm::outs().flush();                 // GCOV_EXCL_LINE
 }

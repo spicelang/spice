@@ -19,7 +19,45 @@ std::any IRGenerator::visitTypeAltsLst(const TypeAltsLstNode *node) {
   return nullptr; // Noop
 }
 
-std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) { return ParallelizableASTVisitor::visitDeclStmt(node); }
+std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
+  diGenerator.setSourceLocation(node);
+
+  // Get variable entry
+  SymbolTableEntry *varEntry = currentScope->lookupStrict(node->varName);
+  assert(varEntry != nullptr);
+  const SymbolType varSymbolType = varEntry->getType();
+
+  // Get LLVM type of variable
+  llvm::Type *varTy = varSymbolType.toLLVMType(context, currentScope);
+
+  // Check if the declaration is with an assignment or the default value
+  llvm::Value *varAddress = nullptr;
+  if (node->hasAssignment) { // Assignment
+    // Deduce some information about the declaration assignment
+    const bool isRefAssign = varSymbolType.isReference();
+    const bool requiresShallowCopy = !isRefAssign && varSymbolType.is(TY_STRUCT);
+
+    if (isRefAssign) {
+      // We only need to
+    }
+  } else { // Default value
+    // Retrieve default value for lhs symbol type
+    llvm::Value *defaultValue = getDefaultValueForSymbolType(varSymbolType);
+    // Allocate memory and store the default value there
+    varAddress = insertAlloca(varTy);
+    builder.CreateStore(defaultValue, varAddress);
+  }
+  assert(varAddress != nullptr);
+
+  // Generate debug info for variable declaration
+  if (cliOptions.generateDebugInfo)
+    diGenerator.generateDeclDebugInfo(node->codeLoc, node->varName, varAddress, SIZE_MAX, true);
+
+  // Update address in symbol table
+  varEntry->updateAddress(varAddress);
+
+  return nullptr;
+}
 
 std::any IRGenerator::visitSpecifierLst(const SpecifierLstNode *node) {
   return nullptr; // Noop
@@ -27,10 +65,30 @@ std::any IRGenerator::visitSpecifierLst(const SpecifierLstNode *node) {
 
 std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) { return ParallelizableASTVisitor::visitReturnStmt(node); }
 
-std::any IRGenerator::visitBreakStmt(const BreakStmtNode *node) { return ParallelizableASTVisitor::visitBreakStmt(node); }
+std::any IRGenerator::visitBreakStmt(const BreakStmtNode *node) {
+  diGenerator.setSourceLocation(node);
+
+  // Get destination block
+  for (int i = 1; i < node->breakTimes; i++)
+    breakBlocks.pop();
+
+  // Jump to destination block
+  insertJump(breakBlocks.top());
+
+  return nullptr;
+}
 
 std::any IRGenerator::visitContinueStmt(const ContinueStmtNode *node) {
-  return ParallelizableASTVisitor::visitContinueStmt(node);
+  diGenerator.setSourceLocation(node);
+
+  // Get destination block
+  for (int i = 1; i < node->continueTimes; i++)
+    continueBlocks.pop();
+
+  // Jump to destination block
+  insertJump(continueBlocks.top());
+
+  return nullptr;
 }
 
 std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {

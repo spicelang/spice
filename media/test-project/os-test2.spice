@@ -6,4 +6,7 @@ public type Vector<T> struct {
 
 public p Vector.setData<T>(T data) {
     this.data = data;
+    foreach int item : reverse(items) {
+
+    }
 }
