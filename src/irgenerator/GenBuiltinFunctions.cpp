@@ -25,7 +25,8 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
       argVal = builder.CreateInBoundsGEP(argType, argValPtr, indices);
     } else if (argSymbolType.is(TY_STRUCT, STROBJ_NAME)) {
-      argVal = materializeString(resolveAddress(arg));
+      // ToDo: implement
+      // argVal = materializeString(resolveAddress(arg));
     } else {
       argVal = resolveValue(arg);
     }

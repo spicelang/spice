@@ -4,21 +4,22 @@
 
 #include <stdexcept>
 
-#include "symboltablebuilder/SymbolTable.h"
 #include <irgenerator/IRGenerator.h>
+#include <scope/Scope.h>
 #include <util/CodeLoc.h>
 
 OpRuleConversionsManager::OpRuleConversionsManager(GlobalResourceManager &resourceManager, IRGenerator *irGenerator)
     : context(resourceManager.context), builder(resourceManager.builder), irGenerator(irGenerator),
       stdFunctionManager(irGenerator->stdFunctionManager) {}
 
-PtrAndValue OpRuleConversionsManager::getPlusEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy,
-                                                       const SymbolType &rhsSTy, SymbolTable *accessScope,
-                                                       const CodeLoc &codeLoc) {
+PtrAndValue OpRuleConversionsManager::getPlusEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
+                                                       const SymbolType &rhsSTy, Scope *accessScope) {
   // Unpack lhs
-  llvm::Value *lhsV = lhsData.value;
-  llvm::Value *lhsP = lhsData.ptr;
+  llvm::Value *lhsV = lhs.value;
+  llvm::Value *lhsP = lhs.ptr;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -69,10 +70,13 @@ PtrAndValue OpRuleConversionsManager::getPlusEqualInst(const PtrAndValue &lhsDat
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getMinusEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
-                                                         const SymbolType &rhsSTy, SymbolTable *accessScope) {
+llvm::Value *OpRuleConversionsManager::getMinusEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
+                                                         const SymbolType &rhsSTy, Scope *accessScope) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -111,12 +115,14 @@ llvm::Value *OpRuleConversionsManager::getMinusEqualInst(llvm::Value *lhsV, llvm
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
 
-PtrAndValue OpRuleConversionsManager::getMulEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy,
-                                                      const SymbolType &rhsSTy, const CodeLoc &codeLoc) {
+PtrAndValue OpRuleConversionsManager::getMulEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
+                                                      const SymbolType &rhsSTy) {
   // Unpack lhs
-  llvm::Value *lhsV = lhsData.value;
-  llvm::Value *lhsP = lhsData.ptr;
+  llvm::Value *lhsV = lhs.value;
+  llvm::Value *lhsP = lhs.ptr;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -168,10 +174,13 @@ PtrAndValue OpRuleConversionsManager::getMulEqualInst(const PtrAndValue &lhsData
   throw std::runtime_error("Internal compiler error: Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getDivEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getDivEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -205,10 +214,13 @@ llvm::Value *OpRuleConversionsManager::getDivEqualInst(llvm::Value *lhsV, llvm::
   throw std::runtime_error("Internal compiler error: Operator fallthrough: /="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getRemEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getRemEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
-  // Unpack lhsV
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -242,10 +254,13 @@ llvm::Value *OpRuleConversionsManager::getRemEqualInst(llvm::Value *lhsV, llvm::
   throw std::runtime_error("Internal compiler error: Operator fallthrough: %="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getSHLEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getSHLEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -271,10 +286,13 @@ llvm::Value *OpRuleConversionsManager::getSHLEqualInst(llvm::Value *lhsV, llvm::
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <<="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getSHREqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getSHREqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
-  // Unpack lhsV
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -300,10 +318,13 @@ llvm::Value *OpRuleConversionsManager::getSHREqualInst(llvm::Value *lhsV, llvm::
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >>="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getAndEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getAndEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -329,10 +350,13 @@ llvm::Value *OpRuleConversionsManager::getAndEqualInst(llvm::Value *lhsV, llvm::
   throw std::runtime_error("Internal compiler error: Operator fallthrough: &="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getOrEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getOrEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                       const SymbolType &rhsSTy) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -358,10 +382,13 @@ llvm::Value *OpRuleConversionsManager::getOrEqualInst(llvm::Value *lhsV, llvm::V
   throw std::runtime_error("Internal compiler error: Operator fallthrough: |="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getXorEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getXorEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -388,8 +415,13 @@ llvm::Value *OpRuleConversionsManager::getXorEqualInst(llvm::Value *lhsV, llvm::
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ^="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getBitwiseAndInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getBitwiseAndInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                          const SymbolType &rhsSTy) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
+
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
@@ -400,8 +432,13 @@ llvm::Value *OpRuleConversionsManager::getBitwiseAndInst(llvm::Value *lhsV, llvm
   throw std::runtime_error("Internal compiler error: Operator fallthrough: &"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getBitwiseOrInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getBitwiseOrInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                         const SymbolType &rhsSTy) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
+
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
@@ -412,8 +449,13 @@ llvm::Value *OpRuleConversionsManager::getBitwiseOrInst(llvm::Value *lhsV, llvm:
   throw std::runtime_error("Internal compiler error: Operator fallthrough: |"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getBitwiseXorInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getBitwiseXorInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                          const SymbolType &rhsSTy) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
+
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
@@ -424,13 +466,14 @@ llvm::Value *OpRuleConversionsManager::getBitwiseXorInst(llvm::Value *lhsV, llvm
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ^"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy,
-                                                    const SymbolType &rhsSTy, const CodeLoc &codeLoc) {
+llvm::Value *OpRuleConversionsManager::getEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
+                                                    const SymbolType &rhsSTy) {
   // Unpack lhs
-  llvm::Value *lhsV = lhsData.value;
-  llvm::Value *lhsP = lhsData.ptr;
+  llvm::Value *lhsV = lhs.value;
+  llvm::Value *lhsP = lhs.ptr;
   llvm::Type *lhsVTy = lhsV->getType();
   // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsVTy = rhsV->getType();
 
   // Check if both values are of type pointer
@@ -543,13 +586,14 @@ llvm::Value *OpRuleConversionsManager::getEqualInst(const PtrAndValue &lhsData, 
   throw std::runtime_error("Internal compiler error: Operator fallthrough: =="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getNotEqualInst(const PtrAndValue &lhsData, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getNotEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                        const SymbolType &rhsSTy, const CodeLoc &codeLoc) {
   // Unpack lhs
-  llvm::Value *lhsV = lhsData.value;
-  llvm::Value *lhsP = lhsData.ptr;
+  llvm::Value *lhsV = lhs.value;
+  llvm::Value *lhsP = lhs.ptr;
   llvm::Type *lhsVTy = lhsV->getType();
   // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsVTy = rhsV->getType();
 
   // Check if both values are of type pointer
@@ -663,12 +707,13 @@ llvm::Value *OpRuleConversionsManager::getNotEqualInst(const PtrAndValue &lhsDat
   throw std::runtime_error("Internal compiler error: Operator fallthrough: !="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getLessInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getLessInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                    const SymbolType &rhsSTy) {
-  // Unpack lhsV
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
-
-  // Unpack rhsV
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsVTy = rhsV->getType();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -725,11 +770,13 @@ llvm::Value *OpRuleConversionsManager::getLessInst(llvm::Value *lhsV, llvm::Valu
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getGreaterInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getGreaterInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                       const SymbolType &rhsSTy) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
   // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsVTy = rhsV->getType();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -786,11 +833,13 @@ llvm::Value *OpRuleConversionsManager::getGreaterInst(llvm::Value *lhsV, llvm::V
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getLessEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getLessEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                         const SymbolType &rhsSTy) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
   // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsVTy = rhsV->getType();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -847,11 +896,13 @@ llvm::Value *OpRuleConversionsManager::getLessEqualInst(llvm::Value *lhsV, llvm:
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getGreaterEqualInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getGreaterEqualInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                            const SymbolType &rhsSTy) {
-  // Unpack lhsV
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
-  // Unpack rhsV
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsVTy = rhsV->getType();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -908,10 +959,13 @@ llvm::Value *OpRuleConversionsManager::getGreaterEqualInst(llvm::Value *lhsV, ll
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getShiftLeftInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getShiftLeftInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                         const SymbolType &rhsSTy) {
-  // Unpack lhsV
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -944,10 +998,13 @@ llvm::Value *OpRuleConversionsManager::getShiftLeftInst(llvm::Value *lhsV, llvm:
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <<"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getShiftRightInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getShiftRightInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                          const SymbolType &rhsSTy) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -980,11 +1037,13 @@ llvm::Value *OpRuleConversionsManager::getShiftRightInst(llvm::Value *lhsV, llvm
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >>"); // GCOV_EXCL_LINE
 }
 
-PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
-                                                  const SymbolType &rhsSTy, SymbolTable *accessScope, const CodeLoc &codeLoc) {
+PtrAndValue OpRuleConversionsManager::getPlusInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
+                                                  const SymbolType &rhsSTy, Scope *accessScope, const CodeLoc &codeLoc) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
   // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsVTy = rhsV->getType();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -1050,7 +1109,7 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
     llvm::Value *thisPtr = irGenerator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, lhsV, rhsV});
     // Update mem address of anonymous symbol
-    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    SymbolTableEntry *anonEntry = accessScope->symbolTable.lookupAnonymous(codeLoc);
     assert(anonEntry != nullptr);
     anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
@@ -1061,7 +1120,7 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
     llvm::Value *thisPtr = irGenerator->insertAlloca(StdFunctionManager::getStrobjType(context));
     builder.CreateCall(opFct, {thisPtr, lhsV, rhsV});
     // Update mem address of anonymous symbol
-    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    SymbolTableEntry *anonEntry = accessScope->symbolTable.lookupAnonymous(codeLoc);
     assert(anonEntry != nullptr);
     anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
@@ -1074,11 +1133,13 @@ PtrAndValue OpRuleConversionsManager::getPlusInst(llvm::Value *lhsV, llvm::Value
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
-                                                    const SymbolType &rhsSTy, SymbolTable *accessScope) {
-  // Unpack lhsV
+llvm::Value *OpRuleConversionsManager::getMinusInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
+                                                    const SymbolType &rhsSTy, Scope *accessScope) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsVTy = lhsV->getType();
-  // Unpack rhsV
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsVTy = rhsV->getType();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -1146,13 +1207,13 @@ llvm::Value *OpRuleConversionsManager::getMinusInst(llvm::Value *lhsV, llvm::Val
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
-PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, const PtrAndValue &rhsData, const SymbolType &lhsSTy,
-                                                 const SymbolType &rhsSTy, SymbolTable *accessScope, const CodeLoc &codeLoc) {
+PtrAndValue OpRuleConversionsManager::getMulInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
+                                                 const SymbolType &rhsSTy, Scope *accessScope, const CodeLoc &codeLoc) {
   // Unpack lhs
-  llvm::Value *lhsV = lhsData.value;
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsTy = lhsV->getType();
   // Unpack rhs
-  llvm::Value *rhsV = rhsData.value;
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsTy = rhsV->getType();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -1187,7 +1248,7 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     opFct = stdFunctionManager.getStringMulOpIntFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
     // Update mem address of anonymous symbol
-    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    SymbolTableEntry *anonEntry = accessScope->symbolTable.lookupAnonymous(codeLoc);
     assert(anonEntry != nullptr);
     anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
@@ -1215,7 +1276,7 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     opFct = stdFunctionManager.getStringMulOpShortFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
     // Update mem address of anonymous symbol
-    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    SymbolTableEntry *anonEntry = accessScope->symbolTable.lookupAnonymous(codeLoc);
     assert(anonEntry != nullptr);
     anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
@@ -1240,7 +1301,7 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     opFct = stdFunctionManager.getStringMulOpLongFct();
     builder.CreateCall(opFct, {thisPtr, lhsV});
     // Update mem address of anonymous symbol
-    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    SymbolTableEntry *anonEntry = accessScope->symbolTable.lookupAnonymous(codeLoc);
     assert(anonEntry != nullptr);
     anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
@@ -1256,7 +1317,7 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     opFct = stdFunctionManager.getStringMulOpIntFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
     // Update mem address of anonymous symbol
-    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    SymbolTableEntry *anonEntry = accessScope->symbolTable.lookupAnonymous(codeLoc);
     assert(anonEntry != nullptr);
     anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
@@ -1270,7 +1331,7 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     opFct = stdFunctionManager.getStringMulOpShortFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
     // Update mem address of anonymous symbol
-    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    SymbolTableEntry *anonEntry = accessScope->symbolTable.lookupAnonymous(codeLoc);
     assert(anonEntry != nullptr);
     anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
@@ -1284,7 +1345,7 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
     opFct = stdFunctionManager.getStringMulOpLongFct();
     builder.CreateCall(opFct, {thisPtr, rhsV});
     // Update mem address of anonymous symbol
-    SymbolTableEntry *anonEntry = accessScope->lookupAnonymous(codeLoc);
+    SymbolTableEntry *anonEntry = accessScope->symbolTable.lookupAnonymous(codeLoc);
     assert(anonEntry != nullptr);
     anonEntry->updateAddress(thisPtr);
     return {.ptr = thisPtr};
@@ -1293,11 +1354,13 @@ PtrAndValue OpRuleConversionsManager::getMulInst(const PtrAndValue &lhsData, con
   throw std::runtime_error("Internal compiler error: Operator fallthrough: *"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getDivInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getDivInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                   const SymbolType &rhsSTy) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsTy = lhsV->getType();
   // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsTy = rhsV->getType();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -1354,11 +1417,13 @@ llvm::Value *OpRuleConversionsManager::getDivInst(llvm::Value *lhsV, llvm::Value
   throw std::runtime_error("Internal compiler error: Operator fallthrough: /"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getRemInst(llvm::Value *lhsV, llvm::Value *rhsV, const SymbolType &lhsSTy,
+llvm::Value *OpRuleConversionsManager::getRemInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
                                                   const SymbolType &rhsSTy) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsTy = lhsV->getType();
   // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
   llvm::Type *rhsTy = rhsV->getType();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -1395,7 +1460,10 @@ llvm::Value *OpRuleConversionsManager::getRemInst(llvm::Value *lhsV, llvm::Value
   throw std::runtime_error("Internal compiler error: Operator fallthrough: %"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPrefixMinusInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPrefixMinusInst(const ExprResult &lhs, const SymbolType &lhsSTy) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
+
   switch (lhsSTy.getSuperType()) {
   case TY_DOUBLE:
     return builder.CreateFMul(lhsV, llvm::ConstantFP::get(builder.getContext(), llvm::APFloat(double(-1))));
@@ -1409,7 +1477,10 @@ llvm::Value *OpRuleConversionsManager::getPrefixMinusInst(llvm::Value *lhsV, con
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPrefixPlusPlusInst(const ExprResult &lhs, const SymbolType &lhsSTy) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
+
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
     return builder.CreateAdd(lhsV, builder.getInt32(1));
@@ -1423,7 +1494,10 @@ llvm::Value *OpRuleConversionsManager::getPrefixPlusPlusInst(llvm::Value *lhsV, 
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPrefixMinusMinusInst(const ExprResult &lhs, const SymbolType &lhsSTy) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
+
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
     return builder.CreateSub(lhsV, builder.getInt32(1));
@@ -1437,7 +1511,10 @@ llvm::Value *OpRuleConversionsManager::getPrefixMinusMinusInst(llvm::Value *lhsV
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPrefixNotInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPrefixNotInst(const ExprResult &lhs, const SymbolType &lhsSTy) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
+
   switch (lhsSTy.getSuperType()) {
   case TY_BOOL:
     return builder.CreateNot(lhsV);
@@ -1447,7 +1524,10 @@ llvm::Value *OpRuleConversionsManager::getPrefixNotInst(llvm::Value *lhsV, const
   throw std::runtime_error("Internal compiler error: Operator fallthrough: !"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPrefixBitwiseNotInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPrefixBitwiseNotInst(const ExprResult &lhs, const SymbolType &lhsSTy) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
+
   switch (lhsSTy.getSuperType()) {
   case TY_INT:   // fallthrough
   case TY_SHORT: // fallthrough
@@ -1459,7 +1539,10 @@ llvm::Value *OpRuleConversionsManager::getPrefixBitwiseNotInst(llvm::Value *lhsV
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ~"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPostfixPlusPlusInst(const ExprResult &lhs, const SymbolType &lhsSTy) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
+
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
     return builder.CreateAdd(lhsV, builder.getInt32(1));
@@ -1473,7 +1556,10 @@ llvm::Value *OpRuleConversionsManager::getPostfixPlusPlusInst(llvm::Value *lhsV,
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value *lhsV, const SymbolType &lhsSTy) {
+llvm::Value *OpRuleConversionsManager::getPostfixMinusMinusInst(const ExprResult &lhs, const SymbolType &lhsSTy) {
+  // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
+
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
     return builder.CreateSub(lhsV, builder.getInt32(1));
@@ -1487,10 +1573,13 @@ llvm::Value *OpRuleConversionsManager::getPostfixMinusMinusInst(llvm::Value *lhs
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionsManager::getCastInst(llvm::Value *rhsV, const SymbolType &lhsSTy, const SymbolType &rhsSTy,
-                                                   SymbolTable *accessScope) {
+llvm::Value *OpRuleConversionsManager::getCastInst(const ExprResult &lhs, const ExprResult &rhs, const SymbolType &lhsSTy,
+                                                   const SymbolType &rhsSTy, Scope *accessScope) {
   // Unpack lhs
+  llvm::Value *lhsV = lhs.value;
   llvm::Type *lhsTy = lhsSTy.toLLVMType(context, accessScope);
+  // Unpack rhs
+  llvm::Value *rhsV = rhs.value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):

@@ -1,5 +1,5 @@
 type Visitable interface {
-    f<bool> accept(int)
+    f<bool> accept(int);
 }
 
 type AstNode struct : Visitable<Test> {

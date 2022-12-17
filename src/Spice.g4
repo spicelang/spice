@@ -36,7 +36,7 @@ argLst: assignExpr (COMMA assignExpr)*;
 enumItemLst: enumItem (COMMA enumItem)*;
 enumItem: IDENTIFIER (ASSIGN INT_LIT)?;
 field: specifierLst? dataType IDENTIFIER;
-signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER LPAREN typeLst? RPAREN;
+signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER LPAREN typeLst? RPAREN SEMICOLON;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: specifierLst? dataType IDENTIFIER (ASSIGN assignExpr)?;
 specifierLst: specifier+;

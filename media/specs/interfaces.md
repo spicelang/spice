@@ -14,8 +14,8 @@
 
 ```spice
 type AstNode interface {
-    f<bool> accept(ASTVisitor*)
-    p dump()
+    f<bool> accept(ASTVisitor*);
+    p dump();
 }
 
 type MainFctDefNode struct : AstNode {
