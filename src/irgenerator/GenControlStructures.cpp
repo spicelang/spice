@@ -14,7 +14,7 @@ std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
   const std::string fctName = "_thread" + std::to_string(resourceManager.threadFactory.getNextFunctionSuffix());
   llvm::Type *voidPtrTy = builder.getInt8PtrTy();
   llvm::FunctionType *threadFctTy = llvm::FunctionType::get(voidPtrTy, voidPtrTy, false);
-  llvm::Function *threadFct = llvm::Function::Create(threadFctTy, llvm::Function::InternalLinkage, fctName, module);
+  llvm::Function *threadFct = llvm::Function::Create(threadFctTy, llvm::Function::PrivateLinkage, fctName, module);
 
   // Change scope
   currentScope = node->bodyScope;

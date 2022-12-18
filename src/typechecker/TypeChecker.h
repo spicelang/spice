@@ -118,9 +118,10 @@ private:
   Scope *accessScope = nullptr;
   const TypeCheckerMode typeCheckerMode;
   std::vector<CompilerWarning> &warnings;
+  size_t manIdx = 0;
 
   // Private methods
   std::tuple<Scope *, SymbolType, std::string> visitOrdinaryFctCall(FunctionCallNode *node) const;
-  static std::pair<Scope *, SymbolType> visitMethodCall(FunctionCallNode *node, Scope *structScope);
+  std::pair<Scope *, SymbolType> visitMethodCall(FunctionCallNode *node, Scope *structScope);
   [[nodiscard]] static SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType);
 };

@@ -14,6 +14,11 @@ Struct *StructManager::insertStruct(Scope *insertScope, const Struct &spiceStruc
   return insertSubstantiation(insertScope, spiceStruct, spiceStruct.declNode);
 }
 
+StructManifestationList *StructManager::getManifestationList(Scope *lookupScope, const CodeLoc &defCodeLoc) {
+  const std::string codeLocStr = defCodeLoc.toString();
+  return lookupScope->structs.contains(codeLocStr) ? &lookupScope->structs.at(codeLocStr) : nullptr;
+}
+
 Struct *StructManager::insertSubstantiation(Scope *insertScope, const Struct &newManifestation, const ASTNode *declNode) {
   const std::string mangledStructName = newManifestation.getMangledName();
   const std::string codeLocStr = declNode->codeLoc.toString();

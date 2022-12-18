@@ -5,8 +5,12 @@
 #include <CompilerPass.h>
 #include <ast/ParallelizableASTVisitor.h>
 #include <irgenerator/DebugInfoGenerator.h>
-#include <irgenerator/OpRuleConversionsManager.h>
+#include <irgenerator/OpRuleConversionManager.h>
 #include <irgenerator/StdFunctionManager.h>
+
+const char *const ANON_GLOBAL_STRING_NAME = "anon.string.";
+const char *const ANON_GLOBAL_ARRAY_NAME = "anon.array.";
+const char *const ANON_GLOBAL_STRUCT_NAME = "anon.struct.";
 
 // Forward declarations
 class SourceFile;
@@ -18,7 +22,7 @@ public:
 
   // Friend classes
   friend class StdFunctionManager;
-  friend class OpRuleConversionsManager;
+  friend class OpRuleConversionManager;
   friend class DebugInfoGenerator;
 
   // Visitor methods
@@ -86,7 +90,9 @@ public:
   // Public methods
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
+  llvm::Value *resolveValue(const ASTNode *node, ExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveAddress(const ASTNode *node, bool storeVolatile = false);
+  llvm::Value *resolveAddress(ExprResult &exprResult, bool storeVolatile = false);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
   [[nodiscard]] std::string getIRString() const;
 
@@ -96,16 +102,21 @@ private:
   void insertJump(llvm::BasicBlock *targetBlock);
   void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   void switchToBlock(llvm::BasicBlock *block);
+  void verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) const;
+  void verifyModule(const CodeLoc &codeLoc) const;
   ExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
   ExprResult doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *rhsNode);
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name = "",
                                  bool isVolatile = false);
+  void autoDeReferencePtr(llvm::Value *ptr, SymbolType symbolType, Scope *accessScope) const;
+  llvm::Value *createGlobalConstant(const std::string &baseName, llvm::Constant *constant);
+  [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
 
   // Private members
   llvm::LLVMContext &context;
   llvm::IRBuilder<> &builder;
   llvm::Module *module;
-  OpRuleConversionsManager conversionManager = OpRuleConversionsManager(resourceManager, this);
+  OpRuleConversionManager conversionManager = OpRuleConversionManager(resourceManager, this);
   const StdFunctionManager stdFunctionManager;
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);
   Scope *currentScope;
@@ -114,4 +125,5 @@ private:
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
   bool blockAlreadyTerminated = false;
+  size_t manIdx = 0;
 };

@@ -37,7 +37,7 @@ public:
 
   // Destructors
   virtual ~ASTNode() {
-    for (const auto child : children)
+    for (const ASTNode *child : children)
       delete child;
   }
 
@@ -59,7 +59,7 @@ public:
   template <typename T> [[nodiscard]] T *getChild(size_t i = 0) const {
     static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from AstNode");
     size_t j = 0;
-    for (const auto &child : children) {
+    for (ASTNode *child : children) {
       if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr) {
         if (j++ == i)
           return typedChild;
@@ -71,7 +71,7 @@ public:
   template <typename T> [[nodiscard]] std::vector<T *> getChildren() const {
     static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from AstNode");
     std::vector<T *> nodes;
-    for (const auto &child : children) {
+    for (ASTNode *child : children) {
       if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr)
         nodes.push_back(typedChild);
     }
@@ -80,35 +80,29 @@ public:
 
   inline void reserveChildren(size_t numberOfChildren) { children.reserve(numberOfChildren); }
 
-  [[nodiscard]] size_t getSymbolTypeIndex() const { // NOLINT(misc-no-recursion)
-    if (symbolTypeIndex == SIZE_MAX) {
-      if (parent != nullptr)
-        return parent->getSymbolTypeIndex();
-      return 0;
-    }
-    return symbolTypeIndex;
+  virtual void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
+    // Reserve children
+    for (ASTNode *child : children)
+      child->resizeToNumberOfManifestations(manifestationCount);
+    // Reserve this node
+    symbolTypes.resize(manifestationCount, SymbolType(TY_DYN));
+    // Do custom work
+    customItemsInitialization(manifestationCount);
   }
 
-  SymbolType setEvaluatedSymbolType(const SymbolType &symbolType) {
-    symbolTypes.insert(symbolTypes.begin() + static_cast<long>(getSymbolTypeIndex()), symbolType);
+  virtual void customItemsInitialization(size_t) { /* Noop */}
+
+  SymbolType setEvaluatedSymbolType(const SymbolType &symbolType, const size_t idx) {
+    symbolTypes.insert(symbolTypes.begin() + static_cast<long>(idx), symbolType);
     return symbolType;
   }
 
-  [[nodiscard]] SymbolType getEvaluatedSymbolType() const { // NOLINT(misc-no-recursion)
-    size_t idx = getSymbolTypeIndex();
+  [[nodiscard]] const SymbolType &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
     if (!symbolTypes.empty() && !symbolTypes[idx].is(TY_INVALID))
       return symbolTypes.at(idx);
     if (children.size() != 1)
       throw std::runtime_error("Cannot deduce evaluated symbol type");
-    return children.front()->getEvaluatedSymbolType();
-  }
-
-  void reset() { // NOLINT(misc-no-recursion)
-    // Reset all children
-    for (const auto &child : children)
-      child->reset();
-    // Reset the symbolTypeIndex counter
-    symbolTypeIndex = SIZE_MAX;
+    return children.front()->getEvaluatedSymbolType(idx);
   }
 
   [[nodiscard]] virtual const CompileTimeValue &getCompileTimeValue() const { // NOLINT(misc-no-recursion)
@@ -125,17 +119,17 @@ public:
     return children.front()->hasCompileTimeValue();
   }
 
-  [[nodiscard]] virtual bool returnsOnAllControlPaths() const {
-    return children.size() == 1 && children.front()->returnsOnAllControlPaths();
+  [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const {
+    return children.size() == 1 && children.front()->returnsOnAllControlPaths(overrideUnreachable);
   }
 
   [[nodiscard]] virtual std::vector<Function *> *getFctManifestations() {
-    assert(false); // Must be called on FctDefNode or ProcDefNode
+    assert(false && "Must be called on a FctDefNode or a ProcDefNode");
     return nullptr;
   }
 
   [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() {
-    assert(false); // Must be called on StructDefNode
+    assert(false && "Must be called on a StructDefNode");
     return nullptr;
   }
 
@@ -144,7 +138,6 @@ public:
   std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
   std::string errorMessage;
-  size_t symbolTypeIndex = SIZE_MAX;
   std::vector<SymbolType> symbolTypes;
   bool unreachable = false;
 
@@ -190,7 +183,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
   [[nodiscard]] std::string getSignature() const { return takesArgs ? "main()" : "main(int, string[])"; }
-  bool returnsOnAllControlPaths() const override;
+  bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
 
   // Public members
   SymbolTableEntry *entry = nullptr;
@@ -219,7 +212,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
   [[nodiscard]] std::string getSymbolTableEntryName() const { return functionName + ":" + codeLoc.toPrettyLine(); }
-  [[nodiscard]] bool returnsOnAllControlPaths() const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
   std::vector<Function *> *getFctManifestations() override { return &fctManifestations; }
 
   // Public members
@@ -256,7 +249,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
   [[nodiscard]] std::string getSymbolTableEntryName() const { return procedureName + ":" + codeLoc.toPrettyLine(); }
-  bool returnsOnAllControlPaths() const override;
+  bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
   std::vector<Function *> *getFctManifestations() override { return &procManifestations; }
 
   // Public members
@@ -382,6 +375,7 @@ public:
   // Public members
   std::string varName;
   SymbolTableEntry *entry = nullptr;
+  bool hasAssigment = false;
 };
 
 // ========================================================== ExtDeclNode ========================================================
@@ -425,7 +419,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "thread:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths() const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -471,7 +465,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "for:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths() const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -521,7 +515,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "while:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths() const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -544,7 +538,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "dowhile:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths() const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -568,7 +562,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths() const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
 
   // Public members
   Scope *thenBodyScope = nullptr;
@@ -591,7 +585,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths() const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
 
   // Public members
   bool isElseIf = false;
@@ -631,7 +625,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStmtLst(this); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths() const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
 
   // Public members
   size_t complexity = 0;
@@ -821,11 +815,14 @@ public:
 
   // Util methods
   [[nodiscard]] bool isParam() const { return dynamic_cast<ParamLstNode *>(parent); }
+  void customItemsInitialization(size_t manifestationCount) override {
+    entries.resize(manifestationCount, nullptr);
+  }
 
   // Public members
   std::string varName;
   bool hasAssignment = false;
-  SymbolTableEntry *entry = nullptr;
+  std::vector<SymbolTableEntry *> entries;
 };
 
 // ======================================================= SpecifierLstNode ======================================================
@@ -848,7 +845,7 @@ public:
 class SpecifierNode : public ASTNode {
 public:
   // Enums
-  enum SpecifierType { TY_CONST, TY_SIGNED, TY_UNSIGNED, TY_INLINE, TY_PUBLIC, TY_HEAP };
+  enum SpecifierType { TY_NONE, TY_CONST, TY_SIGNED, TY_UNSIGNED, TY_INLINE, TY_PUBLIC, TY_HEAP };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -858,7 +855,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSpecifier(this); }
 
   // Public members
-  SpecifierType type;
+  SpecifierType type = TY_NONE;
 };
 
 // ======================================================== ImportStmtNode =======================================================
@@ -892,7 +889,7 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths() const override { return true; }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override { return true; }
 
   // Public members
   bool hasReturnValue = false;
@@ -958,7 +955,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitPrintfCall(this); }
 
   // Public get methods
-  [[nodiscard]] std::vector<AssignExprNode *> assignExpr() const { return getChildren<AssignExprNode>(); }
+  [[nodiscard]] std::vector<AssignExprNode *> args() const { return getChildren<AssignExprNode>(); }
 
   // Public members
   std::string templatedString;
@@ -1031,6 +1028,7 @@ class AssignExprNode : public ASTNode {
 public:
   // Enums
   enum AssignOp {
+    OP_NONE,
     OP_ASSIGN,
     OP_PLUS_EQUAL,
     OP_MINUS_EQUAL,
@@ -1058,10 +1056,10 @@ public:
   [[nodiscard]] ThreadDefNode *threadDef() const { return getChild<ThreadDefNode>(); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths() const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
 
   // Public members
-  AssignOp op;
+  AssignOp op = OP_NONE;
   bool hasOperator = false;
 };
 
@@ -1168,7 +1166,7 @@ public:
 class EqualityExprNode : public ASTNode {
 public:
   // Enums
-  enum EqualityOp { OP_EQUAL, OP_NOT_EQUAL };
+  enum EqualityOp { OP_NONE, OP_EQUAL, OP_NOT_EQUAL };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1181,7 +1179,7 @@ public:
   [[nodiscard]] std::vector<RelationalExprNode *> operands() const { return getChildren<RelationalExprNode>(); }
 
   // Public members
-  EqualityOp op;
+  EqualityOp op = OP_NONE;
 };
 
 // ==================================================== RelationalExprNode =======================================================
@@ -1189,7 +1187,7 @@ public:
 class RelationalExprNode : public ASTNode {
 public:
   // Enums
-  enum RelationalOp { OP_LESS, OP_GREATER, OP_LESS_EQUAL, OP_GREATER_EQUAL };
+  enum RelationalOp { OP_NONE, OP_LESS, OP_GREATER, OP_LESS_EQUAL, OP_GREATER_EQUAL };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1202,7 +1200,7 @@ public:
   [[nodiscard]] std::vector<ShiftExprNode *> operands() const { return getChildren<ShiftExprNode>(); }
 
   // Public members
-  RelationalOp op;
+  RelationalOp op = OP_NONE;
 };
 
 // ====================================================== ShiftExprNode ==========================================================
@@ -1211,6 +1209,7 @@ class ShiftExprNode : public ASTNode {
 public:
   // Enums
   enum ShiftOp {
+    OP_NONE,
     OP_SHIFT_LEFT,
     OP_SHIFT_RIGHT,
   };
@@ -1226,7 +1225,7 @@ public:
   [[nodiscard]] std::vector<AdditiveExprNode *> operands() const { return getChildren<AdditiveExprNode>(); }
 
   // Public members
-  ShiftOp op;
+  ShiftOp op = OP_NONE;
 };
 
 // ==================================================== AdditiveExprNode =========================================================
@@ -1235,6 +1234,7 @@ class AdditiveExprNode : public ASTNode {
 public:
   // Enums
   enum AdditiveOp {
+    OP_NONE,
     OP_PLUS,
     OP_MINUS,
   };
@@ -1262,6 +1262,7 @@ class MultiplicativeExprNode : public ASTNode {
 public:
   // Enums
   enum MultiplicativeOp {
+    OP_NONE,
     OP_MUL,
     OP_DIV,
     OP_REM,
@@ -1309,6 +1310,7 @@ class PrefixUnaryExprNode : public ASTNode {
 public:
   // Enums
   enum PrefixUnaryOp {
+    OP_NONE,
     OP_MINUS,
     OP_PLUS_PLUS,
     OP_MINUS_MINUS,
@@ -1340,7 +1342,7 @@ public:
 class PostfixUnaryExprNode : public ASTNode {
 public:
   // Enums
-  enum PostfixUnaryOp { OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS };
+  enum PostfixUnaryOp { OP_NONE, OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS };
 
   // Typedefs
   typedef std::queue<std::pair<PostfixUnaryOp, SymbolType>> OpQueue;
@@ -1382,10 +1384,17 @@ public:
   [[nodiscard]] TidCallNode *tidCall() const { return getChild<TidCallNode>(); }
   [[nodiscard]] JoinCallNode *joinCall() const { return getChild<JoinCallNode>(); }
 
+  // Util methods
+  void customItemsInitialization(size_t manifestationCount) override {
+    entries.resize(manifestationCount, nullptr);
+    accessScopes.resize(manifestationCount, nullptr);
+  }
+
   // Public members
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
-  SymbolTableEntry *entry = nullptr; // Only set if identifier is set as well
+  std::vector<SymbolTableEntry *> entries; // Only set if identifier is set as well
+  std::vector<Scope *> accessScopes;       // Only set if identifier is set as well
 };
 
 // ======================================================== ValueNode ============================================================
@@ -1415,7 +1424,17 @@ public:
 class ConstantNode : public ASTNode {
 public:
   // Enum
-  enum PrimitiveValueType { TYPE_DOUBLE, TYPE_INT, TYPE_SHORT, TYPE_LONG, TYPE_BYTE, TYPE_CHAR, TYPE_STRING, TYPE_BOOL };
+  enum PrimitiveValueType {
+    TYPE_NONE,
+    TYPE_DOUBLE,
+    TYPE_INT,
+    TYPE_SHORT,
+    TYPE_LONG,
+    TYPE_BYTE,
+    TYPE_CHAR,
+    TYPE_STRING,
+    TYPE_BOOL
+  };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1425,7 +1444,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitConstant(this); }
 
   // Public members
-  PrimitiveValueType type;
+  PrimitiveValueType type = TYPE_NONE;
   bool isSigned = true;
 };
 
@@ -1433,6 +1452,17 @@ public:
 
 class FunctionCallNode : public ASTNode {
 public:
+  // Structs
+  struct FunctionCallData {
+    bool isConstructorCall = false;
+    bool isMethodCall = false;
+    bool isImported = false;
+    SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
+    std::vector<SymbolType> argTypes;
+    Function *callee = nullptr;
+    Scope *calleeParentScope = nullptr;
+  };
+
   // Constructors
   using ASTNode::ASTNode;
 
@@ -1443,15 +1473,16 @@ public:
   // Public get methods
   [[nodiscard]] ArgLstNode *argLst() const { return getChild<ArgLstNode>(); }
 
+  // Util methods
+  void customItemsInitialization(size_t manifestationCount) override {
+    data.resize(manifestationCount);
+  }
+
   // Public members
   std::string fqFunctionName;
   std::vector<std::string> functionNameFragments;
   bool hasArgs = false;
-  bool isConstructorCall = false;
-  bool isMethodCall = false;
-  SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
-  std::vector<SymbolType> argTypes;
-  Function *calledFunction = nullptr;
+  std::vector<FunctionCallData> data;
 };
 
 // ================================================= ArrayInitializationNode =====================================================
@@ -1467,6 +1498,9 @@ public:
 
   // Public get methods
   [[nodiscard]] ArgLstNode *itemLst() const { return getChild<ArgLstNode>(); }
+
+  // Public members
+  long actualSize = 0;
 };
 
 // ================================================= StructInstantiationNode =====================================================
@@ -1484,10 +1518,15 @@ public:
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
   [[nodiscard]] ArgLstNode *fieldLst() const { return getChild<ArgLstNode>(); }
 
+  // Util methods
+  void customItemsInitialization(size_t manifestationCount) override {
+    instantiatedStructs.resize(manifestationCount, nullptr);
+  }
+
   // Public members
   std::string fqStructName;
   std::vector<std::string> structNameFragments;
-  Struct *instantiatedStruct;
+  std::vector<Struct *> instantiatedStructs;
 };
 
 // ======================================================= DataTypeNode ==========================================================
@@ -1531,7 +1570,19 @@ public:
 class BaseDataTypeNode : public ASTNode {
 public:
   // Enums
-  enum Type { TYPE_DOUBLE, TYPE_INT, TYPE_SHORT, TYPE_LONG, TYPE_BYTE, TYPE_CHAR, TYPE_STRING, TYPE_BOOL, TYPE_DYN, TY_CUSTOM };
+  enum Type {
+    TYPE_NONE,
+    TYPE_DOUBLE,
+    TYPE_INT,
+    TYPE_SHORT,
+    TYPE_LONG,
+    TYPE_BYTE,
+    TYPE_CHAR,
+    TYPE_STRING,
+    TYPE_BOOL,
+    TYPE_DYN,
+    TY_CUSTOM
+  };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1544,7 +1595,7 @@ public:
   [[nodiscard]] CustomDataTypeNode *customDataType() const { return getChild<CustomDataTypeNode>(); }
 
   // Public members
-  Type type;
+  Type type = TYPE_NONE;
 };
 
 // ==================================================== CustomDataTypeNode =======================================================
@@ -1561,8 +1612,13 @@ public:
   // Public get methods
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
 
+  // Util methods
+  void customItemsInitialization(size_t manifestationCount) override {
+    customTypes.resize(manifestationCount, nullptr);
+  }
+
   // Public members
   std::string fqTypeName;
   std::vector<std::string> typeNameFragments;
-  SymbolTableEntry *customType = nullptr;
+  std::vector<SymbolTableEntry *> customTypes;
 };

@@ -33,6 +33,7 @@ public:
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   static std::string getSignature(const std::string &structName, const std::vector<SymbolType> &concreteTemplateTypes);
+  //bool hasInfiniteSize(Scope *anchorScope = nullptr) const;
 
   // Public members
   std::string name;

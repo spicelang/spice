@@ -21,6 +21,7 @@ class StructManager {
 public:
   // Public methods
   [[nodiscard]] static Struct *insertStruct(Scope *insertScope, const Struct &spiceStruct);
+  [[nodiscard]] static StructManifestationList *getManifestationList(Scope *lookupScope, const CodeLoc &defCodeLoc);
   [[nodiscard]] static Struct *matchStruct(Scope *matchScope, const std::string &requestedName,
                                            const std::vector<SymbolType> &requestedTemplateTypes, const ASTNode *node);
 

@@ -4,64 +4,75 @@
 
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
-bool MainFctDefNode::returnsOnAllControlPaths() const { return body()->returnsOnAllControlPaths(); }
+bool MainFctDefNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+  return body()->returnsOnAllControlPaths(overrideUnreachable);
+}
 
-bool FctDefNode::returnsOnAllControlPaths() const { return body()->returnsOnAllControlPaths(); }
+bool FctDefNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+  return body()->returnsOnAllControlPaths(overrideUnreachable);
+}
 
-bool ProcDefNode::returnsOnAllControlPaths() const { return body()->returnsOnAllControlPaths(); }
+bool ProcDefNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+  return body()->returnsOnAllControlPaths(overrideUnreachable);
+}
 
-bool ForLoopNode::returnsOnAllControlPaths() const {
+bool ForLoopNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   const AssignExprNode *cond = condAssign();
   return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
 }
 
-bool WhileLoopNode::returnsOnAllControlPaths() const {
+bool WhileLoopNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   const AssignExprNode *cond = condition();
   return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
 }
 
-bool DoWhileLoopNode::returnsOnAllControlPaths() const {
+bool DoWhileLoopNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   const AssignExprNode *cond = condition();
   return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
 }
 
-bool IfStmtNode::returnsOnAllControlPaths() const {
+bool IfStmtNode::returnsOnAllControlPaths(bool *overrideUnreachable) const { // NOLINT(misc-no-recursion)
   // An if statement returns on all control paths, if then and else block return on all control paths
   const AssignExprNode *cond = condition();
   if (!cond->hasCompileTimeValue())
-    return thenBody()->returnsOnAllControlPaths() && elseStmt() != nullptr && elseStmt()->returnsOnAllControlPaths();
+    return thenBody()->returnsOnAllControlPaths(overrideUnreachable) && elseStmt() != nullptr &&
+           elseStmt()->returnsOnAllControlPaths(overrideUnreachable);
 
   // If the condition always evaluates to 'true' only the then block must return and vice versa
   const CompileTimeValue &compileTimeValue = cond->getCompileTimeValue();
   if (compileTimeValue.boolValue)
-    return thenBody()->returnsOnAllControlPaths();
-  return elseStmt() != nullptr && elseStmt()->returnsOnAllControlPaths();
+    return thenBody()->returnsOnAllControlPaths(overrideUnreachable);
+  return elseStmt() != nullptr && elseStmt()->returnsOnAllControlPaths(overrideUnreachable);
 }
 
-bool ElseStmtNode::returnsOnAllControlPaths() const {
-  return isElseIf ? ifStmt()->returnsOnAllControlPaths() : body()->returnsOnAllControlPaths();
+bool ElseStmtNode::returnsOnAllControlPaths(bool *overrideUnreachable) const { // NOLINT(misc-no-recursion)
+  return isElseIf ? ifStmt()->returnsOnAllControlPaths(overrideUnreachable)
+                  : body()->returnsOnAllControlPaths(overrideUnreachable);
 }
 
-bool ThreadDefNode::returnsOnAllControlPaths() const { return false; }
+bool ThreadDefNode::returnsOnAllControlPaths(bool *overrideUnreachable) const { return false; }
 
-bool StmtLstNode::returnsOnAllControlPaths() const {
+bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
   // An empty statement list does not return at all
   if (children.empty())
     return false;
   // A statement list returns on all control paths, if the one statement returns on all control paths
   bool returns = false;
+  bool overrideUnreachable = false;
   for (auto astNode : children) {
     if (returns) {
-      astNode->unreachable = true;
-    } else if (astNode->returnsOnAllControlPaths()) {
+      astNode->unreachable = !overrideUnreachable;
+    } else if (astNode->returnsOnAllControlPaths(&overrideUnreachable)) {
       returns = true;
     }
   }
   return returns;
 }
 
-bool AssignExprNode::returnsOnAllControlPaths() const {
-  return hasOperator && op == OP_ASSIGN && lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
+bool AssignExprNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+  const bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
+  *overrideUnreachable |= returns;
+  return returns;
 }
 
 const CompileTimeValue &TernaryExprNode::getCompileTimeValue() const {

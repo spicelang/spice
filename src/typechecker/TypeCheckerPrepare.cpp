@@ -67,8 +67,16 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   SymbolType thisType(TY_DYN); // If the function is not a method, the default this type is TY_DYN
   SymbolType thisPtrType = thisType;
   if (node->isMethod) {
-    SymbolTableEntry *structEntry = node->structScope->parent->lookupStrict(node->structName);
+    Scope *structParentScope = node->structScope->parent;
+    SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->structName);
     assert(structEntry != nullptr);
+    // Set struct to used
+    structEntry->used = true;
+    auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
+    if (manifestations)
+      for (auto &manifestation : *manifestations)
+        manifestation.second.used = true;
+    // Get type and ptr type
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
@@ -173,8 +181,16 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   SymbolType thisType(TY_DYN); // If the procedure is not a method, the default this type is TY_DYN
   SymbolType thisPtrType = thisType;
   if (node->isMethod) {
-    SymbolTableEntry *structEntry = node->structScope->parent->lookupStrict(node->structName);
+    Scope *structParentScope = node->structScope->parent;
+    SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->structName);
     assert(structEntry != nullptr);
+    // Set struct to used
+    structEntry->used = true;
+    auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
+    if (manifestations)
+      for (auto &manifestation : *manifestations)
+        manifestation.second.used = true;
+    // Get type and ptr type
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
@@ -291,6 +307,11 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     // Visit field type
     auto fieldType = std::any_cast<SymbolType>(visit(field->dataType()));
 
+    // Check for struct with infinite size.
+    // This can happen if the struct A has a field with type A
+    if (fieldType.is(TY_STRUCT) && fieldType.getStructBodyScope() == node->structScope)
+      throw SemanticError(field, STRUCT_INFINITE_SIZE, "Struct with infinite size detected");
+
     // Add to field types
     fieldTypes.push_back(fieldType);
 
@@ -317,6 +338,10 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
                      node);
   node->spiceStruct = StructManager::insertStruct(currentScope, spiceStruct);
   spiceStruct.structScope = node->structScope;
+
+  // Check for infinite size
+  // if (spiceStruct.hasInfiniteSize())
+  //  throw SemanticError(node, STRUCT_INFINITE_SIZE, "This struct was detected as infinite sized");
 
   return nullptr;
 }

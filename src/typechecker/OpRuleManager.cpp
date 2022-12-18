@@ -252,7 +252,7 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, const SymbolTyp
 }
 
 SymbolType OpRuleManager::validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
-                                                  const std::string &name, const SymbolType &lhs, const SymbolType &rhs) {
+                                                  const char *name, const SymbolType &lhs, const SymbolType &rhs) {
   for (size_t i = 0; i < opRulesSize; i++) {
     const BinaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType() && std::get<1>(rule) == rhs.getSuperType())
@@ -262,7 +262,7 @@ SymbolType OpRuleManager::validateBinaryOperation(const ASTNode *node, const Bin
 }
 
 SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,
-                                                 const std::string &name, const SymbolType &lhs) {
+                                                 const char *name, const SymbolType &lhs) {
   for (size_t i = 0; i < opRulesSize; i++) {
     const UnaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType())
@@ -271,19 +271,19 @@ SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const Unar
   throw printErrorMessageUnary(node, name, lhs);
 }
 
-SemanticError OpRuleManager::printErrorMessageBinary(const ASTNode *node, const std::string &name, const SymbolType &lhs,
+SemanticError OpRuleManager::printErrorMessageBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
                                                      const SymbolType &rhs) {
   return {node, OPERATOR_WRONG_DATA_TYPE,
-          "Cannot apply '" + name + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true)};
+          "Cannot apply '" + std::string(name) + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true)};
 }
 
-SemanticError OpRuleManager::printErrorMessageUnary(const ASTNode *node, const std::string &name, const SymbolType &lhs) {
-  return {node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + name + "' operator on type " + lhs.getName(true)};
+SemanticError OpRuleManager::printErrorMessageUnary(const ASTNode *node, const char *name, const SymbolType &lhs) {
+  return {node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + std::string(name) + "' operator on type " + lhs.getName(true)};
 }
 
-SemanticError OpRuleManager::printErrorMessageUnsafe(const ASTNode *node, const std::string &name, const SymbolType &lhs,
+SemanticError OpRuleManager::printErrorMessageUnsafe(const ASTNode *node, const char *name, const SymbolType &lhs,
                                                      const SymbolType &rhs) {
   return {node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
-          "Cannot apply '" + name + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true) +
+          "Cannot apply '" + std::string(name) + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true) +
               " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing."};
 }

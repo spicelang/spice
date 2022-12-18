@@ -10,12 +10,13 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
 
   // Push the template string as first argument
   std::vector<llvm::Value *> printfArgs;
-  printfArgs.push_back(builder.CreateGlobalStringPtr(node->templatedString));
+  const std::string globalStringName = getUnusedGlobalName("printf.str.");
+  printfArgs.push_back(builder.CreateGlobalStringPtr(node->templatedString, globalStringName));
 
   // Collect replacement arguments
-  for (AssignExprNode *arg : node->assignExpr()) {
+  for (AssignExprNode *arg : node->args()) {
     // Retrieve type of argument
-    const SymbolType argSymbolType = arg->getEvaluatedSymbolType();
+    const SymbolType argSymbolType = arg->getEvaluatedSymbolType(manIdx);
     llvm::Type *argType = argSymbolType.toLLVMType(context, currentScope);
 
     // Re-map some values
@@ -41,7 +42,10 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   }
 
   // Call printf function
-  llvm::Value *returnValue = builder.CreateCall(printfFct, printfArgs);
+  llvm::CallInst *returnValue = builder.CreateCall(printfFct, printfArgs);
+
+  // Add noundef attribute to template string
+  returnValue->addParamAttr(0, llvm::Attribute::NoUndef);
 
   return ExprResult{.value = returnValue};
 }
@@ -51,7 +55,7 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
   if (node->isType) { // Size of type
     type = any_cast<llvm::Type *>(visit(node->dataType()));
   } else { // Size of value
-    type = node->assignExpr()->getEvaluatedSymbolType().toLLVMType(context, currentScope);
+    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
   }
   // Calculate size at compile-time
   const unsigned int size = module->getDataLayout().getTypeSizeInBits(type);
@@ -63,7 +67,7 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
-  const SymbolType assignExprSymbolType = node->assignExpr()->getEvaluatedSymbolType();
+  const SymbolType assignExprSymbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
   assert(assignExprSymbolType.isArray() && assignExprSymbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
   llvm::Value *lengthValue;
   if (assignExprSymbolType.getArraySize() == ARRAY_SIZE_DYNAMIC) { // Dynamic array size
@@ -99,14 +103,14 @@ std::any IRGenerator::visitJoinCall(const JoinCallNode *node) {
     assert(threadIdPtr != nullptr && threadIdPtr->getType()->isPointerTy());
 
     // Check if we have a single thread to join or an array of thread ids
-    const SymbolType assignExprSymbolType = assignExpr->getEvaluatedSymbolType();
+    const SymbolType assignExprSymbolType = assignExpr->getEvaluatedSymbolType(manIdx);
     if (assignExprSymbolType.isArray()) { // Multiple ids
       assert(assignExprSymbolType.getArraySize() > ARRAY_SIZE_UNKNOWN);
       llvm::Type *threadIdPtrTy = assignExprSymbolType.toLLVMType(context, currentScope);
       for (int i = 0; i < threadIdPtrTy->getArrayNumElements(); i++) {
         // Get thread id that has to be joined
         llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
-        llvm::Value *threadIdPtr = builder.CreateGEP(threadIdPtrTy, threadIdPtr, indices);
+        threadIdPtr = builder.CreateGEP(threadIdPtrTy, threadIdPtr, indices);
         threadIdPointers.push_back(threadIdPtr);
       }
     } else { // Single id

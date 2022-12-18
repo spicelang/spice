@@ -1,6 +1,9 @@
-//import "std/type/int" as unused;
+f<int> test(int i, int j = 12, string t = "Test") {
+    printf("Test: %d, %s", j, t);
+    return i;
+}
 
 f<int> main() {
-    unsigned int t = 12u;
-    printf("%d", t);
+    test(1);
+    test(1, 3);
 }

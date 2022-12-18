@@ -13,9 +13,6 @@ std::any ImportCollector::visitEntry(EntryNode *node) {
   for (ImportStmtNode *importStmt : node->importStmts())
     visit(importStmt);
 
-  // Reset the AST
-  node->reset();
-
   return nullptr;
 }
 

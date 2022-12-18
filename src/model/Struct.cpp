@@ -2,6 +2,8 @@
 
 #include "Struct.h"
 
+#include <scope/Scope.h>
+
 /**
  * Mange the struct and return the mangled string
  *
@@ -91,3 +93,42 @@ std::string Struct::getSignature(const std::string &structName, const std::vecto
 
   return structName + templateTyStr.str();
 }
+
+/**
+ * Checks if the current struct is of infinite size.
+ *
+ * This can happen for structs with at least a:
+ * 1) direct dependency (e.g. the struct A has a field with type A)
+ * 2) indirect dependency (e.g. the struct A has a field with type B and struct B has a field with type A)
+ *
+ * @return Infinite size or not
+ */
+/*bool Struct::hasInfiniteSize(Scope *anchorScope) const { // NOLINT(misc-no-recursion)
+  // Cancel recursion if we have reached the anchor again
+  if (structScope == anchorScope)
+    return true;
+
+  // Set the recursion anchor scope
+  if (!anchorScope)
+    anchorScope = structScope;
+
+  // Loop through all fields
+  for (const SymbolType &fieldType : fieldTypes) {
+    // Skip non-struct fields
+    if (!fieldType.is(TY_STRUCT))
+      continue;
+    // Check for 1)
+    if (fieldType.getStructBodyScope() == structScope)
+      return true;
+    // Check for 2)
+    const std::string &structName = fieldType.getSubType();
+    Scope *structParentScope = fieldType.getStructBodyScope()->parent;
+    SymbolTableEntry *structEntry = structParentScope->lookupStrict(structName);
+    StructManifestationList *structs = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
+    for (auto &[mangledName, spiceStruct] : *structs) {
+      if (spiceStruct.hasInfiniteSize(anchorScope))
+        return true;
+    }
+  }
+  return false;
+}*/

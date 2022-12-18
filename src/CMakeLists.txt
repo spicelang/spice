@@ -85,8 +85,8 @@ set(SOURCES
         irgenerator/GenValues.cpp
         irgenerator/StdFunctionManager.cpp
         irgenerator/StdFunctionManager.h
-        irgenerator/OpRuleConversionsManager.cpp
-        irgenerator/OpRuleConversionsManager.h
+        irgenerator/OpRuleConversionManager.cpp
+        irgenerator/OpRuleConversionManager.h
         irgenerator/DebugInfoGenerator.cpp
         irgenerator/DebugInfoGenerator.h
         # IR optimizer

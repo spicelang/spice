@@ -18,15 +18,16 @@ Function *FunctionManager::insertFunction(Scope *insertScope, const Function &ba
   assert(!manifestations.empty());
 
   // Save substantiations
+  Function *manifestationPtr;
   for (const Function &manifestation : manifestations) {
-    Function *manifestationPtr = insertSubstantiation(insertScope, manifestation, baseFunction.declNode);
+    manifestationPtr = insertSubstantiation(insertScope, manifestation, baseFunction.declNode);
     assert(manifestationPtr != nullptr);
     if (nodeFunctionList)
       nodeFunctionList->push_back(manifestationPtr);
   }
 
   if (!nodeFunctionList)
-    return nullptr;
+    return manifestationPtr;
 
   assert(!nodeFunctionList->empty());
   return nodeFunctionList->front();
@@ -88,8 +89,16 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
 }
 
 FunctionManifestationList *FunctionManager::getManifestationList(Scope *lookupScope, const CodeLoc &defCodeLoc) {
-  std::string codeLocStr = defCodeLoc.toString();
+  const std::string codeLocStr = defCodeLoc.toString();
   return lookupScope->functions.contains(codeLocStr) ? &lookupScope->functions.at(codeLocStr) : nullptr;
+}
+
+Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std::vector<SymbolType> &paramTypes,
+                                             ASTNode *declNode) {
+  ParamList paramList;
+  for (const SymbolType &paramType : paramTypes)
+    paramList.push_back({paramType, true});
+  return {MAIN_FUNCTION_NAME, entry, SymbolType(TY_DYN), SymbolType(TY_INT), paramList, {}, declNode, false};
 }
 
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {

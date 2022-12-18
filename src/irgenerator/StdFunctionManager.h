@@ -25,17 +25,7 @@ public:
   [[nodiscard]] llvm::Function *getPthreadCreate() const;
   [[nodiscard]] llvm::Function *getPthreadSelf() const;
   [[nodiscard]] llvm::Function *getPthreadJoin() const;
-  [[nodiscard]] llvm::Function *getStringGetRawFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorStrobjFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorStrobjStringFct() const;
-  [[nodiscard]] llvm::Function *getStringCtorStrobjStrobjFct() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
-  [[nodiscard]] llvm::Function *getStringIsEqualStrobjFct() const;
-  [[nodiscard]] llvm::Function *getStringAppendStringFct() const;
-  [[nodiscard]] llvm::Function *getStringAppendCharFct() const;
-  [[nodiscard]] llvm::Function *getStringMulOpIntFct() const;
-  [[nodiscard]] llvm::Function *getStringMulOpLongFct() const;
-  [[nodiscard]] llvm::Function *getStringMulOpShortFct() const;
 
 private:
   // Members

@@ -15,9 +15,6 @@ std::any SymbolTableBuilder::visitEntry(EntryNode *node) {
   // Visit children
   visitChildren(node);
 
-  // Reset the AST
-  node->reset();
-
   // Check if the main function exists
   if (sourceFile->mainFile && !hasMainFunction)
     throw SemanticError(node, MISSING_MAIN_FUNCTION, "No main function found");
