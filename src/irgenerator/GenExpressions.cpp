@@ -17,51 +17,13 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
 
   // Assign or compound assign operation
   if (node->hasOperator) {
-    // Get symbol types of left and right side
-    const SymbolType lhsSType = node->lhs()->getEvaluatedSymbolType();
-    const SymbolType rhsSType = node->rhs()->getEvaluatedSymbolType();
-
     if (node->op == AssignExprNode::OP_ASSIGN) { // Normal assignment
-      // Deduce some information about the assignment
-      const bool isRefAssign = lhsSType.isReference();
-      const bool needsShallowCopy = !isRefAssign && lhsSType.is(TY_STRUCT);
-
-      if (isRefAssign) { // We simply set the address of lhs to the address of rhs
-        // Get address of right side
-        llvm::Value *rhsAddress = resolveAddress(node->rhs());
-        assert(rhsAddress != nullptr);
-        // Get entry of left side
-        auto lhs = std::any_cast<ExprResult>(visit(node->lhs()));
-        assert(lhs.entry != nullptr);
-        // Set address of rhs to lhs entry
-        lhs.entry->updateAddress(rhsAddress);
-        return ExprResult{.ptr = rhsAddress, .entry = lhs.entry};
-      }
-
-      // Check if we need to copy the rhs to the lhs. This happens for structs
-      if (needsShallowCopy) {
-        // Get address of right side
-        llvm::Value *rhsAddress = resolveAddress(node->rhs());
-        assert(rhsAddress != nullptr);
-        // Get entry of left side
-        auto lhs = std::any_cast<ExprResult>(visit(node->lhs()));
-        assert(lhs.entry != nullptr);
-        // Create shallow copy
-        llvm::Value *newAddress = copyMemoryShallow(rhsAddress, rhsAddress->getType(), lhs.entry->name, lhs.entry->isVolatile);
-        // Set address of lhs to the copy
-        lhs.entry->updateAddress(newAddress);
-        return ExprResult{.ptr = newAddress, .entry = lhs.entry};
-      }
-
-      // We can load the value from the right side and store it to the left side
-      // Retrieve value of the right side
-      llvm::Value *rhsValue = resolveValue(node->rhs());
-      // Retrieve address of the lhs side
-      llvm::Value *lhsAddress = resolveAddress(node->lhs());
-      // Store the value to the address
-      builder.CreateStore(rhsValue, lhsAddress);
-      return ExprResult{.ptr = lhsAddress, .value = rhsValue};
+      return doAssignment(node->lhs(), node->rhs());
     } else { // Compound assignment
+      // Get symbol types of left and right side
+      const SymbolType lhsSType = node->lhs()->getEvaluatedSymbolType();
+      const SymbolType rhsSType = node->rhs()->getEvaluatedSymbolType();
+
       // Retrieve rhs
       auto rhs = std::any_cast<ExprResult>(visit(node->rhs()));
       // Retrieve lhs

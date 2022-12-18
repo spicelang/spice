@@ -33,28 +33,24 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   // Check if the declaration is with an assignment or the default value
   llvm::Value *varAddress = nullptr;
   if (node->hasAssignment) { // Assignment
-    // Deduce some information about the declaration assignment
-    const bool isRefAssign = varSymbolType.isReference();
-    const bool requiresShallowCopy = !isRefAssign && varSymbolType.is(TY_STRUCT);
-
-    if (isRefAssign) {
-      // We only need to
-    }
+    ExprResult assignResult = doAssignment(varEntry, node->assignExpr());
+    assert(assignResult.entry == varEntry);
+    assert(assignResult.ptr == varEntry->getAddress());
+    varAddress = assignResult.entry->getAddress();
   } else { // Default value
     // Retrieve default value for lhs symbol type
     llvm::Value *defaultValue = getDefaultValueForSymbolType(varSymbolType);
     // Allocate memory and store the default value there
     varAddress = insertAlloca(varTy);
     builder.CreateStore(defaultValue, varAddress);
+    // Update address in symbol table
+    varEntry->updateAddress(varAddress);
   }
   assert(varAddress != nullptr);
 
   // Generate debug info for variable declaration
   if (cliOptions.generateDebugInfo)
     diGenerator.generateDeclDebugInfo(node->codeLoc, node->varName, varAddress, SIZE_MAX, true);
-
-  // Update address in symbol table
-  varEntry->updateAddress(varAddress);
 
   return nullptr;
 }

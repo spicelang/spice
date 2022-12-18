@@ -215,8 +215,59 @@ void IRGenerator::switchToBlock(llvm::BasicBlock *block) {
   blockAlreadyTerminated = false;
 }
 
-llvm::Value *IRGenerator::copyMemoryShallow(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name /*=""*/,
-                                           bool isVolatile /*=false*/) {
+ExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {
+  // Get entry of left side
+  auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
+  assert(lhs.entry != nullptr);
+
+  return doAssignment(lhs.entry, rhsNode);
+}
+
+ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *rhsNode) {
+  assert(lhsEntry != nullptr);
+
+  // Get symbol types of left and right side
+  const SymbolType lhsSType = lhsEntry->getType();
+  const SymbolType rhsSType = rhsNode->getEvaluatedSymbolType();
+
+  // Deduce some information about the assignment
+  const bool isRefAssign = lhsSType.isReference();
+  const bool needsShallowCopy = !isRefAssign && lhsSType.is(TY_STRUCT);
+
+  if (isRefAssign) { // We simply set the address of lhs to the address of rhs
+    // Get address of right side
+    llvm::Value *rhsAddress = resolveAddress(rhsNode);
+    assert(rhsAddress != nullptr);
+
+    // Set address of rhs to lhs entry
+    lhsEntry->updateAddress(rhsAddress);
+    return ExprResult{.ptr = rhsAddress, .entry = lhsEntry};
+  }
+
+  // Check if we need to copy the rhs to the lhs. This happens for structs
+  if (needsShallowCopy) {
+    // Get address of right side
+    llvm::Value *rhsAddress = resolveAddress(rhsNode);
+    assert(rhsAddress != nullptr);
+    // Create shallow copy
+    llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsAddress->getType(), lhsEntry->name, lhsEntry->isVolatile);
+    // Set address of lhs to the copy
+    lhsEntry->updateAddress(newAddress);
+    return ExprResult{.ptr = newAddress, .entry = lhsEntry};
+  }
+
+  // We can load the value from the right side and store it to the left side
+  // Retrieve value of the right side
+  llvm::Value *rhsValue = resolveValue(rhsNode);
+  // Retrieve address of the lhs side
+  llvm::Value *lhsAddress = lhsEntry->getAddress();
+  // Store the value to the address
+  builder.CreateStore(rhsValue, lhsAddress);
+  return ExprResult{.ptr = lhsAddress, .value = rhsValue};
+}
+
+llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name /*=""*/,
+                                            bool isVolatile /*=false*/) {
   // Retrieve size to copy
   const unsigned int typeSize = module->getDataLayout().getTypeSizeInBits(varType);
 
