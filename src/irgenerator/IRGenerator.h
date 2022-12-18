@@ -96,7 +96,9 @@ private:
   void insertJump(llvm::BasicBlock *targetBlock);
   void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
   void switchToBlock(llvm::BasicBlock *block);
-  llvm::Value *copyMemoryShallow(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name = "",
+  ExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
+  ExprResult doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *rhsNode);
+  llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name = "",
                                  bool isVolatile = false);
 
   // Private members
