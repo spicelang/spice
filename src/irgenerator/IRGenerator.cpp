@@ -26,16 +26,10 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
   visitChildren(node);
 
   // Finalize debug info generator
-  if (cliOptions.generateDebugInfo)
-    diGenerator.finalize();
+  diGenerator.finalize();
 
   // Verify module
-  if (!cliOptions.disableVerifier) {
-    std::string output;
-    llvm::raw_string_ostream oss(output);
-    if (llvm::verifyModule(*module, &oss))
-      throw IRError(node->codeLoc, INVALID_MODULE, oss.str());
-  }
+  verifyModule(node->codeLoc);
 
   return nullptr;
 }
@@ -62,12 +56,15 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &
 }
 
 llvm::Value *IRGenerator::resolveValue(const ASTNode *node, Scope *accessScope /*=nullptr*/) {
+  // Visit the given AST node
+  auto exprResult = any_cast<ExprResult>(visit(node));
+  return resolveValue(node, exprResult);
+}
+
+llvm::Value *IRGenerator::resolveValue(const ASTNode *node, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
   // Set access scope to current scope if nullptr gets passed
   if (!accessScope)
     accessScope = currentScope;
-
-  // Visit the given AST node
-  auto exprResult = any_cast<ExprResult>(visit(node));
 
   // Check if a constant or a value is already present
   if (exprResult.constant != nullptr)
@@ -77,17 +74,23 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, Scope *accessScope /
 
   // If not, load the value from the pointer
   assert(exprResult.ptr != nullptr);
-  llvm::Type *valueTy = node->getEvaluatedSymbolType().toLLVMType(context, accessScope);
+  llvm::Type *valueTy = node->getEvaluatedSymbolType(manIdx).toLLVMType(context, accessScope);
   return builder.CreateLoad(valueTy, exprResult.ptr);
 }
 
 llvm::Value *IRGenerator::resolveAddress(const ASTNode *node, bool storeVolatile /*=false*/) {
   // Visit the given AST node
   auto exprResult = any_cast<ExprResult>(visit(node));
+  return resolveAddress(exprResult);
+}
 
+llvm::Value *IRGenerator::resolveAddress(ExprResult &exprResult, bool storeVolatile /*=false*/) {
   // Check if an address is already present
   if (exprResult.ptr != nullptr)
     return exprResult.ptr;
+
+  if (exprResult.entry)
+    storeVolatile |= exprResult.entry->isVolatile;
 
   // If not, store the value or constant
   llvm::Value *value = exprResult.constant ?: exprResult.value;
@@ -215,6 +218,30 @@ void IRGenerator::switchToBlock(llvm::BasicBlock *block) {
   blockAlreadyTerminated = false;
 }
 
+void IRGenerator::verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) const {
+  // Skip the verifying step if the verifier was disabled manually or debug info is emitted
+  if (cliOptions.disableVerifier || cliOptions.generateDebugInfo)
+    return;
+
+  // Verify function
+  std::string output;
+  llvm::raw_string_ostream oss(output);
+  if (llvm::verifyFunction(*fct, &oss))
+    throw IRError(codeLoc, INVALID_FUNCTION, output);
+}
+
+void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
+  // Skip the verifying step if the verifier was disabled manually or debug info is emitted
+  if (cliOptions.disableVerifier || cliOptions.generateDebugInfo)
+    return;
+
+  // Verify module
+  std::string output;
+  llvm::raw_string_ostream oss(output);
+  if (llvm::verifyModule(*module, &oss))
+    throw IRError(codeLoc, INVALID_MODULE, output);
+}
+
 ExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {
   // Get entry of left side
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
@@ -228,7 +255,7 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
 
   // Get symbol types of left and right side
   const SymbolType lhsSType = lhsEntry->getType();
-  const SymbolType rhsSType = rhsNode->getEvaluatedSymbolType();
+  const SymbolType rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
 
   // Deduce some information about the assignment
   const bool isRefAssign = lhsSType.isReference();
@@ -261,9 +288,14 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
   llvm::Value *rhsValue = resolveValue(rhsNode);
   // Retrieve address of the lhs side
   llvm::Value *lhsAddress = lhsEntry->getAddress();
+  // Allocate new memory if the lhs address does not exist
+  if (!lhsAddress) {
+    lhsAddress = insertAlloca(lhsSType.toLLVMType(context, currentScope));
+    lhsEntry->updateAddress(lhsAddress);
+  }
   // Store the value to the address
   builder.CreateStore(rhsValue, lhsAddress);
-  return ExprResult{.ptr = lhsAddress, .value = rhsValue};
+  return ExprResult{.ptr = lhsAddress, .value = rhsValue, .entry = lhsEntry};
 }
 
 llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name /*=""*/,
@@ -281,6 +313,38 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
   builder.CreateCall(memcpyFct, {newAddress, oldAddress, structSize, copyVolatile});
 
   return newAddress;
+}
+
+void IRGenerator::autoDeReferencePtr(llvm::Value *ptr, SymbolType symbolType, Scope *accessScope) const {
+  while (symbolType.isPointer()) {
+    ptr = builder.CreateLoad(symbolType.toLLVMType(context, accessScope), ptr);
+    symbolType = symbolType.getContainedTy();
+  }
+}
+
+llvm::Value *IRGenerator::createGlobalConstant(const std::string &baseName, llvm::Constant *constant) {
+  // Get unused name
+  const std::string globalName = getUnusedGlobalName(baseName);
+  // Create global
+  llvm::Value *globalAddr = module->getOrInsertGlobal(globalName, constant->getType());
+  llvm::GlobalVariable *global = module->getNamedGlobal(globalName);
+  // Set initializer to the given constant
+  global->setInitializer(constant);
+  global->setConstant(true);
+  global->setLinkage(llvm::GlobalValue::PrivateLinkage);
+  global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+  return globalAddr;
+}
+
+std::string IRGenerator::getUnusedGlobalName(const std::string &baseName) const {
+  // Find an unused global name
+  std::string globalName;
+  unsigned int suffixNumber = 0;
+  do {
+    globalName = baseName + std::to_string(suffixNumber);
+    suffixNumber++;
+  } while (module->getNamedGlobal(globalName) != nullptr);
+  return globalName;
 }
 
 std::string IRGenerator::getIRString() const {

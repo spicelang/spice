@@ -277,9 +277,10 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
       currentNode = globalVarDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = globalVarDefNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) // Constant
+    else if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) { // Constant
       currentNode = globalVarDefNode->createChild<ConstantNode>(CodeLoc(rule->start, filePath));
-    else
+      globalVarDefNode->hasAssigment = true;
+    } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
     if (currentNode != globalVarDefNode) {
@@ -572,6 +573,8 @@ std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
       currentNode = stmtLstNode->createChild<ForeachLoopNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::WhileLoopContext *>(subTree); rule != nullptr) // WhileLoop
       currentNode = stmtLstNode->createChild<WhileLoopNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::DoWhileLoopContext *>(subTree); rule != nullptr) // DoWhileLoop
+      currentNode = stmtLstNode->createChild<DoWhileLoopNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::IfStmtContext *>(subTree); rule != nullptr) // IfStmt
       currentNode = stmtLstNode->createChild<IfStmtNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::AssertStmtContext *>(subTree); rule != nullptr) // AssertStmt

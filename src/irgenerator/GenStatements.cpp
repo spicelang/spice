@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2022 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
+#include "symboltablebuilder/SymbolTableBuilder.h"
 
 #include <ast/ASTNodes.h>
 
@@ -23,7 +24,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Get variable entry
-  SymbolTableEntry *varEntry = currentScope->lookupStrict(node->varName);
+  SymbolTableEntry *varEntry = node->entries.at(manIdx);
   assert(varEntry != nullptr);
   const SymbolType varSymbolType = varEntry->getType();
 
@@ -48,9 +49,12 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   }
   assert(varAddress != nullptr);
 
+  // Attach the variable name to the LLVM value
+  varAddress->setName(varEntry->name);
+
   // Generate debug info for variable declaration
   if (cliOptions.generateDebugInfo)
-    diGenerator.generateDeclDebugInfo(node->codeLoc, node->varName, varAddress, SIZE_MAX, true);
+    diGenerator.generateLocalVarDebugInfo(node->codeLoc, node->varName, varAddress, SIZE_MAX, true);
 
   return nullptr;
 }
@@ -59,7 +63,33 @@ std::any IRGenerator::visitSpecifierLst(const SpecifierLstNode *node) {
   return nullptr; // Noop
 }
 
-std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) { return ParallelizableASTVisitor::visitReturnStmt(node); }
+std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
+  diGenerator.setSourceLocation(node);
+
+  llvm::Value *returnValue = nullptr;
+  if (node->hasReturnValue) { // Return value is attached to the return statement
+    returnValue = resolveValue(node->assignExpr());
+  } else { // Try to load return variable value
+    SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
+    if (resultEntry != nullptr) {
+      llvm::Type *resultSTy = resultEntry->getType().toLLVMType(context, currentScope);
+      llvm::Value *returnValueAddr = resultEntry->getAddress();
+      returnValue = builder.CreateLoad(resultSTy, returnValueAddr);
+    }
+  }
+
+  // Set block to terminated
+  blockAlreadyTerminated = true;
+
+  // Create return instruction
+  if (returnValue != nullptr) { // Return value
+    builder.CreateRet(returnValue);
+  } else { // Return without value
+    builder.CreateRetVoid();
+  }
+
+  return nullptr;
+}
 
 std::any IRGenerator::visitBreakStmt(const BreakStmtNode *node) {
   diGenerator.setSourceLocation(node);

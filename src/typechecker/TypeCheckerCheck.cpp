@@ -7,6 +7,8 @@
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
+  node->resizeToNumberOfManifestations(1);
+
   // Change to function body scope
   currentScope = node->fctScope;
 
@@ -20,8 +22,10 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
 }
 
 std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
+  node->resizeToNumberOfManifestations(node->fctManifestations.size());
+  manIdx = 0; // Reset the symbolTypeIndex
+
   // Get all manifestations for this function definition
-  node->symbolTypeIndex = 0; // Reset the symbolTypeIndex
   for (Function *manifestation : node->fctManifestations) {
     // Skip non-substantiated or already checked functions
     if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked)
@@ -45,17 +49,17 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
       returnVarEntry->updateType(newReturnType, true);
     }
 
-    // Substantiate all generic parameter types if necessary and save the old types to restore them later
+    // Substantiate all generic parameter types if necessary and save the generic types to restore them later
     NamedParamList namedParams;
     if (node->hasParams) {
       const std::vector<SymbolType> newParamTypes = manifestation->getParamTypes();
-      for (int i = 0; i < newParamTypes.size(); i++) {
+      for (size_t i = 0; i < newParamTypes.size(); i++) {
         // Get param declaration node
         const DeclStmtNode *paramDecl = node->paramLst()->params()[i];
         // Retrieve the symbol table entry for that param
         SymbolTableEntry *paramEntry = currentScope->lookup(paramDecl->varName);
         assert(paramEntry != nullptr);
-        // Check if we need to substantiate this type
+        // Skip non-generic params
         if (!paramEntry->getType().is(TY_GENERIC))
           continue;
         // Save the old type
@@ -83,15 +87,18 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     manifestation->alreadyTypeChecked = true;
 
     // Increase the symbolTypeIndex
-    node->symbolTypeIndex++;
+    manIdx++;
   }
+  manIdx = 0; // Reset the symbolTypeIndex
 
   return nullptr;
 }
 
 std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
+  node->resizeToNumberOfManifestations(node->procManifestations.size());
+  manIdx = 0; // Reset the symbolTypeIndex
+
   // Get all manifestations for this procedure definition
-  node->symbolTypeIndex = 0; // Reset the symbolTypeIndex
   for (auto &manifestation : node->procManifestations) {
     // Skip non-substantiated or already checked procedures
     if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked)
@@ -108,17 +115,17 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     currentScope = currentScope->getChildScope(manifestation->getSignature());
     assert(currentScope != nullptr && currentScope->type == SCOPE_FUNC_PROC_BODY);
 
-    // Substantiate all generic parameter types if necessary and save the old types to restore them later
+    // Substantiate all generic parameter types if necessary and save the generic types to restore them later
     NamedParamList namedParams;
     if (node->hasParams) {
       const std::vector<SymbolType> newParamTypes = manifestation->getParamTypes();
-      for (int i = 0; i < newParamTypes.size(); i++) {
+      for (size_t i = 0; i < newParamTypes.size(); i++) {
         // Get param declaration node
         const DeclStmtNode *paramDecl = node->paramLst()->params()[i];
         // Retrieve the symbol table entry for that param
         SymbolTableEntry *paramEntry = currentScope->lookup(paramDecl->varName);
         assert(paramEntry != nullptr);
-        // Check if we need to substantiate this type
+        // Skip non-generic params
         if (!paramEntry->getType().is(TY_GENERIC))
           continue;
         // Save the old type
@@ -146,8 +153,9 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     manifestation->alreadyTypeChecked = true;
 
     // Increase the symbolTypeIndex
-    node->symbolTypeIndex++;
+    manIdx++;
   }
+  manIdx = 0; // Reset the symbolTypeIndex
 
   return nullptr;
 }

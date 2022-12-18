@@ -23,7 +23,7 @@ const char *const STROBJ_NAME = "String";
 const int ARRAY_SIZE_UNKNOWN = 0;
 const int ARRAY_SIZE_DYNAMIC = -1;
 
-enum SymbolSuperType {
+enum SymbolSuperType : uint16_t {
   TY_INVALID,
   TY_DOUBLE,
   TY_INT,

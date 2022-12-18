@@ -5,13 +5,14 @@
 #include <string>
 #include <utility>
 
-#include "SymbolSpecifiers.h"
-#include "SymbolType.h"
+#include <borrowchecker/Lifecycle.h>
+#include <symboltablebuilder/SymbolSpecifiers.h>
+#include <symboltablebuilder/SymbolType.h>
 
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Value.h>
 
 #include "../../lib/json/json.hpp"
-#include "borrowchecker/Lifecycle.h"
 
 // Forward declarations
 class Scope;
@@ -35,8 +36,8 @@ public:
   void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);
   [[nodiscard]] const ASTNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
-  [[nodiscard]] llvm::Type *getStructLLVMType() const;
-  void setStructLLVMType(llvm::Type *newStructType);
+  [[nodiscard]] llvm::StructType *getStructLLVMType() const;
+  void setStructLLVMType(llvm::StructType *newStructType);
   [[nodiscard]] virtual llvm::Value *getAddress() const;
   void updateAddress(llvm::Value *address);
   void pushAddress(llvm::Value *address);
@@ -49,7 +50,7 @@ public:
   SymbolTable *symbolTable;
   SymbolSpecifiers specifiers;
   ASTNode *declNode;
-  size_t orderIndex;
+  const size_t orderIndex;
   const bool global;
   bool isVolatile = false;
   bool anonymous = false;
@@ -58,7 +59,7 @@ public:
 private:
   // Members
   SymbolType type;
-  llvm::Type *llvmType = nullptr;
+  llvm::StructType *llvmType = nullptr;
   std::stack<llvm::Value *> memAddress;
   Lifecycle lifecycle;
 };

@@ -7,7 +7,7 @@
 #include <Token.h>
 
 #include <exception/SemanticError.h>
-#include <irgenerator/OpRuleConversionsManager.h>
+#include <irgenerator/OpRuleConversionManager.h>
 #include <symboltablebuilder/SymbolType.h>
 
 // Forward declarations
@@ -31,7 +31,6 @@ const BinaryOpRule ASSIGN_OP_RULES[] = {
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte = byte -> byte
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // char = char -> char
     BinaryOpRule(TY_STRING, TY_STRING, TY_STRING, false), // string = string -> string
-    BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_STROBJ, false), // strobj = strobj -> strobj
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),       // bool = bool -> bool
 };
 
@@ -48,8 +47,6 @@ const BinaryOpRule PLUS_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long += short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long += long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte += byte -> byte
-    BinaryOpRule(TY_STROBJ, TY_CHAR, TY_STROBJ, false),   // strobj += char -> strobj
-    BinaryOpRule(TY_STROBJ, TY_STRING, TY_STROBJ, false), // strobj += string -> strobj
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // char += char -> char
 };
 
@@ -82,9 +79,6 @@ const BinaryOpRule MUL_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long *= short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long *= long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte *= byte -> byte
-    BinaryOpRule(TY_STROBJ, TY_INT, TY_STROBJ, false),    // strobj *= int -> strobj
-    BinaryOpRule(TY_STROBJ, TY_SHORT, TY_STROBJ, false),  // strobj *= short strobj
-    BinaryOpRule(TY_STROBJ, TY_LONG, TY_STROBJ, false),   // strobj *= long -> strobj
 };
 
 // Div equal op rules
@@ -249,7 +243,6 @@ const BinaryOpRule EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_CHAR, TY_LONG, TY_BOOL, false),     // char == long -> bool
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL, false),     // char == char -> bool
     BinaryOpRule(TY_STRING, TY_STRING, TY_BOOL, false), // string == string -> bool
-    BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_BOOL, false), // strobj == strobj -> bool
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),     // bool == bool -> bool
 };
 
@@ -280,7 +273,6 @@ const BinaryOpRule NOT_EQUAL_OP_RULES[] = {
     BinaryOpRule(TY_CHAR, TY_LONG, TY_BOOL, false),     // char != long -> bool
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_BOOL, false),     // char != char -> bool
     BinaryOpRule(TY_STRING, TY_STRING, TY_BOOL, false), // string != string -> bool
-    BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_BOOL, false), // strobj != strobj -> bool
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),     // bool != bool -> bool
 };
 
@@ -425,8 +417,6 @@ const BinaryOpRule PLUS_OP_RULES[] = {
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long + short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long + long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte + byte -> byte
-    BinaryOpRule(TY_STROBJ, TY_STRING, TY_STROBJ, false), // strobj + string -> strobj
-    BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_STROBJ, false), // strobj + strobj -> strobj
 };
 
 // Minus op rules
@@ -460,21 +450,15 @@ const BinaryOpRule MUL_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),          // int * int -> int
     BinaryOpRule(TY_INT, TY_SHORT, TY_INT, false),        // int * short -> int
     BinaryOpRule(TY_INT, TY_LONG, TY_LONG, false),        // int * long -> long
-    BinaryOpRule(TY_INT, TY_STROBJ, TY_STROBJ, false),    // int * strobj -> strobj
     BinaryOpRule(TY_SHORT, TY_DOUBLE, TY_DOUBLE, false),  // short * double -> double
     BinaryOpRule(TY_SHORT, TY_INT, TY_INT, false),        // short * int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false),    // short * short -> short
     BinaryOpRule(TY_SHORT, TY_LONG, TY_LONG, false),      // short * long -> long
-    BinaryOpRule(TY_SHORT, TY_STROBJ, TY_STROBJ, false),  // short * strobj -> strobj
     BinaryOpRule(TY_LONG, TY_DOUBLE, TY_DOUBLE, false),   // long * double -> double
     BinaryOpRule(TY_LONG, TY_INT, TY_LONG, false),        // long * int -> long
     BinaryOpRule(TY_LONG, TY_SHORT, TY_LONG, false),      // long * short -> long
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),       // long * long -> long
-    BinaryOpRule(TY_LONG, TY_STROBJ, TY_STROBJ, false),   // long * strobj -> strobj
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),       // byte * byte -> byte
-    BinaryOpRule(TY_STROBJ, TY_INT, TY_STROBJ, false),    // strobj * int -> strobj
-    BinaryOpRule(TY_STROBJ, TY_SHORT, TY_STROBJ, false),  // strobj * short -> strobj
-    BinaryOpRule(TY_STROBJ, TY_LONG, TY_STROBJ, false),   // strobj * long -> strobj
 };
 
 // Div op rules
@@ -587,7 +571,6 @@ const BinaryOpRule CAST_OP_RULES[] = {
     BinaryOpRule(TY_CHAR, TY_BYTE, TY_CHAR, false),       // (char) byte -> char
     BinaryOpRule(TY_CHAR, TY_CHAR, TY_CHAR, false),       // (char) char -> char
     BinaryOpRule(TY_STRING, TY_STRING, TY_STRING, false), // (string) string -> string
-    BinaryOpRule(TY_STROBJ, TY_STROBJ, TY_STROBJ, false), // (strobj) strobj -> strobj
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),       // (bool) bool -> bool
 };
 
@@ -647,12 +630,12 @@ private:
 
   // Private methods
   static SymbolType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
-                                            const std::string &name, const SymbolType &lhs, const SymbolType &rhs);
-  static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,
-                                           const std::string &name, const SymbolType &lhs);
-  static SemanticError printErrorMessageBinary(const ASTNode *node, const std::string &name, const SymbolType &lhs,
+                                            const char *name, const SymbolType &lhs, const SymbolType &rhs);
+  static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
+                                           const SymbolType &lhs);
+  static SemanticError printErrorMessageBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
                                                const SymbolType &rhs);
-  static SemanticError printErrorMessageUnary(const ASTNode *node, const std::string &name, const SymbolType &lhs);
-  static SemanticError printErrorMessageUnsafe(const ASTNode *node, const std::string &name, const SymbolType &lhs,
+  static SemanticError printErrorMessageUnary(const ASTNode *node, const char *name, const SymbolType &lhs);
+  static SemanticError printErrorMessageUnsafe(const ASTNode *node, const char *name, const SymbolType &lhs,
                                                const SymbolType &rhs);
 };

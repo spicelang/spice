@@ -33,7 +33,7 @@ public type AstNode struct : Visitable {
     vec::Vector<AstNode*> children
     const cl::CodeLoc codeLoc
     string errorMessage
-    unsigned long symbolTypeIndex
+    unsigned long manIdx
     vec::Vector<symbolType::SymbolType> symbolTypes
     CompileTimeValue compileTimeValue
     string compileTimeStringValue
@@ -43,7 +43,7 @@ public type AstNode struct : Visitable {
 p AstNode.ctor(AstNode *parent, cl::CodeLoc codeLoc) {
     this.parent = parent;
     this.codeLoc = codeLoc;
-    this.symbolTypeIndex = longTy::MAX_VALUE;
+    this.manIdx = longTy::MAX_VALUE;
     hasDirectCompileTimeValue = false;
 }
 

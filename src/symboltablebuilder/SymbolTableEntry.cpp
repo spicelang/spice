@@ -2,9 +2,9 @@
 
 #include "SymbolTableEntry.h"
 
-#include "ast/ASTNodes.h"
-#include "exception/SemanticError.h"
-#include "util/CodeLoc.h"
+#include <ast/ASTNodes.h>
+#include <exception/SemanticError.h>
+#include <util/CodeLoc.h>
 
 /**
  * Retrieve the symbol type of this symbol
@@ -61,7 +61,7 @@ const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declNode->codeL
  *
  * @return LLVM type of the current struct symbol
  */
-llvm::Type *SymbolTableEntry::getStructLLVMType() const {
+llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
   assert(type.is(TY_STRUCT));
   return llvmType;
 }
@@ -71,7 +71,7 @@ llvm::Type *SymbolTableEntry::getStructLLVMType() const {
  *
  * @param newStructType New struct LLVM type
  */
-void SymbolTableEntry::setStructLLVMType(llvm::Type *newStructType) {
+void SymbolTableEntry::setStructLLVMType(llvm::StructType *newStructType) {
   assert(type.is(TY_STRUCT));
   llvmType = newStructType;
 }
