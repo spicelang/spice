@@ -70,7 +70,7 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
   if (node->hasReturnValue) { // Return value is attached to the return statement
     returnValue = resolveValue(node->assignExpr());
   } else { // Try to load return variable value
-    SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
+    SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (resultEntry != nullptr) {
       llvm::Type *resultSTy = resultEntry->getType().toLLVMType(context, currentScope);
       llvm::Value *returnValueAddr = resultEntry->getAddress();
