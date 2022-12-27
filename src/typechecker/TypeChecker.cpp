@@ -1125,7 +1125,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     throw SemanticError(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.");
 
   // The base type should be a primitive or struct
-  if (!varType.getBaseType().isPrimitive() && !varType.isBaseType(TY_STRUCT))
+  if (!varType.getBaseType().isPrimitive() && !varType.getBaseType().isOneOf({TY_STRUCT, TY_DYN}))
     throw SemanticError(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here");
 
   // Check if is an imported variable
