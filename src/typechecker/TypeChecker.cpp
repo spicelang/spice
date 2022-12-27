@@ -1278,7 +1278,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     // Build error message
     const std::string functionName = data.isConstructorCall ? CTOR_FUNCTION_NAME : node->functionNameFragments.back();
     ParamList errArgTypes;
-    for (const auto &argType : data.argTypes)
+    for (const SymbolType &argType : data.argTypes)
       errArgTypes.push_back({argType, false});
     const SymbolType dynType(TY_DYN);
     Function f(functionName, nullptr, thisType, returnType, errArgTypes, /*templateTypes=*/{}, node, /*external=*/false);
@@ -1303,6 +1303,11 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
 
   // Get function entry from function object
   SymbolTableEntry *functionEntry = data.callee->entry;
+
+  // Check if down-call
+  const CodeLoc &callLoc = node->codeLoc;
+  const CodeLoc &defLoc = functionEntry->getDeclCodeLoc();
+  data.isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
 
   // Check if the called function has sufficient visibility
   data.isImported = data.calleeParentScope->isImportedBy(rootScope);

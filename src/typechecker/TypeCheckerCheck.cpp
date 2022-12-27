@@ -52,20 +52,18 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     // Substantiate all generic parameter types if necessary and save the generic types to restore them later
     NamedParamList namedParams;
     if (node->hasParams) {
-      const std::vector<SymbolType> newParamTypes = manifestation->getParamTypes();
-      for (size_t i = 0; i < newParamTypes.size(); i++) {
-        // Get param declaration node
-        const DeclStmtNode *paramDecl = node->paramLst()->params()[i];
+      for (DeclStmtNode *param : node->paramLst()->params()) {
+        auto paramType = std::any_cast<SymbolType>(visit(param));
         // Retrieve the symbol table entry for that param
-        SymbolTableEntry *paramEntry = currentScope->lookup(paramDecl->varName);
+        SymbolTableEntry *paramEntry = currentScope->lookup(param->varName);
         assert(paramEntry != nullptr);
         // Skip non-generic params
         if (!paramEntry->getType().is(TY_GENERIC))
           continue;
         // Save the old type
-        namedParams.push_back({paramDecl->varName, paramEntry->getType()});
+        namedParams.push_back({param->varName, paramEntry->getType()});
         // Substantiate the type
-        paramEntry->updateType(newParamTypes[i], true);
+        paramEntry->updateType(paramType, true);
       }
     }
 
@@ -118,20 +116,18 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     // Substantiate all generic parameter types if necessary and save the generic types to restore them later
     NamedParamList namedParams;
     if (node->hasParams) {
-      const std::vector<SymbolType> newParamTypes = manifestation->getParamTypes();
-      for (size_t i = 0; i < newParamTypes.size(); i++) {
-        // Get param declaration node
-        const DeclStmtNode *paramDecl = node->paramLst()->params()[i];
+      for (DeclStmtNode *param : node->paramLst()->params()) {
+        auto paramType = std::any_cast<SymbolType>(visit(param));
         // Retrieve the symbol table entry for that param
-        SymbolTableEntry *paramEntry = currentScope->lookup(paramDecl->varName);
+        SymbolTableEntry *paramEntry = currentScope->lookup(param->varName);
         assert(paramEntry != nullptr);
         // Skip non-generic params
         if (!paramEntry->getType().is(TY_GENERIC))
           continue;
         // Save the old type
-        namedParams.push_back({paramDecl->varName, paramEntry->getType()});
+        namedParams.push_back({param->varName, paramEntry->getType()});
         // Substantiate the type
-        paramEntry->updateType(newParamTypes[i], true);
+        paramEntry->updateType(paramType, true);
       }
     }
 
