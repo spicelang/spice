@@ -1457,6 +1457,7 @@ public:
     bool isConstructorCall = false;
     bool isMethodCall = false;
     bool isImported = false;
+    bool isDownCall = false;
     SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
     std::vector<SymbolType> argTypes;
     Function *callee = nullptr;

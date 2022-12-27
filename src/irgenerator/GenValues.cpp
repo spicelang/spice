@@ -147,8 +147,11 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
     }
   }
 
-  // Function is not defined in the current module -> declare it, will be linked in
-  if (data.isImported) {
+  // Function is not defined in the current module -> declare it
+  // This can happen when:
+  // 1) If this is an imported source file
+  // 2) This is a down-call to a function, which is defined later in the same file
+  if (data.isImported || data.isDownCall) {
     // Get returnType
     llvm::Type *returnType = builder.getVoidTy();
     if (!spiceFunc->returnType.is(TY_DYN))
