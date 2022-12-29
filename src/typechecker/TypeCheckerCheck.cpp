@@ -23,13 +23,15 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
 
 std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
   node->resizeToNumberOfManifestations(node->fctManifestations.size());
-  manIdx = 0; // Reset the symbolTypeIndex
+  manIdx = 0; // Reset the manifestation index
 
   // Get all manifestations for this function definition
   for (Function *manifestation : node->fctManifestations) {
     // Skip non-substantiated or already checked functions
-    if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked)
+    if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked) {
+      manIdx++; // Increase the manifestation index
       continue;
+    }
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
@@ -84,23 +86,24 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     // Do not type-check this manifestation again
     manifestation->alreadyTypeChecked = true;
 
-    // Increase the symbolTypeIndex
-    manIdx++;
+    manIdx++; // Increase the manifestation index
   }
-  manIdx = 0; // Reset the symbolTypeIndex
+  manIdx = 0; // Reset the manifestation index
 
   return nullptr;
 }
 
 std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
   node->resizeToNumberOfManifestations(node->procManifestations.size());
-  manIdx = 0; // Reset the symbolTypeIndex
+  manIdx = 0; // Reset the manifestation index
 
   // Get all manifestations for this procedure definition
   for (auto &manifestation : node->procManifestations) {
     // Skip non-substantiated or already checked procedures
-    if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked)
+    if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked) {
+      manIdx++; // Increase the manifestation index
       continue;
+    }
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
@@ -148,10 +151,9 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     // Do not type-check this manifestation again
     manifestation->alreadyTypeChecked = true;
 
-    // Increase the symbolTypeIndex
-    manIdx++;
+    manIdx++; // Increase the manifestation index
   }
-  manIdx = 0; // Reset the symbolTypeIndex
+  manIdx = 0; // Reset the manifestation index
 
   return nullptr;
 }

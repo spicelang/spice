@@ -130,14 +130,18 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated
-    if (!manifestation->isFullySubstantiated())
+    if (!manifestation->isFullySubstantiated()) {
+      manIdx++; // Increment symbolTypeIndex
       continue;
+    }
 
     // Do not generate this manifestation if it is private and used by nobody
     const SymbolSpecifiers &specifiers = manifestation->entry->specifiers;
     const bool isPublic = specifiers.isPublic();
-    if (!isPublic && !manifestation->used)
+    if (!isPublic && !manifestation->used) {
+      manIdx++; // Increment symbolTypeIndex
       continue;
+    }
 
     std::vector<std::string> paramNames;
     std::vector<SymbolTableEntry *> paramSymbols;
@@ -291,14 +295,18 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated
-    if (!manifestation->isFullySubstantiated())
+    if (!manifestation->isFullySubstantiated()) {
+      manIdx++; // Increment symbolTypeIndex
       continue;
+    }
 
     // Do not generate this manifestation if it is private and used by nobody
     const SymbolSpecifiers &specifiers = manifestation->entry->specifiers;
     const bool isPublic = specifiers.isPublic();
-    if (!isPublic && !manifestation->used)
+    if (!isPublic && !manifestation->used) {
+      manIdx++; // Increment symbolTypeIndex
       continue;
+    }
 
     std::vector<std::string> paramNames;
     std::vector<SymbolTableEntry *> paramSymbols;
