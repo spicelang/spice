@@ -254,8 +254,8 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
   assert(lhsEntry != nullptr);
 
   // Get symbol types of left and right side
-  const SymbolType lhsSType = lhsEntry->getType();
-  const SymbolType rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
+  const SymbolType &lhsSType = lhsEntry->getType();
+  const SymbolType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
 
   // Deduce some information about the assignment
   const bool isRefAssign = lhsSType.isReference();

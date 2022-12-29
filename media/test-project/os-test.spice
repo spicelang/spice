@@ -1,15 +1,25 @@
-f<int> getAge() {
-    dyn i;
-    if (true) {
-        result = 20;
-        return;
-    } else if (i = false) {
-        result = 19;
-    }
-    return 15;
-}
+/*f<double> calledFunction(int mandatoryArg, dyn optionalArg = true) {
+    printf("Mandatory: %d\n", mandatoryArg);
+    printf("Optional: %d\n", optionalArg);
+    return 0.1;
+}*/
+
+/*f<double> calledFunction(string testString) {
+    printf("String: %s", testString);
+    return 0.3;
+}*/
+
+/*f<int> main() {
+    dyn res = calledFunction(1, false);
+    printf("Result: %f\n", res);
+    //calledFunction("test");
+}*/
 
 f<int> main() {
-    int age = getAge();
-    printf("The age is: %d", age);
+    bool i = true;
+    if (i) {
+        while (i) {
+
+        }
+    }
 }

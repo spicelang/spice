@@ -643,6 +643,13 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
       break;
     }
     case PrefixUnaryExprNode::OP_ADDRESS_OF: {
+      // If the address is unknown, allocate memory to save the value or constant
+      if (!lhs.ptr) {
+        llvm::Value *value = lhs.value ?: lhs.constant;
+        lhs.ptr = insertAlloca(value->getType());
+        builder.CreateStore(value, lhs.ptr);
+      }
+
       // Execute operation
       lhs.value = lhs.ptr;
       lhs.ptr = insertAlloca(lhs.value->getType());

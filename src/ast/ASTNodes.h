@@ -40,6 +40,14 @@ public:
     for (const ASTNode *child : children)
       delete child;
   }
+  virtual void deleteRecursive(const ASTNode *anchorNode = nullptr) {
+    for (ASTNode *child : children) {
+      if (child != anchorNode)
+        child->deleteRecursive(anchorNode);
+    }
+    children.clear();
+    delete this;
+  }
 
   // Friend classes
   friend class ASTBuilder;
@@ -80,6 +88,33 @@ public:
 
   inline void reserveChildren(size_t numberOfChildren) { children.reserve(numberOfChildren); }
 
+  void replaceInParent(ASTNode *replacementNode) {
+    assert(parent != nullptr);
+    for (size_t i = 0; i < parent->children.size(); i++) {
+      if (parent->children.at(i) == this) {
+        // Replace in children vector
+        parent->children.at(i) = replacementNode;
+        // De-allocate subtree without destroying the replacement node
+        deleteRecursive(replacementNode);
+        break;
+      }
+    }
+  }
+
+  void removeFromParent() {
+    assert(parent != nullptr);
+    for (size_t i = 0; i < parent->children.size(); i++) {
+      ASTNode *child = parent->children.at(i);
+      if (child == this) {
+        // Remove from children vector
+        parent->children.erase(parent->children.begin() + (long)i);
+        // De-allocate subtree
+        delete this;
+        break;
+      }
+    }
+  }
+
   virtual void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Reserve children
     for (ASTNode *child : children)
@@ -90,7 +125,7 @@ public:
     customItemsInitialization(manifestationCount);
   }
 
-  virtual void customItemsInitialization(size_t) { /* Noop */}
+  virtual void customItemsInitialization(size_t) {} // Noop
 
   SymbolType setEvaluatedSymbolType(const SymbolType &symbolType, const size_t idx) {
     symbolTypes.insert(symbolTypes.begin() + static_cast<long>(idx), symbolType);
@@ -142,11 +177,12 @@ public:
   bool unreachable = false;
 
 protected:
-  // Private members
+  // Protected members
   CompileTimeValue compileTimeValue = {};
   std::string compileTimeStringValue;
 
 private:
+  // Private members
   bool hasDirectCompileTimeValue = false;
 };
 
@@ -815,9 +851,7 @@ public:
 
   // Util methods
   [[nodiscard]] bool isParam() const { return dynamic_cast<ParamLstNode *>(parent); }
-  void customItemsInitialization(size_t manifestationCount) override {
-    entries.resize(manifestationCount, nullptr);
-  }
+  void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount, nullptr); }
 
   // Public members
   std::string varName;
@@ -1475,9 +1509,7 @@ public:
   [[nodiscard]] ArgLstNode *argLst() const { return getChild<ArgLstNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override {
-    data.resize(manifestationCount);
-  }
+  void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
 
   // Public members
   std::string fqFunctionName;
@@ -1520,9 +1552,7 @@ public:
   [[nodiscard]] ArgLstNode *fieldLst() const { return getChild<ArgLstNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override {
-    instantiatedStructs.resize(manifestationCount, nullptr);
-  }
+  void customItemsInitialization(size_t manifestationCount) override { instantiatedStructs.resize(manifestationCount, nullptr); }
 
   // Public members
   std::string fqStructName;
@@ -1614,9 +1644,7 @@ public:
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override {
-    customTypes.resize(manifestationCount, nullptr);
-  }
+  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount, nullptr); }
 
   // Public members
   std::string fqTypeName;
