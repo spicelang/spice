@@ -12,39 +12,39 @@ const unsigned short BIT_INDEX_CONST = 2;
 const unsigned short BIT_INDEX_INLINE = 3;
 const unsigned short BIT_INDEX_HEAP = 4;
 
-// Defaults: Const: 0, Signed: 1, Public: 0
+// Defaults: Heap: 0, Const: 0, Signed: 1, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_DOUBLE = 0b0010;
-// Defaults: Const: 0, Signed: 1, Public: 0
+// Defaults: Heap: 0, Const: 0, Signed: 1, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_INT = 0b0010;
-// Defaults: Const: 0, Signed: 1, Public: 0
+// Defaults: Heap: 0, Const: 0, Signed: 1, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_SHORT = 0b0010;
-// Defaults: Const: 0, Signed: 1, Public: 0
+// Defaults: Heap: 0, Const: 0, Signed: 1, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_LONG = 0b0010;
-// Defaults: Const: 0, Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_BYTE = 0b0000;
-// Defaults: Const: 0, Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_CHAR = 0b0000;
-// Defaults: Const: 0, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_STRING = 0b0000;
-// Defaults: Const: 0, Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_STRING = 0b0100;
+// Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_BOOL = 0b0000;
-// Defaults: Const: 0, Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_PTR = 0b0000;
-// Defaults: Const: 0, Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_ARRAY = 0b0000;
-// Defaults: Const: 1, Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_GENERIC = 0b0000;
-// Defaults: Const: 0, Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_STRUCT = 0b0000;
-// Defaults: Const: 0; Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 0; Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_INTERFACE = 0b0000;
-// Defaults: Const: 1, Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_ENUM = 0b0100;
-// Defaults: Const: 1, Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_FUNCTION = 0b0100;
-// Defaults: Const: 1, Signed: 0, Public: 0
+// Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_PROCEDURE = 0b0100;
-// Defaults: Const: 1, Signed: 0, Public: 1
+// Defaults: Heap: 0, Const: 1, Signed: 0, Public: 1
 const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b0101;
 
 class SymbolSpecifiers {
