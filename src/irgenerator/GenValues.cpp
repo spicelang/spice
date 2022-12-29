@@ -77,9 +77,8 @@ std::any IRGenerator::visitConstant(const ConstantNode *node) {
 
   // Value is a string constant
   if (node->type == ConstantNode::TYPE_STRING) {
-    std::string stringValue(compileTimeValue.stringValue);
     const std::string globalName = getUnusedGlobalName(ANON_GLOBAL_STRING_NAME);
-    llvm::Constant *constString = builder.CreateGlobalStringPtr(stringValue, globalName, 0, module);
+    llvm::Constant *constString = builder.CreateGlobalStringPtr(compileTimeValue.stringValue, globalName, 0, module);
     return constString;
   }
 

@@ -1540,7 +1540,7 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
       constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t5 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
                t5->getSymbol()->getType() == SpiceParser::STRING_LIT) {
-      std::string stringValue = parseString(ctx->STRING_LIT()->toString());
+      constantNode->compileTimeStringValue = parseString(ctx->STRING_LIT()->toString());
 
       constantNode->type = ConstantNode::TYPE_STRING;
       constantNode->compileTimeValue.stringValue = constantNode->compileTimeStringValue.c_str();
