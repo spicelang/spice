@@ -1,5 +1,5 @@
 type UnusedInterface interface {
-    f<int> testFunction()
+    f<int> testFunction();
 }
 
 f<int> main() {}

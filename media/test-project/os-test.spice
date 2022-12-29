@@ -1,17 +1,8 @@
-f<double> calledFunction(int mandatoryArg, dyn optionalArg = true) {
-    printf("Mandatory: %d\n", mandatoryArg);
-    printf("Optional: %d\n", optionalArg);
-    return 0.1;
-}
-
-f<double> calledFunction(string testString) {
-    printf("String: %s", testString);
-    return 0.3;
+type UnusedStruct struct {
+    double f1
+    int* f2
 }
 
 f<int> main() {
-    dyn res = calledFunction(1, false);
-    //res = calledFunction(1);
-    printf("Result: %f\n", res);
-    calledFunction("test");
+    printf("%p", UnusedStruct{}.f2);
 }
