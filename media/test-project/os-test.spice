@@ -14,12 +14,3 @@
     printf("Result: %f\n", res);
     //calledFunction("test");
 }*/
-
-f<int> main() {
-    bool i = true;
-    if (i) {
-        while (i) {
-
-        }
-    }
-}
