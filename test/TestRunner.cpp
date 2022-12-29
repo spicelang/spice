@@ -176,25 +176,25 @@ class ParserTests : public testing::TestWithParam<TestCase> {};
 TEST_P(ParserTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, ParserTests, testing::ValuesIn(TestUtil::collectTestCases("parser", false)), TestUtil::NameResolver());
 
-class SymbolTableBuilderTests : public testing::TestWithParam<TestCase> {};
+/*class SymbolTableBuilderTests : public testing::TestWithParam<TestCase> {};
 TEST_P(SymbolTableBuilderTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, SymbolTableBuilderTests, testing::ValuesIn(TestUtil::collectTestCases("symboltablebuilder", true)),
-                         TestUtil::NameResolver());
+                         TestUtil::NameResolver());*/
 
 class TypeCheckerTests : public testing::TestWithParam<TestCase> {};
 TEST_P(TypeCheckerTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, TypeCheckerTests, testing::ValuesIn(TestUtil::collectTestCases("typechecker", true)),
                          TestUtil::NameResolver());
 
-class BorrowCheckerTests : public testing::TestWithParam<TestCase> {};
+/*class BorrowCheckerTests : public testing::TestWithParam<TestCase> {};
 TEST_P(BorrowCheckerTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, BorrowCheckerTests, testing::ValuesIn(TestUtil::collectTestCases("borrowchecker", true)),
-                         TestUtil::NameResolver());
+                         TestUtil::NameResolver());*/
 
-class EscapeAnalyzerTests : public testing::TestWithParam<TestCase> {};
+/*class EscapeAnalyzerTests : public testing::TestWithParam<TestCase> {};
 TEST_P(EscapeAnalyzerTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, EscapeAnalyzerTests, testing::ValuesIn(TestUtil::collectTestCases("borrowchecker", true)),
-                         TestUtil::NameResolver());
+                         TestUtil::NameResolver());*/
 
 class IRGeneratorTests : public testing::TestWithParam<TestCase> {};
 TEST_P(IRGeneratorTests, ) { execTestCase(GetParam()); }

@@ -1,5 +1,5 @@
-[Error|Semantic] ./test-files/typechecker/while-loops/error-while-condition-bool/source.spice:2:11:
-Condition must be bool: While loop condition must be of type bool
+[Error|Semantic] ./test-files/typechecker/do-while-loops/error-do-while-condition-bool/source.spice:4:12:
+Condition must be bool: Do-While loop condition must be of type bool
 
-2  while 5.6 {
-         ^^^
+4  } while(5.6);
+          ^^^^^
