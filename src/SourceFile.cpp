@@ -398,6 +398,9 @@ void SourceFile::runObjectEmitter() {
     objectEmitter.dumpAsm();
   } // GCOV_EXCL_STOP
 
+  // Add object file to linker objects
+  resourceManager.linker.addObjectFilePath(objectFilePath);
+
   timer.stop();
   printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, compilerOutput.times.objectEmitter, true);
 }

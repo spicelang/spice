@@ -24,20 +24,22 @@ void LinkerInterface::link() const {
     throw std::runtime_error("Internal compiler error: Output path for the linker was not set"); // GCOV_EXCL_LINE
 
   // Build the linker command
-  std::string linkerCommand = LINKER_EXECUTABLE_NAME;
+  std::stringstream linkerCommandBuilder;
+  linkerCommandBuilder << LINKER_EXECUTABLE_NAME;
   if (threadFactory.isUsingThreads())
-    linkerCommand += " -pthread";
+    linkerCommandBuilder << " -pthread";
   for (const auto &linkerFlag : linkerFlags)
-    linkerCommand += " " + linkerFlag;
-  linkerCommand += " -o " + outputPath;
+    linkerCommandBuilder << " " + linkerFlag;
+  linkerCommandBuilder << " -o " + outputPath;
   for (const auto &objectFilePath : objectFilePaths)
-    linkerCommand += " " + objectFilePath;
+    linkerCommandBuilder << " " + objectFilePath;
 
   // Print status message
   if (cliOptions.printDebugOutput)
     std::cout << "\nEmitting executable to path: " << outputPath << "\n"; // GCOV_EXCL_LINE
 
   // Call the linker
+  const std::string linkerCommand = linkerCommandBuilder.str();
   ExecResult result = FileUtil::exec(linkerCommand);
 
   // Check for linker error
