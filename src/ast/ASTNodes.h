@@ -120,7 +120,7 @@ public:
     for (ASTNode *child : children)
       child->resizeToNumberOfManifestations(manifestationCount);
     // Reserve this node
-    symbolTypes.resize(manifestationCount, SymbolType(TY_DYN));
+    symbolTypes.resize(manifestationCount, SymbolType(TY_INVALID));
     // Do custom work
     customItemsInitialization(manifestationCount);
   }

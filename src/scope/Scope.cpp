@@ -179,7 +179,7 @@ size_t Scope::getFieldCount() const {
   size_t fieldCount = 0;
   for (const auto &symbol : symbolTable.symbols) {
     const SymbolType &symbolType = symbol.second.getType();
-    if (symbolType.isPrimitive() || symbolType.isOneOf({TY_STRUCT, TY_INTERFACE}))
+    if (!symbolType.isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
       fieldCount++;
   }
   return fieldCount;

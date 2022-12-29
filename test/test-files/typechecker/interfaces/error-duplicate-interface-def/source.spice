@@ -3,7 +3,7 @@ type Person interface {
 }
 
 type Person interface {
-    p print()
+    p print();
 }
 
 f<int> main() {}

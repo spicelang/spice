@@ -162,9 +162,6 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     const size_t fieldCount = structScope->getFieldCount();
     auto structType = reinterpret_cast<llvm::StructType *>(structEntry->getType().toLLVMType(context, structScope));
 
-    // Allocate space for the struct in memory
-    llvm::Value *structAddress = insertAlloca(structType);
-
     // Get default values for all fields of the struct
     std::vector<llvm::Constant *> fieldConstants;
     fieldConstants.reserve(fieldCount);
@@ -175,10 +172,6 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
 
       // Retrieve default field value
       llvm::Constant *defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getType());
-
-      // Store the default value at the correct offset
-      llvm::Value *fieldAddress = builder.CreateStructGEP(structType, structAddress, i);
-      builder.CreateStore(defaultFieldValue, fieldAddress);
 
       fieldConstants.push_back(defaultFieldValue);
     }

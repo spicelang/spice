@@ -243,8 +243,8 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
 
 std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *node) {
   // Return immediately if the initialization is empty
-  if (!node->fieldLst())
-    return ExprResult{.node = node};
+  //if (!node->fieldLst())
+  //  return ExprResult{.node = node};
 
   // Get struct object
   const Struct *spiceStruct = node->instantiatedStructs.at(manIdx);
@@ -254,6 +254,11 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   // Get struct type
   llvm::StructType *structType = spiceStruct->entry->getStructLLVMType();
   assert(structType != nullptr);
+
+  if (!node->fieldLst()) {
+    llvm::Constant *constantStruct = getDefaultValueForSymbolType(spiceStruct->entry->getType());
+    return ExprResult{.constant = constantStruct};
+  }
 
   // Visit struct field values
   bool canBeConstant = true;

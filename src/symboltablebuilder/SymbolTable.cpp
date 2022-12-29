@@ -40,6 +40,7 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, ASTNode *
   std::string name = "anon." + declNode->codeLoc.toString();
   insert(name, SymbolSpecifiers::of(type), declNode);
   SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc);
+  anonSymbol->updateType(type, false);
   anonSymbol->anonymous = true;
   anonSymbol->used = true;
   return anonSymbol;
