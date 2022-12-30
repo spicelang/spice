@@ -1022,7 +1022,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       Scope *structScope = lhsBaseTy.getStructBodyScope();
 
       // Get accessed field
-      SymbolTableEntry *memberEntry = structScope->lookupStrict(node->identifier[identifierCounter]);
+      SymbolTableEntry *memberEntry = structScope->lookupStrict(node->identifier.at(identifierCounter));
       if (!memberEntry)
         throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE,
                             "Field '" + node->identifier[identifierCounter] + "' not found in struct " + structName);

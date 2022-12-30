@@ -1,8 +1,8 @@
-type UnusedStruct struct {
-    double f1
-    int* f2
+type Test struct {
+    int test
 }
 
 f<int> main() {
-    printf("%p", UnusedStruct{}.f2);
+    Test t = Test{ 12 };
+    printf("Test: %d", t.test);
 }
