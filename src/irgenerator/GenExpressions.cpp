@@ -34,7 +34,6 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       assert(lhs.entry != nullptr);
 
       PtrAndValue result;
-      SymbolTableEntry *lhsEntry = nullptr;
       switch (node->op) {
       case AssignExprNode::OP_PLUS_EQUAL:
         result = conversionManager.getPlusEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
@@ -69,17 +68,16 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       default:
         throw std::runtime_error("Assign op fall-through");
       }
-      assert(lhsEntry != nullptr);
+      assert(lhs.entry != nullptr);
 
-      if (result.ptr) {
-        // Check if the operation updated the address
-        lhsEntry->updateAddress(result.ptr);
-      } else {
+      if (result.ptr) { // The operation allocated more memory
+        lhs.entry->updateAddress(result.ptr);
+      } else { // The operation only updated the value
         // Store the result
-        result.ptr = lhsEntry->getAddress();
-        builder.CreateStore(result.value, result.ptr, lhsEntry->isVolatile);
+        lhs.value = result.value;
+        builder.CreateStore(lhs.value, lhs.ptr, lhs.entry->isVolatile);
       }
-      return ExprResult{.ptr = result.ptr, .value = result.value, .entry = lhsEntry};
+      return ExprResult{.ptr = lhs.ptr, .value = lhs.value, .entry = lhs.entry};
     }
   }
 
@@ -428,7 +426,7 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
     MultiplicativeExprNode *rhsNode = node->operands()[operandIndex++];
     assert(rhsNode != nullptr);
     const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
-    auto rhs = std::any_cast<ExprResult>(rhsNode);
+    auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
 
     // Retrieve the result, based on the exact operator
     PtrAndValue result = {nullptr, nullptr};
@@ -480,7 +478,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
     CastExprNode *rhsNode = node->operands()[operandIndex++];
     assert(rhsNode != nullptr);
     const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
-    auto rhs = std::any_cast<ExprResult>(rhsNode);
+    auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
 
     // Retrieve the result, based on the exact operator
     PtrAndValue result = {nullptr, nullptr};
@@ -706,6 +704,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       AssignExprNode *indexExpr = node->assignExpr()[subscriptCounter++];
       llvm::Value *indexValue = resolveValue(indexExpr);
 
+      // Come up with the address
       if (lhsSTy.isArray() && lhsSTy.getArraySize() > 0) { // Array
         // Calculate address of array item
         llvm::Value *indices[2] = {builder.getInt32(0), indexValue};
@@ -717,6 +716,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
         lhs.ptr = builder.CreateInBoundsGEP(lhsTy, lhs.ptr, indexValue);
       }
 
+      // Reset the value
       lhs.value = nullptr;
       break;
     }
@@ -724,6 +724,9 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       // Auto de-reference pointer
       autoDeReferencePtr(lhs.ptr, lhsSTy, currentScope);
       assert(lhsSTy.is(TY_STRUCT));
+
+      // Get the address of the struct instance
+      lhs.ptr = resolveAddress(lhs, lhs.entry && lhs.entry->isVolatile);
 
       // Retrieve struct scope
       const std::string &fieldName = node->identifier.at(memberAccessCounter++);
@@ -734,8 +737,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
       lhs.ptr = builder.CreateInBoundsGEP(lhsSTy.toLLVMType(context, currentScope), lhs.ptr, indices);
 
-      // Set the new symbol type and the value
-      lhsSTy = fieldEntry->getType();
+      // Reset the value
       lhs.value = nullptr;
       break;
     }

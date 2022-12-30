@@ -42,10 +42,10 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
     assert(assignResult.ptr == varEntry->getAddress());
     varAddress = assignResult.entry->getAddress();
   } else { // Default value
-    // Retrieve default value for lhs symbol type
-    llvm::Value *defaultValue = getDefaultValueForSymbolType(varSymbolType);
-    // Allocate memory and store the default value there
+    // Allocate memory
     varAddress = insertAlloca(varTy);
+    // Retrieve default value for lhs symbol type and store it
+    llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);
     builder.CreateStore(defaultValue, varAddress);
     // Update address in symbol table
     varEntry->updateAddress(varAddress);

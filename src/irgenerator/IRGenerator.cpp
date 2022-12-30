@@ -181,15 +181,21 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
   throw std::runtime_error("Internal compiler error: Cannot determine default value for symbol type"); // GCOV_EXCL_LINE
 }
 
-llvm::BasicBlock *IRGenerator::createBlock(const std::string &blockName, llvm::Function *parentFct /*=nullptr*/) {
+llvm::BasicBlock *IRGenerator::createBlock(const std::string &blockName) {
   // Create block
-  llvm::BasicBlock *block = llvm::BasicBlock::Create(context, blockName);
+  return llvm::BasicBlock::Create(context, blockName);
+}
+
+void IRGenerator::switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct /*=nullptr*/) {
+  assert(block->getParent() == nullptr); // Ensure that the block was not added to a function already
   // If no parent function were passed, use the current function
   if (!parentFct)
     parentFct = builder.GetInsertBlock()->getParent();
-  // Append to current function
+  // Append block to current function
   parentFct->getBasicBlockList().push_back(block);
-  return block;
+  // Set insert point to the block
+  builder.SetInsertPoint(block);
+  blockAlreadyTerminated = false;
 }
 
 void IRGenerator::insertJump(llvm::BasicBlock *targetBlock) {
@@ -204,11 +210,6 @@ void IRGenerator::insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueB
     return;
   builder.CreateCondBr(condition, trueBlock, falseBlock);
   blockAlreadyTerminated = true;
-}
-
-void IRGenerator::switchToBlock(llvm::BasicBlock *block) {
-  builder.SetInsertPoint(block);
-  blockAlreadyTerminated = false;
 }
 
 void IRGenerator::verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) const {

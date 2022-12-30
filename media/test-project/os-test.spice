@@ -1,8 +1,7 @@
-type Test struct {
-    int test
-}
-
 f<int> main() {
-    Test t = Test{ 12 };
-    printf("Test: %d", t.test);
+    int[10] a;
+    for int i = 0; i < len(a); i++ {
+        a[i] = 1;
+    }
+    printf("Cell [3]: %d", a[3]);
 }
