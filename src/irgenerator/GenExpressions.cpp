@@ -722,16 +722,20 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
       // Auto de-reference pointer
-      while (lhsSTy.isPointer()) {
-        lhs.ptr = builder.CreateLoad(lhsTy, lhs.ptr);
-        lhsSTy = lhsSTy.getContainedTy();
-        lhsTy = lhsSTy.toLLVMType(context, currentScope);
-      }
+      autoDeReferencePtr(lhs.ptr, lhsSTy, currentScope);
+      assert(lhsSTy.is(TY_STRUCT));
 
-      // ToDo
+      // Retrieve struct scope
+      const std::string &fieldName = node->identifier.at(memberAccessCounter++);
+      Scope *structScope = lhsSTy.getStructBodyScope();
+      SymbolTableEntry *fieldEntry = structScope->lookupStrict(fieldName);
 
-      // Visit identifier after the dot
-      //lhs.ptr = resolveAddress(rhs);
+      // Get address of the field in the struct instance
+      llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
+      lhs.ptr = builder.CreateInBoundsGEP(lhsSTy.toLLVMType(context, currentScope), lhs.ptr, indices);
+
+      // Set the new symbol type and the value
+      lhsSTy = fieldEntry->getType();
       lhs.value = nullptr;
       break;
     }

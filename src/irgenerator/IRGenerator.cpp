@@ -308,7 +308,7 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
   return newAddress;
 }
 
-void IRGenerator::autoDeReferencePtr(llvm::Value *ptr, SymbolType symbolType, Scope *accessScope) const {
+void IRGenerator::autoDeReferencePtr(llvm::Value *ptr, SymbolType &symbolType, Scope *accessScope) const {
   while (symbolType.isPointer()) {
     ptr = builder.CreateLoad(symbolType.toLLVMType(context, accessScope), ptr);
     symbolType = symbolType.getContainedTy();

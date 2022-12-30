@@ -113,7 +113,8 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
     thisPtr = firstFragmentEntry->getAddress();
 
     // Auto de-reference 'this' pointer
-    autoDeReferencePtr(thisPtr, firstFragmentEntry->getType(), structScope->parent);
+    SymbolType firstFragmentType = firstFragmentEntry->getType();
+    autoDeReferencePtr(thisPtr, firstFragmentType, structScope->parent);
     llvm::Type *structTy = firstFragmentEntry->getType().getBaseType().toLLVMType(context, structScope->parent);
 
     // Traverse through structs - the first fragment is already looked up and the last one is the function name
@@ -129,7 +130,8 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
       thisPtr = builder.CreateInBoundsGEP(structTy, thisPtr, indices);
       // Auto de-reference pointer and get new struct type
-      autoDeReferencePtr(thisPtr, fieldEntry->getType(), structScope->parent);
+      SymbolType fieldEntryType = fieldEntry->getType();
+      autoDeReferencePtr(thisPtr, fieldEntryType, structScope->parent);
       structTy = fieldEntry->getType().getBaseType().toLLVMType(context, structScope->parent);
     }
 
