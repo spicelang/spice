@@ -920,6 +920,9 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   // Visit the right side
   auto [operandType, operandEntry] = std::any_cast<ExprResult>(visit(node->postfixUnaryExpr()));
 
+  // Reverse op queue to process the operator next to the operand first
+  CommonUtil::reverseQueue<std::pair<PrefixUnaryExprNode::PrefixUnaryOp, SymbolType>>(node->opQueue);
+
   // Loop through the op queue
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Check operator

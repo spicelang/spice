@@ -35,7 +35,7 @@ std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
   llvm::Value *argStruct = insertAlloca(argStructTy);
 
   // Fill the struct with the argument values
-  for (int i = 0; i < argStructFieldNames.size(); i++) {
+  for (size_t i = 0; i < argStructFieldNames.size(); i++) {
     llvm::Value *fieldAddress = builder.CreateStructGEP(argStructTy, argStruct, i);
     builder.CreateStore(argStructFieldPointers[i], fieldAddress);
   }
@@ -45,8 +45,8 @@ std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
 
   // Create entry block for thread function
   const std::string codeLine = node->codeLoc.toPrettyLine();
-  llvm::BasicBlock *bEntry = allocaInsertBlock = createBlock("thread.entry." + codeLine, threadFct);
-  switchToBlock(bEntry);
+  llvm::BasicBlock *bEntry = allocaInsertBlock = createBlock("thread.entry." + codeLine);
+  switchToBlock(bEntry, threadFct);
 
   llvm::BasicBlock *allocaInsertBlockBackup = allocaInsertBlock;
   llvm::Instruction *allocaInsertInstBackup = allocaInsertInst;
@@ -54,9 +54,9 @@ std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
 
   // Store function args
   llvm::Value *recArgStructPtr = builder.CreatePointerCast(threadFct->args().begin(), argStructTy->getPointerTo());
-  unsigned int i = 0;
+  size_t i = 0;
   for (const auto &[name, capture] : currentScope->symbolTable.captures) {
-    const std::string argName = argStructFieldNames[i];
+    const std::string argName = argStructFieldNames.at(i);
     llvm::Value *memAddress = builder.CreateStructGEP(argStructTy, recArgStructPtr, i);
     llvm::Type *loadType = capture.capturedEntry->getType().toLLVMType(context, currentScope)->getPointerTo();
     memAddress = builder.CreateLoad(loadType, memAddress);

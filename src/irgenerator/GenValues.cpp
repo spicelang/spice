@@ -244,10 +244,6 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
 }
 
 std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *node) {
-  // Return immediately if the initialization is empty
-  //if (!node->fieldLst())
-  //  return ExprResult{.node = node};
-
   // Get struct object
   const Struct *spiceStruct = node->instantiatedStructs.at(manIdx);
   assert(spiceStruct != nullptr);

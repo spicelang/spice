@@ -98,10 +98,10 @@ public:
 
 private:
   // Private methods
-  llvm::BasicBlock *createBlock(const std::string &blockName, llvm::Function *parentFct = nullptr);
+  llvm::BasicBlock *createBlock(const std::string &blockName);
+  void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
   void insertJump(llvm::BasicBlock *targetBlock);
   void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
-  void switchToBlock(llvm::BasicBlock *block);
   void verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) const;
   void verifyModule(const CodeLoc &codeLoc) const;
   ExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
