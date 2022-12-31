@@ -4,6 +4,8 @@
 
 #include <ast/ASTNodes.h>
 
+namespace spice::compiler {
+
 std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   // Retrieve printf function
   llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
@@ -130,3 +132,5 @@ std::any IRGenerator::visitJoinCall(const JoinCallNode *node) {
   llvm::Value *joinCountValue = builder.getInt32(threadIdPointers.size());
   return ExprResult{.value = joinCountValue};
 }
+
+} // namespace spice::compiler

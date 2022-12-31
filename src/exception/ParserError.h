@@ -6,6 +6,8 @@
 #include <string>
 #include <utility>
 
+namespace spice::compiler {
+
 // Forward declarations
 struct CodeLoc;
 
@@ -29,3 +31,5 @@ private:
   // Private methods
   [[nodiscard]] static std::string getMessagePrefix(ParserErrorType errorType);
 };
+
+} // namespace spice::compiler

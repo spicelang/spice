@@ -4,6 +4,8 @@
 
 #include <vector>
 
+namespace spice::compiler {
+
 // Forward declarations
 class ASTNode;
 
@@ -54,3 +56,5 @@ private:
   // Private members
   std::vector<LifecycleEvent> events;
 };
+
+} // namespace spice::compiler

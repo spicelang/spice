@@ -11,6 +11,8 @@
 
 #include "../../lib/json/json.hpp"
 
+namespace spice::compiler {
+
 // Forward declaration
 class Scope;
 class SymbolType;
@@ -49,3 +51,5 @@ public:
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, fieldTypes, templateTypes, interfaceTypes, genericSubstantiation, used)
 };
+
+} // namespace spice::compiler

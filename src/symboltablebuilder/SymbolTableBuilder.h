@@ -5,6 +5,8 @@
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
 
+namespace spice::compiler {
+
 const char *const MAIN_FUNCTION_NAME = "main";
 const char *const RETURN_VARIABLE_NAME = "result";
 const char *const THIS_VARIABLE_NAME = "this";
@@ -54,3 +56,5 @@ private:
   Scope *currentScope = nullptr;
   bool hasMainFunction = false;
 };
+
+} // namespace spice::compiler

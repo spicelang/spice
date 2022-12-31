@@ -6,6 +6,8 @@
 #include <tuple>
 #include <vector>
 
+namespace spice::compiler {
+
 // Forward declarations
 class SymbolTable;
 
@@ -22,3 +24,5 @@ public:
 private:
   std::vector<std::pair<std::string, SymbolTable *>> fragments;
 };
+
+} // namespace spice::compiler

@@ -2,6 +2,8 @@
 
 #include "ScopePath.h"
 
+namespace spice::compiler {
+
 /**
  * Add a new fragment and the associated symbolTable to the scope path
  *
@@ -59,3 +61,5 @@ std::string ScopePath::getScopePrefix(bool includeLast) const {
  * @return Last scope name
  */
 std::string ScopePath::getLastScopeName() const { return fragments.back().first; }
+
+} // namespace spice::compiler

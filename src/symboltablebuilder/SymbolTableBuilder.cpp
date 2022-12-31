@@ -5,6 +5,8 @@
 #include <SourceFile.h>
 #include <exception/SemanticError.h>
 
+namespace spice::compiler {
+
 SymbolTableBuilder::SymbolTableBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : CompilerPass(resourceManager, sourceFile), rootScope(sourceFile->globalScope.get()) {}
 
@@ -562,3 +564,5 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
 
   return nullptr;
 }
+
+} // namespace spice::compiler

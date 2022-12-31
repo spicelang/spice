@@ -8,6 +8,8 @@
 
 #include <llvm/BinaryFormat/Dwarf.h>
 
+namespace spice::compiler {
+
 void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std::string &sourceFileDir) {
   llvm::Module *module = irGenerator->module;
   llvm::LLVMContext &context = irGenerator->context;
@@ -175,3 +177,5 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const SymbolType &symbo
     return nullptr;
   }
 }
+
+} // namespace spice::compiler

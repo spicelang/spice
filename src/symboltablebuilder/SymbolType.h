@@ -13,6 +13,8 @@
 
 #include "../../lib/json/json.hpp"
 
+namespace spice::compiler {
+
 // Forward declarations
 class SymbolTable;
 class ASTNode;
@@ -178,3 +180,5 @@ public:
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolType, typeChain);
 };
+
+} // namespace spice::compiler

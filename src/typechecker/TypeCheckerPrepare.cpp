@@ -5,6 +5,8 @@
 #include <SourceFile.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
+namespace spice::compiler {
+
 std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   // Mark unreachable statements
   node->returnsOnAllControlPaths();
@@ -518,3 +520,5 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
 
   return nullptr;
 }
+
+} // namespace spice::compiler

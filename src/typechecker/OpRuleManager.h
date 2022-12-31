@@ -10,6 +10,8 @@
 #include <irgenerator/OpRuleConversionManager.h>
 #include <symboltablebuilder/SymbolType.h>
 
+namespace spice::compiler {
+
 // Forward declarations
 class ASTNode;
 class TypeChecker;
@@ -639,3 +641,5 @@ private:
   static SemanticError printErrorMessageUnsafe(const ASTNode *node, const char *name, const SymbolType &lhs,
                                                const SymbolType &rhs);
 };
+
+} // namespace spice::compiler

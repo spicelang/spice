@@ -4,6 +4,8 @@
 
 #include <util/CommonUtil.h>
 
+namespace spice::compiler {
+
 std::string CSTVisualizer::buildRule(antlr4::ParserRuleContext *ctx) {
   std::stringstream result;
 
@@ -56,3 +58,5 @@ std::string CSTVisualizer::getSpaces() const {
 std::string CSTVisualizer::tokenToCodeLoc(const antlr4::Token &token) {
   return "L" + std::to_string(token.getLine()) + "C" + std::to_string(token.getCharPositionInLine());
 }
+
+} // namespace spice::compiler

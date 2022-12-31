@@ -7,6 +7,8 @@
 
 #include <Token.h>
 
+namespace spice::compiler {
+
 /**
  * Util for general simplification of tasks
  */
@@ -27,3 +29,5 @@ public:
     }
   }
 };
+
+} // namespace spice::compiler

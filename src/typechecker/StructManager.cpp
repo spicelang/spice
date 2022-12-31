@@ -7,6 +7,8 @@
 #include <scope/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
+namespace spice::compiler {
+
 Struct *StructManager::insertStruct(Scope *insertScope, const Struct &spiceStruct) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
   insertScope->structs.insert({spiceStruct.declNode->codeLoc.toString(), std::unordered_map<std::string, Struct>()});
@@ -193,3 +195,5 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
 
   return true;
 }
+
+} // namespace spice::compiler

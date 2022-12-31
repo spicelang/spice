@@ -2,6 +2,8 @@
 
 #include "LinkerError.h"
 
+namespace spice::compiler {
+
 /**
  * @param type Type of the error
  * @param message Error message suffix
@@ -32,3 +34,5 @@ std::string LinkerError::getMessagePrefix(LinkerErrorType type) {
   }
   return "Unknown error"; // GCOV_EXCL_LINE
 }
+
+} // namespace spice::compiler

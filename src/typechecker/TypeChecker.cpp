@@ -5,6 +5,8 @@
 #include <SourceFile.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
+namespace spice::compiler {
+
 TypeChecker::TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile, TypeCheckerMode typeCheckerMode)
     : CompilerPass(resourceManager, sourceFile), typeCheckerMode(typeCheckerMode), rootScope(sourceFile->globalScope.get()),
       warnings(sourceFile->compilerOutput.warnings) {}
@@ -1678,3 +1680,5 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
           return symbolType.replaceBaseSubType(manifestation->name);
   return symbolType;
 }
+
+} // namespace spice::compiler

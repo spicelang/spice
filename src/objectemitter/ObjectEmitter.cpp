@@ -7,6 +7,8 @@
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Support/FileSystem.h>
 
+namespace spice::compiler {
+
 void ObjectEmitter::emit() const {
   const std::string &objectFile = sourceFile->objectFilePath;
 
@@ -51,3 +53,5 @@ void ObjectEmitter::dumpAsm() const {
   passManager.run(module);
   llvm::outs().flush();
 }
+
+} // namespace spice::compiler

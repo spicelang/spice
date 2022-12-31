@@ -7,6 +7,8 @@
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeChecker.h>
 
+namespace spice::compiler {
+
 Function *FunctionManager::insertFunction(Scope *insertScope, const Function &baseFunction,
                                           std::vector<Function *> *nodeFunctionList) {
   // Open a new manifestation list for the function definition
@@ -371,3 +373,5 @@ const GenericType *FunctionManager::getGenericTypeByNameFromCandidate(const Func
   }
   return nullptr;
 }
+
+} // namespace spice::compiler

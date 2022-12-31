@@ -4,6 +4,8 @@
 
 #include <ast/ASTNodes.h>
 
+namespace spice::compiler {
+
 std::any AbstractASTVisitor::visit(ASTNode *node) { return node->accept(this); }
 
 std::any AbstractASTVisitor::visitChildren(ASTNode *node) {
@@ -11,3 +13,5 @@ std::any AbstractASTVisitor::visitChildren(ASTNode *node) {
     child->accept(this);
   return {};
 }
+
+} // namespace spice::compiler

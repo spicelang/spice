@@ -5,6 +5,8 @@
 #include <exception>
 #include <string>
 
+namespace spice::compiler {
+
 enum CliErrorType {
   INCOMPLETE_TARGET_TRIPLE,
   INVALID_TARGET_TRIPLE,
@@ -31,3 +33,5 @@ private:
 
   [[nodiscard]] static std::string getMessagePrefix(CliErrorType errorType);
 };
+
+} // namespace spice::compiler

@@ -9,6 +9,8 @@
 #include <ast/ASTNodes.h>
 #include <ast/AbstractASTVisitor.h>
 
+namespace spice::compiler {
+
 /**
  * Visitor for debug purposes (is only executed in the compiler debug mode and when explicitly enabling it via cli flag)
  *
@@ -264,3 +266,5 @@ private:
 
   [[nodiscard]] std::string getSpaces() const;
 };
+
+} // namespace spice::compiler

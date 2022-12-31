@@ -4,6 +4,8 @@
 
 #include <scope/Scope.h>
 
+namespace spice::compiler {
+
 /**
  * Mange the struct and return the mangled string
  *
@@ -132,3 +134,5 @@ std::string Struct::getSignature(const std::string &structName, const std::vecto
   }
   return false;
 }*/
+
+} // namespace spice::compiler

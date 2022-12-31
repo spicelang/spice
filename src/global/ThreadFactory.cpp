@@ -2,6 +2,8 @@
 
 #include "ThreadFactory.h"
 
+namespace spice::compiler {
+
 /**
  * Retrieve the next free function suffix
  *
@@ -15,3 +17,5 @@ int ThreadFactory::getNextFunctionSuffix() { return nextFctSuffix++; }
  * @return Using threads or not
  */
 bool ThreadFactory::isUsingThreads() const { return nextFctSuffix > 0; }
+
+} // namespace spice::compiler

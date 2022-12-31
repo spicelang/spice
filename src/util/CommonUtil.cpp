@@ -2,6 +2,8 @@
 
 #include "CommonUtil.h"
 
+namespace spice::compiler {
+
 /**
  * Search all occurrences of needle in haystack and replace them with the replacement
  *
@@ -38,3 +40,5 @@ std::string CommonUtil::getLastFragment(const std::string &haystack, const std::
 std::string CommonUtil::getPrefix(const std::string &haystack, const std::string &needle) {
   return haystack.substr(0, haystack.find(needle) + needle.length());
 }
+
+} // namespace spice::compiler

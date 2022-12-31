@@ -6,6 +6,8 @@
 
 #include <llvm/IR/DIBuilder.h>
 
+namespace spice::compiler {
+
 // Forward declarations
 class IRGenerator;
 class SymbolTableEntry;
@@ -53,3 +55,5 @@ private:
   // Private methods
   [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
 };
+
+} // namespace spice::compiler

@@ -5,6 +5,8 @@
 
 #include <ast/ASTNodes.h>
 
+namespace spice::compiler {
+
 std::any IRGenerator::visitStmtLst(const StmtLstNode *node) {
   for (const ASTNode *child : node->children) {
     // Check if we can cancel generating instructions for this code branch
@@ -156,3 +158,5 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
 
   return nullptr;
 }
+
+} // namespace spice::compiler

@@ -4,6 +4,8 @@
 
 #include <any>
 
+namespace spice::compiler {
+
 // Forward declarations
 class ASTNode;
 class EntryNode;
@@ -147,3 +149,5 @@ public:
   virtual std::any visitBaseDataType(const BaseDataTypeNode *node);
   virtual std::any visitCustomDataType(const CustomDataTypeNode *node);
 };
+
+} // namespace spice::compiler

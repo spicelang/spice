@@ -8,6 +8,8 @@
 
 #include <util/CommonUtil.h>
 
+namespace spice::compiler {
+
 /**
  * Checks if a certain file exists on the file system
  *
@@ -145,3 +147,5 @@ std::string FileUtil::getSpiceBinDir() {
   return "/usr/local/bin/";
 #endif
 }
+
+} // namespace spice::compiler

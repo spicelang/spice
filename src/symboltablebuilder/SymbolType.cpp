@@ -10,6 +10,8 @@
 #include <scope/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 
+namespace spice::compiler {
+
 /**
  * Get the pointer type of the current type as a new type
  *
@@ -383,3 +385,5 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
   }
   return "unknown"; // GCOV_EXCL_LINE
 }
+
+} // namespace spice::compiler

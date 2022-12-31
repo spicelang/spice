@@ -8,6 +8,8 @@
 #include <irgenerator/IRGenerator.h>
 #include <scope/Scope.h>
 
+namespace spice::compiler {
+
 OpRuleConversionManager::OpRuleConversionManager(GlobalResourceManager &resourceManager, IRGenerator *irGenerator)
     : context(resourceManager.context), builder(resourceManager.builder), irGenerator(irGenerator),
       stdFunctionManager(irGenerator->stdFunctionManager) {}
@@ -1547,3 +1549,5 @@ llvm::Value *OpRuleConversionManager::getCastInst(const SymbolType &lhsSTy, Expr
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
 }
+
+} // namespace spice::compiler

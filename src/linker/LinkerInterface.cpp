@@ -6,8 +6,10 @@
 #include <stdexcept>
 
 #include <exception/LinkerError.h>
+#include <global/ThreadFactory.h>
 #include <util/FileUtil.h>
-#include <util/ThreadFactory.h>
+
+namespace spice::compiler {
 
 const char *const LINKER_EXECUTABLE_NAME = "gcc";
 
@@ -64,3 +66,5 @@ void LinkerInterface::addObjectFilePath(const std::string &objectFilePath) { obj
  * @param linkerFlag Linker flag
  */
 void LinkerInterface::addLinkerFlag(const std::string &flag) { linkerFlags.push_back(flag); }
+
+} // namespace spice::compiler

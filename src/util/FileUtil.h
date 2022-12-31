@@ -4,6 +4,8 @@
 
 #include <string>
 
+namespace spice::compiler {
+
 struct ExecResult {
   std::string output;
   int exitCode;
@@ -32,3 +34,5 @@ public:
   static std::string getStdDir();
   static std::string getSpiceBinDir();
 };
+
+} // namespace spice::compiler

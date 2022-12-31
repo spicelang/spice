@@ -14,6 +14,8 @@
 
 #include "../../lib/json/json.hpp"
 
+namespace spice::compiler {
+
 // Forward declarations
 class Scope;
 class ASTNode;
@@ -63,3 +65,5 @@ private:
   std::stack<llvm::Value *> memAddress;
   Lifecycle lifecycle;
 };
+
+} // namespace spice::compiler

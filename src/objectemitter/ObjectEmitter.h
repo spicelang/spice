@@ -6,6 +6,8 @@
 #include <SourceFile.h>
 #include <ast/ASTVisitor.h>
 
+namespace spice::compiler {
+
 class ObjectEmitter : private CompilerPass {
 public:
   // Constructors
@@ -20,3 +22,5 @@ private:
   // Private members
   llvm::Module &module;
 };
+
+} // namespace spice::compiler

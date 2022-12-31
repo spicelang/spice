@@ -8,6 +8,8 @@
 #include <typechecker/FunctionManager.h>
 #include <typechecker/StructManager.h>
 
+namespace spice::compiler {
+
 // Forward declarations
 class FctDefNode;
 class ProcDefNode;
@@ -105,3 +107,5 @@ private:
   // Private methods
   Scope *searchForScope(const ScopeType &scopeType);
 };
+
+} // namespace spice::compiler

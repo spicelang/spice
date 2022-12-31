@@ -8,6 +8,8 @@
 #include <symboltablebuilder/SymbolSpecifiers.h>
 #include <symboltablebuilder/SymbolType.h>
 
+namespace spice::compiler {
+
 // Forward declarations
 class ASTNode;
 struct CodeLoc;
@@ -68,3 +70,5 @@ public:
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, thisType, returnType, paramList, templateTypes)
 };
+
+} // namespace spice::compiler

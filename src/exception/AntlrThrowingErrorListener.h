@@ -4,6 +4,8 @@
 
 #include <BaseErrorListener.h>
 
+namespace spice::compiler {
+
 enum Mode { LEXER, PARSER };
 
 class AntlrThrowingErrorListener : public antlr4::BaseErrorListener {
@@ -15,3 +17,5 @@ public:
 private:
   Mode mode;
 };
+
+} // namespace spice::compiler

@@ -7,6 +7,8 @@
 #include <global/RuntimeModuleManager.h>
 #include <typechecker/TypeChecker.h>
 
+namespace spice::compiler {
+
 SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs) {
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference
   if (lhs.is(TY_DYN))
@@ -287,3 +289,5 @@ SemanticError OpRuleManager::printErrorMessageUnsafe(const ASTNode *node, const 
           "Cannot apply '" + std::string(name) + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true) +
               " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing."};
 }
+
+} // namespace spice::compiler

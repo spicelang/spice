@@ -5,6 +5,8 @@
 #include <ast/ASTNodes.h>
 #include <util/CodeLoc.h>
 
+namespace spice::compiler {
+
 SemanticError::SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message) {
   errorMessage = "[Error|Semantic] " + node->codeLoc.toPrettyString() + ":\n";
   errorMessage += getMessagePrefix(type) + ": " + message;
@@ -176,3 +178,5 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
   }
   return "Unknown error"; // GCOV_EXCL_LINE
 }
+
+} // namespace spice::compiler

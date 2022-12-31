@@ -4,6 +4,8 @@
 
 #include <unordered_map>
 
+namespace spice::compiler {
+
 // Forward declaration
 class SourceFile;
 class Scope;
@@ -31,3 +33,5 @@ private:
   // Private fields
   std::unordered_map<RuntimeModuleName, SourceFile *> modules;
 };
+
+} // namespace spice::compiler

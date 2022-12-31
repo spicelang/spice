@@ -9,6 +9,8 @@
 #include <exception/ParserError.h>
 #include <util/CommonUtil.h>
 
+namespace spice::compiler {
+
 ASTBuilder::ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile, ASTNode *rootNode,
                        antlr4::ANTLRInputStream *inputStream)
     : CompilerPass(resourceManager, sourceFile), currentNode(rootNode), filePath(sourceFile->filePath), inputStream(inputStream) {
@@ -2003,3 +2005,5 @@ std::string ASTBuilder::getIdentifier(antlr4::tree::TerminalNode *terminal) {
 
   return identifier;
 }
+
+} // namespace spice::compiler

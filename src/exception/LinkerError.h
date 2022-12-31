@@ -4,6 +4,8 @@
 
 #include <string>
 
+namespace spice::compiler {
+
 enum LinkerErrorType {
   LINKER_NOT_FOUND,
   LINKER_ERROR,
@@ -26,3 +28,5 @@ private:
 
   [[nodiscard]] static std::string getMessagePrefix(LinkerErrorType errorType);
 };
+
+} // namespace spice::compiler

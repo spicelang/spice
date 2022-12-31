@@ -8,6 +8,8 @@
 
 #include <ast/ASTNodes.h>
 
+namespace spice::compiler {
+
 SourceFile *RuntimeModuleManager::requestModule(SourceFile *sourceFile, const RuntimeModuleName &moduleName) {
   // Make the module available
   bool available = isModuleAvailable(moduleName);
@@ -56,3 +58,5 @@ bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const Runtime
 
   return true;
 }
+
+} // namespace spice::compiler

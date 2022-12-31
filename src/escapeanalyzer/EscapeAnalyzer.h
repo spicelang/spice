@@ -5,6 +5,8 @@
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
 
+namespace spice::compiler {
+
 class EscapeAnalyzer : private CompilerPass, public ASTVisitor {
 public:
   // Constructor
@@ -13,3 +15,5 @@ public:
 private:
   // Private members
 };
+
+} // namespace spice::compiler

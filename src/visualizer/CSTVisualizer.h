@@ -9,6 +9,8 @@
 
 #include <CompilerPass.h>
 
+namespace spice::compiler {
+
 /**
  * Visitor for debug purposes (is only executed in the compiler debug mode and when explicitly enabling it via cli flag)
  *
@@ -107,3 +109,5 @@ private:
   [[nodiscard]] std::string getSpaces() const;
   [[nodiscard]] static std::string tokenToCodeLoc(const antlr4::Token &token);
 };
+
+} // namespace spice::compiler

@@ -4,6 +4,8 @@
 
 #include <model/Function.h>
 
+namespace spice::compiler {
+
 llvm::StructType *StdFunctionManager::getStrobjType(llvm::LLVMContext &context) {
   std::string structTypeName = "_s__String__charptr_long_long";
   llvm::StructType *structType = llvm::StructType::getTypeByName(context, structTypeName);
@@ -67,3 +69,5 @@ llvm::Function *StdFunctionManager::getProcedure(const char *procName, llvm::Arr
                                                  bool varArg /*=false*/) const {
   return getFunction(procName, builder.getVoidTy(), args, varArg);
 }
+
+} // namespace spice::compiler

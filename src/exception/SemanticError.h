@@ -7,6 +7,8 @@
 
 #include <Token.h>
 
+namespace spice::compiler {
+
 // Forward declarations
 class ASTNode;
 struct CodeLoc;
@@ -105,3 +107,5 @@ private:
   // Private methods
   [[nodiscard]] static std::string getMessagePrefix(SemanticErrorType errorType);
 };
+
+} // namespace spice::compiler

@@ -8,6 +8,8 @@
 #include <functional>
 #include <utility>
 
+namespace spice::compiler {
+
 // Forward declarations
 class ASTNode;
 class ConstantNode;
@@ -112,3 +114,5 @@ private:
   std::string getIdentifier(antlr4::tree::TerminalNode *terminal);
   void saveErrorMessage(ASTNode *node, const antlr4::ParserRuleContext *ctx);
 };
+
+} // namespace spice::compiler

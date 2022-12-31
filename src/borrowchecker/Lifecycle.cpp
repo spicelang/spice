@@ -2,6 +2,8 @@
 
 #include "Lifecycle.h"
 
+namespace spice::compiler {
+
 /**
  * Add an event to the lifecycle
  *
@@ -70,3 +72,5 @@ const LifecycleEvent *Lifecycle::getLastMoveEvent() const {
   }
   return nullptr;
 }
+
+} // namespace spice::compiler

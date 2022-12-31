@@ -5,6 +5,8 @@
 #include <SourceFile.h>
 #include <util/FileUtil.h>
 
+namespace spice::compiler {
+
 bool CacheManager::lookupSourceFile(SourceFile *sourceFile) {
   std::string symbolTableFilePath = cacheDir + FileUtil::DIR_SEPARATOR + sourceFile->cacheKey + ".bson";
   std::string objectFilePath = cacheDir + FileUtil::DIR_SEPARATOR + sourceFile->cacheKey + ".o";
@@ -25,3 +27,5 @@ void CacheManager::cacheSourceFile(const SourceFile */*sourceFile*/) {
 
   // Cache object file
 }
+
+} // namespace spice::compiler

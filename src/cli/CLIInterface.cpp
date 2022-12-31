@@ -9,6 +9,8 @@
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
 
+namespace spice::compiler {
+
 void CLIInterface::createInterface() {
   // Allow positional args
   app.allow_windows_style_options();
@@ -300,3 +302,5 @@ void CLIInterface::runBinary() const {
   if (exitCode != 0)
     throw CliError(NON_ZERO_EXIT_CODE, "Your Spice executable exited with non-zero exit code " + std::to_string(exitCode));
 }
+
+} // namespace spice::compiler

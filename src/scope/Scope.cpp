@@ -6,6 +6,8 @@
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
+namespace spice::compiler {
+
 Scope::~Scope() {
   // Reset fields
   parent = nullptr;
@@ -343,3 +345,5 @@ nlohmann::json Scope::getSymbolTableJSON() const {
 
   return result;
 }
+
+} // namespace spice::compiler
