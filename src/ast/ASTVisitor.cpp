@@ -2,7 +2,7 @@
 
 #include "ASTVisitor.h"
 
-#include <ast/AstNodes.h>
+#include <ast/ASTNodes.h>
 
 namespace spice::compiler {
 
