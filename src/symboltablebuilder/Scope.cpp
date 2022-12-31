@@ -13,9 +13,9 @@ Scope::~Scope() {
   parent = nullptr;
   codeLoc = nullptr;
   // Notify all parents, that the scope is de-allocated now
-  for (Scope *parent : parents) {
-    if (parent)
-      for (auto &child : parent->children)
+  for (Scope *p : parents) {
+    if (p)
+      for (auto &child : p->children)
         if (child.second == this)
           child.second = nullptr;
   }

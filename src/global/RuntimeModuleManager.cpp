@@ -3,10 +3,8 @@
 #include "RuntimeModuleManager.h"
 
 #include <SourceFile.h>
-#include <scope/Scope.h>
+#include <symboltablebuilder/Scope.h>
 #include <util/FileUtil.h>
-
-#include <ast/ASTNodes.h>
 
 namespace spice::compiler {
 

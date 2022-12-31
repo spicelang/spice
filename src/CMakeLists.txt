@@ -47,6 +47,8 @@ set(SOURCES
         # Symbol table builder
         symboltablebuilder/SymbolTableBuilder.cpp
         symboltablebuilder/SymbolTableBuilder.h
+        symboltablebuilder/Scope.cpp
+        symboltablebuilder/Scope.h
         symboltablebuilder/SymbolTable.cpp
         symboltablebuilder/SymbolTable.h
         symboltablebuilder/SymbolTableEntry.cpp
@@ -100,9 +102,6 @@ set(SOURCES
         # Linker
         linker/LinkerInterface.cpp
         linker/LinkerInterface.h
-        # Scope management
-        scope/Scope.cpp
-        scope/Scope.h
         # Model
         model/Function.cpp
         model/Function.h

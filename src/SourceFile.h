@@ -13,7 +13,7 @@
 #include <ast/ASTNodes.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <global/RuntimeModuleManager.h>
-#include <scope/Scope.h>
+#include <symboltablebuilder/Scope.h>
 #include <util/CompilerWarning.h>
 
 #include <llvm/IR/IRBuilder.h>

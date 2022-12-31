@@ -7,7 +7,7 @@
 #include <exception/SemanticError.h>
 #include <irgenerator/StdFunctionManager.h>
 #include <model/Struct.h>
-#include <scope/Scope.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 
 namespace spice::compiler {

@@ -100,7 +100,7 @@ public:
 
 private:
   // Private methods
-  llvm::BasicBlock *createBlock(const std::string &blockName);
+  llvm::BasicBlock *createBlock(const std::string &blockName = "");
   void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
   void insertJump(llvm::BasicBlock *targetBlock);
   void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);

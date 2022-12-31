@@ -19,13 +19,15 @@
 #include <global/GlobalResourceManager.h>
 #include <util/FileUtil.h>
 
+using namespace spice::compiler;
+
 void execTestCase(const TestCase &testCase) {
   // Check if test is disabled
   if (TestUtil::isDisabled(testCase, skipNonGitHubTests))
     GTEST_SKIP();
 
   // Create fake cli options
-  std::string sourceFilePath = testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SOURCE;
+  std::string sourceFilePath = testCase.testPath + spice::compiler::FileUtil::DIR_SEPARATOR + REF_NAME_SOURCE;
   llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
   CliOptions cliOptions = {/* mainSourceFile= */ sourceFilePath,
                            /* targetTriple= */ targetTriple.getTriple(),

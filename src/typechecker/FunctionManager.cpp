@@ -3,7 +3,7 @@
 #include "FunctionManager.h"
 
 #include <ast/ASTNodes.h>
-#include <scope/Scope.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeChecker.h>
 

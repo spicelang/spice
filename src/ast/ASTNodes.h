@@ -11,7 +11,7 @@
 #include <ast/ParallelizableASTVisitor.h>
 #include <model/Function.h>
 #include <model/Struct.h>
-#include <scope/Scope.h>
+#include <symboltablebuilder/Scope.h>
 #include <util/CodeLoc.h>
 
 namespace spice::compiler {
