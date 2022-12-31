@@ -25,7 +25,7 @@ set(SOURCES
         visualizer/CSTVisualizer.cpp
         visualizer/CSTVisualizer.h
         # AST builder
-        ast/AstNodes.cpp
+        ast/ASTNodes.cpp
         ast/ASTNodes.h
         ast/AbstractASTVisitor.cpp
         ast/AbstractASTVisitor.h
