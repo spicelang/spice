@@ -27,16 +27,15 @@ struct CodeLoc;
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, SymbolType type, SymbolTable *symbolTable, SymbolSpecifiers specifiers, ASTNode *declNode,
+  SymbolTableEntry(std::string name, SymbolType type, Scope *scope, SymbolSpecifiers specifiers, ASTNode *declNode,
                    size_t orderIndex, const bool global)
-      : name(std::move(name)), type(std::move(type)), symbolTable(symbolTable), specifiers(specifiers), declNode(declNode),
+      : name(std::move(name)), type(std::move(type)), scope(scope), specifiers(specifiers), declNode(declNode),
         orderIndex(orderIndex), global(global){};
 
   // Public methods
   [[nodiscard]] const SymbolType &getType() const;
   void updateType(const SymbolType &newType, bool overwriteExistingType);
   void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);
-  [[nodiscard]] const ASTNode *getDeclNode() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] llvm::StructType *getStructLLVMType() const;
   void setStructLLVMType(llvm::StructType *newStructType);
@@ -49,7 +48,7 @@ public:
 
   // Public members
   const std::string name;
-  SymbolTable *symbolTable;
+  Scope *scope;
   SymbolSpecifiers specifiers;
   ASTNode *declNode;
   const size_t orderIndex;

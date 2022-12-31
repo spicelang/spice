@@ -18,6 +18,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class SymbolSpecifiers;
+class Scope;
 class SymbolType;
 struct CodeLoc;
 
@@ -29,7 +30,7 @@ struct CodeLoc;
 class SymbolTable {
 public:
   // Constructors
-  explicit SymbolTable(SymbolTable *parent) : parent(parent){};
+  SymbolTable(SymbolTable *parent, Scope *scope) : parent(parent), scope(scope){};
 
   // Friend classes
   friend class Scope;
@@ -49,6 +50,7 @@ public:
 
   // Public members
   SymbolTable *parent;
+  Scope *scope;
   std::unordered_map<std::string, SymbolTableEntry> symbols;
   std::unordered_map<std::string, Capture> captures;
   bool capturingRequired = false;

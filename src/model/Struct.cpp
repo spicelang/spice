@@ -2,7 +2,7 @@
 
 #include "Struct.h"
 
-#include <scope/Scope.h>
+#include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
 

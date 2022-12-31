@@ -1254,7 +1254,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   SymbolType returnType(TY_DYN);
   SymbolType thisType(TY_DYN);
   data.isMethodCall = firstFragmentEntry != nullptr && firstFragmentEntry->getType().isBaseType(TY_STRUCT) &&
-                      firstFragmentEntry->symbolTable->parent;
+                      firstFragmentEntry->scope->symbolTable.parent;
   if (data.isMethodCall) {
     // This is a method call
     data.thisType = firstFragmentEntry->getType();

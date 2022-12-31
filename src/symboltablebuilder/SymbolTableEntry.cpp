@@ -4,6 +4,7 @@
 
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
+#include <symboltablebuilder/Scope.h>
 #include <util/CodeLoc.h>
 
 namespace spice::compiler {
@@ -92,13 +93,17 @@ llvm::Value *SymbolTableEntry::getAddress() const { return memAddress.empty() ? 
  */
 void SymbolTableEntry::updateAddress(llvm::Value *address) {
   assert(address != nullptr);
-  if (!memAddress.empty())
-    memAddress.pop();
-  memAddress.push(address);
+  // Ensure that structs fields get no addresses assigned, as the addresses are meant for the struct instances
+  assert(scope->type != SCOPE_STRUCT && scope->type != SCOPE_INTERFACE);
+  if (memAddress.empty())
+    memAddress.push(address);
+  else
+    memAddress.top() = address;
 }
 
 /**
- * Pushes an address onto the stack. Can be called when entering a nested function to ensure that a valid address is given
+ * Pushes an address onto the stack.
+ * Called when entering a nested function to ensure that a valid address is given, known to that function
  *
  * @param address Address of the symbol in memory
  */
@@ -110,7 +115,10 @@ void SymbolTableEntry::pushAddress(llvm::Value *address) {
 /**
  * Pop an address from the stack. Can be called when leaving a nested function
  */
-void SymbolTableEntry::popAddress() { memAddress.pop(); }
+void SymbolTableEntry::popAddress() {
+  assert(!memAddress.empty());
+  memAddress.pop();
+}
 
 /**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.

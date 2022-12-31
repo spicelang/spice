@@ -11,6 +11,8 @@
 #include "util/CommonUtil.h"
 #include "util/FileUtil.h"
 
+using namespace spice::compiler;
+
 #ifdef OS_UNIX
 #include <cstring> // Required by builds on Linux
 #endif
@@ -33,16 +35,22 @@ std::vector<TestCase> TestUtil::collectTestCases(const std::string &suiteName, b
 
     // Convert them to test cases
     for (const std::string &groupDirName : testGroupDirs) {
-      const std::string groupPath = suitePath + FileUtil::DIR_SEPARATOR + groupDirName;
+      std::stringstream groupPathBuilder;
+      groupPathBuilder << suitePath << FileUtil::DIR_SEPARATOR << groupDirName;
+      const std::string &groupPath = groupPathBuilder.str();
       for (const std::string &caseDirName : TestUtil::getSubdirs(groupPath)) {
-        TestCase tc = {toCamelCase(groupDirName), toCamelCase(caseDirName), groupPath + FileUtil::DIR_SEPARATOR + caseDirName};
+        std::stringstream testPathBuilder;
+        testPathBuilder << groupPath << FileUtil::DIR_SEPARATOR << caseDirName;
+        TestCase tc = {toCamelCase(groupDirName), toCamelCase(caseDirName), testPathBuilder.str()};
         testCases.push_back(tc);
       }
     }
   } else {
     // Collect test cases
     for (const std::string &caseDirName : TestUtil::getSubdirs(suitePath)) {
-      TestCase tc = {toCamelCase(suiteName), toCamelCase(caseDirName), suitePath + FileUtil::DIR_SEPARATOR + caseDirName};
+      std::stringstream testPathBuilder;
+      testPathBuilder << suitePath << FileUtil::DIR_SEPARATOR << caseDirName;
+      TestCase tc = {toCamelCase(suiteName), toCamelCase(caseDirName), testPathBuilder.str()};
       testCases.push_back(tc);
     }
   }

@@ -67,7 +67,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   }
 
   // Create entry block
-  llvm::BasicBlock *bEntry = createBlock("entry");
+  llvm::BasicBlock *bEntry = createBlock();
   switchToBlock(bEntry, fct);
 
   // Reset alloca insert markers to this block
@@ -222,7 +222,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     diGenerator.generateFunctionDebugInfo(func, manifestation);
 
     // Create entry block
-    llvm::BasicBlock *bEntry = createBlock("entry");
+    llvm::BasicBlock *bEntry = createBlock();
     switchToBlock(bEntry, func);
 
     // Reset alloca insert markers to this block
@@ -387,7 +387,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     diGenerator.generateFunctionDebugInfo(proc, manifestation);
 
     // Create entry block
-    llvm::BasicBlock *bEntry = createBlock("entry");
+    llvm::BasicBlock *bEntry = createBlock();
     switchToBlock(bEntry, proc);
 
     // Reset alloca insert markers to this block

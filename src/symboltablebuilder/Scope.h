@@ -93,7 +93,7 @@ public:
   SourceFile *sourceFile;
   std::unordered_map<std::string, Scope *> children;
   const ScopeType type;
-  SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable);
+  SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable, this);
   const CodeLoc *codeLoc = nullptr;
 
 private:

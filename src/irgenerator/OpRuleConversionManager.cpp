@@ -6,7 +6,7 @@
 
 #include <ast/ASTNodes.h>
 #include <irgenerator/IRGenerator.h>
-#include <scope/Scope.h>
+#include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
 

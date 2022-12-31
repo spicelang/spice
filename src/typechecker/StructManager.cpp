@@ -4,7 +4,7 @@
 
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
-#include <scope/Scope.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
