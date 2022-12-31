@@ -7,6 +7,8 @@
 
 #include <llvm/IR/Verifier.h>
 
+namespace spice::compiler {
+
 std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
   diGenerator.setSourceLocation(node);
 
@@ -406,3 +408,5 @@ std::any IRGenerator::visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node
 
   return nullptr;
 }
+
+} // namespace spice::compiler

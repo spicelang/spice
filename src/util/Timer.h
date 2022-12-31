@@ -5,6 +5,8 @@
 #include <chrono>
 #include <iostream>
 
+namespace spice::compiler {
+
 struct Timer {
 public:
   // Constructors
@@ -33,3 +35,5 @@ private:
   std::chrono::time_point<std::chrono::system_clock> timeStart;
   std::chrono::time_point<std::chrono::system_clock> timeStop;
 };
+
+} // namespace spice::compiler

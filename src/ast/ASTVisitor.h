@@ -4,6 +4,8 @@
 
 #include <ast/AbstractASTVisitor.h>
 
+namespace spice::compiler {
+
 class ASTVisitor : public AbstractASTVisitor {
 public:
   // Visitor methods
@@ -74,3 +76,5 @@ public:
   std::any visitBaseDataType(BaseDataTypeNode *node) override;
   std::any visitCustomDataType(CustomDataTypeNode *node) override;
 };
+
+} // namespace spice::compiler

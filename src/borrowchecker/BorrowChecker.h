@@ -5,6 +5,8 @@
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
 
+namespace spice::compiler {
+
 class BorrowChecker : private CompilerPass, public ASTVisitor {
 public:
   // Constructors
@@ -13,3 +15,5 @@ public:
 private:
   // Private members
 };
+
+} // namespace spice::compiler

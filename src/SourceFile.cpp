@@ -23,6 +23,8 @@
 #include <visualizer/ASTVisualizer.h>
 #include <visualizer/CSTVisualizer.h>
 
+namespace spice::compiler {
+
 SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::string &filePath,
                        bool stdFile)
     : resourceManager(resourceManager), tout(resourceManager.tout), name(std::move(name)), filePath(filePath), stdFile(stdFile),
@@ -586,3 +588,5 @@ void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType 
     }
   }
 }
+
+} // namespace spice::compiler

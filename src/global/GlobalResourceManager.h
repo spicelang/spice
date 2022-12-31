@@ -4,8 +4,8 @@
 
 #include <global/CacheManager.h>
 #include <global/RuntimeModuleManager.h>
+#include <global/ThreadFactory.h>
 #include <linker/LinkerInterface.h>
-#include <util/ThreadFactory.h>
 #include <util/Timer.h>
 
 #include <llvm/IR/IRBuilder.h>
@@ -14,6 +14,8 @@
 #include <llvm/Target/TargetMachine.h>
 
 #include "../../lib/thread-pool/thread-pool.hpp"
+
+namespace spice::compiler {
 
 // Forward declarations
 struct CliOptions;
@@ -42,3 +44,5 @@ public:
   BS::synced_stream tout;
   std::mutex objectEmitLock;
 };
+
+} // namespace spice::compiler

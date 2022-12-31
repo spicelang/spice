@@ -2,6 +2,8 @@
 
 #include "Capture.h"
 
+namespace spice::compiler {
+
 /**
  * Retrieve the name of the capture
  *
@@ -32,3 +34,5 @@ void Capture::setCaptureMode(CaptureMode captureMode) {
  * @return Capture as a JSON object
  */
 nlohmann::ordered_json Capture::toJSON() const { return capturedEntry->toJSON(); }
+
+} // namespace spice::compiler

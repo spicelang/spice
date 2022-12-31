@@ -4,6 +4,8 @@
 
 #include <util/CodeLoc.h>
 
+namespace spice::compiler {
+
 /**
  * Constructor: Used in case that the exact code position where the error occurred is unknown
  *
@@ -63,3 +65,5 @@ std::string IRError::getMessagePrefix(IRErrorType type) {
   }
   return "Unknown error"; // GCOV_EXCL_LINE
 }
+
+} // namespace spice::compiler

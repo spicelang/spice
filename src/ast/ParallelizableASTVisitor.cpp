@@ -4,6 +4,8 @@
 
 #include <ast/ASTNodes.h>
 
+namespace spice::compiler {
+
 std::any ParallelizableASTVisitor::visit(const ASTNode *node) { return node->accept(this); }
 
 std::any ParallelizableASTVisitor::visitChildren(const ASTNode *node) {
@@ -143,3 +145,5 @@ std::any ParallelizableASTVisitor::visitDataType(const DataTypeNode *node) { ret
 std::any ParallelizableASTVisitor::visitBaseDataType(const BaseDataTypeNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitCustomDataType(const CustomDataTypeNode *node) { return visitChildren(node); }
+
+} // namespace spice::compiler

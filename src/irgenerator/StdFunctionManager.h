@@ -7,6 +7,8 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
 
+namespace spice::compiler {
+
 class StdFunctionManager {
 public:
   // Constructors
@@ -38,3 +40,5 @@ private:
                               bool varArg = false) const;
   [[nodiscard]] llvm::Function *getProcedure(const char *procName, llvm::ArrayRef<llvm::Type *> args, bool varArg = false) const;
 };
+
+} // namespace spice::compiler

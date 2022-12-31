@@ -6,6 +6,8 @@
 
 #include <utility>
 
+namespace spice::compiler {
+
 CodeLoc::CodeLoc(size_t line, size_t col, std::string sourceFilePath)
     : line(line), col(col), sourceFilePath(std::move(sourceFilePath)) {
   CommonUtil::replaceAll(this->sourceFilePath, "\\", "/");
@@ -38,3 +40,5 @@ std::string CodeLoc::toPrettyString() const {
  * @return Pretty line number
  */
 std::string CodeLoc::toPrettyLine() const { return "L" + std::to_string(line); }
+
+} // namespace spice::compiler

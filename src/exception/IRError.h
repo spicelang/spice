@@ -7,6 +7,8 @@
 
 #include <Token.h>
 
+namespace spice::compiler {
+
 // Forward declarations
 struct CodeLoc;
 
@@ -42,3 +44,5 @@ private:
   // Private methods
   [[nodiscard]] static std::string getMessagePrefix(IRErrorType errorType);
 };
+
+} // namespace spice::compiler

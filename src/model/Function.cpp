@@ -4,6 +4,8 @@
 
 #include <ast/ASTNodes.h>
 
+namespace spice::compiler {
+
 /**
  * Retrieve the parameter types of the current function
  *
@@ -173,3 +175,5 @@ bool Function::isFullySubstantiated() const { return hasSubstantiatedParams() &&
  * @return Declaration code location
  */
 const CodeLoc &Function::getDeclCodeLoc() const { return declNode->codeLoc; }
+
+} // namespace spice::compiler

@@ -7,6 +7,8 @@
 
 #include <Token.h>
 
+namespace spice::compiler {
+
 struct CodeLoc {
 public:
   // Constructors
@@ -23,3 +25,5 @@ public:
   [[nodiscard]] std::string toPrettyString() const;
   [[nodiscard]] std::string toPrettyLine() const;
 };
+
+} // namespace spice::compiler

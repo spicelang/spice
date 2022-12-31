@@ -2,6 +2,8 @@
 
 #pragma once
 
+namespace spice::compiler {
+
 /**
  * Factory class for managing program-wide organized threads and their ids
  */
@@ -19,3 +21,5 @@ private:
   // Members
   int nextFctSuffix = 0;
 };
+
+} // namespace spice::compiler

@@ -14,6 +14,8 @@
 #include <scope/Scope.h>
 #include <util/CodeLoc.h>
 
+namespace spice::compiler {
+
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
  */
@@ -1651,3 +1653,5 @@ public:
   std::vector<std::string> typeNameFragments;
   std::vector<SymbolTableEntry *> customTypes;
 };
+
+} // namespace spice::compiler

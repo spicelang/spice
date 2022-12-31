@@ -8,6 +8,8 @@
 
 #include "../../lib/json/json.hpp"
 
+namespace spice::compiler {
+
 enum CaptureMode { READ_ONLY, READ_WRITE };
 
 class Capture {
@@ -28,3 +30,5 @@ private:
   CaptureMode mode = READ_ONLY;
   std::string name;
 };
+
+} // namespace spice::compiler

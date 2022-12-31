@@ -8,6 +8,8 @@
 
 #include <typechecker/FunctionManager.h>
 
+namespace spice::compiler {
+
 // Forward declarations
 class Struct;
 class Scope;
@@ -32,3 +34,5 @@ private:
   [[nodiscard]] static bool matchTemplateTypes(Struct &candidate, const std::vector<SymbolType> &requestedTemplateTypes,
                                                TypeMapping &typeMapping);
 };
+
+} // namespace spice::compiler

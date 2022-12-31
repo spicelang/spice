@@ -4,6 +4,8 @@
 
 #include <ast/ASTNodes.h>
 
+namespace spice::compiler {
+
 std::any ASTOptimizer::visitThreadDef(ThreadDefNode *node) {
   // Optimize all children first
   visitChildren(node);
@@ -158,3 +160,4 @@ std::any ASTOptimizer::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   return false;
 }
 
+} // namespace spice::compiler

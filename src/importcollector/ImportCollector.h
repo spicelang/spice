@@ -6,6 +6,8 @@
 #include <ast/ASTVisitor.h>
 #include <global/GlobalResourceManager.h>
 
+namespace spice::compiler {
+
 /**
  * Jobs:
  * - Visit the import statements of a source file and register the imported files as dependencies to the current one
@@ -24,3 +26,5 @@ private:
   // Private members
   const CliOptions &cliOptions;
 };
+
+} // namespace spice::compiler

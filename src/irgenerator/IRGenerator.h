@@ -8,6 +8,8 @@
 #include <irgenerator/OpRuleConversionManager.h>
 #include <irgenerator/StdFunctionManager.h>
 
+namespace spice::compiler {
+
 const char *const ANON_GLOBAL_STRING_NAME = "anon.string.";
 const char *const ANON_GLOBAL_ARRAY_NAME = "anon.array.";
 const char *const ANON_GLOBAL_STRUCT_NAME = "anon.struct.";
@@ -127,3 +129,5 @@ private:
   bool blockAlreadyTerminated = false;
   size_t manIdx = 0;
 };
+
+} // namespace spice::compiler

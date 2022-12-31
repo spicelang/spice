@@ -8,6 +8,8 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetOptions.h>
 
+namespace spice::compiler {
+
 GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
     : cliOptions(cliOptions), linker(threadFactory, cliOptions), cacheManager(cliOptions.cacheDir) {
   // Initialize the required LLVM targets
@@ -34,3 +36,5 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
   llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
   targetMachine = target->createTargetMachine(cliOptions.targetTriple, "generic", "", opt, rm);
 }
+
+} // namespace spice::compiler

@@ -4,6 +4,8 @@
 
 #include <global/GlobalResourceManager.h>
 
+namespace spice::compiler {
+
 // Forward declarations
 class Scope;
 
@@ -19,3 +21,5 @@ protected:
   SourceFile *sourceFile;
   Scope *rootScope;
 };
+
+} // namespace spice::compiler

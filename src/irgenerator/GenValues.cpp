@@ -4,6 +4,8 @@
 
 #include <ast/ASTNodes.h>
 
+namespace spice::compiler {
+
 std::any IRGenerator::visitValue(const ValueNode *node) {
   diGenerator.setSourceLocation(node);
 
@@ -314,3 +316,5 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
 
   return symbolType.toLLVMType(context, currentScope);
 }
+
+} // namespace spice::compiler

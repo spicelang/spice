@@ -8,6 +8,8 @@
 #include <llvm/BinaryFormat/Dwarf.h>
 #include <llvm/IR/Verifier.h>
 
+namespace spice::compiler {
+
 IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : CompilerPass(resourceManager, sourceFile), context(resourceManager.context), builder(resourceManager.builder),
       module(sourceFile->llvmModule.get()), stdFunctionManager(StdFunctionManager(resourceManager, sourceFile->llvmModule.get())),
@@ -347,3 +349,5 @@ std::string IRGenerator::getIRString() const {
   module->print(oss, nullptr);
   return oss.str();
 }
+
+} // namespace spice::compiler

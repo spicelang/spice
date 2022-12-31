@@ -8,6 +8,8 @@
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
+namespace spice::compiler {
+
 void IROptimizer::optimize() {
   if (cliOptions.printDebugOutput && cliOptions.dumpIR)
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " ...\n"; // GCOV_EXCL_LINE
@@ -61,3 +63,5 @@ llvm::OptimizationLevel IROptimizer::getLLVMOptLevelFromSpiceOptLevel() const {
     return llvm::OptimizationLevel::O0;
   }
 }
+
+} // namespace spice::compiler

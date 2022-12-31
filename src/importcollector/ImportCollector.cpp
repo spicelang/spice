@@ -8,6 +8,8 @@
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
 
+namespace spice::compiler {
+
 std::any ImportCollector::visitEntry(EntryNode *node) {
   // Visit all import statements
   for (ImportStmtNode *importStmt : node->importStmts())
@@ -60,3 +62,5 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
 
   return nullptr;
 }
+
+} // namespace spice::compiler

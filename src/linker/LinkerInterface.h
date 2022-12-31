@@ -7,6 +7,8 @@
 
 #include <cli/CLIInterface.h>
 
+namespace spice::compiler {
+
 // Forward declarations
 class ThreadFactory;
 
@@ -31,3 +33,5 @@ private:
   std::vector<std::string> objectFilePaths;
   std::vector<std::string> linkerFlags = {"-no-pie", "-flto"};
 };
+
+} // namespace spice::compiler

@@ -4,6 +4,8 @@
 
 #include <string>
 
+namespace spice::compiler {
+
 // Forward declaration
 struct CodeLoc;
 
@@ -44,3 +46,5 @@ private:
   // Private methods
   [[nodiscard]] static std::string getMessagePrefix(CompilerWarningType warningType);
 };
+
+} // namespace spice::compiler

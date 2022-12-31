@@ -11,6 +11,8 @@
 #include <typechecker/StructManager.h>
 #include <util/CompilerWarning.h>
 
+namespace spice::compiler {
+
 enum TypeCheckerMode { TC_MODE_PREPARE, TC_MODE_CHECK };
 
 /**
@@ -125,3 +127,5 @@ private:
   std::pair<Scope *, SymbolType> visitMethodCall(FunctionCallNode *node, Scope *structScope);
   [[nodiscard]] static SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType);
 };
+
+} // namespace spice::compiler

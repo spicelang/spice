@@ -4,6 +4,8 @@
 
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
+namespace spice::compiler {
+
 bool MainFctDefNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   return body()->returnsOnAllControlPaths(overrideUnreachable);
 }
@@ -114,3 +116,5 @@ const CompileTimeValue &LogicalOrExprNode::getCompileTimeValue() const {
   // Return 'false'
   return ops.front()->getCompileTimeValue();
 }
+
+} // namespace spice::compiler

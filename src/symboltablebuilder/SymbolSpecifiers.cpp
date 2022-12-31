@@ -6,6 +6,8 @@
 
 #include "SymbolType.h"
 
+namespace spice::compiler {
+
 SymbolSpecifiers SymbolSpecifiers::of(const SymbolType &symbolType) { return of(symbolType.getSuperType()); }
 
 SymbolSpecifiers SymbolSpecifiers::of(SymbolSuperType superType) {
@@ -180,3 +182,5 @@ nlohmann::ordered_json SymbolSpecifiers::toJSON() const {
   result["public"] = isPublic();
   return result;
 }
+
+} // namespace spice::compiler

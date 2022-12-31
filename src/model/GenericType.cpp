@@ -2,6 +2,8 @@
 
 #include "GenericType.h"
 
+namespace spice::compiler {
+
 GenericType::GenericType(const SymbolType &type) { this->typeChain = type.typeChain; }
 
 GenericType::GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions) {
@@ -28,3 +30,5 @@ bool GenericType::checkTypeConditionOf(const SymbolType &symbolType) const {
   return std::ranges::any_of(
       typeConditions, [&](const SymbolType &typeCondition) { return typeCondition.is(TY_DYN) || typeCondition == symbolType; });
 }
+
+} // namespace spice::compiler

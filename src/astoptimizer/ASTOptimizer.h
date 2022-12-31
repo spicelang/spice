@@ -5,6 +5,8 @@
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
 
+namespace spice::compiler {
+
 /**
  * Jobs:
  * - Remove obviously unnecessary nodes from the AST
@@ -30,3 +32,5 @@ public:
   std::any visitElseStmt(ElseStmtNode *node) override;
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
 };
+
+} // namespace spice::compiler

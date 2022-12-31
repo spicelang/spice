@@ -6,6 +6,8 @@
 #include <ast/ASTNodes.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
+namespace spice::compiler {
+
 std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   // Ignore main function definitions if this is not the main source file
   if (!sourceFile->mainFile)
@@ -565,3 +567,5 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
 
   return nullptr;
 }
+
+} // namespace spice::compiler

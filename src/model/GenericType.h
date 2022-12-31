@@ -9,6 +9,8 @@
 
 #include "../../lib/json/json.hpp"
 
+namespace spice::compiler {
+
 class GenericType : public SymbolType {
 public:
   // Constructors
@@ -30,3 +32,5 @@ private:
   // Private methods
   [[nodiscard]] bool checkTypeConditionOf(const SymbolType &symbolType) const;
 };
+
+} // namespace spice::compiler

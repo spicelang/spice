@@ -4,6 +4,8 @@
 
 #include <string>
 
+namespace spice::compiler {
+
 // Forward declarations
 class SourceFile;
 
@@ -21,3 +23,5 @@ private:
   // Private members
   const std::string &cacheDir;
 };
+
+} // namespace spice::compiler

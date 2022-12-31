@@ -6,6 +6,8 @@
 
 #include "../../lib/cli11/CLI11.hpp"
 
+namespace spice::compiler {
+
 /**
  * Representation of the various cli options
  */
@@ -66,3 +68,5 @@ private:
   // Members
   CLI::App app = CLI::App{"Spice Programming Language", "spice"};
 };
+
+} // namespace spice::compiler

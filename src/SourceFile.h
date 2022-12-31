@@ -20,6 +20,8 @@
 
 #include "../lib/thread-pool/thread-pool.hpp"
 
+namespace spice::compiler {
+
 // Forward declarations
 class GlobalResourceManager;
 class EntryNode;
@@ -161,3 +163,5 @@ private:
   void printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out, uint64_t &stageRuntime,
                           bool fromThread = false) const;
 };
+
+} // namespace spice::compiler

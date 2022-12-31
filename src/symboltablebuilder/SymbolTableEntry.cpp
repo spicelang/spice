@@ -6,6 +6,8 @@
 #include <exception/SemanticError.h>
 #include <util/CodeLoc.h>
 
+namespace spice::compiler {
+
 /**
  * Retrieve the symbol type of this symbol
  *
@@ -160,3 +162,5 @@ nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   result["isVolatile"] = isVolatile;
   return result;
 }
+
+} // namespace spice::compiler

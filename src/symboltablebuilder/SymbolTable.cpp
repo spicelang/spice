@@ -12,6 +12,8 @@
 #include <util/CodeLoc.h>
 #include <util/CompilerWarning.h>
 
+namespace spice::compiler {
+
 /**
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
  *
@@ -198,3 +200,5 @@ nlohmann::json SymbolTable::toJSON() const {
   result["captures"] = jsonCaptures;
   return result;
 }
+
+} // namespace spice::compiler

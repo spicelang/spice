@@ -6,6 +6,8 @@
 #include <exception/ParserError.h>
 #include <util/CodeLoc.h>
 
+namespace spice::compiler {
+
 void AntlrThrowingErrorListener::syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line,
                                              size_t charPositionInLine, const std::string &msg, std::exception_ptr e) {
   if (mode == LEXER)
@@ -13,3 +15,5 @@ void AntlrThrowingErrorListener::syntaxError(antlr4::Recognizer *recognizer, ant
   else
     throw ParserError(CodeLoc(line, charPositionInLine), PARSING_FAILED, msg);
 }
+
+} // namespace spice::compiler

@@ -5,6 +5,8 @@
 #include "../../lib/json/json.hpp"
 #include "SymbolType.h"
 
+namespace spice::compiler {
+
 // Bit indices from right to left
 const unsigned short BIT_INDEX_PUBLIC = 0;
 const unsigned short BIT_INDEX_SIGNED = 1;
@@ -80,3 +82,5 @@ private:
   void clearBit(unsigned short index);
   [[nodiscard]] bool getBit(unsigned short index) const;
 };
+
+} // namespace spice::compiler

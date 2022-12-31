@@ -6,6 +6,8 @@
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
+namespace spice::compiler {
+
 std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
   node->resizeToNumberOfManifestations(1);
 
@@ -186,3 +188,5 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
   return nullptr;
 }
+
+} // namespace spice::compiler

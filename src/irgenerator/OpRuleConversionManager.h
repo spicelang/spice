@@ -9,6 +9,8 @@
 
 #include <llvm/IR/Value.h>
 
+namespace spice::compiler {
+
 // Forward declarations
 class IRGenerator;
 class StdFunctionManager;
@@ -92,3 +94,5 @@ private:
     return COMB(lhsTy.getSuperType(), rhsTy.getSuperType());
   }
 };
+
+} // namespace spice::compiler

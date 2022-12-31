@@ -4,6 +4,8 @@
 
 #include <ast/ASTNodes.h>
 
+namespace spice::compiler {
+
 std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
   diGenerator.setSourceLocation(node);
 
@@ -863,3 +865,5 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(varEntry->getAddress() != nullptr);
   return ExprResult{.ptr = varEntry->getAddress(), .entry = varEntry};
 }
+
+} // namespace spice::compiler

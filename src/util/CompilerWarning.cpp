@@ -4,6 +4,8 @@
 
 #include <util/CodeLoc.h>
 
+namespace spice::compiler {
+
 /**
  * Constructor: Used in case that the exact code position where the warning occurred is known
  *
@@ -71,3 +73,5 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
   }
   return "Unknown warning"; // GCOV_EXCL_LINE
 }
+
+} // namespace spice::compiler

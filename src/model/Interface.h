@@ -10,6 +10,8 @@
 
 #include "../../lib/json/json.hpp"
 
+namespace spice::compiler {
+
 // Forward declaration
 class Scope;
 class SymbolType;
@@ -30,3 +32,5 @@ public:
   ASTNode *declNode;
   bool used = false;
 };
+
+} // namespace spice::compiler

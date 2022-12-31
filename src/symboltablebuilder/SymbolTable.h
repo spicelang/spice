@@ -14,6 +14,8 @@
 
 #include "../../lib/json/json.hpp"
 
+namespace spice::compiler {
+
 // Forward declarations
 class SymbolSpecifiers;
 class SymbolType;
@@ -51,3 +53,5 @@ public:
   std::unordered_map<std::string, Capture> captures;
   bool capturingRequired = false;
 };
+
+} // namespace spice::compiler

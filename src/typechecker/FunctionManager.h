@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace spice::compiler {
+
 // Forward declarations
 class Function;
 class Scope;
@@ -43,3 +45,5 @@ private:
   [[nodiscard]] static const GenericType *getGenericTypeByNameFromCandidate(const Function &candidate,
                                                                             const std::string &templateTypeName);
 };
+
+} // namespace spice::compiler

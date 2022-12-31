@@ -9,6 +9,8 @@
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 
+using namespace spice::compiler;
+
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *

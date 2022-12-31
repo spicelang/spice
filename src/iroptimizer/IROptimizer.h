@@ -8,6 +8,8 @@
 
 #include <llvm/Passes/OptimizationLevel.h>
 
+namespace spice::compiler {
+
 class IROptimizer : private CompilerPass {
 public:
   // Constructors
@@ -26,3 +28,5 @@ private:
   // Private methods
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
 };
+
+} // namespace spice::compiler
