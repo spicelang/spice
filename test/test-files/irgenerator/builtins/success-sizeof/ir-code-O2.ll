@@ -3,37 +3,36 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-@0 = private unnamed_addr constant [20 x i8] c"Size of double: %d\0A\00", align 1
-@1 = private unnamed_addr constant [17 x i8] c"Size of int: %d\0A\00", align 1
-@2 = private unnamed_addr constant [19 x i8] c"Size of short: %d\0A\00", align 1
-@3 = private unnamed_addr constant [18 x i8] c"Size of long: %d\0A\00", align 1
-@4 = private unnamed_addr constant [18 x i8] c"Size of byte: %d\0A\00", align 1
-@5 = private unnamed_addr constant [18 x i8] c"Size of char: %d\0A\00", align 1
-@6 = private unnamed_addr constant [20 x i8] c"Size of string: %d\0A\00", align 1
-@7 = private unnamed_addr constant [18 x i8] c"Size of bool: %d\0A\00", align 1
-@8 = private unnamed_addr constant [19 x i8] c"Size of int[]: %d\0A\00", align 1
-@anonymous.0 = local_unnamed_addr global [7 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7]
-@9 = private unnamed_addr constant [18 x i8] c"Size of int*: %d\0A\00", align 1
-@10 = private unnamed_addr constant [29 x i8] c"Size of struct instance: %d\0A\00", align 1
+@printf.str.0 = private unnamed_addr constant [20 x i8] c"Size of double: %d\0A\00", align 1
+@printf.str.1 = private unnamed_addr constant [17 x i8] c"Size of int: %d\0A\00", align 1
+@printf.str.2 = private unnamed_addr constant [19 x i8] c"Size of short: %d\0A\00", align 1
+@printf.str.3 = private unnamed_addr constant [18 x i8] c"Size of long: %d\0A\00", align 1
+@printf.str.4 = private unnamed_addr constant [18 x i8] c"Size of byte: %d\0A\00", align 1
+@printf.str.5 = private unnamed_addr constant [18 x i8] c"Size of char: %d\0A\00", align 1
+@printf.str.6 = private unnamed_addr constant [20 x i8] c"Size of string: %d\0A\00", align 1
+@printf.str.7 = private unnamed_addr constant [18 x i8] c"Size of bool: %d\0A\00", align 1
+@printf.str.8 = private unnamed_addr constant [19 x i8] c"Size of int[]: %d\0A\00", align 1
+@printf.str.9 = private unnamed_addr constant [18 x i8] c"Size of int*: %d\0A\00", align 1
+@printf.str.10 = private unnamed_addr constant [29 x i8] c"Size of struct instance: %d\0A\00", align 1
 
-; Function Attrs: nofree nounwind
-define i32 @main() local_unnamed_addr #0 {
-entry.l7:
-  %0 = tail call i32 (ptr, ...) @printf(ptr nonnull @0, i32 64)
-  %1 = tail call i32 (ptr, ...) @printf(ptr nonnull @1, i32 32)
-  %2 = tail call i32 (ptr, ...) @printf(ptr nonnull @2, i32 16)
-  %3 = tail call i32 (ptr, ...) @printf(ptr nonnull @3, i32 64)
-  %4 = tail call i32 (ptr, ...) @printf(ptr nonnull @4, i32 8)
-  %5 = tail call i32 (ptr, ...) @printf(ptr nonnull @5, i32 8)
-  %6 = tail call i32 (ptr, ...) @printf(ptr nonnull @6, i32 64)
-  %7 = tail call i32 (ptr, ...) @printf(ptr nonnull @7, i32 1)
-  %8 = tail call i32 (ptr, ...) @printf(ptr nonnull @8, i32 224)
-  %9 = tail call i32 (ptr, ...) @printf(ptr nonnull @9, i32 64)
-  %10 = tail call i32 (ptr, ...) @printf(ptr nonnull @10, i32 128)
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local i32 @main() local_unnamed_addr #0 {
+  %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 64)
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 32)
+  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.2, i32 16)
+  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.3, i32 64)
+  %5 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4, i32 8)
+  %6 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.5, i32 8)
+  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.6, i32 64)
+  %8 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7, i32 1)
+  %9 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.8, i32 224)
+  %10 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.9, i32 64)
+  %11 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 128)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
-attributes #0 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
