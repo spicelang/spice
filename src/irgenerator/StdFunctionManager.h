@@ -21,8 +21,6 @@ public:
   // Public methods for function retrieval
   [[nodiscard]] llvm::Function *getPrintfFct() const;
   [[nodiscard]] llvm::Function *getExitFct() const;
-  [[nodiscard]] llvm::Function *getStackSaveIntrinsic() const;
-  [[nodiscard]] llvm::Function *getStackRestoreIntrinsic() const;
   [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
   [[nodiscard]] llvm::Function *getPthreadCreate() const;
   [[nodiscard]] llvm::Function *getPthreadSelf() const;

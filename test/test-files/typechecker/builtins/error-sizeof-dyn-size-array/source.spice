@@ -1,5 +1,0 @@
-f<int> main() {
-    int size = 5;
-    int[size] array;
-    printf("%d", sizeof(array));
-}

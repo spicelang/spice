@@ -28,12 +28,10 @@ type TypeChainElement struct {
     string subType
     TypeChainElementData data
     vec::Vector<SymbolType> templateTypes
-    //llvm::Type* dynamicArraySize
 }
 
 p TypeChainElement.ctor() {
     this.superType = SymbolSuperType.TY_DYN;
-    //this.dynamicArraySize = nil<llvm::Type*>;
 }
 
 f<bool> TypeChainElement.equalsIgnoreArraySize(const TypeChainElement* lhs, const TypeChainElement rhs) {

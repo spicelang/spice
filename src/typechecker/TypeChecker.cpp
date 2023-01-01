@@ -558,10 +558,6 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
     symbolType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   }
 
-  // Check if symbol type is dynamically sized array
-  if (symbolType.is(TY_ARRAY) && symbolType.getArraySize() == ARRAY_SIZE_DYNAMIC)
-    throw SemanticError(node, SIZEOF_DYNAMIC_SIZED_ARRAY, "Cannot get size of dynamically sized array at compile time");
-
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_INT), manIdx)};
 }
 
@@ -642,7 +638,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
 
     if (lhsVar) { // Variable is involved on the left side
       // Perform type inference
-      if (lhsType.is(TY_DYN) || (lhsType.is(TY_STRING) && rhsType.is(TY_STRING)))
+      if (lhsType.is(TY_DYN))
         lhsVar->updateType(rhsType, false);
 
       // In case the lhs variable is captured, notify the capture about the write access
@@ -1249,12 +1245,14 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
 
   // Retrieve entry of the first fragment
   SymbolTableEntry *firstFragmentEntry = currentScope->lookup(node->functionNameFragments.front());
+  if (firstFragmentEntry) {
+    firstFragmentEntry->used = true;
+    data.isMethodCall = firstFragmentEntry->getType().isBaseType(TY_STRUCT) && firstFragmentEntry->scope->symbolTable.parent;
+  }
 
   // Check if this is a method call or a normal function call
   SymbolType returnType(TY_DYN);
   SymbolType thisType(TY_DYN);
-  data.isMethodCall = firstFragmentEntry != nullptr && firstFragmentEntry->getType().isBaseType(TY_STRUCT) &&
-                      firstFragmentEntry->scope->symbolTable.parent;
   if (data.isMethodCall) {
     // This is a method call
     data.thisType = firstFragmentEntry->getType();
@@ -1292,7 +1290,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   }
 
   // Check if we need to request a re-visit, because the function body was not type-checked yet
-  if (!data.callee->alreadyTypeChecked)
+  if (!data.callee->alreadyTypeChecked && !data.callee->external)
     reVisitRequested = true;
 
   // Retrieve return type
@@ -1530,20 +1528,8 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       break;
     }
     case DataTypeNode::TYPE_ARRAY: {
-      if (typeModifier.hasSize) {
-        if (typeModifier.isSizeHardcoded) {
-          if (typeModifier.hardcodedSize <= 1)
-            throw SemanticError(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated");
-        } else {
-          // Do not allow dynamic sized types in parameter lists
-          if (node->isParamType())
-            throw SemanticError(node, ARRAY_SIZE_INVALID, "Types in parameter lists may not be dynamically sized");
-          // Visit size
-          SymbolType sizeType = std::any_cast<ExprResult>(visit(node->arraySizeExpr()[assignExprCounter++])).type;
-          if (!sizeType.isOneOf({TY_INT, TY_LONG, TY_SHORT}))
-            throw SemanticError(node, ARRAY_SIZE_INVALID, "The array size must be of type int, long or short");
-        }
-      }
+      if (typeModifier.hasSize && typeModifier.hardcodedSize <= 1)
+        throw SemanticError(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated");
       // Do not allow arrays of dyn
       if (type.is(TY_DYN))
         throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");

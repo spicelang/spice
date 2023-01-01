@@ -229,8 +229,13 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
       break;
     }
     case TY_STRUCT: {
-      warningType = UNUSED_STRUCT;
-      warningMessage = "The struct '" + entry.name + "' is unused";
+      if (entry.scope->type == SCOPE_GLOBAL) {
+        warningType = UNUSED_STRUCT;
+        warningMessage = "The struct '" + entry.name + "' is unused";
+      } else {
+        warningType = UNUSED_VARIABLE;
+        warningMessage = "The variable '" + entry.name + "' is unused";
+      }
       break;
     }
     case TY_INTERFACE: {

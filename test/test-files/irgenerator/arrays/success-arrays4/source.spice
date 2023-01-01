@@ -1,6 +1,0 @@
-f<int> main() {
-    string[5] welcomeMessage = { "Hello", "Spice", "programmers!" };
-    foreach int i, string word : welcomeMessage {
-        printf("Word no. %d: %s\n", i, word);
-    }
-}

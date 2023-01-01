@@ -25,14 +25,6 @@ llvm::Function *StdFunctionManager::getPrintfFct() const {
 
 llvm::Function *StdFunctionManager::getExitFct() const { return getProcedure("exit", builder.getInt32Ty()); }
 
-llvm::Function *StdFunctionManager::getStackSaveIntrinsic() const {
-  return getFunction("llvm.stacksave", builder.getPtrTy(), {});
-}
-
-llvm::Function *StdFunctionManager::getStackRestoreIntrinsic() const {
-  return getProcedure("llvm.stackrestore", builder.getInt8PtrTy());
-}
-
 llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
   llvm::Type *ptrTy = builder.getPtrTy();
   return getProcedure("llvm.memcpy.p0.p0.i64", {ptrTy, ptrTy, builder.getInt64Ty(), builder.getInt1Ty()});
