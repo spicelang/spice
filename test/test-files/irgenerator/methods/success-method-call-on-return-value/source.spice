@@ -12,25 +12,13 @@ type Letter struct {
     Stamp stamp
 }
 
-f<string> Letter.getContent() {
-    return this.content;
-}
-
-p Letter.setContent(string text) {
-    this.content = text;
-}
-
 f<Stamp> Letter.getStamp() {
     return this.stamp;
 }
 
-p Letter.setStamp(Stamp stamp) {
-    this.stamp = stamp;
-}
-
 f<int> main() {
-    dyn letter = Letter{ "", Stamp{ 3.4, true } };
-    printf("Stamp glued: %d\n", letter.getStamp().glued);
+    dyn letter = Letter{ "This is a letter", Stamp{ 3.4, true } };
+    printf("Stamp glued: %d\n", letter.stamp.glued);
     Stamp stamp = letter.getStamp();
     stamp.print();
 }
