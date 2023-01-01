@@ -703,16 +703,21 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     switch (opQueue.front().first) {
     case PostfixUnaryExprNode::OP_SUBSCRIPT: {
       // Get the index value
-      AssignExprNode *indexExpr = node->assignExpr()[subscriptCounter++];
+      AssignExprNode *indexExpr = node->assignExpr().at(subscriptCounter++);
       llvm::Value *indexValue = resolveValue(indexExpr);
 
       // Come up with the address
-      if (lhsSTy.isArray() && lhsSTy.getArraySize() > 0) { // Array
+      if (lhsSTy.isArray() && lhsSTy.getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array
+        // Get the address
+        lhs.ptr = resolveAddress(lhs, lhs.entry && lhs.entry->isVolatile);
+
         // Calculate address of array item
         llvm::Value *indices[2] = {builder.getInt32(0), indexValue};
         lhs.ptr = builder.CreateInBoundsGEP(lhsTy, lhs.ptr, indices);
       } else { // Pointer
-        lhs.ptr = builder.CreateLoad(lhsTy, lhs.ptr);
+        // Get the address
+        lhs.ptr = lhs.value ?: builder.CreateLoad(lhsTy, lhs.ptr);
+
         lhsTy = lhsSTy.getContainedTy().toLLVMType(context, currentScope);
         // Calculate address of pointer item
         lhs.ptr = builder.CreateInBoundsGEP(lhsTy, lhs.ptr, indexValue);
@@ -723,12 +728,12 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       break;
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
+      // Get the address of the struct instance
+      lhs.ptr = resolveAddress(lhs, lhs.entry && lhs.entry->isVolatile);
+
       // Auto de-reference pointer
       autoDeReferencePtr(lhs.ptr, lhsSTy, currentScope);
       assert(lhsSTy.is(TY_STRUCT));
-
-      // Get the address of the struct instance
-      lhs.ptr = resolveAddress(lhs, lhs.entry && lhs.entry->isVolatile);
 
       // Retrieve struct scope
       const std::string &fieldName = node->identifier.at(memberAccessCounter++);
