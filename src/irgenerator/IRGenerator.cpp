@@ -272,7 +272,8 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
     llvm::Value *rhsAddress = resolveAddress(rhsNode);
     assert(rhsAddress != nullptr);
     // Create shallow copy
-    llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsAddress->getType(), lhsEntry->name, lhsEntry->isVolatile);
+    llvm::Type *rhsType = rhsSType.toLLVMType(context, currentScope);
+    llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsEntry->name, lhsEntry->isVolatile);
     // Set address of lhs to the copy
     lhsEntry->updateAddress(newAddress);
     return ExprResult{.ptr = newAddress, .entry = lhsEntry};
@@ -296,7 +297,7 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
 llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name /*=""*/,
                                             bool isVolatile /*=false*/) {
   // Retrieve size to copy
-  const unsigned int typeSize = module->getDataLayout().getTypeSizeInBits(varType);
+  const llvm::TypeSize typeSize = module->getDataLayout().getTypeAllocSize(varType);
 
   // Create values for memcpy intrinsic
   llvm::Value *structSize = builder.getInt64(typeSize);
@@ -310,7 +311,7 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
   return newAddress;
 }
 
-void IRGenerator::autoDeReferencePtr(llvm::Value *ptr, SymbolType &symbolType, Scope *accessScope) const {
+void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const {
   while (symbolType.isPointer()) {
     ptr = builder.CreateLoad(symbolType.toLLVMType(context, accessScope), ptr);
     symbolType = symbolType.getContainedTy();

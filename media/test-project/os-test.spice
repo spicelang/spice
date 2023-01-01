@@ -17,8 +17,9 @@ f<Stamp> Letter.getStamp() {
 }
 
 f<int> main() {
-    dyn letter = Letter{ "", Stamp{ 3.4, true } };
-    printf("Stamp glued: %d\n", letter.getStamp().glued);
+    dyn letter = Letter{ "Twar", Stamp{ 3.4, true } };
+    printf("Test: %s\n", letter.content);
+    printf("Stamp glued: %d\n", letter.stamp.glued);
     Stamp stamp = letter.getStamp();
     stamp.print();
 }

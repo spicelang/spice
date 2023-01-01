@@ -110,7 +110,7 @@ private:
   ExprResult doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *rhsNode);
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name = "",
                                  bool isVolatile = false);
-  void autoDeReferencePtr(llvm::Value *ptr, SymbolType &symbolType, Scope *accessScope) const;
+  void autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const;
   llvm::Value *createGlobalConstant(const std::string &baseName, llvm::Constant *constant);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
 

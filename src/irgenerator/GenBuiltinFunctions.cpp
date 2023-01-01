@@ -101,7 +101,7 @@ std::any IRGenerator::visitJoinCall(const JoinCallNode *node) {
     // Check if we have a single thread to join or an array of thread ids
     const SymbolType assignExprSymbolType = assignExpr->getEvaluatedSymbolType(manIdx);
     if (assignExprSymbolType.isArray()) { // Multiple ids
-      assert(assignExprSymbolType.getArraySize() > ARRAY_SIZE_UNKNOWN);
+      assert(assignExprSymbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
       llvm::Type *threadIdPtrTy = assignExprSymbolType.toLLVMType(context, currentScope);
       for (int i = 0; i < threadIdPtrTy->getArrayNumElements(); i++) {
         // Get thread id that has to be joined
