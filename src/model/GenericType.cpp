@@ -7,11 +7,11 @@ namespace spice::compiler {
 GenericType::GenericType(const SymbolType &type) { this->typeChain = type.typeChain; }
 
 GenericType::GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions) {
-  this->typeChain.push_back({TY_GENERIC, name, 0, {}, nullptr});
+  this->typeChain.push_back({TY_GENERIC, name, 0, {}});
   this->typeConditions = typeConditions;
 }
 
-GenericType::GenericType(const std::string &name) { this->typeChain.push_back({TY_GENERIC, name, 0, {}, nullptr}); }
+GenericType::GenericType(const std::string &name) { this->typeChain.push_back({TY_GENERIC, name, 0, {}}); }
 
 /**
  * Checks if the given symbol type matches all conditions to get a manifestation of the current generic type

@@ -17,13 +17,13 @@ namespace spice::compiler {
  *
  * @return Pointer type of the current type
  */
-SymbolType SymbolType::toPointer(const ASTNode *node, llvm::Value *dynamicSize) const {
+SymbolType SymbolType::toPointer(const ASTNode *node) const {
   // Do not allow pointers of dyn
   if (typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push_back({TY_PTR, "", {}, {}, dynamicSize});
+  newTypeChain.push_back({TY_PTR, "", {}, {}});
   return SymbolType(newTypeChain);
 }
 
@@ -38,7 +38,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
     throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push_back({TY_REF, "", {}, {}, nullptr});
+  newTypeChain.push_back({TY_REF, "", {}, {}});
   return SymbolType(newTypeChain);
 }
 
@@ -49,7 +49,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
  */
 SymbolType SymbolType::toArray(const ASTNode *node, long size) const {
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push_back({TY_ARRAY, "", {.arraySize = size}, {}, nullptr});
+  newTypeChain.push_back({TY_ARRAY, "", {.arraySize = size}, {}});
   return SymbolType(newTypeChain);
 }
 
@@ -290,20 +290,6 @@ Scope *SymbolType::getStructBodyScope() const {
   return typeChain.back().data.structBodyScope;
 }
 
-/**
- * Retrieve the dynamic array size of the current type
- *
- * @return Dynamic array size
- */
-llvm::Value *SymbolType::getDynamicArraySize() const {
-  if (typeChain.back().superType != TY_PTR)                                                          // GCOV_EXCL_LINE
-    throw std::runtime_error("Internal compiler error: Cannot get dynamic sized of non-array type"); // GCOV_EXCL_LINE
-  if (typeChain.back().data.arraySize > ARRAY_SIZE_UNKNOWN)                                          // GCOV_EXCL_LINE
-    throw std::runtime_error("Cannot retrieve dynamic size of non-dynamically-sized array");         // GCOV_EXCL_LINE
-
-  return typeChain.back().dynamicArraySize;
-}
-
 bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain == rhs.typeChain; }
 
 bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs.typeChain == rhs.typeChain); }
@@ -334,8 +320,6 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
       return "array";
     if (!withSize || chainElement.data.arraySize == ARRAY_SIZE_UNKNOWN)
       return "[]";
-    if (chainElement.data.arraySize == ARRAY_SIZE_DYNAMIC)
-      return "[n]";
     return "[" + std::to_string(chainElement.data.arraySize) + "]";
   }
   case TY_DOUBLE:

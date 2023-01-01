@@ -71,13 +71,7 @@ std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
   const SymbolType assignExprSymbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
   assert(assignExprSymbolType.isArray() && assignExprSymbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
-  llvm::Value *lengthValue;
-  if (assignExprSymbolType.getArraySize() == ARRAY_SIZE_DYNAMIC) { // Dynamic array size
-    lengthValue = assignExprSymbolType.getDynamicArraySize();
-    assert(lengthValue != nullptr);
-  } else { // Fixed array size
-    lengthValue = builder.getInt32(assignExprSymbolType.getArraySize());
-  }
+  llvm::Value *lengthValue = builder.getInt32(assignExprSymbolType.getArraySize());
   return ExprResult{.value = lengthValue};
 }
 

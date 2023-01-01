@@ -1656,29 +1656,21 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
     if (rule = dynamic_cast<SpiceParser::BaseDataTypeContext *>(subTree); rule != nullptr) // BaseDataType
       currentNode = dataTypeNode->createChild<BaseDataTypeNode>(CodeLoc(rule->start, filePath));
     else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::MUL)
-      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_PTR, false, false, 0});
+      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_PTR, false, 0});
     else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
              t1->getSymbol()->getType() == SpiceParser::BITWISE_AND)
-      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_REF, false, false, 0});
+      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_REF, false, 0});
     else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::LBRACKET) {
       i++; // Consume LBRACKET
       subTree = ctx->children[i];
       bool hasSize = false;
-      bool isHardcoded = false;
       int hardCodedSize = 0;
-      if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
+      if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t4->getSymbol()->getType() == SpiceParser::INT_LIT) {
         hasSize = true;
-        hardCodedSize = -1;
-        currentNode = dataTypeNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
-        i++; // Consume INTEGER
-      } else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
-                 t4->getSymbol()->getType() == SpiceParser::INT_LIT) {
-        hasSize = true;
-        isHardcoded = true;
         hardCodedSize = std::stoi(t4->getSymbol()->getText());
         i++; // Consume INTEGER
       }
-      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_ARRAY, hasSize, isHardcoded, hardCodedSize});
+      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_ARRAY, hasSize, hardCodedSize});
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 

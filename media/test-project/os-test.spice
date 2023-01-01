@@ -1,7 +1,32 @@
+type Stamp struct {
+    double value
+    bool glued
+}
+
+p Stamp.print() {
+    printf("Value: %f, glued: %d", this.value, this.glued);
+}
+
+type Letter struct {
+    string content
+    Stamp stamp
+}
+
+f<Stamp> Letter.getStamp() {
+    return this.stamp;
+}
+
 f<int> main() {
+    dyn letter = Letter{ "", Stamp{ 3.4, true } };
+    printf("Stamp glued: %d\n", letter.getStamp().glued);
+    Stamp stamp = letter.getStamp();
+    stamp.print();
+}
+
+/*f<int> main() {
     int[10] a;
     for int i = 0; i < len(a); i++ {
         a[i] = 1;
     }
     printf("Cell [3]: %d", a[3]);
-}
+}*/

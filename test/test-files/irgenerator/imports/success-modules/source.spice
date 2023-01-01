@@ -1,6 +1,6 @@
 import "source2" as s2;
 
 f<int> main() {
-    int integer = s2.forwardToOtherModule();
+    int integer = s2::forwardToOtherModule();
     printf("Result: %d", integer);
 }

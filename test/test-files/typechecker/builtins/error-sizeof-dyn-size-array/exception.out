@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/typechecker/builtins/error-sizeof-dyn-size-array/source.spice:4:18:
-Sizeof dynamically sized array: Cannot get size of dynamically sized array at compile time
-
-4  printf("%d", sizeof(array));
-                ^^^^^^^^^^^^^

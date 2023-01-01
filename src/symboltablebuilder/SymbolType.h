@@ -22,8 +22,7 @@ class Scope;
 
 // Constants
 const char *const STROBJ_NAME = "String";
-const int ARRAY_SIZE_UNKNOWN = 0;
-const int ARRAY_SIZE_DYNAMIC = -1;
+const long ARRAY_SIZE_UNKNOWN = 0;
 
 enum SymbolSuperType : uint16_t {
   TY_INVALID,
@@ -98,7 +97,6 @@ public:
     std::string subType;
     TypeChainElementData data = {.arraySize = 0};
     std::vector<SymbolType> templateTypes;
-    llvm::Value *dynamicArraySize = nullptr;
 
     // Json serializer/deserializer
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, data, templateTypes)
@@ -117,7 +115,7 @@ public:
   explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
 
   // Public methods
-  [[nodiscard]] SymbolType toPointer(const ASTNode *node, llvm::Value *dynamicSize = nullptr) const;
+  [[nodiscard]] SymbolType toPointer(const ASTNode *node) const;
   [[nodiscard]] SymbolType toReference(const ASTNode *node) const;
   [[nodiscard]] SymbolType toArray(const ASTNode *node, long size = 0) const;
   [[nodiscard]] SymbolType getContainedTy() const;
@@ -161,7 +159,6 @@ public:
   [[nodiscard]] bool isSigned() const;
   void setStructBodyScope(Scope *bodyScope);
   [[nodiscard]] Scope *getStructBodyScope() const;
-  [[nodiscard]] llvm::Value *getDynamicArraySize() const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
 

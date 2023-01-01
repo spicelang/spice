@@ -132,7 +132,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     return builder.getFalse();
 
   // Pointer
-  if (symbolType.is(TY_PTR) || (symbolType.is(TY_ARRAY) && symbolType.getArraySize() == ARRAY_SIZE_DYNAMIC))
+  if (symbolType.is(TY_PTR))
     return llvm::Constant::getNullValue(builder.getPtrTy());
 
   // Array

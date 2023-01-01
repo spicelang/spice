@@ -31,5 +31,6 @@ p Letter.setStamp(Stamp stamp) {
 f<int> main() {
     dyn letter = Letter{ "", Stamp{ 3.4, true } };
     printf("Stamp glued: %d\n", letter.getStamp().glued);
-    letter.getStamp().print();
+    Stamp stamp = letter.getStamp();
+    stamp.print();
 }

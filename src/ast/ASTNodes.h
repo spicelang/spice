@@ -1573,7 +1573,6 @@ public:
   struct TypeModifier {
     TypeModifierType modifierType = TYPE_PTR;
     bool hasSize = false;
-    bool isSizeHardcoded = false;
     int hardcodedSize = 0;
   };
 
