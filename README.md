@@ -96,4 +96,4 @@ Currently, Spice only offers stable support for x86_64/windows and x86_64/linux.
 ## Contribute to the project
 If you want to contribute to this project, please ensure you comply with the [contribution guidelines](./CONTRIBUTING.md).
 
-© ChilliBits 2021-2022
+© ChilliBits 2021-2023

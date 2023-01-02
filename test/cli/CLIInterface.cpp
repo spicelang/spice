@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "CLIInterface.h"
 
@@ -9,12 +9,12 @@ void CLIInterface::createInterface() {
   app.allow_windows_style_options();
   app.allow_extras();
   app.positionals_at_end();
-  app.footer("(c) Marc Auberer 2021-2022");
+  app.footer("(c) Marc Auberer 2021-2023");
 
   // Add version flag
   std::string versionName = std::string(SPICE_VERSION);
   std::string builtBy = std::string(SPICE_BUILT_BY);
-  std::string versionString = "Spice version " + versionName + "\nbuilt by: " + builtBy + "\n\n(c) Marc Auberer 2021-2022";
+  std::string versionString = "Spice version " + versionName + "\nbuilt by: " + builtBy + "\n\n(c) Marc Auberer 2021-2023";
   app.set_version_flag("--version,-v", versionString);
 }
 

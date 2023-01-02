@@ -1,6 +1,6 @@
-site_name: Spice
+site_name: Spice Programming Language
 site_url: https://www.spicelang.com
-site_description: Spice Programming Language
+site_description: The fast, powerful, self-contained and programmer oriented systems language Spice.
 site_author: Marc Auberer
 copyright: Made with ❤️ by Spice contributors, powered by <a href="https://www.chillibits.com" target="_blank">ChilliBits</a>.
 repo_name: spicelang/spice
@@ -20,7 +20,6 @@ theme:
     - navigation.tabs
     - content.code.copy
     - content.action.edit
-    - content.action.view
   palette:
     - media: "(prefers-color-scheme: light)"  # Light mode
       scheme: default
@@ -42,7 +41,6 @@ extra_css:
 
 plugins:
   - search:
-      prebuild_index: python
       lang:
       - en
   - minify:
