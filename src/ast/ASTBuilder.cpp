@@ -950,7 +950,8 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
     antlr4::ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
       currentNode = assertStmtNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
-      assertStmtNode->expressionString = rule->getText();
+      antlr4::misc::Interval interval(rule->start->getStartIndex(), rule->stop->getStopIndex());
+      assertStmtNode->expressionString = inputStream->getText(interval);
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
