@@ -2,6 +2,7 @@
 
 #include "SymbolType.h"
 
+#include <ranges>
 #include <stdexcept>
 
 #include <exception/SemanticError.h>
@@ -33,7 +34,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
  * @return Reference type of the current type
  */
 SymbolType SymbolType::toReference(const ASTNode *node) const {
-  // Do not allow pointers of dyn
+  // Do not allow references of dyn
   if (typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
 
@@ -59,10 +60,9 @@ SymbolType SymbolType::toArray(const ASTNode *node, long size) const {
  * @return Base type
  */
 SymbolType SymbolType::getContainedTy() const {
-  if (typeChain.back().superType == TY_STRING)
+  if (is(TY_STRING))
     return SymbolType(TY_CHAR);
-  if (typeChain.size() < 2)                                                                                     // GCOV_EXCL_LINE
-    throw std::runtime_error("Internal compiler error: Cannot get contained type of type with type chain < 2"); // GCOV_EXCL_LINE
+  assert(typeChain.size() > 1);
   TypeChain newTypeChain = typeChain;
   newTypeChain.pop_back();
   return SymbolType(newTypeChain);
@@ -75,9 +75,13 @@ SymbolType SymbolType::getContainedTy() const {
  * @return The new type with the adjusted type chain
  */
 SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
-  SymbolType newBaseType = getBaseType();
-  newBaseType.setSubType(newSubType);
-  return replaceBaseType(newBaseType);
+  assert(!typeChain.empty());
+  // Copy the stack to not destroy the present one
+  TypeChain chainCopy = typeChain;
+  // Replace the first element
+  chainCopy.front().subType = newSubType;
+  // Return the new chain as a symbol type
+  return SymbolType(chainCopy);
 }
 
 /**
@@ -87,20 +91,12 @@ SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
  * @return The new type
  */
 SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
+  assert(!typeChain.empty());
+  assert(newBaseType.typeChain.size() == 1);
   // Copy the stack to not destroy the present one
   TypeChain chainCopy = typeChain;
-  // Reverse type chain
-  TypeChain tmp;
-  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_REF || chainCopy.back().superType == TY_ARRAY) {
-    tmp.push_back(chainCopy.back());
-    chainCopy.pop_back();
-  }
-  chainCopy = newBaseType.typeChain; // Replace base type
-  // Restore the other chain elements
-  for (unsigned int i = 0; i < tmp.size(); i++) {
-    chainCopy.push_back(tmp.back());
-    tmp.pop_back();
-  }
+  // Replace the first element
+  chainCopy.front() = newBaseType.typeChain.front();
   // Return the new chain as a symbol type
   return SymbolType(chainCopy);
 }
@@ -148,7 +144,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
   if (is(TY_ENUM))
     return llvm::Type::getInt32Ty(context);
 
-  if (isPointer() || isReference() || (isArray() && getArraySize() <= 0)) {
+  if (isPointer() || isReference() || (isArray() && getArraySize() == 0)) {
     llvm::PointerType *pointerType = getContainedTy().toLLVMType(context, accessScope)->getPointerTo();
     return static_cast<llvm::Type *>(pointerType);
   }
@@ -169,13 +165,8 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
  * @return Applicable or not
  */
 bool SymbolType::isBaseType(SymbolSuperType superType) const {
-  // Copy the stack to not destroy the present one
-  TypeChain chainCopy = typeChain;
-  // Unwrap the chain until the base type can be retrieved
-  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_REF || chainCopy.back().superType == TY_ARRAY)
-    chainCopy.pop_back();
-  // Check if it is of the given superType and subType
-  return chainCopy.back().superType == superType;
+  assert(!typeChain.empty());
+  return typeChain.front().superType == superType;
 }
 
 /**
@@ -187,21 +178,6 @@ bool SymbolType::isBaseType(SymbolSuperType superType) const {
  */
 bool SymbolType::isSameContainerTypeAs(const SymbolType &otherType) const {
   return (is(TY_PTR) && otherType.is(TY_PTR)) || (is(TY_REF) && otherType.is(TY_REF)) || (is(TY_ARRAY) && otherType.is(TY_ARRAY));
-}
-
-/**
- * Retrieve the base type of the current type. E.g. int of int[]*[]**
- *
- * @return Base type
- */
-SymbolType SymbolType::getBaseType() const {
-  // Copy the stack to not destroy the present one
-  TypeChain chainCopy = typeChain;
-  // Unwrap the chain until the base type can be retrieved
-  while (chainCopy.back().superType == TY_PTR || chainCopy.back().superType == TY_REF || chainCopy.back().superType == TY_ARRAY)
-    chainCopy.pop_back();
-  // Return the base type
-  return SymbolType(chainCopy);
 }
 
 /**
@@ -227,14 +203,13 @@ void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTyp
  * @return Symbol type name
  */
 std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLINT(misc-no-recursion)
-  std::string name;
-  TypeChain chain = typeChain;
-  for (int i = 0; i < typeChain.size(); i++) {
-    TypeChainElement chainElement = chain.back();
-    name.insert(0, getNameFromChainElement(chainElement, withSize, mangledName));
-    chain.pop_back();
-  }
-  return name;
+  std::stringstream name;
+  // Copy the chain to not destroy the present one
+  TypeChain chainCopy = typeChain;
+  // Loop through all items
+  for (TypeChainElement &chainElement : chainCopy)
+    name << getNameFromChainElement(chainElement, withSize, mangledName);
+  return name.str();
 }
 
 /**
@@ -246,9 +221,7 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLI
  * @return Size
  */
 long SymbolType::getArraySize() const {
-  if (typeChain.back().superType != TY_ARRAY)                                               // GCOV_EXCL_LINE
-    throw std::runtime_error("Internal compiler error: Cannot get size of non-array type"); // GCOV_EXCL_LINE
-
+  assert(getSuperType() == TY_ARRAY);
   return typeChain.back().data.arraySize;
 }
 
@@ -299,7 +272,10 @@ bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs.typ
  *
  * @param newSubType New sub type
  */
-void SymbolType::setSubType(const std::string &newSubType) { typeChain.back().subType = newSubType; }
+void SymbolType::setSubType(const std::string &newSubType) {
+  assert(!typeChain.empty());
+  typeChain.back().subType = newSubType;
+}
 
 /**
  * Get the name of a type chain element

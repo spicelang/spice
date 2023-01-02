@@ -100,7 +100,7 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
 
   Function *spiceFunc = data.callee;
   Scope *accessScope = data.calleeParentScope;
-  const std::string mangledName = spiceFunc->getMangledName();
+  const std::string &mangledName = data.callee->external ? node->fqFunctionName : spiceFunc->getMangledName();
   std::vector<llvm::Value *> argValues;
 
   // Get this type

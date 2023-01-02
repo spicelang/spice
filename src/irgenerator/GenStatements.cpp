@@ -54,8 +54,10 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   }
   assert(varAddress != nullptr);
 
-  // Attach the variable name to the LLVM value
-  varAddress->setName(varEntry->name);
+  // Attach the variable name to the LLVM value.
+  // Skip reference variables, as they get the LLVM value of another variable and would rename it
+  if (!varSymbolType.isReference())
+    varAddress->setName(varEntry->name);
 
   // Generate debug info for variable declaration
   if (cliOptions.generateDebugInfo)
@@ -139,7 +141,7 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   llvm::Function *parentFct = builder.GetInsertBlock()->getParent();
 
   // Create condition check
-  insertCondJump(condValue, bThen, bExit);
+  insertCondJump(condValue, bExit, bThen);
 
   // Switch to then block
   switchToBlock(bThen);

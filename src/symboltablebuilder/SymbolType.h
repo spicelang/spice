@@ -144,12 +144,15 @@ public:
     return std::any_of(superTypes.begin(), superTypes.end(), [&superType](int type) { return type == superType; });
   }
   [[nodiscard]] bool isSameContainerTypeAs(const SymbolType &otherType) const;
-  [[nodiscard]] inline SymbolSuperType getSuperType() const { return typeChain.back().superType; }
+  [[nodiscard]] inline SymbolSuperType getSuperType() const {
+    assert(!typeChain.empty());
+    return typeChain.back().superType;
+  }
   [[nodiscard]] inline const std::string &getSubType() const {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
     return typeChain.back().subType;
   }
-  [[nodiscard]] SymbolType getBaseType() const;
+  [[nodiscard]] SymbolType getBaseType() const { return SymbolType({typeChain.front()}); }
   void setTemplateTypes(const std::vector<SymbolType> &templateTypes);
   void setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes);
   [[nodiscard]] inline const std::vector<SymbolType> &getTemplateTypes() const { return typeChain.back().templateTypes; }
