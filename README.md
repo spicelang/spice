@@ -53,7 +53,7 @@ Use this command to run it:
 ```
 
 #### Re-build Spice
-To re-build Spice there is also a batch/shell script to help you with that. Use the following command to run it:
+There is also a batch/shell script to rebuild Spice. Use the following command to run it:
 
 **Linux:** <br>
 ```sh

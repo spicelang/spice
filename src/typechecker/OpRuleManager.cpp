@@ -108,7 +108,7 @@ SymbolType OpRuleManager::getEqualResultType(const ASTNode *node, const SymbolTy
   // Allow 'pointer == pointer' straight away
   if (lhs.isPointer() && rhs.isPointer())
     return SymbolType(TY_BOOL);
-  // Allow 'pointer == byte' straight away
+  // Allow 'pointer == int' straight away
   if (lhs.isPointer() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
   // Check primitive type combinations
@@ -119,7 +119,7 @@ SymbolType OpRuleManager::getNotEqualResultType(const ASTNode *node, const Symbo
   // Allow 'pointer != pointer' straight away
   if (lhs.isPointer() && rhs.isPointer())
     return SymbolType(TY_BOOL);
-  // Allow 'pointer != byte' straight away
+  // Allow 'pointer != int' straight away
   if (lhs.isPointer() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
   // Check primitive type combinations

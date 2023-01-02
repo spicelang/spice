@@ -1,7 +1,7 @@
 f<int> main() {
     int test = 123;
     int& testRef = test;
-    assert &test == &testRef;
+    assert test == testRef;
 }
 
 /*ext<byte*> malloc(long);
