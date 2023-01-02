@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "Lifecycle.h"
 
