@@ -869,8 +869,16 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
     return ExprResult{.constant = constantItemValue, .entry = varEntry};
   }
 
-  assert(varEntry->getAddress() != nullptr);
-  return ExprResult{.ptr = varEntry->getAddress(), .entry = varEntry};
+  llvm::Value *address = varEntry->getAddress();
+  assert(address != nullptr);
+
+  // Load the address of the referenced variable
+  if (varEntry->getType().isReference()) {
+    llvm::Type *referencedType = varEntry->getType().toLLVMType(context, currentScope);
+    address = builder.CreateLoad(referencedType, address);
+  }
+
+  return ExprResult{.ptr = address, .entry = varEntry};
 }
 
 } // namespace spice::compiler

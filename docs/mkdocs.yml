@@ -18,6 +18,9 @@ theme:
   features:
     - navigation.instant
     - navigation.tabs
+    - content.code.copy
+    - content.action.edit
+    - content.action.view
   palette:
     - media: "(prefers-color-scheme: light)"  # Light mode
       scheme: default

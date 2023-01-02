@@ -55,9 +55,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   assert(varAddress != nullptr);
 
   // Attach the variable name to the LLVM value.
-  // Skip reference variables, as they get the LLVM value of another variable and would rename it
-  if (!varSymbolType.isReference())
-    varAddress->setName(varEntry->name);
+  varAddress->setName(varEntry->name);
 
   // Generate debug info for variable declaration
   if (cliOptions.generateDebugInfo)

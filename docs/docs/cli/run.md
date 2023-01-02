@@ -27,7 +27,10 @@ You can apply following options to the `run` command:
 | `-symtab`    | `--dump-symtab`      | Dump serialized symbol tables                                                               |
 | `-ir`        | `--dump-ir`          | Dump LLVM-IR                                                                                |
 | `-s`, `-asm` | `--dump-assembly`    | Dump Assembly code                                                                          |
+| `-j <n>`     | `--jobs <n>`         | Set number of jobs to parallelize compilation (default is auto)                             |
 | `-o`         | `--output`           | Set path for executable output.                                                             |
 | `-O<x>`      | -                    | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz`        |
 | `-g`         | `--debug-info`       | Generate debug info to debug the executable in GDB, etc.                                    |
 | -            | `--disable-verifier` | Disable LLVM module and function verification (only recommended for debugging the compiler) |
+| -            | `--ignore-cache`     | Compile always and ignore the compile cache                                                 |
+| -            | `--disable-ast-opt`  | Disable AST optimization (recommended for debugging the compiler)                           |

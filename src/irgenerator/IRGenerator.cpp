@@ -256,14 +256,16 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
   const bool isRefAssign = lhsSType.isReference();
   const bool needsShallowCopy = !isRefAssign && lhsSType.is(TY_STRUCT);
 
-  if (isRefAssign) { // We simply set the address of lhs to the address of rhs
+  if (isRefAssign) {
     // Get address of right side
     llvm::Value *rhsAddress = resolveAddress(rhsNode);
     assert(rhsAddress != nullptr);
 
-    // Set address of rhs to lhs entry
-    lhsEntry->updateAddress(rhsAddress);
-    return ExprResult{.ptr = rhsAddress, .entry = lhsEntry};
+    // Allocate space for the reference and store the address
+    llvm::Value *refAddress = insertAlloca(rhsAddress->getType());
+    builder.CreateStore(rhsAddress, refAddress);
+    lhsEntry->updateAddress(refAddress);
+    return ExprResult{.ptr = refAddress, .value = rhsAddress, .entry = lhsEntry};
   }
 
   // Check if we need to copy the rhs to the lhs. This happens for structs
