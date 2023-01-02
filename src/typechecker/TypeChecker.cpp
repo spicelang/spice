@@ -398,6 +398,10 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   } else {
     // Visit data type
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
+
+    // References with no initialization are illegal
+    if (localVarType.isReference())
+      throw SemanticError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
   }
 
   // Update the type of the variable
@@ -1525,6 +1529,10 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
     switch (typeModifier.modifierType) {
     case DataTypeNode::TYPE_PTR: {
       type = type.toPointer(node);
+      break;
+    }
+    case DataTypeNode::TYPE_REF: {
+      type = type.toReference(node);
       break;
     }
     case DataTypeNode::TYPE_ARRAY: {

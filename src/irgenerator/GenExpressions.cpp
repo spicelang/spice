@@ -636,7 +636,9 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
       // Execute operation
       lhs.ptr = lhs.value;
-      lhs.value = builder.CreateLoad(lhsTy, lhs.value);
+
+      // Reset value
+      lhs.value = nullptr;
 
       // If this is the last operation, we can skip the final store, as we just stored
       storeValue = false;

@@ -141,6 +141,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Dyn references not allowed";
   case DYN_ARRAYS_NOT_ALLOWED:
     return "Dyn arrays not allowed";
+  case REFERENCE_WITHOUT_INITIALIZER:
+    return "Reference without initializer";
   case GENERIC_TYPE_NOT_IN_TEMPLATE:
     return "Generic type not contained in template";
   case SPECIFIER_AT_ILLEGAL_CONTEXT:

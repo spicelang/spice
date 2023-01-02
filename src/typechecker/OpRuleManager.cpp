@@ -16,6 +16,9 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const SymbolT
   // Allow pointers, arrays and structs of the same type straight away
   if (lhs.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhs == rhs)
     return rhs;
+  // Allow type to ref type of the same contained type straight away
+  if (lhs.is(TY_REF) && lhs.getContainedTy() == rhs)
+    return lhs;
   // Allow array to pointer
   if (lhs.is(TY_PTR) && rhs.is(TY_ARRAY) && lhs.getContainedTy() == rhs.getContainedTy())
     return lhs;
@@ -27,6 +30,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const SymbolT
 }
 
 SymbolType OpRuleManager::getPlusEqualResultType(const ASTNode *node, const SymbolType &lhs, const SymbolType &rhs) {
+  // Check if this is an unsafe operation
   if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
