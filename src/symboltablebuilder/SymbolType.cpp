@@ -263,9 +263,13 @@ Scope *SymbolType::getStructBodyScope() const {
   return typeChain.back().data.structBodyScope;
 }
 
-bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain == rhs.typeChain; }
+bool operator==(const SymbolType &lhs, const SymbolType &rhs) {
+  return lhs.getTypeChainWithoutReferences() == rhs.getTypeChainWithoutReferences();
+}
 
-bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs.typeChain == rhs.typeChain); }
+bool operator!=(const SymbolType &lhs, const SymbolType &rhs) {
+  return !(lhs == rhs);
+}
 
 /**
  * Set the sub type of the top element

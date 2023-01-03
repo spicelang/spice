@@ -1,7 +1,26 @@
+type Stamp struct {
+    double value
+    bool glued
+}
+
+p Stamp.print() {
+    printf("Value: %f, glued: %d", this.value, this.glued);
+}
+
+type Letter struct {
+    string content
+    Stamp stamp
+}
+
+f<Stamp> Letter.getStamp() {
+    return this.stamp;
+}
+
 f<int> main() {
-    int test = 123;
-    int& testRef = test;
-    assert test == testRef;
+    dyn letter = Letter{ "This is a letter", Stamp{ 3.4, true } };
+    printf("Stamp glued: %d\n", letter.stamp.glued);
+    Stamp stamp = letter.getStamp();
+    stamp.print();
 }
 
 /*ext<byte*> malloc(long);

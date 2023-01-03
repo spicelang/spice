@@ -292,7 +292,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     // Store all field values at their corresponding offsets
     llvm::Value *indices[2] = {builder.getInt32(0), nullptr};
     for (size_t i = 0; i < fieldValueResults.size(); i++) {
-      ExprResult &exprResult = fieldValueResults[i];
+      ExprResult &exprResult = fieldValueResults.at(i);
       // Get field value
       llvm::Value *itemValue = resolveValue(exprResult.node, exprResult);
       // Get field address

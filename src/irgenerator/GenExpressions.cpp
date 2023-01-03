@@ -548,7 +548,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
   // It is a prefix unary expression
   // Evaluate lhs
   PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
-  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx).removeReferenceWrappers();
   llvm::Type *lhsTy = lhsSTy.toLLVMType(context, currentScope);
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
 
@@ -588,7 +588,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
         lhs.value = builder.CreateLoad(lhsTy, lhs.ptr, isVolatile);
 
       // Execute operation
-      lhs.value = conversionManager.getPostfixMinusMinusInst(lhs, lhsNode, currentScope);
+      lhs.value = conversionManager.getPrefixMinusMinusInst(lhs, lhsNode, currentScope);
 
       // If this operation happens on a volatile variable, store the value directly
       if (lhs.entry && lhs.entry->isVolatile) {
@@ -654,10 +654,9 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
       // Execute operation
       lhs.value = lhs.ptr;
-      lhs.ptr = insertAlloca(lhs.value->getType());
-      builder.CreateStore(lhs.value, lhs.ptr);
 
       // If this is the last operation, we can skip the final store, as we just stored
+      lhs.ptr = nullptr;
       storeValue = false;
       break;
     }
@@ -665,7 +664,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
       throw std::runtime_error("PrefixUnary fall-through");
     }
 
-    lhsSTy = opQueue.front().second;
+    lhsSTy = opQueue.front().second.removeReferenceWrappers();
     lhsTy = lhsSTy.toLLVMType(context, currentScope);
     opQueue.pop();
   }
@@ -690,7 +689,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
   // It is a postfix unary expression
   // Evaluate lhs
   AtomicExprNode *lhsNode = node->atomicExpr();
-  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx).removeReferenceWrappers();
   llvm::Type *lhsTy = lhsSTy.is(TY_IMPORT) ? nullptr : lhsSTy.toLLVMType(context, currentScope);
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
 
@@ -756,7 +755,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
         lhs.value = builder.CreateLoad(lhsTy, lhs.ptr, isVolatile);
 
       // Execute operation
-      llvm::Value *newLhsValue = conversionManager.getPostfixPlusPlusInst(lhs, lhsNode, currentScope);
+      llvm::Value *newLhsValue = conversionManager.getPostfixPlusPlusInst(lhs, lhsSTy, lhsNode, currentScope);
 
       // Save the new value to the old address
       assert(lhs.entry != nullptr);
@@ -775,7 +774,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
         lhs.value = builder.CreateLoad(lhsTy, lhs.ptr, isVolatile);
 
       // Execute operation
-      llvm::Value *newLhsValue = conversionManager.getPostfixMinusMinusInst(lhs, lhsNode, currentScope);
+      llvm::Value *newLhsValue = conversionManager.getPostfixMinusMinusInst(lhs, lhsSTy, lhsNode, currentScope);
 
       // Save the new value to the old address
       assert(lhs.entry != nullptr);
@@ -792,7 +791,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       throw std::runtime_error("PostfixUnary fall-through");
     }
 
-    lhsSTy = opQueue.front().second;
+    lhsSTy = opQueue.front().second.removeReferenceWrappers();
     lhsTy = lhsSTy.toLLVMType(context, currentScope);
     opQueue.pop();
   }

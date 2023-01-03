@@ -17,8 +17,8 @@ OpRuleConversionManager::OpRuleConversionManager(GlobalResourceManager &resource
 PtrAndValue OpRuleConversionManager::getPlusEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                       Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -65,8 +65,8 @@ PtrAndValue OpRuleConversionManager::getPlusEqualInst(ExprResult &lhs, const AST
 llvm::Value *OpRuleConversionManager::getMinusEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs,
                                                         const ASTNode *rhsN, Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -112,8 +112,8 @@ llvm::Value *OpRuleConversionManager::getMinusEqualInst(ExprResult &lhs, const A
 PtrAndValue OpRuleConversionManager::getMulEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                      Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -155,8 +155,8 @@ PtrAndValue OpRuleConversionManager::getMulEqualInst(ExprResult &lhs, const ASTN
 llvm::Value *OpRuleConversionManager::getDivEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                       Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -197,8 +197,8 @@ llvm::Value *OpRuleConversionManager::getDivEqualInst(ExprResult &lhs, const AST
 llvm::Value *OpRuleConversionManager::getRemEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                       Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -239,8 +239,8 @@ llvm::Value *OpRuleConversionManager::getRemEqualInst(ExprResult &lhs, const AST
 llvm::Value *OpRuleConversionManager::getSHLEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                       Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -273,8 +273,8 @@ llvm::Value *OpRuleConversionManager::getSHLEqualInst(ExprResult &lhs, const AST
 llvm::Value *OpRuleConversionManager::getSHREqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                       Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -307,8 +307,8 @@ llvm::Value *OpRuleConversionManager::getSHREqualInst(ExprResult &lhs, const AST
 llvm::Value *OpRuleConversionManager::getAndEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                       Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -341,8 +341,8 @@ llvm::Value *OpRuleConversionManager::getAndEqualInst(ExprResult &lhs, const AST
 llvm::Value *OpRuleConversionManager::getOrEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                      Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -375,8 +375,8 @@ llvm::Value *OpRuleConversionManager::getOrEqualInst(ExprResult &lhs, const ASTN
 llvm::Value *OpRuleConversionManager::getXorEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                       Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -410,8 +410,8 @@ llvm::Value *OpRuleConversionManager::getXorEqualInst(ExprResult &lhs, const AST
 llvm::Value *OpRuleConversionManager::getBitwiseAndInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs,
                                                         const ASTNode *rhsN, Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -429,8 +429,8 @@ llvm::Value *OpRuleConversionManager::getBitwiseAndInst(ExprResult &lhs, const A
 llvm::Value *OpRuleConversionManager::getBitwiseOrInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                        Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -448,8 +448,8 @@ llvm::Value *OpRuleConversionManager::getBitwiseOrInst(ExprResult &lhs, const AS
 llvm::Value *OpRuleConversionManager::getBitwiseXorInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs,
                                                         const ASTNode *rhsN, Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -467,8 +467,8 @@ llvm::Value *OpRuleConversionManager::getBitwiseXorInst(ExprResult &lhs, const A
 llvm::Value *OpRuleConversionManager::getEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                    Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -583,8 +583,8 @@ llvm::Value *OpRuleConversionManager::getEqualInst(ExprResult &lhs, const ASTNod
 llvm::Value *OpRuleConversionManager::getNotEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                       Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -699,8 +699,8 @@ llvm::Value *OpRuleConversionManager::getNotEqualInst(ExprResult &lhs, const AST
 llvm::Value *OpRuleConversionManager::getLessInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                   Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -764,8 +764,8 @@ llvm::Value *OpRuleConversionManager::getLessInst(ExprResult &lhs, const ASTNode
 llvm::Value *OpRuleConversionManager::getGreaterInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                      Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -829,8 +829,8 @@ llvm::Value *OpRuleConversionManager::getGreaterInst(ExprResult &lhs, const ASTN
 llvm::Value *OpRuleConversionManager::getLessEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                        Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -894,8 +894,8 @@ llvm::Value *OpRuleConversionManager::getLessEqualInst(ExprResult &lhs, const AS
 llvm::Value *OpRuleConversionManager::getGreaterEqualInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs,
                                                           const ASTNode *rhsN, Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -959,8 +959,8 @@ llvm::Value *OpRuleConversionManager::getGreaterEqualInst(ExprResult &lhs, const
 llvm::Value *OpRuleConversionManager::getShiftLeftInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                        Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -1000,8 +1000,8 @@ llvm::Value *OpRuleConversionManager::getShiftLeftInst(ExprResult &lhs, const AS
 llvm::Value *OpRuleConversionManager::getShiftRightInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs,
                                                         const ASTNode *rhsN, Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -1041,8 +1041,8 @@ llvm::Value *OpRuleConversionManager::getShiftRightInst(ExprResult &lhs, const A
 PtrAndValue OpRuleConversionManager::getPlusInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                  Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -1117,8 +1117,8 @@ PtrAndValue OpRuleConversionManager::getPlusInst(ExprResult &lhs, const ASTNode 
 llvm::Value *OpRuleConversionManager::getMinusInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                    Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -1193,8 +1193,8 @@ llvm::Value *OpRuleConversionManager::getMinusInst(ExprResult &lhs, const ASTNod
 PtrAndValue OpRuleConversionManager::getMulInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                 Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -1257,8 +1257,8 @@ PtrAndValue OpRuleConversionManager::getMulInst(ExprResult &lhs, const ASTNode *
 llvm::Value *OpRuleConversionManager::getDivInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                  Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -1322,8 +1322,8 @@ llvm::Value *OpRuleConversionManager::getDivInst(ExprResult &lhs, const ASTNode 
 llvm::Value *OpRuleConversionManager::getRemInst(ExprResult &lhs, const ASTNode *lhsN, ExprResult &rhs, const ASTNode *rhsN,
                                                  Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
@@ -1366,7 +1366,7 @@ llvm::Value *OpRuleConversionManager::getRemInst(ExprResult &lhs, const ASTNode 
 
 llvm::Value *OpRuleConversionManager::getPrefixMinusInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
 
@@ -1385,7 +1385,7 @@ llvm::Value *OpRuleConversionManager::getPrefixMinusInst(ExprResult &lhs, const 
 
 llvm::Value *OpRuleConversionManager::getPrefixPlusPlusInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
 
@@ -1404,7 +1404,7 @@ llvm::Value *OpRuleConversionManager::getPrefixPlusPlusInst(ExprResult &lhs, con
 
 llvm::Value *OpRuleConversionManager::getPrefixMinusMinusInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
 
@@ -1423,7 +1423,7 @@ llvm::Value *OpRuleConversionManager::getPrefixMinusMinusInst(ExprResult &lhs, c
 
 llvm::Value *OpRuleConversionManager::getPrefixNotInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
 
@@ -1438,7 +1438,7 @@ llvm::Value *OpRuleConversionManager::getPrefixNotInst(ExprResult &lhs, const AS
 
 llvm::Value *OpRuleConversionManager::getPrefixBitwiseNotInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
 
@@ -1453,9 +1453,10 @@ llvm::Value *OpRuleConversionManager::getPrefixBitwiseNotInst(ExprResult &lhs, c
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ~"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getPostfixPlusPlusInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope) {
+llvm::Value *OpRuleConversionManager::getPostfixPlusPlusInst(ExprResult &lhs, SymbolType lhsSTy, const ASTNode *lhsN,
+                                                             Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  lhsSTy = lhsSTy.removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
 
@@ -1472,9 +1473,10 @@ llvm::Value *OpRuleConversionManager::getPostfixPlusPlusInst(ExprResult &lhs, co
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getPostfixMinusMinusInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope) {
+llvm::Value *OpRuleConversionManager::getPostfixMinusMinusInst(ExprResult &lhs, SymbolType lhsSTy, const ASTNode *lhsN,
+                                                               Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &lhsSTy = lhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  lhsSTy = lhsSTy.removeReferenceWrappers();
 
   const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsN, lhs, accessScope); };
 
@@ -1494,7 +1496,7 @@ llvm::Value *OpRuleConversionManager::getPostfixMinusMinusInst(ExprResult &lhs, 
 llvm::Value *OpRuleConversionManager::getCastInst(const SymbolType &lhsSTy, ExprResult &rhs, const ASTNode *rhsN,
                                                   Scope *accessScope) {
   // Retrieve symbol types
-  const SymbolType &rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx);
+  SymbolType rhsSTy = rhsN->getEvaluatedSymbolType(irGenerator->manIdx).removeReferenceWrappers();
 
   const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsN, rhs, accessScope); };
   const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);

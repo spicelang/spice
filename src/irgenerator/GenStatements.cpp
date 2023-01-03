@@ -39,9 +39,9 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   // Check if the declaration is with an assignment or the default value
   llvm::Value *varAddress = nullptr;
   if (node->hasAssignment && !rhsIsDynArray) { // Assignment
-    ExprResult assignResult = doAssignment(varEntry, node->assignExpr());
+    ExprResult assignResult = doAssignment(varEntry, node->assignExpr(), true);
     assert(assignResult.entry == varEntry);
-    assert(assignResult.ptr == varEntry->getAddress());
+    assert(assignResult.ptr == varEntry->getAddress() || varEntry->getAddress() == nullptr);
     varAddress = assignResult.entry->getAddress();
   } else { // Default value
     // Allocate memory
@@ -126,7 +126,7 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Only generate assertions with -O0
-  if (cliOptions.optLevel == 0)
+  if (cliOptions.optLevel != 0)
     return nullptr;
 
   // Create blocks
