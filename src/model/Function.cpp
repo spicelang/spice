@@ -158,6 +158,9 @@ bool Function::hasSubstantiatedParams() const {
  * @return Substantiated generics or not
  */
 bool Function::hasSubstantiatedGenerics() const {
+  for (const SymbolType &templateType : thisType.getTemplateTypes())
+    if (templateType.isBaseType(TY_GENERIC))
+      return false;
   return templateTypes.empty() && !thisType.isBaseType(TY_GENERIC) && !returnType.isBaseType(TY_GENERIC);
 }
 

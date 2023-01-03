@@ -57,6 +57,18 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, ASTNode *
 void SymbolTable::insertCapture(const std::string &name, const Capture &capture) { captures.insert({name, capture}); }
 
 /**
+ * Copy a symbol by its name
+ *
+ * @param originalName Original symbol name
+ * @param newName New symbol name
+ */
+void SymbolTable::copy(const std::string &originalName, const std::string &newName) {
+  SymbolTableEntry *entryToCopy = lookupStrict(originalName);
+  assert(entryToCopy != nullptr);
+  symbols.insert({newName, *entryToCopy});
+}
+
+/**
  * Check if a symbol exists in the current or any parent scope and return it if possible
  *
  * @param name Name of the desired symbol

@@ -1,0 +1,4 @@
+import "source1";
+import "source1";
+
+f<int> main() {}

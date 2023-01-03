@@ -252,8 +252,8 @@ bool FunctionManager::matchName(const Function &candidate, const std::string &re
  * @return Fulfilled or not
  */
 bool FunctionManager::matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping) {
-  const SymbolType candidateThisType = candidate.thisType;
-  const SymbolType requestedThisBaseType = requestedThisType.getBaseType();
+  const SymbolType &candidateThisType = candidate.thisType;
+  const SymbolType &requestedThisBaseType = requestedThisType.getBaseType();
 
   // If the candidate 'this' type is non-generic, we can simpy check for equality of the types
   if (candidateThisType.getTemplateTypes().empty())
@@ -351,7 +351,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
     typeMapping.insert({genericTypeName, requestedParamType});
 
     // Substantiate generic type with the requested type
-    SymbolType newParamType = paramType.replaceBaseType(requestedParamType.getBaseType());
+    const SymbolType &newParamType = paramType.replaceBaseType(requestedParamType.getBaseType());
     candidate.paramList.at(i) = Param{newParamType, false};
   }
 

@@ -130,12 +130,13 @@ public:
   virtual void customItemsInitialization(size_t) {} // Noop
 
   SymbolType setEvaluatedSymbolType(const SymbolType &symbolType, const size_t idx) {
-    symbolTypes.insert(symbolTypes.begin() + static_cast<long>(idx), symbolType);
+    assert(symbolTypes.size() > idx);
+    symbolTypes.at(idx) = symbolType;
     return symbolType;
   }
 
   [[nodiscard]] const SymbolType &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
-    if (!symbolTypes.empty() && !symbolTypes[idx].is(TY_INVALID))
+    if (!symbolTypes.empty() && !symbolTypes.at(idx).is(TY_INVALID))
       return symbolTypes.at(idx);
     if (children.size() != 1)
       throw std::runtime_error("Cannot deduce evaluated symbol type");
