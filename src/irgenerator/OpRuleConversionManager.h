@@ -78,8 +78,8 @@ public:
   llvm::Value *getPrefixMinusMinusInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope);
   llvm::Value *getPrefixNotInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope);
   llvm::Value *getPrefixBitwiseNotInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope);
-  llvm::Value *getPostfixPlusPlusInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope);
-  llvm::Value *getPostfixMinusMinusInst(ExprResult &lhs, const ASTNode *lhsN, Scope *accessScope);
+  llvm::Value *getPostfixPlusPlusInst(ExprResult &lhs, SymbolType lhsSTy, const ASTNode *lhsN, Scope *accessScope);
+  llvm::Value *getPostfixMinusMinusInst(ExprResult &lhs, SymbolType lhsSTy, const ASTNode *lhsN, Scope *accessScope);
   llvm::Value *getCastInst(const SymbolType &lhsSTy, ExprResult &rhs, const ASTNode *rhsN, Scope *accessScope);
 
 private:

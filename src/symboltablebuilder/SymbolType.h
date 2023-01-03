@@ -152,6 +152,14 @@ public:
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
     return typeChain.back().subType;
   }
+  [[nodiscard]] inline TypeChain getTypeChainWithoutReferences() const {
+    assert(!typeChain.empty());
+    TypeChain typeChainCopy = typeChain;
+    while (typeChainCopy.back().superType == TY_REF)
+      typeChainCopy.pop_back();
+    return typeChainCopy;
+  }
+  [[nodiscard]] inline SymbolType removeReferenceWrappers() const { return SymbolType(getTypeChainWithoutReferences()); }
   [[nodiscard]] SymbolType getBaseType() const { return SymbolType({typeChain.front()}); }
   void setTemplateTypes(const std::vector<SymbolType> &templateTypes);
   void setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes);

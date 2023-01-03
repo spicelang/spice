@@ -3,32 +3,23 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-@0 = private unnamed_addr constant [11 x i8] c"./test-dir\00", align 1
-@1 = private unnamed_addr constant [6 x i8] c"Done.\00", align 1
-@str = private unnamed_addr constant [17 x i8] c"Creating dir ...\00", align 1
-@str.1 = private unnamed_addr constant [17 x i8] c"Deleting dir ...\00", align 1
+; Function Attrs: inaccessiblememonly mustprogress nofree nounwind willreturn allockind("alloc,uninitialized") allocsize(0)
+declare noalias noundef ptr @malloc(i64 noundef) local_unnamed_addr #0
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @mkdir(ptr nocapture noundef readonly, i32 noundef) local_unnamed_addr #0
+; Function Attrs: inaccessiblemem_or_argmemonly mustprogress nounwind willreturn allockind("free")
+declare void @free(ptr allocptr nocapture noundef) local_unnamed_addr #1
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @rmdir(ptr nocapture noundef readonly) local_unnamed_addr #0
-
-; Function Attrs: nofree nounwind
-define i32 @main() local_unnamed_addr #0 {
-entry.l7:
-  %puts = tail call i32 @puts(ptr nonnull @str)
-  %0 = tail call i32 @mkdir(ptr nonnull @0, i32 511)
-  %puts2 = tail call i32 @puts(ptr nonnull @str.1)
-  %1 = tail call i32 @rmdir(ptr nonnull @0)
-  %2 = tail call i32 (ptr, ...) @printf(ptr nonnull @1)
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local i32 @main() local_unnamed_addr #2 {
+  %1 = tail call dereferenceable_or_null(1) ptr @malloc(i64 1)
+  %2 = ptrtoint ptr %1 to i64
+  %address.0.insert.mask = and i64 %2, -256
+  %address.0.insert.insert = or i64 %address.0.insert.mask, 12
+  %3 = inttoptr i64 %address.0.insert.insert to ptr
+  tail call void @free(ptr %3)
   ret i32 0
 }
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
-
-; Function Attrs: nofree nounwind
-declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #0
-
-attributes #0 = { nofree nounwind }
+attributes #0 = { inaccessiblememonly mustprogress nofree nounwind willreturn allockind("alloc,uninitialized") allocsize(0) "alloc-family"="malloc" }
+attributes #1 = { inaccessiblemem_or_argmemonly mustprogress nounwind willreturn allockind("free") "alloc-family"="malloc" }
+attributes #2 = { noinline nounwind optnone uwtable }

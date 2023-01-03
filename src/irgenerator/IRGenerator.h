@@ -107,7 +107,7 @@ private:
   void verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) const;
   void verifyModule(const CodeLoc &codeLoc) const;
   ExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
-  ExprResult doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *rhsNode);
+  ExprResult doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl = false);
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name = "",
                                  bool isVolatile = false);
   void autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const;

@@ -495,6 +495,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     AssignExprNode *assignment = node->args().at(placeholderCount);
     // Visit assignment
     SymbolType argType = std::any_cast<ExprResult>(visit(assignment)).type;
+    argType = argType.removeReferenceWrappers();
 
     switch (node->templatedString[index + 1]) {
     case 'c': {
@@ -555,11 +556,10 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
 }
 
 std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
-  SymbolType symbolType;
   if (node->isType) { // Size of type
-    symbolType = std::any_cast<SymbolType>(visit(node->dataType()));
+    visit(node->dataType());
   } else { // Size of value
-    symbolType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+    visit(node->assignExpr());
   }
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_INT), manIdx)};
@@ -567,6 +567,7 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
   SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  argType = argType.removeReferenceWrappers();
 
   // Check if arg is of type array
   if (!argType.isArray())
@@ -586,6 +587,7 @@ std::any TypeChecker::visitJoinCall(JoinCallNode *node) {
   for (AssignExprNode *assignExpr : node->assignExpressions()) {
     // Visit assign expression
     SymbolType assignExprType = std::any_cast<ExprResult>(visit(assignExpr)).type;
+    assignExprType = assignExprType.removeReferenceWrappers();
     // Check if type is byte* or byte*[]
     if (assignExprType == bytePtr && assignExprType.isArrayOf(bytePtr))
       throw SemanticError(assignExpr, JOIN_ARG_MUST_BE_TID,
@@ -1489,7 +1491,6 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   structType.setTemplateTypes(templateTypes);
 
   // Check if the number of fields matches
-  std::vector<SymbolType> fieldTypes;
   if (node->fieldLst()) { // Check if any fields are passed. Empty braces are also allowed
     if (spiceStruct->fieldTypes.size() != node->fieldLst()->args().size())
       throw SemanticError(node->fieldLst(), NUMBER_OF_FIELDS_NOT_MATCHING,
@@ -1498,7 +1499,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     // Check if the field types are matching
     for (int i = 0; i < node->fieldLst()->args().size(); i++) {
       // Get actual type
-      AssignExprNode *assignExpr = node->fieldLst()->args()[i];
+      AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
       SymbolType actualType = std::any_cast<ExprResult>(visit(assignExpr)).type;
       // Get expected type
       const SymbolTableEntry *expectedField = structScope->symbolTable.lookupByIndex(i);
@@ -1509,6 +1510,12 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
         throw SemanticError(assignExpr, FIELD_TYPE_NOT_MATCHING,
                             "Expected type " + expectedType.getName() + " for the field '" + expectedField->name + "', but got " +
                                 actualType.getName());
+    }
+  } else {
+    for (SymbolType &fieldType : spiceStruct->fieldTypes) {
+      if (fieldType.isReference())
+        throw SemanticError(node, REFERENCE_WITHOUT_INITIALIZER,
+                            "The struct takes at least one reference field. You need to instantiate it with all fields.");
     }
   }
 

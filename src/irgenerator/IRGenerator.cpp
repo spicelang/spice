@@ -245,7 +245,7 @@ ExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsN
   return doAssignment(lhs.entry, rhsNode);
 }
 
-ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *rhsNode) {
+ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl /*=false*/) {
   assert(lhsEntry != nullptr);
 
   // Get symbol types of left and right side
@@ -254,7 +254,7 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
 
   // Deduce some information about the assignment
   const bool isRefAssign = lhsSType.isReference();
-  const bool needsShallowCopy = !isRefAssign && lhsSType.is(TY_STRUCT);
+  const bool needsShallowCopy = !isDecl && !isRefAssign && lhsSType.is(TY_STRUCT);
 
   if (isRefAssign) {
     // Get address of right side
@@ -266,6 +266,13 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
     builder.CreateStore(rhsAddress, refAddress);
     lhsEntry->updateAddress(refAddress);
     return ExprResult{.ptr = refAddress, .value = rhsAddress, .entry = lhsEntry};
+  }
+
+  if (isDecl && rhsSType.is(TY_STRUCT)) {
+    auto result = std::any_cast<ExprResult>(visit(rhsNode));
+    lhsEntry->updateAddress(result.ptr);
+    result.entry = lhsEntry;
+    return result;
   }
 
   // Check if we need to copy the rhs to the lhs. This happens for structs
