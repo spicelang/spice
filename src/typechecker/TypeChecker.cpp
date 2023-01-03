@@ -1384,7 +1384,7 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
   return std::make_tuple(functionParentScope, data.thisType, knownStructName);
 }
 
-std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *node, Scope *structScope) {
+std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *node, Scope *structScope) const {
   FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
 
   // Traverse through structs - the first fragment is already looked up and the last one is the function name
@@ -1469,12 +1469,22 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   }
 
   // Get the struct instance
-  Struct *spiceStruct = StructManager::matchStruct(structScope->parent, structEntry->name, concreteTemplateTypes, node);
+  const std::string structName = structEntry->name;
+  Struct *spiceStruct = StructManager::matchStruct(structScope->parent, structName, concreteTemplateTypes, node);
   if (!spiceStruct) {
-    const std::string structSignature = Struct::getSignature(structEntry->name, concreteTemplateTypes);
+    const std::string structSignature = Struct::getSignature(structName, concreteTemplateTypes);
     throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
   }
   node->instantiatedStructs.at(manIdx) = spiceStruct;
+
+  // Ensure that the struct object has the right entry attached
+  if (spiceStruct->genericSubstantiation) {
+    Scope *structParentScope = registryEntry->targetScope->parent;
+    structParentScope->symbolTable.copy(structName, spiceStruct->getSignature());
+    spiceStruct->entry = structParentScope->lookupStrict(spiceStruct->getSignature());
+    assert(spiceStruct->entry != nullptr);
+    spiceStruct->entry->used = true; // We use it directly, so set it to used
+  }
 
   // Set struct to used
   spiceStruct->used = true;
@@ -1677,7 +1687,7 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
   for (const auto &[registryEntryName, entry] : targetSourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->structScope == symbolType.getStructBodyScope())
+        if (manifestation->structScope == symbolType.getBaseType().getStructBodyScope())
           return symbolType.replaceBaseSubType(manifestation->name);
   return symbolType;
 }

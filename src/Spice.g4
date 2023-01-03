@@ -41,7 +41,7 @@ stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: specifierLst? dataType IDENTIFIER (ASSIGN assignExpr)?;
 specifierLst: specifier+;
 specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC | HEAP;
-importStmt: IMPORT STRING_LIT AS IDENTIFIER SEMICOLON;
+importStmt: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;
 returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INT_LIT?;
 continueStmt: CONTINUE INT_LIT?;

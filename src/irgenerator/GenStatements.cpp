@@ -41,7 +41,6 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   if (node->hasAssignment && !rhsIsDynArray) { // Assignment
     ExprResult assignResult = doAssignment(varEntry, node->assignExpr(), true);
     assert(assignResult.entry == varEntry);
-    assert(assignResult.ptr == varEntry->getAddress() || varEntry->getAddress() == nullptr);
     varAddress = assignResult.entry->getAddress();
   } else { // Default value
     // Allocate memory

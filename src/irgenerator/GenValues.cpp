@@ -252,6 +252,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   const size_t numFields = spiceStruct->fieldTypes.size();
 
   // Get struct type
+  assert(spiceStruct->entry != nullptr);
   llvm::StructType *structType = spiceStruct->entry->getStructLLVMType();
   assert(structType != nullptr);
 

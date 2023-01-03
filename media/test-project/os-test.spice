@@ -1,27 +1,29 @@
-type Stamp struct {
-    double value
-    bool glued
-}
+import "std/data/vector";
 
-p Stamp.print() {
-    printf("Value: %f, glued: %d", this.value, this.glued);
-}
 
-type Letter struct {
-    string content
-    Stamp stamp
-}
+/*type T string|char;
 
-f<Stamp> Letter.getStamp() {
-    return this.stamp;
+type TestStruct<T> struct {
+    T base
+    int test
 }
 
 f<int> main() {
-    dyn letter = Letter{ "This is a letter", Stamp{ 3.4, true } };
-    printf("Stamp glued: %d\n", letter.stamp.glued);
-    Stamp stamp = letter.getStamp();
-    stamp.print();
+    TestStruct<char> s = TestStruct<char>{ 'a', 1 };
+    s.printTest();
 }
+
+p TestStruct.printTest() {
+    printf("Test: %d\n", this.getTest());
+}
+
+f<int> TestStruct.getTest() {
+    if this.test == 1 {
+        this.test++;
+        this.printTest();
+    }
+    return this.test;
+}*/
 
 /*ext<byte*> malloc(long);
 ext free(byte*);

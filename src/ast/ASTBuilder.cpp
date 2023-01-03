@@ -887,11 +887,11 @@ std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
   saveErrorMessage(importStmtNode, ctx);
 
   // Extract path
-  std::string pathStr = ctx->STRING_LIT()->getText();
+  const std::string pathStr = ctx->STRING_LIT()->getText();
   importStmtNode->importPath = pathStr.substr(1, pathStr.size() - 2);
 
-  // Extract name
-  importStmtNode->importName = getIdentifier(ctx->IDENTIFIER());
+  // If no name is given, use the path as name
+  importStmtNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER()) : importStmtNode->importPath;
 
   return nullptr;
 }

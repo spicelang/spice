@@ -270,7 +270,7 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
 
   if (isDecl && rhsSType.is(TY_STRUCT)) {
     auto result = std::any_cast<ExprResult>(visit(rhsNode));
-    lhsEntry->updateAddress(result.ptr);
+    lhsEntry->updateAddress(resolveAddress(result, lhsEntry->isVolatile));
     result.entry = lhsEntry;
     return result;
   }

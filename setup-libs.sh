@@ -14,6 +14,6 @@ mkdir thread-pool
 curl -SsL "https://raw.githubusercontent.com/bshoshany/thread-pool/master/BS_thread_pool.hpp" --output thread-pool/thread-pool.hpp
 
 mkdir cli11
-curl -SsL "https://github.com/spicelang/CLI11/releases/download/v2.3.0-spice/CLI11.hpp" --output cli11/CLI11.hpp
+curl -SsL "https://github.com/spicelang/CLI11/releases/download/v2.3.2-spice/CLI11.hpp" --output cli11/CLI11.hpp
 
 cd ..

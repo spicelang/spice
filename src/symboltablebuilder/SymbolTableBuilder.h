@@ -49,6 +49,7 @@ public:
   std::any visitEnumItem(EnumItemNode *node) override;
   std::any visitField(FieldNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
+  std::any visitImportStmt(ImportStmtNode *node) override;
 
 private:
   // Private members

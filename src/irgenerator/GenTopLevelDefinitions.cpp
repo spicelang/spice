@@ -451,7 +451,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
   // Get all substantiated structs which result from this struct def
   StructManifestationList *manifestations = StructManager::getManifestationList(currentScope, node->codeLoc);
   if (manifestations) {
-    for (const auto &[mangledName, spiceStruct] : *manifestations) {
+    for (auto &[mangledName, spiceStruct] : *manifestations) {
       // Skip structs, that are not fully substantiated
       if (!spiceStruct.isFullySubstantiated())
         continue;
@@ -467,16 +467,16 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
       // Create struct definition
       llvm::StructType *structType = llvm::StructType::create(context, mangledName);
 
-      // Set LLVM type to struct entry
-      SymbolTableEntry *structEntry = spiceStruct.entry;
-      assert(structEntry);
-      // ToDo: Check if we then need an entry for each substantiation
+      // Set LLVM type to the struct entry
+      const std::string structSignature = spiceStruct.getSignature();
+      SymbolTableEntry *structEntry = rootScope->lookupStrict(structSignature);
+      assert(structEntry != nullptr);
       structEntry->setStructLLVMType(structType);
 
       // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
       fieldTypes.reserve(node->fields().size());
-      for (FieldNode *field : node->fields()) {
+      for (const FieldNode *field : node->fields()) {
         SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
         assert(fieldEntry && !fieldEntry->getType().is(TY_GENERIC));
         fieldTypes.push_back(fieldEntry->getType().toLLVMType(context, currentScope));

@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/imports/error-duplicate-import2/source.spice:2:1:
+Duplicate import name: Duplicate import 'source1'
+
+2  import "source1";
+   ^^^^^^^^^^^^^^^^^

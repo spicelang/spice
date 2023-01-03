@@ -565,4 +565,17 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
   return nullptr;
 }
 
+std::any SymbolTableBuilder::visitImportStmt(ImportStmtNode *node) {
+  // Check if the import already exists
+  SymbolTableEntry *importEntry = rootScope->lookupStrict(node->importName);
+  if (importEntry != nullptr)
+    throw SemanticError(node, DUPLICATE_IMPORT_NAME, "Duplicate import '" + node->importName + "'");
+
+  // Create entry for import
+  const SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_IMPORT);
+  rootScope->insert(node->importName, specifiers, node);
+
+  return nullptr;
+}
+
 } // namespace spice::compiler
