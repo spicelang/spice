@@ -1,0 +1,4 @@
+type T double|string;
+type TestAlias alias UnknownStruct<T>;
+
+f<int> main() {}

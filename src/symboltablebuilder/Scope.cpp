@@ -251,6 +251,11 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     case TY_ENUM: {
       continue; // Do not report unused enums. Only unused enum items are reported
     }
+    case TY_ALIAS: {
+      warningType = UNUSED_ALIAS;
+      warningMessage = "The type alias '" + entry.name + "' is unused";
+      break;
+    }
     default: {
       // Check parent scope type
       switch (type) {

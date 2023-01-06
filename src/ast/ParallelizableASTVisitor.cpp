@@ -30,6 +30,8 @@ std::any ParallelizableASTVisitor::visitEnumDef(const EnumDefNode *node) { retur
 
 std::any ParallelizableASTVisitor::visitGenericTypeDef(const GenericTypeDefNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitAliasDef(const AliasDefNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitGlobalVarDef(const GlobalVarDefNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitExtDecl(const ExtDeclNode *node) { return visitChildren(node); }

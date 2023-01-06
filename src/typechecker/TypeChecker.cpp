@@ -71,6 +71,12 @@ std::any TypeChecker::visitGenericTypeDef(GenericTypeDefNode *node) {
   return nullptr;
 }
 
+std::any TypeChecker::visitAliasDef(AliasDefNode *node) {
+  if (typeCheckerMode == TC_MODE_PREPARE)
+    return visitAliasDefPrepare(node);
+  return nullptr;
+}
+
 std::any TypeChecker::visitGlobalVarDef(GlobalVarDefNode *node) {
   if (typeCheckerMode == TC_MODE_PREPARE)
     return visitGlobalVarDefPrepare(node);
@@ -1440,14 +1446,27 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
 }
 
 std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
+  // Get struct name. Retrieve it from alias if required
+  std::string structName = node->fqStructName;
+  SymbolTableEntry *aliasEntry = rootScope->lookupStrict(structName);
+  SymbolTableEntry *aliasedTypeContainerEntry = nullptr;
+  const bool isAliasType = aliasEntry && aliasEntry->getType().is(TY_ALIAS);
+  if (isAliasType) {
+    aliasedTypeContainerEntry = rootScope->lookupStrict(aliasEntry->name + ALIAS_CONTAINER_SUFFIX);
+    assert(aliasedTypeContainerEntry != nullptr);
+    // Set alias entry used
+    aliasEntry->used = true;
+    structName = aliasedTypeContainerEntry->getType().getSubType();
+  }
+
   // Check if access scope was altered
   if (accessScope != nullptr && accessScope != currentScope)
-    throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + node->fqStructName + "'");
+    throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'");
 
   // Retrieve struct
-  const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqStructName);
+  const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(structName);
   if (!registryEntry)
-    throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + node->fqStructName + "'");
+    throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'");
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *structEntry = registryEntry->targetEntry;
   Scope *structScope = accessScope = registryEntry->targetScope;
@@ -1457,6 +1476,14 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // Get the concrete template types
   std::vector<SymbolType> concreteTemplateTypes;
+  if (isAliasType) {
+    // Retrieve concrete template types from type alias
+    concreteTemplateTypes = aliasedTypeContainerEntry->getType().getTemplateTypes();
+    // Check if the aliased type specified template types and the struct instantiation does
+    if (!concreteTemplateTypes.empty() && node->templateTypeLst())
+      throw SemanticError(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list");
+  }
+
   if (node->templateTypeLst()) {
     concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
@@ -1469,7 +1496,6 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   }
 
   // Get the struct instance
-  const std::string structName = structEntry->name;
   Struct *spiceStruct = StructManager::matchStruct(structScope->parent, structName, concreteTemplateTypes, node);
   if (!spiceStruct) {
     const std::string structSignature = Struct::getSignature(structName, concreteTemplateTypes);
@@ -1507,7 +1533,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
                           "You've passed too less/many field values. Pass either none or all of them");
 
     // Check if the field types are matching
-    for (int i = 0; i < node->fieldLst()->args().size(); i++) {
+    for (size_t i = 0; i < node->fieldLst()->args().size(); i++) {
       // Get actual type
       AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
       SymbolType actualType = std::any_cast<ExprResult>(visit(assignExpr)).type;
@@ -1613,6 +1639,18 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     const SymbolType *genericType = rootScope->lookupGenericType(firstFragment);
     assert(genericType != nullptr);
     return node->setEvaluatedSymbolType(*genericType, manIdx);
+  }
+
+  // Check if it is a type alias
+  SymbolTableEntry *aliasEntry = rootScope->lookupStrict(firstFragment);
+  if (!isImported && aliasEntry && aliasEntry->getType().is(TY_ALIAS)) {
+    // Set alias entry used
+    aliasEntry->used = true;
+    // Get type of aliased type container entry
+    const std::string aliasedContainerEntryName = aliasEntry->name + ALIAS_CONTAINER_SUFFIX;
+    SymbolTableEntry *aliasedTypeContainerEntry = rootScope->lookupStrict(aliasedContainerEntryName);
+    assert(aliasedTypeContainerEntry != nullptr);
+    return node->setEvaluatedSymbolType(aliasedTypeContainerEntry->getType(), manIdx);
   }
 
   // Check if the type exists in the exported names registry

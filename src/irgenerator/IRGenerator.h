@@ -37,6 +37,7 @@ public:
   std::any visitInterfaceDef(const InterfaceDefNode *node) override;
   std::any visitEnumDef(const EnumDefNode *node) override;
   std::any visitGenericTypeDef(const GenericTypeDefNode *node) override;
+  std::any visitAliasDef(const AliasDefNode *node) override;
   std::any visitGlobalVarDef(const GlobalVarDefNode *node) override;
   std::any visitExtDecl(const ExtDeclNode *node) override;
   // Control structures

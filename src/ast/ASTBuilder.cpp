@@ -37,6 +37,8 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
       currentNode = entryNode->createChild<EnumDefNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::GenericTypeDefContext *>(subTree); rule != nullptr) // GenericTypeDef
       currentNode = entryNode->createChild<GenericTypeDefNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::AliasDefContext *>(subTree); rule != nullptr) // AliasDef
+      currentNode = entryNode->createChild<AliasDefNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::GlobalVarDefContext *>(subTree); rule != nullptr) // GlobalVarDef
       currentNode = entryNode->createChild<GlobalVarDefNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::ImportStmtContext *>(subTree); rule != nullptr) // ImportStmt
@@ -262,6 +264,31 @@ std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx
       currentNode = genericTypeDefNode;
     }
   }
+  return nullptr;
+}
+
+std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
+  auto aliasDefNode = static_cast<AliasDefNode *>(currentNode);
+  aliasDefNode->reserveChildren(ctx->children.size());
+  saveErrorMessage(aliasDefNode, ctx);
+
+  // Extract type name
+  aliasDefNode->aliasName = getIdentifier(ctx->IDENTIFIER());
+
+  for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
+    antlr4::ParserRuleContext *rule;
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
+      currentNode = aliasDefNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
+      aliasDefNode->dataTypeString = rule->getText();
+    } else
+      assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    if (currentNode != aliasDefNode) {
+      visit(rule);
+      currentNode = aliasDefNode;
+    }
+  }
+
   return nullptr;
 }
 

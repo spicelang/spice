@@ -32,6 +32,7 @@ public:
   std::any visitInterfaceDef(InterfaceDefNode *ctx) override { return buildNode(ctx); }
   std::any visitEnumDef(EnumDefNode *ctx) override { return buildNode(ctx); }
   std::any visitGenericTypeDef(GenericTypeDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitAliasDef(AliasDefNode *ctx) override { return buildNode(ctx); }
   std::any visitGlobalVarDef(GlobalVarDefNode *ctx) override { return buildNode(ctx); }
   std::any visitExtDecl(ExtDeclNode *ctx) override { return buildNode(ctx); }
   std::any visitThreadDef(ThreadDefNode *ctx) override { return buildNode(ctx); }

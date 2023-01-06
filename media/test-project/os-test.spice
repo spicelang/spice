@@ -1,5 +1,16 @@
-import "std/data/vector";
+type T dyn;
 
+type TestStruct<T> struct {
+    T f1
+    double f2
+}
+
+type Ts alias TestStruct<int>;
+
+f<int> main() {
+    Ts ts = Ts{ 1, 1.2};
+    printf("Test: %d", ts.f1);
+}
 
 /*type T string|char;
 

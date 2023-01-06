@@ -22,6 +22,8 @@ std::any ASTVisitor::visitEnumDef(EnumDefNode *node) { return visitChildren(node
 
 std::any ASTVisitor::visitGenericTypeDef(GenericTypeDefNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitAliasDef(AliasDefNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitGlobalVarDef(GlobalVarDefNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitExtDecl(ExtDeclNode *node) { return visitChildren(node); }

@@ -3,7 +3,7 @@
 grammar Spice;
 
 // Top level definitions and declarations
-entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | globalVarDef | importStmt | extDecl)*;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importStmt | extDecl)*;
 mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 functionDef: specifierLst? F LESS dataType GREATER (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: specifierLst? P (IDENTIFIER DOT)? IDENTIFIER (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
@@ -11,6 +11,7 @@ structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON t
 interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE IDENTIFIER typeAltsLst SEMICOLON;
+aliasDef: TYPE IDENTIFIER ALIAS dataType SEMICOLON;
 globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
 
@@ -123,6 +124,7 @@ STRUCT: 'struct';
 INTERFACE: 'interface';
 TYPE: 'type';
 ENUM: 'enum';
+ALIAS: 'alias';
 THREAD: 'thread';
 UNSAFE: 'unsafe';
 //NEW: 'new';

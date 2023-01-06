@@ -17,6 +17,7 @@ public:
   std::any visitInterfaceDef(InterfaceDefNode *node) override;
   std::any visitEnumDef(EnumDefNode *node) override;
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override;
+  std::any visitAliasDef(AliasDefNode *node) override;
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
   std::any visitExtDecl(ExtDeclNode *node) override;
   std::any visitThreadDef(ThreadDefNode *node) override;

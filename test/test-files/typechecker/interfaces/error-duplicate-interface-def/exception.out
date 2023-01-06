@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/interfaces/error-duplicate-interface-def/source.spice:5:1:
-Multiple declarations of an interface with the same name: Duplicate interface 'Person'
+Duplicate symbol: Duplicate symbol 'Person'
 
 5  type Person interface {
    ^^^^^^^^^^^^^^^^^^^^^^^

@@ -57,6 +57,8 @@ public:
   std::any visitEnumDefPrepare(EnumDefNode *node);
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override;
   std::any visitGenericTypeDefPrepare(GenericTypeDefNode *node);
+  std::any visitAliasDef(AliasDefNode *node);
+  std::any visitAliasDefPrepare(AliasDefNode *node);
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
   std::any visitGlobalVarDefPrepare(GlobalVarDefNode *node);
   std::any visitExtDecl(ExtDeclNode *node) override;

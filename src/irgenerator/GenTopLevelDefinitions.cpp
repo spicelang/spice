@@ -506,6 +506,10 @@ std::any IRGenerator::visitGenericTypeDef(const GenericTypeDefNode *node) {
   return nullptr; // Noop (generic types are high-level semantic-only structures)
 }
 
+std::any IRGenerator::visitAliasDef(const AliasDefNode *node) {
+  return nullptr; // Noop (alias defs are high-level semantic-only structures)
+}
+
 std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   diGenerator.setSourceLocation(node);
 

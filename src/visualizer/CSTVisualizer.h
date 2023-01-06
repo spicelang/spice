@@ -31,6 +31,7 @@ public:
   std::any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override { return buildRule(ctx); }
   std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override { return buildRule(ctx); }
   std::any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override { return buildRule(ctx); }
+  std::any visitAliasDef(SpiceParser::AliasDefContext *ctx) override { return buildRule(ctx); }
   std::any visitStructDef(SpiceParser::StructDefContext *ctx) override { return buildRule(ctx); }
   std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override { return buildRule(ctx); }
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override { return buildRule(ctx); }

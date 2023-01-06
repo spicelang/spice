@@ -43,6 +43,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Function ambiguity";
   case STRUCT_AMBIGUITY:
     return "Struct ambiguity";
+  case DUPLICATE_SYMBOL:
+    return "Duplicate symbol";
   case VARIABLE_DECLARED_TWICE:
     return "Multiple declarations of the same variable";
   case GLOBAL_DECLARED_TWICE:
@@ -161,6 +163,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Expected a struct type";
   case EXPECTED_INTERFACE_TYPE:
     return "Expected an interface type";
+  case ALIAS_WITH_TEMPLATE_LIST:
+    return "Alias with template list";
   case INTERFACE_WITH_TEMPLATE_LIST:
     return "Interface reference with template list";
   case EXPECTED_VALUE:
