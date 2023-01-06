@@ -1,0 +1,4 @@
+type Alias alias int;
+type Alias alias double;
+
+f<int> main() {}

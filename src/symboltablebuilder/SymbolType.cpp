@@ -267,9 +267,7 @@ bool operator==(const SymbolType &lhs, const SymbolType &rhs) {
   return lhs.getTypeChainWithoutReferences() == rhs.getTypeChainWithoutReferences();
 }
 
-bool operator!=(const SymbolType &lhs, const SymbolType &rhs) {
-  return !(lhs == rhs);
-}
+bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs == rhs); }
 
 /**
  * Set the sub type of the top element
@@ -334,6 +332,10 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "interface(" + chainElement.subType + ")";
   case TY_ENUM:
     return "enum";
+  case TY_GENERIC:
+    return "generic(" + chainElement.subType + ")";
+  case TY_ALIAS:
+    return "alias(" + chainElement.subType + ")";
   case TY_DYN:
     return "dyn";
   case TY_FUNCTION:
@@ -342,9 +344,7 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "procedure";
   case TY_IMPORT:
     return "import";
-  case TY_GENERIC:
-    return "generic(" + chainElement.subType + ")";
-  case TY_INVALID:
+  case TY_INVALID:    // GCOV_EXCL_LINE
     return "invalid"; // GCOV_EXCL_LINE
   }
   return "unknown"; // GCOV_EXCL_LINE

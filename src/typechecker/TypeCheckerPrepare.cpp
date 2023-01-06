@@ -293,10 +293,9 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   }
 
   // Update type of struct entry
-  SymbolTableEntry *structEntry = rootScope->lookupStrict(node->structName);
-  assert(structEntry != nullptr);
+  assert(node->entry != nullptr);
   const SymbolType structType(TY_STRUCT, node->structName, {.structBodyScope = node->structScope}, usedTemplateTypes);
-  structEntry->updateType(structType, false);
+  node->entry->updateType(structType, false);
 
   // Change to struct scope
   currentScope = node->structScope;
@@ -336,7 +335,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   assert(currentScope->type == SCOPE_GLOBAL);
 
   // Build struct object
-  Struct spiceStruct(node->structName, structEntry, node->structScope, fieldTypes, usedTemplateTypesGeneric, interfaceTypes,
+  Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, usedTemplateTypesGeneric, interfaceTypes,
                      node);
   node->spiceStruct = StructManager::insertStruct(currentScope, spiceStruct);
   spiceStruct.structScope = node->structScope;
@@ -351,9 +350,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   // Update type of interface entry
   SymbolType interfaceType(TY_INTERFACE, node->interfaceName);
-  SymbolTableEntry *interfaceEntry = currentScope->lookupStrict(node->interfaceName);
-  assert(interfaceEntry != nullptr);
-  interfaceEntry->updateType(interfaceType, false);
+  assert(node->entry != nullptr);
+  node->entry->updateType(interfaceType, false);
 
   // Change to interface scope
   currentScope = node->interfaceScope;
@@ -383,9 +381,8 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Update type of enum entry
   SymbolType enumType(TY_ENUM, node->enumName);
-  SymbolTableEntry *enumEntry = rootScope->lookupStrict(node->enumName);
-  assert(enumEntry != nullptr);
-  enumEntry->updateType(enumType, false);
+  assert(node->entry != nullptr);
+  node->entry->updateType(enumType, false);
 
   // Change to enum scope
   currentScope = node->enumScope;
@@ -450,6 +447,21 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   return nullptr;
 }
 
+std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
+  assert(node->entry != nullptr && node->aliasedTypeContainerEntry != nullptr);
+
+  // Update type of alias entry
+  const SymbolType symbolType(TY_ALIAS, node->dataTypeString);
+  node->entry->updateType(symbolType, false);
+
+  // Update type of the aliased type container entry
+  auto aliasedType = std::any_cast<SymbolType>(visit(node->dataType()));
+  node->aliasedTypeContainerEntry->updateType(aliasedType, false);
+  node->aliasedTypeContainerEntry->used = true; // The container type is always used per default
+
+  return nullptr;
+}
+
 std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
   // Insert variable name to symbol table
   auto globalVarType = std::any_cast<SymbolType>(visit(node->dataType()));
@@ -473,12 +485,11 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
     throw SemanticError(node->dataType(), GLOBAL_OF_INVALID_TYPE, "Spice does only global variables of primitive type");
 
   // Update type of global var entry
-  SymbolTableEntry *globalVarEntry = rootScope->lookupStrict(node->varName);
-  assert(globalVarEntry != nullptr);
-  globalVarEntry->updateType(globalVarType, false);
+  assert(node->entry != nullptr);
+  node->entry->updateType(globalVarType, false);
 
   // Check if a value is attached
-  if (!node->constant() && globalVarEntry->specifiers.isConst())
+  if (!node->constant() && node->entry->specifiers.isConst())
     throw SemanticError(node, GLOBAL_CONST_WITHOUT_VALUE, "You must specify a value for constant global variables");
 
   return nullptr;

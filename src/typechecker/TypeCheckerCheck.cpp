@@ -46,11 +46,11 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     currentScope = currentScope->getChildScope(manifestation->getSignature());
     assert(currentScope != nullptr && currentScope->type == SCOPE_FUNC_PROC_BODY);
 
-    // Substantiate the generic return type if necessary
-    SymbolTableEntry *returnVarEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
-    if (returnVarEntry->getType().isBaseType(TY_GENERIC)) {
-      const SymbolType newReturnType = returnVarEntry->getType().replaceBaseType(manifestation->returnType);
-      returnVarEntry->updateType(newReturnType, true);
+    // Create local, temporary type aliases
+    std::vector<SymbolTableEntry *> localTypeAliases;
+    if (manifestation->genericSubstantiation) {
+      localTypeAliases.reserve(manifestation->templateTypes.size());
+
     }
 
     // Substantiate all generic parameter types if necessary and save the generic types to restore them later
@@ -59,7 +59,7 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
       for (DeclStmtNode *param : node->paramLst()->params()) {
         auto paramType = std::any_cast<SymbolType>(visit(param));
         // Retrieve the symbol table entry for that param
-        SymbolTableEntry *paramEntry = currentScope->lookup(param->varName);
+        SymbolTableEntry *paramEntry = currentScope->lookupStrict(param->varName);
         assert(paramEntry != nullptr);
         // Skip non-generic params
         if (!paramEntry->getType().is(TY_GENERIC))
@@ -73,13 +73,6 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 
     // Visit statements in new scope
     visit(node->body());
-
-    // Reset param types to their generic versions
-    for (const NamedParam &param : namedParams) {
-      SymbolTableEntry *paramEntry = currentScope->lookup(param.name);
-      assert(paramEntry != nullptr);
-      paramEntry->updateType(param.type, true);
-    }
 
     // Change to root scope
     currentScope = rootScope;
@@ -118,33 +111,8 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     currentScope = currentScope->getChildScope(manifestation->getSignature());
     assert(currentScope != nullptr && currentScope->type == SCOPE_FUNC_PROC_BODY);
 
-    // Substantiate all generic parameter types if necessary and save the generic types to restore them later
-    NamedParamList namedParams;
-    if (node->hasParams) {
-      for (DeclStmtNode *param : node->paramLst()->params()) {
-        auto paramType = std::any_cast<SymbolType>(visit(param));
-        // Retrieve the symbol table entry for that param
-        SymbolTableEntry *paramEntry = currentScope->lookup(param->varName);
-        assert(paramEntry != nullptr);
-        // Skip non-generic params
-        if (!paramEntry->getType().is(TY_GENERIC))
-          continue;
-        // Save the old type
-        namedParams.push_back({param->varName, paramEntry->getType()});
-        // Substantiate the type
-        paramEntry->updateType(paramType, true);
-      }
-    }
-
     // Visit statements in new scope
     visit(node->body());
-
-    // Reset param types to their generic versions
-    for (const NamedParam &param : namedParams) {
-      SymbolTableEntry *paramEntry = currentScope->lookup(param.name);
-      assert(paramEntry != nullptr);
-      paramEntry->updateType(param.type, true);
-    }
 
     // Change to root scope
     currentScope = rootScope;

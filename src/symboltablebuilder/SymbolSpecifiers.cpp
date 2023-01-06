@@ -40,6 +40,8 @@ SymbolSpecifiers SymbolSpecifiers::of(SymbolSuperType superType) {
     return SymbolSpecifiers(SPECIFIER_DEFAULTS_INTERFACE);
   case TY_ENUM:
     return SymbolSpecifiers(SPECIFIER_DEFAULTS_ENUM);
+  case TY_ALIAS:
+    return SymbolSpecifiers(SPECIFIER_DEFAULTS_ALIAS);
   case TY_FUNCTION:
     return SymbolSpecifiers(SPECIFIER_DEFAULTS_FUNCTION);
   case TY_PROCEDURE:

@@ -395,6 +395,27 @@ public:
   std::string typeName;
 };
 
+// ========================================================= AliasDefNode ========================================================
+
+class AliasDefNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAliasDef(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAliasDef(this); }
+
+  // Public get methods
+  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+
+  // Public members
+  std::string aliasName;
+  std::string dataTypeString;
+  SymbolTableEntry *entry = nullptr;
+  SymbolTableEntry *aliasedTypeContainerEntry = nullptr;
+};
+
 // ======================================================= GlobalVarDefNode ======================================================
 
 class GlobalVarDefNode : public ASTNode {

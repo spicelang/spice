@@ -34,10 +34,11 @@ enum SymbolSuperType : uint16_t {
   TY_CHAR,
   TY_STRING, // Alias for 'const char*'
   TY_BOOL,
-  TY_GENERIC,
   TY_STRUCT,
   TY_INTERFACE,
   TY_ENUM,
+  TY_GENERIC,
+  TY_ALIAS,
   TY_DYN,
   TY_PTR,
   TY_REF,

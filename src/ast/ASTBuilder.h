@@ -30,6 +30,7 @@ public:
   std::any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
   std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
   std::any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override;
+  std::any visitAliasDef(SpiceParser::AliasDefContext *ctx) override;
   std::any visitStructDef(SpiceParser::StructDefContext *ctx) override;
   std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override;
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override;

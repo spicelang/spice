@@ -174,9 +174,9 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 }
 
 std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
-  // Check if struct already exists
+  // Check if this name already exists
   if (rootScope->lookup(node->structName))
-    throw SemanticError(node, STRUCT_DECLARED_TWICE, "Duplicate struct '" + node->structName + "'");
+    throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->structName + "'");
 
   // Create scope for the struct
   node->structScope = currentScope =
@@ -209,9 +209,9 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 }
 
 std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
-  // Check if interface already exists
+  // Check if this name already exists
   if (rootScope->lookup(node->interfaceName))
-    throw SemanticError(node, INTERFACE_DECLARED_TWICE, "Duplicate interface '" + node->interfaceName + "'");
+    throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->interfaceName + "'");
 
   // Create scope for the interface
   node->interfaceScope = currentScope =
@@ -244,9 +244,9 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
 }
 
 std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
-  // Check if enum already exists
+  // Check if this name already exists
   if (rootScope->lookup(node->enumName))
-    throw SemanticError(node, ENUM_DECLARED_TWICE, "Duplicate interface '" + node->enumName + "'");
+    throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->enumName + "'");
 
   // Create scope for the enum
   node->enumScope = currentScope = rootScope->createChildScope(ENUM_SCOPE_PREFIX + node->enumName, SCOPE_ENUM, &node->codeLoc);
@@ -276,10 +276,34 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   return nullptr;
 }
 
+std::any SymbolTableBuilder::visitGenericTypeDef(GenericTypeDefNode *node) {
+  // Check if this name already exists
+  if (rootScope->lookup(node->typeName))
+    throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->typeName + "'");
+
+  return nullptr;
+}
+
+std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
+  // Check if this name already exists
+  if (rootScope->lookup(node->aliasName))
+    throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->aliasName + "'");
+
+  // Add the alias to the symbol table
+  const SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_ALIAS);
+  node->entry = rootScope->insert(node->aliasName, specifiers, node);
+
+  // Add another symbol for the aliased type container
+  const std::string aliasedTypeContainerName = node->aliasName + ALIAS_CONTAINER_SUFFIX;
+  node->aliasedTypeContainerEntry = rootScope->insert(aliasedTypeContainerName, specifiers, node);
+
+  return nullptr;
+}
+
 std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
-  // Check if global already exists in this source file
+  // Check if this name already exists
   if (rootScope->lookup(node->varName))
-    throw SemanticError(node, GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + node->varName + "'");
+    throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->varName + "'");
 
   // Check if global already exists in an imported source file
   for (const auto &[name, dependency] : sourceFile->dependencies) {
@@ -314,9 +338,9 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
 }
 
 std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
-  // Check if external declaration already exists
+  // Check if this name already exists
   if (rootScope->lookup(node->extFunctionName))
-    throw SemanticError(node, FUNCTION_DECLARED_TWICE, "Duplicate external declaration of '" + node->extFunctionName + "'");
+    throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->extFunctionName + "'");
 
   // Build external declaration specifiers
   SymbolSpecifiers specifiers = SymbolSpecifiers::of(node->returnType() ? TY_FUNCTION : TY_PROCEDURE);

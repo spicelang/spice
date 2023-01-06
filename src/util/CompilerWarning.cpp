@@ -54,6 +54,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused field";
   case UNUSED_ENUM_ITEM:
     return "Unused enum item";
+  case UNUSED_ALIAS:
+    return "Unused type alias";
   case UNUSED_VARIABLE:
     return "Unused variable";
   case UNREACHABLE_CODE:

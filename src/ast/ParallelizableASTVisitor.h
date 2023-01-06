@@ -16,6 +16,7 @@ class StructDefNode;
 class InterfaceDefNode;
 class EnumDefNode;
 class GenericTypeDefNode;
+class AliasDefNode;
 class GlobalVarDefNode;
 class ExtDeclNode;
 class ThreadDefNode;
@@ -90,6 +91,7 @@ public:
   virtual std::any visitInterfaceDef(const InterfaceDefNode *node);
   virtual std::any visitEnumDef(const EnumDefNode *node);
   virtual std::any visitGenericTypeDef(const GenericTypeDefNode *node);
+  virtual std::any visitAliasDef(const AliasDefNode *node);
   virtual std::any visitGlobalVarDef(const GlobalVarDefNode *node);
   virtual std::any visitExtDecl(const ExtDeclNode *node);
   virtual std::any visitThreadDef(const ThreadDefNode *node);

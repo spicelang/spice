@@ -13,6 +13,7 @@ const char *const THIS_VARIABLE_NAME = "this";
 const char *const FOREACH_DEFAULT_IDX_VARIABLE_NAME = "idx";
 const char *const CTOR_FUNCTION_NAME = "ctor";
 const char *const DTOR_FUNCTION_NAME = "dtor";
+const char *const ALIAS_CONTAINER_SUFFIX = ".container";
 const char *const STRUCT_SCOPE_PREFIX = "struct:";
 const char *const INTERFACE_SCOPE_PREFIX = "interface:";
 const char *const ENUM_SCOPE_PREFIX = "enum:";
@@ -35,6 +36,8 @@ public:
   std::any visitStructDef(StructDefNode *node) override;
   std::any visitInterfaceDef(InterfaceDefNode *node) override;
   std::any visitEnumDef(EnumDefNode *node) override;
+  std::any visitGenericTypeDef(GenericTypeDefNode *node) override;
+  std::any visitAliasDef(AliasDefNode *node) override;
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
   std::any visitExtDecl(ExtDeclNode *node) override;
   std::any visitThreadDef(ThreadDefNode *node) override;

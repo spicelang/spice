@@ -43,6 +43,8 @@ const unsigned short SPECIFIER_DEFAULTS_INTERFACE = 0b0000;
 // Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_ENUM = 0b0100;
 // Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_ALIAS = 0b0100;
+// Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_FUNCTION = 0b0100;
 // Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_PROCEDURE = 0b0100;
