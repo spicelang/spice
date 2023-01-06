@@ -9,6 +9,10 @@
 namespace spice::compiler {
 
 std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
+  // Skip if already type-checked
+  if (typeCheckedMainFct)
+    return nullptr;
+
   node->resizeToNumberOfManifestations(1);
 
   // Change to function body scope
@@ -19,6 +23,9 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
 
   // Leave main function body scope
   currentScope = rootScope;
+
+  // Set to type-checked
+  typeCheckedMainFct = true;
 
   return nullptr;
 }

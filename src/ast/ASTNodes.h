@@ -1530,6 +1530,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFunctionCall(this); }
 
   // Public get methods
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
   [[nodiscard]] ArgLstNode *argLst() const { return getChild<ArgLstNode>(); }
 
   // Util methods
@@ -1539,6 +1540,7 @@ public:
   std::string fqFunctionName;
   std::vector<std::string> functionNameFragments;
   bool hasArgs = false;
+  bool hasTemplateTypes = false;
   std::vector<FunctionCallData> data;
 };
 

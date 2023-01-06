@@ -167,6 +167,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Alias with template list";
   case INTERFACE_WITH_TEMPLATE_LIST:
     return "Interface reference with template list";
+  case INVALID_TEMPLATE_TYPES:
+    return "Invalid template types";
   case EXPECTED_VALUE:
     return "Expected value";
   case EXPECTED_TYPE:

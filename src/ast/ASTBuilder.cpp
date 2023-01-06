@@ -1605,14 +1605,17 @@ std::any ASTBuilder::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
     if (rule = dynamic_cast<SpiceParser::ArgLstContext *>(subTree); rule != nullptr) { // ArgLst
       currentNode = fctCallNode->createChild<ArgLstNode>(CodeLoc(rule->start, filePath));
       fctCallNode->hasArgs = true;
-    } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
-               t->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      fctCallNode->functionNameFragments.push_back(t->toString());
+    } else if (auto t1 = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
+      currentNode = fctCallNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
+      fctCallNode->hasTemplateTypes = true;
+    } else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+               t2->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      fctCallNode->functionNameFragments.push_back(t2->toString());
       fctCallNode->fqFunctionName += fctCallNode->functionNameFragments.back();
-    } else if (auto t7 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t7->getSymbol()->getType() == SpiceParser::DOT)
+    } else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::DOT)
       fctCallNode->fqFunctionName += ".";
-    else if (auto t7 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
-             t7->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS)
+    else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
+             t4->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS)
       fctCallNode->fqFunctionName += "::";
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal

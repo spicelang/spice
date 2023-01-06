@@ -39,7 +39,8 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolSpeci
  * @return Inserted entry
  */
 SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, ASTNode *declNode) {
-  std::string name = "anon." + declNode->codeLoc.toString();
+  assert(lookupAnonymous(declNode->codeLoc) == nullptr);
+  const std::string name = "anon." + declNode->codeLoc.toString();
   insert(name, SymbolSpecifiers::of(type), declNode);
   SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc);
   anonSymbol->updateType(type, false);
