@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="Spice Logo" src="./docs/docs/static/ak_spice-02-without-text.png" height="220" />
+  <img alt="Spice Logo" src="./docs/docs/static/logo_large_white_background_blur.png" height="230" />
   <h3 align="center">Spice Programming Language</h3>
   <p align="center">Compiler and standard library for the Spice programming language.</p>
   <p align="center">
