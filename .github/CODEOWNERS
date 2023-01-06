@@ -9,3 +9,6 @@
 
 # Code owner for std lib
 /std/ @spicelang/stdlib-team
+
+# Code owner for documentation
+/docs/ @spicelang/documentation-team

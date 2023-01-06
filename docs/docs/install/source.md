@@ -17,11 +17,11 @@ To build Spice, you can use the `dev-setup.sh` for Linux or the `dev-setup.bat` 
 
 === "Linux"
     ```sh
-    ./dev-setup..sh
+    ./dev-setup.sh
     ```
 === "Windows"
     ```sh
-    .\dev-setup..bat
+    .\dev-setup.bat
     ```
 
 ### Use

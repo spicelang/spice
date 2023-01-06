@@ -89,6 +89,7 @@ nav:
     - language/structs.md
     - language/methods.md
     - language/constructors-destructors.md
+    #- language/aliases.md
     - language/generics.md
     #- language/threads.md
     - language/number-formats.md
