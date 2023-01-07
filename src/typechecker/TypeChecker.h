@@ -122,6 +122,7 @@ private:
   Scope *accessScope = nullptr;
   const TypeCheckerMode typeCheckerMode;
   std::vector<CompilerWarning> &warnings;
+  std::unordered_map<std::string, SymbolType> typeMapping;
   bool typeCheckedMainFct = false;
   size_t manIdx = 0;
 

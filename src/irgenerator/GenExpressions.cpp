@@ -726,6 +726,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
       // Reset the value
       lhs.value = nullptr;
+      lhs.entry = nullptr;
       break;
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
@@ -739,10 +740,12 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       // Retrieve struct scope
       const std::string &fieldName = node->identifier.at(memberAccessCounter++);
       Scope *structScope = lhsSTy.getStructBodyScope();
-      SymbolTableEntry *fieldEntry = structScope->lookupStrict(fieldName);
+
+      // Retrieve field entry
+      lhs.entry = structScope->lookupStrict(fieldName);
 
       // Get address of the field in the struct instance
-      llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
+      llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(lhs.entry->orderIndex)};
       lhs.ptr = builder.CreateInBoundsGEP(lhsSTy.toLLVMType(context, currentScope), lhs.ptr, indices);
 
       // Reset the value

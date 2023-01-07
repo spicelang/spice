@@ -6,11 +6,11 @@ type TestStruct<T> struct {
 }
 
 p TestStruct.ctor(const unsigned long initialLength) {
-    length = initialLength;
+    this.length = initialLength;
 }
 
 p TestStruct.printLength() {
-    printf("%d", this.length);
+    printf("%d\n", this.length);
 }
 
 type Alias alias TestStruct<long>;

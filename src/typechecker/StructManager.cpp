@@ -74,11 +74,11 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
         break; // Leave the whole manifestation list, because all manifestations in this list have the same name
 
       // Prepare mapping table from generic type name to concrete type
-      std::unordered_map</*name=*/std::string, /*concreteType=*/SymbolType> typeMapping;
-      typeMapping.reserve(candidate.templateTypes.size());
+      candidate.typeMapping.clear();
+      candidate.typeMapping.reserve(candidate.templateTypes.size());
 
       // Check template types requirement
-      if (!matchTemplateTypes(candidate, requestedTemplateTypes, typeMapping))
+      if (!matchTemplateTypes(candidate, requestedTemplateTypes, candidate.typeMapping))
         continue; // Leave this manifestation and continue with the next one
 
       // We found a match! -> Check if it needs to be substantiated
@@ -87,6 +87,9 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
         matches.push_back(&matchScope->structs.at(defCodeLocStr).at(mangledName));
         continue; // Match was successful -> match the next struct
       }
+
+      // Clear template types of candidate, since they are not needed anymore
+      //candidate.templateTypes.clear();
 
       // Check if we already have this manifestation and can simply re-use it
       if (manifestations.contains(candidate.getMangledName())) {
