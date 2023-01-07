@@ -160,16 +160,28 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
         break; // Leave the whole manifestation list, because all manifestations in this list have the same name
 
       // Prepare mapping table from generic type name to concrete type
-      std::unordered_map</*name=*/std::string, /*concreteType=*/SymbolType> typeMapping;
-      typeMapping.reserve(candidate.templateTypes.size());
+      candidate.typeMapping.clear();
+      candidate.typeMapping.reserve(candidate.templateTypes.size());
 
       // Check 'this' type requirement
-      if (!matchThisType(candidate, requestedThisType, typeMapping))
+      if (!matchThisType(candidate, requestedThisType, candidate.typeMapping))
         continue; // Leave this manifestation and try the next one
 
       // Check arg types requirement
-      if (!matchArgTypes(candidate, requestedParamTypes, typeMapping))
+      if (!matchArgTypes(candidate, requestedParamTypes, candidate.typeMapping))
         continue; // Leave this manifestation and try the next one
+
+      const SymbolType &thisType = candidate.thisType;
+      if (!thisType.is(TY_DYN)) {
+        // Update struct scope of 'this' type to the substantiated struct scope
+        const std::string structSignature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
+        Scope *substantiatedStructBodyScope = matchScope->parent->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
+        assert(substantiatedStructBodyScope != nullptr);
+        candidate.thisType.setStructBodyScope(substantiatedStructBodyScope);
+
+        // Set match scope to the substantiated struct scope
+        matchScope = substantiatedStructBodyScope;
+      }
 
       // We found a match! -> Check if it needs to be substantiated
       if (presetFunction.templateTypes.empty()) {
@@ -184,12 +196,12 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       // Replace return type with concrete type
       if (candidate.returnType.isBaseType(TY_GENERIC)) {
         const std::string genericReturnTypeName = candidate.returnType.getBaseType().getSubType();
-        assert(typeMapping.contains(genericReturnTypeName));
-        candidate.returnType = candidate.returnType.replaceBaseType(typeMapping.at(genericReturnTypeName));
+        assert(candidate.typeMapping.contains(genericReturnTypeName));
+        candidate.returnType = candidate.returnType.replaceBaseType(candidate.typeMapping.at(genericReturnTypeName));
       }
 
       // Check if we already have this manifestation and can simply re-use it
-      if (manifestations.contains(candidate.getMangledName())) {
+      if (matchScope->functions.at(defCodeLocStr).contains(candidate.getMangledName())) {
         matches.push_back(&matchScope->functions.at(defCodeLocStr).at(candidate.getMangledName()));
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
@@ -204,7 +216,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 
       // Insert symbols for generic type names with concrete types into the child block
       Scope *childBlock = matchScope->getChildScope(substantiatedFunction->getSignature());
-      for (const auto &[typeName, concreteType] : typeMapping)
+      for (const auto &[typeName, concreteType] : candidate.typeMapping)
         childBlock->insertGenericType(typeName, GenericType(concreteType));
 
       // Substantiate the 'this' symbol table entry in the new function scope

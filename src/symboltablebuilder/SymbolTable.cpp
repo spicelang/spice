@@ -179,6 +179,16 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
 void SymbolTable::deleteAnonymous(const std::string &name) { symbols.erase(name); }
 
 /**
+ * Deletes an existing symbol
+ *
+ * @param name Symbol name
+ */
+void SymbolTable::deleteEntry(const std::string &name) {
+  assert(symbols.contains(name));
+  symbols.erase(name);
+}
+
+/**
  * Stringify a symbol table to a human-readable form. This is used to realize dumps of symbol tables
  *
  * Example:

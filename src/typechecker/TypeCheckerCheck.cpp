@@ -53,33 +53,19 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     currentScope = currentScope->getChildScope(manifestation->getSignature());
     assert(currentScope != nullptr && currentScope->type == SCOPE_FUNC_PROC_BODY);
 
-    // Create local, temporary type aliases
-    std::vector<SymbolTableEntry *> localTypeAliases;
-    if (manifestation->genericSubstantiation) {
-      localTypeAliases.reserve(manifestation->templateTypes.size());
+    // Mount type mapping for this manifestation
+    assert(typeMapping.empty());
+    typeMapping = manifestation->typeMapping;
 
-    }
-
-    // Substantiate all generic parameter types if necessary and save the generic types to restore them later
-    NamedParamList namedParams;
-    if (node->hasParams) {
-      for (DeclStmtNode *param : node->paramLst()->params()) {
-        auto paramType = std::any_cast<SymbolType>(visit(param));
-        // Retrieve the symbol table entry for that param
-        SymbolTableEntry *paramEntry = currentScope->lookupStrict(param->varName);
-        assert(paramEntry != nullptr);
-        // Skip non-generic params
-        if (!paramEntry->getType().is(TY_GENERIC))
-          continue;
-        // Save the old type
-        namedParams.push_back({param->varName, paramEntry->getType()});
-        // Substantiate the type
-        paramEntry->updateType(paramType, true);
-      }
-    }
+    // Visit parameters
+    if (node->hasParams)
+      visit(node->paramLst());
 
     // Visit statements in new scope
     visit(node->body());
+
+    // Clear type mapping
+    typeMapping.clear();
 
     // Change to root scope
     currentScope = rootScope;
@@ -118,8 +104,19 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     currentScope = currentScope->getChildScope(manifestation->getSignature());
     assert(currentScope != nullptr && currentScope->type == SCOPE_FUNC_PROC_BODY);
 
+    // Mount type mapping for this manifestation
+    assert(typeMapping.empty());
+    typeMapping = manifestation->typeMapping;
+
+    // Visit parameters
+    if (node->hasParams)
+      visit(node->paramLst());
+
     // Visit statements in new scope
     visit(node->body());
+
+    // Clear type mapping
+    typeMapping.clear();
 
     // Change to root scope
     currentScope = rootScope;

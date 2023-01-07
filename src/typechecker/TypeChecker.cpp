@@ -1421,7 +1421,8 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
   }
 
   // Attach the concrete template types to the 'this' type
-  data.thisType.setTemplateTypes(concreteTemplateTypes);
+  if (!data.thisType.is(TY_DYN) && !concreteTemplateTypes.empty())
+    data.thisType.setTemplateTypes(concreteTemplateTypes);
 
   // Map local types to imported types
   Scope *functionParentScope = registryEntry->targetScope;
@@ -1431,7 +1432,6 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
 
   // Retrieve function object
   data.callee = FunctionManager::matchFunction(functionParentScope, functionName, data.thisType, importedArgTypes, node);
-  assert(data.callee != nullptr);
 
   return std::make_tuple(functionParentScope, data.thisType, knownStructName);
 }
@@ -1471,7 +1471,6 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
   data.callee = FunctionManager::matchFunction(functionParentScope, functionName, importedThisType, importedArgTypes, node);
-  assert(data.callee != nullptr);
 
   return std::make_pair(functionParentScope, data.thisType);
 }
@@ -1547,6 +1546,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   }
 
   // Get the struct instance
+  structName = structEntry->name;
   Struct *spiceStruct = StructManager::matchStruct(structScope->parent, structName, concreteTemplateTypes, node);
   if (!spiceStruct) {
     const std::string structSignature = Struct::getSignature(structName, concreteTemplateTypes);
@@ -1686,10 +1686,13 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     sourceFile->requestRuntimeModule(STRING_RT);
 
   // Check if it is a generic type
-  if (!isImported && rootScope->lookupGenericType(firstFragment)) {
-    const SymbolType *genericType = rootScope->lookupGenericType(firstFragment);
-    assert(genericType != nullptr);
-    return node->setEvaluatedSymbolType(*genericType, manIdx);
+  const SymbolType *genericType = rootScope->lookupGenericType(firstFragment);
+  if (!isImported && genericType) {
+    // Take the concrete replacement type for the name of this generic type if available
+    SymbolType symbolType = *genericType;
+    if (typeMapping.contains(firstFragment))
+      symbolType = typeMapping.at(firstFragment);
+    return node->setEvaluatedSymbolType(symbolType, manIdx);
   }
 
   // Check if it is a type alias

@@ -1,0 +1,75 @@
+{
+  "captures": [],
+  "symbols": [
+    {
+      "codeLoc": "L3C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "TestStruct",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": false,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
+      "type": "TestStruct<generic(T)>"
+    },
+    {
+      "codeLoc": "L16C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "Alias.container",
+      "orderIndex": 2,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
+      "type": "TestStruct<long>"
+    },
+    {
+      "codeLoc": "L18C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "main(int, string[])",
+      "orderIndex": 3,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
+      "type": "function"
+    },
+    {
+      "codeLoc": "L16C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "Alias",
+      "orderIndex": 1,
+      "specifiers": {
+        "const": true,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
+      "type": "alias(TestStruct<long>)"
+    },
+    {
+      "codeLoc": "L3C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "TestStruct",
+      "orderIndex": 0,
+      "specifiers": {
+        "const": false,
+        "public": false,
+        "signed": false
+      },
+      "state": "destructed",
+      "type": "TestStruct<generic(T)>"
+    }
+  ]
+}

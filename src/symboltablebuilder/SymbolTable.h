@@ -46,6 +46,7 @@ public:
   SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc);
   Capture *lookupCapture(const std::string &symbolName);
   Capture *lookupCaptureStrict(const std::string &symbolName);
+  void deleteEntry(const std::string &name);
   void deleteAnonymous(const std::string &name);
   [[nodiscard]] nlohmann::json toJSON() const;
 

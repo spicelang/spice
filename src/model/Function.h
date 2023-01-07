@@ -60,6 +60,7 @@ public:
   SymbolType returnType = SymbolType(TY_DYN);
   ParamList paramList;
   std::vector<GenericType> templateTypes;
+  std::unordered_map<std::string, SymbolType> typeMapping;
   SymbolTableEntry *entry = nullptr;
   ASTNode *declNode = nullptr;
   bool genericSubstantiation = false;

@@ -39,7 +39,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   // Check if the declaration is with an assignment or the default value
   llvm::Value *varAddress = nullptr;
   if (node->hasAssignment && !rhsIsDynArray) { // Assignment
-    ExprResult assignResult = doAssignment(varEntry, node->assignExpr(), true);
+    ExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
     assert(assignResult.entry == varEntry);
     varAddress = assignResult.entry->getAddress();
   } else { // Default value

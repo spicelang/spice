@@ -240,21 +240,17 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
 ExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {
   // Get entry of left side
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
-  assert(lhs.entry != nullptr);
-
-  return doAssignment(lhs.entry, rhsNode);
+  return doAssignment(lhs.ptr, lhs.entry, rhsNode);
 }
 
-ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl /*=false*/) {
-  assert(lhsEntry != nullptr);
-
+ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl) {
   // Get symbol types of left and right side
   const SymbolType &lhsSType = lhsEntry->getType();
   const SymbolType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
 
   // Deduce some information about the assignment
-  const bool isRefAssign = lhsSType.isReference();
-  const bool needsShallowCopy = !isDecl && !isRefAssign && lhsSType.is(TY_STRUCT);
+  const bool isRefAssign = lhsEntry != nullptr && lhsSType.isReference();
+  const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT);
 
   if (isRefAssign) {
     // Get address of right side
@@ -264,7 +260,8 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
     // Allocate space for the reference and store the address
     llvm::Value *refAddress = insertAlloca(rhsAddress->getType());
     builder.CreateStore(rhsAddress, refAddress);
-    lhsEntry->updateAddress(refAddress);
+    if (lhsEntry)
+      lhsEntry->updateAddress(refAddress);
     return ExprResult{.ptr = refAddress, .value = rhsAddress, .entry = lhsEntry};
   }
 
@@ -284,19 +281,20 @@ ExprResult IRGenerator::doAssignment(SymbolTableEntry *lhsEntry, const ASTNode *
     llvm::Type *rhsType = rhsSType.toLLVMType(context, currentScope);
     llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsEntry->name, lhsEntry->isVolatile);
     // Set address of lhs to the copy
-    lhsEntry->updateAddress(newAddress);
+    if (lhsEntry)
+      lhsEntry->updateAddress(newAddress);
     return ExprResult{.ptr = newAddress, .entry = lhsEntry};
   }
 
   // We can load the value from the right side and store it to the left side
   // Retrieve value of the right side
   llvm::Value *rhsValue = resolveValue(rhsNode);
-  // Retrieve address of the lhs side
-  llvm::Value *lhsAddress = lhsEntry->getAddress();
   // Allocate new memory if the lhs address does not exist
   if (!lhsAddress) {
+    assert(lhsEntry != nullptr);
     lhsAddress = insertAlloca(lhsSType.toLLVMType(context, currentScope));
-    lhsEntry->updateAddress(lhsAddress);
+    if (lhsEntry)
+      lhsEntry->updateAddress(lhsAddress);
   }
   // Store the value to the address
   builder.CreateStore(rhsValue, lhsAddress);

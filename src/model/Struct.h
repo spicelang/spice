@@ -41,6 +41,7 @@ public:
   std::string name;
   std::vector<SymbolType> fieldTypes;
   std::vector<GenericType> templateTypes;
+  std::unordered_map<std::string, SymbolType> typeMapping;
   std::vector<SymbolType> interfaceTypes;
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;

@@ -141,6 +141,14 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
     argValues.push_back(thisPtr);
   }
 
+  if (data.isConstructorCall) {
+    llvm::Type *thisType = spiceFunc->thisType.toLLVMType(context, spiceFunc->thisType.getStructBodyScope());
+    thisPtr = insertAlloca(thisType);
+
+    // Add 'this' pointer to the front of the argument list
+    argValues.push_back(thisPtr);
+  }
+
   // Get arg values
   if (node->hasArgs) {
     argValues.reserve(spiceFunc->paramList.size());
