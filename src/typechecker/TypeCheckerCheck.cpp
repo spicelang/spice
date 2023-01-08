@@ -57,6 +57,12 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     assert(typeMapping.empty());
     typeMapping = manifestation->typeMapping;
 
+    // Set return type to the result variable
+    SymbolTableEntry *resultVarEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
+    assert(resultVarEntry != nullptr);
+    resultVarEntry->updateType(manifestation->returnType, false);
+    resultVarEntry->used = true;
+
     // Visit parameters
     if (node->hasParams)
       visit(node->paramLst());

@@ -17,7 +17,8 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
   reVisitRequested = false;
 
   // Initialize AST nodes with size of 1
-  node->resizeToNumberOfManifestations(1);
+  if (typeCheckerMode == TC_MODE_PREPARE)
+    node->resizeToNumberOfManifestations(1);
 
   // Visit children
   visitChildren(node);

@@ -88,9 +88,6 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
         continue; // Match was successful -> match the next struct
       }
 
-      // Clear template types of candidate, since they are not needed anymore
-      //candidate.templateTypes.clear();
-
       // Check if we already have this manifestation and can simply re-use it
       if (manifestations.contains(candidate.getMangledName())) {
         matches.push_back(&matchScope->structs.at(defCodeLocStr).at(candidate.getMangledName()));

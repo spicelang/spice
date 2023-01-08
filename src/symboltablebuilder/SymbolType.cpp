@@ -92,13 +92,11 @@ SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
  */
 SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   assert(!typeChain.empty());
-  assert(newBaseType.typeChain.size() == 1);
-  // Copy the stack to not destroy the present one
-  TypeChain chainCopy = typeChain;
-  // Replace the first element
-  chainCopy.front() = newBaseType.typeChain.front();
+  TypeChain newTypeChain = newBaseType.typeChain;
+  for (size_t i = 1; i < typeChain.size(); i++)
+    newTypeChain.push_back(typeChain.at(i));
   // Return the new chain as a symbol type
-  return SymbolType(chainCopy);
+  return SymbolType(newTypeChain);
 }
 
 /**

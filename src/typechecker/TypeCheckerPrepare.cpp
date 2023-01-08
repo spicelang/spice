@@ -97,11 +97,6 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
   if (returnType.is(TY_DYN))
     throw SemanticError(node, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
-  // Set return type to the result variable
-  SymbolTableEntry *resultVarEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
-  assert(resultVarEntry != nullptr);
-  resultVarEntry->updateType(returnType, false);
-  resultVarEntry->used = true;
 
   // Visit parameters
   std::vector<std::string> paramNames;

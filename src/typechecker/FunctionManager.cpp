@@ -327,7 +327,15 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
   for (size_t i = 0; i < requestedParamTypes.size(); i++) {
     // Retrieve actual and requested types
     SymbolType requestedParamType = requestedParamTypes.at(i);
-    SymbolType paramType = candidate.paramList.at(i).type;
+    SymbolType originalParamType = candidate.paramList.at(i).type;
+    SymbolType paramType = originalParamType;
+
+    // If this is a non-generic type, we can do the type check straight away and move to the next param
+    if (!paramType.isBaseType(TY_GENERIC)) {
+      if (paramType == requestedParamType)
+        continue;
+      return false;
+    }
 
     // Unwrap both types
     while (paramType.isSameContainerTypeAs(requestedParamType)) {
@@ -335,27 +343,26 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
       paramType = paramType.getContainedTy();
     }
 
-    // Check if we need to substantiate generic types
-    if (!paramType.isBaseType(TY_GENERIC)) {
-      if (paramType == requestedParamType)
-        continue;
+    // Check if all wrappers around the generic type are removed now
+    if (!paramType.is(TY_GENERIC))
       return false;
-    }
 
     // Check if we have an information mismatch
-    const std::string genericTypeName = paramType.getSubType();
+    const std::string &genericTypeName = paramType.getSubType();
     if (typeMapping.contains(genericTypeName)) { // Known type name
-      const SymbolType &concreteType = typeMapping.at(paramType.getSubType());
+      const SymbolType &knownConcreteType = typeMapping.at(paramType.getSubType());
 
       // Check if the concrete type matches the requested type
-      if (concreteType != requestedParamType)
+      if (knownConcreteType != requestedParamType)
         return false;
 
-      candidate.paramList.at(i) = Param{concreteType, false};
+      // If the already known and the given type match, accept the type straight away and move to the next param
+      candidate.paramList.at(i) = Param{knownConcreteType, false};
       continue;
     }
 
-    const GenericType *genericType = getGenericTypeByNameFromCandidate(candidate, genericTypeName);
+    // Check if the given type matches all conditions of the generic type
+    const GenericType *genericType = getGenericTypeOfCandidateByName(candidate, genericTypeName);
     if (!genericType->checkConditionsOf(requestedParamType))
       return false;
 
@@ -363,7 +370,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
     typeMapping.insert({genericTypeName, requestedParamType});
 
     // Substantiate generic type with the requested type
-    const SymbolType &newParamType = paramType.replaceBaseType(requestedParamType.getBaseType());
+    const SymbolType &newParamType = originalParamType.replaceBaseType(requestedParamType);
     candidate.paramList.at(i) = Param{newParamType, false};
   }
 
@@ -377,7 +384,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
  * @param templateTypeName Template type name
  * @return Generic type object
  */
-const GenericType *FunctionManager::getGenericTypeByNameFromCandidate(const Function &candidate,
+const GenericType *FunctionManager::getGenericTypeOfCandidateByName(const Function &candidate,
                                                                       const std::string &templateTypeName) {
   for (const auto &templateType : candidate.templateTypes) {
     if (templateType.getSubType() == templateTypeName)

@@ -40,7 +40,7 @@ for.body.L4:                                      ; preds = %for.head.L4
   %11 = load i32, ptr %j, align 4
   %12 = load i32, ptr %i, align 4
   %13 = mul i32 %12, %11
-  store i32 %13, ptr %a, align 4
+  store i32 %13, ptr %10, align 4
   br label %for.tail.L4
 
 for.tail.L4:                                      ; preds = %for.body.L4

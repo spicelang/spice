@@ -33,7 +33,6 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
       // Retrieve lhs
       auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
-      assert(lhs.entry != nullptr);
 
       PtrAndValue result;
       switch (node->op) {
@@ -70,14 +69,14 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       default:
         throw std::runtime_error("Assign op fall-through");
       }
-      assert(lhs.entry != nullptr);
 
       if (result.ptr) { // The operation allocated more memory
-        lhs.entry->updateAddress(result.ptr);
+        if (lhs.entry)
+          lhs.entry->updateAddress(result.ptr);
       } else { // The operation only updated the value
         // Store the result
         lhs.value = result.value;
-        builder.CreateStore(lhs.value, lhs.ptr, lhs.entry->isVolatile);
+        builder.CreateStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
       }
       return ExprResult{.ptr = lhs.ptr, .value = lhs.value, .entry = lhs.entry};
     }
