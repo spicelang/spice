@@ -1,3 +1,10 @@
-type Vector struct {
-    int i
+type A dyn;
+
+public p printFormat<A>(A element) {
+    printf("Sizeof output: %d\n", sizeof(element));
+}
+
+public f<A*> getAInc<A>(A* number) {
+    (*number)++;
+    return number;
 }

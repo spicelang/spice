@@ -17,7 +17,7 @@ define dso_local i32 @main() #0 {
   %1 = call ptr @malloc(i64 1)
   store ptr %1, ptr %address, align 8
   %2 = load ptr, ptr %address, align 8
-  store i8 12, ptr %address, align 1
+  store i8 12, ptr %2, align 1
   %3 = load ptr, ptr %address, align 8
   call void @free(ptr %3)
   %4 = load i32, ptr %result, align 4
