@@ -1,16 +1,26 @@
-import "os-test2" as s1;
+p print() {
+    printf("Hello World!");
+}
 
 f<int> main() {
-    s1::printFormat(1.123);
-    s1::printFormat(543);
-    s1::printFormat({"Hello", "World"});
-    int test = 1234;
-    s1::printFormat(&test);
-
-    int i = 12;
-    int* iPtr = s1::getAInc(&i);
-    assert *iPtr == 13;
+    print();
 }
+
+/*type T dyn;
+type U dyn;
+
+f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
+    return arg1 + arg2 + arg3;
+}
+
+f<double> genericFunction<T, U>(T arg1, U arg2, T arg3) {
+    return arg1 + arg2 + arg3;
+}
+
+f<int> main() {
+    printf("%f\n", genericFunction(1, 2.4));
+    printf("%f\n", genericFunction(12l, 2.0));
+}*/
 
 /*type T string|char;
 
