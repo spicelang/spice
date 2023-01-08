@@ -4,4 +4,10 @@ f<int> main() {
     s1::printFormat(1.123);
     s1::printFormat(543);
     s1::printFormat({"Hello", "World"});
+    int test = 1234;
+    s1::printFormat(&test);
+
+    int i = 12;
+    int* iPtr = s1::getAInc(&i);
+    assert *iPtr == 13;
 }
