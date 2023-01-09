@@ -115,7 +115,7 @@ public:
   void runIROptimizer();
   void runObjectEmitter();
   void concludeCompilation();
-  void execute();
+  int execute();
 
   // Shortcuts
   void runFrontEnd();

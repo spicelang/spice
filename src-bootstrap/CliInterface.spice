@@ -33,7 +33,7 @@ public type CliInterface struct {
     CliOptions cliOptions
     public bool shouldCompile
     public bool shouldInstall
-    public bool shouldRun
+    public bool shouldExecute
 }
 
 public p CliInterface.ctor() {

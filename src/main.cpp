@@ -15,10 +15,9 @@ using namespace spice::compiler;
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *
  * @param cliOptions Command line options
- * @param shouldExecute Tells the compiler to execute the generated program
  * @return Successful or not
  */
-bool compileProject(CliOptions &cliOptions, bool shouldExecute) {
+bool compileProject(CliOptions &cliOptions) {
   try {
     // Instantiate GlobalResourceManager
     GlobalResourceManager resourceManager(cliOptions);
@@ -32,16 +31,17 @@ bool compileProject(CliOptions &cliOptions, bool shouldExecute) {
     mainSourceFile.runBackEnd();
 
     // Link the target executable (Link object files to executable)
-    resourceManager.linker.link();
+    if (!cliOptions.execute)
+      resourceManager.linker.link();
 
     // Print compiler warnings
     mainSourceFile.collectAndPrintWarnings();
 
-    // Execute if required
-    if (shouldExecute)
-      mainSourceFile.execute();
+    // Execute if required and return with the return code
+    if (cliOptions.execute)
+      return mainSourceFile.execute();
 
-    return true;
+    return EXIT_SUCCESS;
   } catch (LexerError &e) {
     std::cout << e.what() << "\n";
   } catch (ParserError &e) {
@@ -51,7 +51,7 @@ bool compileProject(CliOptions &cliOptions, bool shouldExecute) {
   } catch (IRError &e) {
     std::cout << e.what() << "\n";
   }
-  return false;
+  return EXIT_FAILURE;
 }
 
 /**
@@ -67,16 +67,16 @@ int main(int argc, char **argv) {
   cli.createInterface();
   try {
     cli.parse(argc, argv);
-    if (cli.shouldCompile) {
-      cli.validate(); // Check if all required fields are present
-      cli.enrich();   // Prepare the cli options
 
-      if (!compileProject(cli.cliOptions, cli.shouldRun)) // Kick off the compiling process
-        return EXIT_FAILURE;
+    // Cancel here if we do not have to compile
+    if (!cli.shouldCompile)
+      return EXIT_SUCCESS;
 
-      //if (cli.shouldRun)
-      //  cli.runBinary(); // Run executable if required
-    }
+    cli.validate(); // Check if all required fields are present
+    cli.enrich();   // Prepare the cli options
+
+    // Kick off the compiling process
+    return compileProject(cli.cliOptions);
   } catch (CliError &e) {
     std::cout << e.what() << "\n";
     return EXIT_FAILURE;

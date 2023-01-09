@@ -34,6 +34,11 @@ void CLIInterface::createInterface() {
     if (!shouldCompile)
       return;
 
+    if (shouldExecute) {
+      cliOptions.execute = true;
+      return;
+    }
+
     // If the binary should be installed, set the output path to the Spice bin directory
     if (shouldInstall) {
       std::string installPath = FileUtil::getSpiceBinDir();
@@ -74,12 +79,6 @@ void CLIInterface::createInterface() {
     uint64_t millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     outputDir << tmpDir << "spice" << FileUtil::DIR_SEPARATOR << "output" << FileUtil::DIR_SEPARATOR << std::to_string(millis);
     cliOptions.outputDir = outputDir.str();
-
-    // Set output path to output dir if running is enabled
-    if (shouldRun) {
-      cliOptions.outputPath = cliOptions.outputDir + FileUtil::DIR_SEPARATOR;
-      cliOptions.outputPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
-    }
 
     // Create the output dir if it does not exist already
     if (!FileUtil::dirExists(cliOptions.outputDir))
@@ -175,7 +174,7 @@ void CLIInterface::addRunSubcommand() {
   subCmd->alias("r");
   subCmd->ignore_case();
   subCmd->callback([&]() {
-    shouldCompile = shouldRun = true; // Requires the source file to be compiled
+    shouldCompile = shouldExecute = true; // Requires the source file to be compiled
   });
 
   addCompileSubcommandOptions(subCmd);
