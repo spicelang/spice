@@ -1,9 +1,10 @@
-p print() {
-    printf("Hello World!");
+f<int> fibo(int n) {
+    if n <= 1 { return n; }
+    return fibo(n - 1) + fibo(n - 2);
 }
 
 f<int> main() {
-    print();
+    printf("Result: %d", fibo(46));
 }
 
 /*type T dyn;

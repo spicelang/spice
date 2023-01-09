@@ -102,6 +102,9 @@ set(SOURCES
         # Linker
         linker/LinkerInterface.cpp
         linker/LinkerInterface.h
+        # Execution Engine
+        executionengine/ExecutionEngine.cpp
+        executionengine/ExecutionEngine.h
         # Model
         model/Function.cpp
         model/Function.h
