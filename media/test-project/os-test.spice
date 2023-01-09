@@ -1,13 +1,4 @@
-f<int> fibo(int n) {
-    if n <= 1 { return n; }
-    return fibo(n - 1) + fibo(n - 2);
-}
-
-f<int> main() {
-    printf("Result: %d", fibo(46));
-}
-
-/*type T dyn;
+type T dyn;
 type U dyn;
 
 f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
@@ -21,7 +12,7 @@ f<double> genericFunction<T, U>(T arg1, U arg2, T arg3) {
 f<int> main() {
     printf("%f\n", genericFunction(1, 2.4));
     printf("%f\n", genericFunction(12l, 2.0));
-}*/
+}
 
 /*type T string|char;
 

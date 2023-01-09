@@ -17,6 +17,7 @@ struct CliOptions {
   std::string targetArch;
   std::string targetVendor;
   std::string targetOs;
+  bool execute = false;
   bool isNativeTarget = false;
   std::string cacheDir;               // Where the cache files go. Should always be a temp directory
   std::string outputDir;              // Where the object files go. Should always be a temp directory
@@ -55,7 +56,7 @@ public:
   CliOptions cliOptions;
   bool shouldCompile = false;
   bool shouldInstall = false;
-  bool shouldRun = false;
+  bool shouldExecute = false;
 
 private:
   // Private methods

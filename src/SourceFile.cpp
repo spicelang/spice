@@ -425,7 +425,7 @@ void SourceFile::concludeCompilation() {
     tout.println("Finished compiling " + fileName);
 }
 
-void SourceFile::execute() {
+int SourceFile::execute() {
   assert(mainFile);
 
   Timer timer(&compilerOutput.times.executionEngine);
@@ -435,9 +435,11 @@ void SourceFile::execute() {
 
   // JITCompile / Interpret the compiled program
   ExecutionEngine executionEngine(resourceManager, this);
-  executionEngine.executeMainFct();
+  const int returnCode = executionEngine.executeMainFct();
 
   timer.stop();
+
+  return returnCode;
 }
 
 void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
@@ -467,7 +469,8 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   resourceManager.threadPool.push_task([&]() {
     runIRGenerator();
     runIROptimizer();
-    runObjectEmitter();
+    if (!resourceManager.cliOptions.execute)
+      runObjectEmitter();
     concludeCompilation();
   });
 

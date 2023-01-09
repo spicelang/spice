@@ -1,0 +1,3 @@
+public f<bool> isTrue() {
+    return true;
+}

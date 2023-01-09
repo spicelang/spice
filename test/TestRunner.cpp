@@ -34,6 +34,7 @@ void execTestCase(const TestCase &testCase) {
                            /* targetArch= */ std::string(targetTriple.getArchName()),
                            /* targetVendor= */ std::string(targetTriple.getVendorName()),
                            /* targetOs= */ std::string(targetTriple.getOSName()),
+                           /* execute= */ true,
                            /* isNativeTarget= */ true,
                            /* cacheDir= */ "./cache",
                            /* outputDir= */ ".",
@@ -96,6 +97,8 @@ void execTestCase(const TestCase &testCase) {
 
     // Execute generator
     mainSourceFile.runIRGenerator();
+    for (auto &dependency : mainSourceFile.dependencies)
+      dependency.second.first->runIRGenerator();
 
     // Check unoptimized IR code
     TestUtil::checkRefMatch(
@@ -115,6 +118,8 @@ void execTestCase(const TestCase &testCase) {
           [&]() {
             cliOptions.optLevel = i;
             mainSourceFile.runIROptimizer();
+            for (auto &dependency : mainSourceFile.dependencies)
+              dependency.second.first->runIROptimizer();
             return mainSourceFile.compilerOutput.irOptString;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {
@@ -129,10 +134,10 @@ void execTestCase(const TestCase &testCase) {
     // Check warnings
     mainSourceFile.collectAndPrintWarnings();
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_WARNING_OUTPUT, [&]() {
-      std::string actualWarningString;
+      std::stringstream actualWarningString;
       for (const CompilerWarning &warning : mainSourceFile.compilerOutput.warnings)
-        actualWarningString += warning.warningMessage + "\n";
-      return actualWarningString;
+        actualWarningString << warning.warningMessage << "\n";
+      return actualWarningString.str();
     });
 
     // Check if the execution output matches the expected output
@@ -141,22 +146,23 @@ void execTestCase(const TestCase &testCase) {
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
 
       // Parse linker flags
-      std::string linkerFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_NAME_LINKER_FLAGS;
-      if (FileUtil::fileExists(linkerFlagsFile)) {
+      const std::string linkerFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_NAME_LINKER_FLAGS;
+      if (FileUtil::fileExists(linkerFlagsFile))
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           resourceManager.linker.addLinkerFlag(linkerFlag);
-      }
 
       // Emit object file
       mainSourceFile.runObjectEmitter();
+      for (auto &dependency : mainSourceFile.dependencies)
+        dependency.second.first->runObjectEmitter();
 
       // Run linker
       resourceManager.linker.link();
 
       // Execute binary
-      ExecResult result = FileUtil::exec(TestUtil::getDefaultExecutableName());
-
+      const ExecResult result = FileUtil::exec(TestUtil::getDefaultExecutableName());
       EXPECT_EQ(0, result.exitCode);
+
       return result.output;
     });
   } catch (LexerError &error) {
