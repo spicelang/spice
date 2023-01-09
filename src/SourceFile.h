@@ -63,6 +63,7 @@ struct TimerOutput {
   uint64_t irGenerator = 0;
   uint64_t irOptimizer = 0;
   uint64_t objectEmitter = 0;
+  uint64_t executionEngine = 0;
 };
 
 struct CompilerOutput {
@@ -114,6 +115,7 @@ public:
   void runIROptimizer();
   void runObjectEmitter();
   void concludeCompilation();
+  void execute();
 
   // Shortcuts
   void runFrontEnd();
@@ -127,6 +129,7 @@ public:
                      const std::string &path);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   void collectAndPrintWarnings();
+  void collectAllSourceFiles(std::vector<SourceFile *>& sourceFiles);
   void requestRuntimeModule(const RuntimeModuleName &moduleName);
   void addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true,
                             const std::string &predecessorName = "");

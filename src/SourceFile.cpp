@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "SourceFile.h"
+#include "executionengine/ExecutionEngine.h"
 
 #include <ast/ASTBuilder.h>
 #include <astoptimizer/ASTOptimizer.h>
@@ -379,7 +380,7 @@ void SourceFile::runIROptimizer() {
     tout.println("\nOptimized IR code:\n" + irOptimizer.getOptimizedIRString()); // GCOV_EXCL_LINE
 
   timer.stop();
-  printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irGenerator, true);
+  printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irOptimizer, true);
 }
 
 void SourceFile::runObjectEmitter() {
@@ -422,6 +423,21 @@ void SourceFile::concludeCompilation() {
 
   if (resourceManager.cliOptions.printDebugOutput)
     tout.println("Finished compiling " + fileName);
+}
+
+void SourceFile::execute() {
+  assert(mainFile);
+
+  Timer timer(&compilerOutput.times.executionEngine);
+  timer.start();
+
+  std::cout << "\n";
+
+  // JITCompile / Interpret the compiled program
+  ExecutionEngine executionEngine(resourceManager, this);
+  executionEngine.executeMainFct();
+
+  timer.stop();
 }
 
 void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
@@ -500,6 +516,15 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
   // Print warnings for this file
   for (const CompilerWarning &warning : compilerOutput.warnings)
     warning.print();
+}
+
+void SourceFile::collectAllSourceFiles(std::vector<SourceFile *> &sourceFiles) { // NOLINT(misc-no-recursion)
+  // Add this source file. Don't add the main source file
+  if (!mainFile)
+    sourceFiles.push_back(this);
+  // Add all dependencies
+  for (const auto &dependency : dependencies)
+    dependency.second.first->collectAllSourceFiles(sourceFiles);
 }
 
 void SourceFile::requestRuntimeModule(const RuntimeModuleName &moduleName) {

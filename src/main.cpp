@@ -15,9 +15,10 @@ using namespace spice::compiler;
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *
  * @param cliOptions Command line options
+ * @param shouldExecute Tells the compiler to execute the generated program
  * @return Successful or not
  */
-bool compileProject(CliOptions &cliOptions) {
+bool compileProject(CliOptions &cliOptions, bool shouldExecute) {
   try {
     // Instantiate GlobalResourceManager
     GlobalResourceManager resourceManager(cliOptions);
@@ -35,6 +36,10 @@ bool compileProject(CliOptions &cliOptions) {
 
     // Print compiler warnings
     mainSourceFile.collectAndPrintWarnings();
+
+    // Execute if required
+    if (shouldExecute)
+      mainSourceFile.execute();
 
     return true;
   } catch (LexerError &e) {
@@ -66,11 +71,11 @@ int main(int argc, char **argv) {
       cli.validate(); // Check if all required fields are present
       cli.enrich();   // Prepare the cli options
 
-      if (!compileProject(cli.cliOptions)) // Kick off the compiling process
+      if (!compileProject(cli.cliOptions, cli.shouldRun)) // Kick off the compiling process
         return EXIT_FAILURE;
 
-      if (cli.shouldRun)
-        cli.runBinary(); // Run executable if required
+      //if (cli.shouldRun)
+      //  cli.runBinary(); // Run executable if required
     }
   } catch (CliError &e) {
     std::cout << e.what() << "\n";
