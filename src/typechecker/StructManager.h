@@ -33,6 +33,7 @@ private:
   [[nodiscard]] static bool matchName(const Struct &candidate, const std::string &requestedName);
   [[nodiscard]] static bool matchTemplateTypes(Struct &candidate, const std::vector<SymbolType> &requestedTemplateTypes,
                                                TypeMapping &typeMapping);
+  static void substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping);
 };
 
 } // namespace spice::compiler

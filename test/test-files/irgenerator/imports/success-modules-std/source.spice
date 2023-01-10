@@ -1,4 +1,4 @@
-import "std/type/bool" as boolTy;
+import "std/type/bool";
 
 f<int> main() {
     printf("Result: %d\n", toInt(true));

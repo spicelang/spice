@@ -108,8 +108,9 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const CodeLoc &codeLoc, const
   else
     varInfo = diBuilder->createAutoVariable(scope, varName, unit, codeLoc.line, diType);
   llvm::DIExpression *expr = diBuilder->createExpression();
-  auto inst = diBuilder->insertDeclare(address, varInfo, expr, irGenerator->builder.getCurrentDebugLocation(),
-                                       irGenerator->allocaInsertBlock);
+  llvm::DILocation *debugLocation = irGenerator->builder.getCurrentDebugLocation();
+  assert(debugLocation != nullptr);
+  llvm::Instruction *inst = diBuilder->insertDeclare(address, varInfo, expr, debugLocation, irGenerator->allocaInsertBlock);
   if (moveToPrev)
     inst->moveBefore(irGenerator->builder.GetInsertPoint()->getPrevNonDebugInstruction());
 }
@@ -118,13 +119,9 @@ void DebugInfoGenerator::setSourceLocation(const ASTNode *node) {
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
 
-  if (lexicalBlocks.empty()) {
-    irGenerator->builder.SetCurrentDebugLocation(llvm::DebugLoc());
-    return;
-  }
-
+  assert(!lexicalBlocks.empty());
   llvm::DIScope *scope = lexicalBlocks.top();
-  auto codeLoc = llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope);
+  llvm::DILocation *codeLoc = llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope);
   irGenerator->builder.SetCurrentDebugLocation(codeLoc);
 }
 

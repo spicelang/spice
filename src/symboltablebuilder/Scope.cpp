@@ -120,8 +120,6 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
   return varsGoingOutOfScope;
 }
 
-void Scope::addParent(Scope *parent) { parents.push_back(parent); }
-
 /**
  * Insert a new generic type in this scope
  *

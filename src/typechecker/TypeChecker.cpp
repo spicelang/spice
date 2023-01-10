@@ -92,8 +92,7 @@ std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
 
 std::any TypeChecker::visitThreadDef(ThreadDefNode *node) {
   // Change to thread body scope
-  currentScope = node->bodyScope;
-  assert(currentScope->type == SCOPE_THREAD_BODY);
+  changeToScope(node->bodyScope, SCOPE_THREAD_BODY);
 
   // Visit body
   visit(node->body());
@@ -107,8 +106,7 @@ std::any TypeChecker::visitThreadDef(ThreadDefNode *node) {
 
 std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Change to unsafe block body scope
-  currentScope = node->bodyScope;
-  assert(currentScope->type == SCOPE_UNSAFE_BODY);
+  changeToScope(node->bodyScope, SCOPE_UNSAFE_BODY);
 
   // Visit body
   visit(node->body());
@@ -121,8 +119,7 @@ std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
 
 std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   // Change to for body scope
-  currentScope = node->bodyScope;
-  assert(currentScope->type == SCOPE_FOR_BODY);
+  changeToScope(node->bodyScope, SCOPE_FOR_BODY);
 
   // Visit loop variable declaration
   visit(node->initDecl());
@@ -147,8 +144,7 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
 
 std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Change to foreach body scope
-  currentScope = node->bodyScope;
-  assert(currentScope->type == SCOPE_FOREACH_BODY);
+  changeToScope(node->bodyScope, SCOPE_FOREACH_BODY);
 
   // Check type of the array
   SymbolType arrayType = std::any_cast<ExprResult>(visit(node->arrayAssign())).type;
@@ -203,8 +199,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
 
 std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   // Change to while body scope
-  currentScope = node->bodyScope;
-  assert(currentScope->type == SCOPE_WHILE_BODY);
+  changeToScope(node->bodyScope, SCOPE_WHILE_BODY);
 
   // Visit condition
   SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
@@ -223,8 +218,7 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
 
 std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
   // Change to while body scope
-  currentScope = node->bodyScope;
-  assert(currentScope->type == SCOPE_WHILE_BODY);
+  changeToScope(node->bodyScope, SCOPE_WHILE_BODY);
 
   // Visit body
   visit(node->body());
@@ -243,8 +237,7 @@ std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
 
 std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   // Change to then body scope
-  currentScope = node->thenBodyScope;
-  assert(currentScope->type == SCOPE_IF_ELSE_BODY);
+  changeToScope(node->thenBodyScope, SCOPE_IF_ELSE_BODY);
 
   // Visit condition
   AssignExprNode *condition = node->condition();
@@ -279,8 +272,7 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   }
 
   // Change to else body scope
-  currentScope = node->elseBodyScope;
-  assert(currentScope->type == SCOPE_IF_ELSE_BODY);
+  changeToScope(node->elseBodyScope, SCOPE_IF_ELSE_BODY);
 
   // Visit body
   visit(node->body());
@@ -293,6 +285,8 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
 
 std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Change to anonymous scope body scope
+  node->bodyScope->parent = currentScope;                           // Needed for nested scopes in generic functions
+  node->bodyScope->symbolTable.parent = &currentScope->symbolTable; // Needed for nested scopes in generic functions
   currentScope = node->bodyScope;
   assert(currentScope->type == SCOPE_ANONYMOUS_BLOCK_BODY);
 
@@ -1175,10 +1169,6 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 }
 
 std::any TypeChecker::visitValue(ValueNode *node) {
-  // Constant
-  if (node->constant())
-    return visit(node->constant());
-
   // Function call
   if (node->functionCall())
     return visit(node->functionCall());
@@ -1783,6 +1773,24 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
         if (manifestation->structScope == symbolType.getBaseType().getStructBodyScope())
           return symbolType.replaceBaseSubType(manifestation->name);
   return symbolType;
+}
+
+/**
+ * Change to the passed scope.
+ * For nested scopes in generic functions/procedures it is important to have the right parent for symbol lookups
+ * Therefore, changeToScope sets the children's parent to the old scope to always have the right parent
+ *
+ * @param scope Scope to change to
+ * @param scopeType Expected type of the given scope
+ */
+void TypeChecker::changeToScope(Scope *scope, const ScopeType scopeType) {
+  assert(scope != nullptr);
+  assert(scope->type == scopeType);
+  // Adjust members of the new scope
+  scope->parent = currentScope;
+  scope->symbolTable.parent = &currentScope->symbolTable;
+  // Set the scope
+  currentScope = scope;
 }
 
 } // namespace spice::compiler

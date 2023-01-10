@@ -9,13 +9,6 @@ namespace spice::compiler {
 std::any IRGenerator::visitValue(const ValueNode *node) {
   diGenerator.setSourceLocation(node);
 
-  // Constant
-  if (node->constant()) {
-    // Visit constant value
-    auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
-    return ExprResult{.constant = constantValue};
-  }
-
   // Function call
   if (node->functionCall())
     return visit(node->functionCall());
@@ -152,9 +145,20 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
   // Get arg values
   if (node->hasArgs) {
     argValues.reserve(spiceFunc->paramList.size());
-    for (AssignExprNode *argNode : node->argLst()->args()) {
-      llvm::Value *argValue = resolveValue(argNode);
-      argValues.push_back(argValue);
+    const std::vector<AssignExprNode *> args = node->argLst()->args();
+    for (size_t i = 0; i < spiceFunc->paramList.size(); i++) {
+      AssignExprNode *argNode = args.at(i);
+      const SymbolType &expectedSTy = spiceFunc->paramList.at(i).type;
+      const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
+
+      // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
+      if (actualSTy == expectedSTy) {
+        argValues.push_back(resolveValue(argNode));
+      } else {
+        assert(actualSTy.isArray() && actualSTy.getArraySize() != ARRAY_SIZE_UNKNOWN);
+        assert(expectedSTy.isArray() && expectedSTy.getArraySize() == ARRAY_SIZE_UNKNOWN);
+        argValues.push_back(doImplicitCast(resolveAddress(argNode), expectedSTy, actualSTy));
+      }
     }
   }
 
@@ -292,9 +296,9 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
     // Create global struct
     llvm::Constant *constantStruct = llvm::ConstantStruct::get(structType, constants);
-    llvm::Value *structAddr = createGlobalConstant(ANON_GLOBAL_STRUCT_NAME, constantStruct);
+    llvm::Value *constantAddr = createGlobalConstant(ANON_GLOBAL_STRUCT_NAME, constantStruct);
 
-    return ExprResult{.ptr = structAddr, .constant = constantStruct};
+    return ExprResult{.ptr = constantAddr, .constant = constantStruct };
   } else { // We have at least one non-immediate value, so we need to take normal struct instantiation as fallback
     llvm::Value *structAddr = insertAlloca(structType);
 

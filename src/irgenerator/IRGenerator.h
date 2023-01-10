@@ -7,6 +7,7 @@
 #include <irgenerator/DebugInfoGenerator.h>
 #include <irgenerator/OpRuleConversionManager.h>
 #include <irgenerator/StdFunctionManager.h>
+#include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
 
@@ -114,6 +115,9 @@ private:
   void autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const;
   llvm::Value *createGlobalConstant(const std::string &baseName, llvm::Constant *constant);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
+  void materializeConstant(ExprResult &exprResult);
+  llvm::Value *doImplicitCast(llvm::Value *src, const SymbolType &dstSTy, SymbolType srcSTy);
+  void changeToScope(Scope *scope, const ScopeType scopeType);
 
   // Private members
   llvm::LLVMContext &context;

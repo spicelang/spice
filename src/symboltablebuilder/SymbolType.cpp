@@ -268,6 +268,33 @@ bool operator==(const SymbolType &lhs, const SymbolType &rhs) {
 bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs == rhs); }
 
 /**
+ * Compare two symbol types, ignoring array sizes.
+ * This can be used for function argument matching or similar
+ *
+ * @param lhs Other symbol type
+ * @return Equal or not
+ */
+bool SymbolType::equalsIgnoreArraySize(const SymbolType &otherType) const {
+  // If the size does not match, it is not equal
+  if (typeChain.size() != otherType.typeChain.size())
+    return false;
+  // Compare the elements
+  for (size_t i = 0; i < typeChain.size(); i++) {
+    const SymbolType::TypeChainElement &lhsElement = typeChain.at(i);
+    const SymbolType::TypeChainElement &rhsElement = otherType.typeChain.at(i);
+
+    // Ignore differences in array size
+    if (isArray() && otherType.isArray())
+      continue;
+
+    // Not both types are arrays -> compare them as usual
+    if (*this != otherType)
+      return false;
+  }
+  return true;
+}
+
+/**
  * Set the sub type of the top element
  *
  * @param newSubType New sub type

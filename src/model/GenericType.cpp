@@ -16,19 +16,29 @@ GenericType::GenericType(const std::string &name) { this->typeChain.push_back({T
 /**
  * Checks if the given symbol type matches all conditions to get a manifestation of the current generic type
  *
+ * @param symbolType Symbol type to be checked
+ * @param ignoreArraySize Ignore the array size at type comparison
  * @return True or false
  */
-bool GenericType::checkConditionsOf(const SymbolType &symbolType) const { return checkTypeConditionOf(symbolType); }
+bool GenericType::checkConditionsOf(const SymbolType &symbolType, bool ignoreArraySize /*=false*/) const {
+  return checkTypeConditionOf(symbolType, ignoreArraySize);
+}
 
 /**
  * Checks if the given symbol type matches all type conditions to get a manifestation of the current generic type
  *
+ * @param symbolType Symbol type to be checked
+ * @param ignoreArraySize Ignore the array size at type comparison
  * @return True or false
  */
-bool GenericType::checkTypeConditionOf(const SymbolType &symbolType) const {
+bool GenericType::checkTypeConditionOf(const SymbolType &symbolType, bool ignoreArraySize) const {
   // Check type conditions
-  return std::ranges::any_of(
-      typeConditions, [&](const SymbolType &typeCondition) { return typeCondition.is(TY_DYN) || typeCondition == symbolType; });
+  return std::ranges::any_of(typeConditions, [&](const SymbolType &typeCondition) {
+    if (ignoreArraySize)
+      return typeCondition.is(TY_DYN) || typeCondition.equalsIgnoreArraySize(symbolType);
+    else
+      return typeCondition.is(TY_DYN) || typeCondition == symbolType;
+  });
 }
 
 } // namespace spice::compiler

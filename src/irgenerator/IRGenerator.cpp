@@ -68,16 +68,22 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, ExprResult &exprResu
   if (!accessScope)
     accessScope = currentScope;
 
-  // Check if a constant or a value is already present
-  if (exprResult.constant != nullptr)
-    return exprResult.constant;
+  // Check if the value is already present
   if (exprResult.value != nullptr)
     return exprResult.value;
+
+  // Check if a constant is present
+  if (exprResult.constant != nullptr) {
+    materializeConstant(exprResult);
+    return exprResult.value;
+  }
 
   // If not, load the value from the pointer
   assert(exprResult.ptr != nullptr);
   llvm::Type *valueTy = node->getEvaluatedSymbolType(manIdx).toLLVMType(context, accessScope);
-  return builder.CreateLoad(valueTy, exprResult.ptr);
+  exprResult.value = builder.CreateLoad(valueTy, exprResult.ptr);
+
+  return exprResult.value;
 }
 
 llvm::Value *IRGenerator::resolveAddress(const ASTNode *node, bool storeVolatile /*=false*/) {
@@ -95,10 +101,10 @@ llvm::Value *IRGenerator::resolveAddress(ExprResult &exprResult, bool storeVolat
     storeVolatile |= exprResult.entry->isVolatile;
 
   // If not, store the value or constant
-  llvm::Value *value = exprResult.constant ?: exprResult.value;
-  assert(value != nullptr);
-  llvm::Value *address = insertAlloca(value->getType(), exprResult.entry ? exprResult.entry->name : "");
-  builder.CreateStore(value, address, storeVolatile);
+  materializeConstant(exprResult);
+  assert(exprResult.value != nullptr);
+  llvm::Value *address = insertAlloca(exprResult.value->getType(), exprResult.entry ? exprResult.entry->name : "");
+  builder.CreateStore(exprResult.value, address, storeVolatile);
   return address;
 }
 
@@ -267,6 +273,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
 
   if (isDecl && rhsSType.is(TY_STRUCT)) {
     auto result = std::any_cast<ExprResult>(visit(rhsNode));
+    materializeConstant(result);
     lhsEntry->updateAddress(resolveAddress(result, lhsEntry->isVolatile));
     result.entry = lhsEntry;
     return result;
@@ -350,11 +357,85 @@ std::string IRGenerator::getUnusedGlobalName(const std::string &baseName) const 
   return globalName;
 }
 
+llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, const SymbolType &dstSTy, SymbolType srcSTy) {
+  assert(srcSTy != dstSTy);
+
+  // Unpack the pointers until a pointer of another type is met
+  size_t loadCounter = 0;
+  while (srcSTy.isPointer()) {
+    src = builder.CreateLoad(srcSTy.toLLVMType(context, currentScope), src);
+    srcSTy = srcSTy.getContainedTy();
+    loadCounter++;
+  }
+  // GEP or bit-cast
+  if (dstSTy.isArray() && srcSTy.isArray()) { // Special case that is used for passing arrays as pointer to functions
+    llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
+    src = builder.CreateInBoundsGEP(srcSTy.toLLVMType(context, currentScope), src, indices);
+  } else {
+    src = builder.CreateLoad(srcSTy.toLLVMType(context, currentScope), src);
+    src = builder.CreateBitCast(src, dstSTy.toLLVMType(context, currentScope));
+  }
+  // Pack the pointers together again
+  for (; loadCounter > 0; loadCounter--) {
+    llvm::Value *newActualArg = insertAlloca(src->getType());
+    builder.CreateStore(src, newActualArg);
+    src = newActualArg;
+  }
+  return src;
+}
+
+void IRGenerator::materializeConstant(ExprResult &exprResult) {
+  // Skip results, that do not contain a constant or already have a value
+  if (exprResult.constant == nullptr || exprResult.value != nullptr)
+    return;
+
+  llvm::Type *constantType = exprResult.constant->getType();
+  if (constantType->isArrayTy() || constantType->isStructTy()) {
+    // Insert alloca for local variable
+    llvm::Value *localAddr = insertAlloca(constantType);
+
+    // If no address is given, we simply store the constant
+    if (exprResult.ptr != nullptr) {
+      // Get the size of the type in bytes
+      const size_t instanceSize = module->getDataLayout().getTypeAllocSize(constantType);
+
+      // Copy the constant to the local address via llvm.memcpy
+      llvm::Function *memcpyIntrinsic = stdFunctionManager.getMemcpyIntrinsic();
+      llvm::Value *args[4] = {localAddr, exprResult.ptr, builder.getInt64(instanceSize), builder.getFalse()};
+      builder.CreateCall(memcpyIntrinsic, args);
+    }
+
+    // Set the pointer to the newly created local variable
+    exprResult.ptr = localAddr;
+  }
+
+  // Default case: the value to the constant
+  exprResult.value = exprResult.constant;
+}
+
 std::string IRGenerator::getIRString() const {
   std::string output;
   llvm::raw_string_ostream oss(output);
   module->print(oss, nullptr);
   return oss.str();
+}
+
+/**
+ * Change to the passed scope.
+ * For nested scopes in generic functions/procedures it is important to have the right parent for symbol lookups
+ * Therefore, changeToScope sets the children's parent to the old scope to always have the right parent
+ *
+ * @param scope Scope to change to
+ * @param scopeType Expected type of the given scope
+ */
+void IRGenerator::changeToScope(Scope *scope, const ScopeType scopeType) {
+  assert(scope != nullptr);
+  assert(scope->type == scopeType);
+  // Adjust members of the new scope
+  scope->parent = currentScope;
+  scope->symbolTable.parent = &currentScope->symbolTable;
+  // Set the scope
+  currentScope = scope;
 }
 
 } // namespace spice::compiler
