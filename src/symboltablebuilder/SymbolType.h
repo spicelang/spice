@@ -92,6 +92,7 @@ public:
         return true;
       }
     }
+    friend bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs) { return !(lhs == rhs); }
 
     // Public members
     SymbolSuperType superType = TY_DYN;
@@ -173,6 +174,7 @@ public:
   [[nodiscard]] Scope *getStructBodyScope() const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
+  bool equalsIgnoreArraySize(const SymbolType &otherType) const;
 
   // Public members
   TypeChain typeChain;

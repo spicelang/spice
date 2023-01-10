@@ -565,9 +565,8 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
       break;
     }
     case PrefixUnaryExprNode::OP_PLUS_PLUS: {
-      // Load value of lhs
-      if (!lhs.value)
-        lhs.value = builder.CreateLoad(lhsTy, lhs.ptr, isVolatile);
+      // Make sure the value is present
+      resolveValue(lhsNode, lhs);
 
       // Execute operation
       lhs.value = conversionManager.getPrefixPlusPlusInst(lhs, lhsNode, currentScope);
@@ -582,9 +581,8 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
       break;
     }
     case PrefixUnaryExprNode::OP_MINUS_MINUS: {
-      // Load value of lhs
-      if (!lhs.value)
-        lhs.value = builder.CreateLoad(lhsTy, lhs.ptr, isVolatile);
+      // Make sure the value is present
+      resolveValue(lhsNode, lhs);
 
       // Execute operation
       lhs.value = conversionManager.getPrefixMinusMinusInst(lhs, lhsNode, currentScope);
@@ -599,9 +597,8 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
       break;
     }
     case PrefixUnaryExprNode::OP_NOT: {
-      // Load value of lhs
-      if (!lhs.value)
-        lhs.value = builder.CreateLoad(lhsTy, lhs.ptr, isVolatile);
+      // Make sure the value is present
+      resolveValue(lhsNode, lhs);
 
       // Execute operation
       lhs.value = conversionManager.getPrefixNotInst(lhs, lhsNode, currentScope);
@@ -613,9 +610,8 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
       break;
     }
     case PrefixUnaryExprNode::OP_BITWISE_NOT: {
-      // Load value of lhs
-      if (!lhs.value)
-        lhs.value = builder.CreateLoad(lhsTy, lhs.ptr, isVolatile);
+      // Make sure the value is present
+      resolveValue(lhsNode, lhs);
 
       // Execute operation
       lhs.value = conversionManager.getPrefixBitwiseNotInst(lhs, lhsNode, currentScope);
@@ -627,11 +623,8 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
       break;
     }
     case PrefixUnaryExprNode::OP_INDIRECTION: {
-      if (!lhs.value) {
-        lhs.value = builder.CreateLoad(lhsTy, lhs.ptr);
-        lhsSTy = lhsSTy.getContainedTy();
-        lhsTy = lhsSTy.toLLVMType(context, currentScope);
-      }
+      // Make sure the value is present
+      resolveValue(lhsNode, lhs);
 
       // Execute operation
       lhs.ptr = lhs.value;
@@ -644,12 +637,8 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
       break;
     }
     case PrefixUnaryExprNode::OP_ADDRESS_OF: {
-      // If the address is unknown, allocate memory to save the value or constant
-      if (!lhs.ptr) {
-        llvm::Value *value = lhs.value ?: lhs.constant;
-        lhs.ptr = insertAlloca(value->getType());
-        builder.CreateStore(value, lhs.ptr);
-      }
+      // Make sure the address is present
+      resolveAddress(lhs);
 
       // Execute operation
       lhs.value = lhs.ptr;
@@ -708,15 +697,19 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
       // Come up with the address
       if (lhsSTy.isArray() && lhsSTy.getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array
-        // Get the address
-        lhs.ptr = resolveAddress(lhs, lhs.entry && lhs.entry->isVolatile);
+        // Make sure the address is present
+        resolveAddress(lhs);
 
         // Calculate address of array item
         llvm::Value *indices[2] = {builder.getInt32(0), indexValue};
         lhs.ptr = builder.CreateInBoundsGEP(lhsTy, lhs.ptr, indices);
       } else { // Pointer
-        // Get the address
-        lhs.ptr = lhs.value ?: builder.CreateLoad(lhsTy, lhs.ptr);
+        // Make sure the value is present
+        resolveValue(lhsNode, lhs);
+        assert(lhs.value != nullptr);
+
+        // Now the pointer is the value
+        lhs.ptr = lhs.value;
 
         lhsTy = lhsSTy.getContainedTy().toLLVMType(context, currentScope);
         // Calculate address of pointer item
@@ -730,7 +723,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
     case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
       // Get the address of the struct instance
-      lhs.ptr = resolveAddress(lhs, lhs.entry && lhs.entry->isVolatile);
+      resolveAddress(lhs);
 
       // Auto de-reference pointer
       autoDeReferencePtr(lhs.ptr, lhsSTy, currentScope);
@@ -752,41 +745,45 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       break;
     }
     case PostfixUnaryExprNode::OP_PLUS_PLUS: {
-      // Load value of lhs
-      if (!lhs.value)
-        lhs.value = builder.CreateLoad(lhsTy, lhs.ptr, isVolatile);
+      // Make sure a value is present
+      resolveValue(lhsNode, lhs);
+
+      // Allocate new local variable if required
+      if (!lhs.ptr) {
+        assert(lhs.value != nullptr);
+        lhs.ptr = insertAlloca(lhs.value->getType());
+      }
 
       // Execute operation
       llvm::Value *newLhsValue = conversionManager.getPostfixPlusPlusInst(lhs, lhsSTy, lhsNode, currentScope);
 
       // Save the new value to the old address
-      assert(lhs.entry != nullptr);
-      isVolatile |= lhs.entry->isVolatile;
-      builder.CreateStore(newLhsValue, lhs.ptr, isVolatile);
+      builder.CreateStore(newLhsValue, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
 
-      // Allocate new space and continue working with the new memory slot
-      lhs.ptr = insertAlloca(lhsTy);
-
-      storeValue = true;
+      // Invalidate lhs ptr
+      lhs.ptr = nullptr;
+      storeValue = false;
       break;
     }
     case PostfixUnaryExprNode::OP_MINUS_MINUS: {
-      // Load value of lhs
-      if (!lhs.value)
-        lhs.value = builder.CreateLoad(lhsTy, lhs.ptr, isVolatile);
+      // Make sure a value is present
+      resolveValue(lhsNode, lhs);
+
+      // Allocate new local variable if required
+      if (!lhs.ptr) {
+        assert(lhs.value != nullptr);
+        lhs.ptr = insertAlloca(lhs.value->getType());
+      }
 
       // Execute operation
       llvm::Value *newLhsValue = conversionManager.getPostfixMinusMinusInst(lhs, lhsSTy, lhsNode, currentScope);
 
       // Save the new value to the old address
-      assert(lhs.entry != nullptr);
-      isVolatile |= lhs.entry->isVolatile;
-      builder.CreateStore(newLhsValue, lhs.ptr, isVolatile);
+      builder.CreateStore(newLhsValue, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
 
-      // Allocate new space and continue working with the new memory slot
-      lhs.ptr = insertAlloca(lhsTy);
-
-      storeValue = true;
+      // Invalidate lhs ptr
+      lhs.ptr = nullptr;
+      storeValue = false;
       break;
     }
     default:

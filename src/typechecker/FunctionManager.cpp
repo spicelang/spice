@@ -363,7 +363,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
 
     // Check if the given type matches all conditions of the generic type
     const GenericType *genericType = getGenericTypeOfCandidateByName(candidate, genericTypeName);
-    if (!genericType->checkConditionsOf(requestedParamType))
+    if (!genericType->checkConditionsOf(requestedParamType, true))
       return false;
 
     // Add new type mapping entry

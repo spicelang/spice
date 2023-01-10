@@ -1,17 +1,19 @@
-type T dyn;
-type U dyn;
-
-f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
-    return arg1 + arg2 + arg3;
+type Letter struct {
+    string content
 }
 
-f<double> genericFunction<T, U>(T arg1, U arg2, T arg3) {
-    return arg1 + arg2 + arg3;
+f<string> Letter.getContent() {
+    return this.content;
+}
+
+p Letter.setContent(string text) {
+    this.content = text;
 }
 
 f<int> main() {
-    printf("%f\n", genericFunction(1, 2.4));
-    printf("%f\n", genericFunction(12l, 2.0));
+    dyn letter = Letter { "No content" };
+    letter.setContent("Hello World!");
+    printf("Content: %s\n", letter.getContent());
 }
 
 /*type T string|char;

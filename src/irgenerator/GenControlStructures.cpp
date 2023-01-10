@@ -19,8 +19,7 @@ std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
   llvm::Function *threadFct = llvm::Function::Create(threadFctTy, llvm::Function::PrivateLinkage, fctName, module);
 
   // Change scope
-  currentScope = node->bodyScope;
-  assert(currentScope != nullptr);
+  changeToScope(node->bodyScope, SCOPE_THREAD_BODY);
 
   // Collect arg names, types and addresses from captures of the nested scope
   std::vector<std::string> argStructFieldNames;
@@ -108,8 +107,7 @@ std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockDefNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Change scope
-  currentScope = node->bodyScope;
-  assert(currentScope != nullptr);
+  changeToScope(node->bodyScope, SCOPE_UNSAFE_BODY);
 
   // Visit instructions in the block
   visit(node->body());
@@ -132,8 +130,9 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   llvm::BasicBlock *bExit = createBlock("for.exit." + codeLine);
 
   // Change scope
-  currentScope = node->bodyScope;
-  assert(currentScope != nullptr);
+  changeToScope(node->bodyScope, SCOPE_FOR_BODY);
+
+  // Save the blocks for break and continue
   breakBlocks.push(bExit);
   continueBlocks.push(bTail);
 
@@ -188,8 +187,9 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   llvm::BasicBlock *bExit = createBlock("foreach.exit." + codeLine);
 
   // Change scope
-  currentScope = node->bodyScope;
-  assert(currentScope != nullptr);
+  changeToScope(node->bodyScope, SCOPE_FOREACH_BODY);
+
+  // Save the blocks for break and continue
   breakBlocks.push(bExit);
   continueBlocks.push(bTail);
 
@@ -244,8 +244,9 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   llvm::BasicBlock *bExit = createBlock("while.exit." + codeLine);
 
   // Change scope
-  currentScope = node->bodyScope;
-  assert(currentScope != nullptr);
+  changeToScope(node->bodyScope, SCOPE_WHILE_BODY);
+
+  // Save the blocks for break and continue
   breakBlocks.push(bExit);
   continueBlocks.push(bHead);
 
@@ -290,8 +291,9 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   llvm::BasicBlock *bExit = createBlock("dowhile.exit." + codeLine);
 
   // Change scope
-  currentScope = node->bodyScope;
-  assert(currentScope != nullptr);
+  changeToScope(node->bodyScope, SCOPE_WHILE_BODY);
+
+  // Save the blocks for break and continue
   breakBlocks.push(bExit);
   continueBlocks.push(bFoot);
 
@@ -336,8 +338,7 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   llvm::BasicBlock *bExit = createBlock("if.exit." + codeLine);
 
   // Change scope
-  currentScope = node->thenBodyScope;
-  assert(currentScope != nullptr);
+  changeToScope(node->thenBodyScope, SCOPE_IF_ELSE_BODY);
 
   // Retrieve condition value
   llvm::Value *condValue = resolveValue(node->condition());
@@ -378,8 +379,7 @@ std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
     visit(node->ifStmt());
   } else { // It is an else branch
     // Change scope
-    currentScope = node->elseBodyScope;
-    assert(currentScope != nullptr);
+    changeToScope(node->elseBodyScope, SCOPE_IF_ELSE_BODY);
 
     // Generate IR for nested statements
     visit(node->body());
@@ -396,6 +396,8 @@ std::any IRGenerator::visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node
   diGenerator.setSourceLocation(node);
 
   // Change scope
+  node->bodyScope->parent = currentScope;                           // Needed for nested scopes in generic functions
+  node->bodyScope->symbolTable.parent = &currentScope->symbolTable; // Needed for nested scopes in generic functions
   currentScope = node->bodyScope;
   assert(currentScope != nullptr);
 

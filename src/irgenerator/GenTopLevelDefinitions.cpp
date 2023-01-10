@@ -13,8 +13,6 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   if (!sourceFile->mainFile)
     return nullptr;
 
-  diGenerator.setSourceLocation(node);
-
   // Change scope to function scope
   currentScope = node->fctScope;
   assert(currentScope != nullptr);
@@ -124,8 +122,6 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
 }
 
 std::any IRGenerator::visitFctDef(const FctDefNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Loop through manifestations
   manIdx = 0; // Reset the symbolTypeIndex
   for (const Function *manifestation : node->fctManifestations) {
@@ -220,6 +216,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Add debug info
     diGenerator.generateFunctionDebugInfo(func, manifestation);
+    diGenerator.setSourceLocation(node);
 
     // Create entry block
     llvm::BasicBlock *bEntry = createBlock();
@@ -248,7 +245,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       assert(paramSymbol != nullptr);
       paramSymbol->updateAddress(paramAddress);
       // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(node->codeLoc, paramName, paramAddress, argNumber);
+      diGenerator.generateLocalVarDebugInfo(node->codeLoc, paramName, paramAddress, argNumber + 1);
       // Store the value at the new address
       builder.CreateStore(&arg, paramAddress);
     }
@@ -289,8 +286,6 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 }
 
 std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Loop through manifestations
   manIdx = 0; // Reset the symbolTypeIndex
   for (const Function *manifestation : node->procManifestations) {
@@ -385,6 +380,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
 
     // Add debug info
     diGenerator.generateFunctionDebugInfo(proc, manifestation);
+    diGenerator.setSourceLocation(node);
 
     // Create entry block
     llvm::BasicBlock *bEntry = createBlock();
@@ -407,7 +403,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       assert(paramSymbol != nullptr);
       paramSymbol->updateAddress(paramAddress);
       // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(node->codeLoc, paramName, paramAddress, argNumber);
+      diGenerator.generateLocalVarDebugInfo(node->codeLoc, paramName, paramAddress, argNumber + 1);
       // Store the value at the new address
       builder.CreateStore(&arg, paramAddress);
     }
@@ -446,8 +442,6 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
 }
 
 std::any IRGenerator::visitStructDef(const StructDefNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Get all substantiated structs which result from this struct def
   StructManifestationList *manifestations = StructManager::getManifestationList(currentScope, node->codeLoc);
   if (manifestations) {

@@ -35,9 +35,13 @@ enum ScopeType {
  * In the source code, scopes usually are written as curly braces.
  *
  * Following language structures use scopes:
+ * - global scope
  * - functions/procedures
- * - thread expressions
- * - unsafe block statements
+ * - structs
+ * - enums
+ * - interfaces
+ * - thread blocks
+ * - unsafe blocks
  * - for loops
  * - foreach loops
  * - while loops
@@ -63,7 +67,6 @@ public:
   [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] Scope *getChildScope(const std::string &scopeName) const;
   [[nodiscard]] std::vector<SymbolTableEntry *> getVarsGoingOutOfScope();
-  void addParent(Scope *parent);
 
   // Generic types
   void insertGenericType(const std::string &typeName, const GenericType &genericType);

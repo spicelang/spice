@@ -10,6 +10,7 @@
 #include <typechecker/OpRuleManager.h>
 #include <typechecker/StructManager.h>
 #include <util/CompilerWarning.h>
+#include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
 
@@ -130,6 +131,7 @@ private:
   std::tuple<Scope *, SymbolType, std::string> visitOrdinaryFctCall(FunctionCallNode *node);
   std::pair<Scope *, SymbolType> visitMethodCall(FunctionCallNode *node, Scope *structScope) const;
   [[nodiscard]] static SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType);
+  void changeToScope(Scope *scope, const ScopeType scopeType);
 };
 
 } // namespace spice::compiler

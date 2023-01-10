@@ -81,6 +81,9 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       if (!matchTemplateTypes(candidate, requestedTemplateTypes, candidate.typeMapping))
         continue; // Leave this manifestation and continue with the next one
 
+      // Map field types from generic to concrete
+      substantiateFieldTypes(candidate, candidate.typeMapping);
+
       // We found a match! -> Check if it needs to be substantiated
       if (presetStruct.templateTypes.empty()) {
         assert(matchScope->structs.contains(defCodeLocStr) && matchScope->structs.at(defCodeLocStr).contains(mangledName));
@@ -194,6 +197,19 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
   }
 
   return true;
+}
+
+void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping) {
+  // Loop over all field types and substantiate the generic ones
+  for (SymbolType &fieldType : candidate.fieldTypes) {
+    // Skip non-generic types
+    if (!fieldType.isBaseType(TY_GENERIC))
+      continue;
+    // Substantiate generic types
+    const std::string &genericTypeName = fieldType.getBaseType().getSubType();
+    assert(typeMapping.contains(genericTypeName));
+    fieldType = fieldType.replaceBaseType(typeMapping.at(genericTypeName));
+  }
 }
 
 } // namespace spice::compiler
