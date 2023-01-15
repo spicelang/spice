@@ -284,11 +284,11 @@ bool SymbolType::equalsIgnoreArraySize(const SymbolType &otherType) const {
     const SymbolType::TypeChainElement &rhsElement = otherType.typeChain.at(i);
 
     // Ignore differences in array size
-    if (isArray() && otherType.isArray())
+    if (lhsElement.superType == TY_ARRAY && rhsElement.superType == TY_ARRAY)
       continue;
 
     // Not both types are arrays -> compare them as usual
-    if (*this != otherType)
+    if (lhsElement != rhsElement)
       return false;
   }
   return true;

@@ -332,7 +332,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
 
     // If this is a non-generic type, we can do the type check straight away and move to the next param
     if (!paramType.isBaseType(TY_GENERIC)) {
-      if (paramType == requestedParamType)
+      if (paramType.equalsIgnoreArraySize(requestedParamType))
         continue;
       return false;
     }
@@ -385,7 +385,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
  * @return Generic type object
  */
 const GenericType *FunctionManager::getGenericTypeOfCandidateByName(const Function &candidate,
-                                                                      const std::string &templateTypeName) {
+                                                                    const std::string &templateTypeName) {
   for (const auto &templateType : candidate.templateTypes) {
     if (templateType.getSubType() == templateTypeName)
       return &templateType;

@@ -1,19 +1,17 @@
-type Letter struct {
-    string content
-}
-
-f<string> Letter.getContent() {
-    return this.content;
-}
-
-p Letter.setContent(string text) {
-    this.content = text;
+p testProc(int[]*** nums) {
+    int[]* nums1 = **nums;
+    int[] nums2 = *nums1;
+    nums2[2] = 10;
+    printf("1: %d\n", nums2[0]);
+    printf("2: %d\n", nums2[1]);
+    printf("3: %d\n", nums2[2]);
+    printf("4: %d\n", nums2[3]);
 }
 
 f<int> main() {
-    dyn letter = Letter { "No content" };
-    letter.setContent("Hello World!");
-    printf("Content: %s\n", letter.getContent());
+    int[4] intArray = { 1, 2, 3, 4 };
+    printf("1: %d\n", intArray[1]);
+    testProc(&&&intArray);
 }
 
 /*type T string|char;
