@@ -116,7 +116,7 @@ private:
   llvm::Value *createGlobalConstant(const std::string &baseName, llvm::Constant *constant);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   void materializeConstant(ExprResult &exprResult);
-  llvm::Value *doImplicitCast(llvm::Value *src, const SymbolType &dstSTy, SymbolType srcSTy);
+  llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
   void changeToScope(Scope *scope, const ScopeType scopeType);
 
   // Private members

@@ -9,7 +9,7 @@ namespace spice::compiler {
 
 std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   // Mark unreachable statements
-  node->returnsOnAllControlPaths();
+  node->returnsOnAllControlPaths(nullptr);
 
   // Update main function symbol type
   SymbolTableEntry *functionEntry = rootScope->lookupStrict(node->getSignature());
@@ -42,7 +42,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     throw SemanticError(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function");
 
   // Check if all control paths in the function return
-  if (!node->returnsOnAllControlPaths())
+  if (!node->returnsOnAllControlPaths(nullptr))
     throw SemanticError(node, MISSING_RETURN_STMT, "Not all control paths of this function have a return statement");
 
   // Change to function scope
@@ -148,7 +148,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
 std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Mark unreachable statements
-  node->returnsOnAllControlPaths();
+  node->returnsOnAllControlPaths(nullptr);
 
   // Check if dtor and has params
   if (node->hasParams && node->procedureName == DTOR_FUNCTION_NAME)

@@ -70,8 +70,8 @@ shiftExpr: additiveExpr ((LESS LESS | GREATER GREATER) additiveExpr)?;
 additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: LPAREN dataType RPAREN prefixUnaryExpr | prefixUnaryExpr;
-prefixUnaryExpr: prefixUnaryOp* postfixUnaryExpr;
-postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS)*;
+prefixUnaryExpr: postfixUnaryExpr | prefixUnaryOp prefixUnaryExpr;
+postfixUnaryExpr: atomicExpr | postfixUnaryExpr LBRACKET assignExpr RBRACKET | postfixUnaryExpr DOT IDENTIFIER | postfixUnaryExpr PLUS_PLUS | postfixUnaryExpr MINUS_MINUS;
 atomicExpr: constant | value | IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values
@@ -204,6 +204,7 @@ fragment HEX_LIT: [0][xXhH][0-9a-fA-F]+;
 fragment OCT_LIT: [0][oO][0-7]+;
 
 // Skipped tokens
+DOC_COMMENT: '/**' .*? '*/' -> skip;
 BLOCK_COMMENT: '/*' .*? '*/' -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
 WS: [ \t\r\n]+ -> skip;

@@ -1,17 +1,19 @@
-p testProc(int[]*** nums) {
-    int[]* nums1 = **nums;
-    int[] nums2 = *nums1;
-    nums2[2] = 10;
-    printf("1: %d\n", nums2[0]);
-    printf("2: %d\n", nums2[1]);
-    printf("3: %d\n", nums2[2]);
-    printf("4: %d\n", nums2[3]);
+f<bool> functionTrue() {
+    printf("Function True\n");
+    return true;
+}
+
+f<bool> functionFalse() {
+    printf("Function False\n");
+    return false;
 }
 
 f<int> main() {
-    int[4] intArray = { 1, 2, 3, 4 };
-    printf("1: %d\n", intArray[1]);
-    testProc(&&&intArray);
+    // Short circuiting for logical and op
+    printf("Logical and evaluated to: %d\n", functionFalse() && functionTrue());
+
+    // Short circuiting for logical or op
+    printf("Logical or evaluated to: %d\n", functionTrue() || functionFalse());
 }
 
 /*type T string|char;

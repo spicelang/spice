@@ -103,9 +103,10 @@ llvm::Value *IRGenerator::resolveAddress(ExprResult &exprResult, bool storeVolat
   // If not, store the value or constant
   materializeConstant(exprResult);
   assert(exprResult.value != nullptr);
-  llvm::Value *address = insertAlloca(exprResult.value->getType(), exprResult.entry ? exprResult.entry->name : "");
-  builder.CreateStore(exprResult.value, address, storeVolatile);
-  return address;
+  exprResult.ptr = insertAlloca(exprResult.value->getType(), exprResult.entry ? exprResult.entry->name : "");
+  builder.CreateStore(exprResult.value, exprResult.ptr, storeVolatile);
+
+  return exprResult.ptr;
 }
 
 llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symbolType) { // NOLINT(misc-no-recursion)
@@ -357,14 +358,15 @@ std::string IRGenerator::getUnusedGlobalName(const std::string &baseName) const 
   return globalName;
 }
 
-llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, const SymbolType &dstSTy, SymbolType srcSTy) {
-  assert(srcSTy != dstSTy);
+llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy) {
+  assert(srcSTy != dstSTy); // We only need to cast implicitly, if the types do not match exactly
 
   // Unpack the pointers until a pointer of another type is met
   size_t loadCounter = 0;
   while (srcSTy.isPointer()) {
     src = builder.CreateLoad(srcSTy.toLLVMType(context, currentScope), src);
     srcSTy = srcSTy.getContainedTy();
+    dstSTy = dstSTy.getContainedTy();
     loadCounter++;
   }
   // GEP or bit-cast
