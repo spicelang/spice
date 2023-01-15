@@ -155,8 +155,6 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
       if (actualSTy == expectedSTy) {
         argValues.push_back(resolveValue(argNode));
       } else {
-        assert(actualSTy.isArray() && actualSTy.getArraySize() != ARRAY_SIZE_UNKNOWN);
-        assert(expectedSTy.isArray() && expectedSTy.getArraySize() == ARRAY_SIZE_UNKNOWN);
         argValues.push_back(doImplicitCast(resolveAddress(argNode), expectedSTy, actualSTy));
       }
     }
@@ -298,7 +296,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     llvm::Constant *constantStruct = llvm::ConstantStruct::get(structType, constants);
     llvm::Value *constantAddr = createGlobalConstant(ANON_GLOBAL_STRUCT_NAME, constantStruct);
 
-    return ExprResult{.ptr = constantAddr, .constant = constantStruct };
+    return ExprResult{.ptr = constantAddr, .constant = constantStruct};
   } else { // We have at least one non-immediate value, so we need to take normal struct instantiation as fallback
     llvm::Value *structAddr = insertAlloca(structType);
 
