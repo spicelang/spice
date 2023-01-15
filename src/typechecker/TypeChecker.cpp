@@ -922,161 +922,158 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   // Reset access scope
   accessScope = nullptr;
 
+  // If no operator is applied, simply visit the postfix unary expression
+  if (node->op == PrefixUnaryExprNode::OP_NONE)
+    return visit(node->postfixUnaryExpr());
+
   // Visit the right side
-  auto [operandType, operandEntry] = std::any_cast<ExprResult>(visit(node->postfixUnaryExpr()));
+  PrefixUnaryExprNode *rhsNode = node->prefixUnary();
+  auto [operandType, operandEntry] = std::any_cast<ExprResult>(visit(rhsNode));
 
-  // Reverse op queue to process the operator next to the operand first
-  CommonUtil::reverseQueue<std::pair<PrefixUnaryExprNode::PrefixUnaryOp, SymbolType>>(node->opQueue);
+  // Determine action, based on the given operator
+  switch (node->op) {
+  case PrefixUnaryExprNode::OP_MINUS:
+    operandType = OpRuleManager::getPrefixMinusResultType(rhsNode, operandType);
+    break;
+  case PrefixUnaryExprNode::OP_PLUS_PLUS:
+    operandType = OpRuleManager::getPrefixPlusPlusResultType(rhsNode, operandType);
 
-  // Loop through the op queue
-  for (size_t i = 0; i < node->opQueue.size(); i++) {
-    // Check operator
-    const PrefixUnaryExprNode::PrefixUnaryOp &op = node->opQueue.front().first;
-    switch (op) {
-    case PrefixUnaryExprNode::OP_MINUS:
-      operandType = OpRuleManager::getPrefixMinusResultType(node->postfixUnaryExpr(), operandType);
-      break;
-    case PrefixUnaryExprNode::OP_PLUS_PLUS:
-      operandType = OpRuleManager::getPrefixPlusPlusResultType(node->postfixUnaryExpr(), operandType);
-      // In case the lhs is captured, notify the capture about the write access
-      if (Capture *lhsCapture = operandEntry ? currentScope->symbolTable.lookupCapture(operandEntry->name) : nullptr; lhsCapture)
-        lhsCapture->setCaptureMode(READ_WRITE);
-      break;
-    case PrefixUnaryExprNode::OP_MINUS_MINUS:
-      operandType = OpRuleManager::getPrefixMinusMinusResultType(node->postfixUnaryExpr(), operandType);
-      // In case the lhs is captured, notify the capture about the write access
-      if (Capture *lhsCapture = operandEntry ? currentScope->symbolTable.lookupCapture(operandEntry->name) : nullptr; lhsCapture)
-        lhsCapture->setCaptureMode(READ_WRITE);
-      break;
-    case PrefixUnaryExprNode::OP_NOT:
-      operandType = OpRuleManager::getPrefixNotResultType(node->postfixUnaryExpr(), operandType);
-      break;
-    case PrefixUnaryExprNode::OP_BITWISE_NOT:
-      operandType = OpRuleManager::getPrefixBitwiseNotResultType(node->postfixUnaryExpr(), operandType);
-      break;
-    case PrefixUnaryExprNode::OP_INDIRECTION:
-      operandType = OpRuleManager::getPrefixMulResultType(node->postfixUnaryExpr(), operandType);
-      break;
-    case PrefixUnaryExprNode::OP_ADDRESS_OF:
-      operandType = OpRuleManager::getPrefixBitwiseAndResultType(node->postfixUnaryExpr(), operandType);
-      break;
-    default:
-      throw std::runtime_error("Prefix unary fall-through");
-    }
+    // In case the lhs is captured, notify the capture about the write access
+    if (Capture *lhsCapture = operandEntry ? currentScope->symbolTable.lookupCapture(operandEntry->name) : nullptr; lhsCapture)
+      lhsCapture->setCaptureMode(READ_WRITE);
 
-    // Push the new item and pop the old one on the other side of the queue
-    node->opQueue.emplace(op, operandType);
-    node->opQueue.pop();
+    break;
+  case PrefixUnaryExprNode::OP_MINUS_MINUS:
+    operandType = OpRuleManager::getPrefixMinusMinusResultType(rhsNode, operandType);
+
+    // In case the lhs is captured, notify the capture about the write access
+    if (Capture *lhsCapture = operandEntry ? currentScope->symbolTable.lookupCapture(operandEntry->name) : nullptr; lhsCapture)
+      lhsCapture->setCaptureMode(READ_WRITE);
+
+    break;
+  case PrefixUnaryExprNode::OP_NOT:
+    operandType = OpRuleManager::getPrefixNotResultType(rhsNode, operandType);
+    break;
+  case PrefixUnaryExprNode::OP_BITWISE_NOT:
+    operandType = OpRuleManager::getPrefixBitwiseNotResultType(rhsNode, operandType);
+    break;
+  case PrefixUnaryExprNode::OP_INDIRECTION:
+    operandType = OpRuleManager::getPrefixMulResultType(rhsNode, operandType);
+    break;
+  case PrefixUnaryExprNode::OP_ADDRESS_OF:
+    operandType = OpRuleManager::getPrefixBitwiseAndResultType(rhsNode, operandType);
+    break;
+  default:
+    throw std::runtime_error("Prefix unary fall-through");
   }
 
   return ExprResult{node->setEvaluatedSymbolType(operandType, manIdx), operandEntry};
 }
 
 std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
+  // If no operator is applied, simply visit the atomic expression
+  if (node->op == PostfixUnaryExprNode::OP_NONE)
+    return visit(node->atomicExpr());
+
   // Visit left side
-  auto [lhsTy, lhsEntry] = std::any_cast<ExprResult>(visit(node->atomicExpr()));
+  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
+  auto [lhsType, lhsEntry] = std::any_cast<ExprResult>(visit(lhsNode));
 
-  size_t subscriptCounter = 0;
-  size_t identifierCounter = 0;
+  switch (node->op) {
+  case PostfixUnaryExprNode::OP_SUBSCRIPT: {
+    // Check if we can apply the subscript operator on the lhs type
+    if (!lhsType.isOneOf({TY_ARRAY, TY_STRING, TY_PTR}))
+      throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE,
+                          "Can only apply subscript operator on array type, got " + lhsType.getName(true));
 
-  // Loop through op queue
-  for (size_t i = 0; i < node->opQueue.size(); i++) {
-    const PostfixUnaryExprNode::PostfixUnaryOp &op = node->opQueue.front().first;
-    switch (op) {
-    case PostfixUnaryExprNode::OP_SUBSCRIPT: {
-      // Check if we can apply the subscript operator on the lhs type
-      if (!lhsTy.isOneOf({TY_ARRAY, TY_STRING, TY_PTR}))
-        throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE,
-                            "Can only apply subscript operator on array type, got " + lhsTy.getName(true));
+    // Visit index assignment
+    AssignExprNode *indexAssignExpr = node->assignExpr();
+    SymbolType indexType = std::any_cast<ExprResult>(visit(indexAssignExpr)).type;
+    // Check if the index is of the right type
+    if (!indexType.isOneOf({TY_INT, TY_LONG}))
+      throw SemanticError(node, ARRAY_INDEX_NOT_INT_OR_LONG, "Array index must be of type int or long");
 
-      // Visit index assignment
-      AssignExprNode *indexAssignExpr = node->assignExpr()[subscriptCounter++];
-      SymbolType indexType = std::any_cast<ExprResult>(visit(indexAssignExpr)).type;
-      // Check if the index is of the right type
-      if (!indexType.isOneOf({TY_INT, TY_LONG}))
-        throw SemanticError(node, ARRAY_INDEX_NOT_INT_OR_LONG, "Array index must be of type int or long");
+    // Check if we have an unsafe operation
+    if (lhsType.is(TY_PTR) && !currentScope->doesAllowUnsafeOperations())
+      throw SemanticError(
+          node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
+          "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.");
 
-      // Check if we have an unsafe operation
-      if (lhsTy.is(TY_PTR) && !currentScope->doesAllowUnsafeOperations())
-        throw SemanticError(
-            node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
-            "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.");
-
-      // Check if we have a hardcoded array size
-      if (lhsTy.is(TY_ARRAY) && lhsTy.getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
-        std::int32_t constIndex = indexAssignExpr->getCompileTimeValue().intValue;
-        size_t constSize = lhsTy.getArraySize();
-        // Check if we are accessing out-of-bounds memory
-        if (constIndex >= constSize) {
-          const std::string idxStr = std::to_string(constIndex);
-          const std::string sizeStr = std::to_string(constSize);
-          throw SemanticError(node, ARRAY_INDEX_OUT_OF_BOUNDS,
-                              "You are trying to access element with index " + idxStr + " of an array with size " + sizeStr);
-        }
+    // Check if we have a hardcoded array index
+    if (lhsType.is(TY_ARRAY) && lhsType.getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
+      std::int32_t constIndex = indexAssignExpr->getCompileTimeValue().intValue;
+      size_t constSize = lhsType.getArraySize();
+      // Check if we are accessing out-of-bounds memory
+      if (constIndex >= constSize) {
+        const std::string idxStr = std::to_string(constIndex);
+        const std::string sizeStr = std::to_string(constSize);
+        throw SemanticError(node, ARRAY_INDEX_OUT_OF_BOUNDS,
+                            "You are trying to access element with index " + idxStr + " of an array with size " + sizeStr);
       }
-
-      // Get item type
-      lhsTy = lhsTy.getContainedTy();
-      break;
-    }
-    case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
-      // Check if lhs is enum or strobj
-      const SymbolType lhsBaseTy = lhsTy.getBaseType();
-      if (!lhsBaseTy.is(TY_STRUCT))
-        throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsTy.getName());
-
-      // Retrieve registry entry
-      const std::string &structName = lhsBaseTy.getSubType();
-      Scope *structScope = lhsBaseTy.getStructBodyScope();
-
-      // Get accessed field
-      SymbolTableEntry *memberEntry = structScope->lookupStrict(node->identifier.at(identifierCounter));
-      if (!memberEntry)
-        throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE,
-                            "Field '" + node->identifier[identifierCounter] + "' not found in struct " + structName);
-
-      // Check for insufficient visibility
-      if (structScope->isImportedBy(rootScope) && !memberEntry->specifiers.isPublic())
-        throw SemanticError(node, INSUFFICIENT_VISIBILITY,
-                            "Cannot access field '" + memberEntry->name + "' due to its private visibility");
-
-      // Set field to used
-      memberEntry->used = true;
-
-      // Overwrite type and entry of left side with member type and entry
-      lhsTy = memberEntry->getType();
-      lhsEntry = memberEntry;
-      identifierCounter++;
-      break;
-    }
-    case PostfixUnaryExprNode::OP_PLUS_PLUS: {
-      lhsTy = OpRuleManager::getPostfixPlusPlusResultType(node->atomicExpr(), lhsTy);
-      // In case the lhs is captured, notify the capture about the write access
-      if (Capture *lhsCapture = lhsEntry ? currentScope->symbolTable.lookupCapture(lhsEntry->name) : nullptr; lhsCapture)
-        lhsCapture->setCaptureMode(READ_WRITE);
-      break;
-    }
-    case PostfixUnaryExprNode::OP_MINUS_MINUS: {
-      lhsTy = OpRuleManager::getPostfixMinusMinusResultType(node->atomicExpr(), lhsTy);
-      // In case the lhs is captured, notify the capture about the write access
-      if (Capture *lhsCapture = lhsEntry ? currentScope->symbolTable.lookupCapture(lhsEntry->name) : nullptr; lhsCapture)
-        lhsCapture->setCaptureMode(READ_WRITE);
-      break;
-    }
-    default:
-      throw std::runtime_error("PostfixUnary fall-through");
     }
 
-    node->opQueue.emplace(op, lhsTy);
-    node->opQueue.pop();
+    // Get item type
+    lhsType = lhsType.getContainedTy();
+    break;
+  }
+  case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
+    const std::string &fieldName = node->identifier;
+
+    // Check if lhs is enum or strobj
+    const SymbolType lhsBaseTy = lhsType.getBaseType();
+    if (!lhsBaseTy.is(TY_STRUCT))
+      throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName());
+
+    // Retrieve registry entry
+    const std::string &structName = lhsBaseTy.getSubType();
+    Scope *structScope = lhsBaseTy.getStructBodyScope();
+
+    // Get accessed field
+    SymbolTableEntry *memberEntry = structScope->lookupStrict(fieldName);
+    if (!memberEntry)
+      throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE,
+                          "Field '" + node->identifier + "' not found in struct " + structName);
+
+    // Check for insufficient visibility
+    if (structScope->isImportedBy(rootScope) && !memberEntry->specifiers.isPublic())
+      throw SemanticError(node, INSUFFICIENT_VISIBILITY, "Cannot access field '" + fieldName + "' due to its private visibility");
+
+    // Set field to used
+    memberEntry->used = true;
+
+    // Overwrite type and entry of left side with member type and entry
+    lhsType = memberEntry->getType();
+    lhsEntry = memberEntry;
+    break;
+  }
+  case PostfixUnaryExprNode::OP_PLUS_PLUS: {
+    lhsType = OpRuleManager::getPostfixPlusPlusResultType(lhsNode, lhsType);
+
+    // In case the lhs is captured, notify the capture about the write access
+    if (Capture *lhsCapture = lhsEntry ? currentScope->symbolTable.lookupCapture(lhsEntry->name) : nullptr; lhsCapture)
+      lhsCapture->setCaptureMode(READ_WRITE);
+
+    break;
+  }
+  case PostfixUnaryExprNode::OP_MINUS_MINUS: {
+    lhsType = OpRuleManager::getPostfixMinusMinusResultType(lhsNode, lhsType);
+
+    // In case the lhs is captured, notify the capture about the write access
+    if (Capture *lhsCapture = lhsEntry ? currentScope->symbolTable.lookupCapture(lhsEntry->name) : nullptr; lhsCapture)
+      lhsCapture->setCaptureMode(READ_WRITE);
+
+    break;
+  }
+  default:
+    throw std::runtime_error("PostfixUnary fall-through");
   }
 
-  if (lhsTy.is(TY_INVALID)) {
+  if (lhsType.is(TY_INVALID)) {
     const std::string varName = lhsEntry ? lhsEntry->name : "";
     throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "Variable '" + varName + "' was referenced before declared");
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(lhsTy, manIdx), lhsEntry};
+  return ExprResult{node->setEvaluatedSymbolType(lhsType, manIdx), lhsEntry};
 }
 
 std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {

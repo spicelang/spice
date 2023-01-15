@@ -72,7 +72,8 @@ bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
 }
 
 bool AssignExprNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  const bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
+  const bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr() &&
+                       lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
   *overrideUnreachable |= returns;
   return returns;
 }

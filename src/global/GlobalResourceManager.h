@@ -5,7 +5,7 @@
 #include <global/CacheManager.h>
 #include <global/RuntimeModuleManager.h>
 #include <global/ThreadFactory.h>
-#include <linker/LinkerInterface.h>
+#include <linker/ExternalLinkerInterface.h>
 #include <util/Timer.h>
 
 #include <llvm/IR/IRBuilder.h>
@@ -33,7 +33,7 @@ public:
   // Public members
   const CliOptions &cliOptions;
   ThreadFactory threadFactory;
-  LinkerInterface linker;
+  ExternalLinkerInterface linker;
   CacheManager cacheManager;
   RuntimeModuleManager runtimeModuleManager;
   llvm::LLVMContext context;

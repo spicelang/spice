@@ -100,8 +100,8 @@ set(SOURCES
         objectemitter/ObjectEmitter.cpp
         objectemitter/ObjectEmitter.h
         # Linker
-        linker/LinkerInterface.cpp
-        linker/LinkerInterface.h
+        linker/ExternalLinkerInterface.cpp
+        linker/ExternalLinkerInterface.h
         # Execution Engine
         executionengine/ExecutionEngine.cpp
         executionengine/ExecutionEngine.h

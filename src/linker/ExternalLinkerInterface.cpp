@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
-#include "LinkerInterface.h"
+#include "ExternalLinkerInterface.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -16,7 +16,7 @@ const char *const LINKER_EXECUTABLE_NAME = "gcc";
 /**
  * Start the linking process
  */
-void LinkerInterface::link() const {
+void ExternalLinkerInterface::link() const {
   if (FileUtil::isCommandAvailable(std::string(LINKER_EXECUTABLE_NAME))) // GCOV_EXCL_START
     throw LinkerError(LINKER_NOT_FOUND, "Please check if you have installed " + std::string(LINKER_EXECUTABLE_NAME) +
                                             " and added it to the PATH variable"); // GCOV_EXCL_STOP
@@ -58,13 +58,13 @@ void LinkerInterface::link() const {
  *
  * @param objectFilePath Path to the object file
  */
-void LinkerInterface::addObjectFilePath(const std::string &objectFilePath) { objectFilePaths.push_back(objectFilePath); }
+void ExternalLinkerInterface::addObjectFilePath(const std::string &objectFilePath) { objectFilePaths.push_back(objectFilePath); }
 
 /**
  * Add another linker flag for the call to the linker executable
  *
  * @param linkerFlag Linker flag
  */
-void LinkerInterface::addLinkerFlag(const std::string &flag) { linkerFlags.push_back(flag); }
+void ExternalLinkerInterface::addLinkerFlag(const std::string &flag) { linkerFlags.push_back(flag); }
 
 } // namespace spice::compiler

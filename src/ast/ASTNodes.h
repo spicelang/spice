@@ -42,7 +42,7 @@ public:
     for (const ASTNode *child : children)
       delete child;
   }
-  virtual void deleteRecursive(const ASTNode *anchorNode = nullptr) {
+  void deleteRecursive(const ASTNode *anchorNode) {
     for (ASTNode *child : children) {
       if (child != anchorNode)
         child->deleteRecursive(anchorNode);
@@ -92,10 +92,10 @@ public:
 
   void replaceInParent(ASTNode *replacementNode) {
     assert(parent != nullptr);
-    for (size_t i = 0; i < parent->children.size(); i++) {
-      if (parent->children.at(i) == this) {
+    for (auto &child : parent->children) {
+      if (child == this) {
         // Replace in children vector
-        parent->children.at(i) = replacementNode;
+        child = replacementNode;
         // De-allocate subtree without destroying the replacement node
         deleteRecursive(replacementNode);
         break;
@@ -157,7 +157,7 @@ public:
     return children.front()->hasCompileTimeValue();
   }
 
-  [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const {
+  [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *overrideUnreachable) const {
     return children.size() == 1 && children.front()->returnsOnAllControlPaths(overrideUnreachable);
   }
 
@@ -222,7 +222,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
   [[nodiscard]] std::string getSignature() const { return takesArgs ? "main()" : "main(int, string[])"; }
-  bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   SymbolTableEntry *entry = nullptr;
@@ -251,7 +251,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
   [[nodiscard]] std::string getSymbolTableEntryName() const { return functionName + ":" + codeLoc.toPrettyLine(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &fctManifestations; }
 
   // Public members
@@ -288,7 +288,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
   [[nodiscard]] std::string getSymbolTableEntryName() const { return procedureName + ":" + codeLoc.toPrettyLine(); }
-  bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &procManifestations; }
 
   // Public members
@@ -479,7 +479,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "thread:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -525,7 +525,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "for:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -575,7 +575,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "while:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -598,7 +598,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "dowhile:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -622,7 +622,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   Scope *thenBodyScope = nullptr;
@@ -645,7 +645,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   bool isElseIf = false;
@@ -685,7 +685,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStmtLst(this); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   size_t complexity = 0;
@@ -947,7 +947,7 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override { return true; }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override { return true; }
 
   // Public members
   bool hasReturnValue = false;
@@ -1114,7 +1114,7 @@ public:
   [[nodiscard]] ThreadDefNode *threadDef() const { return getChild<ThreadDefNode>(); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable = nullptr) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   AssignOp op = OP_NONE;
@@ -1367,19 +1367,7 @@ public:
 class PrefixUnaryExprNode : public ASTNode {
 public:
   // Enums
-  enum PrefixUnaryOp {
-    OP_NONE,
-    OP_MINUS,
-    OP_PLUS_PLUS,
-    OP_MINUS_MINUS,
-    OP_NOT,
-    OP_BITWISE_NOT,
-    OP_INDIRECTION,
-    OP_ADDRESS_OF,
-  };
-
-  // Typedefs
-  typedef std::queue<std::pair<PrefixUnaryOp, SymbolType>> OpQueue;
+  enum PrefixUnaryOp { OP_NONE, OP_MINUS, OP_PLUS_PLUS, OP_MINUS_MINUS, OP_NOT, OP_BITWISE_NOT, OP_INDIRECTION, OP_ADDRESS_OF };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1389,10 +1377,11 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitPrefixUnaryExpr(this); }
 
   // Public get methods
+  [[nodiscard]] PrefixUnaryExprNode *prefixUnary() const { return getChild<PrefixUnaryExprNode>(); }
   [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
 
   // Public members
-  OpQueue opQueue;
+  PrefixUnaryOp op = OP_NONE;
 };
 
 // =================================================== PostfixUnaryExprNode ======================================================
@@ -1401,9 +1390,6 @@ class PostfixUnaryExprNode : public ASTNode {
 public:
   // Enums
   enum PostfixUnaryOp { OP_NONE, OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS };
-
-  // Typedefs
-  typedef std::queue<std::pair<PostfixUnaryOp, SymbolType>> OpQueue;
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1414,11 +1400,12 @@ public:
 
   // Public get methods
   [[nodiscard]] AtomicExprNode *atomicExpr() const { return getChild<AtomicExprNode>(); }
-  [[nodiscard]] std::vector<AssignExprNode *> assignExpr() const { return getChildren<AssignExprNode>(); }
+  [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
   // Public members
-  OpQueue opQueue;
-  std::vector<std::string> identifier; // Only set when operator is member access
+  PostfixUnaryOp op = OP_NONE;
+  std::string identifier; // Only set when operator is member access
 };
 
 // ====================================================== AtomicExprNode =========================================================

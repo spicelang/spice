@@ -1429,8 +1429,10 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
 
   for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
     antlr4::ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::PrefixUnaryOpContext *>(subTree); rule != nullptr) // PrefixUnaryOp
-      visit(rule);
+    if (rule = dynamic_cast<SpiceParser::PrefixUnaryExprContext *>(subTree); rule != nullptr) //
+      currentNode = prefixUnaryExprNode->createChild<PrefixUnaryExprNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::PrefixUnaryOpContext *>(subTree); rule != nullptr) // PrefixUnaryOp
+      prefixUnaryExprNode = std::any_cast<PrefixUnaryExprNode *>(visit(rule));
     else if (rule = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(subTree); rule != nullptr) // PostfixUnaryExpr
       currentNode = prefixUnaryExprNode->createChild<PostfixUnaryExprNode>(CodeLoc(rule->start, filePath));
     else
@@ -1458,16 +1460,16 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
     else if (rule = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(subTree); rule != nullptr) // PostfixUnaryExpr
       currentNode = postfixUnaryExprNode->createChild<PostfixUnaryExprNode>(CodeLoc(rule->start, filePath));
     else if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::LBRACKET)
-      postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_SUBSCRIPT, SymbolType(TY_INVALID));
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_SUBSCRIPT;
     else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::DOT) {
-      postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_MEMBER_ACCESS, SymbolType(TY_INVALID));
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MEMBER_ACCESS;
     } else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER)
-      postfixUnaryExprNode->identifier.push_back(getIdentifier(t));
+      postfixUnaryExprNode->identifier = getIdentifier(t);
     else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::PLUS_PLUS)
-      postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_PLUS_PLUS, SymbolType(TY_INVALID));
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_PLUS_PLUS;
     else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
              t4->getSymbol()->getType() == SpiceParser::MINUS_MINUS)
-      postfixUnaryExprNode->opQueue.emplace(PostfixUnaryExprNode::OP_MINUS_MINUS, SymbolType(TY_INVALID));
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MINUS_MINUS;
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1823,26 +1825,30 @@ std::any ASTBuilder::visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) 
 
   // Extract assign operator
   if (ctx->MINUS())
-    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_MINUS, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS;
   else if (ctx->PLUS_PLUS())
-    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_PLUS_PLUS, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_PLUS_PLUS;
   else if (ctx->MINUS_MINUS())
-    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_MINUS_MINUS, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS_MINUS;
   else if (ctx->NOT())
-    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_NOT, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_NOT;
   else if (ctx->BITWISE_NOT())
-    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_BITWISE_NOT, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_BITWISE_NOT;
   else if (ctx->MUL())
-    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_INDIRECTION, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_INDIRECTION;
   else if (ctx->BITWISE_AND())
-    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_ADDRESS_OF;
   else if (ctx->LOGICAL_AND()) {
-    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
-    prefixUnaryExprNode->opQueue.emplace(PrefixUnaryExprNode::OP_ADDRESS_OF, SymbolType(TY_INVALID));
+    // Here, the logical and (&&) stands for two bitwise and (&) to represent two consecutive address-of operators
+    // What we do here, is to bring it to the form like two bitwise and would be parsed, so that we need no special
+    // handling for '&&' in the other compile stages
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_ADDRESS_OF;
+    prefixUnaryExprNode = prefixUnaryExprNode->createChild<PrefixUnaryExprNode>(CodeLoc(ctx->start, filePath));
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_ADDRESS_OF;
   } else
     assert(false);
 
-  return nullptr;
+  return prefixUnaryExprNode;
 }
 
 void ASTBuilder::replaceEscapeChars(std::string &string) {

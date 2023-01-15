@@ -12,10 +12,10 @@ namespace spice::compiler {
 // Forward declarations
 class ThreadFactory;
 
-class LinkerInterface {
+class ExternalLinkerInterface {
 public:
   // Constructors
-  explicit LinkerInterface(const ThreadFactory &threadFactory, const CliOptions &cliOptions)
+  explicit ExternalLinkerInterface(const ThreadFactory &threadFactory, const CliOptions &cliOptions)
       : threadFactory(threadFactory), cliOptions(cliOptions), outputPath(cliOptions.outputPath){};
 
   // Public methods
