@@ -88,7 +88,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   fctDefNode->functionName = fctDefNode->fqFunctionName = getIdentifier(ctx->IDENTIFIER().back());
   if (ctx->IDENTIFIER().size() > 1) {
     fctDefNode->structName = getIdentifier(ctx->IDENTIFIER().front());
-    fctDefNode->fqFunctionName = fctDefNode->structName + "." + fctDefNode->functionName;
+    fctDefNode->fqFunctionName = fctDefNode->structName + MEMBER_ACCESS_TOKEN + fctDefNode->functionName;
     fctDefNode->isMethod = true;
   }
 
@@ -126,7 +126,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   procDefNode->procedureName = procDefNode->fqProcedureName = getIdentifier(ctx->IDENTIFIER().back());
   if (ctx->IDENTIFIER().size() > 1) {
     procDefNode->structName = getIdentifier(ctx->IDENTIFIER().front());
-    procDefNode->fqProcedureName = procDefNode->structName + "." + procDefNode->procedureName;
+    procDefNode->fqProcedureName = procDefNode->structName + MEMBER_ACCESS_TOKEN + procDefNode->procedureName;
     procDefNode->isMethod = true;
   }
 
@@ -1499,7 +1499,7 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
     else if (auto t = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
       atomicExprNode->identifierFragments.push_back(getIdentifier(t));
       if (!atomicExprNode->fqIdentifier.empty())
-        atomicExprNode->fqIdentifier += "::";
+        atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
       atomicExprNode->fqIdentifier += atomicExprNode->identifierFragments.back();
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1615,10 +1615,10 @@ std::any ASTBuilder::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
       fctCallNode->functionNameFragments.push_back(t2->toString());
       fctCallNode->fqFunctionName += fctCallNode->functionNameFragments.back();
     } else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::DOT)
-      fctCallNode->fqFunctionName += ".";
+      fctCallNode->fqFunctionName += MEMBER_ACCESS_TOKEN;
     else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree);
              t4->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS)
-      fctCallNode->fqFunctionName += "::";
+      fctCallNode->fqFunctionName += SCOPE_ACCESS_TOKEN;
     else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1665,7 +1665,7 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
       std::string fragment = t->toString();
       structInstantiationNode->structNameFragments.push_back(fragment);
       if (!structInstantiationNode->fqStructName.empty())
-        structInstantiationNode->fqStructName += "::";
+        structInstantiationNode->fqStructName += SCOPE_ACCESS_TOKEN;
       structInstantiationNode->fqStructName += fragment;
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1769,7 +1769,7 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
       std::string fragment = t->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
       if (!customDataTypeNode->fqTypeName.empty())
-        customDataTypeNode->fqTypeName += "::";
+        customDataTypeNode->fqTypeName += SCOPE_ACCESS_TOKEN;
       customDataTypeNode->fqTypeName += fragment;
     } else
       assert(dynamic_cast<antlr4::tree::TerminalNode *>(subTree)); // Fail if we did not get a terminal

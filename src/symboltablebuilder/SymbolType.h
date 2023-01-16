@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include <ast/ASTBuilder.h>
 #include <util/CommonUtil.h>
 
 #include <llvm/IR/Type.h>
@@ -74,16 +75,16 @@ public:
         return lhs.data.arraySize == rhs.data.arraySize;
       case TY_STRUCT: {
         assert(lhs.data.structBodyScope != nullptr && rhs.data.structBodyScope != nullptr);
-        const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, "::");
-        const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, "::");
+        const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
+        const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
         return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.templateTypes == rhs.templateTypes &&
                lhs.data.structBodyScope == rhs.data.structBodyScope;
       }
       case TY_INTERFACE:
       case TY_ENUM: {
         assert(lhs.data.structBodyScope != nullptr && rhs.data.structBodyScope != nullptr);
-        const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, "::");
-        const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, "::");
+        const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
+        const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
         return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.structBodyScope == rhs.data.structBodyScope;
       }
       case TY_GENERIC:

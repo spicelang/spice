@@ -3,4 +3,7 @@ import "source1" as s1;
 f<int> main() {
     dyn v = s1::Vec{11, false};
     v.print();
+
+    dyn v1 = Vec{};
+    v.print();
 }

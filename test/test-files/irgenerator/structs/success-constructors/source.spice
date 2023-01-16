@@ -18,5 +18,5 @@ f<int> main() {
     vec = Vector("Another message");
     printf("Fields: %d, %s\n", vec.field1, vec.field2);
 
-    printf("Message: %s\n", Vector().test());
+    printf("Message: %s\n", vec.test());
 }

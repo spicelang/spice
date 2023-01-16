@@ -107,7 +107,7 @@ std::string Function::getSignature() const {
       }
       thisTyStr << ">";
     }
-    thisTyStr << ".";
+    thisTyStr << MEMBER_ACCESS_TOKEN;
   }
 
   // Build return type string

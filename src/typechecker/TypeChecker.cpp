@@ -1373,7 +1373,7 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
     functionName = CTOR_FUNCTION_NAME;
 
     // Retrieve the name registry entry for the constructor
-    registryEntry = sourceFile->getNameRegistryEntry(fqFunctionName + "." + functionName);
+    registryEntry = sourceFile->getNameRegistryEntry(fqFunctionName + MEMBER_ACCESS_TOKEN + functionName);
     // Check if the constructor was found
     if (!registryEntry)
       throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor");

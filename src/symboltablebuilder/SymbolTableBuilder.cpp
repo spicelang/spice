@@ -3,6 +3,7 @@
 #include "SymbolTableBuilder.h"
 
 #include <SourceFile.h>
+#include <ast/ASTBuilder.h>
 #include <exception/SemanticError.h>
 
 namespace spice::compiler {
@@ -525,7 +526,7 @@ std::any SymbolTableBuilder::visitEnumItem(EnumItemNode *node) {
 
   // Add external registry entry
   assert(node->enumDef != nullptr);
-  sourceFile->addNameRegistryEntry(node->enumDef->enumName + "::" + node->itemName, enumItemEntry, currentScope,
+  sourceFile->addNameRegistryEntry(node->enumDef->enumName + SCOPE_ACCESS_TOKEN + node->itemName, enumItemEntry, currentScope,
                                    /*keepNewOnCollision=*/true);
 
   return nullptr;
