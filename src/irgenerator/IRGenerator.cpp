@@ -288,7 +288,8 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
     assert(rhsAddress != nullptr);
     // Create shallow copy
     llvm::Type *rhsType = rhsSType.toLLVMType(context, currentScope);
-    llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsEntry->name, lhsEntry->isVolatile);
+    const std::string copyName = lhsEntry ? lhsEntry->name : "";
+    llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
     // Set address of lhs to the copy
     if (lhsEntry)
       lhsEntry->updateAddress(newAddress);
@@ -310,21 +311,24 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   return ExprResult{.ptr = lhsAddress, .value = rhsValue, .entry = lhsEntry};
 }
 
-llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name /*=""*/,
-                                            bool isVolatile /*=false*/) {
+llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
+                                            const std::string &name /*=""*/, bool isVolatile /*=false*/) {
   // Retrieve size to copy
   const llvm::TypeSize typeSize = module->getDataLayout().getTypeAllocSize(varType);
 
   // Create values for memcpy intrinsic
   llvm::Value *structSize = builder.getInt64(typeSize);
   llvm::Value *copyVolatile = builder.getInt1(isVolatile);
-  llvm::Value *newAddress = insertAlloca(varType, name);
+
+  // If no target address was provided, allocate new space
+  if (!targetAddress)
+    targetAddress = insertAlloca(varType, name);
 
   // Call memcpy intrinsic to execute the shallow copy
   llvm::Function *memcpyFct = stdFunctionManager.getMemcpyIntrinsic();
-  builder.CreateCall(memcpyFct, {newAddress, oldAddress, structSize, copyVolatile});
+  builder.CreateCall(memcpyFct, {targetAddress, oldAddress, structSize, copyVolatile});
 
-  return newAddress;
+  return targetAddress;
 }
 
 void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const {

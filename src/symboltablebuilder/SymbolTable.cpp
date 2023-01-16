@@ -50,14 +50,6 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, ASTNode *
 }
 
 /**
- * Add a capture to the capture list manually
- *
- * @param name Capture name
- * @param capture Capture
- */
-void SymbolTable::insertCapture(const std::string &name, const Capture &capture) { captures.insert({name, capture}); }
-
-/**
  * Copy a symbol by its name
  *
  * @param originalName Original symbol name
@@ -177,16 +169,6 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
  * @param name Anonymous symbol name
  */
 void SymbolTable::deleteAnonymous(const std::string &name) { symbols.erase(name); }
-
-/**
- * Deletes an existing symbol
- *
- * @param name Symbol name
- */
-void SymbolTable::deleteEntry(const std::string &name) {
-  assert(symbols.contains(name));
-  symbols.erase(name);
-}
 
 /**
  * Stringify a symbol table to a human-readable form. This is used to realize dumps of symbol tables

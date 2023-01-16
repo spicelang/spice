@@ -3,80 +3,63 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%_s__TreeNode__TreeNodeptr_int = type { ptr, i32 }
+%__TreeNode__TreeNodeptr_int = type { ptr, i32 }
 
-@0 = private unnamed_addr constant [21 x i8] c"Root node number: %d\00", align 1
+@anon.struct.0 = private unnamed_addr constant %__TreeNode__TreeNodeptr_int zeroinitializer
+@printf.str.0 = private unnamed_addr constant [21 x i8] c"Root node number: %d\00", align 1
 
-define i32 @main() {
-entry.l13:
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %0 = alloca %_s__TreeNode__TreeNodeptr_int, align 8
-  %rootNode = alloca ptr, align 8
-  %1 = alloca %_s__TreeNode__TreeNodeptr_int, align 8
-  %2 = alloca ptr, align 8
-  %3 = alloca %_s__TreeNode__TreeNodeptr_int, align 8
-  %4 = alloca ptr, align 8
-  %5 = alloca %_s__TreeNode__TreeNodeptr_int, align 8
-  %6 = alloca ptr, align 8
-  %7 = alloca ptr, align 8
+  %rootNode = alloca %__TreeNode__TreeNodeptr_int, align 8
+  %childNode1 = alloca %__TreeNode__TreeNodeptr_int, align 8
+  %childNode2 = alloca %__TreeNode__TreeNodeptr_int, align 8
+  %childNode21 = alloca %__TreeNode__TreeNodeptr_int, align 8
   %curNode = alloca ptr, align 8
-  %8 = alloca ptr, align 8
-  %9 = alloca i1, align 1
   store i32 0, ptr %result, align 4
-  store ptr null, ptr %rootNode, align 8
-  %10 = load ptr, ptr %rootNode, align 8
-  %11 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %0, i32 0, i32 0
-  store ptr %10, ptr %11, align 8
-  %12 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %0, i32 0, i32 1
-  store i32 0, ptr %12, align 4
-  store ptr %0, ptr %2, align 8
-  %13 = load ptr, ptr %2, align 8
-  %14 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %1, i32 0, i32 0
-  store ptr %13, ptr %14, align 8
-  %15 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %1, i32 0, i32 1
-  store i32 1, ptr %15, align 4
-  store ptr %0, ptr %4, align 8
-  %16 = load ptr, ptr %4, align 8
-  %17 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %3, i32 0, i32 0
-  store ptr %16, ptr %17, align 8
-  %18 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %3, i32 0, i32 1
-  store i32 2, ptr %18, align 4
-  store ptr %3, ptr %6, align 8
-  %19 = load ptr, ptr %6, align 8
-  %20 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %5, i32 0, i32 0
-  store ptr %19, ptr %20, align 8
-  %21 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %5, i32 0, i32 1
-  store i32 3, ptr %21, align 4
-  store ptr %5, ptr %7, align 8
-  %22 = load ptr, ptr %7, align 8
-  store ptr %22, ptr %curNode, align 8
-  br label %while.cond.l21
+  call void @llvm.memcpy.p0.p0.i64(ptr %rootNode, ptr @anon.struct.0, i64 16, i1 false)
+  %1 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode1, i32 0, i32 0
+  store ptr %rootNode, ptr %1, align 8
+  %2 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode1, i32 0, i32 1
+  store i32 1, ptr %2, align 4
+  %3 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode2, i32 0, i32 0
+  store ptr %rootNode, ptr %3, align 8
+  %4 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode2, i32 0, i32 1
+  store i32 2, ptr %4, align 4
+  %5 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode21, i32 0, i32 0
+  store ptr %childNode2, ptr %5, align 8
+  %6 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode21, i32 0, i32 1
+  store i32 3, ptr %6, align 4
+  store ptr %childNode21, ptr %curNode, align 8
+  br label %while.head.L21
 
-while.cond.l21:                                   ; preds = %while.l21, %entry.l13
-  %23 = load ptr, ptr %curNode, align 8
-  %24 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %23, i32 0, i32 0
-  %25 = load ptr, ptr %24, align 8
-  store ptr null, ptr %8, align 8
-  %26 = load ptr, ptr %8, align 8
-  %27 = icmp ne ptr %25, %26
-  store i1 %27, ptr %9, align 1
-  %28 = load i1, ptr %9, align 1
-  br i1 %28, label %while.l21, label %while.end.l21
+while.head.L21:                                   ; preds = %while.body.L21, %0
+  %7 = load ptr, ptr %curNode, align 8
+  %8 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %7, i32 0, i32 0
+  %9 = load ptr, ptr %8, align 8
+  %10 = icmp ne ptr %9, null
+  br i1 %10, label %while.body.L21, label %while.exit.L21
 
-while.l21:                                        ; preds = %while.cond.l21
-  %29 = load ptr, ptr %curNode, align 8
-  %30 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %29, i32 0, i32 0
-  %31 = load ptr, ptr %30, align 8
-  store ptr %31, ptr %curNode, align 8
-  br label %while.cond.l21
+while.body.L21:                                   ; preds = %while.head.L21
+  %11 = load ptr, ptr %curNode, align 8
+  %12 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %11, i32 0, i32 0
+  %13 = load ptr, ptr %12, align 8
+  store ptr %13, ptr %curNode, align 8
+  br label %while.head.L21
 
-while.end.l21:                                    ; preds = %while.cond.l21
-  %32 = load ptr, ptr %curNode, align 8
-  %33 = getelementptr inbounds %_s__TreeNode__TreeNodeptr_int, ptr %32, i32 0, i32 1
-  %34 = load i32, ptr %33, align 4
-  %35 = call i32 (ptr, ...) @printf(ptr @0, i32 %34)
-  %36 = load i32, ptr %result, align 4
-  ret i32 %36
+while.exit.L21:                                   ; preds = %while.head.L21
+  %14 = load ptr, ptr %curNode, align 8
+  %15 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %14, i32 0, i32 1
+  %16 = load i32, ptr %15, align 4
+  %17 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %16)
+  %18 = load i32, ptr %result, align 4
+  ret i32 %18
 }
 
-declare i32 @printf(ptr, ...)
+; Function Attrs: argmemonly nocallback nofree nounwind willreturn
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
+
+declare i32 @printf(ptr noundef, ...)
+
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { argmemonly nocallback nofree nounwind willreturn }

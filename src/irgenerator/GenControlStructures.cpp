@@ -27,7 +27,8 @@ std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
   std::vector<llvm::Value *> argStructFieldPointers;
   for (const auto &[name, capture] : currentScope->symbolTable.captures) {
     argStructFieldNames.push_back(name);
-    argStructFieldTypes.push_back(capture.capturedEntry->getType().toLLVMType(context, currentScope)->getPointerTo());
+    const SymbolType &captureSTy = capture.capturedEntry->getType();
+    argStructFieldTypes.push_back(captureSTy.toLLVMType(context, currentScope)->getPointerTo());
     argStructFieldPointers.push_back(capture.capturedEntry->getAddress());
   }
 
@@ -88,7 +89,8 @@ std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
     throw IRError(node->codeLoc, INVALID_FUNCTION, oss.str());
 
   // Change back to the original block
-  switchToBlock(bOriginal);
+  builder.SetInsertPoint(bOriginal);
+  blockAlreadyTerminated = false;
 
   // Restore alloca insert block and inst
   allocaInsertBlock = allocaInsertBlockBackup;

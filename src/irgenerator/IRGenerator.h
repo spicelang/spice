@@ -110,8 +110,8 @@ private:
   void verifyModule(const CodeLoc &codeLoc) const;
   ExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
   ExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl = false);
-  llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, const std::string &name = "",
-                                 bool isVolatile = false);
+  llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
+                                 const std::string &name = "", bool isVolatile = false);
   void autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const;
   llvm::Value *createGlobalConstant(const std::string &baseName, llvm::Constant *constant);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
