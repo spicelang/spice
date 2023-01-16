@@ -206,7 +206,7 @@ void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeM
     if (!fieldType.isBaseType(TY_GENERIC))
       continue;
     // Substantiate generic types
-    const std::string &genericTypeName = fieldType.getBaseType().getSubType();
+    const std::string genericTypeName = fieldType.getBaseType().getSubType();
     assert(typeMapping.contains(genericTypeName));
     fieldType = fieldType.replaceBaseType(typeMapping.at(genericTypeName));
   }

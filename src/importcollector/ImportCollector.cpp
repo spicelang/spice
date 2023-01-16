@@ -25,7 +25,7 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
   std::string basePath;
   if (isStd) { // Include source file from standard library
     // Find std library
-    std::string stdPath = FileUtil::getStdDir();
+    const std::string stdPath = FileUtil::getStdDir();
     if (stdPath.empty())
       throw SemanticError(node, STD_NOT_FOUND, "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
     // Format: /dir/to/path/file

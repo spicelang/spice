@@ -2,6 +2,7 @@
 
 #include "Struct.h"
 
+#include <ast/ASTBuilder.h>
 #include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
@@ -93,7 +94,7 @@ std::string Struct::getSignature(const std::string &structName, const std::vecto
     templateTyStr << ">";
   }
 
-  return structName + templateTyStr.str();
+  return CommonUtil::getLastFragment(structName, SCOPE_ACCESS_TOKEN) + templateTyStr.str();
 }
 
 /**

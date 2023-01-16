@@ -1,7 +1,7 @@
 import "source1" as socket;
 
 f<int> main() {
-    socket::Socket s = socket.openServerSocket(8080s);
+    socket::Socket s = socket::openServerSocket(8080s);
     socket::NestedSocket n = s.nested;
     printf("Test string: %s\n", n.testString);
     printf("Socket: %d\n", s.sock);

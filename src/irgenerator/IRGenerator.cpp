@@ -162,7 +162,8 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
   // Struct
   if (symbolType.is(TY_STRUCT)) {
     // Get struct entry
-    SymbolTableEntry *structEntry = currentScope->lookup(symbolType.getSubType());
+    Scope *accessScope = symbolType.getStructBodyScope()->parent;
+    SymbolTableEntry *structEntry = accessScope->lookup(symbolType.getSubType());
     assert(structEntry != nullptr);
 
     // Retrieve struct type

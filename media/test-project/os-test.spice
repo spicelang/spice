@@ -1,19 +1,7 @@
-f<bool> functionTrue() {
-    printf("Function True\n");
-    return true;
-}
-
-f<bool> functionFalse() {
-    printf("Function False\n");
-    return false;
-}
+import "os-test2";
 
 f<int> main() {
-    // Short circuiting for logical and op
-    printf("Logical and evaluated to: %d\n", functionFalse() && functionTrue());
-
-    // Short circuiting for logical or op
-    printf("Logical or evaluated to: %d\n", functionTrue() || functionFalse());
+    printf("IsTrue: %d", isTrue());
 }
 
 /*type T string|char;

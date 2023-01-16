@@ -114,8 +114,6 @@ set(SOURCES
         model/Interface.h
         model/GenericType.cpp
         model/GenericType.h
-        model/ScopePath.cpp
-        model/ScopePath.h
         # Exception handling
         exception/CliError.cpp
         exception/CliError.h

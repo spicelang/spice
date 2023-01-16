@@ -564,7 +564,7 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName
 void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName) {
   for (const auto &[originalName, entry] : importedSourceFile.exportedNameRegistry) {
     // Add fully qualified name
-    const std::string newName = importName + "::" + originalName;
+    const std::string newName = importName + SCOPE_ACCESS_TOKEN + originalName;
     exportedNameRegistry.insert({newName, {newName, entry.targetEntry, entry.targetScope}});
     // Add the shortened name, considering the name collision
     addNameRegistryEntry(originalName, entry.targetEntry, entry.targetScope, /*keepNewOnCollision=*/false, newName);
