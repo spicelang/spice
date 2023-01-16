@@ -38,7 +38,6 @@ public:
   // Public methods
   SymbolTableEntry *insert(const std::string &name, const SymbolSpecifiers &specifiers, ASTNode *declNode);
   SymbolTableEntry *insertAnonymous(const SymbolType &type, ASTNode *declNode);
-  void insertCapture(const std::string &name, const Capture &capture);
   void copy(const std::string &originalName, const std::string &newName);
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
@@ -46,7 +45,6 @@ public:
   SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc);
   Capture *lookupCapture(const std::string &symbolName);
   Capture *lookupCaptureStrict(const std::string &symbolName);
-  void deleteEntry(const std::string &name);
   void deleteAnonymous(const std::string &name);
   [[nodiscard]] nlohmann::json toJSON() const;
 

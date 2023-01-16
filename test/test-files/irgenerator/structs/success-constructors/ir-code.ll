@@ -54,7 +54,6 @@ define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %vec = alloca %__Vector__bool_string, align 8
   %1 = alloca %__Vector__bool_string, align 8
-  %vec1 = alloca %__Vector__bool_string, align 8
   store i32 0, ptr %result, align 4
   call void @_mp__Vector__void__ctor(ptr %vec)
   %2 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
@@ -64,14 +63,14 @@ define dso_local i32 @main() #0 {
   %6 = load ptr, ptr %5, align 8
   %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %4, ptr %6)
   call void @_mp__Vector__void__ctor__string(ptr %1, ptr @anon.string.2)
-  call void @llvm.memcpy.p0.p0.i64(ptr %vec1, ptr %1, i64 16, i1 false)
-  %8 = getelementptr inbounds %__Vector__bool_string, ptr %vec1, i32 0, i32 0
+  call void @llvm.memcpy.p0.p0.i64(ptr %vec, ptr %1, i64 16, i1 false)
+  %8 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
   %9 = load i1, ptr %8, align 1
   %10 = zext i1 %9 to i32
-  %11 = getelementptr inbounds %__Vector__bool_string, ptr %vec1, i32 0, i32 1
+  %11 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
   %12 = load ptr, ptr %11, align 8
   %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %10, ptr %12)
-  %14 = call ptr @_mf__Vector__string__test(ptr %vec1)
+  %14 = call ptr @_mf__Vector__string__test(ptr %vec)
   %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %14)
   %16 = load i32, ptr %result, align 4
   ret i32 %16

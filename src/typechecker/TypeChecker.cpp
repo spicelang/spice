@@ -101,7 +101,7 @@ std::any TypeChecker::visitThreadDef(ThreadDefNode *node) {
   currentScope = node->bodyScope->parent;
 
   // ThreadDef returns a tid as byte*
-  return node->setEvaluatedSymbolType(SymbolType(TY_BYTE).toPointer(node), manIdx);
+  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_BYTE).toPointer(node), manIdx)};
 }
 
 std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {

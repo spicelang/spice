@@ -1,140 +1,32 @@
 {
   "captures": [],
-  "children": [
-    {
-      "captures": [],
-      "children": [
-        {
-          "captures": [],
-          "children": [
-            {
-              "captures": [
-                {
-                  "isGlobal": false,
-                  "isVolatile": true,
-                  "name": "capturedVariable",
-                  "orderIndex": 1,
-                  "specifiers": {
-                    "const": false,
-                    "public": false,
-                    "signed": true
-                  },
-                  "state": "initialized",
-                  "type": "int"
-                },
-                {
-                  "isGlobal": false,
-                  "isVolatile": false,
-                  "name": "i",
-                  "orderIndex": 0,
-                  "specifiers": {
-                    "const": false,
-                    "public": false,
-                    "signed": true
-                  },
-                  "state": "initialized",
-                  "type": "int"
-                }
-              ],
-              "children": [],
-              "name": "thread:L8C9",
-              "symbols": []
-            }
-          ],
-          "name": "for:L6C5",
-          "symbols": [
-            {
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "i",
-              "orderIndex": 0,
-              "specifiers": {
-                "const": false,
-                "public": false,
-                "signed": true
-              },
-              "state": "initialized",
-              "type": "int"
-            }
-          ]
-        }
-      ],
-      "name": "main()",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": true,
-          "name": "capturedVariable",
-          "orderIndex": 1,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        },
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "initialized",
-          "type": "int"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "usleep(int): int",
-      "symbols": [
-        {
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "specifiers": {
-            "const": false,
-            "public": false,
-            "signed": true
-          },
-          "state": "declared",
-          "type": "int"
-        }
-      ]
-    }
-  ],
   "symbols": [
     {
+      "codeLoc": "L3C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "main()",
+      "name": "main(int, string[])",
       "orderIndex": 1,
       "specifiers": {
         "const": true,
         "public": false,
         "signed": false
       },
-      "state": "initialized",
+      "state": "destructed",
       "type": "function"
     },
     {
+      "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "usleep(int): int",
+      "name": "usleep",
       "orderIndex": 0,
       "specifiers": {
         "const": true,
         "public": false,
         "signed": false
       },
-      "state": "initialized",
+      "state": "destructed",
       "type": "function"
     }
   ]
