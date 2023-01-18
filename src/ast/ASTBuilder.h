@@ -20,6 +20,10 @@ const char *const MEMBER_ACCESS_TOKEN = ".";
 const char *const SCOPE_ACCESS_TOKEN = "::";
 
 class ASTBuilder : private CompilerPass, public SpiceVisitor {
+private:
+  using TerminalNode = antlr4::tree::TerminalNode;
+  using ParserRuleContext = antlr4::ParserRuleContext;
+
 public:
   // Constructors
   ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile, ASTNode *rootNode,
@@ -106,16 +110,16 @@ private:
   antlr4::ANTLRInputStream *inputStream;
 
   // Private methods
-  int32_t parseInt(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal);
-  int16_t parseShort(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal);
-  int64_t parseLong(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal);
-  int8_t parseChar(antlr4::tree::TerminalNode *terminal);
+  int32_t parseInt(ConstantNode *constantNode, TerminalNode *terminal);
+  int16_t parseShort(ConstantNode *constantNode, TerminalNode *terminal);
+  int64_t parseLong(ConstantNode *constantNode, TerminalNode *terminal);
+  int8_t parseChar(TerminalNode *terminal);
   static std::string parseString(std::string input);
   template <typename T>
-  T parseNumeric(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
+  T parseNumeric(ConstantNode *constantNode, TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
   static void replaceEscapeChars(std::string &string);
-  std::string getIdentifier(antlr4::tree::TerminalNode *terminal);
-  void saveErrorMessage(ASTNode *node, const antlr4::ParserRuleContext *ctx);
+  std::string getIdentifier(TerminalNode *terminal);
+  void saveErrorMessage(ASTNode *node, const ParserRuleContext *ctx);
 };
 
 } // namespace spice::compiler
