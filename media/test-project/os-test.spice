@@ -1,39 +1,13 @@
-// See Issue #82
-
-type ShoppingItem struct {
-    string name
-    double amount
-    string unit
-}
-
-type ShoppingCart struct {
-    string label
-    ShoppingItem[3] items
-}
-
-f<ShoppingCart> newShoppingCart() {
-    ShoppingItem[3] items;
-    items[0] = ShoppingItem { "Spaghetti", 100.0, "g" };
-    items[1] = ShoppingItem { "Rice", 125.5, "g" };
-    items[2] = ShoppingItem { "Doughnut", 6.0, "pcs" };
-    return ShoppingCart { "Shopping Cart", items };
-}
-
-f<ShoppingCart> anotherShoppingCart() {
-    ShoppingItem[3] items = {
-        ShoppingItem { "Spaghetti", 100.0, "g" },
-        ShoppingItem { "Rice", 125.5, "g" },
-        ShoppingItem { "Doughnut", 6.0, "pcs" }
-    };
-    return ShoppingCart { "Another Cart", items };
-}
+import "std/data/vector";
+import "std/data/pair";
 
 f<int> main() {
-    ShoppingCart shoppingCart = newShoppingCart();
-    printf("Shopping cart item 1: %s\n", shoppingCart.items[1].name);
+    Vector<Pair<int, string>> pairVector = Vector<Pair<int, string>>();
+    /*pairVector.pushBack(Pair<int, string>(0, "Hello"));
+    pairVector.pushBack(Pair<int, string>(1, "World"));
 
-    shoppingCart = anotherShoppingCart();
-    printf("Another cart item 2 unit: %s\n", shoppingCart.items[2].unit);
+    Pair<int, string> p1 = pairVector.get(1);
+    printf("Hello %s!\n", p1.getSecond());*/
 }
 
 /*type T string|char;
