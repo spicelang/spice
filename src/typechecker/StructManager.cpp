@@ -84,7 +84,11 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       // Map field types from generic to concrete
       substantiateFieldTypes(candidate, candidate.typeMapping);
 
-      // We found a match! -> Check if it needs to be substantiated
+      // We found a match! -> Set the actual candidate and its entry to used
+      candidate.used = true;
+      candidate.entry->used = true;
+
+      // Check if it needs to be substantiated
       if (presetStruct.templateTypes.empty()) {
         assert(matchScope->structs.contains(defCodeLocStr) && matchScope->structs.at(defCodeLocStr).contains(mangledName));
         matches.push_back(&matchScope->structs.at(defCodeLocStr).at(mangledName));
@@ -101,12 +105,20 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       Struct *substantiatedStruct = insertSubstantiation(matchScope, candidate, presetStruct.declNode);
       substantiatedStruct->genericSubstantiation = true;
       substantiatedStruct->declNode->getStructManifestations()->push_back(substantiatedStruct);
+
+      // Copy function entry
+      const std::string newSignature = substantiatedStruct->getSignature();
+      matchScope->symbolTable.copySymbol(candidate.name, newSignature);
+      matchScope->lookupStrict(candidate.name)->used = true;
+      candidate.entry = matchScope->lookupStrict(newSignature);
+
       // Copy struct scope
-      const std::string newScopeName = STRUCT_SCOPE_PREFIX + substantiatedStruct->getSignature();
+      const std::string newScopeName = STRUCT_SCOPE_PREFIX + newSignature;
       matchScope->copyChildScope(STRUCT_SCOPE_PREFIX + presetStruct.name, newScopeName);
+      substantiatedStruct->structScope = matchScope->getChildScope(newScopeName);
+      substantiatedStruct->structScope->isGenericScope = false;
 
       // Replace field types with concrete template types
-      substantiatedStruct->structScope = matchScope->getChildScope(newScopeName);
       assert(substantiatedStruct->structScope != nullptr);
       for (size_t i = 0; i < candidate.fieldTypes.size(); i++) {
         // Replace field type with concrete template type

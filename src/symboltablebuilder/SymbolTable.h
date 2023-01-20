@@ -38,7 +38,7 @@ public:
   // Public methods
   SymbolTableEntry *insert(const std::string &name, const SymbolSpecifiers &specifiers, ASTNode *declNode);
   SymbolTableEntry *insertAnonymous(const SymbolType &type, ASTNode *declNode);
-  void copy(const std::string &originalName, const std::string &newName);
+  void copySymbol(const std::string &originalName, const std::string &newName);
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
   SymbolTableEntry *lookupByIndex(unsigned int orderIndex);

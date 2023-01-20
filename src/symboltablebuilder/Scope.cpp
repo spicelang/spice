@@ -61,11 +61,15 @@ void Scope::renameChildScope(const std::string &oldName, const std::string &newN
  */
 void Scope::copyChildScope(const std::string &oldName, const std::string &newName) {
   assert(children.contains(oldName) && !children.contains(newName));
+  // Create copy
   const Scope *origChildScope = children.at(oldName);
   auto newChildBlock = new Scope(*origChildScope);
+
   // Add newChildBlock as parent of all children for tracking de-allocation
   for (const auto &child : newChildBlock->children)
     child.second->parents.push_back(newChildBlock);
+
+  // Insert the new child scope as child to the current scope
   children.insert({newName, newChildBlock});
 }
 
@@ -217,16 +221,28 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 
     switch (entry.getType().getSuperType()) {
     case TY_FUNCTION: {
+      // Skip generic function entries
+      if (!entry.getType().getTemplateTypes().empty())
+        continue;
+
       warningType = UNUSED_FUNCTION;
-      warningMessage = "The function '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+      warningMessage = "The function '" + key + "' is unused";
       break;
     }
     case TY_PROCEDURE: {
+      // Skip generic procedure entries
+      if (!entry.getType().getTemplateTypes().empty())
+        continue;
+
       warningType = UNUSED_PROCEDURE;
-      warningMessage = "The procedure '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+      warningMessage = "The procedure '" + key + "' is unused";
       break;
     }
     case TY_STRUCT: {
+      // Skip generic struct entries
+      if (!entry.getType().getTemplateTypes().empty())
+        continue;
+
       if (entry.scope->type == SCOPE_GLOBAL) {
         warningType = UNUSED_STRUCT;
         warningMessage = "The struct '" + entry.name + "' is unused";
@@ -283,9 +299,11 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     // Add warning
     warnings.emplace_back(entry.getDeclCodeLoc(), warningType, warningMessage);
   }
+
   // Visit children
   for (const auto &child : children)
-    child.second->collectWarnings(warnings);
+    if (!child.second->isGenericScope)
+      child.second->collectWarnings(warnings);
 }
 
 /**

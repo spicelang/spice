@@ -1318,10 +1318,6 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     throw SemanticError(node, INSUFFICIENT_VISIBILITY,
                         "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility");
 
-  // Set the function to used
-  data.callee->used = true;
-  functionEntry->used = true;
-
   // Procedures always have the return type 'bool'
   if (data.callee->isProcedure() || returnType.is(TY_DYN))
     returnType = SymbolType(TY_BOOL);
@@ -1356,38 +1352,14 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
   }
 
   // Check if the exported name registry contains that function name
-  const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(fqFunctionName);
-  if (!registryEntry)
+  const NameRegistryEntry *functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName);
+  if (!functionRegistryEntry)
     throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION,
                         "Function/procedure/struct '" + node->functionNameFragments.back() + "' could not be found");
-  SymbolTableEntry *symbolEntry = registryEntry->targetEntry;
+  SymbolTableEntry *functionEntry = functionRegistryEntry->targetEntry;
 
   // Check if the target symbol is a struct -> this must be a constructor call
-  std::string knownStructName;
-  std::string functionName = node->functionNameFragments.back();
-  if (symbolEntry != nullptr && symbolEntry->getType().is(TY_STRUCT)) {
-    const NameRegistryEntry *structRegistryEntry = registryEntry;
-    const std::string structName = structRegistryEntry->targetEntry->name;
-
-    // Override function name
-    functionName = CTOR_FUNCTION_NAME;
-
-    // Retrieve the name registry entry for the constructor
-    registryEntry = sourceFile->getNameRegistryEntry(fqFunctionName + MEMBER_ACCESS_TOKEN + functionName);
-    // Check if the constructor was found
-    if (!registryEntry)
-      throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor");
-    data.isConstructorCall = true;
-
-    // Set the 'this' type of the function to the struct type
-    data.thisType = symbolEntry->getType();
-
-    // Set the struct to used
-    structRegistryEntry->targetEntry->used = true;
-
-    // Get the name, that can be used in the current source file to identify the struct
-    knownStructName = structRegistryEntry->name;
-  }
+  data.isConstructorCall = functionEntry != nullptr && functionEntry->getType().is(TY_STRUCT);
 
   // Get concrete template types
   if (node->hasTemplateTypes) {
@@ -1408,12 +1380,41 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
     }
   }
 
+  // For constructor calls, do some preparation
+  std::string knownStructName;
+  std::string functionName = node->functionNameFragments.back();
+  if (data.isConstructorCall) {
+    const NameRegistryEntry *structRegistryEntry = functionRegistryEntry;
+    const SymbolTableEntry *structEntry = functionEntry;
+    const std::string structName = structRegistryEntry->targetEntry->name;
+
+    // Substantiate potentially generic this struct
+    Struct *thisStruct = StructManager::matchStruct(structEntry->scope, structName, concreteTemplateTypes, node);
+    assert(thisStruct != nullptr);
+
+    // Override function name
+    functionName = CTOR_FUNCTION_NAME;
+
+    // Retrieve the name registry entry for the constructor
+    functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName + MEMBER_ACCESS_TOKEN + functionName);
+    // Check if the constructor was found
+    if (!functionRegistryEntry)
+      throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor");
+
+    // Set the 'this' type of the function to the struct type
+    data.thisType = structEntry->getType();
+    data.thisType.setStructBodyScope(thisStruct->structScope);
+
+    // Get the fully qualified name, that can be used in the current source file to identify the struct
+    knownStructName = structRegistryEntry->name;
+  }
+
   // Attach the concrete template types to the 'this' type
   if (!data.thisType.is(TY_DYN) && !concreteTemplateTypes.empty())
     data.thisType.setTemplateTypes(concreteTemplateTypes);
 
   // Map local types to imported types
-  Scope *functionParentScope = registryEntry->targetScope;
+  Scope *functionParentScope = functionRegistryEntry->targetScope;
   std::vector<SymbolType> importedArgTypes = data.argTypes;
   for (SymbolType &symbolType : importedArgTypes)
     symbolType = mapLocalTypeToImportedScopeType(functionParentScope, symbolType);
@@ -1541,19 +1542,6 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found");
   }
   node->instantiatedStructs.at(manIdx) = spiceStruct;
-
-  // Ensure that the struct object has the right entry attached
-  if (spiceStruct->genericSubstantiation) {
-    Scope *structParentScope = registryEntry->targetScope->parent;
-    structParentScope->symbolTable.copy(structName, spiceStruct->getSignature());
-    spiceStruct->entry = structParentScope->lookupStrict(spiceStruct->getSignature());
-    assert(spiceStruct->entry != nullptr);
-    spiceStruct->entry->used = true; // We use it directly, so set it to used
-  }
-
-  // Set struct to used
-  spiceStruct->used = true;
-  structEntry->used = true;
 
   // Use scope of concrete substantiation and not the scope of the generic type
   structScope = spiceStruct->structScope;
@@ -1730,10 +1718,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
     const std::string structName = node->typeNameFragments.back();
     Struct *spiceStruct = StructManager::matchStruct(accessScope, structName, concreteTemplateTypes, node);
-    if (spiceStruct) {
-      spiceStruct->used = true;
+    if (spiceStruct)
       entryType.setStructBodyScope(spiceStruct->structScope);
-    }
 
     return node->setEvaluatedSymbolType(entryType, manIdx);
   }
@@ -1769,6 +1755,7 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
         if (manifestation->structScope == symbolType.getBaseType().getStructBodyScope())
           return symbolType.replaceBaseSubType(manifestation->name);
+
   return symbolType;
 }
 

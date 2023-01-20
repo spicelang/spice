@@ -1,14 +1,40 @@
-import "std/data/vector";
-import "std/data/pair";
+type T int|long;
+
+type TestStruct<T> struct {
+    T f1
+    unsigned long length
+}
+
+p TestStruct.ctor(const unsigned long initialLength) {
+    this.length = initialLength;
+}
+
+p TestStruct.printLength() {
+    printf("%d\n", this.length);
+}
+
+type Alias alias TestStruct<long>;
 
 f<int> main() {
-    Vector<Pair<int, string>> pairVector = Vector<Pair<int, string>>();
-    /*pairVector.pushBack(Pair<int, string>(0, "Hello"));
-    pairVector.pushBack(Pair<int, string>(1, "World"));
-
-    Pair<int, string> p1 = pairVector.get(1);
-    printf("Hello %s!\n", p1.getSecond());*/
+    Alias a = Alias{12345l, 54321l};
+    a.printLength();
+    dyn b = Alias(12l);
+    b.printLength();
 }
+
+/*type T dyn;
+
+type Vector<T> struct {
+    T data
+}
+
+p Vector.ctor() {
+    this.data = 12;
+}
+
+f<int> main() {
+    Vector<int> intVec = Vector<int>();
+}*/
 
 /*type T string|char;
 

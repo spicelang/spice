@@ -55,7 +55,7 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, ASTNode *
  * @param originalName Original symbol name
  * @param newName New symbol name
  */
-void SymbolTable::copy(const std::string &originalName, const std::string &newName) {
+void SymbolTable::copySymbol(const std::string &originalName, const std::string &newName) {
   SymbolTableEntry *entryToCopy = lookupStrict(originalName);
   assert(entryToCopy != nullptr);
   symbols.insert({newName, *entryToCopy});
