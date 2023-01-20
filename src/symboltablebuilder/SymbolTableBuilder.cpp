@@ -36,6 +36,7 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
 
   // Create scope for main function body
   node->fctScope = currentScope = rootScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
+  currentScope->isGenericScope = false;
 
   // Declare variable for the return value in the function scope
   SymbolTableEntry *resultVarEntry = node->fctScope->insert(RETURN_VARIABLE_NAME, SymbolSpecifiers::of(TY_INT), node);
@@ -80,6 +81,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Create scope for the function
   node->fctScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
+  currentScope->isGenericScope = node->hasTemplateTypes;
 
   // Create symbol for 'this' variable
   if (node->isMethod) {
@@ -141,6 +143,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Create scope for the procedure
   node->procScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
+  currentScope->isGenericScope = node->hasTemplateTypes;
 
   // Create symbol for 'this' variable
   if (node->isMethod) {
@@ -182,6 +185,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Create scope for the struct
   node->structScope = currentScope =
       rootScope->createChildScope(STRUCT_SCOPE_PREFIX + node->structName, SCOPE_STRUCT, &node->codeLoc);
+  currentScope->isGenericScope = node->isGeneric;
 
   // Visit struct fields
   for (FieldNode *field : node->fields())

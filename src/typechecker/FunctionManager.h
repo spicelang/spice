@@ -43,7 +43,7 @@ private:
   [[nodiscard]] static bool matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedParamTypes,
                                           TypeMapping &typeMapping);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Function &candidate,
-                                                                            const std::string &templateTypeName);
+                                                                          const std::string &templateTypeName);
 };
 
 } // namespace spice::compiler

@@ -183,7 +183,11 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
         matchScope = substantiatedStructBodyScope;
       }
 
-      // We found a match! -> Check if it needs to be substantiated
+      // We found a match! -> Set the actual candidate and its entry to used
+      candidate.used = true;
+      candidate.entry->used = true;
+
+      // Check if the function is generic needs to be substantiated
       if (presetFunction.templateTypes.empty()) {
         assert(matchScope->functions.contains(defCodeLocStr) && matchScope->functions.at(defCodeLocStr).contains(mangledName));
         matches.push_back(&matchScope->functions.at(defCodeLocStr).at(mangledName));
@@ -211,17 +215,25 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       substantiatedFunction->genericSubstantiation = true;
       substantiatedFunction->declNode->getFctManifestations()->push_back(substantiatedFunction);
 
+      // Copy function entry
+      const std::string newSignature = substantiatedFunction->getSignature();
+      matchScope->symbolTable.copySymbol(presetFunction.entry->name, newSignature);
+      matchScope->lookupStrict(presetFunction.entry->name)->used = true;
+      candidate.entry = matchScope->lookupStrict(newSignature);
+      candidate.entry->used = true;
+
       // Copy function scope
-      matchScope->copyChildScope(presetFunction.getSignature(), substantiatedFunction->getSignature());
+      matchScope->copyChildScope(presetFunction.getSignature(false), newSignature);
+      Scope *childScope = matchScope->getChildScope(newSignature);
+      childScope->isGenericScope = false;
 
       // Insert symbols for generic type names with concrete types into the child block
-      Scope *childBlock = matchScope->getChildScope(substantiatedFunction->getSignature());
       for (const auto &[typeName, concreteType] : candidate.typeMapping)
-        childBlock->insertGenericType(typeName, GenericType(concreteType));
+        childScope->insertGenericType(typeName, GenericType(concreteType));
 
       // Substantiate the 'this' symbol table entry in the new function scope
       if (presetFunction.isMethod() && !presetFunction.templateTypes.empty()) {
-        SymbolTableEntry *thisEntry = childBlock->lookupStrict(THIS_VARIABLE_NAME);
+        SymbolTableEntry *thisEntry = childScope->lookupStrict(THIS_VARIABLE_NAME);
         assert(thisEntry != nullptr);
         thisEntry->updateType(requestedThisType.toPointer(callNode), /*overwriteExistingType=*/true);
       }
@@ -357,7 +369,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
         return false;
 
       // If the already known and the given type match, accept the type straight away and move to the next param
-      candidate.paramList.at(i) = Param{knownConcreteType, false};
+      SymbolType newParamType = originalParamType.replaceBaseType(knownConcreteType);
+      candidate.paramList.at(i) = Param{newParamType, false};
       continue;
     }
 

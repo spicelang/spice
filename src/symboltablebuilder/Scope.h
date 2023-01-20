@@ -98,6 +98,7 @@ public:
   const ScopeType type;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable, this);
   const CodeLoc *codeLoc = nullptr;
+  bool isGenericScope = false;
 
 private:
   // Private members

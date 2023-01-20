@@ -43,7 +43,7 @@ public:
   // Public methods
   [[nodiscard]] std::vector<SymbolType> getParamTypes() const;
   [[nodiscard]] std::string getMangledName() const;
-  [[nodiscard]] std::string getSignature() const;
+  [[nodiscard]] std::string getSignature(bool withThisType = true) const;
   [[nodiscard]] inline bool isMethod() const { return !thisType.is(TY_DYN); }
   [[nodiscard]] inline bool isFunction() const { return !isMethod() && !returnType.is(TY_DYN); }
   [[nodiscard]] inline bool isProcedure() const { return !isMethod() && returnType.is(TY_DYN); }

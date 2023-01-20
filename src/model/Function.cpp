@@ -54,6 +54,14 @@ std::string Function::getMangledName() const {
   if (!returnType.is(TY_DYN))
     returnTyStr = returnType.getName(false, true);
 
+  // Template type string
+  std::stringstream templateTyStr;
+  for (size_t i = 0; i < templateTypes.size(); i++) {
+    if (i != 0)
+      templateTyStr << "_";
+    templateTyStr << templateTypes.at(i).getName(false, true);
+  }
+
   // Param type string
   std::stringstream paramTyStr;
   for (size_t i = 0; i < paramList.size(); i++) {
@@ -63,14 +71,6 @@ std::string Function::getMangledName() const {
     paramTyStr << param.type.getName(false, true);
     if (param.isOptional)
       paramTyStr << "?";
-  }
-
-  // Template type string
-  std::stringstream templateTyStr;
-  for (size_t i = 0; i < templateTypes.size(); i++) {
-    if (i != 0)
-      templateTyStr << "_";
-    templateTyStr << templateTypes.at(i).getName(false, true);
   }
 
   // Construct mangled name
@@ -92,10 +92,10 @@ std::string Function::getMangledName() const {
  *
  * @return String representation as function signature
  */
-std::string Function::getSignature() const {
+std::string Function::getSignature(bool withThisType /*=true*/) const {
   // Build this type string
   std::stringstream thisTyStr;
-  if (!thisType.is(TY_DYN)) {
+  if (withThisType && !thisType.is(TY_DYN)) {
     thisTyStr << thisType.getBaseType().getSubType();
     const std::vector<SymbolType> &thisTemplateTypes = thisType.getTemplateTypes();
     if (!thisTemplateTypes.empty()) {
