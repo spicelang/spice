@@ -81,7 +81,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Create scope for the function
   node->fctScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
-  currentScope->isGenericScope = node->hasTemplateTypes;
+  currentScope->isGenericScope = node->hasTemplateTypes || (node->structScope && node->structScope->isGenericScope);
 
   // Create symbol for 'this' variable
   if (node->isMethod) {
@@ -143,7 +143,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Create scope for the procedure
   node->procScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
-  currentScope->isGenericScope = node->hasTemplateTypes;
+  currentScope->isGenericScope = node->hasTemplateTypes || (node->structScope && node->structScope->isGenericScope);
 
   // Create symbol for 'this' variable
   if (node->isMethod) {

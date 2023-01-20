@@ -50,7 +50,7 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     }
 
     // Change to function scope
-    currentScope = currentScope->getChildScope(manifestation->getSignature());
+    currentScope = currentScope->getChildScope(manifestation->getSignature(false));
     assert(currentScope != nullptr && currentScope->type == SCOPE_FUNC_PROC_BODY);
 
     // Mount type mapping for this manifestation
@@ -107,7 +107,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     }
 
     // Change to procedure scope
-    currentScope = currentScope->getChildScope(manifestation->getSignature());
+    currentScope = currentScope->getChildScope(manifestation->getSignature(false));
     assert(currentScope != nullptr && currentScope->type == SCOPE_FUNC_PROC_BODY);
 
     // Mount type mapping for this manifestation

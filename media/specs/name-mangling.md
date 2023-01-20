@@ -56,4 +56,4 @@ Here is the scheme, how Spice mangles struct names:
 ### Implementation
 
 To see the implementation for struct name mangling, have a look here:
-[Struct::gerMangledName](../../src/model/Struct.cpp#:~:text=Struct::getMangledName)
+[Struct::getMangledName](../../src/model/Struct.cpp#:~:text=Struct::getMangledName)

@@ -137,7 +137,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   FunctionManager::substantiateOptionalParams(spiceFunc, substantiatedFunctions);
   currentScope->renameChildScope(node->getScopeId(), substantiatedFunctions.front().getSignature(false));
   for (size_t i = 1; i < substantiatedFunctions.size(); i++)
-    currentScope->copyChildScope(substantiatedFunctions.front().getSignature(), substantiatedFunctions[i].getSignature(false));
+    currentScope->copyChildScope(substantiatedFunctions.front().getSignature(false),
+                                 substantiatedFunctions[i].getSignature(false));
 
   // Change to the root scope
   currentScope = rootScope;
@@ -241,7 +242,8 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   FunctionManager::substantiateOptionalParams(spiceProc, substantiatedProcedures);
   currentScope->renameChildScope(node->getScopeId(), substantiatedProcedures.front().getSignature(false));
   for (size_t i = 1; i < substantiatedProcedures.size(); i++)
-    currentScope->copyChildScope(substantiatedProcedures.front().getSignature(), substantiatedProcedures[i].getSignature(false));
+    currentScope->copyChildScope(substantiatedProcedures.front().getSignature(false),
+                                 substantiatedProcedures[i].getSignature(false));
 
   // Change to the root scope
   currentScope = rootScope;

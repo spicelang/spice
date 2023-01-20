@@ -438,6 +438,7 @@ std::string IRGenerator::getIRString() const {
 void IRGenerator::changeToScope(Scope *scope, const ScopeType scopeType) {
   assert(scope != nullptr);
   assert(scope->type == scopeType);
+  assert(!scope->isGenericScope);
   // Adjust members of the new scope
   scope->parent = currentScope;
   scope->symbolTable.parent = &currentScope->symbolTable;

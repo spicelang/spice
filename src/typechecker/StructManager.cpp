@@ -92,6 +92,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       if (presetStruct.templateTypes.empty()) {
         assert(matchScope->structs.contains(defCodeLocStr) && matchScope->structs.at(defCodeLocStr).contains(mangledName));
         matches.push_back(&matchScope->structs.at(defCodeLocStr).at(mangledName));
+        matches.back()->used = true;
         continue; // Match was successful -> match the next struct
       }
 
@@ -106,25 +107,27 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       substantiatedStruct->genericSubstantiation = true;
       substantiatedStruct->declNode->getStructManifestations()->push_back(substantiatedStruct);
 
-      // Copy function entry
+      // Copy struct entry
       const std::string newSignature = substantiatedStruct->getSignature();
-      matchScope->symbolTable.copySymbol(candidate.name, newSignature);
-      matchScope->lookupStrict(candidate.name)->used = true;
-      candidate.entry = matchScope->lookupStrict(newSignature);
+      matchScope->lookupStrict(substantiatedStruct->name)->used = true;
+      matchScope->symbolTable.copySymbol(substantiatedStruct->name, newSignature);
+      substantiatedStruct->entry = matchScope->lookupStrict(newSignature);
+      assert(substantiatedStruct->entry != nullptr);
 
       // Copy struct scope
       const std::string newScopeName = STRUCT_SCOPE_PREFIX + newSignature;
       matchScope->copyChildScope(STRUCT_SCOPE_PREFIX + presetStruct.name, newScopeName);
       substantiatedStruct->structScope = matchScope->getChildScope(newScopeName);
+      assert(substantiatedStruct->structScope != nullptr);
       substantiatedStruct->structScope->isGenericScope = false;
 
       // Replace field types with concrete template types
       assert(substantiatedStruct->structScope != nullptr);
-      for (size_t i = 0; i < candidate.fieldTypes.size(); i++) {
+      for (size_t i = 0; i < substantiatedStruct->fieldTypes.size(); i++) {
         // Replace field type with concrete template type
         SymbolTableEntry *fieldEntry = substantiatedStruct->structScope->symbolTable.lookupByIndex(i);
         assert(fieldEntry != nullptr);
-        fieldEntry->updateType(candidate.fieldTypes.at(i), /*overwriteExistingType=*/true);
+        fieldEntry->updateType(substantiatedStruct->fieldTypes.at(i), /*overwriteExistingType=*/true);
       }
 
       // Add to matched structs
