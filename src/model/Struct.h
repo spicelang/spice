@@ -32,10 +32,10 @@ public:
   // Public methods
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] std::string getSignature() const;
+  static std::string getSignature(const std::string &name, const std::vector<SymbolType> &concreteTemplateTypes);
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
-  static std::string getSignature(const std::string &structName, const std::vector<SymbolType> &concreteTemplateTypes);
-  //bool hasInfiniteSize(Scope *anchorScope = nullptr) const;
+  // bool hasInfiniteSize(Scope *anchorScope = nullptr) const;
 
   // Public members
   std::string name;

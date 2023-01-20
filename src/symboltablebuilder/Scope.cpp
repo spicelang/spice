@@ -226,7 +226,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
         continue;
 
       warningType = UNUSED_FUNCTION;
-      warningMessage = "The function '" + key + "' is unused";
+      warningMessage = "The function '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
       break;
     }
     case TY_PROCEDURE: {
@@ -235,15 +235,15 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
         continue;
 
       warningType = UNUSED_PROCEDURE;
-      warningMessage = "The procedure '" + key + "' is unused";
+      warningMessage = "The procedure '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
       break;
     }
     case TY_STRUCT: {
-      // Skip generic struct entries
-      if (!entry.getType().getTemplateTypes().empty())
-        continue;
-
       if (entry.scope->type == SCOPE_GLOBAL) {
+        // Skip generic struct entries
+        if (!entry.getType().getTemplateTypes().empty())
+          continue;
+
         warningType = UNUSED_STRUCT;
         warningMessage = "The struct '" + entry.name + "' is unused";
       } else {

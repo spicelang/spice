@@ -157,7 +157,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     }
 
     // Change scope
-    currentScope = currentScope->getChildScope(manifestation->getSignature());
+    currentScope = currentScope->getChildScope(manifestation->getSignature(false));
     assert(currentScope != nullptr);
 
     // Get 'this' entry
@@ -321,7 +321,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     }
 
     // Change scope
-    currentScope = currentScope->getChildScope(manifestation->getSignature());
+    currentScope = currentScope->getChildScope(manifestation->getSignature(false));
     assert(currentScope != nullptr);
 
     // Get 'this' entry
@@ -462,10 +462,8 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
       llvm::StructType *structType = llvm::StructType::create(context, mangledName);
 
       // Set LLVM type to the struct entry
-      const std::string structSignature = spiceStruct.getSignature();
-      SymbolTableEntry *structEntry = rootScope->lookupStrict(structSignature);
-      assert(structEntry != nullptr);
-      structEntry->setStructLLVMType(structType);
+      assert(spiceStruct.entry != nullptr);
+      spiceStruct.entry->setStructLLVMType(structType);
 
       // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
@@ -501,7 +499,7 @@ std::any IRGenerator::visitGenericTypeDef(const GenericTypeDefNode *node) {
 }
 
 std::any IRGenerator::visitAliasDef(const AliasDefNode *node) {
-  return nullptr; // Noop (alias defs are high-level semantic-only structures)
+  return nullptr; // Noop (alias definitions are high-level semantic-only structures)
 }
 
 std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {

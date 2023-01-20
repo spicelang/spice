@@ -1283,10 +1283,9 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     ParamList errArgTypes;
     for (const SymbolType &argType : data.argTypes)
       errArgTypes.push_back({argType, false});
-    const SymbolType dynType(TY_DYN);
-    Function f(functionName, nullptr, thisType, returnType, errArgTypes, /*templateTypes=*/{}, node, /*external=*/false);
+    const std::string signature = Function::getSignature(functionName, thisType, returnType, errArgTypes, {});
     // Throw error
-    throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + f.getSignature() + "' could not be found");
+    throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + signature + "' could not be found");
   }
 
   // Check if we need to request a re-visit, because the function body was not type-checked yet

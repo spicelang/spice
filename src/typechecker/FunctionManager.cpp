@@ -191,6 +191,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       if (presetFunction.templateTypes.empty()) {
         assert(matchScope->functions.contains(defCodeLocStr) && matchScope->functions.at(defCodeLocStr).contains(mangledName));
         matches.push_back(&matchScope->functions.at(defCodeLocStr).at(mangledName));
+        matches.back()->used = true;
         continue; // Match was successful -> match the next function
       }
 
@@ -216,19 +217,20 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       substantiatedFunction->declNode->getFctManifestations()->push_back(substantiatedFunction);
 
       // Copy function entry
-      const std::string newSignature = substantiatedFunction->getSignature();
-      matchScope->symbolTable.copySymbol(presetFunction.entry->name, newSignature);
+      const std::string newSignature = substantiatedFunction->getSignature(false);
       matchScope->lookupStrict(presetFunction.entry->name)->used = true;
-      candidate.entry = matchScope->lookupStrict(newSignature);
-      candidate.entry->used = true;
+      matchScope->symbolTable.copySymbol(presetFunction.entry->name, newSignature);
+      substantiatedFunction->entry = matchScope->lookupStrict(newSignature);
+      assert(substantiatedFunction->entry != nullptr);
 
       // Copy function scope
       matchScope->copyChildScope(presetFunction.getSignature(false), newSignature);
       Scope *childScope = matchScope->getChildScope(newSignature);
+      assert(childScope != nullptr);
       childScope->isGenericScope = false;
 
       // Insert symbols for generic type names with concrete types into the child block
-      for (const auto &[typeName, concreteType] : candidate.typeMapping)
+      for (const auto &[typeName, concreteType] : substantiatedFunction->typeMapping)
         childScope->insertGenericType(typeName, GenericType(concreteType));
 
       // Substantiate the 'this' symbol table entry in the new function scope

@@ -1,78 +1,11 @@
-type T int|long;
-
-type TestStruct<T> struct {
-    T f1
-    unsigned long length
-}
-
-p TestStruct.ctor(const unsigned long initialLength) {
-    this.length = initialLength;
-}
-
-p TestStruct.printLength() {
-    printf("%d\n", this.length);
-}
-
-type Alias alias TestStruct<long>;
+import "std/data/vector" as vec;
+import "std/data/pair" as pair;
 
 f<int> main() {
-    Alias a = Alias{12345l, 54321l};
-    a.printLength();
-    dyn b = Alias(12l);
-    b.printLength();
+    Vector<Pair<int, string>> pairVector = Vector<Pair<int, string>>();
+    pairVector.pushBack(Pair<int, string>(0, "Hello"));
+    pairVector.pushBack(Pair<int, string>(1, "World"));
+
+    Pair<int, string> p1 = pairVector.get(1);
+    printf("Hello %s!\n", p1.getSecond());
 }
-
-/*type T dyn;
-
-type Vector<T> struct {
-    T data
-}
-
-p Vector.ctor() {
-    this.data = 12;
-}
-
-f<int> main() {
-    Vector<int> intVec = Vector<int>();
-}*/
-
-/*type T string|char;
-
-type TestStruct<T> struct {
-    T base
-    int test
-}
-
-f<int> main() {
-    TestStruct<char> s = TestStruct<char>{ 'a', 1 };
-    s.printTest();
-}
-
-p TestStruct.printTest() {
-    printf("Test: %d\n", this.getTest());
-}
-
-f<int> TestStruct.getTest() {
-    if this.test == 1 {
-        this.test++;
-        this.printTest();
-    }
-    return this.test;
-}*/
-
-/*ext<byte*> malloc(long);
-ext free(byte*);
-
-f<int> main() {
-    byte* address = malloc(1l);
-    *address = (byte) 12;
-    free(address);
-}*/
-
-/*f<int> main() {
-    int[10] a;
-    for int i = 0; i < len(a); i++ {
-        a[i] = 1;
-    }
-    printf("Cell [3]: %d", a[3]);
-}*/

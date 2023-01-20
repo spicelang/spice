@@ -53,6 +53,32 @@ std::string Struct::getSignature() const {
 }
 
 /**
+ * Get the signature from the struct name and the concrete template types
+ *
+ * Example:
+ * Pair<int,double>
+ *
+ * @param name Struct name
+ * @param concreteTemplateTypes Concrete template types
+ * @return Signature
+ */
+std::string Struct::getSignature(const std::string &name, const std::vector<SymbolType> &concreteTemplateTypes) {
+  // Build template type string
+  std::stringstream templateTyStr;
+  if (!concreteTemplateTypes.empty()) {
+    templateTyStr << "<";
+    for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
+      if (i > 0)
+        templateTyStr << ",";
+      templateTyStr << concreteTemplateTypes.at(i).getName();
+    }
+    templateTyStr << ">";
+  }
+
+  return CommonUtil::getLastFragment(name, SCOPE_ACCESS_TOKEN) + templateTyStr.str();
+}
+
+/**
  * Checks if a struct contains template types.
  * This would imply that the struct is not substantiated by its generic types yet.
  *
@@ -70,32 +96,6 @@ bool Struct::hasSubstantiatedGenerics() const {
  * @return Fully substantiated or not
  */
 bool Struct::isFullySubstantiated() const { return hasSubstantiatedGenerics(); }
-
-/**
- * Get the signature from the struct name and the concrete template types
- *
- * Example:
- * Pair<int,double>
- *
- * @param structName Struct name
- * @param concreteTemplateTypes Concrete template types
- * @return Signature
- */
-std::string Struct::getSignature(const std::string &structName, const std::vector<SymbolType> &concreteTemplateTypes) {
-  // Build template type string
-  std::stringstream templateTyStr;
-  if (!concreteTemplateTypes.empty()) {
-    templateTyStr << "<";
-    for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
-      if (i > 0)
-        templateTyStr << ",";
-      templateTyStr << concreteTemplateTypes.at(i).getName();
-    }
-    templateTyStr << ">";
-  }
-
-  return CommonUtil::getLastFragment(structName, SCOPE_ACCESS_TOKEN) + templateTyStr.str();
-}
 
 /**
  * Checks if the current struct is of infinite size.

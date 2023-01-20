@@ -93,6 +93,28 @@ std::string Function::getMangledName() const {
  * @return String representation as function signature
  */
 std::string Function::getSignature(bool withThisType /*=true*/) const {
+  std::vector<SymbolType> templateSymbolTypes;
+  templateSymbolTypes.reserve(templateTypes.size());
+  for (const GenericType &genericType : templateTypes)
+    templateSymbolTypes.push_back(genericType);
+
+  return Function::getSignature(name, thisType, returnType, paramList, templateSymbolTypes, withThisType);
+}
+
+/**
+ * Get a string representation of the current function.
+ *
+ * @param name Function name
+ * @param thisType This symbol type
+ * @param returnType Return symbol type
+ * @param paramList Param symbol types
+ * @param concreteTemplateTypes Concrete template symbol types
+ * @param withThisType Include 'this' type in signature
+ * @return Function signature
+ */
+std::string Function::getSignature(const std::string &name, const SymbolType &thisType, const SymbolType &returnType,
+                                   const ParamList &paramList, const std::vector<SymbolType> &concreteTemplateTypes,
+                                   bool withThisType /*=true*/) {
   // Build this type string
   std::stringstream thisTyStr;
   if (withThisType && !thisType.is(TY_DYN)) {
@@ -128,12 +150,12 @@ std::string Function::getSignature(bool withThisType /*=true*/) const {
 
   // Build template type string
   std::stringstream templateTyStr;
-  if (!templateTypes.empty()) {
+  if (!concreteTemplateTypes.empty()) {
     templateTyStr << "<";
-    for (size_t i = 0; i < templateTypes.size(); i++) {
+    for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
       if (i > 0)
         templateTyStr << ",";
-      templateTyStr << templateTypes.at(i).getName();
+      templateTyStr << concreteTemplateTypes.at(i).getName();
     }
     templateTyStr << ">";
   }
