@@ -60,11 +60,11 @@ define dso_local i32 @main() #0 {
   %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.7, i32 %19)
   store [4 x %__NestedStruct__int_string] [%__NestedStruct__int_string { i32 0, ptr @1 }, %__NestedStruct__int_string { i32 0, ptr @1 }, %__NestedStruct__int_string { i32 0, ptr @1 }, %__NestedStruct__int_string { i32 0, ptr @1 }], ptr %structArrayVar, align 8
   %21 = getelementptr inbounds [4 x %__NestedStruct__int_string], ptr %structArrayVar, i32 0, i32 2
-  %22 = getelementptr inbounds %__NestedStruct__int_string, ptr %21, i32 0, i32 1
-  %23 = load ptr, ptr %22, align 8
-  %24 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.8, ptr %23)
-  %25 = load i32, ptr %result, align 4
-  ret i32 %25
+  %field2 = getelementptr inbounds %__NestedStruct__int_string, ptr %21, i32 0, i32 1
+  %22 = load ptr, ptr %field2, align 8
+  %23 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.8, ptr %22)
+  %24 = load i32, ptr %result, align 4
+  ret i32 %24
 }
 
 declare i32 @printf(ptr noundef, ...)
