@@ -602,7 +602,7 @@ std::any SymbolTableBuilder::visitImportStmt(ImportStmtNode *node) {
 
   // Create entry for import
   const SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_IMPORT);
-  rootScope->insert(node->importName, specifiers, node);
+  node->entry = rootScope->insert(node->importName, specifiers, node);
 
   return nullptr;
 }

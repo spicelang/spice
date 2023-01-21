@@ -165,6 +165,8 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     Scope *accessScope = symbolType.getStructBodyScope()->parent;
     SymbolTableEntry *structEntry = accessScope->lookup(symbolType.getSubType());
     assert(structEntry != nullptr);
+    assert(std::none_of(structEntry->getType().getTemplateTypes().begin(), structEntry->getType().getTemplateTypes().end(),
+                        [](const SymbolType &templateType) { return templateType.is(TY_GENERIC); }));
 
     // Retrieve struct type
     Scope *structScope = structEntry->getType().getStructBodyScope();

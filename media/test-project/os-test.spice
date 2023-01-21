@@ -1,11 +1,20 @@
-import "std/data/vector" as vec;
-import "std/data/pair" as pair;
+import "std/data/vector";
 
 f<int> main() {
-    Vector<Pair<int, string>> pairVector = Vector<Pair<int, string>>();
-    pairVector.pushBack(Pair<int, string>(0, "Hello"));
-    pairVector.pushBack(Pair<int, string>(1, "World"));
-
-    Pair<int, string> p1 = pairVector.get(1);
-    printf("Hello %s!\n", p1.getSecond());
+    Vector<int> pairVector = Vector<int>();
+    pairVector.reserve(10l);
+    /*pairVector.pushBack(4);
+    pairVector.pushBack(2);
+    pairVector.pushBack(4);
+    pairVector.pushBack(3);
+    pairVector.pushBack(1);
+    printf("Cap: %d\n", pairVector.getCapacity());
+    printf("Size: %d\n", pairVector.getSize());
+    pairVector.pushBack(2);
+    pairVector.pushBack(2);
+    pairVector.pushBack(2);
+    printf("Cap: %d\n", pairVector.getCapacity());
+    printf("Size: %d\n", pairVector.getSize());
+    printf("Val: %d\n", pairVector.get(2));*/
+    pairVector.dtor();
 }

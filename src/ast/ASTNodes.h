@@ -930,6 +930,7 @@ public:
   // Public members
   std::string importPath;
   std::string importName;
+  SymbolTableEntry *entry = nullptr;
 };
 
 // ======================================================== ReturnStmtNode =======================================================

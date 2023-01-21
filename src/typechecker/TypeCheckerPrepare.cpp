@@ -532,4 +532,12 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   return nullptr;
 }
 
+std::any TypeChecker::visitImportStmtPrepare(ImportStmtNode *node) {
+  // Set entry to import type
+  assert(node->entry != nullptr);
+  node->entry->updateType(SymbolType(TY_IMPORT, node->importName), false);
+
+  return nullptr;
+}
+
 } // namespace spice::compiler
