@@ -508,7 +508,6 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   // Retrieve some information about the variable
   assert(node->entry != nullptr);
   const bool isPublic = node->entry->specifiers.isPublic();
-  const bool isSigned = node->entry->specifiers.isSigned();
   const bool isConst = node->entry->specifiers.isConst();
 
   // Get correct type and linkage type
@@ -530,6 +529,8 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
     constantValue = getDefaultValueForSymbolType(node->entry->getType());
   }
   var->setInitializer(constantValue);
+
+  node->entry->updateAddress(varAddress);
 
   // Add debug info
   diGenerator.generateGlobalVarDebugInfo(var, node->entry);

@@ -727,6 +727,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     // Get address of the field in the struct instance
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(lhs.entry->orderIndex)};
     lhs.ptr = builder.CreateInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices);
+    lhs.ptr->setName(fieldName);
 
     // Reset the value
     lhs.value = nullptr;

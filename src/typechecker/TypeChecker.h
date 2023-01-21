@@ -5,12 +5,12 @@
 #include <CompilerPass.h>
 #include <ast/ASTVisitor.h>
 #include <model/Function.h>
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 #include <typechecker/FunctionManager.h>
 #include <typechecker/OpRuleManager.h>
 #include <typechecker/StructManager.h>
 #include <util/CompilerWarning.h>
-#include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
 
@@ -78,6 +78,8 @@ public:
   std::any visitField(FieldNode *node) override;
   std::any visitSignature(SignatureNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
+  std::any visitImportStmt(ImportStmtNode *node) override;
+  static std::any visitImportStmtPrepare(ImportStmtNode *node);
   std::any visitReturnStmt(ReturnStmtNode *node) override;
   std::any visitBreakStmt(BreakStmtNode *node) override;
   std::any visitContinueStmt(ContinueStmtNode *node) override;

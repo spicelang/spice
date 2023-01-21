@@ -414,6 +414,12 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   return node->setEvaluatedSymbolType(localVarType, manIdx);
 }
 
+std::any TypeChecker::visitImportStmt(ImportStmtNode *node) {
+  if (typeCheckerMode == TC_MODE_PREPARE)
+    return visitImportStmtPrepare(node);
+  return nullptr;
+}
+
 std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   // Retrieve return variable entry
   SymbolTableEntry *returnVar = currentScope->lookup(RETURN_VARIABLE_NAME);
@@ -1306,16 +1312,18 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   // Get function entry from function object
   SymbolTableEntry *functionEntry = data.callee->entry;
 
-  // Check if down-call
-  const CodeLoc &callLoc = node->codeLoc;
-  const CodeLoc &defLoc = functionEntry->getDeclCodeLoc();
-  data.isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
-
   // Check if the called function has sufficient visibility
   data.isImported = data.calleeParentScope->isImportedBy(rootScope);
   if (data.isImported && !functionEntry->specifiers.isPublic())
     throw SemanticError(node, INSUFFICIENT_VISIBILITY,
                         "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility");
+
+  // Check if down-call
+  if (!data.isImported) {
+    const CodeLoc &callLoc = node->codeLoc;
+    const CodeLoc &defLoc = functionEntry->getDeclCodeLoc();
+    data.isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
+  }
 
   // Procedures always have the return type 'bool'
   if (data.callee->isProcedure() || returnType.is(TY_DYN))
@@ -1580,6 +1588,9 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
                             "The struct takes at least one reference field. You need to instantiate it with all fields.");
     }
   }
+
+  // Update type of struct entry
+  structEntry->updateType(structType, true);
 
   // Insert anonymous symbol to keep track of dtor calls for de-allocation
   SymbolTableEntry *anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
