@@ -18,11 +18,11 @@ define dso_local i32 @main() #0 {
   store ptr %dbl, ptr %1, align 8
   %2 = getelementptr inbounds %__double__Vector__doubleptr_int, ptr %doubleVec, i32 0, i32 1
   store i32 1, ptr %2, align 4
-  %3 = getelementptr inbounds %__double__Vector__doubleptr_int, ptr %doubleVec, i32 0, i32 1
-  %4 = load i32, ptr %3, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  %cap = getelementptr inbounds %__double__Vector__doubleptr_int, ptr %doubleVec, i32 0, i32 1
+  %3 = load i32, ptr %cap, align 4
+  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
+  %5 = load i32, ptr %result, align 4
+  ret i32 %5
 }
 
 declare i32 @printf(ptr noundef, ...)

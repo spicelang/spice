@@ -15,13 +15,13 @@ define private void @_mp__Stamp__void__print(ptr noundef nonnull %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %__Stamp__double_bool, ptr %2, i32 0, i32 0
-  %4 = load double, ptr %3, align 8
-  %5 = load ptr, ptr %this, align 8
-  %6 = getelementptr inbounds %__Stamp__double_bool, ptr %5, i32 0, i32 1
-  %7 = load i1, ptr %6, align 1
-  %8 = zext i1 %7 to i32
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double %4, i32 %8)
+  %value = getelementptr inbounds %__Stamp__double_bool, ptr %2, i32 0, i32 0
+  %3 = load double, ptr %value, align 8
+  %4 = load ptr, ptr %this, align 8
+  %glued = getelementptr inbounds %__Stamp__double_bool, ptr %4, i32 0, i32 1
+  %5 = load i1, ptr %glued, align 1
+  %6 = zext i1 %5 to i32
+  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double %3, i32 %6)
   ret void
 }
 
@@ -32,28 +32,28 @@ define private %__Stamp__double_bool @_mf__Letter__Stamp__getStamp(ptr noundef n
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %__Letter__string_Stamp, ptr %2, i32 0, i32 1
-  %4 = load %__Stamp__double_bool, ptr %3, align 8
-  ret %__Stamp__double_bool %4
+  %stamp = getelementptr inbounds %__Letter__string_Stamp, ptr %2, i32 0, i32 1
+  %3 = load %__Stamp__double_bool, ptr %stamp, align 8
+  ret %__Stamp__double_bool %3
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %letter = alloca %__Letter__string_Stamp, align 8
-  %stamp = alloca %__Stamp__double_bool, align 8
+  %stamp1 = alloca %__Stamp__double_bool, align 8
   store i32 0, ptr %result, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr %letter, ptr @anon.struct.0, i64 24, i1 false)
-  %1 = getelementptr inbounds %__Letter__string_Stamp, ptr %letter, i32 0, i32 1
-  %2 = getelementptr inbounds %__Stamp__double_bool, ptr %1, i32 0, i32 1
-  %3 = load i1, ptr %2, align 1
-  %4 = zext i1 %3 to i32
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %4)
-  %6 = call %__Stamp__double_bool @_mf__Letter__Stamp__getStamp(ptr %letter)
-  store %__Stamp__double_bool %6, ptr %stamp, align 8
-  call void @_mp__Stamp__void__print(ptr %stamp)
-  %7 = load i32, ptr %result, align 4
-  ret i32 %7
+  %stamp = getelementptr inbounds %__Letter__string_Stamp, ptr %letter, i32 0, i32 1
+  %glued = getelementptr inbounds %__Stamp__double_bool, ptr %stamp, i32 0, i32 1
+  %1 = load i1, ptr %glued, align 1
+  %2 = zext i1 %1 to i32
+  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %2)
+  %4 = call %__Stamp__double_bool @_mf__Letter__Stamp__getStamp(ptr %letter)
+  store %__Stamp__double_bool %4, ptr %stamp1, align 8
+  call void @_mp__Stamp__void__print(ptr %stamp1)
+  %5 = load i32, ptr %result, align 4
+  ret i32 %5
 }
 
 ; Function Attrs: argmemonly nocallback nofree nounwind willreturn

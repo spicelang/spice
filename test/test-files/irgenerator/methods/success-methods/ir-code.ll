@@ -15,9 +15,9 @@ define private ptr @_mf__Letter__string__getContent(ptr noundef nonnull %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %__Letter__string, ptr %2, i32 0, i32 0
-  %4 = load ptr, ptr %3, align 8
-  ret ptr %4
+  %content = getelementptr inbounds %__Letter__string, ptr %2, i32 0, i32 0
+  %3 = load ptr, ptr %content, align 8
+  ret ptr %3
 }
 
 define private void @_mp__Letter__void__setContent__string(ptr noundef nonnull %0, ptr %1) {
@@ -26,9 +26,9 @@ define private void @_mp__Letter__void__setContent__string(ptr noundef nonnull %
   store ptr %0, ptr %this, align 8
   store ptr %1, ptr %text, align 8
   %3 = load ptr, ptr %this, align 8
-  %4 = getelementptr inbounds %__Letter__string, ptr %3, i32 0, i32 0
-  %5 = load ptr, ptr %text, align 8
-  store ptr %5, ptr %4, align 8
+  %content = getelementptr inbounds %__Letter__string, ptr %3, i32 0, i32 0
+  %4 = load ptr, ptr %text, align 8
+  store ptr %4, ptr %content, align 8
   ret void
 }
 

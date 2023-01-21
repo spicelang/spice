@@ -18,12 +18,12 @@ define private void @_mp__Vector__void__ctor(ptr noundef nonnull %0) {
   store ptr %0, ptr %this, align 8
   store ptr @anon.string.0, ptr %msg, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %__Vector__bool_string, ptr %2, i32 0, i32 0
-  store i1 false, ptr %3, align 1
-  %4 = load ptr, ptr %this, align 8
-  %5 = getelementptr inbounds %__Vector__bool_string, ptr %4, i32 0, i32 1
-  %6 = load ptr, ptr %msg, align 8
-  store ptr %6, ptr %5, align 8
+  %field1 = getelementptr inbounds %__Vector__bool_string, ptr %2, i32 0, i32 0
+  store i1 false, ptr %field1, align 1
+  %3 = load ptr, ptr %this, align 8
+  %field2 = getelementptr inbounds %__Vector__bool_string, ptr %3, i32 0, i32 1
+  %4 = load ptr, ptr %msg, align 8
+  store ptr %4, ptr %field2, align 8
   ret void
 }
 
@@ -33,12 +33,12 @@ define private void @_mp__Vector__void__ctor__string(ptr noundef nonnull %0, ptr
   store ptr %0, ptr %this, align 8
   store ptr %1, ptr %msg, align 8
   %3 = load ptr, ptr %this, align 8
-  %4 = getelementptr inbounds %__Vector__bool_string, ptr %3, i32 0, i32 0
-  store i1 false, ptr %4, align 1
-  %5 = load ptr, ptr %this, align 8
-  %6 = getelementptr inbounds %__Vector__bool_string, ptr %5, i32 0, i32 1
-  %7 = load ptr, ptr %msg, align 8
-  store ptr %7, ptr %6, align 8
+  %field1 = getelementptr inbounds %__Vector__bool_string, ptr %3, i32 0, i32 0
+  store i1 false, ptr %field1, align 1
+  %4 = load ptr, ptr %this, align 8
+  %field2 = getelementptr inbounds %__Vector__bool_string, ptr %4, i32 0, i32 1
+  %5 = load ptr, ptr %msg, align 8
+  store ptr %5, ptr %field2, align 8
   ret void
 }
 
@@ -56,24 +56,24 @@ define dso_local i32 @main() #0 {
   %1 = alloca %__Vector__bool_string, align 8
   store i32 0, ptr %result, align 4
   call void @_mp__Vector__void__ctor(ptr %vec)
-  %2 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
-  %3 = load i1, ptr %2, align 1
-  %4 = zext i1 %3 to i32
-  %5 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
-  %6 = load ptr, ptr %5, align 8
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %4, ptr %6)
+  %field1 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
+  %2 = load i1, ptr %field1, align 1
+  %3 = zext i1 %2 to i32
+  %field2 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
+  %4 = load ptr, ptr %field2, align 8
+  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3, ptr %4)
   call void @_mp__Vector__void__ctor__string(ptr %1, ptr @anon.string.2)
   call void @llvm.memcpy.p0.p0.i64(ptr %vec, ptr %1, i64 16, i1 false)
-  %8 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
-  %9 = load i1, ptr %8, align 1
-  %10 = zext i1 %9 to i32
-  %11 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
-  %12 = load ptr, ptr %11, align 8
-  %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %10, ptr %12)
-  %14 = call ptr @_mf__Vector__string__test(ptr %vec)
-  %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %14)
-  %16 = load i32, ptr %result, align 4
-  ret i32 %16
+  %field11 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
+  %6 = load i1, ptr %field11, align 1
+  %7 = zext i1 %6 to i32
+  %field22 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
+  %8 = load ptr, ptr %field22, align 8
+  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %7, ptr %8)
+  %10 = call ptr @_mf__Vector__string__test(ptr %vec)
+  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %10)
+  %12 = load i32, ptr %result, align 4
+  ret i32 %12
 }
 
 declare i32 @printf(ptr noundef, ...)

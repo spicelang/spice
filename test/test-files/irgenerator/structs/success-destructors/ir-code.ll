@@ -15,14 +15,14 @@ define dso_local i32 @main() #0 {
   %vec = alloca %__Vector__bool_string, align 8
   store i32 0, ptr %result, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr %vec, ptr @anon.struct.0, i64 16, i1 false)
-  %1 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
-  %2 = load i1, ptr %1, align 1
-  %3 = zext i1 %2 to i32
-  %4 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
-  %5 = load ptr, ptr %4, align 8
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3, ptr %5)
-  %7 = load i32, ptr %result, align 4
-  ret i32 %7
+  %field1 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
+  %1 = load i1, ptr %field1, align 1
+  %2 = zext i1 %1 to i32
+  %field2 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
+  %3 = load ptr, ptr %field2, align 8
+  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2, ptr %3)
+  %5 = load i32, ptr %result, align 4
+  ret i32 %5
 }
 
 ; Function Attrs: argmemonly nocallback nofree nounwind willreturn

@@ -30,22 +30,22 @@ define dso_local i32 @main() #0 {
   store double 4.634000e+01, ptr %4, align 8
   %5 = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 2
   store ptr %nestedInstance, ptr %5, align 8
-  %6 = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 2
-  %7 = load ptr, ptr %6, align 8
-  %8 = getelementptr inbounds %__Nested__string_boolptr, ptr %7, i32 0, i32 1
-  %9 = load ptr, ptr %8, align 8
-  %10 = load i1, ptr %9, align 1
-  %11 = zext i1 %10 to i32
-  %12 = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 1
-  %13 = load double, ptr %12, align 8
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %11, double %13)
-  %15 = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 2
-  %16 = load ptr, ptr %15, align 8
-  %17 = getelementptr inbounds %__Nested__string_boolptr, ptr %16, i32 0, i32 0
-  %18 = load ptr, ptr %17, align 8
-  %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %18)
-  %20 = load i32, ptr %result, align 4
-  ret i32 %20
+  %nested = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 2
+  %6 = load ptr, ptr %nested, align 8
+  %nested2 = getelementptr inbounds %__Nested__string_boolptr, ptr %6, i32 0, i32 1
+  %7 = load ptr, ptr %nested2, align 8
+  %8 = load i1, ptr %7, align 1
+  %9 = zext i1 %8 to i32
+  %field2 = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 1
+  %10 = load double, ptr %field2, align 8
+  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %9, double %10)
+  %nested1 = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 2
+  %12 = load ptr, ptr %nested1, align 8
+  %nested12 = getelementptr inbounds %__Nested__string_boolptr, ptr %12, i32 0, i32 0
+  %13 = load ptr, ptr %nested12, align 8
+  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %13)
+  %15 = load i32, ptr %result, align 4
+  ret i32 %15
 }
 
 declare i32 @printf(ptr noundef, ...)

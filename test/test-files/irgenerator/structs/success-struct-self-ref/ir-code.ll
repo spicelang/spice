@@ -35,25 +35,25 @@ define dso_local i32 @main() #0 {
 
 while.head.L21:                                   ; preds = %while.body.L21, %0
   %7 = load ptr, ptr %curNode, align 8
-  %8 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %7, i32 0, i32 0
-  %9 = load ptr, ptr %8, align 8
-  %10 = icmp ne ptr %9, null
-  br i1 %10, label %while.body.L21, label %while.exit.L21
+  %parent = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %7, i32 0, i32 0
+  %8 = load ptr, ptr %parent, align 8
+  %9 = icmp ne ptr %8, null
+  br i1 %9, label %while.body.L21, label %while.exit.L21
 
 while.body.L21:                                   ; preds = %while.head.L21
-  %11 = load ptr, ptr %curNode, align 8
-  %12 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %11, i32 0, i32 0
-  %13 = load ptr, ptr %12, align 8
-  store ptr %13, ptr %curNode, align 8
+  %10 = load ptr, ptr %curNode, align 8
+  %parent1 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %10, i32 0, i32 0
+  %11 = load ptr, ptr %parent1, align 8
+  store ptr %11, ptr %curNode, align 8
   br label %while.head.L21
 
 while.exit.L21:                                   ; preds = %while.head.L21
-  %14 = load ptr, ptr %curNode, align 8
-  %15 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %14, i32 0, i32 1
-  %16 = load i32, ptr %15, align 4
-  %17 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %16)
-  %18 = load i32, ptr %result, align 4
-  ret i32 %18
+  %12 = load ptr, ptr %curNode, align 8
+  %value = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %12, i32 0, i32 1
+  %13 = load i32, ptr %value, align 4
+  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %13)
+  %15 = load i32, ptr %result, align 4
+  ret i32 %15
 }
 
 ; Function Attrs: argmemonly nocallback nofree nounwind willreturn
