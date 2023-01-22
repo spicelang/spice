@@ -101,12 +101,9 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
 std::any IRGenerator::visitBreakStmt(const BreakStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
-  // Get destination block
-  for (int i = 1; i < node->breakTimes; i++)
-    breakBlocks.pop();
-
   // Jump to destination block
-  insertJump(breakBlocks.top());
+  const size_t blockIdx = breakBlocks.size() - node->breakTimes;
+  insertJump(breakBlocks.at(blockIdx));
 
   return nullptr;
 }
@@ -114,12 +111,9 @@ std::any IRGenerator::visitBreakStmt(const BreakStmtNode *node) {
 std::any IRGenerator::visitContinueStmt(const ContinueStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
-  // Get destination block
-  for (int i = 1; i < node->continueTimes; i++)
-    continueBlocks.pop();
-
   // Jump to destination block
-  insertJump(continueBlocks.top());
+  const size_t blockIdx = continueBlocks.size() - node->continueTimes;
+  insertJump(continueBlocks.at(blockIdx));
 
   return nullptr;
 }

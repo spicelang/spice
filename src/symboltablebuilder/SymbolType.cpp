@@ -131,8 +131,9 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
     return llvm::Type::getInt1Ty(context);
 
   if (is(TY_STRUCT)) {
+    Scope *structBodyScope = getStructBodyScope();
     const std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
-    SymbolTableEntry *structSymbol = accessScope->lookup(structSignature);
+    SymbolTableEntry *structSymbol = structBodyScope->parent->lookupStrict(structSignature);
     assert(structSymbol != nullptr);
     llvm::Type *structType = structSymbol->getStructLLVMType();
     assert(structType != nullptr);

@@ -127,8 +127,8 @@ private:
   const StdFunctionManager stdFunctionManager;
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);
   Scope *currentScope;
-  std::stack<llvm::BasicBlock *> breakBlocks;
-  std::stack<llvm::BasicBlock *> continueBlocks;
+  std::vector<llvm::BasicBlock *> breakBlocks;
+  std::vector<llvm::BasicBlock *> continueBlocks;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
   bool blockAlreadyTerminated = false;

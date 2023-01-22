@@ -24,6 +24,7 @@ public:
   [[nodiscard]] std::string toString() const;
   [[nodiscard]] std::string toPrettyString() const;
   [[nodiscard]] std::string toPrettyLine() const;
+  [[nodiscard]] std::string toPrettyLineAndColumn() const;
 };
 
 } // namespace spice::compiler

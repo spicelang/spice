@@ -135,8 +135,8 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   changeToScope(node->bodyScope, SCOPE_FOR_BODY);
 
   // Save the blocks for break and continue
-  breakBlocks.push(bExit);
-  continueBlocks.push(bTail);
+  breakBlocks.push_back(bExit);
+  continueBlocks.push_back(bTail);
 
   // Init statement
   visit(node->initDecl());
@@ -168,8 +168,10 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   switchToBlock(bExit);
 
   // Pop basic blocks from break and continue stacks
-  breakBlocks.pop();
-  continueBlocks.pop();
+  assert(breakBlocks.back() == bExit);
+  breakBlocks.pop_back();
+  assert(continueBlocks.back() == bTail);
+  continueBlocks.pop_back();
 
   // Change scope back
   currentScope = node->bodyScope->parent;
@@ -192,8 +194,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   changeToScope(node->bodyScope, SCOPE_FOREACH_BODY);
 
   // Save the blocks for break and continue
-  breakBlocks.push(bExit);
-  continueBlocks.push(bTail);
+  breakBlocks.push_back(bExit);
+  continueBlocks.push_back(bTail);
 
   // Call .reset on iterator
   // ToDo: implement
@@ -226,8 +228,10 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   switchToBlock(bExit);
 
   // Pop basic blocks from break and continue stacks
-  breakBlocks.pop();
-  continueBlocks.pop();
+  assert(breakBlocks.back() == bExit);
+  breakBlocks.pop_back();
+  assert(continueBlocks.back() == bTail);
+  continueBlocks.pop_back();
 
   // Change scope back
   currentScope = node->bodyScope->parent;
@@ -249,8 +253,8 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   changeToScope(node->bodyScope, SCOPE_WHILE_BODY);
 
   // Save the blocks for break and continue
-  breakBlocks.push(bExit);
-  continueBlocks.push(bHead);
+  breakBlocks.push_back(bExit);
+  continueBlocks.push_back(bHead);
 
   // Jump to head block
   insertJump(bHead);
@@ -273,8 +277,10 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   switchToBlock(bExit);
 
   // Pop basic blocks from break and continue stacks
-  breakBlocks.pop();
-  continueBlocks.pop();
+  assert(breakBlocks.back() == bExit);
+  breakBlocks.pop_back();
+  assert(continueBlocks.back() == bHead);
+  continueBlocks.pop_back();
 
   // Change scope back
   currentScope = node->bodyScope->parent;
@@ -296,8 +302,8 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   changeToScope(node->bodyScope, SCOPE_WHILE_BODY);
 
   // Save the blocks for break and continue
-  breakBlocks.push(bExit);
-  continueBlocks.push(bFoot);
+  breakBlocks.push_back(bExit);
+  continueBlocks.push_back(bFoot);
 
   // Jump to body block
   insertJump(bBody);
@@ -320,8 +326,10 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   switchToBlock(bExit);
 
   // Pop basic blocks from break and continue stacks
-  breakBlocks.pop();
-  continueBlocks.pop();
+  assert(breakBlocks.back() == bExit);
+  breakBlocks.pop_back();
+  assert(continueBlocks.back() == bFoot);
+  continueBlocks.pop_back();
 
   // Change scope back
   currentScope = node->bodyScope->parent;

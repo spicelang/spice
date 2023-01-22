@@ -1026,7 +1026,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     const std::string &fieldName = node->identifier;
 
     // Check if lhs is enum or strobj
-    const SymbolType lhsBaseTy = lhsType.getBaseType();
+    SymbolType lhsBaseTy = lhsType;
+    TypeChecker::autoDeReference(lhsBaseTy);
     if (!lhsBaseTy.is(TY_STRUCT))
       throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName());
 
@@ -1462,7 +1463,9 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   for (SymbolType &symbolType : importedArgTypes)
     symbolType = mapLocalTypeToImportedScopeType(functionParentScope, symbolType);
   // 'this' type
-  SymbolType importedThisType = mapLocalTypeToImportedScopeType(functionParentScope, data.thisType);
+  SymbolType thisType = data.thisType;
+  TypeChecker::autoDeReference(thisType);
+  SymbolType importedThisType = mapLocalTypeToImportedScopeType(functionParentScope, thisType);
 
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
@@ -1660,8 +1663,7 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
 
 std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   // It is a struct type -> get the access scope
-  if (!accessScope)
-    accessScope = currentScope;
+  Scope *localAccessScope = accessScope ?: currentScope;
 
   const bool isImported = node->typeNameFragments.size() > 1;
   const std::string firstFragment = node->typeNameFragments.front();
@@ -1700,7 +1702,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *entry = registryEntry->targetEntry;
   assert(entry != nullptr);
-  accessScope = registryEntry->targetScope->parent;
+  localAccessScope = registryEntry->targetScope->parent;
 
   // Get struct type and change it to the fully qualified name for identifying without ambiguities
   SymbolType entryType = entry->getType().replaceBaseSubType(registryEntry->name);
@@ -1727,7 +1729,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     // Set the struct instance to used, if found
     // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
     const std::string structName = node->typeNameFragments.back();
-    Struct *spiceStruct = StructManager::matchStruct(accessScope, structName, concreteTemplateTypes, node);
+    Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, concreteTemplateTypes, node);
     if (spiceStruct)
       entryType.setStructBodyScope(spiceStruct->structScope);
 
@@ -1741,7 +1743,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
                           "Referencing interfaces with template lists is not allowed");
 
     // Set the interface instance to used
-    Interface *spiceInterface = accessScope->lookupInterface(node->typeNameFragments.back());
+    Interface *spiceInterface = localAccessScope->lookupInterface(node->typeNameFragments.back());
     assert(spiceInterface != nullptr);
     spiceInterface->used = true;
 
@@ -1753,18 +1755,29 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   throw SemanticError(node, EXPECTED_TYPE, errorMessage);
 }
 
-SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) {
+SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const {
   // Skip all types, exception structs, interfaces and enums
   if (!symbolType.getBaseType().is(TY_STRUCT))
     return symbolType;
 
-  // Match the scope of the symbol type against
-  const SourceFile *targetSourceFile = targetScope->sourceFile;
-  for (const auto &[registryEntryName, entry] : targetSourceFile->exportedNameRegistry)
+  // If the target scope is in the current source file, we can return the symbol type as is
+  SourceFile *targetSourceFile = targetScope->sourceFile;
+  if (targetSourceFile == sourceFile)
+    return symbolType;
+
+  // Match the scope of the symbol type against all scopes in the name registry of the target source file
+  for (const auto &[_, entry] : targetSourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
         if (manifestation->structScope == symbolType.getBaseType().getStructBodyScope())
           return symbolType.replaceBaseSubType(manifestation->name);
+
+  // The target source file does not know about the struct at all
+  // -> show it how to find the struct
+  const std::string structName = symbolType.getBaseType().getSubType();
+  const NameRegistryEntry *origRegistryEntry = sourceFile->getNameRegistryEntry(structName);
+  assert(origRegistryEntry != nullptr);
+  targetSourceFile->addNameRegistryEntry(structName, origRegistryEntry->targetEntry, origRegistryEntry->targetScope, false);
 
   return symbolType;
 }
@@ -1785,6 +1798,17 @@ void TypeChecker::changeToScope(Scope *scope, const ScopeType scopeType) {
   scope->symbolTable.parent = &currentScope->symbolTable;
   // Set the scope
   currentScope = scope;
+}
+
+/**
+ * Auto-dereference the given symbol type.
+ * This process is NOT equivalent with getBaseType() because getBaseType() also removes e.g. array wrappers
+ *
+ * @param symbolType Input symbol type
+ */
+void TypeChecker::autoDeReference(SymbolType &symbolType) {
+  while (symbolType.isPointer() || symbolType.isReference())
+    symbolType = symbolType.getContainedTy();
 }
 
 } // namespace spice::compiler

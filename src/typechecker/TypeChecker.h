@@ -132,8 +132,9 @@ private:
   // Private methods
   std::tuple<Scope *, SymbolType, std::string> visitOrdinaryFctCall(FunctionCallNode *node);
   std::pair<Scope *, SymbolType> visitMethodCall(FunctionCallNode *node, Scope *structScope) const;
-  [[nodiscard]] static SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType);
-  void changeToScope(Scope *scope, const ScopeType scopeType);
+  [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;
+  void changeToScope(Scope *scope, ScopeType scopeType);
+  static void autoDeReference(SymbolType &symbolType);
 };
 
 } // namespace spice::compiler

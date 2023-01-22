@@ -50,7 +50,6 @@ public:
   int parse(int argc, char **argv);
   void validate() const;
   void enrich();
-  void runBinary() const;
 
   // Public members
   CliOptions cliOptions;

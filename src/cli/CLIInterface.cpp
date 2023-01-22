@@ -288,18 +288,4 @@ int CLIInterface::parse(int argc, char **argv) {
   return 0;
 }
 
-/**
- * Executes the built executable
- */
-void CLIInterface::runBinary() const {
-  // Print status message
-  if (cliOptions.printDebugOutput)
-    std::cout << "Running executable ...\n\n";
-
-  // Run executable
-  int exitCode = std::system(cliOptions.outputPath.c_str()) / 256;
-  if (exitCode != 0)
-    throw CliError(NON_ZERO_EXIT_CODE, "Your Spice executable exited with non-zero exit code " + std::to_string(exitCode));
-}
-
 } // namespace spice::compiler

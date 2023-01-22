@@ -94,12 +94,12 @@ Source file A imports B and C.
        4. AST Builder for C
        5. AST Visualizer for C
        6. Import Collector for C
-7. Type Checker for B
-8. Type Checker for C
-9. Type Checker for A
-10. Type Checker for A (again)
-11. Type Checker for B (again)
-12. Type Checker for C (again)
+7. Type Checker for B (prepare)
+8. Type Checker for C (prepare)
+9. Type Checker for A (prepare)
+10. Type Checker for A (check)
+11. Type Checker for B (check)
+12. Type Checker for C (check)
 13. Borrow Checker for B
 14. Borrow Checker for C
 15. Borrow Checker for A

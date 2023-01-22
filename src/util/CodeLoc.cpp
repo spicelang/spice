@@ -41,4 +41,11 @@ std::string CodeLoc::toPrettyString() const {
  */
 std::string CodeLoc::toPrettyLine() const { return "L" + std::to_string(line); }
 
+/**
+ * Returns the line and column numbers in a pretty form
+ *
+ * @return Pretty line and column numbers
+ */
+std::string CodeLoc::toPrettyLineAndColumn() const { return toString(); }
+
 } // namespace spice::compiler
