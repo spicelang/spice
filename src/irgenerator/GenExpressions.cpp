@@ -121,44 +121,46 @@ std::any IRGenerator::visitLogicalOrExpr(const LogicalOrExprNode *node) {
 
   // It is a logical or expression
   // Create exit block for short-circuiting
-  const std::string codeLine = node->codeLoc.toPrettyLine();
-  llvm::BasicBlock *bExit = createBlock("lor.exit." + codeLine);
+  const std::string codeLoc = node->codeLoc.toPrettyLineAndColumn();
+  llvm::BasicBlock *bExit = createBlock("lor.exit." + codeLoc);
 
   // Visit the first operand
   llvm::Value *firstOperandValue = resolveValue(node->operands().front());
 
   // Prepare an array for value-to-block-mapping
-  std::pair<llvm::Value *, llvm::BasicBlock *> shortCircuitBlocks[node->operands().size()];
+  std::pair<llvm::BasicBlock *, llvm::Value *> shortCircuitBlocks[node->operands().size()];
   // The first element is the first operand value with the original block
-  shortCircuitBlocks[0] = {firstOperandValue, builder.GetInsertBlock()};
+  shortCircuitBlocks[0] = {builder.GetInsertBlock(), firstOperandValue};
   // Create a block for each additional operand and save it to the mapping
   for (size_t i = 1; i < node->operands().size(); i++) {
-    llvm::BasicBlock *nextBlock = createBlock("lor." + std::to_string(i) + "." + codeLine);
-    shortCircuitBlocks[i] = {nullptr, nextBlock};
+    llvm::BasicBlock *nextBlock = createBlock("lor." + std::to_string(i) + "." + codeLoc);
+    shortCircuitBlocks[i] = {nextBlock, nullptr};
   }
   // Create conditional jump to the exit block if the first operand was true, otherwise to the next block
-  insertCondJump(firstOperandValue, bExit, shortCircuitBlocks[1].second);
+  insertCondJump(firstOperandValue, bExit, shortCircuitBlocks[1].first);
 
   // Create block for each operand
   for (int i = 1; i < node->operands().size(); i++) {
     // Switch to the next block
-    switchToBlock(shortCircuitBlocks[i].second);
+    switchToBlock(shortCircuitBlocks[i].first);
     // Evaluate operand and save the result in the mapping
-    shortCircuitBlocks[i].first = resolveValue(node->operands()[i]);
+    shortCircuitBlocks[i].second = resolveValue(node->operands()[i]);
+    // Replace the array entry with the current insert block, since the insert block could have changed in the meantime
+    shortCircuitBlocks[i].first = builder.GetInsertBlock();
     // Check if there are more blocks to process
-    if (i < node->operands().size() - 1) {
+    if (i == node->operands().size() - 1) {
+      // Insert a simple jump to the exit block for the last block
+      insertJump(bExit);
+    } else {
       // Create conditional jump to the exit block if the first operand was true, otherwise to the next block
-      insertCondJump(shortCircuitBlocks[i].first, bExit, shortCircuitBlocks[i + 1].second);
-      continue;
+      insertCondJump(shortCircuitBlocks[i].second, bExit, shortCircuitBlocks[i + 1].first);
     }
-    // Insert a simple jump to the exit block for the last block
-    insertJump(bExit);
   }
 
   // Get the result with the phi node
   switchToBlock(bExit);
   llvm::PHINode *result = builder.CreatePHI(firstOperandValue->getType(), node->operands().size(), "lor_phi");
-  for (const auto &[value, incomingBlock] : shortCircuitBlocks)
+  for (const auto &[incomingBlock, value] : shortCircuitBlocks)
     result->addIncoming(value, incomingBlock);
 
   // Return the result
@@ -174,44 +176,46 @@ std::any IRGenerator::visitLogicalAndExpr(const LogicalAndExprNode *node) {
 
   // It is a logical and expression
   // Create exit block for short-circuiting
-  const std::string codeLine = node->codeLoc.toPrettyLine();
-  llvm::BasicBlock *bExit = createBlock("land.exit." + codeLine);
+  const std::string codeLoc = node->codeLoc.toPrettyLineAndColumn();
+  llvm::BasicBlock *bExit = createBlock("land.exit." + codeLoc);
 
   // Visit the first operand
   llvm::Value *firstOperandValue = resolveValue(node->operands().front());
 
   // Prepare an array for value-to-block-mapping
-  std::pair<llvm::Value *, llvm::BasicBlock *> shortCircuitBlocks[node->operands().size()];
+  std::pair<llvm::BasicBlock *, llvm::Value *> shortCircuitBlocks[node->operands().size()];
   // The first element is the first operand value with the original block
-  shortCircuitBlocks[0] = {firstOperandValue, builder.GetInsertBlock()};
+  shortCircuitBlocks[0] = {builder.GetInsertBlock(), firstOperandValue};
   // Create a block for each additional operand and save it to the mapping
   for (size_t i = 1; i < node->operands().size(); i++) {
-    llvm::BasicBlock *nextBlock = createBlock("land." + std::to_string(i) + "." + codeLine);
-    shortCircuitBlocks[i] = {nullptr, nextBlock};
+    llvm::BasicBlock *nextBlock = createBlock("land." + std::to_string(i) + "." + codeLoc);
+    shortCircuitBlocks[i] = {nextBlock, nullptr};
   }
   // Create conditional jump to the exit block if the first operand was true, otherwise to the next block
-  insertCondJump(firstOperandValue, shortCircuitBlocks[1].second, bExit);
+  insertCondJump(firstOperandValue, shortCircuitBlocks[1].first, bExit);
 
   // Create block for each operand
   for (int i = 1; i < node->operands().size(); i++) {
     // Switch to the next block
-    switchToBlock(shortCircuitBlocks[i].second);
+    switchToBlock(shortCircuitBlocks[i].first);
     // Evaluate operand and save the result in the mapping
-    shortCircuitBlocks[i].first = resolveValue(node->operands()[i]);
+    shortCircuitBlocks[i].second = resolveValue(node->operands()[i]);
+    // Replace the array entry with the current insert block, since the insert block could have changed in the meantime
+    shortCircuitBlocks[i].first = builder.GetInsertBlock();
     // Check if there are more blocks to process
-    if (i < node->operands().size() - 1) {
-      // Create conditional jump to the exit block if the first operand was true, otherwise to the next block
-      insertCondJump(shortCircuitBlocks[i].first, shortCircuitBlocks[i + 1].second, bExit);
-      continue;
+    if (i == node->operands().size() - 1) {
+      // Insert a simple jump to the exit block for the last block
+      insertJump(bExit);
+    } else {
+      // Create conditional jump to the exit block if the operand was true, otherwise to the next block
+      insertCondJump(shortCircuitBlocks[i].second, shortCircuitBlocks[i + 1].first, bExit);
     }
-    // Insert a simple jump to the exit block for the last block
-    insertJump(bExit);
   }
 
   // Get the result with the phi node
   switchToBlock(bExit);
   llvm::PHINode *result = builder.CreatePHI(firstOperandValue->getType(), node->operands().size(), "land_phi");
-  for (const auto &[value, incomingBlock] : shortCircuitBlocks)
+  for (const auto &[incomingBlock, value] : shortCircuitBlocks)
     result->addIncoming(value, incomingBlock);
 
   // Return the result

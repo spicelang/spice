@@ -83,6 +83,11 @@ void execTestCase(const TestCase &testCase) {
     // Execute import collector and semantic analysis stages
     mainSourceFile.runImportCollector();
     mainSourceFile.runSymbolTableBuilder();
+
+    // Check symbol table output
+    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYMBOL_TABLE,
+                            [&]() { return mainSourceFile.globalScope->symbolTable.toJSON().dump(2); });
+
     mainSourceFile.runTypeChecker();
     mainSourceFile.runBorrowChecker();
     mainSourceFile.runEscapeAnalyzer();
@@ -91,14 +96,10 @@ void execTestCase(const TestCase &testCase) {
     if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT))
       FAIL() << "Expected error, but got no error";
 
-    // Check SymbolTable
-    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYMBOL_TABLE,
-                            [&]() { return mainSourceFile.globalScope->symbolTable.toJSON().dump(2); });
-
-    // Execute generator
-    mainSourceFile.runIRGenerator();
+    // Execute IR generator
     for (auto &dependency : mainSourceFile.dependencies)
       dependency.second.first->runIRGenerator();
+    mainSourceFile.runIRGenerator();
 
     // Check unoptimized IR code
     TestUtil::checkRefMatch(
@@ -117,9 +118,9 @@ void execTestCase(const TestCase &testCase) {
           testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_OPT_IR[i - 1],
           [&]() {
             cliOptions.optLevel = i;
-            mainSourceFile.runIROptimizer();
             for (auto &dependency : mainSourceFile.dependencies)
               dependency.second.first->runIROptimizer();
+            mainSourceFile.runIROptimizer();
             return mainSourceFile.compilerOutput.irOptString;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {
@@ -151,10 +152,10 @@ void execTestCase(const TestCase &testCase) {
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           resourceManager.linker.addLinkerFlag(linkerFlag);
 
-      // Emit object file
-      mainSourceFile.runObjectEmitter();
+      // Emit object files
       for (auto &dependency : mainSourceFile.dependencies)
         dependency.second.first->runObjectEmitter();
+      mainSourceFile.runObjectEmitter();
 
       // Run linker
       resourceManager.linker.link();
