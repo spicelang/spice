@@ -13,6 +13,7 @@
 #include "util/TestUtil.h"
 #include <SourceFile.h>
 #include <cli/CLIInterface.h>
+#include <exception/IRError.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
@@ -34,7 +35,7 @@ void execTestCase(const TestCase &testCase) {
                            /* targetArch= */ std::string(targetTriple.getArchName()),
                            /* targetVendor= */ std::string(targetTriple.getVendorName()),
                            /* targetOs= */ std::string(targetTriple.getOSName()),
-                           /* execute= */ true,
+                           /* execute= */ false, // If we set this to 'true', the compiler will not emit object files
                            /* isNativeTarget= */ true,
                            /* cacheDir= */ "./cache",
                            /* outputDir= */ ".",
@@ -96,9 +97,11 @@ void execTestCase(const TestCase &testCase) {
     if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT))
       FAIL() << "Expected error, but got no error";
 
-    // Execute IR generator
+    // Run backend for all dependencies
     for (auto &dependency : mainSourceFile.dependencies)
-      dependency.second.first->runIRGenerator();
+      dependency.second.first->runBackEnd();
+
+    // Execute IR generator
     mainSourceFile.runIRGenerator();
 
     // Check unoptimized IR code
@@ -118,8 +121,6 @@ void execTestCase(const TestCase &testCase) {
           testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_OPT_IR[i - 1],
           [&]() {
             cliOptions.optLevel = i;
-            for (auto &dependency : mainSourceFile.dependencies)
-              dependency.second.first->runIROptimizer();
             mainSourceFile.runIROptimizer();
             return mainSourceFile.compilerOutput.irOptString;
           },
@@ -153,9 +154,8 @@ void execTestCase(const TestCase &testCase) {
           resourceManager.linker.addLinkerFlag(linkerFlag);
 
       // Emit object files
-      for (auto &dependency : mainSourceFile.dependencies)
-        dependency.second.first->runObjectEmitter();
       mainSourceFile.runObjectEmitter();
+      mainSourceFile.concludeCompilation();
 
       // Run linker
       resourceManager.linker.link();
@@ -171,6 +171,8 @@ void execTestCase(const TestCase &testCase) {
   } catch (ParserError &error) {
     TestUtil::handleError(testCase, error);
   } catch (SemanticError &error) {
+    TestUtil::handleError(testCase, error);
+  } catch (IRError &error) {
     TestUtil::handleError(testCase, error);
   }
 
