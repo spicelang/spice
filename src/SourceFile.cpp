@@ -474,9 +474,8 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
     concludeCompilation();
   });
 
-  // Wait until all compile tasks are done
-  if (mainFile)
-    resourceManager.threadPool.wait_for_tasks();
+  // Wait until all compile tasks for all depending source files are done
+  resourceManager.threadPool.wait_for_tasks();
 
   if (mainFile) {
     resourceManager.totalTimer.stop();

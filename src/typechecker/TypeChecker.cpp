@@ -1609,6 +1609,12 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
   std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
   while (!tmQueue.empty()) {
     DataTypeNode::TypeModifier typeModifier = tmQueue.front();
+
+    // Only the outermost array can have an unknown size
+    if (type.isArray() && type.getArraySize() == ARRAY_SIZE_UNKNOWN)
+      throw SemanticError(node, ARRAY_SIZE_INVALID,
+                          "Usage of incomplete array type. Only the outermost array type may have unknown size");
+
     switch (typeModifier.modifierType) {
     case DataTypeNode::TYPE_PTR: {
       type = type.toPointer(node);
@@ -1621,9 +1627,6 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
     case DataTypeNode::TYPE_ARRAY: {
       if (typeModifier.hasSize && typeModifier.hardcodedSize <= 1)
         throw SemanticError(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated");
-      // Do not allow arrays of dyn
-      if (type.is(TY_DYN))
-        throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
       type = type.toArray(node, typeModifier.hardcodedSize);
       break;
     }
