@@ -1,0 +1,5 @@
+const bool SIZE = false;
+
+f<int> main() {
+    short[SIZE] test;
+}

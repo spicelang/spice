@@ -1490,7 +1490,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
     }
   }
 
-  const SymbolType arrayType = actualItemType.toArray(node, node->actualSize);
+  const SymbolType arrayType = actualItemType.toArray(node, node->actualSize, true);
   return ExprResult{node->setEvaluatedSymbolType(arrayType, manIdx)};
 }
 
@@ -1625,6 +1625,19 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       break;
     }
     case DataTypeNode::TYPE_ARRAY: {
+      const std::string &varName = typeModifier.sizeVarName;
+      if (!varName.empty()) {
+        SymbolTableEntry *globalVar = rootScope->lookupStrict(varName);
+        if (!globalVar)
+          throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + varName + "' ");
+        if (!globalVar->specifiers.isConst())
+          throw SemanticError(node, EXPECTED_CONST_VARIABLE, "The size of the array must be known at compile time");
+        if (!globalVar->getType().is(TY_INT))
+          throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "Expected variable of type int");
+        assert(globalVar->compileTimeValue != nullptr);
+        typeModifier.hardcodedSize = globalVar->compileTimeValue->intValue;
+      }
+
       if (typeModifier.hasSize && typeModifier.hardcodedSize <= 1)
         throw SemanticError(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated");
       type = type.toArray(node, typeModifier.hardcodedSize);
@@ -1715,6 +1728,10 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return SymbolType(TY_INT);
 
   if (entryType.is(TY_STRUCT)) {
+    // Check if struct is defined before the current code location
+    if (entry->declNode->codeLoc > node->codeLoc)
+      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
+
     // Collect the concrete template types
     std::vector<SymbolType> concreteTemplateTypes;
     if (node->templateTypeLst()) {

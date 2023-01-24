@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/arrays/error-size-global-var-unknown/source.spice:4:5:
+Referenced undefined variable: Could not find global variable 'GLOBAL_VAR_INVALID' 
+
+4  bool[GLOBAL_VAR_INVALID] test;
+   ^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,5 @@
+const int GLOBAL_VAR = 5;
+
+f<int> main() {
+    bool[GLOBAL_VAR_INVALID] test;
+}

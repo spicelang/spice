@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/arrays/error-size-global-var-invalid-type/source.spice:4:5:
+Wrong data type for operator: Expected variable of type int
+
+4  short[SIZE] test;
+   ^^^^^^^^^^^

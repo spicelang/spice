@@ -435,7 +435,7 @@ public:
   // Public members
   std::string varName;
   SymbolTableEntry *entry = nullptr;
-  bool hasAssigment = false;
+  bool hasValue = false;
 };
 
 // ========================================================== ExtDeclNode ========================================================
@@ -1584,7 +1584,8 @@ public:
   struct TypeModifier {
     TypeModifierType modifierType = TYPE_PTR;
     bool hasSize = false;
-    int hardcodedSize = 0;
+    unsigned int hardcodedSize = 0;
+    std::string sizeVarName;
   };
 
   // Constructors
@@ -1596,13 +1597,6 @@ public:
 
   // Public get methods
   [[nodiscard]] BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
-  [[nodiscard]] std::vector<AssignExprNode *> arraySizeExpr() const { return getChildren<AssignExprNode>(); }
-
-  // Util methods
-  [[nodiscard]] bool isParamType() const {
-    auto declStmt = dynamic_cast<DeclStmtNode *>(parent);
-    return declStmt && declStmt->isParam();
-  }
 
   // Public members
   std::queue<TypeModifier> tmQueue;

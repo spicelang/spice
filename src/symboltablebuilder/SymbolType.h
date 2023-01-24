@@ -54,7 +54,7 @@ public:
   // Unions
   union TypeChainElementData {
     // Union fields
-    long arraySize = 0;     // TY_ARRAY
+    size_t arraySize = 0;   // TY_ARRAY
     bool numericSigned;     // TY_INT, TY_SHORT, TY_LONG
     Scope *structBodyScope; // TY_STRUCT, TY_INTERFACE, TY_ENUM
 
@@ -120,7 +120,7 @@ public:
   // Public methods
   [[nodiscard]] SymbolType toPointer(const ASTNode *node) const;
   [[nodiscard]] SymbolType toReference(const ASTNode *node) const;
-  [[nodiscard]] SymbolType toArray(const ASTNode *node, long size = 0) const;
+  [[nodiscard]] SymbolType toArray(const ASTNode *node, size_t size = 0, bool skipDynCheck = false) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
