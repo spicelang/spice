@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/structs/error-declaration-after-usage/source.spice:4:5:
+Referenced undefined struct: Structs must be defined before usage
+
+4  TestStruct<char> s = TestStruct<char
+   ^^^^^^^^^^^^^^^^

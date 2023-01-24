@@ -471,6 +471,9 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
       throw SemanticError(node->constant(), OPERATOR_WRONG_DATA_TYPE,
                           "Expected " + globalVarType.getName() + ", but got " + rhsType.getName());
     }
+
+    // Update compile time value of entry with the value of the constant
+    node->entry->compileTimeValue = &node->constant()->getCompileTimeValue();
   }
 
   // Check if the type is still missing

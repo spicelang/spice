@@ -25,6 +25,11 @@ public:
   [[nodiscard]] std::string toPrettyString() const;
   [[nodiscard]] std::string toPrettyLine() const;
   [[nodiscard]] std::string toPrettyLineAndColumn() const;
+
+  // Operators
+  friend bool operator==(const CodeLoc &a, const CodeLoc &b) { return a.line == b.line && a.col == b.col; }
+  friend bool operator<(const CodeLoc &a, const CodeLoc &b) { return a.line == b.line ? a.col < b.col : a.line < b.line; }
+  friend bool operator>(const CodeLoc &a, const CodeLoc &b) { return a.line == b.line ? a.col > b.col : a.line > b.line; }
 };
 
 } // namespace spice::compiler

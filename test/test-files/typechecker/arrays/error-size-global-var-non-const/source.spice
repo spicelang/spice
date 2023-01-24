@@ -1,0 +1,5 @@
+int SIZE = 3;
+
+f<int> main() {
+    char[SIZE] test = {'H', 'e', 'l'};
+}

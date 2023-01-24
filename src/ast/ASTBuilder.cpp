@@ -308,7 +308,7 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
       currentNode = globalVarDefNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) { // Constant
       currentNode = globalVarDefNode->createChild<ConstantNode>(CodeLoc(rule->start, filePath));
-      globalVarDefNode->hasAssigment = true;
+      globalVarDefNode->hasValue = true;
     } else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1688,13 +1688,18 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
       i++; // Consume LBRACKET
       subTree = ctx->children[i];
       bool hasSize = false;
-      int hardCodedSize = 0;
+      unsigned int hardCodedSize = 0;
+      std::string sizeVarName;
       if (auto t4 = dynamic_cast<TerminalNode *>(subTree); t4->getSymbol()->getType() == SpiceParser::INT_LIT) {
         hasSize = true;
         hardCodedSize = std::stoi(t4->getSymbol()->getText());
         i++; // Consume INTEGER
+      } else if (auto t5 = dynamic_cast<TerminalNode *>(subTree); t5->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+        hasSize = true;
+        sizeVarName = getIdentifier(t5);
+        i++; // Consume IDENTIFIER
       }
-      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_ARRAY, hasSize, hardCodedSize});
+      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_ARRAY, hasSize, hardCodedSize, sizeVarName});
     } else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
 

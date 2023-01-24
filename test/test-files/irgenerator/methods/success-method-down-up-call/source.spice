@@ -1,13 +1,13 @@
-f<int> main() {
-    TestStruct<char> s = TestStruct<char>{ 'a', 1 };
-    s.printTest();
-}
-
 type T string|char;
 
 type TestStruct<T> struct {
     T base
     int test
+}
+
+f<int> main() {
+    TestStruct<char> s = TestStruct<char>{ 'a', 1 };
+    s.printTest();
 }
 
 p TestStruct.printTest() {

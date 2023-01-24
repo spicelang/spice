@@ -16,6 +16,7 @@ namespace spice::compiler {
 /**
  * Get the pointer type of the current type as a new type
  *
+ * @param node AST node for error messages
  * @return Pointer type of the current type
  */
 SymbolType SymbolType::toPointer(const ASTNode *node) const {
@@ -31,6 +32,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
 /**
  * Get the reference type of the current type as a new type
  *
+ * @param node AST node for error messages
  * @return Reference type of the current type
  */
 SymbolType SymbolType::toReference(const ASTNode *node) const {
@@ -46,11 +48,13 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
 /**
  * Get the array type of the current type as a new type
  *
+ * @param node AST node for error messages
+ * @param size Size of the array
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(const ASTNode *node, long size) const {
+SymbolType SymbolType::toArray(const ASTNode *node, size_t size, bool skipDynCheck /*=false*/) const {
   // Do not allow arrays of dyn
-  if (typeChain.back().superType == TY_DYN)
+  if (!skipDynCheck && typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;

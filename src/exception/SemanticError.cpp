@@ -179,6 +179,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Assertion condition must be bool";
   case ARRAY_INDEX_OUT_OF_BOUNDS:
     return "Array index out of bounds";
+  case EXPECTED_CONST_VARIABLE:
+    return "Expected const variable";
   case COMING_SOON_SA:
     return "Coming soon";
   }

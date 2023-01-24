@@ -84,14 +84,13 @@ void execTestCase(const TestCase &testCase) {
     // Execute import collector and semantic analysis stages
     mainSourceFile.runImportCollector();
     mainSourceFile.runSymbolTableBuilder();
-
-    // Check symbol table output
-    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYMBOL_TABLE,
-                            [&]() { return mainSourceFile.globalScope->symbolTable.toJSON().dump(2); });
-
     mainSourceFile.runTypeChecker();
     mainSourceFile.runBorrowChecker();
     mainSourceFile.runEscapeAnalyzer();
+
+    // Check symbol table output (check happens here, to include updates from type checker, borrow checker and escape analyzer)
+    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYMBOL_TABLE,
+                            [&]() { return mainSourceFile.globalScope->symbolTable.toJSON().dump(2); });
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT))

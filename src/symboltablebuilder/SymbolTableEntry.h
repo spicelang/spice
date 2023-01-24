@@ -20,6 +20,7 @@ namespace spice::compiler {
 class Scope;
 class ASTNode;
 struct CodeLoc;
+union CompileTimeValue;
 
 /**
  * Entry of a symbol table, representing an individual symbol with all its properties
@@ -53,6 +54,7 @@ public:
   ASTNode *declNode;
   const size_t orderIndex;
   const bool global;
+  const CompileTimeValue *compileTimeValue = nullptr;
   bool isVolatile = false;
   bool anonymous = false;
   bool used = false;
