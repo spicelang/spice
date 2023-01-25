@@ -534,9 +534,10 @@ void SourceFile::requestRuntimeModule(const RuntimeModuleName &moduleName) {
 }
 
 void SourceFile::addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope,
-                                      bool keepNewOnCollision /*=true*/, const std::string &predecessorName /*=""*/) {
+                                      bool keepNewOnCollision /*=true*/, SymbolTableEntry *importEntry /*=nullptr*/,
+                                      const std::string &predecessorName /*=""*/) {
   if (keepNewOnCollision || !exportedNameRegistry.contains(name)) // Overwrite potential existing entry
-    exportedNameRegistry[name] = {name, entry, scope, predecessorName};
+    exportedNameRegistry[name] = {name, entry, scope, importEntry, predecessorName};
   else // Name collision => we must remove the existing entry
     exportedNameRegistry.erase(name);
 }
@@ -544,11 +545,16 @@ void SourceFile::addNameRegistryEntry(const std::string &name, SymbolTableEntry 
 const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName) const {
   if (!exportedNameRegistry.contains(symbolName))
     return nullptr;
+
+  // Resolve the 'fullest-qualified' registry entry for the given name
   const NameRegistryEntry *registryEntry;
   do {
     registryEntry = &exportedNameRegistry.at(symbolName);
+    if (registryEntry->importEntry)
+      registryEntry->importEntry->used = true;
     symbolName = registryEntry->predecessorName;
   } while (!registryEntry->predecessorName.empty());
+
   return registryEntry;
 }
 
@@ -561,12 +567,16 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName
  * @param importName First fragment of all fully-qualified symbol names from that import
  */
 void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName) {
+  // Retrieve import entry
+  SymbolTableEntry *importEntry = globalScope->lookupStrict(importName);
+  assert(importEntry != nullptr);
+
   for (const auto &[originalName, entry] : importedSourceFile.exportedNameRegistry) {
     // Add fully qualified name
     const std::string newName = importName + SCOPE_ACCESS_TOKEN + originalName;
-    exportedNameRegistry.insert({newName, {newName, entry.targetEntry, entry.targetScope}});
+    exportedNameRegistry.insert({newName, {newName, entry.targetEntry, entry.targetScope, importEntry}});
     // Add the shortened name, considering the name collision
-    addNameRegistryEntry(originalName, entry.targetEntry, entry.targetScope, /*keepNewOnCollision=*/false, newName);
+    addNameRegistryEntry(originalName, entry.targetEntry, entry.targetScope, /*keepNewOnCollision=*/false, importEntry, newName);
   }
 }
 

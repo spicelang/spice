@@ -1147,6 +1147,11 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
       throw SemanticError(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility");
   }
 
+  // Check if we have seen a 'this.' prefix, because the generator needs that
+  if (varEntry->scope->type == SCOPE_STRUCT && node->identifierFragments.front() != THIS_VARIABLE_NAME)
+    throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE,
+                        "The symbol '" + node->fqIdentifier + "' could not be found. Missing 'this.' prefix?");
+
   // Set symbol table entry to used
   varEntry->used = true;
 
