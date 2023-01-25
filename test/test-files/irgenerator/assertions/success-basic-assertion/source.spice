@@ -1,4 +1,7 @@
 f<int> main() {
+    assert true;
+    printf("First assertion was true");
+
     assert 1 != 1;
     printf("Unreachable");
 }

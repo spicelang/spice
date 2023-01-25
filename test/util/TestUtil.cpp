@@ -63,11 +63,13 @@ std::vector<TestCase> TestUtil::collectTestCases(const std::string &suiteName, b
  *
  * @param refPath Path to the reference file
  * @param callback Callback to execute the required steps to get the actual test output
+ *
+ * @return True, if the ref file was found
  */
-void TestUtil::checkRefMatch(const std::string &refPath, GetOutputFct getActualOutput, ModifyOutputFct modifyOutputFct) {
+bool TestUtil::checkRefMatch(const std::string &refPath, GetOutputFct getActualOutput, ModifyOutputFct modifyOutputFct) {
   // Cancel if the ref file does not exist
   if (!FileUtil::fileExists(refPath))
-    return;
+    return false;
 
   // Get actual output
   std::string actualOutput = getActualOutput();
@@ -78,6 +80,8 @@ void TestUtil::checkRefMatch(const std::string &refPath, GetOutputFct getActualO
     modifyOutputFct(expectedOutput, actualOutput);
     EXPECT_EQ(expectedOutput, actualOutput);
   }
+
+  return true;
 }
 
 /**

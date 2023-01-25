@@ -2,7 +2,9 @@ import "source1" as s1;
 import "source2" as s2;
 
 f<int> dummy() {
-    return 0;
+    return s1::dummy() + s2::dummy();
 }
 
-f<int> main() {}
+f<int> main() {
+    dummy();
+}

@@ -161,7 +161,13 @@ void execTestCase(const TestCase &testCase) {
 
       // Execute binary
       const ExecResult result = FileUtil::exec(TestUtil::getDefaultExecutableName());
-      EXPECT_EQ(0, result.exitCode);
+
+      // Check if the exit code matches the expected one
+      bool exitRefFileFound = TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_EXIT_CODE,
+                                                      [&]() { return std::to_string(result.exitCode); });
+      // If no exit code ref file exists, check against 0
+      if (!exitRefFileFound)
+        EXPECT_EQ(0, result.exitCode);
 
       return result.output;
     });
