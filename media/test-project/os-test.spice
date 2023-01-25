@@ -1,23 +1,14 @@
-type T string|char;
+import "std/data/stack" as stc;
 
 f<int> main() {
-    TestStruct<char> s = TestStruct<char>{ 'a', 1 };
-    s.printTest();
-}
-
-type TestStruct<T> struct {
-    T base
-    int test
-}
-
-p TestStruct.printTest() {
-    printf("Test: %d\n", this.getTest());
-}
-
-f<int> TestStruct.getTest() {
-    if this.test == 1 {
-        this.test++;
-        this.printTest();
-    }
-    return this.test;
+    stc::Stack<int> s1 = stc::Stack<int>{};
+    s1.ctor();
+    s1.push(123);
+    s1.push(456);
+    s1.push(789);
+    printf("Stack size: %d\n", s1.getSize());
+    printf("Stack capacity: %d\n", s1.getCapacity());
+    printf("Stack item 3: %d\n", s1.pop());
+    printf("Stack item 2: %d\n", s1.pop());
+    printf("Stack item 1: %d\n", s1.pop());
 }

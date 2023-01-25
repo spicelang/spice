@@ -1729,7 +1729,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
   if (entryType.is(TY_STRUCT)) {
     // Check if struct is defined before the current code location
-    if (entry->declNode->codeLoc > node->codeLoc)
+    if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
       throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
 
     // Collect the concrete template types

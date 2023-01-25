@@ -98,6 +98,18 @@ bool Struct::hasSubstantiatedGenerics() const {
 bool Struct::isFullySubstantiated() const { return hasSubstantiatedGenerics(); }
 
 /**
+ * Retrieve the template types as vector of symbol types
+ *
+ * @return Template types as vector of symbol types
+ */
+std::vector<SymbolType> Struct::getTemplateTypes() const {
+  std::vector<SymbolType> templateSymbolTypes;
+  for (const GenericType &genericTemplateType : templateTypes)
+    templateSymbolTypes.push_back(genericTemplateType);
+  return templateSymbolTypes;
+}
+
+/**
  * Checks if the current struct is of infinite size.
  *
  * This can happen for structs with at least a:

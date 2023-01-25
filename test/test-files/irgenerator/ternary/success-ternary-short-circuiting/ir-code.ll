@@ -20,14 +20,14 @@ define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call i1 @_f__void__bool__condition1()
-  br i1 %1, label %land.1.L10, label %land.exit.L10
+  br i1 %1, label %land.1.L10C26, label %land.exit.L10C26
 
-land.1.L10:                                       ; preds = %0
+land.1.L10C26:                                    ; preds = %0
   %2 = call i1 @_f__void__bool__condition2()
-  br label %land.exit.L10
+  br label %land.exit.L10C26
 
-land.exit.L10:                                    ; preds = %land.1.L10, %0
-  %land_phi = phi i1 [ %1, %0 ], [ %2, %land.1.L10 ]
+land.exit.L10C26:                                 ; preds = %land.1.L10C26, %0
+  %land_phi = phi i1 [ %1, %0 ], [ %2, %land.1.L10C26 ]
   %3 = select i1 %land_phi, i32 2, i32 3
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
   %5 = load i32, ptr %result, align 4
