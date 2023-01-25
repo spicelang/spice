@@ -80,6 +80,7 @@ struct NameRegistryEntry {
   std::string name;
   SymbolTableEntry *targetEntry;
   Scope *targetScope;
+  SymbolTableEntry *importEntry = nullptr;
   std::string predecessorName;
 };
 
@@ -129,10 +130,10 @@ public:
                      const std::string &path);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   void collectAndPrintWarnings();
-  void collectAllSourceFiles(std::vector<SourceFile *>& sourceFiles);
+  void collectAllSourceFiles(std::vector<SourceFile *> &sourceFiles);
   void requestRuntimeModule(const RuntimeModuleName &moduleName);
   void addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true,
-                            const std::string &predecessorName = "");
+                            SymbolTableEntry *importEntry = nullptr, const std::string &predecessorName = "");
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
 
   // Public fields

@@ -214,7 +214,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
   // Visit own symbols
   CompilerWarningType warningType;
   std::string warningMessage;
-  for (const auto &[key, entry] : symbolTable.symbols) {
+  for (const auto &[_, entry] : symbolTable.symbols) {
     // Do not produce a warning if the symbol is used or has a special name
     if (entry.used || entry.name == UNUSED_VARIABLE_NAME)
       continue;
