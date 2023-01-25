@@ -44,14 +44,14 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /home/runner/work/spice/llvm
-          key: 15.0.6
+          key: 15.0.7
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
           cd ..
-          git clone --depth 1 --branch llvmorg-15.0.6 https://github.com/llvm/llvm-project llvm
+          git clone --depth 1 --branch llvmorg-15.0.7 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja ../llvm
