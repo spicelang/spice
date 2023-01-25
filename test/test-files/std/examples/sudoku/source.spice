@@ -1,36 +1,36 @@
 const int SIZE = 9;
 
-p print(int[SIZE][SIZE] grid) {
+p print(int[SIZE][SIZE]* grid) {
     for int i = 0; i < SIZE; i++ {
         for int j = 0; j < SIZE; j++ {
-             printf("%d ", grid[i][j]);
+             printf("%d ", (*grid)[i][j]);
         }
         printf("\n");
     }
 }
 
-f<bool> isSafe(int[SIZE][SIZE] grid, int row, int col, int num) {
+f<bool> isSafe(int[SIZE][SIZE]* grid, int row, int col, int num) {
     // Check if we find the same num in the similar row -> return false
     for int x = 0; x <= SIZE - 1; x++ {
-        if grid[row][x] == num {
+        if (*grid)[row][x] == num {
             return false;
         }
     }
 
     // Check if we find the same num in the similar column -> return false
     for int x = 0; x <= SIZE - 1; x++ {
-        if grid[x][col] == num {
+        if (*grid)[x][col] == num {
             return false;
         }
     }
 
     // Check if we find the same num in the particular 3*3 matrix -> return false
-    int startRow = row - row % 3;
-    int startCol = col - col % 3;
+    const int startRow = row - row % 3;
+    const int startCol = col - col % 3;
 
     for int i = 0; i < 3; i++ {
         for int j = 0; j < 3; j++ {
-            if grid[i + startRow][j + startCol] == num {
+            if (*grid)[i + startRow][j + startCol] == num {
                 return false;
             }
         }
@@ -39,7 +39,7 @@ f<bool> isSafe(int[SIZE][SIZE] grid, int row, int col, int num) {
     return true;
 }
 
-f<bool> solveSudoku(int[SIZE][SIZE] grid, int row, int col) {
+f<bool> solveSudoku(int[SIZE][SIZE]* grid, int row, int col) {
     // Check if we have reached the second last row and the last column.
     // We return true to avoid further backtracking
     if row == SIZE - 1 && col == SIZE { return true; }
@@ -49,19 +49,19 @@ f<bool> solveSudoku(int[SIZE][SIZE] grid, int row, int col) {
         col = 0;
     }
 
-    if grid[row][col] > 0 {
+    if (*grid)[row][col] > 0 {
         return solveSudoku(grid, row, col + 1);
     }
 
     for int num = 1; num <= SIZE; num++ {
         if isSafe(grid, row, col, num) {
-            grid[row][col] = num;
+            (*grid)[row][col] = num;
 
             if solveSudoku(grid, row, col + 1) {
                 return true;
             }
         }
-        grid[row][col] = 0;
+        (*grid)[row][col] = 0;
     }
 
     return false;
@@ -80,8 +80,8 @@ f<int> main() {
         { 0, 0, 5, 2, 0, 6, 3, 0, 0 }
     };
 
-    if solveSudoku(grid, 0, 0) {
-        print(grid);
+    if solveSudoku(&grid, 0, 0) {
+        print(&grid);
     } else {
         printf("No solution was found.");
     }
