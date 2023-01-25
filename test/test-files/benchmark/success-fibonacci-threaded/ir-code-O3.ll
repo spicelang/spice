@@ -60,7 +60,7 @@ for.body.L9:
   %22 = call i32 @pthread_join(ptr %6, ptr null) #3
   %23 = call i32 @pthread_join(ptr %11, ptr null) #3
   %24 = call i32 @pthread_join(ptr %18, ptr null) #3
-  %25 = call i32 @pthread_join(ptr poison, ptr null) #3
+  %25 = call i32 @pthread_join(ptr , ptr null) #3
   %26 = call i32 @pthread_join(ptr poison, ptr null) #3
   %27 = call i32 @pthread_join(ptr poison, ptr null) #3
   %28 = call i32 @pthread_join(ptr poison, ptr null) #3
