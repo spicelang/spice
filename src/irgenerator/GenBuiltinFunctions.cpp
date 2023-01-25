@@ -103,11 +103,13 @@ std::any IRGenerator::visitJoinCall(const JoinCallNode *node) {
     if (assignExprSymbolType.isArray()) { // Multiple ids
       assert(assignExprSymbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
       llvm::Type *threadIdPtrTy = assignExprSymbolType.toLLVMType(context, currentScope);
+      llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
       for (int i = 0; i < threadIdPtrTy->getArrayNumElements(); i++) {
         // Get thread id that has to be joined
-        llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
         threadIdPtr = builder.CreateGEP(threadIdPtrTy, threadIdPtr, indices);
         threadIdPointers.push_back(threadIdPtr);
+        // Use offset 1 for all other thread ids
+        indices[1] = builder.getInt32(1);
       }
     } else { // Single id
       threadIdPointers.push_back(threadIdPtr);
@@ -117,7 +119,7 @@ std::any IRGenerator::visitJoinCall(const JoinCallNode *node) {
   // Create a call to pthread_join for each thread id pointer
   for (llvm::Value *threadIdPtr : threadIdPointers) {
     // Load thread id that has to be joined
-    llvm::Value *threadId = builder.CreateLoad(builder.getInt8PtrTy(), threadIdPtr);
+    llvm::Value *threadId = builder.CreateLoad(builder.getPtrTy(), threadIdPtr);
     // Create call to pthread_join
     builder.CreateCall(joinFct, {threadId, voidPtrPtrNull});
   }
