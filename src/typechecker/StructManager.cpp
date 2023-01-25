@@ -114,6 +114,11 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       substantiatedStruct->entry = matchScope->lookupStrict(newSignature);
       assert(substantiatedStruct->entry != nullptr);
 
+      // Attach the template types to the new struct entry
+      SymbolType entryType = substantiatedStruct->entry->getType();
+      entryType.setTemplateTypes(substantiatedStruct->getTemplateTypes());
+      substantiatedStruct->entry->updateType(entryType, true);
+
       // Copy struct scope
       const std::string newScopeName = STRUCT_SCOPE_PREFIX + newSignature;
       matchScope->copyChildScope(STRUCT_SCOPE_PREFIX + presetStruct.name, newScopeName);

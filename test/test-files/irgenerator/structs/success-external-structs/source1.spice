@@ -4,5 +4,5 @@ public type Vec struct {
 }
 
 public p Vec.print() {
-    printf("Test: %d, %d", this.f1, this.f2);
+    printf("Test: %d, %d\n", this.f1, this.f2);
 }

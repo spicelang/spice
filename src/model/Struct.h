@@ -35,6 +35,7 @@ public:
   static std::string getSignature(const std::string &name, const std::vector<SymbolType> &concreteTemplateTypes);
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
+  [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
   // bool hasInfiniteSize(Scope *anchorScope = nullptr) const;
 
   // Public members

@@ -161,18 +161,11 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
 
   // Struct
   if (symbolType.is(TY_STRUCT)) {
-    // Get struct entry
-    Scope *accessScope = symbolType.getStructBodyScope()->parent;
-    SymbolTableEntry *structEntry = accessScope->lookup(symbolType.getSubType());
-    assert(structEntry != nullptr);
-    assert(std::none_of(structEntry->getType().getTemplateTypes().begin(), structEntry->getType().getTemplateTypes().end(),
-                        [](const SymbolType &templateType) { return templateType.is(TY_GENERIC); }));
-
     // Retrieve struct type
-    Scope *structScope = structEntry->getType().getStructBodyScope();
+    Scope *structScope = symbolType.getStructBodyScope();
     assert(structScope != nullptr);
     const size_t fieldCount = structScope->getFieldCount();
-    auto structType = reinterpret_cast<llvm::StructType *>(structEntry->getType().toLLVMType(context, structScope));
+    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, structScope));
 
     // Get default values for all fields of the struct
     std::vector<llvm::Constant *> fieldConstants;
