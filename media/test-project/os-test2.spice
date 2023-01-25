@@ -1,8 +1,3 @@
-public type Vec struct {
-    int f1
-    bool f2
-}
-
-public p Vec.print() {
-    printf("Test: %d, %d\n", this.f1, this.f2);
+public f<int> dummy() {
+    return 1;
 }

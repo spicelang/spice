@@ -209,6 +209,10 @@ void SourceFile::runSymbolTableBuilder() {
   Timer timer(&compilerOutput.times.symbolTableBuilder);
   timer.start();
 
+  // The symbol tables of all dependencies are present at this point, so we can merge the exported name registries in
+  for (const auto &[importName, sourceFile] : dependencies)
+    mergeNameRegistries(*sourceFile.first, importName);
+
   // Build symbol table of the current file
   SymbolTableBuilder symbolTableBuilder(resourceManager, this);
   symbolTableBuilder.visit(static_cast<EntryNode *>(ast.get()));
@@ -231,12 +235,8 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
     return;
 
   // Type-check all dependencies first
-  for (const auto &[importName, sourceFile] : dependencies) {
-    // Type-check
+  for (const auto &[importName, sourceFile] : dependencies)
     sourceFile.first->runTypeCheckerFirst();
-    // Merge exported names of the imported file with the existing ones
-    mergeNameRegistries(*sourceFile.first, importName);
-  }
 
   Timer timer(&compilerOutput.times.typeCheckerPre);
   timer.start();
@@ -569,7 +569,7 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName
 void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName) {
   // Retrieve import entry
   SymbolTableEntry *importEntry = globalScope->lookupStrict(importName);
-  assert(importEntry != nullptr);
+  assert(importEntry != nullptr || importName.starts_with("__")); // Runtime imports start with two underscores
 
   for (const auto &[originalName, entry] : importedSourceFile.exportedNameRegistry) {
     // Add fully qualified name

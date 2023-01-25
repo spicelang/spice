@@ -1,5 +1,5 @@
 import "source3" as s3;
 
-f<int> dummy() {
-    return 0;
+public f<int> dummy() {
+    return 2 + s3::dummy() + dummy();
 }

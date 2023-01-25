@@ -55,6 +55,14 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
   // Use the correct dir separator for the current OS
   CommonUtil::replaceAll(importPath, "/", std::string(1, FileUtil::DIR_SEPARATOR));
 
+  // Check if the import already exists
+  SymbolTableEntry *importEntry = rootScope->lookupStrict(node->importName);
+  if (importEntry != nullptr)
+    throw SemanticError(node, DUPLICATE_IMPORT_NAME, "Duplicate import '" + node->importName + "'");
+
+  // Create symbol for import
+  node->entry = rootScope->insert(node->importName, SymbolSpecifiers(TY_IMPORT), node);
+
   // Create the imported source file
   const auto importedSourceFile = sourceFile->createSourceFile(node->importName, importPath, isStd);
   // Register it as a dependency to the current source file

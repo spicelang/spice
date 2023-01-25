@@ -60,7 +60,7 @@ public:
 
   // Public static methods
   static std::vector<TestCase> collectTestCases(const std::string &suiteName, bool useSubDirs);
-  static void checkRefMatch(
+  static bool checkRefMatch(
       const std::string &refPath, GetOutputFct getActualOutput,
       ModifyOutputFct modifyOutput = [](std::string &, std::string &) {});
   static void handleError(const TestCase &testCase, const std::exception &error);
