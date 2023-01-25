@@ -1,40 +1,40 @@
-import "std/type/long" as longTy;
+import "std/type/long";
 
 f<int> main() {
     // toDouble()
-    double asDouble = longTy.toDouble(123l);
+    double asDouble = toDouble(123l);
     assert asDouble == 123.0;
 
     // toInt()
-    int asInt = longTy.toInt(459873l);
+    int asInt = toInt(459873l);
     assert asInt == 459873;
 
     // toShort()
-    short asShort = longTy.toShort(-345l);
+    short asShort = toShort(-345l);
     assert asShort == -345s;
 
     // toByte()
-    byte asByte = longTy.toByte(12l);
+    byte asByte = toByte(12l);
     assert asByte == (byte) 12;
 
     // toChar()
-    char asChar = longTy.toChar(66l);
+    char asChar = toChar(66l);
     assert asChar == 'B';
 
     // toString()
-    //string asString = longTy.toString(12345l);
+    //string asString = toString(12345l);
     //assert asString == "12345";
     //printf("Str: %s\n", asString);
 
     // toBool()
-    bool asBool1 = longTy.toBool(1l);
+    bool asBool1 = toBool(1l);
     assert asBool1 == true;
-    bool asBool2 = longTy.toBool(0l);
+    bool asBool2 = toBool(0l);
     assert asBool2 == false;
 
     // isPowerOfTwo()
-    assert longTy.isPowerOfTwo(16l);
-    assert !longTy.isPowerOfTwo(31l);
+    assert isPowerOfTwo(16l);
+    assert !isPowerOfTwo(31l);
 
     printf("All assertions succeeded");
 }

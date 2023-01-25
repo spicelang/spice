@@ -13,34 +13,29 @@ target triple = "x86_64-w64-windows-gnu"
 define private void @_p__void__void__testProc__intarrayptrptrptr(ptr %0) {
   %nums = alloca ptr, align 8
   %nums1 = alloca ptr, align 8
-  %nums2 = alloca ptr, align 8
+  %nums2 = alloca [4 x i32], align 4
   store ptr %0, ptr %nums, align 8
   %2 = load ptr, ptr %nums, align 8
   %3 = load ptr, ptr %2, align 8
   %4 = load ptr, ptr %3, align 8
   store ptr %4, ptr %nums1, align 8
   %5 = load ptr, ptr %nums1, align 8
-  %6 = load ptr, ptr %5, align 8
-  store ptr %6, ptr %nums2, align 8
-  %7 = load ptr, ptr %nums2, align 8
-  %8 = getelementptr inbounds i32, ptr %7, i32 2
-  store i32 10, ptr %8, align 4
-  %9 = load ptr, ptr %nums2, align 8
-  %10 = getelementptr inbounds i32, ptr %9, i32 0
-  %11 = load i32, ptr %10, align 4
-  %12 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %11)
-  %13 = load ptr, ptr %nums2, align 8
-  %14 = getelementptr inbounds i32, ptr %13, i32 1
+  %6 = load [4 x i32], ptr %5, align 4
+  store [4 x i32] %6, ptr %nums2, align 4
+  %7 = getelementptr inbounds [4 x i32], ptr %nums2, i32 0, i32 2
+  store i32 10, ptr %7, align 4
+  %8 = getelementptr inbounds [4 x i32], ptr %nums2, i32 0, i32 0
+  %9 = load i32, ptr %8, align 4
+  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %9)
+  %11 = getelementptr inbounds [4 x i32], ptr %nums2, i32 0, i32 1
+  %12 = load i32, ptr %11, align 4
+  %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %12)
+  %14 = getelementptr inbounds [4 x i32], ptr %nums2, i32 0, i32 2
   %15 = load i32, ptr %14, align 4
-  %16 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %15)
-  %17 = load ptr, ptr %nums2, align 8
-  %18 = getelementptr inbounds i32, ptr %17, i32 2
-  %19 = load i32, ptr %18, align 4
-  %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %19)
-  %21 = load ptr, ptr %nums2, align 8
-  %22 = getelementptr inbounds i32, ptr %21, i32 3
-  %23 = load i32, ptr %22, align 4
-  %24 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 %23)
+  %16 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %15)
+  %17 = getelementptr inbounds [4 x i32], ptr %nums2, i32 0, i32 3
+  %18 = load i32, ptr %17, align 4
+  %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 %18)
   ret void
 }
 
@@ -53,29 +48,17 @@ define dso_local i32 @main() #0 {
   %intArray = alloca [4 x i32], align 4
   %intArray1 = alloca ptr, align 8
   %intArray2 = alloca ptr, align 8
-  %intArray3 = alloca ptr, align 8
-  %2 = alloca ptr, align 8
-  %3 = alloca ptr, align 8
-  %4 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.array.0, i64 16, i1 false)
   store [4 x i32] [i32 1, i32 2, i32 3, i32 4], ptr %intArray, align 4
-  %5 = getelementptr inbounds [4 x i32], ptr %intArray, i32 0, i32 1
-  %6 = load i32, ptr %5, align 4
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %6)
+  %2 = getelementptr inbounds [4 x i32], ptr %intArray, i32 0, i32 1
+  %3 = load i32, ptr %2, align 4
+  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %3)
   store ptr %intArray, ptr %intArray1, align 8
   store ptr %intArray1, ptr %intArray2, align 8
-  store ptr %intArray2, ptr %intArray3, align 8
-  %8 = load ptr, ptr %intArray3, align 8
-  %9 = load ptr, ptr %8, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds [4 x i32], ptr %10, i32 0, i32 0
-  store ptr %11, ptr %2, align 8
-  store ptr %2, ptr %3, align 8
-  store ptr %3, ptr %4, align 8
-  call void @_p__void__void__testProc__intarrayptrptrptr(ptr %4)
-  %12 = load i32, ptr %result, align 4
-  ret i32 %12
+  call void @_p__void__void__testProc__intarrayptrptrptr(ptr %intArray2)
+  %5 = load i32, ptr %result, align 4
+  ret i32 %5
 }
 
 ; Function Attrs: argmemonly nocallback nofree nounwind willreturn

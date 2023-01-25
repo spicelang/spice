@@ -13,7 +13,7 @@
         "signed": false
       },
       "state": "destructed",
-      "type": "TestStruct<generic(T)>"
+      "type": "TestStruct<long>"
     },
     {
       "codeLoc": "L16C1",

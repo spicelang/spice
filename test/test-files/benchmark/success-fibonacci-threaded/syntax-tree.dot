@@ -462,6 +462,8 @@ digraph {
  L9C37_CastExpr -> L9C37_PrefixUnaryExpr;
  L9C37_PostfixUnaryExpr [color="lightgreen",label="PostfixUnaryExpr"];
  L9C37_PrefixUnaryExpr -> L9C37_PostfixUnaryExpr;
+ L9C37_PostfixUnaryExpr [color="lightgreen",label="PostfixUnaryExpr"];
+ L9C37_PostfixUnaryExpr -> L9C37_PostfixUnaryExpr;
  L9C37_AtomicExpr [color="lightgreen",label="AtomicExpr"];
  L9C37_PostfixUnaryExpr -> L9C37_AtomicExpr;
  L10C9_StmtLst [color="lightgreen",label="StmtLst"];
@@ -474,6 +476,8 @@ digraph {
  L10C9_AssignExpr -> L10C9_PrefixUnaryExpr;
  L10C9_PostfixUnaryExpr [color="lightgreen",label="PostfixUnaryExpr"];
  L10C9_PrefixUnaryExpr -> L10C9_PostfixUnaryExpr;
+ L10C9_PostfixUnaryExpr [color="lightgreen",label="PostfixUnaryExpr"];
+ L10C9_PostfixUnaryExpr -> L10C9_PostfixUnaryExpr;
  L10C9_AtomicExpr [color="lightgreen",label="AtomicExpr"];
  L10C9_PostfixUnaryExpr -> L10C9_AtomicExpr;
  L10C17_AssignExpr [color="lightgreen",label="AssignExpr"];

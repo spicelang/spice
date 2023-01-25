@@ -1,39 +1,39 @@
-import "std/type/string" as stringTy;
+import "std/type/string";
 
 f<int> main() {
     // toDouble()
-    double asDouble = stringTy.toDouble("5.67");
+    double asDouble = toDouble("5.67");
     //assert asDouble == 5.67;
 
     // toInt()
-    int asInt = stringTy.toInt("-6546");
+    int asInt = toInt("-6546");
     //assert asInt == -6546;
 
     // toLong()
-    long asLong = stringTy.toLong("56");
+    long asLong = toLong("56");
     //assert asLong == 56l;
 
     // toShort()
-    short asShort = stringTy.toShort("-12");
+    short asShort = toShort("-12");
     //assert asShort == -12s;
 
     // toByte()
-    byte asByte = stringTy.toByte("12");
+    byte asByte = toByte("12");
     //assert asByte == (byte) 12;
 
     // toChar()
-    char asChar = stringTy.toChar("i");
+    char asChar = toChar("i");
     //assert asChar == 'i';
 
     // toString()
-    //string asString = stringTy.toString(15);
+    //string asString = toString(15);
     //assert asString == "15";
     //printf("Str: %s\n", asString);
 
     // toBool()
-    bool asBool1 = stringTy.toBool("true");
+    bool asBool1 = toBool("true");
     assert asBool1 == true;
-    bool asBool2 = stringTy.toBool("false");
+    bool asBool2 = toBool("false");
     assert asBool2 == false;
 
     printf("All assertions succeeded");

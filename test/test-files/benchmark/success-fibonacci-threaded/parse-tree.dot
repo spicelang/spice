@@ -600,6 +600,8 @@ digraph {
  L9C36_castExpr -> L9C36_prefixUnaryExpr;
  L9C36_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
  L9C36_prefixUnaryExpr -> L9C36_postfixUnaryExpr;
+ L9C36_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L9C36_postfixUnaryExpr -> L9C36_postfixUnaryExpr;
  L9C36_atomicExpr [color="lightgreen",label="atomicExpr"];
  L9C36_postfixUnaryExpr -> L9C36_atomicExpr;
  L9C36 [color="lightblue",label="IDENTIFIER: i"];
@@ -618,6 +620,8 @@ digraph {
  L10C8_assignExpr -> L10C8_prefixUnaryExpr;
  L10C8_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
  L10C8_prefixUnaryExpr -> L10C8_postfixUnaryExpr;
+ L10C8_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L10C8_postfixUnaryExpr -> L10C8_postfixUnaryExpr;
  L10C8_atomicExpr [color="lightgreen",label="atomicExpr"];
  L10C8_postfixUnaryExpr -> L10C8_atomicExpr;
  L10C8 [color="lightblue",label="IDENTIFIER: threads"];

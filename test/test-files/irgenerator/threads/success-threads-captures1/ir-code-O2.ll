@@ -40,11 +40,10 @@ for.exit.L5:                                      ; preds = %for.body.L5
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 define private noalias ptr @_thread0(ptr nocapture readonly %0) {
-thread.entry.L7:
-  %1 = load ptr, ptr %0, align 8
-  %2 = load i32, ptr %1, align 4
-  %3 = mul i32 %2, 100000
-  %4 = tail call i32 @usleep(i32 %3)
+  %2 = load ptr, ptr %0, align 8
+  %3 = load i32, ptr %2, align 4
+  %4 = mul i32 %3, 100000
+  %5 = tail call i32 @usleep(i32 %4)
   %puts = tail call i32 @puts(ptr nonnull @str.2)
   ret ptr null
 }

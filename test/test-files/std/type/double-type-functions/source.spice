@@ -1,30 +1,30 @@
-import "std/type/double" as doubleTy;
+import "std/type/double";
 
 f<int> main() {
     // toInt()
-    //int asInt = doubleTy.toInt(123.54);
+    //int asInt = toInt(123.54);
     //assert asInt == 123;
 
     // toShort()
-    //short asShort = doubleTy.toShort(12.345);
+    //short asShort = toShort(12.345);
     //assert asShort == 12;
 
     // toLong()
-    //long asLong = doubleTy.toLong(534569.2345);
+    //long asLong = toLong(534569.2345);
     //assert asLong == 534569l;
 
     // toByte()
-    //long asByte = doubleTy.toLong(53.89);
+    //long asByte = toLong(53.89);
     //assert asByte == (byte) 53;
 
     // toString()
-    //string asString = doubleTy.toString(9.0);
+    //string asString = toString(9.0);
     //assert asString == "9.0";
 
     // toBool()
-    bool asBool1 = doubleTy.toBool(1.0);
+    bool asBool1 = toBool(1.0);
     assert asBool1 == true;
-    bool asBool2 = doubleTy.toBool(0.0);
+    bool asBool2 = toBool(0.0);
     assert asBool2 == false;
 
     printf("All assertions succeeded");

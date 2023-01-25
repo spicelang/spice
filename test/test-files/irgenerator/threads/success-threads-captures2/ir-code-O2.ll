@@ -44,16 +44,15 @@ for.exit.L6:                                      ; preds = %for.body.L6
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 define private noalias ptr @_thread0(ptr nocapture readonly %0) {
-thread.entry.L8:
-  %1 = load ptr, ptr %0, align 8
-  %2 = getelementptr inbounds { ptr, ptr }, ptr %0, i64 0, i32 1
-  %3 = load ptr, ptr %2, align 8
-  %4 = load i32, ptr %3, align 4
-  %5 = mul i32 %4, 100000
-  %6 = tail call i32 @usleep(i32 %5)
-  %7 = load i32, ptr %1, align 4
-  %8 = shl i32 %7, 1
-  store volatile i32 %8, ptr %1, align 4
+  %2 = load ptr, ptr %0, align 8
+  %3 = getelementptr inbounds { ptr, ptr }, ptr %0, i64 0, i32 1
+  %4 = load ptr, ptr %3, align 8
+  %5 = load i32, ptr %4, align 4
+  %6 = mul i32 %5, 100000
+  %7 = tail call i32 @usleep(i32 %6)
+  %8 = load i32, ptr %2, align 4
+  %9 = shl i32 %8, 1
+  store volatile i32 %9, ptr %2, align 4
   %puts = tail call i32 @puts(ptr nonnull @str.2)
   ret ptr null
 }

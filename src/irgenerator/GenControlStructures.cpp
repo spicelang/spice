@@ -46,8 +46,7 @@ std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
   llvm::BasicBlock *bOriginal = builder.GetInsertBlock();
 
   // Create entry block for thread function
-  const std::string codeLine = node->codeLoc.toPrettyLine();
-  llvm::BasicBlock *bEntry = allocaInsertBlock = createBlock("thread.entry." + codeLine);
+  llvm::BasicBlock *bEntry = allocaInsertBlock = createBlock();
   switchToBlock(bEntry, threadFct);
 
   llvm::BasicBlock *allocaInsertBlockBackup = allocaInsertBlock;

@@ -3,9 +3,9 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-; Function Attrs: nofree nounwind
-define i32 @main() local_unnamed_addr #0 {
-entry.l3:
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local i32 @main() local_unnamed_addr #0 {
+while.body.L5:
   %putchar = tail call i32 @putchar(i32 72)
   %putchar.1 = tail call i32 @putchar(i32 101)
   %putchar.2 = tail call i32 @putchar(i32 108)
@@ -22,6 +22,7 @@ entry.l3:
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #0
+declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #1
 
-attributes #0 = { nofree nounwind }
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
