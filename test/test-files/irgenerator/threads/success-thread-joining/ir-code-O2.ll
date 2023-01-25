@@ -37,8 +37,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
 }
 
 define private noalias ptr @_thread0(ptr nocapture readnone %0) {
-thread.entry.L8:
-  %1 = tail call i32 @usleep(i32 300000)
+  %2 = tail call i32 @usleep(i32 300000)
   %puts = tail call i32 @puts(ptr nonnull @str.1)
   ret ptr null
 }
@@ -46,14 +45,13 @@ thread.entry.L8:
 declare i32 @pthread_create(ptr, ptr, ptr, ptr) local_unnamed_addr
 
 define private noalias ptr @_thread1(ptr nocapture readonly %0) {
-thread.entry.L13:
-  %1 = load ptr, ptr %0, align 8
-  %2 = getelementptr inbounds { ptr, ptr }, ptr %0, i64 0, i32 1
-  %3 = load ptr, ptr %2, align 8
+  %2 = load ptr, ptr %0, align 8
+  %3 = getelementptr inbounds { ptr, ptr }, ptr %0, i64 0, i32 1
   %4 = load ptr, ptr %3, align 8
-  %5 = tail call i32 @pthread_join(ptr %4, ptr null)
-  %6 = load ptr, ptr %1, align 8
-  %7 = tail call i32 @pthread_join(ptr %6, ptr null)
+  %5 = load ptr, ptr %4, align 8
+  %6 = tail call i32 @pthread_join(ptr %5, ptr null)
+  %7 = load ptr, ptr %2, align 8
+  %8 = tail call i32 @pthread_join(ptr %7, ptr null)
   %puts = tail call i32 @puts(ptr nonnull @str.2)
   ret ptr null
 }
@@ -61,8 +59,7 @@ thread.entry.L13:
 declare i32 @pthread_join(ptr, ptr) local_unnamed_addr
 
 define private noalias ptr @_thread2(ptr nocapture readnone %0) {
-thread.entry.L18:
-  %1 = tail call i32 @usleep(i32 200000)
+  %2 = tail call i32 @usleep(i32 200000)
   %puts = tail call i32 @puts(ptr nonnull @str.3)
   ret ptr null
 }

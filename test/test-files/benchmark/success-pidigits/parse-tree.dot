@@ -662,6 +662,8 @@ digraph {
  L21C35_castExpr -> L21C35_prefixUnaryExpr;
  L21C35_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
  L21C35_prefixUnaryExpr -> L21C35_postfixUnaryExpr;
+ L21C35_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L21C35_postfixUnaryExpr -> L21C35_postfixUnaryExpr;
  L21C35_atomicExpr [color="lightgreen",label="atomicExpr"];
  L21C35_postfixUnaryExpr -> L21C35_atomicExpr;
  L21C35 [color="lightblue",label="IDENTIFIER: i"];
@@ -1016,6 +1018,8 @@ digraph {
  L25C12_castExpr -> L25C12_prefixUnaryExpr;
  L25C12_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
  L25C12_prefixUnaryExpr -> L25C12_postfixUnaryExpr;
+ L25C12_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L25C12_postfixUnaryExpr -> L25C12_postfixUnaryExpr;
  L25C12_atomicExpr [color="lightgreen",label="atomicExpr"];
  L25C12_postfixUnaryExpr -> L25C12_atomicExpr;
  L25C12 [color="lightblue",label="IDENTIFIER: printedDigits"];

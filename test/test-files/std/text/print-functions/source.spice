@@ -1,10 +1,10 @@
 import "std/text/print" as print;
 
 f<int> main() {
-    print.println("Testing all examples ...");
-    print.lineBreak();
+    print::println("Testing all examples ...");
+    print::lineBreak();
     string output = "Next line";
-    print.print(output);
-    print.lineBreak(3);
-    print.print("Concluding line");
+    print::print(output);
+    print::lineBreak(3);
+    print::print("Concluding line");
 }

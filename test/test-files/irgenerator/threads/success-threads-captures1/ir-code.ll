@@ -50,14 +50,13 @@ for.exit.L5:                                      ; preds = %for.head.L5
 declare i32 @printf(ptr noundef, ...)
 
 define private ptr @_thread0(ptr %0) {
-thread.entry.L7:
-  %1 = getelementptr inbounds { ptr }, ptr %0, i32 0, i32 0
-  %2 = load ptr, ptr %1, align 8
-  %3 = load i32, ptr %2, align 4
-  %4 = mul i32 100, %3
-  %5 = mul i32 %4, 1000
-  %6 = call i32 @usleep(i32 %5)
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %2 = getelementptr inbounds { ptr }, ptr %0, i32 0, i32 0
+  %3 = load ptr, ptr %2, align 8
+  %4 = load i32, ptr %3, align 4
+  %5 = mul i32 100, %4
+  %6 = mul i32 %5, 1000
+  %7 = call i32 @usleep(i32 %6)
+  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
   ret ptr null
 }
 

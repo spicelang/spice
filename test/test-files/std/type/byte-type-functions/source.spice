@@ -1,30 +1,30 @@
-import "std/type/byte" as byteTy;
+import "std/type/byte";
 
 f<int> main() {
     // toDouble()
-    double asDouble = byteTy.toDouble((byte) 15);
+    double asDouble = toDouble((byte) 15);
     assert asDouble == 15.0;
 
     // toInt()
-    int asInt = byteTy.toInt((byte) 9);
+    int asInt = toInt((byte) 9);
     assert asInt == 9;
 
     // toShort()
-    short asShort = byteTy.toShort((byte) 6);
+    short asShort = toShort((byte) 6);
     assert asShort == 6s;
 
     // toLong()
-    long asLong = byteTy.toLong((byte) 63);
+    long asLong = toLong((byte) 63);
     assert asLong == 63l;
 
     // toString()
-    //string asString = byteTy.toString((byte) 13);
+    //string asString = toString((byte) 13);
     //assert asString == "13";
 
     // toBool()
-    bool asBool1 = byteTy.toBool((byte) 1);
+    bool asBool1 = toBool((byte) 1);
     assert asBool1 == true;
-    bool asBool2 = byteTy.toBool((byte) 0);
+    bool asBool2 = toBool((byte) 0);
     assert asBool2 == false;
 
     printf("All assertions succeeded");

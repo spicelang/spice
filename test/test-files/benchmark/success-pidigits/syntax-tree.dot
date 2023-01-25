@@ -508,6 +508,8 @@ digraph {
  L21C36_CastExpr -> L21C36_PrefixUnaryExpr;
  L21C36_PostfixUnaryExpr [color="lightgreen",label="PostfixUnaryExpr"];
  L21C36_PrefixUnaryExpr -> L21C36_PostfixUnaryExpr;
+ L21C36_PostfixUnaryExpr [color="lightgreen",label="PostfixUnaryExpr"];
+ L21C36_PostfixUnaryExpr -> L21C36_PostfixUnaryExpr;
  L21C36_AtomicExpr [color="lightgreen",label="AtomicExpr"];
  L21C36_PostfixUnaryExpr -> L21C36_AtomicExpr;
  L22C9_StmtLst [color="lightgreen",label="StmtLst"];
@@ -790,6 +792,8 @@ digraph {
  L25C13_CastExpr -> L25C13_PrefixUnaryExpr;
  L25C13_PostfixUnaryExpr [color="lightgreen",label="PostfixUnaryExpr"];
  L25C13_PrefixUnaryExpr -> L25C13_PostfixUnaryExpr;
+ L25C13_PostfixUnaryExpr [color="lightgreen",label="PostfixUnaryExpr"];
+ L25C13_PostfixUnaryExpr -> L25C13_PostfixUnaryExpr;
  L25C13_AtomicExpr [color="lightgreen",label="AtomicExpr"];
  L25C13_PostfixUnaryExpr -> L25C13_AtomicExpr;
  L26C13_Stmt [color="lightgreen",label="Stmt"];
