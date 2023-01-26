@@ -14,31 +14,31 @@ for.head.L5.preheader:                            ; preds = %1, %for.head.L5.pre
   %indvars.iv = phi i64 [ 0, %1 ], [ %indvars.iv.next, %for.head.L5.preheader ]
   %2 = getelementptr inbounds [9 x [9 x i32]], ptr %0, i64 0, i64 %indvars.iv, i64 0
   %3 = load i32, ptr %2, align 4
-  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 %3)
+  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %3)
   %5 = getelementptr inbounds [9 x [9 x i32]], ptr %0, i64 0, i64 %indvars.iv, i64 1
   %6 = load i32, ptr %5, align 4
-  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 %6)
+  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %6)
   %8 = getelementptr inbounds [9 x [9 x i32]], ptr %0, i64 0, i64 %indvars.iv, i64 2
   %9 = load i32, ptr %8, align 4
-  %10 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 %9)
+  %10 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %9)
   %11 = getelementptr inbounds [9 x [9 x i32]], ptr %0, i64 0, i64 %indvars.iv, i64 3
   %12 = load i32, ptr %11, align 4
-  %13 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 %12)
+  %13 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %12)
   %14 = getelementptr inbounds [9 x [9 x i32]], ptr %0, i64 0, i64 %indvars.iv, i64 4
   %15 = load i32, ptr %14, align 4
-  %16 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 %15)
+  %16 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %15)
   %17 = getelementptr inbounds [9 x [9 x i32]], ptr %0, i64 0, i64 %indvars.iv, i64 5
   %18 = load i32, ptr %17, align 4
-  %19 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 %18)
+  %19 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %18)
   %20 = getelementptr inbounds [9 x [9 x i32]], ptr %0, i64 0, i64 %indvars.iv, i64 6
   %21 = load i32, ptr %20, align 4
-  %22 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 %21)
+  %22 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %21)
   %23 = getelementptr inbounds [9 x [9 x i32]], ptr %0, i64 0, i64 %indvars.iv, i64 7
   %24 = load i32, ptr %23, align 4
-  %25 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 %24)
+  %25 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %24)
   %26 = getelementptr inbounds [9 x [9 x i32]], ptr %0, i64 0, i64 %indvars.iv, i64 8
   %27 = load i32, ptr %26, align 4
-  %28 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 %27)
+  %28 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %27)
   %putchar = tail call i32 @putchar(i32 10)
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond.not = icmp eq i64 %indvars.iv.next, 9
@@ -51,7 +51,7 @@ for.exit.L4:                                      ; preds = %for.head.L5.prehead
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
-; Function Attrs: argmemonly nofree nosync nounwind
+; Function Attrs: nofree nosync nounwind memory(argmem: readwrite)
 define private fastcc i1 @_f__void__bool__solveSudoku__intarrayarrayptr_int_int(ptr %0, i32 %1, i32 %2) unnamed_addr #1 {
 land.exit.L45C8:
   %3 = icmp eq i32 %1, 8
@@ -409,7 +409,7 @@ if.then.L83:                                      ; preds = %0
   br label %if.exit.L83
 
 if.else.L83:                                      ; preds = %0
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.2)
+  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
   br label %if.exit.L83
 
 if.exit.L83:                                      ; preds = %if.else.L83, %if.then.L83
@@ -419,11 +419,11 @@ if.exit.L83:                                      ; preds = %if.else.L83, %if.th
 ; Function Attrs: nofree nounwind
 declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #0
 
-; Function Attrs: argmemonly nocallback nofree nounwind willreturn writeonly
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #3
 
 attributes #0 = { nofree nounwind }
-attributes #1 = { argmemonly nofree nosync nounwind }
+attributes #1 = { nofree nosync nounwind memory(argmem: readwrite) }
 attributes #2 = { noinline nounwind optnone uwtable }
-attributes #3 = { argmemonly nocallback nofree nounwind willreturn writeonly }
+attributes #3 = { nocallback nofree nounwind willreturn memory(argmem: write) }
 attributes #4 = { nounwind }

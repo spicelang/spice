@@ -19,39 +19,39 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
   %1 = tail call i32 @_f__void__int__abs__int(i32 123) #2
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %1)
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %1)
   %3 = tail call i32 @_f__void__int__abs__int(i32 -137) #2
-  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %3)
+  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %3)
   %5 = tail call i16 @_f__void__short__abs__short(i16 56) #2
   %6 = sext i16 %5 to i32
-  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.3, i32 %6)
+  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %6)
   %8 = tail call i16 @_f__void__short__abs__short(i16 -3) #2
   %9 = sext i16 %8 to i32
-  %10 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.3, i32 %9)
+  %10 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %9)
   %11 = tail call i64 @_f__void__long__abs__long(i64 1234567890) #2
-  %12 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.5, i64 %11)
+  %12 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.5, i64 %11)
   %13 = tail call i64 @_f__void__long__abs__long(i64 -987654321) #2
-  %14 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.5, i64 %13)
+  %14 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.5, i64 %13)
   %15 = tail call double @_f__void__double__abs__double(double 5.612300e+01) #2
-  %16 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7, double %15)
+  %16 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7, double %15)
   %17 = tail call double @_f__void__double__abs__double(double -3.481200e+02) #2
-  %18 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7, double %17)
+  %18 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7, double %17)
   %19 = tail call double @_f__void__double__sin__double(double 7.834500e+01) #2
-  %20 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.8, double %19)
+  %20 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.8, double %19)
   %21 = tail call double @_f__void__double__sin__int(i32 23) #2
-  %22 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.9, double %21)
+  %22 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.9, double %21)
   %23 = tail call double @_f__void__double__sin__short(i16 -68) #2
-  %24 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, double %23)
+  %24 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, double %23)
   %25 = tail call double @_f__void__double__sin__long(i64 359) #2
-  %26 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.11, double %25)
+  %26 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.11, double %25)
   %27 = tail call double @_f__void__double__cos__double(double 7.834500e+01) #2
-  %28 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.12, double %27)
+  %28 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.12, double %27)
   %29 = tail call double @_f__void__double__cos__int(i32 23) #2
-  %30 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.13, double %29)
+  %30 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.13, double %29)
   %31 = tail call double @_f__void__double__cos__short(i16 -68) #2
-  %32 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.14, double %31)
+  %32 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.14, double %31)
   %33 = tail call double @_f__void__double__cos__long(i64 359) #2
-  %34 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.15, double %33)
+  %34 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, double %33)
   ret i32 0
 }
 

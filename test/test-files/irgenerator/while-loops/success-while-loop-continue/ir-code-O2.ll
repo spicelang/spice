@@ -16,11 +16,11 @@ while.body.L3:                                    ; preds = %0, %while.head.L3.b
   br i1 %2, label %while.head.L3.backedge.loopexit, label %while.head.L3.backedge
 
 while.head.L3.backedge.loopexit:                  ; preds = %while.body.L3
-  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, double %1, i32 10)
-  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, double %1, i32 9)
-  %5 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, double %1, i32 8)
-  %6 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, double %1, i32 7)
-  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, double %1, i32 6)
+  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 10)
+  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 9)
+  %5 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 8)
+  %6 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 7)
+  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 6)
   br label %while.head.L3.backedge
 
 while.head.L3.backedge:                           ; preds = %while.head.L3.backedge.loopexit, %while.body.L3

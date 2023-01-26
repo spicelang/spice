@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @printf.str.0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 1
 
-; Function Attrs: nofree nosync nounwind readnone
+; Function Attrs: nofree nosync nounwind memory(none)
 define private fastcc i32 @_f__void__int__ack__int_int(i32 %0, i32 %1) unnamed_addr #0 {
   %3 = icmp eq i32 %0, 0
   br i1 %3, label %if.then.L2, label %if.exit.L2
@@ -36,14 +36,14 @@ if.exit.L3:                                       ; preds = %if.exit.L2
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #1 {
   %1 = tail call fastcc i32 @_f__void__int__ack__int_int(i32 3, i32 12) #3
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 3, i32 12, i32 %1)
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 3, i32 12, i32 %1)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #2
 
-attributes #0 = { nofree nosync nounwind readnone }
+attributes #0 = { nofree nosync nounwind memory(none) }
 attributes #1 = { noinline nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
 attributes #3 = { nounwind }

@@ -15,12 +15,12 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %stringIntBoolTriple = alloca %__string_int_bool__Triple__string_int_bool, align 8
   call void @_mp__Triple_string_int_bool__void__ctor__string_int_bool(ptr nonnull %stringIntBoolTriple, ptr nonnull @anon.string.0, i32 1234, i1 true) #2
   %1 = call ptr @_mf__Triple_string_int_bool__string__getFirst(ptr nonnull %stringIntBoolTriple) #2
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, ptr %1)
+  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %1)
   %3 = call i32 @_mf__Triple_string_int_bool__int__getSecond(ptr nonnull %stringIntBoolTriple) #2
-  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %3)
+  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %3)
   %5 = call i1 @_mf__Triple_string_int_bool__bool__getThird(ptr nonnull %stringIntBoolTriple) #2
   %6 = zext i1 %5 to i32
-  %7 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.2, i32 %6)
+  %7 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, i32 %6)
   ret i32 0
 }
 

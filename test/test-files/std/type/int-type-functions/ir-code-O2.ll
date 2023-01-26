@@ -21,7 +21,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   br i1 %2, label %assert.exit.L6, label %assert.then.L6
 
 assert.then.L6:                                   ; preds = %0
-  %3 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.0)
+  %3 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.0)
   tail call void @exit(i32 1) #2
   unreachable
 
@@ -31,7 +31,7 @@ assert.exit.L6:                                   ; preds = %0
   br i1 %5, label %assert.exit.L10, label %assert.then.L10
 
 assert.then.L10:                                  ; preds = %assert.exit.L6
-  %6 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.1)
+  %6 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.1)
   tail call void @exit(i32 1) #2
   unreachable
 
@@ -41,7 +41,7 @@ assert.exit.L10:                                  ; preds = %assert.exit.L6
   br i1 %8, label %assert.exit.L14, label %assert.then.L14
 
 assert.then.L14:                                  ; preds = %assert.exit.L10
-  %9 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.2)
+  %9 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.2)
   tail call void @exit(i32 1) #2
   unreachable
 
@@ -51,7 +51,7 @@ assert.exit.L14:                                  ; preds = %assert.exit.L10
   br i1 %11, label %assert.exit.L18, label %assert.then.L18
 
 assert.then.L18:                                  ; preds = %assert.exit.L14
-  %12 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.3)
+  %12 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.3)
   tail call void @exit(i32 1) #2
   unreachable
 
@@ -61,7 +61,7 @@ assert.exit.L18:                                  ; preds = %assert.exit.L14
   br i1 %14, label %assert.exit.L22, label %assert.then.L22
 
 assert.then.L22:                                  ; preds = %assert.exit.L18
-  %15 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.4)
+  %15 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.4)
   tail call void @exit(i32 1) #2
   unreachable
 
@@ -70,7 +70,7 @@ assert.exit.L22:                                  ; preds = %assert.exit.L18
   br i1 %16, label %assert.exit.L31, label %assert.then.L31
 
 assert.then.L31:                                  ; preds = %assert.exit.L22
-  %17 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.5)
+  %17 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.5)
   tail call void @exit(i32 1) #2
   unreachable
 
@@ -79,7 +79,7 @@ assert.exit.L31:                                  ; preds = %assert.exit.L22
   br i1 %18, label %assert.then.L33, label %assert.exit.L33
 
 assert.then.L33:                                  ; preds = %assert.exit.L31
-  %19 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.6)
+  %19 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.6)
   tail call void @exit(i32 1) #2
   unreachable
 
@@ -88,7 +88,7 @@ assert.exit.L33:                                  ; preds = %assert.exit.L31
   br i1 %20, label %assert.exit.L36, label %assert.then.L36
 
 assert.then.L36:                                  ; preds = %assert.exit.L33
-  %21 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.7)
+  %21 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.7)
   tail call void @exit(i32 1) #2
   unreachable
 
@@ -97,12 +97,12 @@ assert.exit.L36:                                  ; preds = %assert.exit.L33
   br i1 %22, label %assert.then.L37, label %assert.exit.L37
 
 assert.then.L37:                                  ; preds = %assert.exit.L36
-  %23 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.8)
+  %23 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.8)
   tail call void @exit(i32 1) #2
   unreachable
 
 assert.exit.L37:                                  ; preds = %assert.exit.L36
-  %24 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0)
+  %24 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
   ret i32 0
 }
 

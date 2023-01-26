@@ -12,9 +12,9 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_a
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #1 {
-  %puts = tail call i32 @puts(ptr nonnull @str)
-  %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 5)
-  %puts1 = tail call i32 @puts(ptr nonnull @str.1)
+  %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str)
+  %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 5)
+  %puts1 = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.1)
   ret i32 0
 }
 

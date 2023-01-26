@@ -19,7 +19,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 33) #2
   %1 = call i64 @_mf__Queue_char__long__getSize(ptr nonnull %q1) #2
   %2 = call i64 @_mf__Queue_char__long__getCapacity(ptr nonnull %q1) #2
-  %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i64 %1, i64 %2)
+  %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %1, i64 %2)
   %4 = call i1 @_mf__Queue_char__bool__isEmpty(ptr nonnull %q1) #2
   br i1 %4, label %while.exit.L12, label %while.body.L12
 

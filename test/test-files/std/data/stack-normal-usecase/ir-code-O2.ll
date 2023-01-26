@@ -19,15 +19,15 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   call void @_mp__Stack_int__void__push__int(ptr nonnull %s1, i32 456) #2
   call void @_mp__Stack_int__void__push__int(ptr nonnull %s1, i32 789) #2
   %1 = call i64 @_mf__Stack_int__long__getSize(ptr nonnull %s1) #2
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i64 %1)
+  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %1)
   %3 = call i64 @_mf__Stack_int__long__getCapacity(ptr nonnull %s1) #2
-  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i64 %3)
+  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i64 %3)
   %5 = call i32 @_mf__Stack_int__int__pop(ptr nonnull %s1) #2
-  %6 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.2, i32 %5)
+  %6 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, i32 %5)
   %7 = call i32 @_mf__Stack_int__int__pop(ptr nonnull %s1) #2
-  %8 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.3, i32 %7)
+  %8 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %7)
   %9 = call i32 @_mf__Stack_int__int__pop(ptr nonnull %s1) #2
-  %10 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4, i32 %9)
+  %10 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4, i32 %9)
   ret i32 0
 }
 

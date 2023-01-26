@@ -27,7 +27,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   br i1 %7, label %assert.exit.L35, label %assert.then.L35
 
 assert.then.L35:                                  ; preds = %0
-  %8 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.7)
+  %8 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.7)
   tail call void @exit(i32 1) #2
   unreachable
 
@@ -36,12 +36,12 @@ assert.exit.L35:                                  ; preds = %0
   br i1 %9, label %assert.then.L37, label %assert.exit.L37
 
 assert.then.L37:                                  ; preds = %assert.exit.L35
-  %10 = tail call i32 (ptr, ...) @printf(ptr nonnull @anon.string.9)
+  %10 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.9)
   tail call void @exit(i32 1) #2
   unreachable
 
 assert.exit.L37:                                  ; preds = %assert.exit.L35
-  %11 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0)
+  %11 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
   ret i32 0
 }
 

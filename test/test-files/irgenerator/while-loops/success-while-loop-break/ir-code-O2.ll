@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
 while.head.L3:
-  %0 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, double 0.000000e+00, i32 10)
+  %0 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double 0.000000e+00, i32 10)
   ret i32 0
 }
 

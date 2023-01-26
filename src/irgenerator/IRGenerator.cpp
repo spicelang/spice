@@ -196,7 +196,7 @@ void IRGenerator::switchToBlock(llvm::BasicBlock *block, llvm::Function *parentF
   if (!parentFct)
     parentFct = builder.GetInsertBlock()->getParent();
   // Append block to current function
-  parentFct->getBasicBlockList().push_back(block);
+  parentFct->insert(parentFct->end(), block);
   // Set insert point to the block
   builder.SetInsertPoint(block);
   blockAlreadyTerminated = false;

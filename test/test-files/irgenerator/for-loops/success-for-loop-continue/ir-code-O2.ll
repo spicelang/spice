@@ -10,32 +10,32 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
 for.body.L5.preheader.3:
-  %0 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 0)
-  %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 2)
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 4)
-  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 6)
+  %0 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 0)
+  %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 2)
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 4)
+  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 6)
   br label %for.body.L5.3
 
 for.body.L5.3:                                    ; preds = %for.body.L5.3, %for.body.L5.preheader.3
   %subCounter.07.3 = phi i32 [ %5, %for.body.L5.3 ], [ 100, %for.body.L5.preheader.3 ]
-  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %subCounter.07.3)
+  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %subCounter.07.3)
   %5 = add nsw i32 %subCounter.07.3, -1
-  %6 = icmp ugt i32 %subCounter.07.3, 11
-  br i1 %6, label %for.body.L5.3, label %for.body.L5.preheader.4
+  %or.cond.3 = icmp ugt i32 %subCounter.07.3, 11
+  br i1 %or.cond.3, label %for.body.L5.3, label %for.body.L5.preheader.4
 
 for.body.L5.preheader.4:                          ; preds = %for.body.L5.3
-  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 8)
+  %6 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 8)
   br label %for.body.L5.4
 
 for.body.L5.4:                                    ; preds = %for.body.L5.4, %for.body.L5.preheader.4
-  %subCounter.07.4 = phi i32 [ %9, %for.body.L5.4 ], [ 100, %for.body.L5.preheader.4 ]
-  %8 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %subCounter.07.4)
-  %9 = add nsw i32 %subCounter.07.4, -1
-  %10 = icmp ugt i32 %subCounter.07.4, 11
-  br i1 %10, label %for.body.L5.4, label %for.tail.L2.4
+  %subCounter.07.4 = phi i32 [ %8, %for.body.L5.4 ], [ 100, %for.body.L5.preheader.4 ]
+  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %subCounter.07.4)
+  %8 = add nsw i32 %subCounter.07.4, -1
+  %or.cond.4 = icmp ugt i32 %subCounter.07.4, 11
+  br i1 %or.cond.4, label %for.body.L5.4, label %for.tail.L2.4
 
 for.tail.L2.4:                                    ; preds = %for.body.L5.4
-  %11 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.2)
+  %9 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
   ret i32 0
 }
 

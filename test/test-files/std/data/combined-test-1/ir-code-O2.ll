@@ -38,7 +38,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %.fca.1.gep = getelementptr inbounds %__int_string__Pair__int_string, ptr %p1, i64 0, i32 1
   store ptr %.fca.1.extract, ptr %.fca.1.gep, align 8
   %4 = call ptr @_mf__Pair_int_string__string__getSecond(ptr nonnull %p1) #2
-  %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, ptr %4)
+  %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %4)
   ret i32 0
 }
 

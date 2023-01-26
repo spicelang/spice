@@ -13,20 +13,20 @@ define dso_local i32 @main() local_unnamed_addr #0 {
 
 for.body.L2:                                      ; preds = %for.body.L2, %0
   %counter.09 = phi i32 [ 0, %0 ], [ %3, %for.body.L2 ]
-  %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i32 %counter.09)
+  %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %counter.09)
   %2 = icmp ugt i32 %counter.09, 9000
   %3 = add nuw nsw i32 %counter.09, 2
   br i1 %2, label %for.body.L5, label %for.body.L2
 
 for.body.L5:                                      ; preds = %for.body.L2, %for.body.L5
   %subCounter.08 = phi i32 [ %6, %for.body.L5 ], [ 100, %for.body.L2 ]
-  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %subCounter.08)
+  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %subCounter.08)
   %5 = icmp eq i32 %subCounter.08, 11
   %6 = add nsw i32 %subCounter.08, -1
   br i1 %5, label %for.exit.L2, label %for.body.L5
 
 for.exit.L2:                                      ; preds = %for.body.L5
-  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.2)
+  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
   ret i32 0
 }
 

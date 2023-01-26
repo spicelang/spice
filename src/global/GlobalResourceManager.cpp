@@ -33,7 +33,7 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
 
   // Create target machine for LLVM
   llvm::TargetOptions opt;
-  llvm::Optional rm = llvm::Optional<llvm::Reloc::Model>();
+  std::optional rm = std::optional<llvm::Reloc::Model>();
   targetMachine = target->createTargetMachine(cliOptions.targetTriple, "generic", "", opt, rm);
 }
 

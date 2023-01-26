@@ -21,11 +21,11 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double -1.234900e+03) #2
   call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 0.000000e+00) #2
   %1 = call i64 @_mf__Vector_double__long__getSize(ptr nonnull %v1) #2
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, i64 %1)
+  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %1)
   %3 = call i64 @_mf__Vector_double__long__getCapacity(ptr nonnull %v1) #2
-  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i64 %3)
+  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i64 %3)
   %5 = call double @_mf__Vector_double__double__get__int(ptr nonnull %v1, i32 5) #2
-  %6 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.2, double %5)
+  %6 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, double %5)
   ret i32 0
 }
 

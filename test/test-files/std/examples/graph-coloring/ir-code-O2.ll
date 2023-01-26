@@ -28,38 +28,38 @@ if.then.L29:                                      ; preds = %2
   %9 = load i32, ptr %1, align 4
   %10 = load i32, ptr %8, align 4
   %11 = icmp eq i32 %10, %9
-  br i1 %11, label %common.ret, label %land.1.L14C16.121.i
+  br i1 %11, label %common.ret, label %land.1.L14C16.129.i
 
-land.1.L14C16.121.i:                              ; preds = %if.then.L29
+land.1.L14C16.129.i:                              ; preds = %if.then.L29
   %12 = getelementptr inbounds i32, ptr %1, i64 2
   %13 = load i32, ptr %12, align 4
   %14 = icmp eq i32 %13, %9
-  br i1 %14, label %common.ret, label %land.1.L14C16.224.i
+  br i1 %14, label %common.ret, label %land.1.L14C16.232.i
 
-land.1.L14C16.224.i:                              ; preds = %land.1.L14C16.121.i
+land.1.L14C16.232.i:                              ; preds = %land.1.L14C16.129.i
   %15 = getelementptr inbounds i32, ptr %1, i64 3
   %16 = load i32, ptr %15, align 4
   %17 = icmp eq i32 %16, %9
   %18 = icmp eq i32 %13, %10
   %or.cond = select i1 %17, i1 true, i1 %18
   %19 = icmp eq i32 %16, %13
-  %or.cond1 = select i1 %or.cond, i1 true, i1 %19
-  br i1 %or.cond1, label %common.ret, label %if.then.L31
+  %or.cond76 = select i1 %or.cond, i1 true, i1 %19
+  br i1 %or.cond76, label %common.ret, label %if.then.L31
 
-common.ret:                                       ; preds = %for.head.L38.preheader, %if.exit.L42, %if.exit.L42.1, %if.exit.L42.2, %land.1.L14C16.224.i, %land.1.L14C16.121.i, %if.then.L29, %if.then.L31
-  %common.ret.op = phi i1 [ true, %if.then.L31 ], [ false, %if.then.L29 ], [ false, %land.1.L14C16.121.i ], [ false, %land.1.L14C16.224.i ], [ true, %for.head.L38.preheader ], [ true, %if.exit.L42 ], [ true, %if.exit.L42.1 ], [ false, %if.exit.L42.2 ]
+common.ret:                                       ; preds = %for.head.L38.preheader, %if.exit.L42, %if.exit.L42.1, %if.exit.L42.2, %land.1.L14C16.232.i, %land.1.L14C16.129.i, %if.then.L29, %if.then.L31
+  %common.ret.op = phi i1 [ true, %if.then.L31 ], [ false, %if.then.L29 ], [ false, %land.1.L14C16.129.i ], [ false, %land.1.L14C16.232.i ], [ true, %for.head.L38.preheader ], [ true, %if.exit.L42 ], [ true, %if.exit.L42.1 ], [ false, %if.exit.L42.2 ]
   ret i1 %common.ret.op
 
-if.then.L31:                                      ; preds = %land.1.L14C16.224.i
-  %puts.i = tail call i32 @puts(ptr nonnull @str)
+if.then.L31:                                      ; preds = %land.1.L14C16.232.i
+  %puts.i = tail call i32 @puts(ptr nonnull dereferenceable(1) @str)
   %20 = load i32, ptr %1, align 4
-  %21 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %20)
+  %21 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %20)
   %22 = load i32, ptr %8, align 4
-  %23 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %22)
+  %23 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %22)
   %24 = load i32, ptr %12, align 4
-  %25 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %24)
+  %25 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %24)
   %26 = load i32, ptr %15, align 4
-  %27 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %26)
+  %27 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %26)
   %putchar.i = tail call i32 @putchar(i32 10)
   br label %common.ret
 
@@ -87,7 +87,7 @@ for.exit.L71:
   br i1 %0, label %if.exit.L75, label %if.then.L75
 
 if.then.L75:                                      ; preds = %for.exit.L71
-  %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.3)
+  %1 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3)
   br label %if.exit.L75
 
 if.exit.L75:                                      ; preds = %if.then.L75, %for.exit.L71
@@ -100,10 +100,10 @@ declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #0
 ; Function Attrs: nofree nounwind
 declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #0
 
-; Function Attrs: argmemonly nocallback nofree nounwind willreturn writeonly
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #2
 
 attributes #0 = { nofree nounwind }
 attributes #1 = { noinline nounwind optnone uwtable }
-attributes #2 = { argmemonly nocallback nofree nounwind willreturn writeonly }
+attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: write) }
 attributes #3 = { nounwind }
