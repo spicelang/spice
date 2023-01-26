@@ -28,7 +28,8 @@ if.exit.L6:                                       ; preds = %if.then.L6, %if.els
   br label %if.exit.L3
 
 if.exit.L3:                                       ; preds = %if.exit.L6
-  ret i32 15
+  %2 = load i32, ptr %result, align 4
+  ret i32 %2
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable

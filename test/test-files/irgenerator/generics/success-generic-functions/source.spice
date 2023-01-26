@@ -5,11 +5,12 @@ f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
     return arg1 + arg2 + arg3;
 }
 
-f<double> genericFunction<T, U>(T arg1, U arg2, T arg3) {
+f<long> genericFunction<T, U>(T arg1, U arg2, T arg3) {
     return arg1 + arg2 + arg3;
 }
 
 f<int> main() {
     printf("%f\n", genericFunction(1, 2.4));
     printf("%f\n", genericFunction(12l, 2.0));
+    printf("%d\n", genericFunction(12l, 1s, 11l));
 }

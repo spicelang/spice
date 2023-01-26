@@ -1,0 +1,8 @@
+p testProc(int t) {
+    printf("%d", t);
+}
+
+f<int> main() {
+    dyn test;
+    testProc(test);
+}

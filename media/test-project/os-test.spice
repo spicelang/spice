@@ -1,7 +1,12 @@
+type TestStruct struct {
+    bool f1
+    int& f2
+}
+
 f<int> main() {
-    int test = 123;
-    int& testRef = test;
-    printf("%p\n", &test);
-    printf("%p\n", &testRef);
-    assert &test == &testRef;
+    int t = 123;
+    dyn ts = TestStruct { true, t };
+    printf("Test: %d", ts.f2);
+    ts.f2++;
+    printf("Test: %d", t);
 }

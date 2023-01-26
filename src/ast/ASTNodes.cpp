@@ -71,6 +71,12 @@ bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
   return returns;
 }
 
+bool AssertStmtNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+  const bool returns = hasCompileTimeValue() && !compileTimeValue.boolValue;
+  *overrideUnreachable |= returns;
+  return returns;
+}
+
 bool AssignExprNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   const bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr() &&
                        lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
