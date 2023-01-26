@@ -26,8 +26,8 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       return doAssignment(lhsNode, rhsNode);
     } else { // Compound assignment
       // Get symbol types of left and right side
-      const SymbolType lhsSType = lhsNode->getEvaluatedSymbolType(manIdx);
-      const SymbolType rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
+      const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+      const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
 
       // Retrieve rhs
       auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
@@ -37,34 +37,34 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       PtrAndValue result;
       switch (node->op) {
       case AssignExprNode::OP_PLUS_EQUAL:
-        result = conversionManager.getPlusEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+        result = conversionManager.getPlusEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
       case AssignExprNode::OP_MINUS_EQUAL:
-        result.value = conversionManager.getMinusEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+        result.value = conversionManager.getMinusEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
       case AssignExprNode::OP_MUL_EQUAL:
-        result = conversionManager.getMulEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+        result = conversionManager.getMulEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
       case AssignExprNode::OP_DIV_EQUAL:
-        result.value = conversionManager.getDivEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+        result.value = conversionManager.getDivEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
       case AssignExprNode::OP_REM_EQUAL:
-        result.value = conversionManager.getRemEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+        result.value = conversionManager.getRemEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
       case AssignExprNode::OP_SHL_EQUAL:
-        result.value = conversionManager.getSHLEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+        result.value = conversionManager.getSHLEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
       case AssignExprNode::OP_SHR_EQUAL:
-        result.value = conversionManager.getSHREqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+        result.value = conversionManager.getSHREqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
       case AssignExprNode::OP_AND_EQUAL:
-        result.value = conversionManager.getAndEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+        result.value = conversionManager.getAndEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
       case AssignExprNode::OP_OR_EQUAL:
-        result.value = conversionManager.getOrEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+        result.value = conversionManager.getOrEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
       case AssignExprNode::OP_XOR_EQUAL:
-        result.value = conversionManager.getXorEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+        result.value = conversionManager.getXorEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
       default:
         throw std::runtime_error("Assign op fall-through");
@@ -241,7 +241,7 @@ std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
     BitwiseXorExprNode *rhsNode = node->operands()[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
-    lhs.value = conversionManager.getBitwiseOrInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    lhs.value = conversionManager.getBitwiseOrInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
   }
 
   // Return result
@@ -267,7 +267,7 @@ std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
     BitwiseAndExprNode *rhsNode = node->operands()[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
-    lhs.value = conversionManager.getBitwiseXorInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    lhs.value = conversionManager.getBitwiseXorInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
   }
 
   // Return result
@@ -293,7 +293,7 @@ std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
     EqualityExprNode *rhsNode = node->operands()[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
-    lhs.value = conversionManager.getBitwiseAndInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    lhs.value = conversionManager.getBitwiseAndInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
   }
 
   // Return result
@@ -322,10 +322,10 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
   llvm::Value *result;
   switch (node->op) {
   case EqualityExprNode::OP_EQUAL:
-    result = conversionManager.getEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    result = conversionManager.getEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
     break;
   case EqualityExprNode::OP_NOT_EQUAL:
-    result = conversionManager.getNotEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    result = conversionManager.getNotEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
     break;
   default:
     throw std::runtime_error("Equality expr fall-through");
@@ -357,16 +357,16 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
   llvm::Value *result;
   switch (node->op) {
   case RelationalExprNode::OP_LESS:
-    result = conversionManager.getLessInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    result = conversionManager.getLessInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
     break;
   case RelationalExprNode::OP_GREATER:
-    result = conversionManager.getGreaterInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    result = conversionManager.getGreaterInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
     break;
   case RelationalExprNode::OP_LESS_EQUAL:
-    result = conversionManager.getLessEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    result = conversionManager.getLessEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
     break;
   case RelationalExprNode::OP_GREATER_EQUAL:
-    result = conversionManager.getGreaterEqualInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    result = conversionManager.getGreaterEqualInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
     break;
   default:
     throw std::runtime_error("Relational expr fall-through");
@@ -398,10 +398,10 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
   llvm::Value *result;
   switch (node->op) {
   case ShiftExprNode::OP_SHIFT_LEFT:
-    result = conversionManager.getShiftLeftInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    result = conversionManager.getShiftLeftInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
     break;
   case ShiftExprNode::OP_SHIFT_RIGHT:
-    result = conversionManager.getShiftRightInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+    result = conversionManager.getShiftRightInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
     break;
   default:
     throw std::runtime_error("Shift expr fall-through");
@@ -437,10 +437,10 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
     PtrAndValue result = {nullptr, nullptr};
     switch (opQueue.front().first) {
     case AdditiveExprNode::OP_PLUS:
-      result = conversionManager.getPlusInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+      result = conversionManager.getPlusInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
       break;
     case AdditiveExprNode::OP_MINUS:
-      result.value = conversionManager.getMinusInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+      result.value = conversionManager.getMinusInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
       break;
     default:
       throw std::runtime_error("Additive expr fall-through");
@@ -489,13 +489,13 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
     PtrAndValue result = {nullptr, nullptr};
     switch (opQueue.front().first) {
     case MultiplicativeExprNode::OP_MUL:
-      result = conversionManager.getMulInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+      result = conversionManager.getMulInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
       break;
     case MultiplicativeExprNode::OP_DIV:
-      result.value = conversionManager.getDivInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+      result.value = conversionManager.getDivInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
       break;
     case MultiplicativeExprNode::OP_REM:
-      result.value = conversionManager.getRemInst(lhs, lhsNode, rhs, rhsNode, currentScope);
+      result.value = conversionManager.getRemInst(lhs, lhsSTy, rhs, rhsSTy, currentScope);
       break;
     default:
       throw std::runtime_error("Additive expr fall-through");
@@ -535,7 +535,7 @@ std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
   auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
 
   // Retrieve the result value
-  llvm::Value *result = conversionManager.getCastInst(targetSTy, rhs, rhsNode, currentScope);
+  llvm::Value *result = conversionManager.getCastInst(targetSTy, rhs, rhsSTy, currentScope);
 
   // Return the result
   return ExprResult{.value = result};
@@ -556,7 +556,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
   switch (node->op) {
   case PrefixUnaryExprNode::OP_MINUS: {
     // Execute operation
-    lhs.value = conversionManager.getPrefixMinusInst(lhs, lhsNode, currentScope);
+    lhs.value = conversionManager.getPrefixMinusInst(lhs, lhsSTy, currentScope);
 
     // This operator can not work in-place, so we need additional memory
     lhs.ptr = insertAlloca(lhs.value->getType());
@@ -571,7 +571,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     resolveValue(lhsNode, lhs);
 
     // Execute operation
-    lhs.value = conversionManager.getPrefixPlusPlusInst(lhs, lhsNode, currentScope);
+    lhs.value = conversionManager.getPrefixPlusPlusInst(lhs, lhsSTy, currentScope);
 
     // If this operation happens on a volatile variable, store the value directly
     if (lhs.entry && lhs.entry->isVolatile)
@@ -591,7 +591,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     resolveValue(lhsNode, lhs);
 
     // Execute operation
-    lhs.value = conversionManager.getPrefixMinusMinusInst(lhs, lhsNode, currentScope);
+    lhs.value = conversionManager.getPrefixMinusMinusInst(lhs, lhsSTy, currentScope);
 
     // If this operation happens on a volatile variable, store the value directly
     if (lhs.entry && lhs.entry->isVolatile)
@@ -611,7 +611,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     resolveValue(lhsNode, lhs);
 
     // Execute operation
-    lhs.value = conversionManager.getPrefixNotInst(lhs, lhsNode, currentScope);
+    lhs.value = conversionManager.getPrefixNotInst(lhs, lhsSTy, currentScope);
 
     // This operator can not work in-place, so we need additional memory
     lhs.ptr = insertAlloca(lhs.value->getType());
@@ -626,7 +626,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     resolveValue(lhsNode, lhs);
 
     // Execute operation
-    lhs.value = conversionManager.getPrefixBitwiseNotInst(lhs, lhsNode, currentScope);
+    lhs.value = conversionManager.getPrefixBitwiseNotInst(lhs, lhsSTy, currentScope);
 
     // This operator can not work in-place, so we need additional memory
     lhs.ptr = insertAlloca(lhs.value->getType());
@@ -748,7 +748,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
 
     // Execute operation
-    llvm::Value *newLhsValue = conversionManager.getPostfixPlusPlusInst(lhs, lhsSTy, lhsNode, currentScope);
+    llvm::Value *newLhsValue = conversionManager.getPostfixPlusPlusInst(lhs, lhsSTy, currentScope);
 
     // Save the new value to the old address
     builder.CreateStore(newLhsValue, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
@@ -769,7 +769,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
 
     // Execute operation
-    llvm::Value *newLhsValue = conversionManager.getPostfixMinusMinusInst(lhs, lhsSTy, lhsNode, currentScope);
+    llvm::Value *newLhsValue = conversionManager.getPostfixMinusMinusInst(lhs, lhsSTy, currentScope);
 
     // Save the new value to the old address
     builder.CreateStore(newLhsValue, lhs.ptr, lhs.entry && lhs.entry->isVolatile);

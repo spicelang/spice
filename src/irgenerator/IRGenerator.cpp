@@ -64,6 +64,10 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, Scope *accessScope /
 }
 
 llvm::Value *IRGenerator::resolveValue(const ASTNode *node, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
+  return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult, accessScope);
+}
+
+llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
   // Set access scope to current scope if nullptr gets passed
   if (!accessScope)
     accessScope = currentScope;
@@ -80,7 +84,7 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, ExprResult &exprResu
 
   // If not, load the value from the pointer
   assert(exprResult.ptr != nullptr);
-  llvm::Type *valueTy = node->getEvaluatedSymbolType(manIdx).toLLVMType(context, accessScope);
+  llvm::Type *valueTy = symbolType.toLLVMType(context, accessScope);
   exprResult.value = builder.CreateLoad(valueTy, exprResult.ptr);
 
   return exprResult.value;
@@ -89,7 +93,7 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, ExprResult &exprResu
 llvm::Value *IRGenerator::resolveAddress(const ASTNode *node, bool storeVolatile /*=false*/) {
   // Visit the given AST node
   auto exprResult = any_cast<ExprResult>(visit(node));
-  return resolveAddress(exprResult);
+  return resolveAddress(exprResult, storeVolatile);
 }
 
 llvm::Value *IRGenerator::resolveAddress(ExprResult &exprResult, bool storeVolatile /*=false*/) {

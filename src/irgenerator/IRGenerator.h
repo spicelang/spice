@@ -95,6 +95,7 @@ public:
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const ASTNode *node, ExprResult &exprResult, Scope *accessScope = nullptr);
+  llvm::Value *resolveValue(const SymbolType &symbolType, ExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveAddress(const ASTNode *node, bool storeVolatile = false);
   llvm::Value *resolveAddress(ExprResult &exprResult, bool storeVolatile = false);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);

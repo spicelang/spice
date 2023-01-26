@@ -998,6 +998,9 @@ public:
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
+  // Other methods
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+
   // Public members
   std::string expressionString;
 };

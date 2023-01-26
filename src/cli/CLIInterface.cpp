@@ -248,9 +248,9 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --jobs
   subCmd->add_option<unsigned short>("--jobs,-j", cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
   // --ignore-cache
-  subCmd->add_option<bool>("--ignore-cache", cliOptions.ignoreCache, "Force re-compilation of all source files");
+  subCmd->add_flag<bool>("--ignore-cache", cliOptions.ignoreCache, "Force re-compilation of all source files");
   // --disable-ast-opt
-  subCmd->add_option<bool>("--disable-ast-opt", cliOptions.disableAstOpt, "Disable first order optimizations on the AST");
+  subCmd->add_flag<bool>("--disable-ast-opt", cliOptions.disableAstOpt, "Disable first order optimizations on the AST");
 
   // Opt levels
   subCmd->add_flag_callback(
