@@ -477,7 +477,7 @@ llvm::Value *OpRuleConversionManager::getEqualInst(ExprResult &lhs, const ASTNod
   const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Check if both values are of type pointer
-  if (lhsSTy.isPointer() && rhsSTy.isPointer())
+  if (lhsSTy.isPtr() && rhsSTy.isPtr())
     return builder.CreateICmpEQ(lhsV(), rhsV());
 
   // Check if one value is of type pointer and one is of type int
@@ -593,7 +593,7 @@ llvm::Value *OpRuleConversionManager::getNotEqualInst(ExprResult &lhs, const AST
   const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Check if both values are of type pointer
-  if (lhsSTy.isPointer() && rhsSTy.isPointer())
+  if (lhsSTy.isPtr() && rhsSTy.isPtr())
     return builder.CreateICmpNE(lhsV(), rhsV());
 
   // Check if one value is of type pointer and one is of type int

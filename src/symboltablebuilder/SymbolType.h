@@ -125,12 +125,10 @@ public:
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
-  [[nodiscard]] inline bool isPointer() const { return getSuperType() == TY_PTR; }
-  [[nodiscard]] inline bool isPointerOf(SymbolSuperType superType) const { return isPointer() && getContainedTy().is(superType); }
-  [[nodiscard]] inline bool isReference() const { return getSuperType() == TY_REF; }
-  [[nodiscard]] inline bool isReferenceOf(SymbolSuperType superType) const {
-    return isReference() && getContainedTy().is(superType);
-  }
+  [[nodiscard]] inline bool isPtr() const { return getSuperType() == TY_PTR; }
+  [[nodiscard]] inline bool isPtrOf(SymbolSuperType superType) const { return isPtr() && getContainedTy().is(superType); }
+  [[nodiscard]] inline bool isRef() const { return getSuperType() == TY_REF; }
+  [[nodiscard]] inline bool isRefOf(SymbolSuperType superType) const { return isRef() && getContainedTy().is(superType); }
   [[nodiscard]] inline bool isArray() const { return getSuperType() == TY_ARRAY; }
   [[nodiscard]] inline bool isArrayOf(SymbolSuperType superType) const { return isArray() && getContainedTy().is(superType); }
   [[nodiscard]] inline bool isArrayOf(const SymbolType &symbolType) const { return isArray() && getContainedTy() == symbolType; }

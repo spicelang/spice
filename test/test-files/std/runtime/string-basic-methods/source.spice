@@ -1,25 +1,30 @@
 f<int> main() {
     // Directly
-    printf("%d\n", String("").isEmpty());
-    printf("%d\n", String("Hello").isEmpty());
-    printf("%d\n", String("Hello!").getLength());
-    printf("%d\n", String("Hello World!").getLength());
-    printf("%d\n", String("Hello!").getCapacity());
-    printf("%d\n", String("Hello World!").getCapacity());
-    printf("%d\n", String("Hello").isFull());
-    printf("%d\n", String("Hello World!").isFull());
-    printf("%d\n", String("Hello World!").find("ell"));
-    printf("%d\n", String("Hello World!").find("Wort"));
-    printf("%d\n", String("Hello World!").find("H"));
-    printf("%d\n", String("Hello World!").find("!"));
-    printf("%d\n", String("Hello World!").find(" ", 12));
-    printf("%d\n", String("Hello World!").contains("abc"));
-    printf("%d\n", String("Hello World!").contains("Hello"));
-    printf("%d\n", String("Hello World!").contains("World!"));
-    printf("%d\n", String("Hello World!").contains("o W"));
-    //printf("'%s'\n", String("Hello World!").substring(0, 5));
-    //printf("'%s'\n", String("Hello World!").substring(4, 2));
-    //printf("'%s'\n", String("Hello World!").substring(6));
-    //printf("'%s'\n", String("Hello World!").substring(2, 0));
-    //printf("%s\n", String("Hello World!").substring(2, 12));
+    String s1 = String("");
+    dyn s2 = String("Hello");
+    dyn s3 = String("Hello!");
+    dyn s4 = String("Hello World!");
+
+    printf("%d\n", s1.isEmpty());
+    printf("%d\n", s2.isEmpty());
+    printf("%d\n", s3.getLength());
+    printf("%d\n", s4.getLength());
+    printf("%d\n", s3.getCapacity());
+    printf("%d\n", s4.getCapacity());
+    printf("%d\n", s2.isFull());
+    printf("%d\n", s4.isFull());
+    printf("%d\n", s4.find("ell"));
+    printf("%d\n", s4.find("Wort"));
+    printf("%d\n", s4.find("H"));
+    printf("%d\n", s4.find("!"));
+    printf("%d\n", s4.find(" ", 12));
+    printf("%d\n", s4.contains("abc"));
+    printf("%d\n", s4.contains("Hello"));
+    printf("%d\n", s4.contains("World!"));
+    printf("%d\n", s4.contains("o W"));
+    //printf("'%s'\n", s4.substring(0, 5));
+    //printf("'%s'\n", s4.substring(4, 2));
+    //printf("'%s'\n", s4.substring(6));
+    //printf("'%s'\n", s4.substring(2, 0));
+    //printf("%s\n", s4.substring(2, 12));
 }

@@ -139,7 +139,7 @@ void DebugInfoGenerator::finalize() {
 }
 
 llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const SymbolType &symbolType) const { // NOLINT(misc-no-recursion)
-  if (symbolType.isPointer()) {                                                                // Pointer type
+  if (symbolType.isPtr()) {                                                                    // Pointer type
     llvm::DIType *pointeeTy = getDITypeForSymbolType(symbolType.getContainedTy());
     const unsigned int pointerWidth = irGenerator->module->getDataLayout().getPointerSizeInBits();
     return diBuilder->createPointerType(pointeeTy, pointerWidth);

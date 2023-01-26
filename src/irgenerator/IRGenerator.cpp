@@ -252,7 +252,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   const SymbolType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
 
   // Deduce some information about the assignment
-  const bool isRefAssign = lhsEntry != nullptr && lhsSType.isReference();
+  const bool isRefAssign = lhsEntry != nullptr && lhsSType.isRef();
   const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT);
 
   if (isRefAssign) {
@@ -327,7 +327,7 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
 }
 
 void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const {
-  while (symbolType.isPointer()) {
+  while (symbolType.isPtr()) {
     ptr = builder.CreateLoad(symbolType.toLLVMType(context, accessScope), ptr);
     symbolType = symbolType.getContainedTy();
   }
@@ -363,7 +363,7 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, SymbolType dstSTy, Sy
 
   // Unpack the pointers until a pointer of another type is met
   size_t loadCounter = 0;
-  while (srcSTy.isPointer()) {
+  while (srcSTy.isPtr()) {
     src = builder.CreateLoad(srcSTy.toLLVMType(context, currentScope), src);
     srcSTy = srcSTy.getContainedTy();
     dstSTy = dstSTy.getContainedTy();

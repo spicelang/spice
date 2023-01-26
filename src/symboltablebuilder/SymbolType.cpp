@@ -151,7 +151,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
   if (is(TY_ENUM))
     return llvm::Type::getInt32Ty(context);
 
-  if (isPointer() || isReference() || (isArray() && getArraySize() == 0)) {
+  if (isPtr() || isRef() || (isArray() && getArraySize() == 0)) {
     llvm::PointerType *pointerType = getContainedTy().toLLVMType(context, accessScope)->getPointerTo();
     return static_cast<llvm::Type *>(pointerType);
   }
