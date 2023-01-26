@@ -401,7 +401,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
 
     // References with no initialization are illegal
-    if (localVarType.isReference())
+    if (localVarType.isRef())
       throw SemanticError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
   }
 
@@ -504,7 +504,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     SymbolType argType = std::any_cast<ExprResult>(visit(assignment)).type;
     argType = argType.removeReferenceWrappers();
 
-    switch (node->templatedString[index + 1]) {
+    switch (node->templatedString.at(index + 1)) {
     case 'c': {
       if (!argType.is(TY_CHAR))
         throw SemanticError(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects char, but got " + argType.getName());
@@ -538,14 +538,16 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
       break;
     }
     case 's': {
-      if (!argType.is(TY_STRING) && !argType.isPointerOf(TY_CHAR) && !argType.isArrayOf(TY_CHAR))
+      const std::string strobjTypeName = STRING_RT_IMPORT_NAME + std::string(SCOPE_ACCESS_TOKEN) + STROBJ_NAME;
+      const bool isString = argType.is(TY_STRING) || argType.is(TY_STRUCT, strobjTypeName);
+      if (!isString && !argType.isPtrOf(TY_CHAR) && !argType.isArrayOf(TY_CHAR))
         throw SemanticError(assignment, PRINTF_TYPE_ERROR,
-                            "The placeholder string expects string, char* or char[], but got " + argType.getName());
+                            "The placeholder string expects string, String, char* or char[], but got " + argType.getName());
       placeholderCount++;
       break;
     }
     case 'p': {
-      if (!argType.isPointer() && !argType.isArray() && !argType.is(TY_STRING))
+      if (!argType.isPtr() && !argType.isArray() && !argType.is(TY_STRING))
         throw SemanticError(assignment, PRINTF_TYPE_ERROR,
                             "The placeholder string expects pointer, array or string, but got " + argType.getName());
       placeholderCount++;
@@ -1591,7 +1593,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     }
   } else {
     for (SymbolType &fieldType : spiceStruct->fieldTypes) {
-      if (fieldType.isReference())
+      if (fieldType.isRef())
         throw SemanticError(node, REFERENCE_WITHOUT_INITIALIZER,
                             "The struct takes at least one reference field. You need to instantiate it with all fields.");
     }
@@ -1832,7 +1834,7 @@ void TypeChecker::changeToScope(Scope *scope, const ScopeType scopeType) {
  * @param symbolType Input symbol type
  */
 void TypeChecker::autoDeReference(SymbolType &symbolType) {
-  while (symbolType.isPointer() || symbolType.isReference())
+  while (symbolType.isPtr() || symbolType.isRef())
     symbolType = symbolType.getContainedTy();
 }
 

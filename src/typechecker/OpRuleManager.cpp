@@ -26,7 +26,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
   if (lhs.is(TY_PTR) && rhs.is(TY_ARRAY) && lhs.getContainedTy() == rhs.getContainedTy())
     return lhs;
   // Allow char* = string
-  if (lhs.isPointerOf(TY_CHAR) && rhs.is(TY_STRING))
+  if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING))
     return lhs;
   // Check primitive type combinations
   return validateBinaryOperation(node, ASSIGN_OP_RULES, arrayLength(ASSIGN_OP_RULES), "=", lhs, rhs);
@@ -37,7 +37,7 @@ SymbolType OpRuleManager::getPlusEqualResultType(const ASTNode *node, SymbolType
   rhs = rhs.removeReferenceWrappers();
 
   // Check if this is an unsafe operation
-  if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
+  if (lhs.isPtr() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
     else
@@ -51,7 +51,7 @@ SymbolType OpRuleManager::getMinusEqualResultType(const ASTNode *node, SymbolTyp
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
-  if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
+  if (lhs.isPtr() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
     else
@@ -157,10 +157,10 @@ SymbolType OpRuleManager::getEqualResultType(const ASTNode *node, SymbolType lhs
   rhs = rhs.removeReferenceWrappers();
 
   // Allow 'pointer == pointer' straight away
-  if (lhs.isPointer() && rhs.isPointer())
+  if (lhs.isPtr() && rhs.isPtr())
     return SymbolType(TY_BOOL);
   // Allow 'pointer == int' straight away
-  if (lhs.isPointer() && rhs.is(TY_INT))
+  if (lhs.isPtr() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
   // Check primitive type combinations
   return validateBinaryOperation(node, EQUAL_OP_RULES, arrayLength(EQUAL_OP_RULES), "==", lhs, rhs);
@@ -171,10 +171,10 @@ SymbolType OpRuleManager::getNotEqualResultType(const ASTNode *node, SymbolType 
   rhs = rhs.removeReferenceWrappers();
 
   // Allow 'pointer != pointer' straight away
-  if (lhs.isPointer() && rhs.isPointer())
+  if (lhs.isPtr() && rhs.isPtr())
     return SymbolType(TY_BOOL);
   // Allow 'pointer != int' straight away
-  if (lhs.isPointer() && rhs.is(TY_INT))
+  if (lhs.isPtr() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
   // Check primitive type combinations
   return validateBinaryOperation(node, NOT_EQUAL_OP_RULES, arrayLength(NOT_EQUAL_OP_RULES), "!=", lhs, rhs);
@@ -227,14 +227,14 @@ SymbolType OpRuleManager::getPlusResultType(const ASTNode *node, SymbolType lhs,
   rhs = rhs.removeReferenceWrappers();
 
   // Allow any* + <int/long/short>
-  if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
+  if (lhs.isPtr() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
     else
       throw printErrorMessageUnsafe(node, "+", lhs, rhs);
   }
   // Allow <int/long/short> + any*
-  if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPointer()) {
+  if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPtr()) {
     if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return rhs;
     else
@@ -249,14 +249,14 @@ SymbolType OpRuleManager::getMinusResultType(const ASTNode *node, SymbolType lhs
   rhs = rhs.removeReferenceWrappers();
 
   // Allow any* - <int/long/short>
-  if (lhs.isPointer() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
+  if (lhs.isPtr() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
     else
       throw printErrorMessageUnsafe(node, "-", lhs, rhs);
   }
   // Allow <int/long/short> - any*
-  if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPointer()) {
+  if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPtr()) {
     if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return rhs;
     else
@@ -320,7 +320,7 @@ SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const ASTNode *node, Sym
 SymbolType OpRuleManager::getPrefixMulResultType(const ASTNode *node, SymbolType lhs) {
   lhs = lhs.removeReferenceWrappers();
 
-  if (!lhs.isPointer())
+  if (!lhs.isPtr())
     throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply de-referencing operator on type " + lhs.getName(true));
   return lhs.getContainedTy();
 }
@@ -354,7 +354,7 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
   if (lhs.is(TY_STRING) && rhs.isOneOf({TY_PTR, TY_ARRAY}) && rhs.getContainedTy().is(TY_CHAR))
     return lhs;
   // Allow casts any* -> any*
-  if (lhs.isPointer() && rhs.isPointer()) {
+  if (lhs.isPtr() && rhs.isPtr()) {
     if (typeChecker->currentScope->doesAllowUnsafeOperations())
       return lhs;
     else
