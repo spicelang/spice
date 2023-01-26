@@ -44,7 +44,7 @@ declare void @_p__void__void__printFormat__double(double)
 
 declare void @_p__void__void__printFormat__int(i32)
 
-; Function Attrs: argmemonly nocallback nofree nounwind willreturn
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
 
 declare void @_p__void__void__printFormat__stringarray([2 x ptr])
@@ -58,4 +58,4 @@ declare i32 @printf(ptr noundef, ...)
 declare void @exit(i32)
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { argmemonly nocallback nofree nounwind willreturn }
+attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

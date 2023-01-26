@@ -27,7 +27,7 @@ for.body.L15:                                     ; preds = %for.head.L15.prehea
   %1 = load i32, ptr %0, align 4
   %2 = icmp eq i32 %1, 1
   %3 = select i1 %2, ptr @anon.string.0, ptr @anon.string.1
-  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, ptr nonnull %3)
+  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr nonnull %3)
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond.not = icmp eq i64 %indvars.iv.next, 80
   br i1 %exitcond.not, label %for.exit.L15, label %for.body.L15
@@ -78,9 +78,9 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_a
 ; Function Attrs: nofree nounwind
 declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #1
 
-; Function Attrs: argmemonly nocallback nofree nounwind willreturn writeonly
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #2
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
-attributes #2 = { argmemonly nocallback nofree nounwind willreturn writeonly }
+attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: write) }

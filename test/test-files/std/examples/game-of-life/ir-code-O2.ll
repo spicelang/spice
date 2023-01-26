@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.0 = private unnamed_addr constant [14 x i8] c"Initial state\00", align 1
 @anon.string.1 = private unnamed_addr constant [16 x i8] c"Next generation\00", align 1
 
-; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
+; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(readwrite, argmem: none, inaccessiblemem: none)
 define private fastcc i32 @_f__void__int__genFakeRandInt() unnamed_addr #0 {
   %1 = load i32, ptr @randCount, align 4
   %2 = add i32 %1, 1
@@ -327,106 +327,106 @@ for.body.L33.peel.next:
   %.fca.9.9.extract = extractvalue [10 x [10 x i32]] %1, 9, 9
   %.fca.9.9.gep = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 9, i64 9
   store i32 %.fca.9.9.extract, ptr %.fca.9.9.gep, align 4
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.9, ptr %0)
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.9, ptr %0)
   %putchar.i = tail call i32 @putchar(i32 10)
-  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1)
-  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1)
-  %5 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1)
-  %6 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1)
-  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1)
-  %8 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1)
-  %9 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1)
-  %10 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1)
-  %11 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1)
-  %12 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1)
+  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %5 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %6 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %8 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %9 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %10 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %11 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
+  %12 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1)
   %putchar2.i = tail call i32 @putchar(i32 10)
   %13 = load i32, ptr %matrix, align 4
-  %14 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %13)
+  %14 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %13)
   %15 = load i32, ptr %.fca.0.1.gep, align 4
-  %16 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %15)
+  %16 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %15)
   %17 = load i32, ptr %.fca.0.2.gep, align 4
-  %18 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %17)
+  %18 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %17)
   %19 = load i32, ptr %.fca.0.3.gep, align 4
-  %20 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %19)
+  %20 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %19)
   %21 = load i32, ptr %.fca.0.4.gep, align 4
-  %22 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %21)
+  %22 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %21)
   %23 = load i32, ptr %.fca.0.5.gep, align 4
-  %24 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %23)
+  %24 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %23)
   %25 = load i32, ptr %.fca.0.6.gep, align 4
-  %26 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %25)
+  %26 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %25)
   %27 = load i32, ptr %.fca.0.7.gep, align 4
-  %28 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %27)
+  %28 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %27)
   %29 = load i32, ptr %.fca.0.8.gep, align 4
-  %30 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %29)
+  %30 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %29)
   %31 = load i32, ptr %.fca.0.9.gep, align 4
-  %32 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %31)
+  %32 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %31)
   br label %if.exit.L34
 
 if.exit.L34:                                      ; preds = %for.body.L33.peel.next, %if.exit.L34
   %indvars.iv = phi i64 [ 1, %for.body.L33.peel.next ], [ %indvars.iv.next, %if.exit.L34 ]
   %putchar.i6 = tail call i32 @putchar(i32 10)
-  %33 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4)
-  %34 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4)
-  %35 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4)
-  %36 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4)
-  %37 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4)
-  %38 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4)
-  %39 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4)
-  %40 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4)
-  %41 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4)
-  %42 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.4)
+  %33 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4)
+  %34 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4)
+  %35 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4)
+  %36 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4)
+  %37 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4)
+  %38 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4)
+  %39 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4)
+  %40 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4)
+  %41 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4)
+  %42 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4)
   %putchar2.i7 = tail call i32 @putchar(i32 10)
   %43 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv, i64 0
   %44 = load i32, ptr %43, align 4
-  %45 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %44)
+  %45 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %44)
   %46 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv, i64 1
   %47 = load i32, ptr %46, align 4
-  %48 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %47)
+  %48 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %47)
   %49 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv, i64 2
   %50 = load i32, ptr %49, align 4
-  %51 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %50)
+  %51 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %50)
   %52 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv, i64 3
   %53 = load i32, ptr %52, align 4
-  %54 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %53)
+  %54 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %53)
   %55 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv, i64 4
   %56 = load i32, ptr %55, align 4
-  %57 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %56)
+  %57 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %56)
   %58 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv, i64 5
   %59 = load i32, ptr %58, align 4
-  %60 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %59)
+  %60 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %59)
   %61 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv, i64 6
   %62 = load i32, ptr %61, align 4
-  %63 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %62)
+  %63 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %62)
   %64 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv, i64 7
   %65 = load i32, ptr %64, align 4
-  %66 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %65)
+  %66 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %65)
   %67 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv, i64 8
   %68 = load i32, ptr %67, align 4
-  %69 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %68)
+  %69 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %68)
   %70 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv, i64 9
   %71 = load i32, ptr %70, align 4
-  %72 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.10, i32 %71)
+  %72 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.10, i32 %71)
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond.not = icmp eq i64 %indvars.iv.next, 10
   br i1 %exitcond.not, label %for.exit.L33, label %if.exit.L34, !llvm.loop !0
 
 for.exit.L33:                                     ; preds = %if.exit.L34
   %putchar.i8 = tail call i32 @putchar(i32 10)
-  %73 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7)
-  %74 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7)
-  %75 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7)
-  %76 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7)
-  %77 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7)
-  %78 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7)
-  %79 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7)
-  %80 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7)
-  %81 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7)
-  %82 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.7)
+  %73 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7)
+  %74 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7)
+  %75 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7)
+  %76 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7)
+  %77 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7)
+  %78 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7)
+  %79 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7)
+  %80 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7)
+  %81 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7)
+  %82 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.7)
   %putchar2.i9 = tail call i32 @putchar(i32 10)
   ret void
 }
 
-; Function Attrs: nofree norecurse nosync nounwind readnone
+; Function Attrs: nofree norecurse nosync nounwind memory(none)
 define private fastcc i32 @_f__void__int__countLiveNeighborCell__intarrayarray_int_int([10 x [10 x i32]] %0, i32 %1, i32 %2) unnamed_addr #2 {
   %matrix = alloca [10 x [10 x i32]], align 4
   %.fca.0.0.extract = extractvalue [10 x [10 x i32]] %0, 0, 0
@@ -1329,7 +1329,7 @@ for.head.L73.preheader:                           ; preds = %for.exit.L64, %for.
   %.fca.0.6.load844 = phi i32 [ %.fca.0.6.load844.pre, %for.exit.L64 ], [ %.fca.0.6.load144, %for.exit.L73 ]
   %.fca.0.5.load841 = phi i32 [ %.fca.0.5.load841.pre, %for.exit.L64 ], [ %.fca.0.5.load141, %for.exit.L73 ]
   %.fca.0.4.load838 = phi i32 [ %.fca.0.4.load838.pre, %for.exit.L64 ], [ %.fca.0.4.load138, %for.exit.L73 ]
-  %generation.01129 = phi i32 [ 1, %for.exit.L64 ], [ %33, %for.exit.L73 ]
+  %generation.01129 = phi i32 [ 1, %for.exit.L64 ], [ %32, %for.exit.L73 ]
   %.fca.0.0.load826 = load i32, ptr %a, align 4
   %.fca.0.0.insert827 = insertvalue [10 x [10 x i32]] poison, i32 %.fca.0.0.load826, 0, 0
   %.fca.0.1.load829 = load i32, ptr %.fca.0.1.gep426, align 4
@@ -1499,28 +1499,28 @@ for.body.L74:                                     ; preds = %for.head.L74.prehea
   %25 = load i32, ptr %24, align 4
   %26 = icmp eq i32 %25, 1
   %27 = and i32 %23, -2
-  %28 = icmp eq i32 %27, 2
-  %land_phi = select i1 %26, i1 %28, i1 false
+  %lor_phi = icmp eq i32 %27, 2
+  %land_phi = select i1 %26, i1 %lor_phi, i1 false
   br i1 %land_phi, label %if.then.L76, label %if.else.L76
 
 if.then.L76:                                      ; preds = %for.body.L74
-  %29 = getelementptr inbounds [10 x [10 x i32]], ptr %b, i64 0, i64 %indvars.iv1136, i64 %indvars.iv1132
-  store i32 1, ptr %29, align 4
+  %28 = getelementptr inbounds [10 x [10 x i32]], ptr %b, i64 0, i64 %indvars.iv1136, i64 %indvars.iv1132
+  store i32 1, ptr %28, align 4
   br label %for.tail.L74
 
 if.else.L76:                                      ; preds = %for.body.L74
-  %30 = icmp eq i32 %25, 0
-  %31 = icmp eq i32 %23, 3
-  %land_phi3 = select i1 %30, i1 %31, i1 false
-  %32 = getelementptr inbounds [10 x [10 x i32]], ptr %b, i64 0, i64 %indvars.iv1136, i64 %indvars.iv1132
+  %29 = icmp eq i32 %25, 0
+  %30 = icmp eq i32 %23, 3
+  %land_phi3 = select i1 %29, i1 %30, i1 false
+  %31 = getelementptr inbounds [10 x [10 x i32]], ptr %b, i64 0, i64 %indvars.iv1136, i64 %indvars.iv1132
   br i1 %land_phi3, label %if.then.L78, label %if.else.L78
 
 if.then.L78:                                      ; preds = %if.else.L76
-  store i32 1, ptr %32, align 4
+  store i32 1, ptr %31, align 4
   br label %for.tail.L74
 
 if.else.L78:                                      ; preds = %if.else.L76
-  store i32 0, ptr %32, align 4
+  store i32 0, ptr %31, align 4
   br label %for.tail.L74
 
 for.tail.L74:                                     ; preds = %if.then.L76, %if.else.L78, %if.then.L78
@@ -1935,8 +1935,8 @@ for.exit.L73:                                     ; preds = %for.tail.L73
   store i32 %.fca.9.7.load417, ptr %.fca.9.7.gep522, align 4
   store i32 %.fca.9.8.load420, ptr %.fca.9.8.gep523, align 4
   store i32 %.fca.9.9.load423, ptr %.fca.9.9.gep524, align 4
-  %33 = add nuw nsw i32 %generation.01129, 1
-  %exitcond1140.not = icmp eq i32 %33, 5
+  %32 = add nuw nsw i32 %generation.01129, 1
+  %exitcond1140.not = icmp eq i32 %32, 5
   br i1 %exitcond1140.not, label %for.exit.L71, label %for.head.L73.preheader
 
 for.exit.L71:                                     ; preds = %for.exit.L73
@@ -1946,14 +1946,14 @@ for.exit.L71:                                     ; preds = %for.exit.L73
 ; Function Attrs: nofree nounwind
 declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #1
 
-; Function Attrs: argmemonly nocallback nofree nounwind willreturn writeonly
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #4
 
-attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }
+attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memory(readwrite, argmem: none, inaccessiblemem: none) }
 attributes #1 = { nofree nounwind }
-attributes #2 = { nofree norecurse nosync nounwind readnone }
+attributes #2 = { nofree norecurse nosync nounwind memory(none) }
 attributes #3 = { noinline nounwind optnone uwtable }
-attributes #4 = { argmemonly nocallback nofree nounwind willreturn writeonly }
+attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: write) }
 attributes #5 = { nounwind }
 
 !0 = distinct !{!0, !1}

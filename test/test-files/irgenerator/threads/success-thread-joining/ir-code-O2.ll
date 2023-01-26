@@ -32,13 +32,13 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %12 = load ptr, ptr %10, align 8
   store ptr %12, ptr %t3, align 8
   %13 = call i32 @pthread_join(ptr %9, ptr null) #2
-  %puts = call i32 @puts(ptr nonnull @str)
+  %puts = call i32 @puts(ptr nonnull dereferenceable(1) @str)
   ret i32 0
 }
 
 define private noalias ptr @_thread0(ptr nocapture readnone %0) {
   %2 = tail call i32 @usleep(i32 300000)
-  %puts = tail call i32 @puts(ptr nonnull @str.1)
+  %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.1)
   ret ptr null
 }
 
@@ -52,7 +52,7 @@ define private noalias ptr @_thread1(ptr nocapture readonly %0) {
   %6 = tail call i32 @pthread_join(ptr %5, ptr null)
   %7 = load ptr, ptr %2, align 8
   %8 = tail call i32 @pthread_join(ptr %7, ptr null)
-  %puts = tail call i32 @puts(ptr nonnull @str.2)
+  %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.2)
   ret ptr null
 }
 
@@ -60,7 +60,7 @@ declare i32 @pthread_join(ptr, ptr) local_unnamed_addr
 
 define private noalias ptr @_thread2(ptr nocapture readnone %0) {
   %2 = tail call i32 @usleep(i32 200000)
-  %puts = tail call i32 @puts(ptr nonnull @str.3)
+  %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.3)
   ret ptr null
 }
 

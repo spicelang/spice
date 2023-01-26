@@ -15,7 +15,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %capturedVariable = alloca i32, align 4
   %i = alloca i32, align 4
   %1 = alloca { ptr, ptr }, align 8
-  %puts = tail call i32 @puts(ptr nonnull @str)
+  %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str)
   store i32 0, ptr %capturedVariable, align 4
   store i32 1, ptr %i, align 4
   %2 = getelementptr inbounds { ptr, ptr }, ptr %1, i64 0, i32 1
@@ -23,7 +23,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
 
 for.body.L6:                                      ; preds = %0, %for.body.L6
   %storemerge2 = phi i32 [ 1, %0 ], [ %7, %for.body.L6 ]
-  %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %storemerge2)
+  %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %storemerge2)
   store ptr %capturedVariable, ptr %1, align 8
   store ptr %i, ptr %2, align 8
   %4 = alloca ptr, align 8
@@ -36,7 +36,7 @@ for.body.L6:                                      ; preds = %0, %for.body.L6
 
 for.exit.L6:                                      ; preds = %for.body.L6
   %9 = call i32 @usleep(i32 1000000) #2
-  %puts1 = call i32 @puts(ptr nonnull @str.1)
+  %puts1 = call i32 @puts(ptr nonnull dereferenceable(1) @str.1)
   ret i32 0
 }
 
@@ -53,7 +53,7 @@ define private noalias ptr @_thread0(ptr nocapture readonly %0) {
   %8 = load i32, ptr %2, align 4
   %9 = shl i32 %8, 1
   store volatile i32 %9, ptr %2, align 4
-  %puts = tail call i32 @puts(ptr nonnull @str.2)
+  %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.2)
   ret ptr null
 }
 

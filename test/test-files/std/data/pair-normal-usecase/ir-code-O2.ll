@@ -14,9 +14,9 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %stringIntPair = alloca %__string_int__Pair__string_int, align 8
   call void @_mp__Pair_string_int__void__ctor__string_int(ptr nonnull %stringIntPair, ptr nonnull @anon.string.0, i32 1234) #2
   %1 = call ptr @_mf__Pair_string_int__string__getFirst(ptr nonnull %stringIntPair) #2
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.0, ptr %1)
+  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %1)
   %3 = call i32 @_mf__Pair_string_int__int__getSecond(ptr nonnull %stringIntPair) #2
-  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %3)
+  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %3)
   ret i32 0
 }
 

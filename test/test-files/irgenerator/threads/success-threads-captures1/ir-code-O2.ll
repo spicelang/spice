@@ -14,13 +14,13 @@ declare i32 @usleep(i32) local_unnamed_addr
 define dso_local i32 @main() local_unnamed_addr #0 {
   %i = alloca i32, align 4
   %1 = alloca { ptr }, align 8
-  %puts = tail call i32 @puts(ptr nonnull @str)
+  %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str)
   store i32 1, ptr %i, align 4
   br label %for.body.L5
 
 for.body.L5:                                      ; preds = %0, %for.body.L5
   %storemerge2 = phi i32 [ 1, %0 ], [ %6, %for.body.L5 ]
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull @printf.str.1, i32 %storemerge2)
+  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %storemerge2)
   store ptr %i, ptr %1, align 8
   %3 = alloca ptr, align 8
   %4 = call i32 @pthread_create(ptr nonnull %3, ptr null, ptr nonnull @_thread0, ptr nonnull %1) #2
@@ -32,7 +32,7 @@ for.body.L5:                                      ; preds = %0, %for.body.L5
 
 for.exit.L5:                                      ; preds = %for.body.L5
   %8 = call i32 @usleep(i32 1000000) #2
-  %puts1 = call i32 @puts(ptr nonnull @str.1)
+  %puts1 = call i32 @puts(ptr nonnull dereferenceable(1) @str.1)
   ret i32 0
 }
 
@@ -44,7 +44,7 @@ define private noalias ptr @_thread0(ptr nocapture readonly %0) {
   %3 = load i32, ptr %2, align 4
   %4 = mul i32 %3, 100000
   %5 = tail call i32 @usleep(i32 %4)
-  %puts = tail call i32 @puts(ptr nonnull @str.2)
+  %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.2)
   ret ptr null
 }
 

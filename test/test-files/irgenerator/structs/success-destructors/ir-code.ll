@@ -25,10 +25,10 @@ define dso_local i32 @main() #0 {
   ret i32 %5
 }
 
-; Function Attrs: argmemonly nocallback nofree nounwind willreturn
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
 
 declare i32 @printf(ptr noundef, ...)
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { argmemonly nocallback nofree nounwind willreturn }
+attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
