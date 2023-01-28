@@ -22,6 +22,8 @@ std::any ParallelizableASTVisitor::visitFctDef(const FctDefNode *node) { return 
 
 std::any ParallelizableASTVisitor::visitProcDef(const ProcDefNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitFctName(const FctNameNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitStructDef(const StructDefNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitInterfaceDef(const InterfaceDefNode *node) { return visitChildren(node); }

@@ -247,8 +247,8 @@ public:
   };
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return nullptr; }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return nullptr; }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctName(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctName(this); }
 
   // Public members
   std::string name;
