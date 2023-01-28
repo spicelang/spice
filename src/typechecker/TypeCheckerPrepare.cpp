@@ -38,7 +38,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
 
 std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Check if name is dtor
-  if (node->functionName == DTOR_FUNCTION_NAME)
+  if (node->fctName->name == DTOR_FUNCTION_NAME)
     throw SemanticError(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function");
 
   // Check if all control paths in the function return
@@ -70,7 +70,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   SymbolType thisPtrType = thisType;
   if (node->isMethod) {
     Scope *structParentScope = node->structScope->parent;
-    SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->structName);
+    SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->fctName->structName);
     assert(structEntry != nullptr);
     // Set struct to used
     structEntry->used = true;
@@ -128,7 +128,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   functionEntry->updateType(SymbolType(TY_FUNCTION), false);
 
   // Build function object
-  const Function spiceFunc(node->functionName, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node,
+  const Function spiceFunc(node->fctName->name, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node,
                            /*external=*/false);
   FunctionManager::insertFunction(currentScope, spiceFunc, &node->fctManifestations);
 
@@ -152,7 +152,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   node->returnsOnAllControlPaths(nullptr);
 
   // Check if dtor and has params
-  if (node->hasParams && node->procedureName == DTOR_FUNCTION_NAME)
+  if (node->hasParams && node->procName->name == DTOR_FUNCTION_NAME)
     throw SemanticError(node, DTOR_WITH_PARAMS, "It is not allowed to specify parameters for destructors");
 
   // Change to procedure scope
@@ -180,7 +180,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   SymbolType thisPtrType = thisType;
   if (node->isMethod) {
     Scope *structParentScope = node->structScope->parent;
-    SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->structName);
+    SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->procName->structName);
     assert(structEntry != nullptr);
     // Set struct to used
     structEntry->used = true;
@@ -233,7 +233,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   procedureEntry->updateType(SymbolType(TY_PROCEDURE), false);
 
   // Build procedure object
-  const Function spiceProc(node->procedureName, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node,
+  const Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node,
                            /*external=*/false);
   FunctionManager::insertFunction(currentScope, spiceProc, &node->procManifestations);
 

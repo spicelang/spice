@@ -230,6 +230,34 @@ public:
   bool takesArgs = false;
 };
 
+// ========================================================== FctNameNode =======================================================
+
+class FctNameNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Enums
+  enum OverloadedOperator {
+    OP_NONE,
+    OP_PLUS,
+    OP_MINUS,
+    OP_MUL,
+    OP_DIV,
+  };
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return nullptr; }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return nullptr; }
+
+  // Public members
+  std::string name;
+  std::string structName;
+  std::string fqName;
+  std::vector<std::string> nameFragments;
+  OverloadedOperator overloadedOperator = OP_NONE;
+};
+
 // ========================================================== FctDefNode =========================================================
 
 class FctDefNode : public ASTNode {
@@ -250,15 +278,16 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getSymbolTableEntryName() const { return functionName + ":" + codeLoc.toPrettyLine(); }
+  [[nodiscard]] std::string getSymbolTableEntryName() const {
+    const FctNameNode *functionName = getChild<FctNameNode>();
+    assert(functionName != nullptr);
+    return functionName->name + ":" + codeLoc.toPrettyLine();
+  }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &fctManifestations; }
 
   // Public members
-  std::string functionName;
-  std::string structName;
-  std::string fqFunctionName;
-  std::vector<std::string> functionNameFragments;
+  FctNameNode *fctName;
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
@@ -287,22 +316,22 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getSymbolTableEntryName() const { return procedureName + ":" + codeLoc.toPrettyLine(); }
+  [[nodiscard]] std::string getSymbolTableEntryName() const {
+    const FctNameNode *functionName = getChild<FctNameNode>();
+    assert(functionName != nullptr);
+    return functionName->name + ":" + codeLoc.toPrettyLine();
+  }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &procManifestations; }
 
   // Public members
-  std::string procedureName;
-  std::string structName;
-  std::string fqProcedureName;
-  std::vector<std::string> procedureNameFragments;
+  FctNameNode *procName;
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
   Scope *procScope = nullptr;
-  Function *procBase = nullptr;
   std::vector<Function *> procManifestations;
 };
 
