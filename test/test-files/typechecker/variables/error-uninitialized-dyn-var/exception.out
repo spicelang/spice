@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/variables/error-uninitialized-dyn-var/source.spice:2:5:
+Unexpected dyn type: For the variable 'test' no type could be inferred
+
+2  dyn test;
+   ^^^^^^^^

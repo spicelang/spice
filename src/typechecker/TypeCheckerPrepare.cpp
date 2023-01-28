@@ -96,7 +96,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Retrieve return type
   auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
   if (returnType.is(TY_DYN))
-    throw SemanticError(node, UNEXPECTED_DYN_TYPE_SA, "Dyn return types are not allowed");
+    throw SemanticError(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed");
 
   // Visit parameters
   std::vector<std::string> paramNames;
@@ -505,7 +505,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
       auto argType = std::any_cast<SymbolType>(visit(arg));
       // Check if the argument type is 'dyn'
       if (argType.is(TY_DYN))
-        throw SemanticError(arg, UNEXPECTED_DYN_TYPE_SA, "Dyn data type is not allowed as arg type for external functions");
+        throw SemanticError(arg, UNEXPECTED_DYN_TYPE, "Dyn data type is not allowed as arg type for external functions");
       // Save argument
       argTypes.push_back({argType, false});
     }
@@ -518,7 +518,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
     auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
     // Check if return type is dyn
     if (returnType.is(TY_DYN))
-      throw SemanticError(node->returnType(), UNEXPECTED_DYN_TYPE_SA, "dyn is not allowed as return type for external functions");
+      throw SemanticError(node->returnType(), UNEXPECTED_DYN_TYPE, "dyn is not allowed as return type for external functions");
     spiceFunc = Function(node->extFunctionName, node->entry, /*thisType=*/dynType, returnType, argTypes, /*templateTypes=*/{},
                          node, /*external=*/true);
   } else { // External procedure

@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/variables/error-usage-of-dyn-var/source.spice:7:5:
+Referenced undefined function: Function/procedure 'testProc(dyn)' could not be found
+
+7  testProc(test);
+   ^^^^^^^^^^^^^^
