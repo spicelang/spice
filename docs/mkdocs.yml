@@ -85,11 +85,12 @@ nav:
     - language/declaration-modifiers.md
     - language/arrays.md
     - language/pointers.md
+    #- language/references.md
     - language/enums.md
     - language/structs.md
     - language/methods.md
     - language/constructors-destructors.md
-    #- language/aliases.md
+    - language/aliases.md
     - language/generics.md
     #- language/threads.md
     - language/number-formats.md
