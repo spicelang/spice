@@ -1,8 +1,4 @@
-f<int> main() {
-    dyn test;
-}
-
-/*type TestStruct struct {
+type TestStruct struct {
     bool f1
     int& f2
 }
@@ -14,4 +10,4 @@ f<int> main() {
     //printf("Test: %d\n", ts.f2);
     //ts.f2++;
     //printf("Test: %d", t);
-}*/
+}
