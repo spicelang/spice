@@ -344,20 +344,21 @@ public p String.reverse() {
     }
 }
 
+type StartIndexType int|long;
+
 /**
  * Replace occurrence of substring with the replacement string
  *
  * @param needle Substring to replace
  * @param replacement Replacement for the substring
  */
-/*public p String.replace(
-    string* haystack,
+/*public p String.replace<ReplaceStartIndexType>(
     string needle,
     string replacement,
-    unsigned long startIndex = 0l
+    unsigned ReplaceStartIndexType startIndex = 0l
 ) {
     // Find occurrence
-    unsigned long startIdx = haystack.find(needle, startIndex);
+    unsigned long startIdx = this.find(needle, startIndex);
     // Return if not found
     if startIdx == -1l { return; }
 
@@ -369,27 +370,12 @@ public p String.reverse() {
 }*/
 
 /**
- * Replace occurrence of substring with the replacement string
- *
- * @param needle Substring to replace
- * @param replacement Replacement for the substring
- */
-/*public inline p String.replace(
-    string* haystack,
-    string needle,
-    string replacement,
-    unsigned int startIndex
-) {
-    this.replace(haystack, needle, replacement, (long) startIndex);
-}*/
-
-/**
  * Replace all occurrences of substring with the replacement string
  *
  * @param needle Substring to replace
  * @param replacement Replacement for the substring
  */
-/*public p String.replaceAll(string* haystack, string needle, string replacement) {
+/*public p String.replaceAll(string needle, string replacement) {
     unsigned long needleLength = getRawLength(needle);
     // Return false if the needle is longer than the haystack
     if this.length < needleLength { return -1l; }
@@ -407,7 +393,7 @@ public p String.reverse() {
  * @param length Length of substring
  * @return Substring
  */
-public f<String> String.substring(unsigned long startIndex, long length = -1l) {
+public f<String> String.substring<StartIndexType>(unsigned StartIndexType startIndex, long length = -1l) {
     // Return empty string if the length is 0 or the startIndex is out of bounds
     if length == 0l || startIndex >= this.length {
         return String("");
@@ -440,18 +426,6 @@ public f<String> String.substring(unsigned long startIndex, long length = -1l) {
 
     // Return raw string
     return substring;
-}
-
-/**
- * Returns the substring of the current string, starting at position `startIndex` with
- * the length of `length`.
- *
- * @param startIndex Substring start index
- * @param length Length of substring
- * @return Substring
- */
-public inline f<String> String.substring(unsigned int startIndex, int length = -1) {
-    return this.substring((long) startIndex, (long) length);
 }
 
 /**

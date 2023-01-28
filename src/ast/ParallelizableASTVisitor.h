@@ -10,6 +10,7 @@ namespace spice::compiler {
 class ASTNode;
 class EntryNode;
 class MainFctDefNode;
+class FctNameNode;
 class FctDefNode;
 class ProcDefNode;
 class StructDefNode;
@@ -87,6 +88,7 @@ public:
   virtual std::any visitMainFctDef(const MainFctDefNode *node);
   virtual std::any visitFctDef(const FctDefNode *node);
   virtual std::any visitProcDef(const ProcDefNode *node);
+  virtual std::any visitFctName(const FctNameNode *node);
   virtual std::any visitStructDef(const StructDefNode *node);
   virtual std::any visitInterfaceDef(const InterfaceDefNode *node);
   virtual std::any visitEnumDef(const EnumDefNode *node);

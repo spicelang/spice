@@ -88,6 +88,7 @@ public:
   virtual std::any visitMainFctDef(MainFctDefNode *node) = 0;
   virtual std::any visitFctDef(FctDefNode *node) = 0;
   virtual std::any visitProcDef(ProcDefNode *node) = 0;
+  virtual std::any visitFctName(FctNameNode *node) = 0;
   virtual std::any visitStructDef(StructDefNode *node) = 0;
   virtual std::any visitInterfaceDef(InterfaceDefNode *node) = 0;
   virtual std::any visitEnumDef(EnumDefNode *node) = 0;

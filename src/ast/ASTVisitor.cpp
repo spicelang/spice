@@ -14,6 +14,8 @@ std::any ASTVisitor::visitFctDef(FctDefNode *node) { return visitChildren(node);
 
 std::any ASTVisitor::visitProcDef(ProcDefNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitFctName(FctNameNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitStructDef(StructDefNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitInterfaceDef(InterfaceDefNode *node) { return visitChildren(node); }
