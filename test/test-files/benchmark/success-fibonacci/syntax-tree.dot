@@ -8,6 +8,8 @@ digraph {
  L1C1_FctDef -> L1C3_DataType;
  L1C3_BaseDataType [color="lightgreen",label="BaseDataType"];
  L1C3_DataType -> L1C3_BaseDataType;
+ L1C8_FctName [color="lightgreen",label="FctName"];
+ L1C1_FctDef -> L1C8_FctName;
  L1C13_ParamLst [color="lightgreen",label="ParamLst"];
  L1C1_FctDef -> L1C13_ParamLst;
  L1C13_DeclStmt [color="lightgreen",label="DeclStmt"];
