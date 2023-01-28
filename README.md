@@ -1,3 +1,4 @@
+
 <p align="center">
   <img alt="Spice Logo" src="./docs/docs/static/logo_large_white_background_blur.png" height="230" />
   <h3 align="center">Spice Programming Language</h3>
@@ -80,6 +81,7 @@ Currently, Spice only offers stable support for x86_64/windows and x86_64/linux.
 - `bpf`
 - `hexagon`
 - `lanai`
+- `loongarch`
 - `mips`
 - `msp430`
 - `nvptx`

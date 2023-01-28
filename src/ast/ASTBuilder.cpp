@@ -90,7 +90,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
       currentNode = fctDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = fctDefNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
-    else if (auto fctName = dynamic_cast<SpiceParser::FctNameContext *>(subTree); fctName != nullptr) // FctName
+    else if (rule = dynamic_cast<SpiceParser::FctNameContext *>(subTree); rule != nullptr) // FctName
       currentNode = fctDefNode->createChild<FctNameNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
       currentNode = fctDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
@@ -110,8 +110,8 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   }
 
   // Retrieve information from the symbol name
-  const FctNameNode *fctNameNode = fctDefNode->getChild<FctNameNode>();
-  fctDefNode->isMethod = fctNameNode->nameFragments.size() > 1;
+  fctDefNode->fctName = fctDefNode->getChild<FctNameNode>();
+  fctDefNode->isMethod = fctDefNode->fctName->nameFragments.size() > 1;
 
   return nullptr;
 }
@@ -145,8 +145,8 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   }
 
   // Retrieve information from the symbol name
-  const FctNameNode *fctNameNode = procDefNode->getChild<FctNameNode>();
-  procDefNode->isMethod = fctNameNode->nameFragments.size() > 1;
+  procDefNode->procName = procDefNode->getChild<FctNameNode>();
+  procDefNode->isMethod = procDefNode->procName->nameFragments.size() > 1;
 
   return nullptr;
 }
@@ -157,14 +157,19 @@ std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
   saveErrorMessage(fctNameNode, ctx);
 
   // Extract function name
-  fctNameNode->name = fctNameNode->fqName = getIdentifier(ctx->IDENTIFIER().back());
-  if (ctx->IDENTIFIER().size() > 1) {
-    fctNameNode->structName = getIdentifier(ctx->IDENTIFIER().front());
-    fctNameNode->fqName = fctNameNode->structName + MEMBER_ACCESS_TOKEN + fctNameNode->name;
+  if (!ctx->IDENTIFIER().empty()) {
+    fctNameNode->name = fctNameNode->fqName = getIdentifier(ctx->IDENTIFIER().back());
+    if (ctx->IDENTIFIER().size() > 1) {
+      fctNameNode->structName = getIdentifier(ctx->IDENTIFIER().front());
+      fctNameNode->fqName = fctNameNode->structName + MEMBER_ACCESS_TOKEN + fctNameNode->name;
+      fctNameNode->nameFragments.push_back(fctNameNode->structName);
+    }
+    fctNameNode->nameFragments.push_back(fctNameNode->name);
   }
 
   // Extract overloaded operator
   if (ctx->OPERATOR()) {
+    // Visit overloadable operator
     currentNode = fctNameNode;
     visit(ctx->overloadableOp());
   }
@@ -1869,14 +1874,23 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
   fctNameNode->reserveChildren(ctx->children.size());
   saveErrorMessage(fctNameNode, ctx);
 
-  if (ctx->PLUS())
+  if (ctx->PLUS()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_PLUS;
-  else if (ctx->MINUS())
+    fctNameNode->name = "_op.plus";
+  } else if (ctx->MINUS()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_MINUS;
-  else if (ctx->MUL())
+    fctNameNode->name = "_op.minus";
+  } else if (ctx->MUL()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_MUL;
-  else if (ctx->DIV())
+    fctNameNode->name = "_op.mul";
+  } else if (ctx->DIV()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_DIV;
+    fctNameNode->name = "_op.div";
+  } else {
+    assert(false);
+  }
+  fctNameNode->fqName = fctNameNode->name;
+  fctNameNode->nameFragments.push_back(fctNameNode->name);
 
   return nullptr;
 }

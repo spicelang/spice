@@ -401,7 +401,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
 
     // References with no initialization are illegal
-    if (localVarType.isRef())
+    if (localVarType.isRef() && !node->isParam())
       throw SemanticError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
   }
 

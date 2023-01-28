@@ -1,8 +1,8 @@
 f<int> main() {
     String strA = String("Hello ");
     String strB = String("World!");
-    //String strC = strA + strB;
-    printf("%d", strA);
-    printf("%d", strB);
-    //printf("%d", strC);
+    String strC = strA + strB;
+    printf("%s\n", strA);
+    printf("%s\n", strB);
+    printf("%s\n", strC);
 }
