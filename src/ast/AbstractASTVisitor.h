@@ -10,6 +10,7 @@ namespace spice::compiler {
 class ASTNode;
 class EntryNode;
 class MainFctDefNode;
+class FctNameNode;
 class FctDefNode;
 class ProcDefNode;
 class StructDefNode;

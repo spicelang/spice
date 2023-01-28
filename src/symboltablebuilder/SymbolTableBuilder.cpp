@@ -74,9 +74,9 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Change to struct scope if this function is a method
   if (node->isMethod) {
-    node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->structName);
+    node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->fctName->structName);
     if (!currentScope)
-      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->structName + "' could not be found");
+      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->fctName->structName + "' could not be found");
   }
 
   // Create scope for the function
@@ -108,8 +108,8 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Add to external name registry
   // if a function has overloads, they both refer to the same entry in the registry. So we only register the name once
-  if (!sourceFile->getNameRegistryEntry(node->fqFunctionName))
-    sourceFile->addNameRegistryEntry(node->fqFunctionName, /*entry=*/nullptr, currentScope, /*keepNewOnCollision=*/true);
+  if (!sourceFile->getNameRegistryEntry(node->fctName->fqName))
+    sourceFile->addNameRegistryEntry(node->fctName->fqName, /*entry=*/nullptr, currentScope, /*keepNewOnCollision=*/true);
 
   // Leave the struct scope
   if (node->isMethod)
@@ -136,9 +136,9 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Change to struct scope if this procedure is a method
   if (node->isMethod) {
-    node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->structName);
+    node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->procName->structName);
     if (!currentScope)
-      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->structName + "' could not be found");
+      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->procName->structName + "' could not be found");
   }
 
   // Create scope for the procedure
@@ -167,8 +167,8 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Add to external name registry
   // if a procedure has overloads, they both refer to the same entry in the registry. So we only register the name once
-  if (!sourceFile->getNameRegistryEntry(node->fqProcedureName))
-    sourceFile->addNameRegistryEntry(node->fqProcedureName, /*entry=*/nullptr, currentScope, /*keepNewOnCollision=*/true);
+  if (!sourceFile->getNameRegistryEntry(node->procName->fqName))
+    sourceFile->addNameRegistryEntry(node->procName->fqName, /*entry=*/nullptr, currentScope, /*keepNewOnCollision=*/true);
 
   // Leave the struct scope
   if (node->isMethod)

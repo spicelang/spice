@@ -1,13 +1,8 @@
-type TestStruct struct {
-    bool f1
-    int& f2
-}
-
 f<int> main() {
-    int t = 123;
-    dyn ts = TestStruct { true, t };
-
-    //printf("Test: %d\n", ts.f2);
-    //ts.f2++;
-    //printf("Test: %d", t);
+    String strA = String("Hello ");
+    String strB = String("World!");
+    //String strC = strA + strB;
+    printf("%d", strA);
+    printf("%d", strB);
+    //printf("%d", strC);
 }

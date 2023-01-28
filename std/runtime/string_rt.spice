@@ -158,22 +158,36 @@ public p String.append(const char c) {
 }
 
 /**
- * Implements the multily operator for 'string * int' or 'int * string'
+ * Concatenates two strings and returns the result
  *
- * @param operand Number of repetitions
+ * @parem a String a
+ * @param b String b
  */
-public inline p String.opMul(const int operand) {
-    this.opMul((long) operand);
+public f<String> operator+(const String& a, const String& b) {
+
+}
+
+type MulOperand int|long|short;
+
+/**
+ * Concatenates the given string with itself n times.
+ *
+ * @param str Input string
+ * @param n Multiplication operand
+ */
+public f<String> operator*(const String& str, const MulOperand n) {
+
 }
 
 /**
- * Implements the multily operator for 'string * long' or 'long * string'
+ * Concatenates the given string with itself n times.
  *
- * @param operand Number of repetitions
+ * @param n Multiplication operand
+ * @param str Input string
  */
-public p String.opMul(const long operand) {
+public f<String> operator*(const MulOperand n, const String& str) {
     // Cancel if operand is less than 2
-    if operand < 2l { return; }
+    if operand < 2 { return; }
 
     unsigned long newLength = operand * this.length;
     // Check if we need to re-allocate memory
@@ -189,15 +203,6 @@ public p String.opMul(const long operand) {
         this.contents[newLength] = '\0';
     }
     this.length = newLength;
-}
-
-/**
- * Implements the multily operator for 'string * short' or 'short * string'
- *
- * @param operand Number of repetitions
- */
-public inline p String.opMul(const short operand) {
-    this.opMul((long) operand);
 }
 
 /**

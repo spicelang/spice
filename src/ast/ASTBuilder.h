@@ -34,6 +34,7 @@ public:
   std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override;
   std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
   std::any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
+  std::any visitFctName(SpiceParser::FctNameContext *ctx) override;
   std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
   std::any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override;
   std::any visitAliasDef(SpiceParser::AliasDefContext *ctx) override;
@@ -102,6 +103,7 @@ public:
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override;
   std::any visitAssignOp(SpiceParser::AssignOpContext *ctx) override;
   std::any visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) override;
+  std::any visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) override;
 
 private:
   // Members
