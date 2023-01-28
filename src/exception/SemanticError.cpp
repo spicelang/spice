@@ -87,7 +87,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Destructors must not have parameters";
   case OPERATOR_WRONG_DATA_TYPE:
     return "Wrong data type for operator";
-  case UNEXPECTED_DYN_TYPE_SA:
+  case UNEXPECTED_DYN_TYPE:
     return "Unexpected dyn type";
   case REASSIGN_CONST_VARIABLE:
     return "Cannot re-assign constant variable";

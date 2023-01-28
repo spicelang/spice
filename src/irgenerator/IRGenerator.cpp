@@ -60,14 +60,14 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &
 llvm::Value *IRGenerator::resolveValue(const ASTNode *node, Scope *accessScope /*=nullptr*/) {
   // Visit the given AST node
   auto exprResult = any_cast<ExprResult>(visit(node));
-  return resolveValue(node, exprResult);
+  return resolveValue(node, exprResult, accessScope);
 }
 
 llvm::Value *IRGenerator::resolveValue(const ASTNode *node, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
   return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult, accessScope);
 }
 
-llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
+llvm::Value *IRGenerator::resolveValue(SymbolType symbolType, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
   // Set access scope to current scope if nullptr gets passed
   if (!accessScope)
     accessScope = currentScope;
@@ -82,8 +82,16 @@ llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, ExprResult 
     return exprResult.value;
   }
 
-  // If not, load the value from the pointer
   assert(exprResult.ptr != nullptr);
+
+  // If we have a reference, load the referenced value ptr first
+  if (symbolType.isRef()) {
+    llvm::Type *valueTy = symbolType.toLLVMType(context, accessScope);
+    exprResult.ptr = builder.CreateLoad(valueTy, exprResult.ptr);
+    symbolType = symbolType.getContainedTy();
+  }
+
+  // Load the value from the pointer
   llvm::Type *valueTy = symbolType.toLLVMType(context, accessScope);
   exprResult.value = builder.CreateLoad(valueTy, exprResult.ptr);
 
@@ -252,24 +260,39 @@ ExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsN
 
 ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl) {
   // Get symbol types of left and right side
-  const SymbolType &lhsSType = lhsEntry->getType();
   const SymbolType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
 
   // Deduce some information about the assignment
-  const bool isRefAssign = lhsEntry != nullptr && lhsSType.isRef();
+  const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
   const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT);
 
-  if (isRefAssign) {
-    // Get address of right side
-    llvm::Value *rhsAddress = resolveAddress(rhsNode);
-    assert(rhsAddress != nullptr);
+  if (lhsEntry && lhsEntry->getType().isRef()) {
+    if (isDecl) { // Reference gets assigned
+      // Get address of right side
+      llvm::Value *rhsAddress = resolveAddress(rhsNode);
+      assert(rhsAddress != nullptr);
 
-    // Allocate space for the reference and store the address
-    llvm::Value *refAddress = insertAlloca(rhsAddress->getType());
-    builder.CreateStore(rhsAddress, refAddress);
-    if (lhsEntry)
+      // Allocate space for the reference and store the address
+      llvm::Value *refAddress = insertAlloca(rhsAddress->getType());
+      builder.CreateStore(rhsAddress, refAddress);
       lhsEntry->updateAddress(refAddress);
-    return ExprResult{.ptr = refAddress, .value = rhsAddress, .entry = lhsEntry};
+
+      return ExprResult{.ptr = refAddress, .value = rhsAddress, .entry = lhsEntry};
+    } else { // Referenced address gets assigned
+      // Get value of right side
+      llvm::Value *rhsValue = resolveValue(rhsNode);
+      assert(rhsValue != nullptr);
+
+      // Load the referenced address
+      assert(lhsAddress != nullptr);
+      llvm::Type *referencedAddressTy = lhsEntry->getType().toLLVMType(context, currentScope);
+      llvm::Value *referencedAddress = builder.CreateLoad(referencedAddressTy, lhsAddress);
+
+      // Store the rhs to the referenced address
+      builder.CreateStore(rhsValue, referencedAddress);
+
+      return ExprResult{.ptr = lhsAddress, .value = rhsValue, .entry = lhsEntry};
+    }
   }
 
   if (isDecl && rhsSType.is(TY_STRUCT)) {
@@ -301,7 +324,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   // Allocate new memory if the lhs address does not exist
   if (!lhsAddress) {
     assert(lhsEntry != nullptr);
-    lhsAddress = insertAlloca(lhsSType.toLLVMType(context, currentScope));
+    lhsAddress = insertAlloca(lhsEntry->getType().toLLVMType(context, currentScope));
     if (lhsEntry)
       lhsEntry->updateAddress(lhsAddress);
   }

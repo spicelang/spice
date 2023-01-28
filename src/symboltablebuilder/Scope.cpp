@@ -74,13 +74,6 @@ void Scope::copyChildScope(const std::string &oldName, const std::string &newNam
 }
 
 /**
- * Retrieve the scope of the function or procedure, where this scope lives
- *
- * @return Function or procedure scope
- */
-Scope *Scope::getFunctionScope() { return searchForScope(SCOPE_FUNC_PROC_BODY); }
-
-/**
  * Get a child scope of the current scope by its name
  *
  * @param scopeName Child scope name
@@ -307,16 +300,18 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 }
 
 /**
- * Searches in the parent scopes for a scope with a certain type
- *
- * @param scopeType Type to search for
- * @return Next higher scope that has the expected type
+ * Checks if all variables of this and all child scopes are of an explicit type.
+ * This is executed after type inference to check that all variables could be inferred correctly.
  */
-Scope *Scope::searchForScope(const ScopeType &scopeType) {
-  Scope *searchResult = this;
-  while (searchResult && searchResult->type != scopeType)
-    searchResult = searchResult->parent;
-  return searchResult;
+void Scope::checkSuccessfulTypeInference() const {
+  // Check symbols in this scope
+  for (auto &[name, entry] : symbolTable.symbols)
+    if (entry.getType().is(TY_DYN))
+      throw SemanticError(entry.declNode, UNEXPECTED_DYN_TYPE, "For the variable '" + name + "' no type could be inferred");
+
+  // Check child scopes
+  for (auto &[_, scope] : children)
+    scope->checkSuccessfulTypeInference();
 }
 
 /**

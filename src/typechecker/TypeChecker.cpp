@@ -1196,7 +1196,7 @@ std::any TypeChecker::visitValue(ValueNode *node) {
   if (node->isNil) {
     auto nilType = std::any_cast<SymbolType>(visit(node->nilType()));
     if (nilType.is(TY_DYN))
-      throw SemanticError(node->nilType(), UNEXPECTED_DYN_TYPE_SA, "Nil must have an explicit type");
+      throw SemanticError(node->nilType(), UNEXPECTED_DYN_TYPE, "Nil must have an explicit type");
     return ExprResult{node->setEvaluatedSymbolType(nilType, manIdx)};
   }
 

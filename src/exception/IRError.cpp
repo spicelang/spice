@@ -52,8 +52,6 @@ std::string IRError::getMessagePrefix(IRErrorType type) {
     return "Branch not found";
   case REFERENCED_UNDEFINED_FUNCTION_IR:
     return "Referenced undefined function";
-  case UNEXPECTED_DYN_TYPE_IR:
-    return "Unexpected type of dyn. Symbol table incomplete";
   case PRINTF_NULL_TYPE:
     return "Printf has null type";
   case INVALID_FUNCTION:

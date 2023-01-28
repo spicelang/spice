@@ -18,7 +18,7 @@ const char *const PATH_TEST_FILES = ".\\test-files\\";
 const char *const PATH_TEST_FILES = "./test-files/";
 #endif
 const unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
-const unsigned int IR_FILE_SKIP_LINES = 4; // Skip the first couple of lines, because they contain target dependent information
+const unsigned int IR_FILE_SKIP_LINES = 5; // Skip the first couple of lines, because they contain target dependent information
 extern bool updateRefs;
 extern bool runBenchmarks;
 extern bool skipNonGitHubTests;

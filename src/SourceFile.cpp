@@ -277,6 +277,9 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
                                "this as a bug on GitHub.");
   } while (typeChecker.reVisitRequested);
 
+  // Check if all dyn variables were type-inferred successfully
+  globalScope->checkSuccessfulTypeInference();
+
   timer.stop();
   printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost);
 

@@ -64,7 +64,6 @@ public:
   Scope *createChildScope(const std::string &scopeName, const ScopeType &scopeType, const CodeLoc *codeLoc);
   void renameChildScope(const std::string &oldName, const std::string &newName);
   void copyChildScope(const std::string &oldName, const std::string &newName);
-  [[nodiscard]] Scope *getFunctionScope();
   [[nodiscard]] Scope *getChildScope(const std::string &scopeName) const;
   [[nodiscard]] std::vector<SymbolTableEntry *> getVarsGoingOutOfScope();
 
@@ -78,6 +77,7 @@ public:
 
   // Util
   void collectWarnings(std::vector<CompilerWarning> &warnings) const;
+  void checkSuccessfulTypeInference() const;
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] size_t getLoopNestingDepth() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
@@ -107,9 +107,6 @@ private:
   StructRegistry structs;
   std::unordered_map<std::string, Interface> interfaces;
   std::unordered_map<std::string, GenericType> genericTypes;
-
-  // Private methods
-  Scope *searchForScope(const ScopeType &scopeType);
 };
 
 } // namespace spice::compiler
