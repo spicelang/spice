@@ -16,8 +16,10 @@ digraph {
  L1C2_baseDataType -> L1C2
  L1C5 [color="lightblue",label="GREATER: >"];
  L1C0_functionDef -> L1C5
+ L1C7_fctName [color="lightgreen",label="fctName"];
+ L1C0_functionDef -> L1C7_fctName;
  L1C7 [color="lightblue",label="IDENTIFIER: fib"];
- L1C0_functionDef -> L1C7
+ L1C7_fctName -> L1C7
  L1C10 [color="lightblue",label="LPAREN: ("];
  L1C0_functionDef -> L1C10
  L1C11_paramLst [color="lightgreen",label="paramLst"];
