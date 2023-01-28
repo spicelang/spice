@@ -38,10 +38,8 @@ SymbolType OpRuleManager::getPlusEqualResultType(const ASTNode *node, SymbolType
 
   // Check if this is an unsafe operation
   if (lhs.isPtr() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (typeChecker->currentScope->doesAllowUnsafeOperations())
-      return lhs;
-    else
-      throw printErrorMessageUnsafe(node, "+=", lhs, rhs);
+    ensureUnsafeAllowed(node, "+=", lhs, rhs);
+    return lhs;
   }
 
   return validateBinaryOperation(node, PLUS_EQUAL_OP_RULES, arrayLength(PLUS_EQUAL_OP_RULES), "+=", lhs, rhs);
@@ -52,10 +50,8 @@ SymbolType OpRuleManager::getMinusEqualResultType(const ASTNode *node, SymbolTyp
   rhs = rhs.removeReferenceWrappers();
 
   if (lhs.isPtr() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (typeChecker->currentScope->doesAllowUnsafeOperations())
-      return lhs;
-    else
-      throw printErrorMessageUnsafe(node, "-=", lhs, rhs);
+    ensureUnsafeAllowed(node, "-=", lhs, rhs);
+    return lhs;
   }
 
   return validateBinaryOperation(node, MINUS_EQUAL_OP_RULES, arrayLength(MINUS_EQUAL_OP_RULES), "-=", lhs, rhs);
@@ -228,17 +224,13 @@ SymbolType OpRuleManager::getPlusResultType(const ASTNode *node, SymbolType lhs,
 
   // Allow any* + <int/long/short>
   if (lhs.isPtr() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (typeChecker->currentScope->doesAllowUnsafeOperations())
-      return lhs;
-    else
-      throw printErrorMessageUnsafe(node, "+", lhs, rhs);
+    ensureUnsafeAllowed(node, "+", lhs, rhs);
+    return lhs;
   }
   // Allow <int/long/short> + any*
   if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPtr()) {
-    if (typeChecker->currentScope->doesAllowUnsafeOperations())
-      return rhs;
-    else
-      throw printErrorMessageUnsafe(node, "+", lhs, rhs);
+    ensureUnsafeAllowed(node, "+", lhs, rhs);
+    return rhs;
   }
 
   return validateBinaryOperation(node, PLUS_OP_RULES, arrayLength(PLUS_OP_RULES), "+", lhs, rhs);
@@ -250,17 +242,13 @@ SymbolType OpRuleManager::getMinusResultType(const ASTNode *node, SymbolType lhs
 
   // Allow any* - <int/long/short>
   if (lhs.isPtr() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
-    if (typeChecker->currentScope->doesAllowUnsafeOperations())
-      return lhs;
-    else
-      throw printErrorMessageUnsafe(node, "-", lhs, rhs);
+    ensureUnsafeAllowed(node, "-", lhs, rhs);
+    return lhs;
   }
   // Allow <int/long/short> - any*
   if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPtr()) {
-    if (typeChecker->currentScope->doesAllowUnsafeOperations())
-      return rhs;
-    else
-      throw printErrorMessageUnsafe(node, "-", lhs, rhs);
+    ensureUnsafeAllowed(node, "-", lhs, rhs);
+    return rhs;
   }
 
   return validateBinaryOperation(node, MINUS_OP_RULES, arrayLength(MINUS_OP_RULES), "-", lhs, rhs);
@@ -355,10 +343,8 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
     return lhs;
   // Allow casts any* -> any*
   if (lhs.isPtr() && rhs.isPtr()) {
-    if (typeChecker->currentScope->doesAllowUnsafeOperations())
-      return lhs;
-    else
-      throw printErrorMessageUnsafe(node, "(cast)", lhs, rhs);
+    ensureUnsafeAllowed(node, "(cast)", lhs, rhs);
+    return lhs;
   }
   // Check primitive type combinations
   return validateBinaryOperation(node, CAST_OP_RULES, arrayLength(CAST_OP_RULES), "(cast)", lhs, rhs);
@@ -384,6 +370,18 @@ SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const Unar
   throw printErrorMessageUnary(node, name, lhs);
 }
 
+void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs,
+                                        const SymbolType &rhs) const {
+  if (typeChecker->currentScope->doesAllowUnsafeOperations())
+    return;
+  // Print error message
+  const std::string lhsName = lhs.getName(true);
+  const std::string rhsName = rhs.getName(true);
+  const std::string errorMsg = "Cannot apply '" + std::string(name) + "' operator on types " + lhsName + " and " + rhsName +
+                               " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing.";
+  throw SemanticError(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg);
+}
+
 SemanticError OpRuleManager::printErrorMessageBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
                                                      const SymbolType &rhs) {
   return {node, OPERATOR_WRONG_DATA_TYPE,
@@ -392,13 +390,6 @@ SemanticError OpRuleManager::printErrorMessageBinary(const ASTNode *node, const 
 
 SemanticError OpRuleManager::printErrorMessageUnary(const ASTNode *node, const char *name, const SymbolType &lhs) {
   return {node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + std::string(name) + "' operator on type " + lhs.getName(true)};
-}
-
-SemanticError OpRuleManager::printErrorMessageUnsafe(const ASTNode *node, const char *name, const SymbolType &lhs,
-                                                     const SymbolType &rhs) {
-  return {node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
-          "Cannot apply '" + std::string(name) + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true) +
-              " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing."};
 }
 
 } // namespace spice::compiler

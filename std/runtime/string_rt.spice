@@ -8,6 +8,10 @@ ext<byte*> realloc(byte*, int);
 ext free(byte*);
 ext memcpy(char*, char*, long);
 
+// Generic types
+type IntLong int|long;
+type IntLongShort int|long|short;
+
 /**
  * String wrapper for enriching raw strings with information and make them mutable
  */
@@ -52,7 +56,7 @@ public p String.ctor(const char value) {
     }
 }
 
-public p String.ctor(const String value1, const string value2 = "") {
+public p String.ctor(const String& value1, const string value2 = "") {
     this.length = value1.length;
     this.capacity = value1.capacity;
 
@@ -69,23 +73,6 @@ public p String.ctor(const String value1, const string value2 = "") {
 
     if getRawLength(value2) > 0l {
         this.append(value2);
-    }
-}
-
-public p String.ctor(const String value1, const String value2) {
-    this.length = value1.length + value2.length;
-    this.capacity = value1.capacity + value2.capacity;
-
-    // Allocate space
-    unsafe {
-        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        this.contents = (char*) malloc(requiredBytes);
-    }
-
-    // Copy the contents from the other string
-    unsafe {
-        memcpy(this.contents, value1.contents, value1.length);
-        memcpy(this.contents + value1.length, value2.contents, value2.length + 1l); // +1 because of null terminator
     }
 }
 
@@ -122,7 +109,7 @@ public p String.append(const string appendix) {
  *
  * @param appendix String to be appended
  */
-public p String.append(const String appendix) {
+public p String.append(const String& appendix) {
     const char* rawAppendix = appendix.getRaw();
     unsigned long appendixLength = appendix.length;
     // Check if we need to re-allocate memory
@@ -167,15 +154,13 @@ public f<String> operator+(const String& a, const String& b) {
     return String("");
 }
 
-type MulOperand int|long|short;
-
 /**
  * Concatenates the given string with itself n times.
  *
  * @param str Input string
  * @param n Multiplication operand
  */
-public f<String> operator*<MulOperand>(const String& str, const MulOperand n) {
+public f<String> operator*<IntLongShort>(const String& str, const IntLongShort n) {
     // Cancel if operand is less than 2
     if operand < 2 { return; }
 
@@ -200,7 +185,7 @@ public f<String> operator*<MulOperand>(const String& str, const MulOperand n) {
  * @param n Multiplication operand
  * @param str Input string
  */
-public f<String> operator*<MulOperand>(const MulOperand n, const String& str) {
+public f<String> operator*<IntLongShort>(const IntLongShort n, const String& str) {
     //return str * n;
     return String("");
 }
@@ -212,7 +197,7 @@ public f<String> operator*<MulOperand>(const MulOperand n, const String& str) {
  *
  * @return Equal or not
  */
-public f<bool> String.isEqual(const String operand) {
+public f<bool> String.isEqual(const String& operand) {
     // Compare sizes
     if operand.length != this.length { return false; }
 
@@ -344,18 +329,16 @@ public p String.reverse() {
     }
 }
 
-type StartIndexType int|long;
-
 /**
  * Replace occurrence of substring with the replacement string
  *
  * @param needle Substring to replace
  * @param replacement Replacement for the substring
  */
-/*public p String.replace<ReplaceStartIndexType>(
+/*public p String.replace<IntLong>(
     string needle,
     string replacement,
-    unsigned ReplaceStartIndexType startIndex = 0l
+    unsigned IntLong startIndex = 0l
 ) {
     // Find occurrence
     unsigned long startIdx = this.find(needle, startIndex);
@@ -393,7 +376,7 @@ type StartIndexType int|long;
  * @param length Length of substring
  * @return Substring
  */
-public f<String> String.substring<StartIndexType>(unsigned StartIndexType startIndex, long length = -1l) {
+public f<String> String.substring<IntLong>(unsigned IntLong startIndex, long length = -1l) {
     // Return empty string if the length is 0 or the startIndex is out of bounds
     if length == 0l || startIndex >= this.length {
         return String("");
@@ -433,19 +416,10 @@ public f<String> String.substring<StartIndexType>(unsigned StartIndexType startI
  *
  * @param charCount Number of chars to reserve for the string
  */
-public p String.reserve(unsigned long charCount) {
+public p String.reserve<IntLong>(unsigned IntLong charCount) {
     if charCount > this.capacity {
         this.resize(charCount);
     }
-}
-
-/**
- * Reserves `charCount` items
- *
- * @param charCount Number of chars to reserve for the string
- */
-public p String.reserve(unsigned int charCount) {
-    this.reserve((long) charCount);
 }
 
 /**
@@ -453,7 +427,7 @@ public p String.reserve(unsigned int charCount) {
  *
  * @param newLength new length of the string after resizing
  */
-p String.resize(unsigned long newLength) {
+p String.resize<IntLong>(unsigned IntLong newLength) {
     // Allocate the new memory
     unsafe {
         byte* oldAddress = (byte*) this.contents;

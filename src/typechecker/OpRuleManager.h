@@ -635,11 +635,10 @@ private:
                                             const char *name, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                            const SymbolType &lhs);
+  void ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs) const;
   static SemanticError printErrorMessageBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
                                                const SymbolType &rhs);
   static SemanticError printErrorMessageUnary(const ASTNode *node, const char *name, const SymbolType &lhs);
-  static SemanticError printErrorMessageUnsafe(const ASTNode *node, const char *name, const SymbolType &lhs,
-                                               const SymbolType &rhs);
 };
 
 } // namespace spice::compiler
