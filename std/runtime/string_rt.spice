@@ -164,7 +164,7 @@ public p String.append(const char c) {
  * @param b String b
  */
 public f<String> operator+(const String& a, const String& b) {
-
+    return String("");
 }
 
 type MulOperand int|long|short;
@@ -175,8 +175,23 @@ type MulOperand int|long|short;
  * @param str Input string
  * @param n Multiplication operand
  */
-public f<String> operator*(const String& str, const MulOperand n) {
+public f<String> operator*<MulOperand>(const String& str, const MulOperand n) {
+    // Cancel if operand is less than 2
+    if operand < 2 { return; }
 
+    // Copy the input string
+    result = String(str);
+    unsigned long newLength = operand * str.length;
+    result.reserve(newLength);
+
+    // Save the value
+    unsafe {
+        for unsigned long i = 0l; i < newLength; i++ {
+            result.contents[i] = str.contents[i % str.length];
+        }
+        result.contents[newLength] = '\0';
+    }
+    result.length = newLength;
 }
 
 /**
@@ -185,24 +200,9 @@ public f<String> operator*(const String& str, const MulOperand n) {
  * @param n Multiplication operand
  * @param str Input string
  */
-public f<String> operator*(const MulOperand n, const String& str) {
-    // Cancel if operand is less than 2
-    if operand < 2 { return; }
-
-    unsigned long newLength = operand * this.length;
-    // Check if we need to re-allocate memory
-    while this.capacity < newLength {
-        this.resize(this.capacity * RESIZE_FACTOR);
-    }
-
-    // Save the value
-    unsafe {
-        for unsigned long i = 0l; i < newLength; i++ {
-            this.contents[i] = this.contents[i % this.length];
-        }
-        this.contents[newLength] = '\0';
-    }
-    this.length = newLength;
+public f<String> operator*<MulOperand>(const MulOperand n, const String& str) {
+    //return str * n;
+    return String("");
 }
 
 /**
