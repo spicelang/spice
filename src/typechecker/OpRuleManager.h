@@ -20,10 +20,12 @@ class TypeChecker;
 #define arrayLength(array) sizeof(array) / sizeof(*array)
 
 // Operator overload function names
-const char *const OP_FCT_PLUS = "_op.plus";
-const char *const OP_FCT_MINUS = "_op.minus";
-const char *const OP_FCT_MUL = "_op.mul";
-const char *const OP_FCT_DIV = "_op.div";
+const char *const OP_FCT_PLUS = "op.plus";
+const char *const OP_FCT_MINUS = "op.minus";
+const char *const OP_FCT_MUL = "op.mul";
+const char *const OP_FCT_DIV = "op.div";
+const char *const OP_FCT_EQUAL = "op.equal";
+const char *const OP_FCT_NOT_EQUAL = "op.notequal";
 
 // Unary operator rule:        lhs type, result type, unsafe
 using UnaryOpRule = std::tuple<uint32_t, uint32_t, bool>;
@@ -608,8 +610,8 @@ public:
   static SymbolType getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getBitwiseOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getBitwiseXorResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getNotEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getNotEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getLessResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getGreaterResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getLessEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);

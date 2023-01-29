@@ -1,49 +1,52 @@
-type i32 alias int;
-
 f<int> main() {
-    i32 test = 12;
-    printf("Hello World: %d\n", test);
+    // Plus
+    printf("Result: %s\n", String("Hello ") + String("World!"));
+    String s1 = String("Hello ") + String("World!");
+    printf("Result: %s\n", s1);
+    printf("Result: %s\n", s1 + " Hi!");
+    printf("Result: %s\n", String("Hi! ") + s1);
+    printf("Result: %s\n", s1 + s1);
+    printf("Result: %s\n", s1 + " " + s1);
+    printf("Result: %s\n", String("Prefix ") + s1 + " Suffix");
+
+    // Mul
+    printf("Result: %s\n", 4s * String("Hi"));
+    String s2 = String("Hello ") * 5;
+    printf("Result: %s\n", s2);
+    printf("Result: %s\n", 20 * String('a'));
+    /*String s3 = 2 * String('c') * 7;
+    printf("Result: %s\n", s3);*/
+
+    // Equals raw
+    printf("Equal raw: %d\n", "Hello World!" == "Hello Programmers!");
+    printf("Equal raw: %d\n", "Hello" == "Hell2");
+    printf("Equal raw: %d\n", "Hello" == "Hello");
+
+    // Equals
+    printf("Equal: %d\n", String("Hello World!") == String("Hello Programmers!"));
+    printf("Equal: %d\n", String("Hello") == String("Hell2"));
+    printf("Equal: %d\n", String("Hello") == String("Hello"));
+
+    // Not equals raw
+    printf("Non-equal raw: %d\n", "Hello World!" != "Hello Programmers!");
+    printf("Non-equal raw: %d\n", "Hello" != "Hell2");
+    printf("Non-equal raw: %d\n", "Hello" != "Hello");
+
+    // Not equals
+    printf("Non-equal: %d\n", String("Hello World!") != String("Hello Programmers!"));
+    printf("Non-equal: %d\n", String("Hello") != String("Hell2"));
+    printf("Non-equal: %d\n", String("Hello") != String("Hello"));
+
+    // PlusEquals
+    /*String s4 = String("Hello");
+    s4 += 'l';
+    printf("Result: %s\n", s4);
+    String s5 = String("Hi");
+    s5 += " World!";
+    printf("Result: %s\n", s5);
+
+    // MulEquals
+    String s6 = String("Hi");
+    s6 *= 3;
+    printf("Result: %s\n", s6);*/
 }
-
-/*f<int> main() {
-    String s = String("Hello ");
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append("World!");
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append('?');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append('!');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    printf("Equals: %d\n", s.isEqual(String("Hello World!?!")));
-    printf("Equals: %d\n", s.isEqual(String("Hello World!!")));
-    s.clear();
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.reserve(100l);
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s = String("");
-    printf("Empty: %d\n", s.isEmpty());
-    s.append('a');
-    printf("Empty: %d", s.isEmpty());
-}*/
-
-/*f<int> main() {
-    String strA = String("Hello ");
-    String strB = String("World!");
-    printf("A: %s\n", strA);
-    printf("B: %s\n", strB);
-    printf("C: %s\n", String("Hello ") + String("World!"));
-    String d = String("Hello ") + String("World!");
-    printf("D: %s\n", d);
-}*/
