@@ -124,6 +124,8 @@ public:
       child->resizeToNumberOfManifestations(manifestationCount);
     // Reserve this node
     symbolTypes.resize(manifestationCount, SymbolType(TY_INVALID));
+    // Reserve operator functions
+    opFct.resize(manifestationCount, {nullptr});
     // Do custom work
     customItemsInitialization(manifestationCount);
   }
@@ -179,7 +181,7 @@ public:
   std::string errorMessage;
   std::vector<SymbolType> symbolTypes;
   bool unreachable = false;
-  std::vector<const Function *> opFct; // Operator overloading functions
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 
 protected:
   // Protected members

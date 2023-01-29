@@ -398,6 +398,8 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
 
 SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *const fctName, SymbolType &lhs, SymbolType &rhs,
                                                                   ASTNode *node, size_t opIdx) {
+  const size_t manIdx = typeChecker->manIdx;
+
   const NameRegistryEntry *registryEntry = typeChecker->sourceFile->getNameRegistryEntry(fctName);
   if (!registryEntry)
     return SymbolType(TY_INVALID);
@@ -413,9 +415,10 @@ SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *co
     return SymbolType(TY_INVALID);
 
   // Save the pointer to the operator function in the AST node
-  if (node->opFct.size() <= opIdx)
-    node->opFct.resize(opIdx + 1);
-  node->opFct.at(opIdx) = callee;
+  assert(node->opFct.size() > manIdx);
+  if (node->opFct.at(manIdx).size() <= opIdx)
+    node->opFct.at(manIdx).resize(opIdx + 1);
+  node->opFct.at(manIdx).at(opIdx) = callee;
 
   // Check if we need to request a re-visit, because the function body was not type-checked yet
   if (!callee->alreadyTypeChecked)
