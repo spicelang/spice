@@ -148,30 +148,48 @@ SymbolType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, SymbolTyp
   return validateBinaryOperation(node, BITWISE_XOR_OP_RULES, arrayLength(BITWISE_XOR_OP_RULES), "^", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   // Allow 'pointer == pointer' straight away
   if (lhs.isPtr() && rhs.isPtr())
     return SymbolType(TY_BOOL);
+
   // Allow 'pointer == int' straight away
   if (lhs.isPtr() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
+
+  // Check is there is an overloaded operator function available
+  if (lhs.is(TY_STRUCT) || rhs.is(TY_STRUCT)) {
+    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_EQUAL, lhs, rhs, node, opIdx);
+    if (!resultType.is(TY_INVALID))
+      return resultType;
+  }
+
   // Check primitive type combinations
   return validateBinaryOperation(node, EQUAL_OP_RULES, arrayLength(EQUAL_OP_RULES), "==", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getNotEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getNotEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   // Allow 'pointer != pointer' straight away
   if (lhs.isPtr() && rhs.isPtr())
     return SymbolType(TY_BOOL);
+
   // Allow 'pointer != int' straight away
   if (lhs.isPtr() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
+
+  // Check is there is an overloaded operator function available
+  if (lhs.is(TY_STRUCT) || rhs.is(TY_STRUCT)) {
+    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_NOT_EQUAL, lhs, rhs, node, opIdx);
+    if (!resultType.is(TY_INVALID))
+      return resultType;
+  }
+
   // Check primitive type combinations
   return validateBinaryOperation(node, NOT_EQUAL_OP_RULES, arrayLength(NOT_EQUAL_OP_RULES), "!=", lhs, rhs);
 }

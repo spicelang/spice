@@ -793,9 +793,9 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   // Check operator
   SymbolType resultType;
   if (node->op == EqualityExprNode::OP_EQUAL) // Operator was equal
-    resultType = OpRuleManager::getEqualResultType(node, lhsTy, rhsTy, 0);
+    resultType = opRuleManager.getEqualResultType(node, lhsTy, rhsTy, 0);
   else if (node->op == EqualityExprNode::OP_NOT_EQUAL) // Operator was not equal
-    resultType = OpRuleManager::getNotEqualResultType(node, lhsTy, rhsTy, 0);
+    resultType = opRuleManager.getNotEqualResultType(node, lhsTy, rhsTy, 0);
   else
     throw std::runtime_error("Internal compiler error: EqualityExpr fall-through"); // GCOV_EXCL_LINE
 

@@ -443,6 +443,10 @@ llvm::Value *OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResu
     return builder.CreateICmpEQ(lhsInt, rhsV());
   }
 
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
+
   // Check for primitive type combinations
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -554,6 +558,10 @@ llvm::Value *OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprR
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV(), rhsT);
     return builder.CreateICmpNE(lhsInt, rhsV());
   }
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
