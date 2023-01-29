@@ -16,8 +16,10 @@ digraph {
  L1C2_baseDataType -> L1C2
  L1C8 [color="lightblue",label="GREATER: >"];
  L1C0_functionDef -> L1C8
+ L1C10_fctName [color="lightgreen",label="fctName"];
+ L1C0_functionDef -> L1C10_fctName;
  L1C10 [color="lightblue",label="IDENTIFIER: calledFunction"];
- L1C0_functionDef -> L1C10
+ L1C10_fctName -> L1C10
  L1C24 [color="lightblue",label="LPAREN: ("];
  L1C0_functionDef -> L1C24
  L1C25_paramLst [color="lightgreen",label="paramLst"];
@@ -316,8 +318,10 @@ digraph {
  L7C2_baseDataType -> L7C2
  L7C8 [color="lightblue",label="GREATER: >"];
  L7C0_functionDef -> L7C8
+ L7C10_fctName [color="lightgreen",label="fctName"];
+ L7C0_functionDef -> L7C10_fctName;
  L7C10 [color="lightblue",label="IDENTIFIER: calledFunction"];
- L7C0_functionDef -> L7C10
+ L7C10_fctName -> L7C10
  L7C24 [color="lightblue",label="LPAREN: ("];
  L7C0_functionDef -> L7C24
  L7C25_paramLst [color="lightgreen",label="paramLst"];

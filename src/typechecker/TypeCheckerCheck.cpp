@@ -44,7 +44,8 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const std::string structSignature = Struct::getSignature(node->structName, manifestation->thisType.getTemplateTypes());
+      const std::string structSignature =
+          Struct::getSignature(node->fctName->structName, manifestation->thisType.getTemplateTypes());
       currentScope = rootScope->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
       assert(currentScope != nullptr && currentScope->type == SCOPE_STRUCT);
     }
@@ -101,7 +102,8 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const std::string structSignature = Struct::getSignature(node->structName, manifestation->thisType.getTemplateTypes());
+      const std::string structSignature =
+          Struct::getSignature(node->procName->structName, manifestation->thisType.getTemplateTypes());
       currentScope = rootScope->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
       assert(currentScope != nullptr && currentScope->type == SCOPE_STRUCT);
     }

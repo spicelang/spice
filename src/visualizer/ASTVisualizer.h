@@ -28,6 +28,7 @@ public:
   std::any visitMainFctDef(MainFctDefNode *ctx) override { return buildNode(ctx); }
   std::any visitFctDef(FctDefNode *ctx) override { return buildNode(ctx); }
   std::any visitProcDef(ProcDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitFctName(FctNameNode *ctx) override { return buildNode(ctx); }
   std::any visitStructDef(StructDefNode *ctx) override { return buildNode(ctx); }
   std::any visitInterfaceDef(InterfaceDefNode *ctx) override { return buildNode(ctx); }
   std::any visitEnumDef(EnumDefNode *ctx) override { return buildNode(ctx); }
@@ -138,6 +139,8 @@ private:
       return "FctDef";
     if (std::is_same<ProcDefNode, T>())
       return "ProcDef";
+    if (std::is_same<FctNameNode, T>())
+      return "FctName";
     if (std::is_same<StructDefNode, T>())
       return "StructDef";
     if (std::is_same<InterfaceDefNode, T>())
@@ -146,6 +149,8 @@ private:
       return "EnumDef";
     if (std::is_same<GenericTypeDefNode, T>())
       return "GenericTypeDef";
+    if (std::is_same<AliasDefNode, T>())
+      return "AliasDef";
     if (std::is_same<GlobalVarDefNode, T>())
       return "GlobalVarDef";
     if (std::is_same<ExtDeclNode, T>())

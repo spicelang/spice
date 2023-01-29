@@ -133,6 +133,7 @@ private:
   std::tuple<Scope *, SymbolType, std::string> visitOrdinaryFctCall(FunctionCallNode *node);
   std::pair<Scope *, SymbolType> visitMethodCall(FunctionCallNode *node, Scope *structScope) const;
   [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;
+  [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
   void changeToScope(Scope *scope, ScopeType scopeType);
   static void autoDeReference(SymbolType &symbolType);
 };

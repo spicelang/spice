@@ -35,7 +35,8 @@ union CompileTimeValue {
 class ASTNode {
 public:
   // Constructors
-  explicit ASTNode(ASTNode *parent, CodeLoc codeLoc) : parent(parent), codeLoc(std::move(codeLoc)) {}
+  ASTNode(ASTNode *parent, CodeLoc codeLoc) : parent(parent), codeLoc(std::move(codeLoc)) {}
+  ASTNode(const ASTNode &) = delete;
 
   // Destructors
   virtual ~ASTNode() {
@@ -123,6 +124,8 @@ public:
       child->resizeToNumberOfManifestations(manifestationCount);
     // Reserve this node
     symbolTypes.resize(manifestationCount, SymbolType(TY_INVALID));
+    // Reserve operator functions
+    opFct.resize(manifestationCount, {nullptr});
     // Do custom work
     customItemsInitialization(manifestationCount);
   }
@@ -178,6 +181,7 @@ public:
   std::string errorMessage;
   std::vector<SymbolType> symbolTypes;
   bool unreachable = false;
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 
 protected:
   // Protected members
@@ -230,6 +234,40 @@ public:
   bool takesArgs = false;
 };
 
+// ========================================================== FctNameNode =======================================================
+
+class FctNameNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Enums
+  enum OverloadedOperator {
+    OP_NONE,
+    OP_PLUS,
+    OP_MINUS,
+    OP_MUL,
+    OP_DIV,
+    OP_EQUAL,
+    OP_NOT_EQUAL,
+    OP_PLUS_EQUAL,
+    OP_MINUS_EQUAL,
+    OP_MUL_EQUAL,
+    OP_DIV_EQUAL
+  };
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctName(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctName(this); }
+
+  // Public members
+  std::string name;
+  std::string structName;
+  std::string fqName;
+  std::vector<std::string> nameFragments;
+  OverloadedOperator overloadedOperator = OP_NONE;
+};
+
 // ========================================================== FctDefNode =========================================================
 
 class FctDefNode : public ASTNode {
@@ -250,15 +288,16 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getSymbolTableEntryName() const { return functionName + ":" + codeLoc.toPrettyLine(); }
+  [[nodiscard]] std::string getSymbolTableEntryName() const {
+    const FctNameNode *functionName = getChild<FctNameNode>();
+    assert(functionName != nullptr);
+    return functionName->name + ":" + codeLoc.toPrettyLine();
+  }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &fctManifestations; }
 
   // Public members
-  std::string functionName;
-  std::string structName;
-  std::string fqFunctionName;
-  std::vector<std::string> functionNameFragments;
+  FctNameNode *fctName;
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
@@ -287,22 +326,22 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getSymbolTableEntryName() const { return procedureName + ":" + codeLoc.toPrettyLine(); }
+  [[nodiscard]] std::string getSymbolTableEntryName() const {
+    const FctNameNode *functionName = getChild<FctNameNode>();
+    assert(functionName != nullptr);
+    return functionName->name + ":" + codeLoc.toPrettyLine();
+  }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &procManifestations; }
 
   // Public members
-  std::string procedureName;
-  std::string structName;
-  std::string fqProcedureName;
-  std::vector<std::string> procedureNameFragments;
+  FctNameNode *procName;
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
   Scope *procScope = nullptr;
-  Function *procBase = nullptr;
   std::vector<Function *> procManifestations;
 };
 

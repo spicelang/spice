@@ -17,7 +17,19 @@ class ASTNode;
 class TypeChecker;
 
 // Helper macro to get the length of an array
-#define arrayLength(array) sizeof(array) / sizeof(*array)
+#define ARRAY_LENGTH(array) sizeof(array) / sizeof(*array)
+
+// Operator overload function names
+const char *const OP_FCT_PLUS = "op.plus";
+const char *const OP_FCT_MINUS = "op.minus";
+const char *const OP_FCT_MUL = "op.mul";
+const char *const OP_FCT_DIV = "op.div";
+const char *const OP_FCT_EQUAL = "op.equal";
+const char *const OP_FCT_NOT_EQUAL = "op.notequal";
+const char *const OP_FCT_PLUS_EQUAL = "op.plusequal";
+const char *const OP_FCT_MINUS_EQUAL = "op.minusequal";
+const char *const OP_FCT_MUL_EQUAL = "op.mulequal";
+const char *const OP_FCT_DIV_EQUAL = "op.divequal";
 
 // Unary operator rule:        lhs type, result type, unsafe
 using UnaryOpRule = std::tuple<uint32_t, uint32_t, bool>;
@@ -586,60 +598,61 @@ public:
   explicit OpRuleManager(TypeChecker *typeChecker) : typeChecker(typeChecker) {}
 
   // Public methods
-  static SymbolType getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  SymbolType getPlusEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  SymbolType getMinusEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getMulEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getDivEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType hs);
-  static SymbolType getRemEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getSHLEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getSHREqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getAndEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getOrEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getXorEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getLogicalOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getBitwiseOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getBitwiseXorResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getNotEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getLessResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getGreaterResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getLessEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getGreaterEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getShiftLeftResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getShiftRightResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  SymbolType getPlusResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  SymbolType getMinusResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getMulResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getDivResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getPrefixMinusResultType(const ASTNode *node, SymbolType lhs);
-  static SymbolType getPrefixPlusPlusResultType(const ASTNode *node, SymbolType lhs);
-  static SymbolType getPrefixMinusMinusResultType(const ASTNode *node, SymbolType lhs);
-  static SymbolType getPrefixNotResultType(const ASTNode *node, SymbolType lhs);
-  static SymbolType getPrefixBitwiseNotResultType(const ASTNode *node, SymbolType lhs);
-  static SymbolType getPrefixMulResultType(const ASTNode *node, SymbolType lhs);
-  static SymbolType getPrefixBitwiseAndResultType(const ASTNode *node, SymbolType lhs);
-  static SymbolType getPostfixPlusPlusResultType(const ASTNode *node, SymbolType lhs);
-  static SymbolType getPostfixMinusMinusResultType(const ASTNode *node, SymbolType lhs);
-  SymbolType getCastResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
+  static SymbolType getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getPlusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getMinusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getMulEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getDivEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getRemEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getSHLEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getSHREqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getAndEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getOrEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getXorEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getLogicalOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getBitwiseOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getBitwiseXorResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getNotEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getLessResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getGreaterResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getLessEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getGreaterEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getShiftLeftResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getShiftRightResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getPlusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getMinusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getMulResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getDivResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getPrefixMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  static SymbolType getPrefixPlusPlusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  static SymbolType getPrefixMinusMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  static SymbolType getPrefixNotResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  static SymbolType getPrefixBitwiseNotResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  static SymbolType getPrefixMulResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  static SymbolType getPrefixBitwiseAndResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  static SymbolType getPostfixPlusPlusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  static SymbolType getPostfixMinusMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  SymbolType getCastResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
 
 private:
   // Members
   TypeChecker *typeChecker;
 
   // Private methods
+  SymbolType isBinaryOperatorOverloadingFctAvailable(const char *const fctName, SymbolType &lhs, SymbolType &rhs, ASTNode *node,
+                                                     size_t opIdx);
   static SymbolType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
                                             const char *name, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                            const SymbolType &lhs);
+  void ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs) const;
   static SemanticError printErrorMessageBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
                                                const SymbolType &rhs);
   static SemanticError printErrorMessageUnary(const ASTNode *node, const char *name, const SymbolType &lhs);
-  static SemanticError printErrorMessageUnsafe(const ASTNode *node, const char *name, const SymbolType &lhs,
-                                               const SymbolType &rhs);
 };
 
 } // namespace spice::compiler

@@ -9,26 +9,49 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
+  %1 = alloca %__char__Queue__charptr_long_long_long_long_int, align 8
   %q1 = alloca %__char__Queue__charptr_long_long_long_long_int, align 8
-  call void @_mp__Queue_char__void__ctor(ptr nonnull %q1) #2
+  call void @_mp__Queue_char__void__ctor(ptr nonnull %1) #2
+  %.fca.0.load = load ptr, ptr %1, align 8
+  %.fca.1.gep2 = getelementptr inbounds %__char__Queue__charptr_long_long_long_long_int, ptr %1, i64 0, i32 1
+  %.fca.1.load = load i64, ptr %.fca.1.gep2, align 8
+  %.fca.2.gep3 = getelementptr inbounds %__char__Queue__charptr_long_long_long_long_int, ptr %1, i64 0, i32 2
+  %.fca.2.load = load i64, ptr %.fca.2.gep3, align 8
+  %.fca.3.gep4 = getelementptr inbounds %__char__Queue__charptr_long_long_long_long_int, ptr %1, i64 0, i32 3
+  %.fca.3.load = load i64, ptr %.fca.3.gep4, align 8
+  %.fca.4.gep5 = getelementptr inbounds %__char__Queue__charptr_long_long_long_long_int, ptr %1, i64 0, i32 4
+  %.fca.4.load = load i64, ptr %.fca.4.gep5, align 8
+  %.fca.5.gep6 = getelementptr inbounds %__char__Queue__charptr_long_long_long_long_int, ptr %1, i64 0, i32 5
+  %.fca.5.load = load i32, ptr %.fca.5.gep6, align 8
+  store ptr %.fca.0.load, ptr %q1, align 8
+  %.fca.1.gep = getelementptr inbounds %__char__Queue__charptr_long_long_long_long_int, ptr %q1, i64 0, i32 1
+  store i64 %.fca.1.load, ptr %.fca.1.gep, align 8
+  %.fca.2.gep = getelementptr inbounds %__char__Queue__charptr_long_long_long_long_int, ptr %q1, i64 0, i32 2
+  store i64 %.fca.2.load, ptr %.fca.2.gep, align 8
+  %.fca.3.gep = getelementptr inbounds %__char__Queue__charptr_long_long_long_long_int, ptr %q1, i64 0, i32 3
+  store i64 %.fca.3.load, ptr %.fca.3.gep, align 8
+  %.fca.4.gep = getelementptr inbounds %__char__Queue__charptr_long_long_long_long_int, ptr %q1, i64 0, i32 4
+  store i64 %.fca.4.load, ptr %.fca.4.gep, align 8
+  %.fca.5.gep = getelementptr inbounds %__char__Queue__charptr_long_long_long_long_int, ptr %q1, i64 0, i32 5
+  store i32 %.fca.5.load, ptr %.fca.5.gep, align 8
   call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 72) #2
   call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 101) #2
   call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 108) #2
   call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 108) #2
   call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 111) #2
   call void @_mp__Queue_char__void__push__char(ptr nonnull %q1, i8 33) #2
-  %1 = call i64 @_mf__Queue_char__long__getSize(ptr nonnull %q1) #2
-  %2 = call i64 @_mf__Queue_char__long__getCapacity(ptr nonnull %q1) #2
-  %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %1, i64 %2)
-  %4 = call i1 @_mf__Queue_char__bool__isEmpty(ptr nonnull %q1) #2
-  br i1 %4, label %while.exit.L12, label %while.body.L12
+  %2 = call i64 @_mf__Queue_char__long__getSize(ptr nonnull %q1) #2
+  %3 = call i64 @_mf__Queue_char__long__getCapacity(ptr nonnull %q1) #2
+  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %2, i64 %3)
+  %5 = call i1 @_mf__Queue_char__bool__isEmpty(ptr nonnull %q1) #2
+  br i1 %5, label %while.exit.L12, label %while.body.L12
 
 while.body.L12:                                   ; preds = %0, %while.body.L12
-  %5 = call i8 @_mf__Queue_char__char__pop(ptr nonnull %q1) #2
-  %6 = sext i8 %5 to i32
-  %putchar = call i32 @putchar(i32 %6)
-  %7 = call i1 @_mf__Queue_char__bool__isEmpty(ptr nonnull %q1) #2
-  br i1 %7, label %while.exit.L12, label %while.body.L12
+  %6 = call i8 @_mf__Queue_char__char__pop(ptr nonnull %q1) #2
+  %7 = sext i8 %6 to i32
+  %putchar = call i32 @putchar(i32 %7)
+  %8 = call i1 @_mf__Queue_char__bool__isEmpty(ptr nonnull %q1) #2
+  br i1 %8, label %while.exit.L12, label %while.body.L12
 
 while.exit.L12:                                   ; preds = %while.body.L12, %0
   ret i32 0

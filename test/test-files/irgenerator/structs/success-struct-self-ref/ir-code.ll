@@ -11,49 +11,60 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
+  %1 = alloca %__TreeNode__TreeNodeptr_int, align 8
   %rootNode = alloca %__TreeNode__TreeNodeptr_int, align 8
+  %2 = alloca %__TreeNode__TreeNodeptr_int, align 8
   %childNode1 = alloca %__TreeNode__TreeNodeptr_int, align 8
+  %3 = alloca %__TreeNode__TreeNodeptr_int, align 8
   %childNode2 = alloca %__TreeNode__TreeNodeptr_int, align 8
+  %4 = alloca %__TreeNode__TreeNodeptr_int, align 8
   %childNode21 = alloca %__TreeNode__TreeNodeptr_int, align 8
   %curNode = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %rootNode, ptr @anon.struct.0, i64 16, i1 false)
-  %1 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode1, i32 0, i32 0
-  store ptr %rootNode, ptr %1, align 8
-  %2 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode1, i32 0, i32 1
-  store i32 1, ptr %2, align 4
-  %3 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode2, i32 0, i32 0
-  store ptr %rootNode, ptr %3, align 8
-  %4 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode2, i32 0, i32 1
-  store i32 2, ptr %4, align 4
-  %5 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode21, i32 0, i32 0
-  store ptr %childNode2, ptr %5, align 8
-  %6 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode21, i32 0, i32 1
-  store i32 3, ptr %6, align 4
+  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.struct.0, i64 16, i1 false)
+  store %__TreeNode__TreeNodeptr_int zeroinitializer, ptr %rootNode, align 8
+  %5 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %2, i32 0, i32 0
+  store ptr %rootNode, ptr %5, align 8
+  %6 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %2, i32 0, i32 1
+  store i32 1, ptr %6, align 4
+  %7 = load %__TreeNode__TreeNodeptr_int, ptr %2, align 8
+  store %__TreeNode__TreeNodeptr_int %7, ptr %childNode1, align 8
+  %8 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %3, i32 0, i32 0
+  store ptr %rootNode, ptr %8, align 8
+  %9 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %3, i32 0, i32 1
+  store i32 2, ptr %9, align 4
+  %10 = load %__TreeNode__TreeNodeptr_int, ptr %3, align 8
+  store %__TreeNode__TreeNodeptr_int %10, ptr %childNode2, align 8
+  %11 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %4, i32 0, i32 0
+  store ptr %childNode2, ptr %11, align 8
+  %12 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %4, i32 0, i32 1
+  store i32 3, ptr %12, align 4
+  %13 = load %__TreeNode__TreeNodeptr_int, ptr %4, align 8
+  store %__TreeNode__TreeNodeptr_int %13, ptr %childNode21, align 8
   store ptr %childNode21, ptr %curNode, align 8
   br label %while.head.L21
 
 while.head.L21:                                   ; preds = %while.body.L21, %0
-  %7 = load ptr, ptr %curNode, align 8
-  %parent = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %7, i32 0, i32 0
-  %8 = load ptr, ptr %parent, align 8
-  %9 = icmp ne ptr %8, null
-  br i1 %9, label %while.body.L21, label %while.exit.L21
+  %14 = load ptr, ptr %curNode, align 8
+  %parent = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %14, i32 0, i32 0
+  %15 = load ptr, ptr %parent, align 8
+  %16 = icmp ne ptr %15, null
+  br i1 %16, label %while.body.L21, label %while.exit.L21
 
 while.body.L21:                                   ; preds = %while.head.L21
-  %10 = load ptr, ptr %curNode, align 8
-  %parent1 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %10, i32 0, i32 0
-  %11 = load ptr, ptr %parent1, align 8
-  store ptr %11, ptr %curNode, align 8
+  %17 = load ptr, ptr %curNode, align 8
+  %parent1 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %17, i32 0, i32 0
+  %18 = load ptr, ptr %parent1, align 8
+  store ptr %18, ptr %curNode, align 8
   br label %while.head.L21
 
 while.exit.L21:                                   ; preds = %while.head.L21
-  %12 = load ptr, ptr %curNode, align 8
-  %value = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %12, i32 0, i32 1
-  %13 = load i32, ptr %value, align 4
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %13)
-  %15 = load i32, ptr %result, align 4
-  ret i32 %15
+  %19 = load ptr, ptr %curNode, align 8
+  %value = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %19, i32 0, i32 1
+  %20 = load i32, ptr %value, align 4
+  %21 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %20)
+  %22 = load i32, ptr %result, align 4
+  ret i32 %22
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)

@@ -14,12 +14,17 @@ OpRuleConversionManager::OpRuleConversionManager(GlobalResourceManager &resource
     : context(resourceManager.context), builder(resourceManager.builder), irGenerator(irGenerator),
       stdFunctionManager(irGenerator->stdFunctionManager) {}
 
-PtrAndValue OpRuleConversionManager::getPlusEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                      const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsP = [&]() { return irGenerator->resolveAddress(lhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+PtrAndValue OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                      size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -58,11 +63,16 @@ PtrAndValue OpRuleConversionManager::getPlusEqualInst(ExprResult &lhs, const Sym
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getMinusEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                        const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                        ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -101,12 +111,17 @@ llvm::Value *OpRuleConversionManager::getMinusEqualInst(ExprResult &lhs, const S
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
 
-PtrAndValue OpRuleConversionManager::getMulEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                     const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsP = [&]() { return irGenerator->resolveAddress(lhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+PtrAndValue OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                     ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                     size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -140,11 +155,16 @@ PtrAndValue OpRuleConversionManager::getMulEqualInst(ExprResult &lhs, const Symb
   throw std::runtime_error("Internal compiler error: Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getDivEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                      const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                      size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -178,11 +198,12 @@ llvm::Value *OpRuleConversionManager::getDivEqualInst(ExprResult &lhs, const Sym
   throw std::runtime_error("Internal compiler error: Operator fallthrough: /="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getRemEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                      const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                      size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -216,11 +237,12 @@ llvm::Value *OpRuleConversionManager::getRemEqualInst(ExprResult &lhs, const Sym
   throw std::runtime_error("Internal compiler error: Operator fallthrough: %="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getSHLEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                      const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                      size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -246,11 +268,12 @@ llvm::Value *OpRuleConversionManager::getSHLEqualInst(ExprResult &lhs, const Sym
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <<="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getSHREqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                      const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                      size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -276,11 +299,12 @@ llvm::Value *OpRuleConversionManager::getSHREqualInst(ExprResult &lhs, const Sym
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >>="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getAndEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                      const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                      size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -306,11 +330,12 @@ llvm::Value *OpRuleConversionManager::getAndEqualInst(ExprResult &lhs, const Sym
   throw std::runtime_error("Internal compiler error: Operator fallthrough: &="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getOrEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                     const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                     ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                     size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -336,11 +361,12 @@ llvm::Value *OpRuleConversionManager::getOrEqualInst(ExprResult &lhs, const Symb
   throw std::runtime_error("Internal compiler error: Operator fallthrough: |="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getXorEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                      const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                      size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -367,10 +393,11 @@ llvm::Value *OpRuleConversionManager::getXorEqualInst(ExprResult &lhs, const Sym
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ^="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getBitwiseAndInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                        const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+llvm::Value *OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                        ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
@@ -382,10 +409,11 @@ llvm::Value *OpRuleConversionManager::getBitwiseAndInst(ExprResult &lhs, const S
   throw std::runtime_error("Internal compiler error: Operator fallthrough: &"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getBitwiseOrInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                       const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+llvm::Value *OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                       ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                       size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
@@ -397,10 +425,11 @@ llvm::Value *OpRuleConversionManager::getBitwiseOrInst(ExprResult &lhs, const Sy
   throw std::runtime_error("Internal compiler error: Operator fallthrough: |"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getBitwiseXorInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                        const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+llvm::Value *OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                        ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
@@ -412,13 +441,12 @@ llvm::Value *OpRuleConversionManager::getBitwiseXorInst(ExprResult &lhs, const S
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ^"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                   const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsP = [&]() { return irGenerator->resolveAddress(lhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                   ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Check if both values are of type pointer
   if (lhsSTy.isPtr() && rhsSTy.isPtr())
@@ -429,6 +457,10 @@ llvm::Value *OpRuleConversionManager::getEqualInst(ExprResult &lhs, const Symbol
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV(), rhsT);
     return builder.CreateICmpEQ(lhsInt, rhsV());
   }
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   // Check for primitive type combinations
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -524,13 +556,13 @@ llvm::Value *OpRuleConversionManager::getEqualInst(ExprResult &lhs, const Symbol
   throw std::runtime_error("Internal compiler error: Operator fallthrough: =="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getNotEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                      const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsP = [&]() { return irGenerator->resolveAddress(lhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                      size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Check if both values are of type pointer
   if (lhsSTy.isPtr() && rhsSTy.isPtr())
@@ -541,6 +573,10 @@ llvm::Value *OpRuleConversionManager::getNotEqualInst(ExprResult &lhs, const Sym
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV(), rhsT);
     return builder.CreateICmpNE(lhsInt, rhsV());
   }
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -636,12 +672,12 @@ llvm::Value *OpRuleConversionManager::getNotEqualInst(ExprResult &lhs, const Sym
   throw std::runtime_error("Internal compiler error: Operator fallthrough: !="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getLessInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                  const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                                  const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -697,12 +733,13 @@ llvm::Value *OpRuleConversionManager::getLessInst(ExprResult &lhs, const SymbolT
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getGreaterInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                     const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                     ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                     size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -758,12 +795,13 @@ llvm::Value *OpRuleConversionManager::getGreaterInst(ExprResult &lhs, const Symb
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getLessEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                       const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                       ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                       size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -819,12 +857,13 @@ llvm::Value *OpRuleConversionManager::getLessEqualInst(ExprResult &lhs, const Sy
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getGreaterEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                          const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                          ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                          size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -880,11 +919,12 @@ llvm::Value *OpRuleConversionManager::getGreaterEqualInst(ExprResult &lhs, const
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >="); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getShiftLeftInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                       const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                       ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                       size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -917,11 +957,12 @@ llvm::Value *OpRuleConversionManager::getShiftLeftInst(ExprResult &lhs, const Sy
   throw std::runtime_error("Internal compiler error: Operator fallthrough: <<"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getShiftRightInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                        const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                        ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -954,12 +995,16 @@ llvm::Value *OpRuleConversionManager::getShiftRightInst(ExprResult &lhs, const S
   throw std::runtime_error("Internal compiler error: Operator fallthrough: >>"); // GCOV_EXCL_LINE
 }
 
-PtrAndValue OpRuleConversionManager::getPlusInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                 const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+PtrAndValue OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                                 const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1026,12 +1071,16 @@ PtrAndValue OpRuleConversionManager::getPlusInst(ExprResult &lhs, const SymbolTy
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getMinusInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                   const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                   ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1098,12 +1147,16 @@ llvm::Value *OpRuleConversionManager::getMinusInst(ExprResult &lhs, const Symbol
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
-PtrAndValue OpRuleConversionManager::getMulInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+PtrAndValue OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                                const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1158,12 +1211,16 @@ PtrAndValue OpRuleConversionManager::getMulInst(ExprResult &lhs, const SymbolTyp
   throw std::runtime_error("Internal compiler error: Operator fallthrough: *"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getDivInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                 const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                                 const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1219,12 +1276,12 @@ llvm::Value *OpRuleConversionManager::getDivInst(ExprResult &lhs, const SymbolTy
   throw std::runtime_error("Internal compiler error: Operator fallthrough: /"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getRemInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                 const SymbolType &rhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto &rhsT = rhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getRemInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                                 const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1260,8 +1317,9 @@ llvm::Value *OpRuleConversionManager::getRemInst(ExprResult &lhs, const SymbolTy
   throw std::runtime_error("Internal compiler error: Operator fallthrough: %"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getPrefixMinusInst(ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+llvm::Value *OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                         Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
 
   switch (lhsSTy.getSuperType()) {
   case TY_DOUBLE:
@@ -1276,8 +1334,9 @@ llvm::Value *OpRuleConversionManager::getPrefixMinusInst(ExprResult &lhs, const 
   throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getPrefixPlusPlusInst(ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+llvm::Value *OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                            Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1292,8 +1351,9 @@ llvm::Value *OpRuleConversionManager::getPrefixPlusPlusInst(ExprResult &lhs, con
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getPrefixMinusMinusInst(ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+llvm::Value *OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                              Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1308,8 +1368,9 @@ llvm::Value *OpRuleConversionManager::getPrefixMinusMinusInst(ExprResult &lhs, c
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getPrefixNotInst(ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+llvm::Value *OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                       Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
 
   switch (lhsSTy.getSuperType()) {
   case TY_BOOL:
@@ -1320,8 +1381,9 @@ llvm::Value *OpRuleConversionManager::getPrefixNotInst(ExprResult &lhs, const Sy
   throw std::runtime_error("Internal compiler error: Operator fallthrough: !"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getPrefixBitwiseNotInst(ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+llvm::Value *OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+                                                              Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:   // fallthrough
@@ -1334,8 +1396,9 @@ llvm::Value *OpRuleConversionManager::getPrefixBitwiseNotInst(ExprResult &lhs, c
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ~"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getPostfixPlusPlusInst(ExprResult &lhs, SymbolType lhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+llvm::Value *OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                             Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1350,8 +1413,9 @@ llvm::Value *OpRuleConversionManager::getPostfixPlusPlusInst(ExprResult &lhs, Sy
   throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getPostfixMinusMinusInst(ExprResult &lhs, SymbolType lhsSTy, Scope *accessScope) {
-  const auto &lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+llvm::Value *OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                               Scope *accessScope, size_t opIdx) {
+  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1366,10 +1430,10 @@ llvm::Value *OpRuleConversionManager::getPostfixMinusMinusInst(ExprResult &lhs, 
   throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
-llvm::Value *OpRuleConversionManager::getCastInst(const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                                                  Scope *accessScope) {
-  const auto &rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto &lhsT = lhsSTy.toLLVMType(context, accessScope);
+llvm::Value *OpRuleConversionManager::getCastInst(const ASTNode *node, const SymbolType &lhsSTy, ExprResult &rhs,
+                                                  const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1420,6 +1484,55 @@ llvm::Value *OpRuleConversionManager::getCastInst(const SymbolType &lhsSTy, Expr
     return lhsSTy.getContainedTy() == rhsSTy.getContainedTy() ? rhsV() : builder.CreatePointerCast(rhsV(), lhsT);
   }
   throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
+}
+
+PtrAndValue OpRuleConversionManager::callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhs, auto &rhs, size_t opIdx) {
+  const size_t manIdx = irGenerator->manIdx;
+  assert(!node->opFct.empty() && node->opFct.size() > manIdx);
+  assert(!node->opFct.at(manIdx).empty() && node->opFct.at(manIdx).size() > opIdx);
+  const Function *opFct = node->opFct.at(manIdx).at(opIdx);
+  assert(opFct != nullptr);
+
+  const std::string mangledName = opFct->getMangledName();
+  Scope *accessScope = opFct->entry->scope;
+  assert(accessScope != nullptr);
+
+  // Get arg values
+  llvm::Value *argValues[2] = {lhs(), rhs()};
+
+  // Obtain information about the call
+  const bool isImported = accessScope->isImportedBy(irGenerator->rootScope);
+  const CodeLoc &callLoc = node->codeLoc;
+  const CodeLoc &defLoc = opFct->entry->getDeclCodeLoc();
+  const bool isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
+
+  // Function is not defined in the current module -> declare it
+  // This can happen when:
+  // 1) If this is an imported source file
+  // 2) This is a down-call to a function, which is defined later in the same file
+  if (isImported || isDownCall) {
+    // Get returnType
+    llvm::Type *returnType = builder.getVoidTy();
+    if (!opFct->returnType.is(TY_DYN))
+      returnType = opFct->returnType.toLLVMType(context, accessScope);
+
+    // Get arg types
+    std::vector<llvm::Type *> argTypes;
+    for (const SymbolType &paramType : opFct->getParamTypes())
+      argTypes.push_back(paramType.toLLVMType(context, accessScope));
+
+    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
+    irGenerator->module->getOrInsertFunction(mangledName, fctType);
+  }
+
+  // Get callee function
+  llvm::Function *callee = irGenerator->module->getFunction(mangledName);
+  assert(callee != nullptr);
+
+  // Generate function call
+  llvm::Value *resultValue = builder.CreateCall(callee, argValues);
+
+  return {.value = resultValue};
 }
 
 } // namespace spice::compiler

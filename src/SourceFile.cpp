@@ -556,7 +556,7 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName
     if (registryEntry->importEntry)
       registryEntry->importEntry->used = true;
     symbolName = registryEntry->predecessorName;
-  } while (!registryEntry->predecessorName.empty());
+  } while (!symbolName.empty());
 
   return registryEntry;
 }
@@ -605,10 +605,12 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
   // Generate SVG
   std::cout << "\nGenerating SVG file ... ";
   std::transform(outputName.begin(), outputName.end(), outputName.begin(), ::tolower);
-  std::string fileBasePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + outputName + ".dot";
-  FileUtil::writeToFile(fileBasePath, output);
-  FileUtil::exec("dot -Tsvg -o" + fileBasePath + ".svg " + fileBasePath + ".dot");
-  std::cout << "done.\nSVG file can be found at: " << fileBasePath << ".svg\n";
+  const std::string fileBasePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + outputName;
+  const std::string dotFilePath = fileBasePath + ".dot";
+  const std::string svgFilePath = fileBasePath + ".svg";
+  FileUtil::writeToFile(dotFilePath, output);
+  FileUtil::exec("dot -Tsvg -o" + svgFilePath + " " + dotFilePath);
+  std::cout << "done.\nSVG file can be found at: " << svgFilePath << ".svg\n";
 }
 
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,

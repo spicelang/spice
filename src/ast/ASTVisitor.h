@@ -13,6 +13,7 @@ public:
   std::any visitMainFctDef(MainFctDefNode *node) override;
   std::any visitFctDef(FctDefNode *node) override;
   std::any visitProcDef(ProcDefNode *node) override;
+  std::any visitFctName(FctNameNode *node) override;
   std::any visitStructDef(StructDefNode *node) override;
   std::any visitInterfaceDef(InterfaceDefNode *node) override;
   std::any visitEnumDef(EnumDefNode *node) override;

@@ -15,9 +15,6 @@ public:
   StdFunctionManager(GlobalResourceManager &resourceManager, llvm::Module *module)
       : context(resourceManager.context), builder(resourceManager.builder), module(module) {}
 
-  // Public methods for type retrieval
-  static llvm::StructType *getStrobjType(llvm::LLVMContext &context);
-
   // Public methods for function retrieval
   [[nodiscard]] llvm::Function *getPrintfFct() const;
   [[nodiscard]] llvm::Function *getExitFct() const;

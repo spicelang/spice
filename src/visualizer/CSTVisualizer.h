@@ -29,6 +29,7 @@ public:
   std::any visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) override { return buildRule(ctx); }
   std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override { return buildRule(ctx); }
   std::any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override { return buildRule(ctx); }
+  std::any visitFctName(SpiceParser::FctNameContext *ctx) override { return buildRule(ctx); }
   std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override { return buildRule(ctx); }
   std::any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override { return buildRule(ctx); }
   std::any visitAliasDef(SpiceParser::AliasDefContext *ctx) override { return buildRule(ctx); }
@@ -97,6 +98,7 @@ public:
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override { return buildRule(ctx); }
   std::any visitAssignOp(SpiceParser::AssignOpContext *ctx) override { return buildRule(ctx); }
   std::any visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) override { return buildRule(ctx); }
+  std::any visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) override { return buildRule(ctx); }
 
 private:
   // Members

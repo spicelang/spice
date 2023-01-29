@@ -6,16 +6,6 @@
 
 namespace spice::compiler {
 
-llvm::StructType *StdFunctionManager::getStrobjType(llvm::LLVMContext &context) {
-  std::string structTypeName = "_s__String__charptr_long_long";
-  llvm::StructType *structType = llvm::StructType::getTypeByName(context, structTypeName);
-  if (structType != nullptr)
-    return structType;
-  llvm::Type *ptrTy = llvm::PointerType::get(context, 0);
-  llvm::Type *int64Ty = llvm::IntegerType::getInt64Ty(context);
-  return llvm::StructType::create(context, {ptrTy, int64Ty, int64Ty}, structTypeName);
-}
-
 llvm::Function *StdFunctionManager::getPrintfFct() const {
   llvm::Function *printfFct = getFunction("printf", builder.getInt32Ty(), builder.getInt8PtrTy(), true);
   // Set noundef attribute to template string

@@ -17,6 +17,13 @@ public type String struct {
     unsigned long length   // Used number of chars
 }
 
+// Generic type definitions
+type IntLong      int|long;
+type IntLongShort int|long|short;
+type StrTy1       String|string;
+type StrTy2       String|string;
+type StrTyChar    String|string|char;
+
 public p String.ctor(const string value = "") {
     this.length = getRawLength(value);
     this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
@@ -29,7 +36,7 @@ public p String.ctor(const string value = "") {
 
     // Save initial value
     unsafe {
-        for unsigned long i; i < this.length + 1; i++ { // +1 because of null terminator
+        for unsigned long i = 0l; i < this.length + 1l; i++ { // +1 because of null terminator
             this.contents[i] = value[i];
         }
     }
@@ -52,9 +59,9 @@ public p String.ctor(const char value) {
     }
 }
 
-public p String.ctor(const String value1, const string value2 = "") {
-    this.length = value1.length;
-    this.capacity = value1.capacity;
+public p String.ctor(const String value) {
+    this.length = value.length;
+    this.capacity = value.capacity;
 
     // Allocate space
     unsafe {
@@ -64,28 +71,7 @@ public p String.ctor(const String value1, const string value2 = "") {
 
     // Copy the contents from the other string
     unsafe {
-        memcpy(this.contents, value1.contents, value1.length + 1l); // +1 because of null terminator
-    }
-
-    if getRawLength(value2) > 0l {
-        this.append(value2);
-    }
-}
-
-public p String.ctor(const String value1, const String value2) {
-    this.length = value1.length + value2.length;
-    this.capacity = value1.capacity + value2.capacity;
-
-    // Allocate space
-    unsafe {
-        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        this.contents = (char*) malloc(requiredBytes);
-    }
-
-    // Copy the contents from the other string
-    unsafe {
-        memcpy(this.contents, value1.contents, value1.length);
-        memcpy(this.contents + value1.length, value2.contents, value2.length + 1l); // +1 because of null terminator
+        memcpy(this.contents, value.contents, value.length + 1l); // +1 because of null terminator
     }
 }
 
@@ -99,7 +85,7 @@ public p String.dtor() {
 /**
  * Appends the given string to the current one
  *
- * @param appendix string to be appended
+ * @param appendix String to be appended
  */
 public p String.append(const string appendix) {
     unsigned long appendixLength = getRawLength(appendix);
@@ -110,7 +96,7 @@ public p String.append(const string appendix) {
 
     // Save data
     unsafe {
-        for int i = 0; i < appendixLength + 1; i++ { // +1 because of null terminator
+        for unsigned long i = 0l; i < appendixLength + 1l; i++ { // +1 because of null terminator
             this.contents[this.length++] = appendix[i];
         }
     }
@@ -123,20 +109,7 @@ public p String.append(const string appendix) {
  * @param appendix String to be appended
  */
 public p String.append(const String appendix) {
-    const char* rawAppendix = appendix.getRaw();
-    unsigned long appendixLength = appendix.length;
-    // Check if we need to re-allocate memory
-    while this.capacity < this.length + appendixLength {
-        this.resize(this.capacity * RESIZE_FACTOR);
-    }
-
-    // Save data
-    unsafe {
-        for int i = 0; i < appendixLength + 1; i++ { // +1 because of null terminator
-            this.contents[this.length++] = rawAppendix[i];
-        }
-    }
-    this.length--; // Remove null terminator
+    this.append((string) appendix.getRaw());
 }
 
 /**
@@ -146,7 +119,7 @@ public p String.append(const String appendix) {
  */
 public p String.append(const char c) {
     // Check if we need to re-allocate memory
-    if this.capacity < this.length + 1 {
+    if this.capacity < this.length + 1l {
         this.resize(this.capacity * RESIZE_FACTOR);
     }
 
@@ -158,69 +131,120 @@ public p String.append(const char c) {
 }
 
 /**
- * Implements the multily operator for 'string * int' or 'int * string'
+ * Concatenates two strings and returns the result
  *
- * @param operand Number of repetitions
+ * @parem a String a
+ * @param b String b
+ * @return Concatenated string
  */
-public inline p String.opMul(const int operand) {
-    this.opMul((long) operand);
+public f<String> operator+<StrTy1, StrTy2>(const StrTy1 a, const StrTy2 b) {
+    result = String(a);
+    result.append(b);
 }
 
 /**
- * Implements the multily operator for 'string * long' or 'long * string'
+ * Concatenates b to the end of a
  *
- * @param operand Number of repetitions
+ * @param a String a
+ * @param b String/char b
  */
-public p String.opMul(const long operand) {
-    // Cancel if operand is less than 2
-    if operand < 2l { return; }
+public p operator+=<StrTyChar>(String& a, const StrTyChar b) {
+    a.append(b);
+}
 
-    unsigned long newLength = operand * this.length;
-    // Check if we need to re-allocate memory
-    while this.capacity < newLength {
-        this.resize(this.capacity * RESIZE_FACTOR);
-    }
+/**
+ * Concatenates the given string with itself n times.
+ *
+ * @param str Input string
+ * @param n Multiplication operand
+ * @return Result string
+ */
+public f<String> operator*<IntLongShort>(const String str, const IntLongShort n) {
+    // Cancel if operand is less than 2
+    if n < 2 { return; }
+
+    // Copy the input string
+    result = String(str);
+    unsigned long newLength = n * str.length;
+    result.reserve(newLength);
 
     // Save the value
     unsafe {
         for unsigned long i = 0l; i < newLength; i++ {
-            this.contents[i] = this.contents[i % this.length];
+            result.contents[i] = str.contents[i % str.length];
         }
-        this.contents[newLength] = '\0';
+        result.contents[newLength] = '\0';
     }
-    this.length = newLength;
+    result.length = newLength;
 }
 
 /**
- * Implements the multily operator for 'string * short' or 'short * string'
+ * Concatenates the given string with itself n times
  *
- * @param operand Number of repetitions
+ * @param n Multiplication operand
+ * @param str Input string
+ * @return Result string
  */
-public inline p String.opMul(const short operand) {
-    this.opMul((long) operand);
+public f<String> operator*<IntLongShort>(const IntLongShort n, const String str) {
+    return str * n;
 }
 
 /**
- * Checks if this String equals another String
+ * Concatenates this string with itself n times
  *
- * @param operand String to comare the current string to
+ * @param str Input string
+ * @param n Multiplication operand
+ */
+public p operator*=<IntLongShort>(String& str, const IntLongShort n) {
+    // Cancel if operand is less than 2
+    if n < 2 { return; }
+
+    // Reserve new length
+    unsigned long newLength = n * str.length;
+    str.reserve(newLength);
+
+    // Save the value
+    unsafe {
+        for unsigned long i = 0l; i < newLength; i++ {
+            str.contents[i] = str.contents[i % str.length];
+        }
+        str.contents[newLength] = '\0';
+    }
+    str.length = newLength;
+}
+
+/**
+ * Checks if two strings have the same value
  *
+ * @param a First input string
+ * @param b Second input string
  * @return Equal or not
  */
-public f<bool> String.isEqual(const String operand) {
+public f<bool> operator==(const String a, const String b) {
     // Compare sizes
-    if operand.length != this.length { return false; }
+    if a.length != b.length { return false; }
 
     // Compare contents
     unsafe {
-        for int i = 0; i < this.length; i++ {
-            if this.contents[i] != operand.contents[i] {
+        for unsigned long i = 0l; i < a.length; i++ {
+            if a.contents[i] != b.contents[i] {
                 return false;
             }
         }
     }
 
     return true;
+}
+
+/**
+ * Checks if two strings have not the same value
+ *
+ * @param a First input string
+ * @param b Second input string
+ * @return Not equal or not
+ */
+public f<bool> operator!=(const String a, const String b) {
+    return !(a == b);
 }
 
 /**
@@ -331,10 +355,10 @@ public inline f<bool> String.contains(string needle) {
  */
 public p String.reverse() {
     unsafe {
-        for int i = 0; i < this.length / 2; i++ {
-            this.contents[i] ^= this.contents[this.length - i - 1];
-            this.contents[this.length - i - 1] ^= this.contents[i];
-            this.contents[i] ^= this.contents[this.length - i - 1];
+        for unsigned long i = 0l; i < this.length / 2l; i++ {
+            this.contents[i] ^= this.contents[this.length - i - 1l];
+            this.contents[this.length - i - 1l] ^= this.contents[i];
+            this.contents[i] ^= this.contents[this.length - i - 1l];
         }
     }
 }
@@ -345,14 +369,13 @@ public p String.reverse() {
  * @param needle Substring to replace
  * @param replacement Replacement for the substring
  */
-/*public p String.replace(
-    string* haystack,
+/*public p String.replace<IntLong>(
     string needle,
     string replacement,
-    unsigned long startIndex = 0l
+    unsigned IntLong startIndex = 0l
 ) {
     // Find occurrence
-    unsigned long startIdx = haystack.find(needle, startIndex);
+    unsigned long startIdx = this.find(needle, startIndex);
     // Return if not found
     if startIdx == -1l { return; }
 
@@ -364,27 +387,12 @@ public p String.reverse() {
 }*/
 
 /**
- * Replace occurrence of substring with the replacement string
- *
- * @param needle Substring to replace
- * @param replacement Replacement for the substring
- */
-/*public inline p String.replace(
-    string* haystack,
-    string needle,
-    string replacement,
-    unsigned int startIndex
-) {
-    this.replace(haystack, needle, replacement, (long) startIndex);
-}*/
-
-/**
  * Replace all occurrences of substring with the replacement string
  *
  * @param needle Substring to replace
  * @param replacement Replacement for the substring
  */
-/*public p String.replaceAll(string* haystack, string needle, string replacement) {
+/*public p String.replaceAll(string needle, string replacement) {
     unsigned long needleLength = getRawLength(needle);
     // Return false if the needle is longer than the haystack
     if this.length < needleLength { return -1l; }
@@ -402,7 +410,7 @@ public p String.reverse() {
  * @param length Length of substring
  * @return Substring
  */
-public f<String> String.substring(unsigned long startIndex, long length = -1l) {
+public f<String> String.substring<IntLong>(unsigned IntLong startIndex, long length = -1l) {
     // Return empty string if the length is 0 or the startIndex is out of bounds
     if length == 0l || startIndex >= this.length {
         return String("");
@@ -438,35 +446,14 @@ public f<String> String.substring(unsigned long startIndex, long length = -1l) {
 }
 
 /**
- * Returns the substring of the current string, starting at position `startIndex` with
- * the length of `length`.
- *
- * @param startIndex Substring start index
- * @param length Length of substring
- * @return Substring
- */
-public inline f<String> String.substring(unsigned int startIndex, int length = -1) {
-    return this.substring((long) startIndex, (long) length);
-}
-
-/**
  * Reserves `charCount` items
  *
  * @param charCount Number of chars to reserve for the string
  */
-public p String.reserve(unsigned long charCount) {
+public p String.reserve<IntLong>(unsigned IntLong charCount) {
     if charCount > this.capacity {
         this.resize(charCount);
     }
-}
-
-/**
- * Reserves `charCount` items
- *
- * @param charCount Number of chars to reserve for the string
- */
-public p String.reserve(unsigned int charCount) {
-    this.reserve((long) charCount);
 }
 
 /**
@@ -474,11 +461,11 @@ public p String.reserve(unsigned int charCount) {
  *
  * @param newLength new length of the string after resizing
  */
-p String.resize(unsigned long newLength) {
+p String.resize<IntLong>(unsigned IntLong newLength) {
     // Allocate the new memory
     unsafe {
         byte* oldAddress = (byte*) this.contents;
-        unsigned long requiredBytes = newLength + 1; // +1 because of null terminator
+        unsigned long requiredBytes = newLength + 1l; // +1 because of null terminator
         char* newMemory = (char*) realloc(oldAddress, (int) requiredBytes);
         this.contents = newMemory;
     }
@@ -488,7 +475,7 @@ p String.resize(unsigned long newLength) {
 
 // ======================================================= Static functions ======================================================
 
-/*
+/**
  * Returns the length of a string
  *
  * @param input Input string
@@ -501,11 +488,11 @@ public f<long> getRawLength(string input) {
     }
 }
 
-/*
- * Checks the equality of two strings
+/**
+ * Checks the equality of two raw strings
  *
- * @param lhs First input string
- * @param rhs Second input string
+ * @param lhs First input raw string
+ * @param rhs Second input raw string
  * @return Equality of lhs and rhs
  */
 public f<bool> isRawEqual(string lhs, string rhs) {
@@ -514,7 +501,7 @@ public f<bool> isRawEqual(string lhs, string rhs) {
     // Return false immediately if length does not match
     if lhsLength != rhsLength { return false; }
     // Compare chars
-    for int i = 0; i < lhsLength; i++ {
+    for unsigned long i = 0l; i < lhsLength; i++ {
         if lhs[i] != rhs[i] {
             return false;
         }

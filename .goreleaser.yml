@@ -74,8 +74,8 @@ nfpms:
     dependencies:
       - build-essential
     contents:
-      - src: std/*
-        dst: /usr/lib/spice/std/
+      - src: std
+        dst: /usr/lib/spice/std
 release:
   name_template: v{{ .Tag }}
   prerelease: auto

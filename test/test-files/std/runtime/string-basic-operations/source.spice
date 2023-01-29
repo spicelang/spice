@@ -15,8 +15,6 @@ f<int> main() {
     printf("Content: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
     printf("Capacity: %d\n\n", s.getCapacity());
-    printf("Equals: %d\n", s.isEqual(String("Hello World!?!")));
-    printf("Equals: %d\n", s.isEqual(String("Hello World!!")));
     s.clear();
     printf("Content: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
