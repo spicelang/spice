@@ -36,7 +36,7 @@ public p String.ctor(const string value = "") {
 
     // Save initial value
     unsafe {
-        for unsigned long i; i < this.length + 1; i++ { // +1 because of null terminator
+        for unsigned long i = 0l; i < this.length + 1l; i++ { // +1 because of null terminator
             this.contents[i] = value[i];
         }
     }
@@ -96,7 +96,7 @@ public p String.append(const string appendix) {
 
     // Save data
     unsafe {
-        for int i = 0; i < appendixLength + 1; i++ { // +1 because of null terminator
+        for unsigned long i = 0l; i < appendixLength + 1l; i++ { // +1 because of null terminator
             this.contents[this.length++] = appendix[i];
         }
     }
@@ -119,7 +119,7 @@ public p String.append(const String appendix) {
  */
 public p String.append(const char c) {
     // Check if we need to re-allocate memory
-    if this.capacity < this.length + 1 {
+    if this.capacity < this.length + 1l {
         this.resize(this.capacity * RESIZE_FACTOR);
     }
 
@@ -355,10 +355,10 @@ public inline f<bool> String.contains(string needle) {
  */
 public p String.reverse() {
     unsafe {
-        for int i = 0; i < this.length / 2; i++ {
-            this.contents[i] ^= this.contents[this.length - i - 1];
-            this.contents[this.length - i - 1] ^= this.contents[i];
-            this.contents[i] ^= this.contents[this.length - i - 1];
+        for unsigned long i = 0l; i < this.length / 2l; i++ {
+            this.contents[i] ^= this.contents[this.length - i - 1l];
+            this.contents[this.length - i - 1l] ^= this.contents[i];
+            this.contents[i] ^= this.contents[this.length - i - 1l];
         }
     }
 }
@@ -465,7 +465,7 @@ p String.resize<IntLong>(unsigned IntLong newLength) {
     // Allocate the new memory
     unsafe {
         byte* oldAddress = (byte*) this.contents;
-        unsigned long requiredBytes = newLength + 1; // +1 because of null terminator
+        unsigned long requiredBytes = newLength + 1l; // +1 because of null terminator
         char* newMemory = (char*) realloc(oldAddress, (int) requiredBytes);
         this.contents = newMemory;
     }
@@ -501,7 +501,7 @@ public f<bool> isRawEqual(string lhs, string rhs) {
     // Return false immediately if length does not match
     if lhsLength != rhsLength { return false; }
     // Compare chars
-    for int i = 0; i < lhsLength; i++ {
+    for unsigned long i = 0l; i < lhsLength; i++ {
         if lhs[i] != rhs[i] {
             return false;
         }

@@ -1,0 +1,26 @@
+type Size alias long;
+
+type Counter struct {
+    Size value
+}
+
+p Counter.ctor(long initialValue = 0l) {
+    this.value = initialValue;
+}
+
+f<Size> Counter.getValue() {
+    return this.value;
+}
+
+f<Counter> operator+(const Counter c1, const Counter c2) {
+    return Counter(c1.value + c2.value);
+}
+
+f<int> main() {
+    Counter counter1 = Counter(2l);
+    Counter counter2 = Counter(3l);
+    printf("Counter1 value: %d\n", counter1.getValue());
+    printf("Counter2 value: %d\n", counter2.getValue());
+    Counter counter3 = counter1 + counter2; // Here we call the overloaded operator
+    printf("Counter3 value: %d\n", counter3.getValue());
+}
