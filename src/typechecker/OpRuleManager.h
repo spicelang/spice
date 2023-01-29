@@ -19,6 +19,12 @@ class TypeChecker;
 // Helper macro to get the length of an array
 #define arrayLength(array) sizeof(array) / sizeof(*array)
 
+// Operator overload function names
+const char *const OP_FCT_PLUS = "_op.plus";
+const char *const OP_FCT_MINUS = "_op.minus";
+const char *const OP_FCT_MUL = "_op.mul";
+const char *const OP_FCT_DIV = "_op.div";
+
 // Unary operator rule:        lhs type, result type, unsafe
 using UnaryOpRule = std::tuple<uint32_t, uint32_t, bool>;
 // Binary operator rule:        lhs type, rhs type, result type, unsafe
@@ -612,8 +618,8 @@ public:
   static SymbolType getShiftRightResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
   SymbolType getPlusResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
   SymbolType getMinusResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getMulResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
-  static SymbolType getDivResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
+  SymbolType getMulResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
+  SymbolType getDivResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
   static SymbolType getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs);
   static SymbolType getPrefixMinusResultType(const ASTNode *node, SymbolType lhs);
   static SymbolType getPrefixPlusPlusResultType(const ASTNode *node, SymbolType lhs);
@@ -631,6 +637,8 @@ private:
   TypeChecker *typeChecker;
 
   // Private methods
+  SymbolType isBinaryOperatorOverloadingFctAvailable(const char *const fctName, SymbolType &lhs, SymbolType &rhs,
+                                                     const ASTNode *node);
   static SymbolType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
                                             const char *name, const SymbolType &lhs, const SymbolType &rhs);
   static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,

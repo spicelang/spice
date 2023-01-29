@@ -56,9 +56,9 @@ public p String.ctor(const char value) {
     }
 }
 
-public p String.ctor(const String& value1, const string value2 = "") {
-    this.length = value1.length;
-    this.capacity = value1.capacity;
+public p String.ctor(const String value) {
+    this.length = value.length;
+    this.capacity = value.capacity;
 
     // Allocate space
     unsafe {
@@ -68,11 +68,7 @@ public p String.ctor(const String& value1, const string value2 = "") {
 
     // Copy the contents from the other string
     unsafe {
-        memcpy(this.contents, value1.contents, value1.length + 1l); // +1 because of null terminator
-    }
-
-    if getRawLength(value2) > 0l {
-        this.append(value2);
+        memcpy(this.contents, value.contents, value.length + 1l); // +1 because of null terminator
     }
 }
 
@@ -197,7 +193,7 @@ public f<String> operator*<IntLongShort>(const IntLongShort n, const String& str
  *
  * @return Equal or not
  */
-public f<bool> String.isEqual(const String& operand) {
+public f<bool> String.isEqual(const String operand) {
     // Compare sizes
     if operand.length != this.length { return false; }
 

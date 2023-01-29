@@ -1,8 +1,41 @@
 f<int> main() {
+    String s = String("Hello ");
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    s.append("World!");
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    s.append('?');
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    s.append('!');
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    printf("Equals: %d\n", s.isEqual(String("Hello World!?!")));
+    printf("Equals: %d\n", s.isEqual(String("Hello World!!")));
+    s.clear();
+    printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    s.reserve(100l);
+    /*printf("Content: %s\n", s.getRaw());
+    printf("Length: %d\n", s.getLength());
+    printf("Capacity: %d\n\n", s.getCapacity());
+    s = String("");
+    printf("Empty: %d\n", s.isEmpty());
+    s.append('a');
+    printf("Empty: %d", s.isEmpty());*/
+}
+
+/*f<int> main() {
     String strA = String("Hello ");
     String strB = String("World!");
     String strC = strA + strB;
     printf("%s\n", strA);
     printf("%s\n", strB);
     printf("%s\n", strC);
-}
+}*/
