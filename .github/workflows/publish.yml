@@ -36,6 +36,9 @@ jobs:
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
+      - name: Setup CCache
+        uses: hendrikmuhs/ccache-action@v1
+
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v3
@@ -110,6 +113,9 @@ jobs:
 
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Setup CCache
+        uses: hendrikmuhs/ccache-action@v1
 
       - name: Cache LLVM
         id: cache-llvm
