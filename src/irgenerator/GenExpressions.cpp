@@ -236,12 +236,12 @@ std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
-  for (size_t i = 0; i < node->operands().size(); i++) {
+  for (size_t i = 1; i < node->operands().size(); i++) {
     // Evaluate the operand
-    BitwiseXorExprNode *rhsNode = node->operands()[i + 1];
+    BitwiseXorExprNode *rhsNode = node->operands()[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
-    lhs.value = conversionManager.getBitwiseOrInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, i);
+    lhs.value = conversionManager.getBitwiseOrInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
   }
 
   // Return result
@@ -262,12 +262,12 @@ std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
-  for (size_t i = 0; i < node->operands().size(); i++) {
+  for (size_t i = 1; i < node->operands().size(); i++) {
     // Evaluate the operand
-    BitwiseAndExprNode *rhsNode = node->operands()[i + 1];
+    BitwiseAndExprNode *rhsNode = node->operands()[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
-    lhs.value = conversionManager.getBitwiseXorInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, i);
+    lhs.value = conversionManager.getBitwiseXorInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
   }
 
   // Return result
@@ -288,12 +288,12 @@ std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
-  for (size_t i = 0; i < node->operands().size(); i++) {
+  for (size_t i = 1; i < node->operands().size(); i++) {
     // Evaluate the operand
-    EqualityExprNode *rhsNode = node->operands()[i + 1];
+    EqualityExprNode *rhsNode = node->operands()[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
-    lhs.value = conversionManager.getBitwiseAndInst(rhsNode, lhs, lhsSTy, rhs, rhsSTy, currentScope, i);
+    lhs.value = conversionManager.getBitwiseAndInst(rhsNode, lhs, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
   }
 
   // Return result
