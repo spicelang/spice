@@ -105,7 +105,7 @@ public p String.append(const string appendix) {
  *
  * @param appendix String to be appended
  */
-public p String.append(const String& appendix) {
+public p String.append(const String appendix) {
     const char* rawAppendix = appendix.getRaw();
     unsigned long appendixLength = appendix.length;
     // Check if we need to re-allocate memory
@@ -146,8 +146,9 @@ public p String.append(const char c) {
  * @parem a String a
  * @param b String b
  */
-public f<String> operator+(const String& a, const String& b) {
-    return String("");
+public f<String> operator+(const String a, const String b) {
+    result = String(a);
+    result.append(b);
 }
 
 /**
@@ -156,13 +157,13 @@ public f<String> operator+(const String& a, const String& b) {
  * @param str Input string
  * @param n Multiplication operand
  */
-public f<String> operator*<IntLongShort>(const String& str, const IntLongShort n) {
+public f<String> operator*<IntLongShort>(const String str, const IntLongShort n) {
     // Cancel if operand is less than 2
-    if operand < 2 { return; }
+    if n < 2 { return; }
 
     // Copy the input string
     result = String(str);
-    unsigned long newLength = operand * str.length;
+    unsigned long newLength = n * str.length;
     result.reserve(newLength);
 
     // Save the value
@@ -181,9 +182,8 @@ public f<String> operator*<IntLongShort>(const String& str, const IntLongShort n
  * @param n Multiplication operand
  * @param str Input string
  */
-public f<String> operator*<IntLongShort>(const IntLongShort n, const String& str) {
-    //return str * n;
-    return String("");
+public f<String> operator*<IntLongShort>(const IntLongShort n, const String str) {
+    return str * n;
 }
 
 /**

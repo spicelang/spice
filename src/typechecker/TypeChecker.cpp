@@ -392,7 +392,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       rhsTy = localVarType;
 
     // Check if type has to be inferred or both types are fixed
-    localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy);
+    localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0);
 
     // Push symbolType to the declaration data type
     node->dataType()->setEvaluatedSymbolType(localVarType, manIdx);
@@ -628,27 +628,27 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
 
     // Take a look at the operator
     if (node->op == AssignExprNode::OP_ASSIGN) {
-      rhsType = OpRuleManager::getAssignResultType(node, lhsType, rhsType);
+      rhsType = OpRuleManager::getAssignResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_PLUS_EQUAL) {
-      rhsType = opRuleManager.getPlusEqualResultType(node, lhsType, rhsType);
+      rhsType = opRuleManager.getPlusEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_MINUS_EQUAL) {
-      rhsType = opRuleManager.getMinusEqualResultType(node, lhsType, rhsType);
+      rhsType = opRuleManager.getMinusEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_MUL_EQUAL) {
-      rhsType = OpRuleManager::getMulEqualResultType(node, lhsType, rhsType);
+      rhsType = OpRuleManager::getMulEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_DIV_EQUAL) {
-      rhsType = OpRuleManager::getDivEqualResultType(node, lhsType, rhsType);
+      rhsType = OpRuleManager::getDivEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_REM_EQUAL) {
-      rhsType = OpRuleManager::getRemEqualResultType(node, lhsType, rhsType);
+      rhsType = OpRuleManager::getRemEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_SHL_EQUAL) {
-      rhsType = OpRuleManager::getSHLEqualResultType(node, lhsType, rhsType);
+      rhsType = OpRuleManager::getSHLEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_SHR_EQUAL) {
-      rhsType = OpRuleManager::getSHREqualResultType(node, lhsType, rhsType);
+      rhsType = OpRuleManager::getSHREqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_AND_EQUAL) {
-      rhsType = OpRuleManager::getAndEqualResultType(node, lhsType, rhsType);
+      rhsType = OpRuleManager::getAndEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_OR_EQUAL) {
-      rhsType = OpRuleManager::getOrEqualResultType(node, lhsType, rhsType);
+      rhsType = OpRuleManager::getOrEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_XOR_EQUAL) {
-      rhsType = OpRuleManager::getXorEqualResultType(node, lhsType, rhsType);
+      rhsType = OpRuleManager::getXorEqualResultType(node, lhsType, rhsType, 0);
     }
 
     if (lhsVar) { // Variable is involved on the left side
@@ -705,9 +705,9 @@ std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through all remaining operands
-  for (int i = 1; i < node->operands().size(); i++) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
-    currentType = OpRuleManager::getLogicalOrResultType(node, currentType, rhsTy);
+  for (size_t i = 0; i < node->operands().size(); i++) {
+    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i + 1])).type;
+    currentType = OpRuleManager::getLogicalOrResultType(node, currentType, rhsTy, i);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
@@ -721,9 +721,9 @@ std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through all remaining operands
-  for (int i = 1; i < node->operands().size(); i++) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
-    currentType = OpRuleManager::getLogicalAndResultType(node, currentType, rhsTy);
+  for (size_t i = 0; i < node->operands().size(); i++) {
+    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i + 1])).type;
+    currentType = OpRuleManager::getLogicalAndResultType(node, currentType, rhsTy, i);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
@@ -737,9 +737,9 @@ std::any TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through all remaining operands
-  for (int i = 1; i < node->operands().size(); i++) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
-    currentType = OpRuleManager::getBitwiseOrResultType(node, currentType, rhsTy);
+  for (size_t i = 0; i < node->operands().size(); i++) {
+    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i + 1])).type;
+    currentType = OpRuleManager::getBitwiseOrResultType(node, currentType, rhsTy, i);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
@@ -753,9 +753,9 @@ std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through all remaining operands
-  for (int i = 1; i < node->operands().size(); i++) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
-    currentType = OpRuleManager::getBitwiseXorResultType(node, currentType, rhsTy);
+  for (size_t i = 0; i < node->operands().size(); i++) {
+    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i + 1])).type;
+    currentType = OpRuleManager::getBitwiseXorResultType(node, currentType, rhsTy, i);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
@@ -769,9 +769,9 @@ std::any TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through all remaining operands
-  for (int i = 1; i < node->operands().size(); i++) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
-    currentType = OpRuleManager::getBitwiseAndResultType(node, currentType, rhsTy);
+  for (size_t i = 0; i < node->operands().size(); i++) {
+    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i + 1])).type;
+    currentType = OpRuleManager::getBitwiseAndResultType(node, currentType, rhsTy, i);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
@@ -793,9 +793,9 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   // Check operator
   SymbolType resultType;
   if (node->op == EqualityExprNode::OP_EQUAL) // Operator was equal
-    resultType = OpRuleManager::getEqualResultType(node, lhsTy, rhsTy);
+    resultType = OpRuleManager::getEqualResultType(node, lhsTy, rhsTy, 0);
   else if (node->op == EqualityExprNode::OP_NOT_EQUAL) // Operator was not equal
-    resultType = OpRuleManager::getNotEqualResultType(node, lhsTy, rhsTy);
+    resultType = OpRuleManager::getNotEqualResultType(node, lhsTy, rhsTy, 0);
   else
     throw std::runtime_error("Internal compiler error: EqualityExpr fall-through"); // GCOV_EXCL_LINE
 
@@ -814,13 +814,13 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
   // Check operator
   SymbolType resultType;
   if (node->op == RelationalExprNode::OP_LESS) // Operator was less
-    resultType = OpRuleManager::getLessResultType(node, lhsTy, rhsTy);
+    resultType = OpRuleManager::getLessResultType(node, lhsTy, rhsTy, 0);
   else if (node->op == RelationalExprNode::OP_GREATER) // Operator was greater
-    resultType = OpRuleManager::getGreaterResultType(node, lhsTy, rhsTy);
+    resultType = OpRuleManager::getGreaterResultType(node, lhsTy, rhsTy, 0);
   else if (node->op == RelationalExprNode::OP_LESS_EQUAL) // Operator was less equal
-    resultType = OpRuleManager::getLessEqualResultType(node, lhsTy, rhsTy);
+    resultType = OpRuleManager::getLessEqualResultType(node, lhsTy, rhsTy, 0);
   else if (node->op == RelationalExprNode::OP_GREATER_EQUAL) // Operator was greater equal
-    resultType = OpRuleManager::getGreaterEqualResultType(node, lhsTy, rhsTy);
+    resultType = OpRuleManager::getGreaterEqualResultType(node, lhsTy, rhsTy, 0);
   else
     throw std::runtime_error("Internal compiler error: RelationalExpr fall-through"); // GCOV_EXCL_LINE
 
@@ -839,9 +839,9 @@ std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
   // Check operator
   SymbolType resultType;
   if (node->op == ShiftExprNode::OP_SHIFT_LEFT) // Operator was shl
-    resultType = OpRuleManager::getShiftLeftResultType(node, lhsTy, rhsTy);
+    resultType = OpRuleManager::getShiftLeftResultType(node, lhsTy, rhsTy, 0);
   else if (node->op == ShiftExprNode::OP_SHIFT_RIGHT) // Operator was shr
-    resultType = OpRuleManager::getShiftRightResultType(node, lhsTy, rhsTy);
+    resultType = OpRuleManager::getShiftRightResultType(node, lhsTy, rhsTy, 0);
   else
     throw std::runtime_error("Internal compiler error: ShiftExpr fall-through"); // GCOV_EXCL_LINE
 
@@ -864,9 +864,9 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
     // Check operator
     const AdditiveExprNode::AdditiveOp &op = node->opQueue.front().first;
     if (op == AdditiveExprNode::OP_PLUS)
-      currentType = opRuleManager.getPlusResultType(operand, currentType, operandType);
+      currentType = opRuleManager.getPlusResultType(node, currentType, operandType, i);
     else if (op == AdditiveExprNode::OP_MINUS)
-      currentType = opRuleManager.getMinusResultType(operand, currentType, operandType);
+      currentType = opRuleManager.getMinusResultType(node, currentType, operandType, i);
     else
       throw std::runtime_error("Additive expr fall-through");
 
@@ -894,11 +894,11 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
     // Check operator
     const MultiplicativeExprNode::MultiplicativeOp &op = node->opQueue.front().first;
     if (op == MultiplicativeExprNode::OP_MUL)
-      currentType = opRuleManager.getMulResultType(operand, currentType, operandType);
+      currentType = opRuleManager.getMulResultType(node, currentType, operandType, i);
     else if (op == MultiplicativeExprNode::OP_DIV)
-      currentType = opRuleManager.getDivResultType(operand, currentType, operandType);
+      currentType = opRuleManager.getDivResultType(node, currentType, operandType, i);
     else if (op == MultiplicativeExprNode::OP_REM)
-      currentType = OpRuleManager::getRemResultType(operand, currentType, operandType);
+      currentType = OpRuleManager::getRemResultType(node, currentType, operandType, i);
     else
       throw std::runtime_error("Multiplicative expr fall-through");
 
@@ -921,7 +921,7 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   auto dstType = std::any_cast<SymbolType>(visit(node->dataType()));
 
   // Get result type
-  SymbolType resultType = opRuleManager.getCastResultType(node, dstType, srcType);
+  SymbolType resultType = opRuleManager.getCastResultType(node, dstType, srcType, 0);
 
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx)};
 }
@@ -941,10 +941,10 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   // Determine action, based on the given operator
   switch (node->op) {
   case PrefixUnaryExprNode::OP_MINUS:
-    operandType = OpRuleManager::getPrefixMinusResultType(rhsNode, operandType);
+    operandType = OpRuleManager::getPrefixMinusResultType(rhsNode, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_PLUS_PLUS:
-    operandType = OpRuleManager::getPrefixPlusPlusResultType(rhsNode, operandType);
+    operandType = OpRuleManager::getPrefixPlusPlusResultType(rhsNode, operandType, 0);
 
     // In case the lhs is captured, notify the capture about the write access
     if (Capture *lhsCapture = operandEntry ? currentScope->symbolTable.lookupCapture(operandEntry->name) : nullptr; lhsCapture)
@@ -952,7 +952,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
     break;
   case PrefixUnaryExprNode::OP_MINUS_MINUS:
-    operandType = OpRuleManager::getPrefixMinusMinusResultType(rhsNode, operandType);
+    operandType = OpRuleManager::getPrefixMinusMinusResultType(rhsNode, operandType, 0);
 
     // In case the lhs is captured, notify the capture about the write access
     if (Capture *lhsCapture = operandEntry ? currentScope->symbolTable.lookupCapture(operandEntry->name) : nullptr; lhsCapture)
@@ -960,16 +960,16 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
     break;
   case PrefixUnaryExprNode::OP_NOT:
-    operandType = OpRuleManager::getPrefixNotResultType(rhsNode, operandType);
+    operandType = OpRuleManager::getPrefixNotResultType(rhsNode, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_BITWISE_NOT:
-    operandType = OpRuleManager::getPrefixBitwiseNotResultType(rhsNode, operandType);
+    operandType = OpRuleManager::getPrefixBitwiseNotResultType(rhsNode, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_INDIRECTION:
-    operandType = OpRuleManager::getPrefixMulResultType(rhsNode, operandType);
+    operandType = OpRuleManager::getPrefixMulResultType(rhsNode, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_ADDRESS_OF:
-    operandType = OpRuleManager::getPrefixBitwiseAndResultType(rhsNode, operandType);
+    operandType = OpRuleManager::getPrefixBitwiseAndResultType(rhsNode, operandType, 0);
     break;
   default:
     throw std::runtime_error("Prefix unary fall-through");
@@ -1056,7 +1056,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     break;
   }
   case PostfixUnaryExprNode::OP_PLUS_PLUS: {
-    lhsType = OpRuleManager::getPostfixPlusPlusResultType(lhsNode, lhsType);
+    lhsType = OpRuleManager::getPostfixPlusPlusResultType(lhsNode, lhsType, 0);
 
     // In case the lhs is captured, notify the capture about the write access
     if (Capture *lhsCapture = lhsEntry ? currentScope->symbolTable.lookupCapture(lhsEntry->name) : nullptr; lhsCapture)
@@ -1065,7 +1065,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     break;
   }
   case PostfixUnaryExprNode::OP_MINUS_MINUS: {
-    lhsType = OpRuleManager::getPostfixMinusMinusResultType(lhsNode, lhsType);
+    lhsType = OpRuleManager::getPostfixMinusMinusResultType(lhsNode, lhsType, 0);
 
     // In case the lhs is captured, notify the capture about the write access
     if (Capture *lhsCapture = lhsEntry ? currentScope->symbolTable.lookupCapture(lhsEntry->name) : nullptr; lhsCapture)
@@ -1805,6 +1805,37 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
   const NameRegistryEntry *origRegistryEntry = sourceFile->getNameRegistryEntry(structName);
   assert(origRegistryEntry != nullptr);
   targetSourceFile->addNameRegistryEntry(structName, origRegistryEntry->targetEntry, origRegistryEntry->targetScope, false);
+
+  return symbolType;
+}
+
+SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const {
+  // Skip all types, exception structs, interfaces and enums
+  if (!symbolType.getBaseType().is(TY_STRUCT))
+    return symbolType;
+
+  // If the target scope is in the current source file, we can return the symbol type as is
+  SourceFile *sourceSourceFile = sourceScope->sourceFile;
+  if (sourceSourceFile == sourceFile)
+    return symbolType;
+
+  // Match the scope of the symbol type against all scopes in the name registry of the target source file
+  for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
+    if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
+      for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
+        if (manifestation->structScope == symbolType.getBaseType().getStructBodyScope()) {
+          // Get the 'fullest-qualified' registry entry
+          const NameRegistryEntry *mostQualifiedEntry = sourceFile->getNameRegistryEntry(entry.name);
+          assert(mostQualifiedEntry != nullptr);
+          return symbolType.replaceBaseSubType(mostQualifiedEntry->name);
+        }
+
+  // This source file does not know about the struct at all
+  // -> show it how to find the struct
+  const std::string structName = symbolType.getBaseType().getSubType();
+  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(structName);
+  assert(origRegistryEntry != nullptr);
+  sourceFile->addNameRegistryEntry(structName, origRegistryEntry->targetEntry, origRegistryEntry->targetScope, false);
 
   return symbolType;
 }

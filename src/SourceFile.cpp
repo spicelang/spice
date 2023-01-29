@@ -556,7 +556,7 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName
     if (registryEntry->importEntry)
       registryEntry->importEntry->used = true;
     symbolName = registryEntry->predecessorName;
-  } while (!registryEntry->predecessorName.empty());
+  } while (!symbolName.empty());
 
   return registryEntry;
 }

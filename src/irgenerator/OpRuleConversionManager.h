@@ -46,66 +46,72 @@ public:
   OpRuleConversionManager(GlobalResourceManager &resourceManager, IRGenerator *irGenerator);
 
   // Public methods
-  PtrAndValue getPlusEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                               Scope *accessScope);
-  llvm::Value *getMinusEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                                 Scope *accessScope);
-  PtrAndValue getMulEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                              Scope *accessScope);
-  llvm::Value *getDivEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                               Scope *accessScope);
-  llvm::Value *getRemEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                               Scope *accessScope);
-  llvm::Value *getSHLEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                               Scope *accessScope);
-  llvm::Value *getSHREqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                               Scope *accessScope);
-  llvm::Value *getAndEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                               Scope *accessScope);
-  llvm::Value *getOrEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                              Scope *accessScope);
-  llvm::Value *getXorEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                               Scope *accessScope);
-  llvm::Value *getBitwiseAndInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                                 Scope *accessScope);
-  llvm::Value *getBitwiseOrInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                                Scope *accessScope);
-  llvm::Value *getBitwiseXorInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                                 Scope *accessScope);
-  llvm::Value *getEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                            Scope *accessScope);
-  llvm::Value *getNotEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                               Scope *accessScope);
-  llvm::Value *getLessInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                           Scope *accessScope);
-  llvm::Value *getGreaterInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                              Scope *accessScope);
-  llvm::Value *getLessEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                                Scope *accessScope);
-  llvm::Value *getGreaterEqualInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                                   Scope *accessScope);
-  llvm::Value *getShiftLeftInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                                Scope *accessScope);
-  llvm::Value *getShiftRightInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                                 Scope *accessScope);
-  PtrAndValue getPlusInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                          Scope *accessScope);
-  llvm::Value *getMinusInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                            Scope *accessScope);
-  PtrAndValue getMulInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                         Scope *accessScope);
-  llvm::Value *getDivInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                          Scope *accessScope);
-  llvm::Value *getRemInst(ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
-                          Scope *accessScope);
-  llvm::Value *getPrefixMinusInst(ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope);
-  llvm::Value *getPrefixPlusPlusInst(ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope);
-  llvm::Value *getPrefixMinusMinusInst(ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope);
-  llvm::Value *getPrefixNotInst(ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope);
-  llvm::Value *getPrefixBitwiseNotInst(ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope);
-  llvm::Value *getPostfixPlusPlusInst(ExprResult &lhs, SymbolType lhsSTy, Scope *accessScope);
-  llvm::Value *getPostfixMinusMinusInst(ExprResult &lhs, SymbolType lhsSTy, Scope *accessScope);
-  llvm::Value *getCastInst(const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope);
+  PtrAndValue getPlusEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getMinusEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                 const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  PtrAndValue getMulEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                              const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getDivEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getRemEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getSHLEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getSHREqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getAndEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getOrEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                              const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getXorEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getBitwiseAndInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                 const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getBitwiseOrInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getBitwiseXorInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                 const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                            const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getNotEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getLessInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                           const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getGreaterInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                              const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getLessEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getGreaterEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                   const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getShiftLeftInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getShiftRightInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                                 const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  PtrAndValue getPlusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                          const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                            const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  PtrAndValue getMulInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                         const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getDivInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                          const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getRemInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
+                          const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getPrefixMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope,
+                                  size_t opIdx);
+  llvm::Value *getPrefixPlusPlusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope,
+                                     size_t opIdx);
+  llvm::Value *getPrefixMinusMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope,
+                                       size_t opIdx);
+  llvm::Value *getPrefixNotInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getPrefixBitwiseNotInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, Scope *accessScope,
+                                       size_t opIdx);
+  llvm::Value *getPostfixPlusPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, Scope *accessScope, size_t opIdx);
+  llvm::Value *getPostfixMinusMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, Scope *accessScope,
+                                        size_t opIdx);
+  llvm::Value *getCastInst(const ASTNode *node, const SymbolType &lhsSTy, ExprResult &rhs, const SymbolType &rhsSTy,
+                           Scope *accessScope, size_t opIdx);
 
 private:
   // Members
@@ -115,6 +121,7 @@ private:
   const StdFunctionManager &stdFunctionManager;
 
   // Private methods
+  PtrAndValue callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhs, auto &rhs, size_t opIdx = 0);
   [[nodiscard]] static inline uint32_t getTypeCombination(const SymbolType &lhsTy, const SymbolType &rhsTy) {
     return COMB(lhsTy.getSuperType(), rhsTy.getSuperType());
   }

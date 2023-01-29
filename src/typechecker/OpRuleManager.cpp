@@ -9,7 +9,7 @@
 
 namespace spice::compiler {
 
-SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
@@ -32,7 +32,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
   return validateBinaryOperation(node, ASSIGN_OP_RULES, arrayLength(ASSIGN_OP_RULES), "=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getPlusEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getPlusEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
@@ -45,7 +45,7 @@ SymbolType OpRuleManager::getPlusEqualResultType(const ASTNode *node, SymbolType
   return validateBinaryOperation(node, PLUS_EQUAL_OP_RULES, arrayLength(PLUS_EQUAL_OP_RULES), "+=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getMinusEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getMinusEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
@@ -57,98 +57,98 @@ SymbolType OpRuleManager::getMinusEqualResultType(const ASTNode *node, SymbolTyp
   return validateBinaryOperation(node, MINUS_EQUAL_OP_RULES, arrayLength(MINUS_EQUAL_OP_RULES), "-=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getMulEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getMulEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, MUL_EQUAL_OP_RULES, arrayLength(MUL_EQUAL_OP_RULES), "*=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getDivEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getDivEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, DIV_EQUAL_OP_RULES, arrayLength(DIV_EQUAL_OP_RULES), "/=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getRemEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getRemEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, REM_EQUAL_OP_RULES, arrayLength(REM_EQUAL_OP_RULES), "%=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getSHLEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getSHLEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, SHL_EQUAL_OP_RULES, arrayLength(SHL_EQUAL_OP_RULES), "<<=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getSHREqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getSHREqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, SHR_EQUAL_OP_RULES, arrayLength(SHR_EQUAL_OP_RULES), ">>=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getAndEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getAndEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, AND_EQUAL_OP_RULES, arrayLength(AND_EQUAL_OP_RULES), "&=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getOrEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getOrEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, OR_EQUAL_OP_RULES, arrayLength(OR_EQUAL_OP_RULES), "|=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getXorEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getXorEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, XOR_EQUAL_OP_RULES, arrayLength(XOR_EQUAL_OP_RULES), "^=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, LOGICAL_AND_OP_RULES, arrayLength(LOGICAL_AND_OP_RULES), "&&", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLogicalOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getLogicalOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, LOGICAL_OR_OP_RULES, arrayLength(LOGICAL_OR_OP_RULES), "||", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, BITWISE_AND_OP_RULES, arrayLength(BITWISE_AND_OP_RULES), "&", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getBitwiseOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getBitwiseOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, BITWISE_OR_OP_RULES, arrayLength(BITWISE_OR_OP_RULES), "|", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, BITWISE_XOR_OP_RULES, arrayLength(BITWISE_XOR_OP_RULES), "^", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
@@ -162,7 +162,7 @@ SymbolType OpRuleManager::getEqualResultType(const ASTNode *node, SymbolType lhs
   return validateBinaryOperation(node, EQUAL_OP_RULES, arrayLength(EQUAL_OP_RULES), "==", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getNotEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getNotEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
@@ -176,49 +176,49 @@ SymbolType OpRuleManager::getNotEqualResultType(const ASTNode *node, SymbolType 
   return validateBinaryOperation(node, NOT_EQUAL_OP_RULES, arrayLength(NOT_EQUAL_OP_RULES), "!=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLessResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getLessResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, LESS_OP_RULES, arrayLength(LESS_OP_RULES), "<", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getGreaterResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getGreaterResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, GREATER_OP_RULES, arrayLength(GREATER_OP_RULES), ">", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLessEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getLessEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, LESS_EQUAL_OP_RULES, arrayLength(LESS_EQUAL_OP_RULES), "<=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, GREATER_EQUAL_OP_RULES, arrayLength(GREATER_EQUAL_OP_RULES), ">=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getShiftLeftResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getShiftLeftResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, SHIFT_LEFT_OP_RULES, arrayLength(SHIFT_LEFT_OP_RULES), "<<", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getShiftRightResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getShiftRightResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, SHIFT_RIGHT_OP_RULES, arrayLength(SHIFT_RIGHT_OP_RULES), ">>", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getPlusResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getPlusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
@@ -235,7 +235,7 @@ SymbolType OpRuleManager::getPlusResultType(const ASTNode *node, SymbolType lhs,
 
   // Check is there is an overloaded operator function available
   if (lhs.is(TY_STRUCT) || rhs.is(TY_STRUCT)) {
-    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_PLUS, lhs, rhs, node);
+    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_PLUS, lhs, rhs, node, opIdx);
     if (!resultType.is(TY_INVALID))
       return resultType;
   }
@@ -243,7 +243,7 @@ SymbolType OpRuleManager::getPlusResultType(const ASTNode *node, SymbolType lhs,
   return validateBinaryOperation(node, PLUS_OP_RULES, arrayLength(PLUS_OP_RULES), "+", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getMinusResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getMinusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
@@ -260,7 +260,7 @@ SymbolType OpRuleManager::getMinusResultType(const ASTNode *node, SymbolType lhs
 
   // Check is there is an overloaded operator function available
   if (lhs.is(TY_STRUCT) || rhs.is(TY_STRUCT)) {
-    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_MINUS, lhs, rhs, node);
+    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_MINUS, lhs, rhs, node, opIdx);
     if (!resultType.is(TY_INVALID))
       return resultType;
   }
@@ -268,13 +268,13 @@ SymbolType OpRuleManager::getMinusResultType(const ASTNode *node, SymbolType lhs
   return validateBinaryOperation(node, MINUS_OP_RULES, arrayLength(MINUS_OP_RULES), "-", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getMulResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getMulResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   // Check is there is an overloaded operator function available
   if (lhs.is(TY_STRUCT) || rhs.is(TY_STRUCT)) {
-    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_MUL, lhs, rhs, node);
+    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_MUL, lhs, rhs, node, opIdx);
     if (!resultType.is(TY_INVALID))
       return resultType;
   }
@@ -282,13 +282,13 @@ SymbolType OpRuleManager::getMulResultType(const ASTNode *node, SymbolType lhs, 
   return validateBinaryOperation(node, MUL_OP_RULES, arrayLength(MUL_OP_RULES), "*", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getDivResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getDivResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   // Check is there is an overloaded operator function available
   if (lhs.is(TY_STRUCT) || rhs.is(TY_STRUCT)) {
-    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_DIV, lhs, rhs, node);
+    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_DIV, lhs, rhs, node, opIdx);
     if (!resultType.is(TY_INVALID))
       return resultType;
   }
@@ -296,44 +296,44 @@ SymbolType OpRuleManager::getDivResultType(const ASTNode *node, SymbolType lhs, 
   return validateBinaryOperation(node, DIV_OP_RULES, arrayLength(DIV_OP_RULES), "/", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
   return validateBinaryOperation(node, REM_OP_RULES, arrayLength(REM_OP_RULES), "%", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getPrefixMinusResultType(const ASTNode *node, SymbolType lhs) {
+SymbolType OpRuleManager::getPrefixMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
 
   return validateUnaryOperation(node, PREFIX_MINUS_OP_RULES, arrayLength(PREFIX_MINUS_OP_RULES), "-", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, SymbolType lhs) {
+SymbolType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
 
   return validateUnaryOperation(node, PREFIX_PLUS_PLUS_OP_RULES, arrayLength(PREFIX_PLUS_PLUS_OP_RULES), "++", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, SymbolType lhs) {
+SymbolType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
 
   return validateUnaryOperation(node, PREFIX_MINUS_MINUS_OP_RULES, arrayLength(PREFIX_MINUS_MINUS_OP_RULES), "--", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixNotResultType(const ASTNode *node, SymbolType lhs) {
+SymbolType OpRuleManager::getPrefixNotResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
 
   return validateUnaryOperation(node, PREFIX_NOT_OP_RULES, arrayLength(PREFIX_NOT_OP_RULES), "!", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const ASTNode *node, SymbolType lhs) {
+SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
 
   return validateUnaryOperation(node, PREFIX_BITWISE_NOT_OP_RULES, arrayLength(PREFIX_BITWISE_NOT_OP_RULES), "~", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixMulResultType(const ASTNode *node, SymbolType lhs) {
+SymbolType OpRuleManager::getPrefixMulResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
 
   if (!lhs.isPtr())
@@ -341,25 +341,25 @@ SymbolType OpRuleManager::getPrefixMulResultType(const ASTNode *node, SymbolType
   return lhs.getContainedTy();
 }
 
-SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, SymbolType lhs) {
+SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
 
   return lhs.toPointer(node);
 }
 
-SymbolType OpRuleManager::getPostfixPlusPlusResultType(const ASTNode *node, SymbolType lhs) {
+SymbolType OpRuleManager::getPostfixPlusPlusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
 
   return validateUnaryOperation(node, POSTFIX_PLUS_PLUS_OP_RULES, arrayLength(POSTFIX_PLUS_PLUS_OP_RULES), "++", lhs);
 }
 
-SymbolType OpRuleManager::getPostfixMinusMinusResultType(const ASTNode *node, SymbolType lhs) {
+SymbolType OpRuleManager::getPostfixMinusMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
 
   return validateUnaryOperation(node, POSTFIX_MINUS_MINUS_OP_RULES, arrayLength(POSTFIX_MINUS_MINUS_OP_RULES), "--", lhs);
 }
 
-SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
+SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
@@ -379,7 +379,7 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
 }
 
 SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *const fctName, SymbolType &lhs, SymbolType &rhs,
-                                                                  const ASTNode *node) {
+                                                                  ASTNode *node, size_t opIdx) {
   const NameRegistryEntry *registryEntry = typeChecker->sourceFile->getNameRegistryEntry(fctName);
   if (!registryEntry)
     return SymbolType(TY_INVALID);
@@ -394,6 +394,11 @@ SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *co
   if (!callee)
     return SymbolType(TY_INVALID);
 
+  // Save the pointer to the operator function in the AST node
+  if (node->opFct.size() <= opIdx)
+    node->opFct.resize(opIdx + 1);
+  node->opFct.at(opIdx) = callee;
+
   // Check if we need to request a re-visit, because the function body was not type-checked yet
   if (!callee->alreadyTypeChecked)
     typeChecker->reVisitRequested = true;
@@ -405,8 +410,12 @@ SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *co
     throw SemanticError(node, INSUFFICIENT_VISIBILITY,
                         "Overloaded operator '" + callee->getSignature() + "' has insufficient visibility");
 
-  // Procedures always have the return type 'bool', otherwise return the specified return type
-  return callee->isProcedure() || callee->returnType.is(TY_DYN) ? SymbolType(TY_BOOL) : callee->returnType;
+  // Procedures always have the return type 'bool'
+  if (callee->isProcedure() || callee->returnType.is(TY_DYN))
+    return SymbolType(TY_BOOL);
+
+  SymbolType localReturnType = typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType);
+  return localReturnType;
 }
 
 SymbolType OpRuleManager::validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,

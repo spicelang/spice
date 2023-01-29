@@ -19,7 +19,7 @@ Function *FunctionManager::insertFunction(Scope *insertScope, const Function &ba
   substantiateOptionalParams(baseFunction, manifestations);
   assert(!manifestations.empty());
 
-  // Save substantiations
+  // Save substantiations in declaration node
   Function *manifestationPtr;
   for (const Function &manifestation : manifestations) {
     manifestationPtr = insertSubstantiation(insertScope, manifestation, baseFunction.declNode);

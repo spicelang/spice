@@ -330,7 +330,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   // Build struct object
   Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, usedTemplateTypesGeneric, interfaceTypes,
                      node);
-  node->spiceStruct = StructManager::insertStruct(currentScope, spiceStruct);
+  node->spiceStruct = StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
   spiceStruct.structScope = node->structScope;
 
   // Check for infinite size
