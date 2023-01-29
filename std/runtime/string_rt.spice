@@ -8,10 +8,6 @@ ext<byte*> realloc(byte*, int);
 ext free(byte*);
 ext memcpy(char*, char*, long);
 
-// Generic types
-type IntLong int|long;
-type IntLongShort int|long|short;
-
 /**
  * String wrapper for enriching raw strings with information and make them mutable
  */
@@ -20,6 +16,13 @@ public type String struct {
     unsigned long capacity // Allocated number of chars (without null terminator)
     unsigned long length   // Used number of chars
 }
+
+// Generic type definitions
+type IntLong      int|long;
+type IntLongShort int|long|short;
+type StrTy1       String|string;
+type StrTy2       String|string;
+type StrTyChar    String|string|char;
 
 public p String.ctor(const string value = "") {
     this.length = getRawLength(value);
@@ -82,7 +85,7 @@ public p String.dtor() {
 /**
  * Appends the given string to the current one
  *
- * @param appendix string to be appended
+ * @param appendix String to be appended
  */
 public p String.append(const string appendix) {
     unsigned long appendixLength = getRawLength(appendix);
@@ -106,20 +109,7 @@ public p String.append(const string appendix) {
  * @param appendix String to be appended
  */
 public p String.append(const String appendix) {
-    const char* rawAppendix = appendix.getRaw();
-    unsigned long appendixLength = appendix.length;
-    // Check if we need to re-allocate memory
-    while this.capacity < this.length + appendixLength {
-        this.resize(this.capacity * RESIZE_FACTOR);
-    }
-
-    // Save data
-    unsafe {
-        for int i = 0; i < appendixLength + 1; i++ { // +1 because of null terminator
-            this.contents[this.length++] = rawAppendix[i];
-        }
-    }
-    this.length--; // Remove null terminator
+    this.append((string) appendix.getRaw());
 }
 
 /**
@@ -140,14 +130,12 @@ public p String.append(const char c) {
     }
 }
 
-type StrTy1 String|string;
-type StrTy2 String|string;
-
 /**
  * Concatenates two strings and returns the result
  *
  * @parem a String a
  * @param b String b
+ * @return Concatenated string
  */
 public f<String> operator+<StrTy1, StrTy2>(const StrTy1 a, const StrTy2 b) {
     result = String(a);
@@ -155,10 +143,21 @@ public f<String> operator+<StrTy1, StrTy2>(const StrTy1 a, const StrTy2 b) {
 }
 
 /**
+ * Concatenates b to the end of a
+ *
+ * @param a String a
+ * @param b String/char b
+ */
+public p operator+=<StrTyChar>(String& a, const StrTyChar b) {
+    a.append(b);
+}
+
+/**
  * Concatenates the given string with itself n times.
  *
  * @param str Input string
  * @param n Multiplication operand
+ * @return Result string
  */
 public f<String> operator*<IntLongShort>(const String str, const IntLongShort n) {
     // Cancel if operand is less than 2
@@ -180,13 +179,38 @@ public f<String> operator*<IntLongShort>(const String str, const IntLongShort n)
 }
 
 /**
- * Concatenates the given string with itself n times.
+ * Concatenates the given string with itself n times
  *
  * @param n Multiplication operand
  * @param str Input string
+ * @return Result string
  */
 public f<String> operator*<IntLongShort>(const IntLongShort n, const String str) {
     return str * n;
+}
+
+/**
+ * Concatenates this string with itself n times
+ *
+ * @param str Input string
+ * @param n Multiplication operand
+ */
+public p operator*=<IntLongShort>(String& str, const IntLongShort n) {
+    // Cancel if operand is less than 2
+    if n < 2 { return; }
+
+    // Reserve new length
+    unsigned long newLength = n * str.length;
+    str.reserve(newLength);
+
+    // Save the value
+    unsafe {
+        for unsigned long i = 0l; i < newLength; i++ {
+            str.contents[i] = str.contents[i % str.length];
+        }
+        str.contents[newLength] = '\0';
+    }
+    str.length = newLength;
 }
 
 /**
@@ -217,7 +241,7 @@ public f<bool> operator==(const String a, const String b) {
  *
  * @param a First input string
  * @param b Second input string
- * @return Equal or not
+ * @return Not equal or not
  */
 public f<bool> operator!=(const String a, const String b) {
     return !(a == b);
@@ -451,7 +475,7 @@ p String.resize<IntLong>(unsigned IntLong newLength) {
 
 // ======================================================= Static functions ======================================================
 
-/*
+/**
  * Returns the length of a string
  *
  * @param input Input string
@@ -464,28 +488,14 @@ public f<long> getRawLength(string input) {
     }
 }
 
-/*
- * Checks the equality of two strings
+/**
+ * Checks the equality of two raw strings
  *
- * @param lhs First input string
- * @param rhs Second input string
+ * @param lhs First input raw string
+ * @param rhs Second input raw string
  * @return Equality of lhs and rhs
  */
 public f<bool> isRawEqual(string lhs, string rhs) {
-    unsigned long lhsLength = getRawLength(lhs);
-    unsigned long rhsLength = getRawLength(rhs);
-    // Return false immediately if length does not match
-    if lhsLength != rhsLength { return false; }
-    // Compare chars
-    for int i = 0; i < lhsLength; i++ {
-        if lhs[i] != rhs[i] {
-            return false;
-        }
-    }
-    return true;
-}
-
-public f<bool> operator==(const string lhs, string rhs) {
     unsigned long lhsLength = getRawLength(lhs);
     unsigned long rhsLength = getRawLength(rhs);
     // Return false immediately if length does not match

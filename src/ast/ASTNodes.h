@@ -242,7 +242,19 @@ public:
   using ASTNode::ASTNode;
 
   // Enums
-  enum OverloadedOperator { OP_NONE, OP_PLUS, OP_MINUS, OP_MUL, OP_DIV, OP_EQUAL, OP_NOT_EQUAL };
+  enum OverloadedOperator {
+    OP_NONE,
+    OP_PLUS,
+    OP_MINUS,
+    OP_MUL,
+    OP_DIV,
+    OP_EQUAL,
+    OP_NOT_EQUAL,
+    OP_PLUS_EQUAL,
+    OP_MINUS_EQUAL,
+    OP_MUL_EQUAL,
+    OP_DIV_EQUAL
+  };
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctName(this); }

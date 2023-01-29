@@ -1,3 +1,15 @@
+---
+title: Operator Overloading
+---
+
+Spice allows overloading operators for [custom struct types](../structs).
+Currently, this works for the operators `+`, `-`, `*`, `/`, `==`, `!=`, `+=`, `-=`, `*=` and `/=`. In the future, more operators
+will be supported for overloads.
+
+### Usage
+
+Overloading operators works like this:
+```spice
 type Size alias long;
 
 type Counter struct {
@@ -31,3 +43,4 @@ f<int> main() {
     Counter counter3 = counter1 + counter2; // Here we call the overloaded operator
     printf("Counter3 value: %d\n", counter3.getValue());
 }
+```

@@ -26,23 +26,25 @@ define private void @_p__void__void__birthday__Personptr(ptr %0) {
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
+  %1 = alloca %__Person__string_string_int, align 8
   %mike = alloca %__Person__string_string_int, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %mike, ptr @anon.struct.0, i64 24, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.struct.0, i64 24, i1 false)
+  store %__Person__string_string_int { ptr @anon.string.0, ptr @anon.string.1, i32 32 }, ptr %mike, align 8
   %lastName = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 1
-  %1 = load ptr, ptr %lastName, align 8
+  %2 = load ptr, ptr %lastName, align 8
   %firstName = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 0
-  %2 = load ptr, ptr %firstName, align 8
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %1, ptr %2)
+  %3 = load ptr, ptr %firstName, align 8
+  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %2, ptr %3)
   %age = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 2
-  %4 = load i32, ptr %age, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %4)
+  %5 = load i32, ptr %age, align 4
+  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %5)
   call void @_p__void__void__birthday__Personptr(ptr %mike)
   %age1 = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 2
-  %6 = load i32, ptr %age1, align 4
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %6)
-  %8 = load i32, ptr %result, align 4
-  ret i32 %8
+  %7 = load i32, ptr %age1, align 4
+  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %7)
+  %9 = load i32, ptr %result, align 4
+  ret i32 %9
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)

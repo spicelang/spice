@@ -16,59 +16,70 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %s = alloca %__String__charptr_long_long, align 8
   %1 = alloca %__String__charptr_long_long, align 8
-  call void @_mp__String__void__ctor__string(ptr nonnull %s, ptr nonnull @anon.string.0) #3
-  %2 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
-  %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %2)
-  %4 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
-  %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %4)
-  %6 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
-  %7 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %6)
+  %s = alloca %__String__charptr_long_long, align 8
+  %2 = alloca %__String__charptr_long_long, align 8
+  call void @_mp__String__void__ctor__string(ptr nonnull %1, ptr nonnull @anon.string.0) #3
+  %.fca.0.load = load ptr, ptr %1, align 8
+  %.fca.1.gep2 = getelementptr inbounds %__String__charptr_long_long, ptr %1, i64 0, i32 1
+  %.fca.1.load = load i64, ptr %.fca.1.gep2, align 8
+  %.fca.2.gep3 = getelementptr inbounds %__String__charptr_long_long, ptr %1, i64 0, i32 2
+  %.fca.2.load = load i64, ptr %.fca.2.gep3, align 8
+  store ptr %.fca.0.load, ptr %s, align 8
+  %.fca.1.gep = getelementptr inbounds %__String__charptr_long_long, ptr %s, i64 0, i32 1
+  store i64 %.fca.1.load, ptr %.fca.1.gep, align 8
+  %.fca.2.gep = getelementptr inbounds %__String__charptr_long_long, ptr %s, i64 0, i32 2
+  store i64 %.fca.2.load, ptr %.fca.2.gep, align 8
+  %3 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %3)
+  %5 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
+  %6 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %5)
+  %7 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
+  %8 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %7)
   call void @_mp__String__void__append__string(ptr nonnull %s, ptr nonnull @anon.string.1) #3
-  %8 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
-  %9 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %8)
-  %10 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
-  %11 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %10)
-  %12 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
-  %13 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %12)
+  %9 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %10 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %9)
+  %11 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
+  %12 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %11)
+  %13 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
+  %14 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %13)
   call void @_mp__String__void__append__char(ptr nonnull %s, i8 63) #3
-  %14 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
-  %15 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %14)
-  %16 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
-  %17 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %16)
-  %18 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
-  %19 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %18)
+  %15 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %16 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %15)
+  %17 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
+  %18 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %17)
+  %19 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
+  %20 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %19)
   call void @_mp__String__void__append__char(ptr nonnull %s, i8 33) #3
-  %20 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
-  %21 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %20)
-  %22 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
-  %23 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %22)
-  %24 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
-  %25 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %24)
+  %21 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %22 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %21)
+  %23 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
+  %24 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %23)
+  %25 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
+  %26 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %25)
   call void @_mp__String__void__clear(ptr nonnull %s) #3
-  %26 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
-  %27 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %26)
-  %28 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
-  %29 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %28)
-  %30 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
-  %31 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %30)
+  %27 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %28 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %27)
+  %29 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
+  %30 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %29)
+  %31 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
+  %32 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %31)
   call void @_mp__String__void__reserve__long(ptr nonnull %s, i64 100) #3
-  %32 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
-  %33 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %32)
-  %34 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
-  %35 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %34)
-  %36 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
-  %37 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %36)
-  call void @_mp__String__void__ctor__string(ptr nonnull %1, ptr nonnull @anon.string.2) #3
-  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %s, ptr noundef nonnull align 8 dereferenceable(24) %1, i64 24, i1 false)
-  %38 = call i1 @_mf__String__bool__isEmpty(ptr nonnull %s) #3
-  %39 = zext i1 %38 to i32
-  %40 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.18, i32 %39)
+  %33 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %34 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %33)
+  %35 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
+  %36 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %35)
+  %37 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
+  %38 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %37)
+  call void @_mp__String__void__ctor__string(ptr nonnull %2, ptr nonnull @anon.string.2) #3
+  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %s, ptr noundef nonnull align 8 dereferenceable(24) %2, i64 24, i1 false)
+  %39 = call i1 @_mf__String__bool__isEmpty(ptr nonnull %s) #3
+  %40 = zext i1 %39 to i32
+  %41 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.18, i32 %40)
   call void @_mp__String__void__append__char(ptr nonnull %s, i8 97) #3
-  %41 = call i1 @_mf__String__bool__isEmpty(ptr nonnull %s) #3
-  %42 = zext i1 %41 to i32
-  %43 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.19, i32 %42)
+  %42 = call i1 @_mf__String__bool__isEmpty(ptr nonnull %s) #3
+  %43 = zext i1 %42 to i32
+  %44 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.19, i32 %43)
   ret i32 0
 }
 

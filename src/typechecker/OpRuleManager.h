@@ -17,7 +17,7 @@ class ASTNode;
 class TypeChecker;
 
 // Helper macro to get the length of an array
-#define arrayLength(array) sizeof(array) / sizeof(*array)
+#define ARRAY_LENGTH(array) sizeof(array) / sizeof(*array)
 
 // Operator overload function names
 const char *const OP_FCT_PLUS = "op.plus";
@@ -26,6 +26,10 @@ const char *const OP_FCT_MUL = "op.mul";
 const char *const OP_FCT_DIV = "op.div";
 const char *const OP_FCT_EQUAL = "op.equal";
 const char *const OP_FCT_NOT_EQUAL = "op.notequal";
+const char *const OP_FCT_PLUS_EQUAL = "op.plusequal";
+const char *const OP_FCT_MINUS_EQUAL = "op.minusequal";
+const char *const OP_FCT_MUL_EQUAL = "op.mulequal";
+const char *const OP_FCT_DIV_EQUAL = "op.divequal";
 
 // Unary operator rule:        lhs type, result type, unsafe
 using UnaryOpRule = std::tuple<uint32_t, uint32_t, bool>;
@@ -595,10 +599,10 @@ public:
 
   // Public methods
   static SymbolType getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  SymbolType getPlusEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  SymbolType getMinusEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getMulEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getDivEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getPlusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getMinusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getMulEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getDivEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getRemEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getSHLEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getSHREqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);

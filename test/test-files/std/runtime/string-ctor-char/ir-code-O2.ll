@@ -13,21 +13,32 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
+  %1 = alloca %__String__charptr_long_long, align 8
   %s = alloca %__String__charptr_long_long, align 8
-  call void @_mp__String__void__ctor__char(ptr nonnull %s, i8 72) #2
-  %1 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #2
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, ptr %1)
-  %3 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #2
-  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4, i64 %3)
-  %5 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #2
-  %6 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, i64 %5)
+  call void @_mp__String__void__ctor__char(ptr nonnull %1, i8 72) #2
+  %.fca.0.load = load ptr, ptr %1, align 8
+  %.fca.1.gep2 = getelementptr inbounds %__String__charptr_long_long, ptr %1, i64 0, i32 1
+  %.fca.1.load = load i64, ptr %.fca.1.gep2, align 8
+  %.fca.2.gep3 = getelementptr inbounds %__String__charptr_long_long, ptr %1, i64 0, i32 2
+  %.fca.2.load = load i64, ptr %.fca.2.gep3, align 8
+  store ptr %.fca.0.load, ptr %s, align 8
+  %.fca.1.gep = getelementptr inbounds %__String__charptr_long_long, ptr %s, i64 0, i32 1
+  store i64 %.fca.1.load, ptr %.fca.1.gep, align 8
+  %.fca.2.gep = getelementptr inbounds %__String__charptr_long_long, ptr %s, i64 0, i32 2
+  store i64 %.fca.2.load, ptr %.fca.2.gep, align 8
+  %2 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #2
+  %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, ptr %2)
+  %4 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #2
+  %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4, i64 %4)
+  %6 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #2
+  %7 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, i64 %6)
   call void @_mp__String__void__append__string(ptr nonnull %s, ptr nonnull @anon.string.0) #2
-  %7 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #2
-  %8 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, ptr %7)
-  %9 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #2
-  %10 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4, i64 %9)
-  %11 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #2
-  %12 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.5, i64 %11)
+  %8 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #2
+  %9 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, ptr %8)
+  %10 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #2
+  %11 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4, i64 %10)
+  %12 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #2
+  %13 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.5, i64 %12)
   ret i32 0
 }
 

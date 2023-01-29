@@ -13,18 +13,21 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %s = alloca %__Socket__int_short_NestedSocket, align 8
+  %n = alloca %__NestedSocket__string_long, align 8
   store i32 0, ptr %result, align 4
   %1 = call %__Socket__int_short_NestedSocket @_f__void__Socket__openServerSocket__short(i16 8080)
   store %__Socket__int_short_NestedSocket %1, ptr %s, align 8
-  %n = getelementptr inbounds %__Socket__int_short_NestedSocket, ptr %s, i32 0, i32 2
+  %nested = getelementptr inbounds %__Socket__int_short_NestedSocket, ptr %s, i32 0, i32 2
+  %2 = load %__NestedSocket__string_long, ptr %nested, align 8
+  store %__NestedSocket__string_long %2, ptr %n, align 8
   %testString = getelementptr inbounds %__NestedSocket__string_long, ptr %n, i32 0, i32 0
-  %2 = load ptr, ptr %testString, align 8
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %2)
+  %3 = load ptr, ptr %testString, align 8
+  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %3)
   %sock = getelementptr inbounds %__Socket__int_short_NestedSocket, ptr %s, i32 0, i32 0
-  %4 = load i32, ptr %sock, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  %5 = load i32, ptr %sock, align 4
+  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %5)
+  %7 = load i32, ptr %result, align 4
+  ret i32 %7
 }
 
 declare %__Socket__int_short_NestedSocket @_f__void__Socket__openServerSocket__short(i16)

@@ -11,18 +11,21 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %dbl = alloca double, align 8
+  %1 = alloca %__double__Vector__doubleptr_int, align 8
   %doubleVec = alloca %__double__Vector__doubleptr_int, align 8
   store i32 0, ptr %result, align 4
   store double 3.467000e+00, ptr %dbl, align 8
-  %1 = getelementptr inbounds %__double__Vector__doubleptr_int, ptr %doubleVec, i32 0, i32 0
-  store ptr %dbl, ptr %1, align 8
-  %2 = getelementptr inbounds %__double__Vector__doubleptr_int, ptr %doubleVec, i32 0, i32 1
-  store i32 1, ptr %2, align 4
+  %2 = getelementptr inbounds %__double__Vector__doubleptr_int, ptr %1, i32 0, i32 0
+  store ptr %dbl, ptr %2, align 8
+  %3 = getelementptr inbounds %__double__Vector__doubleptr_int, ptr %1, i32 0, i32 1
+  store i32 1, ptr %3, align 4
+  %4 = load %__double__Vector__doubleptr_int, ptr %1, align 8
+  store %__double__Vector__doubleptr_int %4, ptr %doubleVec, align 8
   %cap = getelementptr inbounds %__double__Vector__doubleptr_int, ptr %doubleVec, i32 0, i32 1
-  %3 = load i32, ptr %cap, align 4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
-  %5 = load i32, ptr %result, align 4
-  ret i32 %5
+  %5 = load i32, ptr %cap, align 4
+  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %5)
+  %7 = load i32, ptr %result, align 4
+  ret i32 %7
 }
 
 declare i32 @printf(ptr noundef, ...)

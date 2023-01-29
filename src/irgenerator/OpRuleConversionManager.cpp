@@ -7,7 +7,6 @@
 #include <ast/ASTNodes.h>
 #include <irgenerator/IRGenerator.h>
 #include <symboltablebuilder/Scope.h>
-#include <typechecker/OpRuleManager.h>
 
 namespace spice::compiler {
 
@@ -22,6 +21,10 @@ PtrAndValue OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprR
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs, accessScope); };
   const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -66,6 +69,10 @@ llvm::Value *OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, Exp
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -112,6 +119,10 @@ PtrAndValue OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprRe
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs, accessScope); };
   const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx);
+
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
     return {.value = builder.CreateFMul(lhsV(), rhsV())};
@@ -150,6 +161,10 @@ llvm::Value *OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprR
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):

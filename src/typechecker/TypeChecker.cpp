@@ -634,9 +634,9 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     } else if (node->op == AssignExprNode::OP_MINUS_EQUAL) {
       rhsType = opRuleManager.getMinusEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_MUL_EQUAL) {
-      rhsType = OpRuleManager::getMulEqualResultType(node, lhsType, rhsType, 0);
+      rhsType = opRuleManager.getMulEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_DIV_EQUAL) {
-      rhsType = OpRuleManager::getDivEqualResultType(node, lhsType, rhsType, 0);
+      rhsType = opRuleManager.getDivEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_REM_EQUAL) {
       rhsType = OpRuleManager::getRemEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_SHL_EQUAL) {

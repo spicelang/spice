@@ -11,8 +11,23 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
+  %1 = alloca %__double__Vector__doubleptr_long_long_int, align 8
   %v1 = alloca %__double__Vector__doubleptr_long_long_int, align 8
-  call void @_mp__Vector_double__void__ctor__int(ptr nonnull %v1, i32 3) #2
+  call void @_mp__Vector_double__void__ctor__int(ptr nonnull %1, i32 3) #2
+  %.fca.0.load = load ptr, ptr %1, align 8
+  %.fca.1.gep2 = getelementptr inbounds %__double__Vector__doubleptr_long_long_int, ptr %1, i64 0, i32 1
+  %.fca.1.load = load i64, ptr %.fca.1.gep2, align 8
+  %.fca.2.gep3 = getelementptr inbounds %__double__Vector__doubleptr_long_long_int, ptr %1, i64 0, i32 2
+  %.fca.2.load = load i64, ptr %.fca.2.gep3, align 8
+  %.fca.3.gep4 = getelementptr inbounds %__double__Vector__doubleptr_long_long_int, ptr %1, i64 0, i32 3
+  %.fca.3.load = load i32, ptr %.fca.3.gep4, align 8
+  store ptr %.fca.0.load, ptr %v1, align 8
+  %.fca.1.gep = getelementptr inbounds %__double__Vector__doubleptr_long_long_int, ptr %v1, i64 0, i32 1
+  store i64 %.fca.1.load, ptr %.fca.1.gep, align 8
+  %.fca.2.gep = getelementptr inbounds %__double__Vector__doubleptr_long_long_int, ptr %v1, i64 0, i32 2
+  store i64 %.fca.2.load, ptr %.fca.2.gep, align 8
+  %.fca.3.gep = getelementptr inbounds %__double__Vector__doubleptr_long_long_int, ptr %v1, i64 0, i32 3
+  store i32 %.fca.3.load, ptr %.fca.3.gep, align 8
   call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 1.200000e+00) #2
   call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 0x401DFC5FF5331D64) #2
   call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 5.300000e+00) #2
@@ -20,12 +35,12 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 2.323420e+04) #2
   call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double -1.234900e+03) #2
   call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 0.000000e+00) #2
-  %1 = call i64 @_mf__Vector_double__long__getSize(ptr nonnull %v1) #2
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %1)
-  %3 = call i64 @_mf__Vector_double__long__getCapacity(ptr nonnull %v1) #2
-  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i64 %3)
-  %5 = call double @_mf__Vector_double__double__get__int(ptr nonnull %v1, i32 5) #2
-  %6 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, double %5)
+  %2 = call i64 @_mf__Vector_double__long__getSize(ptr nonnull %v1) #2
+  %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %2)
+  %4 = call i64 @_mf__Vector_double__long__getCapacity(ptr nonnull %v1) #2
+  %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i64 %4)
+  %6 = call double @_mf__Vector_double__double__get__int(ptr nonnull %v1, i32 5) #2
+  %7 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, double %6)
   ret i32 0
 }
 

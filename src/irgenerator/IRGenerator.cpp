@@ -310,13 +310,14 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
     return ExprResult{.ptr = newAddress, .entry = lhsEntry};
   }
 
-  if (isDecl && rhsSType.is(TY_STRUCT)) {
+  // ToDo: Had to comment out this, because it led to wrong values for operator overloading and var declarations
+  /*if (isDecl && rhsSType.is(TY_STRUCT)) {
     auto result = std::any_cast<ExprResult>(visit(rhsNode));
     materializeConstant(result);
     lhsEntry->updateAddress(resolveAddress(result, lhsEntry->isVolatile));
     result.entry = lhsEntry;
     return result;
-  }
+  }*/
 
   // We can load the value from the right side and store it to the left side
   // Retrieve value of the right side
