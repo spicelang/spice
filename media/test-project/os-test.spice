@@ -14,8 +14,8 @@ f<int> main() {
     String s2 = String("Hello ") * 5;
     printf("Result: %s\n", s2);
     printf("Result: %s\n", 20 * String('a'));
-    /*String s3 = 2 * String('c') * 7;
-    printf("Result: %s\n", s3);*/
+    String s3 = 2 * String('c') * 7;
+    printf("Result: %s\n", s3);
 
     // Equals raw
     printf("Equal raw: %d\n", "Hello World!" == "Hello Programmers!");

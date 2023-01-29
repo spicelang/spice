@@ -1472,8 +1472,11 @@ llvm::Value *OpRuleConversionManager::getCastInst(const ASTNode *node, const Sym
 }
 
 PtrAndValue OpRuleConversionManager::callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhs, auto &rhs, size_t opIdx) {
-  assert(!node->opFct.empty() && node->opFct.size() > opIdx);
-  const Function *opFct = node->opFct.at(opIdx);
+  const size_t manIdx = irGenerator->manIdx;
+  assert(!node->opFct.empty() && node->opFct.size() > manIdx);
+  assert(!node->opFct.at(manIdx).empty() && node->opFct.at(manIdx).size() > opIdx);
+  const Function *opFct = node->opFct.at(manIdx).at(opIdx);
+  assert(opFct != nullptr);
 
   const std::string mangledName = opFct->getMangledName();
   Scope *accessScope = opFct->entry->scope;
