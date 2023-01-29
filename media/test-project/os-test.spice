@@ -1,3 +1,10 @@
+type i32 alias int;
+
+f<int> main() {
+    i32 test = 12;
+    printf("Hello World: %d\n", test);
+}
+
 /*f<int> main() {
     String s = String("Hello ");
     printf("Content: %s\n", s.getRaw());
@@ -31,11 +38,12 @@
     printf("Empty: %d", s.isEmpty());
 }*/
 
-f<int> main() {
+/*f<int> main() {
     String strA = String("Hello ");
     String strB = String("World!");
-    String strC = strA * 4;
     printf("A: %s\n", strA);
     printf("B: %s\n", strB);
-    printf("C: %s\n", strC);
-}
+    printf("C: %s\n", String("Hello ") + String("World!"));
+    String d = String("Hello ") + String("World!");
+    printf("D: %s\n", d);
+}*/

@@ -295,13 +295,13 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
     }
   }
 
-  if (isDecl && rhsSType.is(TY_STRUCT)) {
+  /*if (isDecl && rhsSType.is(TY_STRUCT)) {
     auto result = std::any_cast<ExprResult>(visit(rhsNode));
     materializeConstant(result);
     lhsEntry->updateAddress(resolveAddress(result, lhsEntry->isVolatile));
     result.entry = lhsEntry;
     return result;
-  }
+  }*/
 
   // Check if we need to copy the rhs to the lhs. This happens for structs
   if (needsShallowCopy) {

@@ -149,6 +149,8 @@ private:
       return "EnumDef";
     if (std::is_same<GenericTypeDefNode, T>())
       return "GenericTypeDef";
+    if (std::is_same<AliasDefNode, T>())
+      return "AliasDef";
     if (std::is_same<GlobalVarDefNode, T>())
       return "GlobalVarDef";
     if (std::is_same<ExtDeclNode, T>())

@@ -1,5 +1,5 @@
-[Error|Semantic] ./test-files/typechecker/operators/error-multiplicative-operators-some-combinations/source.spice:2:30:
+[Error|Semantic] ./test-files/typechecker/operators/error-multiplicative-operators-some-combinations/source.spice:2:23:
 Wrong data type for operator: Cannot apply '*' operator on types bool and string
 
-2  alcResult1 = true * "test";
-                       ^^^^^^
+2  int calcResult1 = true * "test";
+                     ^^^^^^^^^^^^^

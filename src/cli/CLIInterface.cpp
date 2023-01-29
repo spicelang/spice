@@ -34,10 +34,8 @@ void CLIInterface::createInterface() {
     if (!shouldCompile)
       return;
 
-    if (shouldExecute) {
+    if (shouldExecute)
       cliOptions.execute = true;
-      return;
-    }
 
     // If the binary should be installed, set the output path to the Spice bin directory
     if (shouldInstall) {
@@ -72,7 +70,7 @@ void CLIInterface::createInterface() {
     // Set cacheDir to <system-tmp-dir>/spice/cache
     std::stringstream cacheDir;
     cacheDir << tmpDir << "spice" << FileUtil::DIR_SEPARATOR << "cache";
-    cliOptions.outputDir = cacheDir.str();
+    cliOptions.cacheDir = cacheDir.str();
 
     // Set outputDir to <system-tmp-dir>/spice/objects
     std::stringstream outputDir;

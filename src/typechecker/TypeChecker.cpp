@@ -705,9 +705,9 @@ std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through all remaining operands
-  for (size_t i = 0; i < node->operands().size(); i++) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i + 1])).type;
-    currentType = OpRuleManager::getLogicalOrResultType(node, currentType, rhsTy, i);
+  for (size_t i = 1; i < node->operands().size(); i++) {
+    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
+    currentType = OpRuleManager::getLogicalOrResultType(node, currentType, rhsTy, i - 1);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
@@ -721,9 +721,9 @@ std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through all remaining operands
-  for (size_t i = 0; i < node->operands().size(); i++) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i + 1])).type;
-    currentType = OpRuleManager::getLogicalAndResultType(node, currentType, rhsTy, i);
+  for (size_t i = 1; i < node->operands().size(); i++) {
+    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
+    currentType = OpRuleManager::getLogicalAndResultType(node, currentType, rhsTy, i - 1);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
@@ -737,9 +737,9 @@ std::any TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through all remaining operands
-  for (size_t i = 0; i < node->operands().size(); i++) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i + 1])).type;
-    currentType = OpRuleManager::getBitwiseOrResultType(node, currentType, rhsTy, i);
+  for (size_t i = 1; i < node->operands().size(); i++) {
+    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
+    currentType = OpRuleManager::getBitwiseOrResultType(node, currentType, rhsTy, i - 1);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
@@ -753,9 +753,9 @@ std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through all remaining operands
-  for (size_t i = 0; i < node->operands().size(); i++) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i + 1])).type;
-    currentType = OpRuleManager::getBitwiseXorResultType(node, currentType, rhsTy, i);
+  for (size_t i = 2; i < node->operands().size(); i++) {
+    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
+    currentType = OpRuleManager::getBitwiseXorResultType(node, currentType, rhsTy, i - 1);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
@@ -769,9 +769,9 @@ std::any TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   // Loop through all remaining operands
-  for (size_t i = 0; i < node->operands().size(); i++) {
-    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i + 1])).type;
-    currentType = OpRuleManager::getBitwiseAndResultType(node, currentType, rhsTy, i);
+  for (size_t i = 1; i < node->operands().size(); i++) {
+    SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
+    currentType = OpRuleManager::getBitwiseAndResultType(node, currentType, rhsTy, i - 2);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
