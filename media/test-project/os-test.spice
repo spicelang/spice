@@ -1,4 +1,4 @@
-f<int> main() {
+/*f<int> main() {
     String s = String("Hello ");
     printf("Content: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
@@ -22,20 +22,20 @@ f<int> main() {
     printf("Length: %d\n", s.getLength());
     printf("Capacity: %d\n\n", s.getCapacity());
     s.reserve(100l);
-    /*printf("Content: %s\n", s.getRaw());
+    printf("Content: %s\n", s.getRaw());
     printf("Length: %d\n", s.getLength());
     printf("Capacity: %d\n\n", s.getCapacity());
     s = String("");
     printf("Empty: %d\n", s.isEmpty());
     s.append('a');
-    printf("Empty: %d", s.isEmpty());*/
-}
+    printf("Empty: %d", s.isEmpty());
+}*/
 
-/*f<int> main() {
+f<int> main() {
     String strA = String("Hello ");
     String strB = String("World!");
-    String strC = strA + strB;
-    printf("%s\n", strA);
-    printf("%s\n", strB);
-    printf("%s\n", strC);
-}*/
+    String strC = strA * 4;
+    printf("A: %s\n", strA);
+    printf("B: %s\n", strB);
+    printf("C: %s\n", strC);
+}

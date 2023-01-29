@@ -35,7 +35,8 @@ union CompileTimeValue {
 class ASTNode {
 public:
   // Constructors
-  explicit ASTNode(ASTNode *parent, CodeLoc codeLoc) : parent(parent), codeLoc(std::move(codeLoc)) {}
+  ASTNode(ASTNode *parent, CodeLoc codeLoc) : parent(parent), codeLoc(std::move(codeLoc)) {}
+  ASTNode(const ASTNode &) = delete;
 
   // Destructors
   virtual ~ASTNode() {
@@ -178,6 +179,7 @@ public:
   std::string errorMessage;
   std::vector<SymbolType> symbolTypes;
   bool unreachable = false;
+  std::vector<const Function *> opFct; // Operator overloading functions
 
 protected:
   // Protected members
