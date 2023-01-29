@@ -7,6 +7,7 @@
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <exception/ParserError.h>
+#include <typechecker/OpRuleManager.h>
 #include <util/CommonUtil.h>
 
 namespace spice::compiler {
@@ -1876,16 +1877,16 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
 
   if (ctx->PLUS()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_PLUS;
-    fctNameNode->name = "_op.plus";
+    fctNameNode->name = OP_FCT_PLUS;
   } else if (ctx->MINUS()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_MINUS;
-    fctNameNode->name = "_op.minus";
+    fctNameNode->name = OP_FCT_MINUS;
   } else if (ctx->MUL()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_MUL;
-    fctNameNode->name = "_op.mul";
+    fctNameNode->name = OP_FCT_MUL;
   } else if (ctx->DIV()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_DIV;
-    fctNameNode->name = "_op.div";
+    fctNameNode->name = OP_FCT_DIV;
   } else {
     assert(false);
   }

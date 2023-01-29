@@ -894,9 +894,9 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
     // Check operator
     const MultiplicativeExprNode::MultiplicativeOp &op = node->opQueue.front().first;
     if (op == MultiplicativeExprNode::OP_MUL)
-      currentType = OpRuleManager::getMulResultType(operand, currentType, operandType);
+      currentType = opRuleManager.getMulResultType(operand, currentType, operandType);
     else if (op == MultiplicativeExprNode::OP_DIV)
-      currentType = OpRuleManager::getDivResultType(operand, currentType, operandType);
+      currentType = opRuleManager.getDivResultType(operand, currentType, operandType);
     else if (op == MultiplicativeExprNode::OP_REM)
       currentType = OpRuleManager::getRemResultType(operand, currentType, operandType);
     else

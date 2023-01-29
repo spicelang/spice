@@ -233,6 +233,13 @@ SymbolType OpRuleManager::getPlusResultType(const ASTNode *node, SymbolType lhs,
     return rhs;
   }
 
+  // Check is there is an overloaded operator function available
+  if (lhs.is(TY_STRUCT) || rhs.is(TY_STRUCT)) {
+    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_PLUS, lhs, rhs, node);
+    if (!resultType.is(TY_INVALID))
+      return resultType;
+  }
+
   return validateBinaryOperation(node, PLUS_OP_RULES, arrayLength(PLUS_OP_RULES), "+", lhs, rhs);
 }
 
@@ -251,6 +258,13 @@ SymbolType OpRuleManager::getMinusResultType(const ASTNode *node, SymbolType lhs
     return rhs;
   }
 
+  // Check is there is an overloaded operator function available
+  if (lhs.is(TY_STRUCT) || rhs.is(TY_STRUCT)) {
+    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_MINUS, lhs, rhs, node);
+    if (!resultType.is(TY_INVALID))
+      return resultType;
+  }
+
   return validateBinaryOperation(node, MINUS_OP_RULES, arrayLength(MINUS_OP_RULES), "-", lhs, rhs);
 }
 
@@ -258,12 +272,26 @@ SymbolType OpRuleManager::getMulResultType(const ASTNode *node, SymbolType lhs, 
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
 
+  // Check is there is an overloaded operator function available
+  if (lhs.is(TY_STRUCT) || rhs.is(TY_STRUCT)) {
+    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_MUL, lhs, rhs, node);
+    if (!resultType.is(TY_INVALID))
+      return resultType;
+  }
+
   return validateBinaryOperation(node, MUL_OP_RULES, arrayLength(MUL_OP_RULES), "*", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getDivResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   lhs = lhs.removeReferenceWrappers();
   rhs = rhs.removeReferenceWrappers();
+
+  // Check is there is an overloaded operator function available
+  if (lhs.is(TY_STRUCT) || rhs.is(TY_STRUCT)) {
+    SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_DIV, lhs, rhs, node);
+    if (!resultType.is(TY_INVALID))
+      return resultType;
+  }
 
   return validateBinaryOperation(node, DIV_OP_RULES, arrayLength(DIV_OP_RULES), "/", lhs, rhs);
 }
@@ -348,6 +376,37 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
   }
   // Check primitive type combinations
   return validateBinaryOperation(node, CAST_OP_RULES, arrayLength(CAST_OP_RULES), "(cast)", lhs, rhs);
+}
+
+SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *const fctName, SymbolType &lhs, SymbolType &rhs,
+                                                                  const ASTNode *node) {
+  const NameRegistryEntry *registryEntry = typeChecker->sourceFile->getNameRegistryEntry(fctName);
+  if (!registryEntry)
+    return SymbolType(TY_INVALID);
+  Scope *calleeParentScope = registryEntry->targetScope;
+
+  // Get callee
+  const SymbolType localLhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, lhs);
+  const SymbolType localRhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, rhs);
+  Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, SymbolType(TY_DYN), {localLhs, localRhs}, node);
+
+  // Return invalid type if the callee was not found
+  if (!callee)
+    return SymbolType(TY_INVALID);
+
+  // Check if we need to request a re-visit, because the function body was not type-checked yet
+  if (!callee->alreadyTypeChecked)
+    typeChecker->reVisitRequested = true;
+
+  // Check if the called function has sufficient visibility
+  const bool isImported = calleeParentScope->isImportedBy(typeChecker->rootScope);
+  SymbolTableEntry *calleeEntry = callee->entry;
+  if (isImported && !calleeEntry->specifiers.isPublic())
+    throw SemanticError(node, INSUFFICIENT_VISIBILITY,
+                        "Overloaded operator '" + callee->getSignature() + "' has insufficient visibility");
+
+  // Procedures always have the return type 'bool', otherwise return the specified return type
+  return callee->isProcedure() || callee->returnType.is(TY_DYN) ? SymbolType(TY_BOOL) : callee->returnType;
 }
 
 SymbolType OpRuleManager::validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,

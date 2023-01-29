@@ -133,12 +133,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   FunctionManager::insertFunction(currentScope, spiceFunc, &node->fctManifestations);
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the function
-  std::vector<Function> substantiatedFunctions;
-  FunctionManager::substantiateOptionalParams(spiceFunc, substantiatedFunctions);
-  currentScope->renameChildScope(node->getScopeId(), substantiatedFunctions.front().getSignature(false));
-  for (size_t i = 1; i < substantiatedFunctions.size(); i++)
-    currentScope->copyChildScope(substantiatedFunctions.front().getSignature(false),
-                                 substantiatedFunctions[i].getSignature(false));
+  currentScope->renameChildScope(node->getScopeId(), node->fctManifestations.front()->getSignature(false));
+  for (size_t i = 1; i < node->fctManifestations.size(); i++)
+    currentScope->copyChildScope(node->fctManifestations.front()->getSignature(false),
+                                 node->fctManifestations.at(i)->getSignature(false));
 
   // Change to the root scope
   currentScope = rootScope;
@@ -238,12 +236,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   FunctionManager::insertFunction(currentScope, spiceProc, &node->procManifestations);
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the procedure
-  std::vector<Function> substantiatedProcedures;
-  FunctionManager::substantiateOptionalParams(spiceProc, substantiatedProcedures);
-  currentScope->renameChildScope(node->getScopeId(), substantiatedProcedures.front().getSignature(false));
-  for (size_t i = 1; i < substantiatedProcedures.size(); i++)
-    currentScope->copyChildScope(substantiatedProcedures.front().getSignature(false),
-                                 substantiatedProcedures[i].getSignature(false));
+  currentScope->renameChildScope(node->getScopeId(), node->procManifestations.front()->getSignature(false));
+  for (size_t i = 1; i < node->procManifestations.size(); i++)
+    currentScope->copyChildScope(node->procManifestations.front()->getSignature(false),
+                                 node->procManifestations.at(i)->getSignature(false));
 
   // Change to the root scope
   currentScope = rootScope;
