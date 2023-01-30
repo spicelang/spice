@@ -74,7 +74,7 @@ for.body.L9:
 
 ; Function Attrs: nofree nounwind
 define private noalias ptr @_thread0(ptr nocapture readnone %0) #2 {
-  %2 = tail call fastcc i32 @_f__void__int__fib__int(i32 46)
+  %2 = tail call fastcc i32 @_f__void__int__fib__int(i32 30)
   %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %2)
   ret ptr null
 }
