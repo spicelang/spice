@@ -60,7 +60,7 @@ PtrAndValue OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprR
     llvm::Type *elementTy = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
     return {.value = builder.CreateGEP(elementTy, lhsV(), rhsV())};
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: +="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -108,7 +108,7 @@ llvm::Value *OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, Exp
     llvm::Type *elementType = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
     return builder.CreateGEP(elementType, lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: -="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
 
 PtrAndValue OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -152,7 +152,7 @@ PtrAndValue OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprRe
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateMul(lhsV(), rhsV())};
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: *="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -195,7 +195,7 @@ llvm::Value *OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprR
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateSDiv(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: /="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -234,7 +234,7 @@ llvm::Value *OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprR
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateSRem(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: %="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -265,7 +265,7 @@ llvm::Value *OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprR
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateShl(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: <<="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -296,7 +296,7 @@ llvm::Value *OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprR
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateLShr(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: >>="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -327,7 +327,7 @@ llvm::Value *OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprR
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateAnd(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: &="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -358,7 +358,7 @@ llvm::Value *OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprRe
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateOr(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: |="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -390,7 +390,7 @@ llvm::Value *OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprR
   case COMB(TY_CHAR, TY_CHAR):
     return builder.CreateXor(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: ^="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -406,7 +406,7 @@ llvm::Value *OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, Exp
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateAnd(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: &"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -422,7 +422,7 @@ llvm::Value *OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, Expr
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateOr(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: |"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -438,7 +438,7 @@ llvm::Value *OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, Exp
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateXor(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: ^"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -553,7 +553,7 @@ llvm::Value *OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResu
   case COMB(TY_BOOL, TY_BOOL):
     return builder.CreateICmpEQ(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: =="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: =="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -669,7 +669,7 @@ llvm::Value *OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprR
   case COMB(TY_BOOL, TY_BOOL):
     return builder.CreateICmpNE(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: !="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
@@ -730,7 +730,7 @@ llvm::Value *OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResul
   case COMB(TY_CHAR, TY_CHAR):
     return builder.CreateICmpSLT(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: <"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -792,7 +792,7 @@ llvm::Value *OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprRe
   case COMB(TY_CHAR, TY_CHAR):
     return builder.CreateICmpSGT(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: >"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -854,7 +854,7 @@ llvm::Value *OpRuleConversionManager::getLessEqualInst(const ASTNode *node, Expr
   case COMB(TY_CHAR, TY_CHAR):
     return builder.CreateICmpSLE(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: <="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -916,7 +916,7 @@ llvm::Value *OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, E
   case COMB(TY_CHAR, TY_CHAR):
     return builder.CreateICmpSGE(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: >="); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >="); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -954,7 +954,7 @@ llvm::Value *OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, Expr
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateShl(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: <<"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -992,7 +992,7 @@ llvm::Value *OpRuleConversionManager::getShiftRightInst(const ASTNode *node, Exp
   case COMB(TY_BYTE, TY_BYTE):
     return builder.CreateLShr(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: >>"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>"); // GCOV_EXCL_LINE
 }
 
 PtrAndValue OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
@@ -1068,7 +1068,7 @@ PtrAndValue OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult
   case COMB(TY_PTR, TY_LONG):
     return {.value = builder.CreateGEP(lhsSTy.getContainedTy().toLLVMType(context, accessScope), lhsV(), rhsV())};
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -1144,7 +1144,7 @@ llvm::Value *OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResu
   case COMB(TY_PTR, TY_LONG):
     return builder.CreateGEP(lhsSTy.getContainedTy().toLLVMType(context, accessScope), lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: -"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
 PtrAndValue OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
@@ -1208,7 +1208,7 @@ PtrAndValue OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult 
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateMul(lhsV(), rhsV())};
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: *"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
@@ -1273,7 +1273,7 @@ llvm::Value *OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult
   case COMB(TY_CHAR, TY_CHAR):
     return builder.CreateSDiv(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: /"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getRemInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
@@ -1314,7 +1314,7 @@ llvm::Value *OpRuleConversionManager::getRemInst(const ASTNode *node, ExprResult
   case COMB(TY_LONG, TY_LONG):
     return builder.CreateSRem(lhsV(), rhsV());
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: %"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -1331,7 +1331,7 @@ llvm::Value *OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, Ex
   default:
     break;
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: +"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -1348,7 +1348,7 @@ llvm::Value *OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node,
   default:
     break;
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -1365,7 +1365,7 @@ llvm::Value *OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *nod
   default:
     break;
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -1378,7 +1378,7 @@ llvm::Value *OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, Expr
   default:
     break;
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: !"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
@@ -1393,7 +1393,7 @@ llvm::Value *OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *nod
   default:
     break;
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: ~"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ~"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
@@ -1410,7 +1410,7 @@ llvm::Value *OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node
   default:
     break;
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
@@ -1427,7 +1427,7 @@ llvm::Value *OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *no
   default:
     break;
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
 llvm::Value *OpRuleConversionManager::getCastInst(const ASTNode *node, const SymbolType &lhsSTy, ExprResult &rhs,
@@ -1483,7 +1483,7 @@ llvm::Value *OpRuleConversionManager::getCastInst(const ASTNode *node, const Sym
   case COMB(TY_PTR, TY_PTR):
     return lhsSTy.getContainedTy() == rhsSTy.getContainedTy() ? rhsV() : builder.CreatePointerCast(rhsV(), lhsT);
   }
-  throw std::runtime_error("Internal compiler error: Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
 }
 
 PtrAndValue OpRuleConversionManager::callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhs, auto &rhs, size_t opIdx) {

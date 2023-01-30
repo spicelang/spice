@@ -31,8 +31,10 @@ bool compileProject(CliOptions &cliOptions) {
     mainSourceFile.runBackEnd();
 
     // Link the target executable (Link object files to executable)
-    if (!cliOptions.execute)
+    if (!cliOptions.execute) {
+      resourceManager.linker.prepare();
       resourceManager.linker.link();
+    }
 
     // Print compiler warnings
     mainSourceFile.collectAndPrintWarnings();

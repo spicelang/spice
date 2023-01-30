@@ -1,0 +1,2 @@
+[Error|Compiler]:
+Source file not found: Source file at path './test-files/common/error-non-existing-source-file/source.spice' does not exist.

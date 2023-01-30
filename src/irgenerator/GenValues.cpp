@@ -30,7 +30,7 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
     return ExprResult{.constant = nilValue};
   }
 
-  throw std::runtime_error("Internal compiler error: Value fall-through"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Value fall-through"); // GCOV_EXCL_LINE
 }
 
 std::any IRGenerator::visitConstant(const ConstantNode *node) {
@@ -83,7 +83,7 @@ std::any IRGenerator::visitConstant(const ConstantNode *node) {
     return constBool;
   }
 
-  throw std::runtime_error("Internal compiler error: Constant fall-through"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
 }
 
 std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {

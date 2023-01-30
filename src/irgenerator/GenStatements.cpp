@@ -8,12 +8,14 @@
 namespace spice::compiler {
 
 std::any IRGenerator::visitStmtLst(const StmtLstNode *node) {
-  for (const ASTNode *child : node->children) {
+  for (const ASTNode *stmt : node->children) {
+    if (!stmt)
+      continue;
     // Check if we can cancel generating instructions for this code branch
-    if (blockAlreadyTerminated || child->unreachable)
+    if (blockAlreadyTerminated || stmt->unreachable)
       return nullptr;
     // Visit child
-    visit(child);
+    visit(stmt);
   }
   return nullptr;
 }

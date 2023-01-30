@@ -4,6 +4,8 @@
 
 namespace spice::compiler {
 
+// GCOV_EXCL_START
+
 /**
  * @param type Type of the error
  * @param message Error message suffix
@@ -42,5 +44,7 @@ std::string CliError::getMessagePrefix(CliErrorType type) {
   }
   return "Unknown error"; // GCOV_EXCL_LINE
 }
+
+// GCOV_EXCL_STOP
 
 } // namespace spice::compiler

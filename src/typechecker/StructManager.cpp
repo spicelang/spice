@@ -30,11 +30,9 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, const Struct &ne
   const std::string codeLocStr = declNode->codeLoc.toString();
   const std::string signature = newManifestation.getSignature();
 
-  // Check if the struct exists already
-  for (const auto &[_, manifestations] : insertScope->structs) {
-    if (manifestations.contains(newManifestation.getMangledName()))
-      throw SemanticError(declNode, STRUCT_DECLARED_TWICE, "The struct '" + signature + "' is declared twice");
-  }
+  // Make sure that the struct does not exist already
+  for (const auto &manifestations : insertScope->structs)
+    assert(!manifestations.second.contains(newManifestation.getMangledName()));
 
   // Retrieve the matching manifestation list of the scope
   assert(insertScope->structs.contains(codeLocStr));

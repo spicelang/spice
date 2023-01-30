@@ -7,6 +7,8 @@
 
 namespace spice::compiler {
 
+// GCOV_EXCL_START
+
 enum CliErrorType {
   INCOMPLETE_TARGET_TRIPLE,
   INVALID_TARGET_TRIPLE,
@@ -33,5 +35,7 @@ private:
 
   [[nodiscard]] static std::string getMessagePrefix(CliErrorType errorType);
 };
+
+// GCOV_EXCL_STOP
 
 } // namespace spice::compiler

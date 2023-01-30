@@ -3,6 +3,7 @@
 #include "RuntimeModuleManager.h"
 
 #include <SourceFile.h>
+#include <exception/CompilerError.h>
 #include <symboltablebuilder/Scope.h>
 #include <util/FileUtil.h>
 
@@ -37,7 +38,7 @@ bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const Runtime
     fileName = "thread_rt";
     break;
   default:
-    throw std::runtime_error("Internal compiler error: Requested unknown runtime module");
+    throw CompilerError(INTERNAL_ERROR, "Requested unknown runtime module");
   }
   std::string filePath = FileUtil::getStdDir() + "runtime" + FileUtil::DIR_SEPARATOR + fileName + ".spice";
   if (filePath == parentSourceFile->filePath)

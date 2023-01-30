@@ -8,7 +8,7 @@ f<int> main() {
     byte*[8] threads = {};
     for int i = 0; i < threadCount; i++ {
         threads[i] = thread {
-            int result = fib(46);
+            int result = fib(30);
             printf("Thread returned with result: %d\n", result);
         };
     }

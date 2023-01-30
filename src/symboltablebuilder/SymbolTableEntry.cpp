@@ -43,12 +43,12 @@ void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node
   if (newState != DEAD && oldState != DECLARED && specifiers.isConst() && !force)
     throw SemanticError(node, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
   // Check if the type is known at time of initialization
-  if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                                    // GCOV_EXCL_LINE
-    throw std::runtime_error("Internal compiler error: could not determine type of variable '" + name + "'");   // GCOV_EXCL_LINE
-  if (newState == DEAD && oldState == DECLARED)                                                                 // GCOV_EXCL_LINE
-    throw std::runtime_error("Internal compiler error: cannot destruct uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
-  if (newState == DEAD && oldState == DEAD)                                                                     // GCOV_EXCL_LINE
-    throw std::runtime_error("Internal compiler error: cannot destruct already freed variable '" + name + "'"); // GCOV_EXCL_LINE
+  if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                      // GCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Could not determine type of variable '" + name + "'");   // GCOV_EXCL_LINE
+  if (newState == DEAD && oldState == DECLARED)                                                   // GCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Cannot destruct uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
+  if (newState == DEAD && oldState == DEAD)                                                       // GCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Cannot destruct already freed variable '" + name + "'"); // GCOV_EXCL_LINE
   lifecycle.addEvent({newState, node});
 }
 
