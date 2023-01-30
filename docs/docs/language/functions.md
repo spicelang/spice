@@ -4,6 +4,8 @@ title: Functions
 
 Spice distinguishes strictly between functions and procedures. Functions are used to return something, that was calculated from a given input. Other than procedures, functions must have a return value. The paradigm here is, that a function calculates and returns something whereas a procedure executes some action without a result.
 
+## Usage
+
 Functions in Spice can be defined like this:
 ```spice
 f<double> functionName() {
@@ -16,6 +18,8 @@ Spice also allows you to pass arguments to a function. This arguments may also h
 
 !!! note
     Optional arguments have to go after the mandatory arguments in the function head.
+
+## Example with default parameter value
 
 Here, the second argument is one with a default value attached.
 ```spice
@@ -32,4 +36,5 @@ int result1 = demoFunction("another input", 1.0);
 ```
 
 !!! tip
-    If you only want to execute some actions and don't need to return a value to the caller, please consider to use [procedures](../procedures) instead of functions.
+    If you only want to execute some actions and don't need to return a value to the caller, please consider to use
+    [procedures](../procedures) instead of functions.

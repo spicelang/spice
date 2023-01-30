@@ -2,6 +2,10 @@
 title: Enumerations
 ---
 
+Spice supports simple enumerations. These constructs are syntactic sugar over `int` constants.
+
+## Usage
+
 Enumerations in Spice work like this:
 
 ```spice

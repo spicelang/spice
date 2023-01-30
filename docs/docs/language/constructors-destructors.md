@@ -2,7 +2,8 @@
 title: Constructors and destructors
 ---
 
-Sometimes you want to initialize the field of a struct or execute some action right after creating an instance of it. Spice enables you doing that, by supporting constructors. To clean up a struct instance, destructors can be used.
+Sometimes you want to initialize the field of a struct or execute some action right after creating an instance of it. Spice
+enables you doing that, by supporting constructors. To clean up a struct instance, destructors can be used.
 
 ## Constructors
 Whenever you create a struct instance like this, Spice will automatically call the `ctor` method of this struct:

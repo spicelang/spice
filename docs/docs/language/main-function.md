@@ -4,6 +4,8 @@ title: Main Function
 
 The `main` function is the entry point of any Spice program. When the system runs your compiled executable, the `main` function is the first function, which is called by the system. Therefore, it is mandatory and must have the signature `main(): int` or `main(int argc, string[] argv): int` for retrieving command line arguments. The main function has a return value of type `int`, which represents the return code / exit code / status code of the executable.
 
+## Usage
+
 The `main` function can be declared like this:
 ```spice
 f<int> main() {
@@ -16,7 +18,7 @@ Like any other [function](../functions), the `main` function automatically decla
 !!! info "Hello World program"
     Now, as you know how to start a program in Spice, you may like to write your first Spice program. Visit the guide for the [Hello World example](../hello-world) to get started!
 
-### CLI Arguments
+## CLI Arguments
 Spice programs can accept command line arguments similar you would write it in C:
 
 ```spice

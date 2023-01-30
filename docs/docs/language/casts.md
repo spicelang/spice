@@ -6,6 +6,8 @@ Sometimes it is useful to directly cast [a type](../primitive-types) to another 
 type combinations. Additionally, the casting operator can always be applied when the source type matches the cast
 destination type.
 
+## Usage
+
 Casting an int to the short data type:
 ```spice
 short shortVar = (short) 12;

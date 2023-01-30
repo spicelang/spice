@@ -2,7 +2,10 @@
 title: Methods
 ---
 
-Methods in Spice basically are [functions](../functions) / [procedures](../procedures), assigned to a struct. Within methods, fields of the parent struct can be accessed like this: `this.fieldName`.
+Methods in Spice basically are [functions](../functions) / [procedures](../procedures), assigned to a struct. Within methods,
+fields of the parent struct can be accessed like this: `this.fieldName`.
+
+## Usage
 
 A basic setup with one struct field, as well es a getter and a setter could look like this:
 ```spice
@@ -31,4 +34,5 @@ Content: Hello World!
 ```
 
 !!! tip
-    You can initialize or destroy structs by using [constructors](../constructors) and [destructors](,./destructors). Read more about those in the respective documentation section.
+    You can initialize or destroy structs by using [constructors](../constructors) and [destructors](,./destructors). Read more
+    about those in the respective documentation section.

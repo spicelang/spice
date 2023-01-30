@@ -4,6 +4,8 @@ title: Operator Precedence
 
 The following table shows how Spice prioritizes the supported operators. The list is sorted top to bottom in descending precedence.
 
+## Precedence table
+
 | Precedence | Operator | Description                          | Associativity | Modifying |
 | ---------- | -------- | ------------------------------------ | ------------- | --------- |
 | 1          | `a()`    | Function/procedure call              | left to right | no        |

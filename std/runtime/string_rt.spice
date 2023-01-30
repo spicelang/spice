@@ -336,7 +336,17 @@ public f<long> String.find(string needle, unsigned long startIndex = 0l) {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned int startIndex) {
+public f<long> String.find(string needle, unsigned int startIndex = 0) {
+    return this.find(needle, (long) startIndex);
+}
+
+/**
+ * Searches for a substring in a string. Returns -1 if the string was not found.
+ *
+ * @param startIndex Index where to start the search
+ * @return Index, where the substring was found / -1
+ */
+public f<long> String.find(string needle, unsigned short startIndex = 0) {
     return this.find(needle, (long) startIndex);
 }
 
@@ -410,7 +420,7 @@ public p String.reverse() {
  * @param length Length of substring
  * @return Substring
  */
-public f<String> String.substring<IntLong>(unsigned IntLong startIndex, long length = -1l) {
+public f<String> String.substring<IntLongShort>(unsigned IntLongShort startIndex, long length = -1l) {
     // Return empty string if the length is 0 or the startIndex is out of bounds
     if length == 0l || startIndex >= this.length {
         return String("");
@@ -441,7 +451,7 @@ public f<String> String.substring<IntLong>(unsigned IntLong startIndex, long len
         substring.contents[length] = '\0';
     }
 
-    // Return raw string
+    // Return the substring
     return substring;
 }
 
@@ -450,7 +460,7 @@ public f<String> String.substring<IntLong>(unsigned IntLong startIndex, long len
  *
  * @param charCount Number of chars to reserve for the string
  */
-public p String.reserve<IntLong>(unsigned IntLong charCount) {
+public p String.reserve<IntLongShort>(unsigned IntLongShort charCount) {
     if charCount > this.capacity {
         this.resize(charCount);
     }
@@ -461,11 +471,11 @@ public p String.reserve<IntLong>(unsigned IntLong charCount) {
  *
  * @param newLength new length of the string after resizing
  */
-p String.resize<IntLong>(unsigned IntLong newLength) {
+p String.resize<IntLongShort>(unsigned IntLongShort newLength) {
     // Allocate the new memory
     unsafe {
         byte* oldAddress = (byte*) this.contents;
-        unsigned long requiredBytes = newLength + 1l; // +1 because of null terminator
+        unsigned long requiredBytes = newLength + 1; // +1 because of null terminator
         char* newMemory = (char*) realloc(oldAddress, (int) requiredBytes);
         this.contents = newMemory;
     }

@@ -5,6 +5,8 @@ title: Pointers
 Spice supports pointers by providing the address-of operator `&` and indirection operator `*`. <br>
 For any primitive or custom data type you can also use the respective pointer type. For the `int` type, the pointer type is `int*`.
 
+## Usage
+
 See an example here:
 ```spice
 int variable = 1234;

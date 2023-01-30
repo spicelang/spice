@@ -4,7 +4,10 @@ title: Declaration modifiers
 
 ## The `public` modifier
 
-All structures in Spice, that are accessible from outside the module (like functions, procedures, structs, etc.), have private visibility per default. That means that they can't be accessed from outside the module from a source file, that imported the file, where the structures live. If you need to access e.g. a struct from outside the module, you need to attach the modifier `public` to it.
+All structures in Spice, that are accessible from outside the module (like functions, procedures, structs, etc.), have private
+visibility per default. That means that they can't be accessed from outside the module from a source file, that imported the file,
+where the structures live. If you need to access e.g. a struct from outside the module, you need to attach the modifier `public`
+to it.
 
 ### Applicable for
 
@@ -34,14 +37,17 @@ f<int> main() {
 }
 ```
 
-By having private visibility per default, Spice encourages the programmer to adhere to the information hiding principle and expose only the things, that need to be exposed to other modules.
+By having private visibility per default, Spice encourages the programmer to adhere to the information hiding principle and expose
+only the things, that need to be exposed to other modules.
 
 ## The `inline` modifier
 
-The `inline` modifier can be used for functions and procedures to mark them as inlinable for the compiler explicitly. By marking a function or procedure as inlinable, the compiler is forced to always inline it.
+The `inline` modifier can be used for functions and procedures to mark them as inlinable for the compiler explicitly. By marking a
+function or procedure as inlinable, the compiler is forced to always inline it.
 
 !!! note
-    Marking private functions/procedures with the `inline` keyword is not necessary in most of the cases, because the compiler inlines smaller, private scoped functions automatically when compiling with an optimization level >= O1.
+    Marking private functions/procedures with the `inline` keyword is not necessary in most of the cases, because the compiler
+inlines smaller, private scoped functions automatically when compiling with an optimization level >= O1.
 
 ### Applicable for
 

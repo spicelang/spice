@@ -4,6 +4,8 @@ title: Foreach Loops
 
 Foreach loops can be used to iterate over an [array](../arrays) of arbitrary elements.
 
+## Usage
+
 You can write `foreach` loops in two different ways:
 
 ### Normal
@@ -38,8 +40,10 @@ foreach int i, string word : welcomeMessage {
 		i += 2;
 	}
 	```
-	The code snippet above will print `Array item no. 3: 4, Array item no. 6: 7, Array item no. 9: 10,`. In the loop head, we set the start index to `3` and skip 3 items (2+1) each round.
+	The code snippet above will print `Array item no. 3: 4, Array item no. 6: 7, Array item no. 9: 10,`. In the loop head, we set
+	the start index to `3` and skip 3 items (2+1) each round.
 
 
 !!! tip "Usage of loop alternatives"
-    Foreach loops should only be used when you have an array data structure and want to access its items. If this is not the case, we recommend using the [for loop](../for-loops) or [while loop](../while-loops) instead.
+    Foreach loops should only be used when you have an array data structure and want to access its items. If this is not the case,
+	we recommend using the [for loop](../for-loops) or [while loop](../while-loops) instead.
