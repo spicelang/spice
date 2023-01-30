@@ -12,7 +12,7 @@ std::any ParallelizableASTVisitor::visitChildren(const ASTNode *node) {
   for (const ASTNode *child : node->children)
     if (child != nullptr)
       child->accept(this);
-  return {};
+  return nullptr;
 }
 
 // GCOV_EXCL_START

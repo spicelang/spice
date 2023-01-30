@@ -158,7 +158,8 @@ void execTestCase(const TestCase &testCase) {
       mainSourceFile.runObjectEmitter();
       mainSourceFile.concludeCompilation();
 
-      // Run linker
+      // Prepare and run linker
+      resourceManager.linker.prepare();
       resourceManager.linker.link();
 
       // Execute binary

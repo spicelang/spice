@@ -25,7 +25,6 @@ union CompileTimeValue {
   std::int32_t intValue;
   std::int16_t shortValue;
   std::int64_t longValue;
-  std::int8_t byteValue;
   std::int8_t charValue;
   const char *stringValue;
   bool boolValue;
@@ -52,9 +51,6 @@ public:
     children.clear();
     delete this;
   }
-
-  // Friend classes
-  friend class ASTBuilder;
 
   // Virtual methods
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
@@ -94,8 +90,8 @@ public:
 
   void replaceInParent(ASTNode *replacementNode) {
     assert(parent != nullptr);
-    for (ASTNode *child : parent->children) {
-      if (child == this) {
+    for (auto &child : parent->children) {
+      if (child == this) [[unlikely]] {
         // Replace in children vector
         child = replacementNode;
         // De-allocate subtree without destroying the replacement node
@@ -107,8 +103,8 @@ public:
 
   void removeFromParent() {
     assert(parent != nullptr);
-    for (ASTNode *child : parent->children) {
-      if (child == this) {
+    for (auto &child : parent->children) {
+      if (child == this) [[unlikely]] {
         // Remove from children vector
         child = nullptr;
         // De-allocate subtree
@@ -121,7 +117,8 @@ public:
   virtual void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Reserve children
     for (ASTNode *child : children)
-      child->resizeToNumberOfManifestations(manifestationCount);
+      if (child != nullptr)
+        child->resizeToNumberOfManifestations(manifestationCount);
     // Reserve this node
     symbolTypes.resize(manifestationCount, SymbolType(TY_INVALID));
     // Reserve operator functions
@@ -180,17 +177,11 @@ public:
   const CodeLoc codeLoc;
   std::string errorMessage;
   std::vector<SymbolType> symbolTypes;
-  bool unreachable = false;
-  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
-
-protected:
-  // Protected members
   CompileTimeValue compileTimeValue = {};
   std::string compileTimeStringValue;
-
-private:
-  // Private members
   bool hasDirectCompileTimeValue = false;
+  bool unreachable = false;
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 
 // ========================================================== EntryNode ==========================================================

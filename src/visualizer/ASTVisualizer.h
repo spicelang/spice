@@ -119,9 +119,11 @@ private:
     parentNodeId = nodeId; // Set parentNodeId for children
 
     // Visit all the children
-    for (const auto &child : ctx->children) {
-      result << getSpaces();
-      result << std::any_cast<std::string>(visit(child));
+    for (ASTNode *child : ctx->children) {
+      if (child != nullptr) {
+        result << getSpaces();
+        result << std::any_cast<std::string>(visit(child));
+      }
     }
 
     // Restore parent node id

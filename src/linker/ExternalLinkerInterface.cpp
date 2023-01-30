@@ -13,31 +13,40 @@ namespace spice::compiler {
 
 const char *const LINKER_EXECUTABLE_NAME = "gcc";
 
+void ExternalLinkerInterface::prepare() {
+  // Add required linker flags
+  if (threadFactory.isUsingThreads())
+    addLinkerFlag("-pthread");
+}
+
 /**
  * Start the linking process
  */
 void ExternalLinkerInterface::link() const {
-  if (FileUtil::isCommandAvailable(std::string(LINKER_EXECUTABLE_NAME))) // GCOV_EXCL_START
-    throw LinkerError(LINKER_NOT_FOUND, "Please check if you have installed " + std::string(LINKER_EXECUTABLE_NAME) +
-                                            " and added it to the PATH variable"); // GCOV_EXCL_STOP
+  std::string linkerCmd(LINKER_EXECUTABLE_NAME);
+  // LCOV_EXCL_START
+  if (FileUtil::isCommandAvailable(linkerCmd))
+    throw LinkerError(LINKER_NOT_FOUND, "Please check if you have installed " + linkerCmd + " and added it to the PATH variable");
+  // LCOV_EXCL_STOP
 
   // Check if the output path was set
-  if (outputPath.empty())
+  if (outputPath.empty())                                                    // GCOV_EXCL_LINE
     throw CompilerError(IO_ERROR, "Output path for the linker was not set"); // GCOV_EXCL_LINE
 
   // Build the linker command
   std::stringstream linkerCommandBuilder;
-  linkerCommandBuilder << LINKER_EXECUTABLE_NAME;
-  if (threadFactory.isUsingThreads())
-    linkerCommandBuilder << " -pthread";
-  for (const auto &linkerFlag : linkerFlags)
+  linkerCommandBuilder << linkerCmd;
+  // Append linker flags
+  for (const std::string &linkerFlag : linkerFlags)
     linkerCommandBuilder << " " + linkerFlag;
+  // Append output path
   linkerCommandBuilder << " -o " + outputPath;
-  for (const auto &objectFilePath : objectFilePaths)
+  // Append object files
+  for (const std::string &objectFilePath : objectFilePaths)
     linkerCommandBuilder << " " + objectFilePath;
 
   // Print status message
-  if (cliOptions.printDebugOutput)
+  if (cliOptions.printDebugOutput)                                        // GCOV_EXCL_LINE
     std::cout << "\nEmitting executable to path: " << outputPath << "\n"; // GCOV_EXCL_LINE
 
   // Call the linker
@@ -45,11 +54,11 @@ void ExternalLinkerInterface::link() const {
   ExecResult result = FileUtil::exec(linkerCommand);
 
   // Check for linker error
-  if (result.exitCode != 0)
-    throw LinkerError(LINKER_ERROR, "Linker exited with non-zero exit code");
+  if (result.exitCode != 0)                                                   // GCOV_EXCL_LINE
+    throw LinkerError(LINKER_ERROR, "Linker exited with non-zero exit code"); // GCOV_EXCL_LINE
 
   // Print linker result if appropriate
-  if (cliOptions.printDebugOutput && !result.output.empty())
+  if (cliOptions.printDebugOutput && !result.output.empty())  // GCOV_EXCL_LINE
     std::cout << "Linking result: " << result.output << "\n"; // GCOV_EXCL_LINE
 }
 

@@ -12,7 +12,7 @@ std::any AbstractASTVisitor::visitChildren(ASTNode *node) {
   for (ASTNode *child : node->children)
     if (child != nullptr)
       child->accept(this);
-  return {};
+  return nullptr;
 }
 
 } // namespace spice::compiler

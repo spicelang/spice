@@ -301,6 +301,8 @@ std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
 
 std::any TypeChecker::visitStmtLst(StmtLstNode *node) {
   for (ASTNode *stmt : node->children) {
+    if (!stmt)
+      continue;
     // Print warning if statement is unreachable
     if (stmt->unreachable) {
       warnings.emplace_back(stmt->codeLoc, UNREACHABLE_CODE, "This statement is unreachable");

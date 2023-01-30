@@ -19,6 +19,7 @@ public:
       : threadFactory(threadFactory), cliOptions(cliOptions), outputPath(cliOptions.outputPath){};
 
   // Public methods
+  void prepare();
   void link() const;
   void addObjectFilePath(const std::string &objectFilePath);
   void addLinkerFlag(const std::string &linkerFlag);
