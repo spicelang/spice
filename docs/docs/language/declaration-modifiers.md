@@ -16,6 +16,9 @@ to it.
 - Global variables
 - Structs
 - Struct fields
+- Enums
+- Interfaces
+- Interface signatures
 
 ### Example
 
@@ -42,12 +45,12 @@ only the things, that need to be exposed to other modules.
 
 ## The `inline` modifier
 
-The `inline` modifier can be used for functions and procedures to mark them as inlinable for the compiler explicitly. By marking a
-function or procedure as inlinable, the compiler is forced to always inline it.
+The `inline` modifier can be used for functions and procedures to mark them as inlineable for the compiler explicitly. By marking
+a function or procedure as inlineable, the compiler is forced to always inline it.
 
 !!! note
     Marking private functions/procedures with the `inline` keyword is not necessary in most of the cases, because the compiler
-inlines smaller, private scoped functions automatically when compiling with an optimization level >= O1.
+    inlines smaller, private scoped functions automatically when compiling with an optimization level >= O1.
 
 ### Applicable for
 
@@ -82,6 +85,8 @@ This modifier can be used to make variables immutable after the first assignment
 
 - Local variables
 - Global variables
+- Functions
+- Procedures
 
 ### Example
 

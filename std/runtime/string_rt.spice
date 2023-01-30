@@ -336,7 +336,7 @@ public f<long> String.find(string needle, unsigned long startIndex = 0l) {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned int startIndex = 0) {
+public f<long> String.find(string needle, unsigned int startIndex) {
     return this.find(needle, (long) startIndex);
 }
 
@@ -346,7 +346,7 @@ public f<long> String.find(string needle, unsigned int startIndex = 0) {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned short startIndex = 0) {
+public f<long> String.find(string needle, unsigned short startIndex) {
     return this.find(needle, (long) startIndex);
 }
 

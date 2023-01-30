@@ -37,5 +37,6 @@ f<int> main() {
 
 !!! tip "Multiple pointers"
     Spice also supports the usage of double, triple, ... pointers like `char***` or types like `int*[]*`.
-    Please use such types sparely and only where they are necessary, due to readability.
-    To get the pointer to the pointer to an integer, you can use `&&intVariable` and `**doubleIntPtr` in reverse.
+    Please use such types sparingly and only where necessary, due to readability reasons. <br>
+    To get the pointer to the pointer to an integer, you can use `&&intVariable` and `**doubleIntPtr` in reverse. <br>
+    The member access operator automatically de-references the left side, no matter how many indirections there are.

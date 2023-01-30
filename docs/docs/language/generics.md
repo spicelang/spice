@@ -2,14 +2,14 @@
 title: Generics
 ---
 
-Spice offers basic support for generics. [Structs](./structs) as well as [functions](./functions) and [procedures](./procedures)
-can be marked as generic by attaching a template list with one or more generic types to it.
+Spice offers basic support for generics. [Structs](./structs) and [Interfaces](./interfaces) as well as [functions](./functions)
+and [procedures](./procedures) can be marked as generic by attaching a template list with one or more generic types to it.
 
 Spice resolves the substantiations of generic types at compile time. This helps to keep the runtime performance up.
 Generic function substantiations that are unused, are removed by the compiler automatically.
 
 ## Generic types
-Before using generic types in function or struct templates, you have to declare the types first. This can be done like this:
+Before using generic types, you have to declare the types first. This can be done like this:
 
 ```spice
 type T dyn;
@@ -22,9 +22,6 @@ In the above example `T` can substantiate to an arbitrary type, whilst `U` can o
 Here is an example function:
 
 ```spice
-type T dyn;
-type U int|double|long;
-
 f<double> genericFunction<T, U>(T arg1, U arg2, int arg3 = 10) {
     return arg1 + arg2 + arg3;
 }
@@ -35,10 +32,11 @@ in the template list, that is attached at the function (in the above example `<T
 ask you to do so.
 
 As mentioned above, the substantiations of generic types are collected at compile time. That means, that the compiler is able to
-type-check to ensure that e.g. operators are compatible with the concrete types.
+type-check all concrete substantiations to ensure that e.g. operators are compatible with the concrete types. Furthermore, this
+enables more optimizations and does not require to carry runtime type information at runtime, which improves runtime speed.
 
 ## Generic structs
-Here is an example struct:
+Here is a generic struct example:
 
 ```spice
 type T bool|short|long;

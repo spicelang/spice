@@ -72,7 +72,7 @@ variable2 = '.';
 ```
 
 ## The `string` data type
-Strings are sequences of 8-bit integers (chars) and contain text-like information. The length of a string is unlimited.
+Strings are immutable sequences of 8-bit integers (chars) and contain text-like information. The length of a string is unlimited.
 
 In Spice, variables of type `string` can be defined like this:
 ```spice
@@ -83,13 +83,13 @@ variable2 = "Hello World!";
 ```
 
 !!! info "Note"
-    This type of string is immutable. So if you want to mutate your string, during it's lifetime, please consider using
-    [the builtin String data type](../builtin-types#the-string-data-type).
+    This type of string is immutable. So if you want to mutate your string at runtime, you can use the
+    [builtin String data type](../builtin-types#the-string-data-type).
 
 !!! tip "Tip"
     Use the `string` primitive type over the `String` builtin type as much as possible, due to its advantages in runtime
     performance. The usage of the `String` builtin type is only recommended, when you need to modify the value of the
-    string.
+    string at runtime.
 
 ## The `bool` data type
 Booleans are 1-bit integers and can be assigned with the exactly two values: `true` or `false`.

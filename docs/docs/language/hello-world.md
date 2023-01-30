@@ -27,4 +27,4 @@ $ ./hello-world
 Hello World!
 ```
 
-Congratulation! You just wrote and executed your first Spice program!
+Congratulations! You just wrote and executed your first Spice program!
