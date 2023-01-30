@@ -4,6 +4,8 @@ title: Type Aliases
 
 Spice supports defining type aliases like this:
 
+## Usage
+
 ```spice
 type i32 alias int;
 type i64 alias long;

@@ -5,6 +5,8 @@ title: Pointers
 Spice supports pointers by providing the address-of operator `&` and indirection operator `*`. <br>
 For any primitive or custom data type you can also use the respective pointer type. For the `int` type, the pointer type is `int*`.
 
+## Usage
+
 See an example here:
 ```spice
 int variable = 1234;
@@ -35,5 +37,6 @@ f<int> main() {
 
 !!! tip "Multiple pointers"
     Spice also supports the usage of double, triple, ... pointers like `char***` or types like `int*[]*`.
-    Please use such types sparely and only where they are necessary, due to readability.
-    To get the pointer to the pointer to an integer, you can use `&&intVariable` and `**doubleIntPtr` in reverse.
+    Please use such types sparingly and only where necessary, due to readability reasons. <br>
+    To get the pointer to the pointer to an integer, you can use `&&intVariable` and `**doubleIntPtr` in reverse. <br>
+    The member access operator automatically de-references the left side, no matter how many indirections there are.

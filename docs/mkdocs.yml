@@ -77,6 +77,7 @@ nav:
     - language/casts.md
     - language/if-statements.md
     - language/while-loops.md
+    - language/do-while-loops.md
     - language/for-loops.md
     - language/foreach-loops.md
     - language/procedures.md

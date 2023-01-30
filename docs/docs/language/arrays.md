@@ -4,13 +4,16 @@ title: Arrays
 
 You can use arrays in Spice for any [primitive](../primitive-types) or custom [struct](../structs) data type.
 
+## Usage
+
 To initialize an `array` e.g. of type string, you can write:
 ```spice
-string[5] myStringArray = { "First item", "Second Item", "Third item" };
+string[3] myStringArray = { "First item", "Second Item", "Third item" };
 ```
 
-The `5` in the brackets is the size of the array. The initial values can be provided in curly braces after the assign operator and must be of the same data type. <br>
-As you can see, there are fewer values (3) than the array size is (5). The rest of the values are set to the default data type value. The default data type values are:
+The `3` in the brackets is the size of the array. The initial values can be provided in curly braces after the assign operator and
+must be of the same data type. <br>
+You can only initialize an array with the number of items equal the arrays size or no items.
 
 | Type     | Default value                               |
 |----------|---------------------------------------------|
@@ -29,7 +32,7 @@ More complex expressions for initial array values and item indexing are possible
 ```spice
 // Initialize array
 dyn condition = 1 != 2;
-bool[12] myBoolArray = { condition ? true : false, false, true };
+bool[3] myBoolArray = { condition ? true : false, false, true };
 
 // Access item 0
 int i = 2;

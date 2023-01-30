@@ -13,7 +13,7 @@ Printf works the same as the `printf` function in C and is designed for printing
 `template`: Template string, which can contain placeholders for values, passed as args to the `printf` builtin. <br>
 `args`: Arbitrary number of arguments of any type. The particular type and the order of the types have to match the placeholders of the template string.
 
-Within the template string you can use the `\n` control character to achieve a line break. This works on Linux and Windows the same way.
+Within the template string you can use control characters like the `\n` control character to achieve line breaks. This works on Linux and Windows the same way.
 
 ### Placeholders
 | Placeholder | Type                        | Output                                        | Example      |
@@ -47,15 +47,18 @@ printf("Here is a string: %s.\nAnd here is a double: %f", "Demo", 1.123);
 Sizeof returns the internal size of a variable or a constant in bits. To get the size in bytes, simply divide the result by 8.
 
 ### Signature
-`int sizeof(any variable)`
+`int sizeof(<any variable>)`
+`int sizeof(type <any type>)`
 
-`variable`: Variable or constant of any type.
+`any variable`: Variable or constant of any type.
+`any type`: Any data type
 
 If the variable is a pointer type, the size of the contained type is being returned.
 
 ### Usage example
 ```spice
 sizeof(12); // 32
+sizeof(type int) // 32
 
 int[9] intArray = {};
 sizeof(intArray); // 9 * 32 = 288
@@ -69,7 +72,7 @@ Len returns the length of a Spice array in items.
 ### Signature
 `int len(any[] variable)`
 
-`variable`: Variable of any type.
+`variable`: Variable of any  array type.
 
 ### Usage example
 ```spice
