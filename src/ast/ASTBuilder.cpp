@@ -1591,8 +1591,9 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
       constantNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
       constantNode->hasDirectCompileTimeValue = true;
     } else if (auto t5 = dynamic_cast<TerminalNode *>(subTree); t5->getSymbol()->getType() == SpiceParser::STRING_LIT) {
+      // Transfer ownership to the AST node
       constantNode->compileTimeStringValue = parseString(ctx->STRING_LIT()->toString());
-
+      // Save a pointer to the string in the compile time value
       constantNode->type = ConstantNode::TYPE_STRING;
       constantNode->compileTimeValue.stringValue = constantNode->compileTimeStringValue.c_str();
       constantNode->hasDirectCompileTimeValue = true;

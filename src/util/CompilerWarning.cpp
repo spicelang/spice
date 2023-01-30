@@ -60,8 +60,6 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused variable";
   case UNREACHABLE_CODE:
     return "Unreachable code detected";
-  case INTERFACE_WITHOUT_SIGNATURE:
-    return "Interface without signature";
   case SINGLE_GENERIC_TYPE_CONDITION:
     return "Only one type condition";
   case BOOL_ASSIGN_AS_CONDITION:

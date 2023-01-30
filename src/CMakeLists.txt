@@ -115,6 +115,8 @@ set(SOURCES
         model/GenericType.cpp
         model/GenericType.h
         # Exception handling
+        exception/CompilerError.cpp
+        exception/CompilerError.h
         exception/CliError.cpp
         exception/CliError.h
         exception/SemanticError.cpp

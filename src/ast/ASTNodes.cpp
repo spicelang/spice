@@ -61,10 +61,12 @@ bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
   // A statement list returns on all control paths, if the one statement returns on all control paths
   bool returns = false;
   bool overrideUnreachable = false;
-  for (auto astNode : children) {
+  for (ASTNode *child : children) {
+    if (!child)
+      continue;
     if (returns) {
-      astNode->unreachable = !overrideUnreachable;
-    } else if (astNode->returnsOnAllControlPaths(&overrideUnreachable)) {
+      child->unreachable = !overrideUnreachable;
+    } else if (child->returnsOnAllControlPaths(&overrideUnreachable)) {
       returns = true;
     }
   }

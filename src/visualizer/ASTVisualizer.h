@@ -119,9 +119,11 @@ private:
     parentNodeId = nodeId; // Set parentNodeId for children
 
     // Visit all the children
-    for (const auto &child : ctx->children) {
-      result << getSpaces();
-      result << std::any_cast<std::string>(visit(child));
+    for (ASTNode *child : ctx->children) {
+      if (child != nullptr) {
+        result << getSpaces();
+        result << std::any_cast<std::string>(visit(child));
+      }
     }
 
     // Restore parent node id
@@ -267,7 +269,7 @@ private:
       return "BaseDataType";
     if (std::is_same<CustomDataTypeNode, T>())
       return "CustomDataType";
-    throw std::runtime_error("Unknown node name");
+    throw CompilerError(UNHANDLED_BRANCH, "Unknown node in AST visualizer"); // GCOV_EXCL_LINE
   }
 
   [[nodiscard]] std::string getSpaces() const;

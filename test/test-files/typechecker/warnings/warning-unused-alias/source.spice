@@ -1,0 +1,5 @@
+type Size alias long;
+
+f<int> main() {
+    printf("Do something different");
+}

@@ -1,0 +1,6 @@
+f<int> main() {
+    int testVar = 12;
+    {
+        printf("Test var: %d\n", testVar);
+    }
+}

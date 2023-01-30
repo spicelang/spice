@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "FileUtil.h"
+#include "exception/CompilerError.h"
 
 #include <filesystem>
 #include <iostream>
@@ -85,8 +86,8 @@ std::string FileUtil::getFileDir(const std::string &filePath) { return filePath.
  */
 ExecResult FileUtil::exec(const std::string &cmd) {
   FILE *pipe = popen(cmd.c_str(), "r");
-  if (!pipe)
-    throw std::runtime_error("Failed to execute command: " + cmd);
+  if (!pipe)                                                            // GCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Failed to execute command: " + cmd); // GCOV_EXCL_LINE
   char buffer[128];
   std::string result;
   while (!feof(pipe)) {
@@ -105,9 +106,9 @@ ExecResult FileUtil::exec(const std::string &cmd) {
  */
 bool FileUtil::isCommandAvailable(const std::string &cmd) {
 #if OS_WINDOWS
-  std::string checkCmd = "where " + cmd + " > nul 2>&1";
+  const std::string checkCmd = "where " + cmd + " > nul 2>&1";
 #else
-  std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
+  const std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
 #endif
   return std::system(checkCmd.c_str());
 }
@@ -132,7 +133,7 @@ std::string FileUtil::getStdDir() {
       stdPath += FileUtil::DIR_SEPARATOR;
     return stdPath;
   }
-  return "";
+  return ""; // GCOV_EXCL_LINE
 }
 
 /**

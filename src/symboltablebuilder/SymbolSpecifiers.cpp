@@ -2,9 +2,8 @@
 
 #include "SymbolSpecifiers.h"
 
-#include <stdexcept>
-
-#include "SymbolType.h"
+#include <exception/CompilerError.h>
+#include <symboltablebuilder/SymbolType.h>
 
 namespace spice::compiler {
 
@@ -50,8 +49,8 @@ SymbolSpecifiers SymbolSpecifiers::of(SymbolSuperType superType) {
     return SymbolSpecifiers(SPECIFIER_DEFAULTS_IMPORT);
   case TY_DYN:
     return {};
-  default:                                                    // GCOV_EXCL_LINE
-    throw std::runtime_error("Symbol specifier fallthrough"); // GCOV_EXCL_LINE
+  default:
+    throw CompilerError(UNHANDLED_BRANCH, "Symbol specifier fallthrough"); // GCOV_EXCL_LINE
   }
 }
 

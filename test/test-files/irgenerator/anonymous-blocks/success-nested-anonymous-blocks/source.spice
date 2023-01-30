@@ -1,0 +1,15 @@
+p test(int param) {
+    {
+        {
+            {
+                {}
+                printf("Param: %d\n", param);
+                {}
+            }
+        }
+    }
+}
+
+f<int> main() {
+    test(12);
+}
