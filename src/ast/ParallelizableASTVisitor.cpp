@@ -9,10 +9,13 @@ namespace spice::compiler {
 std::any ParallelizableASTVisitor::visit(const ASTNode *node) { return node->accept(this); }
 
 std::any ParallelizableASTVisitor::visitChildren(const ASTNode *node) {
-  for (const auto &child : node->children)
-    child->accept(this);
+  for (const ASTNode *child : node->children)
+    if (child != nullptr)
+      child->accept(this);
   return {};
 }
+
+// GCOV_EXCL_START
 
 std::any ParallelizableASTVisitor::visitEntry(const EntryNode *node) { return visitChildren(node); }
 
@@ -149,5 +152,7 @@ std::any ParallelizableASTVisitor::visitDataType(const DataTypeNode *node) { ret
 std::any ParallelizableASTVisitor::visitBaseDataType(const BaseDataTypeNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitCustomDataType(const CustomDataTypeNode *node) { return visitChildren(node); }
+
+// GCOV_EXCL_STOP
 
 } // namespace spice::compiler

@@ -195,7 +195,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     return llvm::ConstantStruct::get(structType, fieldConstants);
   }
 
-  throw std::runtime_error("Internal compiler error: Cannot determine default value for symbol type"); // GCOV_EXCL_LINE
+  throw CompilerError(INTERNAL_ERROR, "Cannot determine default value for symbol type"); // GCOV_EXCL_LINE
 }
 
 llvm::BasicBlock *IRGenerator::createBlock(const std::string &blockName /*=""*/) {

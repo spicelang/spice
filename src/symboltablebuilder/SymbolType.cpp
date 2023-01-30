@@ -2,9 +2,7 @@
 
 #include "SymbolType.h"
 
-#include <ranges>
-#include <stdexcept>
-
+#include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
 #include <irgenerator/StdFunctionManager.h>
 #include <model/Struct.h>
@@ -162,7 +160,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
     return static_cast<llvm::Type *>(arrayType);
   }
 
-  throw std::runtime_error("Internal compiler error: Cannot determine LLVM type of " + getName(true));
+  throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true));
 }
 
 /**

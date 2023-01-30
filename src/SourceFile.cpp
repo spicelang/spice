@@ -1,13 +1,14 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "SourceFile.h"
-#include "executionengine/ExecutionEngine.h"
 
 #include <ast/ASTBuilder.h>
 #include <astoptimizer/ASTOptimizer.h>
 #include <borrowchecker/BorrowChecker.h>
 #include <escapeanalyzer/EscapeAnalyzer.h>
 #include <exception/AntlrThrowingErrorListener.h>
+#include <exception/CompilerError.h>
+#include <executionengine/ExecutionEngine.h>
 #include <global/GlobalResourceManager.h>
 #include <importcollector/ImportCollector.h>
 #include <irgenerator/IRGenerator.h>
@@ -47,7 +48,7 @@ void SourceFile::runLexer() {
   // Read from file
   std::ifstream fileInputStream(filePath);
   if (!fileInputStream)
-    throw std::runtime_error("Source file at path '" + filePath + "' does not exist.");
+    throw CompilerError(SOURCE_FILE_NOT_FOUND, "Source file at path '" + filePath + "' does not exist.");
 
   // Create error handlers for lexer and parser
   antlrCtx.lexerErrorHandler = std::make_unique<AntlrThrowingErrorListener>(LEXER);
@@ -272,9 +273,11 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
     for (const auto &[importName, sourceFile] : dependencies)
       sourceFile.first->runTypeCheckerSecond();
 
+    // GCOV_EXCL_START
     if (runNumber >= 25)
-      throw std::runtime_error("Internal compiler error: Number of type checker runs for one source file exceeded. Please report "
-                               "this as a bug on GitHub.");
+      throw CompilerError(TYPE_CHECKER_RUNS_EXCEEDED, "Number of type checker runs for one source file exceeded. Please report "
+                                                      "this as a bug on GitHub.");
+    // GCOV_EXCL_STOP
   } while (typeChecker.reVisitRequested);
 
   // Check if all dyn variables were type-inferred successfully
@@ -598,9 +601,10 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
   std::cout << "\nSerialized " << outputName << ":\n\n" << output << "\n";
 
   // Check if the dot command exists
-  if (FileUtil::isCommandAvailable("dot")) // GCOV_EXCL_START
-    throw std::runtime_error(
-        "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable"); // GCOV_EXCL_STOP
+  // GCOV_EXCL_START
+  if (FileUtil::isCommandAvailable("dot"))
+    throw CompilerError(IO_ERROR, "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable");
+  // GCOV_EXCL_STOP
 
   // Generate SVG
   std::cout << "\nGenerating SVG file ... ";

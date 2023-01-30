@@ -664,7 +664,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     return ExprResult{node->setEvaluatedSymbolType(rhsType, manIdx)};
   }
 
-  throw std::runtime_error("Internal compiler error: AssignStmt fall-through"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "AssignStmt fall-through"); // GCOV_EXCL_LINE
 }
 
 std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
@@ -797,7 +797,7 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   else if (node->op == EqualityExprNode::OP_NOT_EQUAL) // Operator was not equal
     resultType = opRuleManager.getNotEqualResultType(node, lhsTy, rhsTy, 0);
   else
-    throw std::runtime_error("Internal compiler error: EqualityExpr fall-through"); // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
 
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx)};
 }
@@ -822,7 +822,7 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
   else if (node->op == RelationalExprNode::OP_GREATER_EQUAL) // Operator was greater equal
     resultType = OpRuleManager::getGreaterEqualResultType(node, lhsTy, rhsTy, 0);
   else
-    throw std::runtime_error("Internal compiler error: RelationalExpr fall-through"); // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "RelationalExpr fall-through"); // GCOV_EXCL_LINE
 
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx)};
 }
@@ -843,7 +843,7 @@ std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
   else if (node->op == ShiftExprNode::OP_SHIFT_RIGHT) // Operator was shr
     resultType = OpRuleManager::getShiftRightResultType(node, lhsTy, rhsTy, 0);
   else
-    throw std::runtime_error("Internal compiler error: ShiftExpr fall-through"); // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "ShiftExpr fall-through"); // GCOV_EXCL_LINE
 
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx)};
 }
@@ -868,7 +868,7 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
     else if (op == AdditiveExprNode::OP_MINUS)
       currentType = opRuleManager.getMinusResultType(node, currentType, operandType, i);
     else
-      throw std::runtime_error("Additive expr fall-through");
+      throw CompilerError(UNHANDLED_BRANCH, "AdditiveExpr fall-through"); // GCOV_EXCL_LINE
 
     // Push the new item and pop the old one on the other side of the queue
     node->opQueue.emplace(op, currentType);
@@ -900,7 +900,7 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
     else if (op == MultiplicativeExprNode::OP_REM)
       currentType = OpRuleManager::getRemResultType(node, currentType, operandType, i);
     else
-      throw std::runtime_error("Multiplicative expr fall-through");
+      throw CompilerError(UNHANDLED_BRANCH, "Multiplicative fall-through"); // GCOV_EXCL_LINE
 
     // Push the new item and pop the old one on the other side of the queue
     node->opQueue.emplace(op, currentType);
@@ -972,7 +972,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     operandType = OpRuleManager::getPrefixBitwiseAndResultType(rhsNode, operandType, 0);
     break;
   default:
-    throw std::runtime_error("Prefix unary fall-through");
+    throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   return ExprResult{node->setEvaluatedSymbolType(operandType, manIdx), operandEntry};
@@ -1074,7 +1074,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     break;
   }
   default:
-    throw std::runtime_error("PostfixUnary fall-through");
+    throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE;
   }
 
   if (lhsType.is(TY_INVALID)) {
@@ -1200,7 +1200,7 @@ std::any TypeChecker::visitValue(ValueNode *node) {
     return ExprResult{node->setEvaluatedSymbolType(nilType, manIdx)};
   }
 
-  throw std::runtime_error("Value fall-through");
+  throw CompilerError(UNHANDLED_BRANCH, "Value fall-through");
 }
 
 std::any TypeChecker::visitConstant(ConstantNode *node) {
@@ -1231,7 +1231,7 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
     superType = TY_BOOL;
     break;
   default:
-    throw std::runtime_error("Constant fall-through");
+    throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through");
   }
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(superType), manIdx)};
 }
@@ -1651,7 +1651,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       break;
     }
     default:
-      throw std::runtime_error("Modifier type fall-through");
+      throw CompilerError(UNHANDLED_BRANCH, "Modifier type fall-through"); // GCOV_EXCL_LINE
     }
     tmQueue.pop();
   }

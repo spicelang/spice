@@ -3,8 +3,8 @@
 #include "ExternalLinkerInterface.h"
 
 #include <iostream>
-#include <stdexcept>
 
+#include <exception/CompilerError.h>
 #include <exception/LinkerError.h>
 #include <global/ThreadFactory.h>
 #include <util/FileUtil.h>
@@ -23,7 +23,7 @@ void ExternalLinkerInterface::link() const {
 
   // Check if the output path was set
   if (outputPath.empty())
-    throw std::runtime_error("Internal compiler error: Output path for the linker was not set"); // GCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Output path for the linker was not set"); // GCOV_EXCL_LINE
 
   // Build the linker command
   std::stringstream linkerCommandBuilder;

@@ -9,6 +9,7 @@
 
 #include <ast/ASTVisitor.h>
 #include <ast/ParallelizableASTVisitor.h>
+#include <exception/CompilerError.h>
 #include <model/Function.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
@@ -93,7 +94,7 @@ public:
 
   void replaceInParent(ASTNode *replacementNode) {
     assert(parent != nullptr);
-    for (auto &child : parent->children) {
+    for (ASTNode *child : parent->children) {
       if (child == this) {
         // Replace in children vector
         child = replacementNode;
@@ -106,11 +107,10 @@ public:
 
   void removeFromParent() {
     assert(parent != nullptr);
-    for (size_t i = 0; i < parent->children.size(); i++) {
-      ASTNode *child = parent->children.at(i);
+    for (ASTNode *child : parent->children) {
       if (child == this) {
         // Remove from children vector
-        parent->children.erase(parent->children.begin() + (long)i);
+        child = nullptr;
         // De-allocate subtree
         delete this;
         break;
@@ -142,7 +142,7 @@ public:
     if (!symbolTypes.empty() && !symbolTypes.at(idx).is(TY_INVALID))
       return symbolTypes.at(idx);
     if (children.size() != 1)
-      throw std::runtime_error("Cannot deduce evaluated symbol type");
+      throw CompilerError(INTERNAL_ERROR, "Cannot deduce evaluated symbol type");
     return children.front()->getEvaluatedSymbolType(idx);
   }
 

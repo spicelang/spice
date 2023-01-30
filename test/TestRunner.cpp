@@ -9,15 +9,17 @@
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
 
-#include "symboltablebuilder/SymbolTable.h"
 #include "util/TestUtil.h"
+
 #include <SourceFile.h>
 #include <cli/CLIInterface.h>
+#include <exception/CompilerError.h>
 #include <exception/IRError.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
+#include <symboltablebuilder/SymbolTable.h>
 #include <util/FileUtil.h>
 
 using namespace spice::compiler;
@@ -152,7 +154,7 @@ void execTestCase(const TestCase &testCase) {
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           resourceManager.linker.addLinkerFlag(linkerFlag);
 
-      // Emit object files
+      // Emit main source file object
       mainSourceFile.runObjectEmitter();
       mainSourceFile.concludeCompilation();
 
@@ -181,10 +183,16 @@ void execTestCase(const TestCase &testCase) {
     TestUtil::handleError(testCase, error);
   } catch (IRError &error) {
     TestUtil::handleError(testCase, error);
+  } catch (CompilerError &error) {
+    TestUtil::handleError(testCase, error);
   }
 
   SUCCEED();
 }
+
+class CommonTests : public testing::TestWithParam<TestCase> {};
+TEST_P(CommonTests, ) { execTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, CommonTests, testing::ValuesIn(TestUtil::collectTestCases("common", false)), TestUtil::NameResolver());
 
 class LexerTests : public testing::TestWithParam<TestCase> {};
 TEST_P(LexerTests, ) { execTestCase(GetParam()); }

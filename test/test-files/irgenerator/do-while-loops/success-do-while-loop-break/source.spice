@@ -1,0 +1,14 @@
+f<int> main() {
+    double loopCounterOuter = 0.0;
+    do {
+        if (loopCounterOuter < 4) {
+            short loopCounterInner = 10s;
+            do {
+                printf("Outer: %f, inner: %d\n", loopCounterOuter, loopCounterInner);
+                loopCounterInner--;
+                break 2;
+            } while (loopCounterInner > 0);
+        }
+        loopCounterOuter += 0.15;
+    } while (loopCounterOuter < 10);
+}

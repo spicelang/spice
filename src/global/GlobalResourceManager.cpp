@@ -17,13 +17,13 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTargetAsmPrinter();
-  } else {
+  } else { // GCOV_EXCL_START
     llvm::InitializeAllTargets();
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmParsers();
     llvm::InitializeAllAsmPrinters();
-  }
+  } // GCOV_EXCL_STOP
 
   // Search after selected target
   std::string error;

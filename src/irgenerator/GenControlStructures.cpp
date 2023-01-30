@@ -84,8 +84,8 @@ std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
   // Verify function
   std::string output;
   llvm::raw_string_ostream oss(output);
-  if (llvm::verifyFunction(*threadFct, &oss))
-    throw IRError(node->codeLoc, INVALID_FUNCTION, oss.str());
+  if (llvm::verifyFunction(*threadFct, &oss))                  // GCOV_EXCL_LINE
+    throw IRError(node->codeLoc, INVALID_FUNCTION, oss.str()); // GCOV_EXCL_LINE
 
   // Change back to the original block
   builder.SetInsertPoint(bOriginal);

@@ -67,7 +67,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
         result.value = conversionManager.getXorEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       default:
-        throw std::runtime_error("Assign op fall-through");
+        throw CompilerError(UNHANDLED_BRANCH, "Assign op fall-through"); // GCOV_EXCL_LINE
       }
 
       if (result.ptr) { // The operation allocated more memory
@@ -83,7 +83,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
   }
 
   // This is a fallthrough case -> throw an error
-  throw std::runtime_error("Internal compiler error: Assign stmt fall-through"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "AssignStmt fall-through"); // GCOV_EXCL_LINE
 }
 
 std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
@@ -328,7 +328,7 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
     result = conversionManager.getNotEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   default:
-    throw std::runtime_error("Equality expr fall-through");
+    throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   // Return the result
@@ -369,7 +369,7 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
     result = conversionManager.getGreaterEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   default:
-    throw std::runtime_error("Relational expr fall-through");
+    throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   // Return the result
@@ -404,7 +404,7 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
     result = conversionManager.getShiftRightInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   default:
-    throw std::runtime_error("Shift expr fall-through");
+    throw CompilerError(UNHANDLED_BRANCH, "ShiftExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   // Return the result
@@ -444,7 +444,7 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
       result.value = conversionManager.getMinusInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
       break;
     default:
-      throw std::runtime_error("Additive expr fall-through");
+      throw CompilerError(UNHANDLED_BRANCH, "AdditiveExpr fall-through"); // GCOV_EXCL_LINE
     }
 
     // Retrieve the new lhs symbol type
@@ -500,7 +500,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
       result.value = conversionManager.getRemInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
       break;
     default:
-      throw std::runtime_error("Additive expr fall-through");
+      throw CompilerError(UNHANDLED_BRANCH, "MultiplicativeExpr fall-through"); // GCOV_EXCL_LINE
     }
 
     // Retrieve the new lhs symbol type
@@ -663,7 +663,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     break;
   }
   default:
-    throw std::runtime_error("PrefixUnary fall-through");
+    throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   return lhs;
@@ -781,7 +781,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     break;
   }
   default:
-    throw std::runtime_error("PostfixUnary fall-through");
+    throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   return lhs;

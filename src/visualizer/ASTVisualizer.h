@@ -267,7 +267,7 @@ private:
       return "BaseDataType";
     if (std::is_same<CustomDataTypeNode, T>())
       return "CustomDataType";
-    throw std::runtime_error("Unknown node name");
+    throw CompilerError(UNHANDLED_BRANCH, "Unknown node in AST visualizer"); // GCOV_EXCL_LINE
   }
 
   [[nodiscard]] std::string getSpaces() const;
