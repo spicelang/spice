@@ -354,7 +354,9 @@ std::any TypeChecker::visitField(FieldNode *node) {
 
 std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Visit return type
-  auto returnType = std::any_cast<SymbolType>(visit(node->dataType()));
+  SymbolType returnType(TY_DYN);
+  if (node->signatureType == SignatureNode::TYPE_FUNCTION)
+    returnType = std::any_cast<SymbolType>(visit(node->dataType()));
 
   // Visit params
   ParamList paramTypes;
