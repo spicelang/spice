@@ -67,6 +67,7 @@ std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
     if (rule = dynamic_cast<SpiceParser::ParamLstContext *>(subTree); rule != nullptr) { // ArgLstDef
       currentNode = mainFctDefNode->createChild<ParamLstNode>(CodeLoc(rule->start, filePath));
       mainFctDefNode->takesArgs = true;
+      isParam = true;
     } else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
       currentNode = mainFctDefNode->createChild<StmtLstNode>(CodeLoc(rule->start, filePath));
     else
@@ -75,6 +76,7 @@ std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
     if (currentNode != mainFctDefNode) {
       visit(rule);
       currentNode = mainFctDefNode;
+      isParam = false;
     }
   }
   return nullptr;
@@ -99,6 +101,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     } else if (rule = dynamic_cast<SpiceParser::ParamLstContext *>(subTree); rule != nullptr) { // ParamLst
       currentNode = fctDefNode->createChild<ParamLstNode>(CodeLoc(rule->start, filePath));
       fctDefNode->hasParams = true;
+      isParam = true;
     } else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
       currentNode = fctDefNode->createChild<StmtLstNode>(CodeLoc(rule->start, filePath));
     else
@@ -107,6 +110,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     if (currentNode != fctDefNode) {
       visit(rule);
       currentNode = fctDefNode;
+      isParam = false;
     }
   }
 
@@ -134,6 +138,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
     } else if (rule = dynamic_cast<SpiceParser::ParamLstContext *>(subTree); rule != nullptr) { // ParamLst
       currentNode = procDefNode->createChild<ParamLstNode>(CodeLoc(rule->start, filePath));
       procDefNode->hasParams = true;
+      isParam = true;
     } else if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
       currentNode = procDefNode->createChild<StmtLstNode>(CodeLoc(rule->start, filePath));
     else
@@ -142,6 +147,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
     if (currentNode != procDefNode) {
       visit(rule);
       currentNode = procDefNode;
+      isParam = false;
     }
   }
 
@@ -199,9 +205,10 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
         currentNode = structDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
         structDefNode->hasInterfaces = true;
       }
-    } else if (rule = dynamic_cast<SpiceParser::FieldContext *>(subTree); rule != nullptr) // Field
+    } else if (rule = dynamic_cast<SpiceParser::FieldContext *>(subTree); rule != nullptr) { // Field
       currentNode = structDefNode->createChild<FieldNode>(CodeLoc(rule->start, filePath));
-    else {
+      isField = true;
+    } else {
       auto token = dynamic_cast<TerminalNode *>(subTree);
       assert(token); // Fail if we did not get a terminal
       if (token->getSymbol()->getType() == SpiceParser::STRUCT)
@@ -211,6 +218,7 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
     if (currentNode != structDefNode) {
       visit(rule);
       currentNode = structDefNode;
+      isField = false;
     }
   }
   return nullptr;
@@ -865,6 +873,7 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 
   // Extract var name
   declStmtNode->varName = getIdentifier(ctx->IDENTIFIER());
+  declStmtNode->isParam = isParam;
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
@@ -1780,6 +1789,9 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
   auto customDataTypeNode = static_cast<CustomDataTypeNode *>(currentNode);
   customDataTypeNode->reserveChildren(ctx->children.size());
   saveErrorMessage(customDataTypeNode, ctx);
+
+  customDataTypeNode->isParamType = isParam;
+  customDataTypeNode->isFieldType = isField;
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;

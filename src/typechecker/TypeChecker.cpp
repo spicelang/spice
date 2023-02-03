@@ -403,7 +403,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
 
     // References with no initialization are illegal
-    if (localVarType.isRef() && !node->isParam())
+    if (localVarType.isRef() && !node->isParam)
       throw SemanticError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
   }
 
@@ -1248,7 +1248,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     for (AssignExprNode *arg : node->argLst()->args()) {
       // Visit argument
       const SymbolType argType = any_cast<ExprResult>(visit(arg)).type;
-      assert(!argType.isBaseType(TY_GENERIC));
+      assert(!argType.hasAnyGenericParts());
       // Save arg type to arg types list
       data.argTypes.push_back(argType);
     }
@@ -1737,30 +1737,34 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return SymbolType(TY_INT);
 
   if (entryType.is(TY_STRUCT)) {
-    // Check if struct is defined before the current code location
+    // Check if struct is defined before the current code location, if defined in the same source file
     if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
       throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
 
+    const bool isParamOrFieldType = node->isParamType || node->isFieldType;
+
     // Collect the concrete template types
-    std::vector<SymbolType> concreteTemplateTypes;
+    std::vector<SymbolType> templateTypes;
     if (node->templateTypeLst()) {
-      concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
+      templateTypes.reserve(node->templateTypeLst()->dataTypes().size());
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
-        auto concreteType = std::any_cast<SymbolType>(visit(dataType));
-        // Check if generic type
-        if (concreteType.is(TY_GENERIC))
+        auto templateType = std::any_cast<SymbolType>(visit(dataType));
+        // Generic types are only allowed for parameters and fields at this point
+        if (templateType.is(TY_GENERIC) && !isParamOrFieldType)
           throw SemanticError(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here");
-        concreteTemplateTypes.push_back(concreteType);
+        templateTypes.push_back(templateType);
       }
-      entryType.setTemplateTypes(concreteTemplateTypes);
+      entryType.setTemplateTypes(templateTypes);
     }
 
-    // Set the struct instance to used, if found
-    // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
-    const std::string structName = node->typeNameFragments.back();
-    Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, concreteTemplateTypes, node);
-    if (spiceStruct)
-      entryType.setStructBodyScope(spiceStruct->structScope);
+    if (!isParamOrFieldType) { // Only do the next step, if we have concrete template types
+      // Set the struct instance to used, if found
+      // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
+      const std::string structName = node->typeNameFragments.back();
+      Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
+      if (spiceStruct)
+        entryType.setStructBodyScope(spiceStruct->structScope);
+    }
 
     return node->setEvaluatedSymbolType(entryType, manIdx);
   }

@@ -1,3 +1,20 @@
+//import "std/data/red-black-tree";
+
+type T int|double;
+
+type Node<T> struct {
+    T data
+}
+
+f<int> test<T>(Node<T, Node<T>> test) {
+    return 1;
+}
+
 f<int> main() {
-    printf("Result: %d", sizeof(type int));
+    dyn node = Node<Node<int>>{ Node<int>{ 12 } };
+    test(node);
+    /*RedBlackTree<int> tree = RedBlackTree<int>();
+    tree.insert(12);
+    tree.insert(5);
+    tree.insert(7);*/
 }

@@ -48,6 +48,7 @@ public:
   Scope *structScope = nullptr;
   ASTNode *declNode;
   bool genericSubstantiation = false;
+  bool alreadyTypeChecked = false;
   bool used = false;
 
   // Json serializer/deserializer

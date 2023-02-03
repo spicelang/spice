@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <typechecker/FunctionManager.h>
+#include <model/GenericType.h>
 
 namespace spice::compiler {
 
@@ -15,7 +15,9 @@ class Struct;
 class Scope;
 class SymbolType;
 class ASTNode;
+struct CodeLoc;
 
+// Typedefs
 using StructManifestationList = std::unordered_map</*mangledName=*/std::string, /*structObject=*/Struct>;
 using StructRegistry = std::unordered_map</*codeLoc=*/std::string, /*manifestations=*/StructManifestationList>;
 

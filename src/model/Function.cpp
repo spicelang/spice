@@ -181,9 +181,9 @@ bool Function::hasSubstantiatedParams() const {
  */
 bool Function::hasSubstantiatedGenerics() const {
   for (const SymbolType &templateType : thisType.getTemplateTypes())
-    if (templateType.isBaseType(TY_GENERIC))
+    if (templateType.hasAnyGenericParts())
       return false;
-  return templateTypes.empty() && !thisType.isBaseType(TY_GENERIC) && !returnType.isBaseType(TY_GENERIC);
+  return templateTypes.empty() && !thisType.hasAnyGenericParts() && !returnType.hasAnyGenericParts();
 }
 
 /**

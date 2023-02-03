@@ -20,6 +20,7 @@ namespace spice::compiler {
 class SymbolTable;
 class ASTNode;
 class Scope;
+class GenericType;
 
 // Constants
 const char *const STROBJ_NAME = "String";
@@ -161,26 +162,27 @@ public:
     return typeChainCopy;
   }
   [[nodiscard]] inline SymbolType removeReferenceWrappers() const { return SymbolType(getTypeChainWithoutReferences()); }
-  [[nodiscard]] SymbolType getBaseType() const { return SymbolType({typeChain.front()}); }
+  [[nodiscard]] SymbolType getBaseType() const {
+    assert(!typeChain.empty());
+    return SymbolType({typeChain.front()});
+  }
+  [[nodiscard]] bool hasAnyGenericParts() const;
   void setTemplateTypes(const std::vector<SymbolType> &templateTypes);
   void setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes);
   [[nodiscard]] inline const std::vector<SymbolType> &getTemplateTypes() const { return typeChain.back().templateTypes; }
+  [[nodiscard]] bool isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
-  [[nodiscard]] long getArraySize() const;
+  [[nodiscard]] size_t getArraySize() const;
   void setSigned(bool value = true);
   [[nodiscard]] bool isSigned() const;
   void setStructBodyScope(Scope *bodyScope);
   [[nodiscard]] Scope *getStructBodyScope() const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
-  bool equalsIgnoreArraySize(const SymbolType &otherType) const;
+  [[nodiscard]] bool equalsIgnoreArraySize(const SymbolType &otherType) const;
 
   // Public members
   TypeChain typeChain;
-
-protected:
-  // Protected methods
-  void setSubType(const std::string &newSubType);
 
 private:
   // Private methods

@@ -107,14 +107,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     for (const NamedParam &param : namedParamList) {
       paramNames.push_back(param.name);
       paramTypes.push_back({param.type, param.isOptional});
-      if (!param.type.getBaseType().is(TY_GENERIC))
-        continue;
       // Check if the type is present in the template for generic types
-      const bool found = std::any_of(usedGenericTypes.begin(), usedGenericTypes.end(),
-                                     [&](const GenericType &t) { return t == param.type.getBaseType(); });
-      if (!found)
+      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
-                            "Generic argument type not included in function template types");
+                            "Generic param type not included in the template type list of the function");
     }
   }
 
@@ -210,14 +206,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     for (const NamedParam &param : namedParamList) {
       paramNames.push_back(param.name);
       paramTypes.push_back({param.type, param.isOptional});
-      if (!param.type.getBaseType().is(TY_GENERIC))
-        continue;
       // Check if the type is present in the template for generic types
-      const bool found = std::none_of(usedGenericTypes.begin(), usedGenericTypes.end(),
-                                      [&](const GenericType &t) { return t == param.type.getBaseType(); });
-      if (found)
+      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
-                            "Generic argument type not included in procedure template types");
+                            "Generic param type not included in the template type list of the procedure");
     }
   }
 
@@ -309,17 +301,9 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     // Add to field types
     fieldTypes.push_back(fieldType);
 
-    // Update type of field entry
-    SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
-    assert(fieldEntry != nullptr);
-    fieldEntry->updateType(fieldType, false);
-
-    if (!fieldType.isBaseType(TY_GENERIC))
-      continue;
-
     // Check if the template type list contains this type
-    if (std::none_of(usedTemplateTypesGeneric.begin(), usedTemplateTypesGeneric.end(),
-                     [&](const GenericType &t) { return t == fieldType.getBaseType(); }))
+    if (fieldType.hasAnyGenericParts() && std::none_of(usedTemplateTypesGeneric.begin(), usedTemplateTypesGeneric.end(),
+                                                       [&](const GenericType &t) { return t == fieldType.getBaseType(); }))
       throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
   }
 
@@ -425,7 +409,8 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   typeConditions.reserve(node->typeAltsLst()->dataTypes().size());
   for (const auto &typeAlt : node->typeAltsLst()->dataTypes()) {
     auto typeCondition = std::any_cast<SymbolType>(visit(typeAlt));
-    typeConditions.push_back(typeCondition);
+    if (!typeCondition.is(TY_DYN))
+      typeConditions.push_back(typeCondition);
   }
 
   // Add generic type to the scope
