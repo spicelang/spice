@@ -242,12 +242,12 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
 std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   std::vector<SymbolType> usedTemplateTypes;
-  std::vector<GenericType> usedTemplateTypesGeneric;
+  std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve struct template types
   if (node->isGeneric) {
     usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
-    usedTemplateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
+    templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
@@ -258,7 +258,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
       GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedTemplateTypes.push_back(*genericType);
-      usedTemplateTypesGeneric.push_back(*genericType);
+      templateTypesGeneric.push_back(*genericType);
     }
   }
 
@@ -307,7 +307,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     fieldEntry->updateType(fieldType, false);
 
     // Check if the template type list contains this type
-    if (!fieldType.isCoveredByGenericTypeList(usedTemplateTypesGeneric))
+    if (!fieldType.isCoveredByGenericTypeList(templateTypesGeneric))
       throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
   }
 
@@ -316,14 +316,9 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   assert(currentScope->type == SCOPE_GLOBAL);
 
   // Build struct object
-  Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, usedTemplateTypesGeneric, interfaceTypes,
-                     node);
+  Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, templateTypesGeneric, interfaceTypes, node);
   node->spiceStruct = StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
   spiceStruct.structScope = node->structScope;
-
-  // Check for infinite size
-  // if (spiceStruct.hasInfiniteSize())
-  //  throw SemanticError(node, STRUCT_INFINITE_SIZE, "This struct was detected as infinite sized");
 
   return nullptr;
 }
