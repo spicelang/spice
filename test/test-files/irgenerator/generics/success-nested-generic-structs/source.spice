@@ -7,6 +7,5 @@ type Node<T, U> struct {
 }
 
 f<int> main() {
-    dyn node = Node<Node<Node<string, double>, int>, double>{};
-    printf("%f", node.data2);
+    dyn node = Node<Node<Node<Node<Node<string, double>, int>, double>, int>, double>{};
 }

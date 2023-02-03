@@ -1691,6 +1691,7 @@ public:
   std::vector<SymbolTableEntry *> customTypes;
   bool isParamType = false;
   bool isFieldType = false;
+  bool isReturnType = false;
 };
 
 } // namespace spice::compiler

@@ -91,9 +91,10 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
       currentNode = fctDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
       currentNode = fctDefNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::FctNameContext *>(subTree); rule != nullptr) // FctName
+      isReturnType = true;
+    } else if (rule = dynamic_cast<SpiceParser::FctNameContext *>(subTree); rule != nullptr) // FctName
       currentNode = fctDefNode->createChild<FctNameNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
       currentNode = fctDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
@@ -111,6 +112,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
       visit(rule);
       currentNode = fctDefNode;
       isParam = false;
+      isReturnType = false;
     }
   }
 
@@ -1792,6 +1794,7 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
 
   customDataTypeNode->isParamType = isParam;
   customDataTypeNode->isFieldType = isField;
+  customDataTypeNode->isReturnType = isReturnType;
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;

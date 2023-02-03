@@ -1741,7 +1741,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
       throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
 
-    const bool isParamOrFieldType = node->isParamType || node->isFieldType;
+    const bool isParamOrFieldOrReturnType = node->isParamType || node->isFieldType || node->isReturnType;
 
     // Collect the concrete template types
     std::vector<SymbolType> templateTypes;
@@ -1750,14 +1750,14 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
         auto templateType = std::any_cast<SymbolType>(visit(dataType));
         // Generic types are only allowed for parameters and fields at this point
-        if (templateType.is(TY_GENERIC) && !isParamOrFieldType)
+        if (templateType.is(TY_GENERIC) && !isParamOrFieldOrReturnType)
           throw SemanticError(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here");
         templateTypes.push_back(templateType);
       }
       entryType.setTemplateTypes(templateTypes);
     }
 
-    if (!node->templateTypeLst() || !isParamOrFieldType) { // Only do the next step, if we have concrete template types
+    if (!node->templateTypeLst() || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
       // Set the struct instance to used, if found
       // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
       const std::string structName = node->typeNameFragments.back();
