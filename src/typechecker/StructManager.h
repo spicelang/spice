@@ -36,6 +36,8 @@ private:
   [[nodiscard]] static bool matchTemplateTypes(Struct &candidate, const std::vector<SymbolType> &requestedTemplateTypes,
                                                TypeMapping &typeMapping);
   static void substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping);
+  [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Struct &candidate,
+                                                                          const std::string &templateTypeName);
 };
 
 } // namespace spice::compiler

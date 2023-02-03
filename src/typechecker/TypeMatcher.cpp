@@ -24,7 +24,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
     if (typeMapping.contains(genericTypeName)) {
       const SymbolType &knownConcreteType = typeMapping.at(candidateType.getSubType());
       // Check if the known concrete type matches the requested type
-      return knownConcreteType != requestedType;
+      return knownConcreteType == requestedType;
     } else {
       // Retrieve generic candidate type by its name
       const GenericType *genericCandidateType = resolveGenericType(genericTypeName);

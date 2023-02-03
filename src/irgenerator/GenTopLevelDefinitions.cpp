@@ -470,7 +470,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
       fieldTypes.reserve(node->fields().size());
       for (const FieldNode *field : node->fields()) {
         SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
-        assert(fieldEntry && !fieldEntry->getType().is(TY_GENERIC));
+        assert(fieldEntry && !fieldEntry->getType().hasAnyGenericParts());
         fieldTypes.push_back(fieldEntry->getType().toLLVMType(context, currentScope));
       }
 

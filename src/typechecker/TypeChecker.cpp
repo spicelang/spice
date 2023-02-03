@@ -1757,7 +1757,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       entryType.setTemplateTypes(templateTypes);
     }
 
-    if (!isParamOrFieldType) { // Only do the next step, if we have concrete template types
+    if (!node->templateTypeLst() || !isParamOrFieldType) { // Only do the next step, if we have concrete template types
       // Set the struct instance to used, if found
       // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
       const std::string structName = node->typeNameFragments.back();

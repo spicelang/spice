@@ -301,9 +301,13 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     // Add to field types
     fieldTypes.push_back(fieldType);
 
+    // Update type of field entry
+    SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
+    assert(fieldEntry != nullptr);
+    fieldEntry->updateType(fieldType, false);
+
     // Check if the template type list contains this type
-    if (fieldType.hasAnyGenericParts() && std::none_of(usedTemplateTypesGeneric.begin(), usedTemplateTypesGeneric.end(),
-                                                       [&](const GenericType &t) { return t == fieldType.getBaseType(); }))
+    if (!fieldType.isCoveredByGenericTypeList(usedTemplateTypesGeneric))
       throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
   }
 

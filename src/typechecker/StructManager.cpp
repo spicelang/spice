@@ -6,6 +6,7 @@
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {
 
@@ -178,44 +179,23 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
   if (typeCount != candidate.templateTypes.size())
     return false;
 
-  // Loop over all candidate template types and collect the concrete fill-ins
-  std::vector<GenericType> concreteTemplateTypes;
-  concreteTemplateTypes.reserve(typeCount);
+  // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
     const SymbolType &requestedType = requestedTemplateTypes.at(i);
-    const GenericType &candidateType = candidate.templateTypes.at(i);
+    SymbolType &candidateType = candidate.templateTypes.at(i);
 
-    if (candidateType.is(TY_GENERIC)) { // Type is generic
-      const std::string candidateTypeName = candidateType.getSubType();
+    // Give the type matcher a way to retrieve instances of GenericType by their name
+    std::function<const GenericType *(const std::string &)> genericTypeResolver = [=](const std::string &genericTypeName) {
+      return getGenericTypeOfCandidateByName(candidate, genericTypeName);
+    };
 
-      // Check if the name is already assigned to a type
-      if (typeMapping.contains(candidateTypeName) && typeMapping.at(candidateTypeName) != requestedType)
-        return false; // Contradictory information
+    // Check if the requested param type matches the candidate template type. The type mapping may be extended
+    if (!TypeMatcher::matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver))
+      return false;
 
-      // Check if the proposal matches the candidates conditions
-      if (!candidateType.checkConditionsOf(requestedType))
-        return false;
-
-      // Add to the type mapping
-      typeMapping.insert({candidateTypeName, requestedType});
-    } else { // Type is non-generic
-      // Check if the types match
-      if (requestedType != candidateType)
-        return false;
-    }
-    // Insert the requested type to the concrete types list
-    concreteTemplateTypes.emplace_back(requestedType);
-  }
-
-  // Set the concrete type list to the candidate
-  candidate.templateTypes = concreteTemplateTypes;
-
-  // Substantiate field types
-  for (SymbolType &fieldType : candidate.fieldTypes) {
-    if (!fieldType.is(TY_GENERIC))
-      continue;
-    const std::string genericTypeName = fieldType.getSubType();
-    fieldType = fieldType.replaceBaseType(typeMapping.at(genericTypeName));
+    // Substantiate the candidate param type, based on the type mapping
+    if (candidateType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping);
   }
 
   return true;
@@ -223,15 +203,26 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
 
 void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping) {
   // Loop over all field types and substantiate the generic ones
-  for (SymbolType &fieldType : candidate.fieldTypes) {
-    // Skip non-generic types
-    if (!fieldType.isBaseType(TY_GENERIC))
+  for (SymbolType &fieldType : candidate.fieldTypes)
+    if (fieldType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
+}
+
+/**
+ * Searches the candidate template types for a generic type object with a certain name and return it
+ *
+ * @param candidate Matching candidate struct
+ * @param templateTypeName Template type name
+ * @return Generic type object
+ */
+const GenericType *StructManager::getGenericTypeOfCandidateByName(const Struct &candidate, const std::string &templateTypeName) {
+  for (const GenericType &templateType : candidate.templateTypes) {
+    if (!templateType.is(TY_GENERIC))
       continue;
-    // Substantiate generic types
-    const std::string genericTypeName = fieldType.getBaseType().getSubType();
-    assert(typeMapping.contains(genericTypeName));
-    fieldType = fieldType.replaceBaseType(typeMapping.at(genericTypeName));
+    if (templateType.getSubType() == templateTypeName)
+      return &templateType;
   }
+  return nullptr;
 }
 
 } // namespace spice::compiler

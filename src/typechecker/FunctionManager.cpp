@@ -344,7 +344,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
  */
 const GenericType *FunctionManager::getGenericTypeOfCandidateByName(const Function &candidate,
                                                                     const std::string &templateTypeName) {
-  for (const auto &templateType : candidate.templateTypes) {
+  for (const GenericType &templateType : candidate.templateTypes) {
     if (templateType.getSubType() == templateTypeName)
       return &templateType;
   }

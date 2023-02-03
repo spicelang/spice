@@ -1,20 +1,20 @@
-//import "std/data/red-black-tree";
-
-type T int|double;
-
-type Node<T> struct {
-    T data
-}
-
-f<int> test<T>(Node<T, Node<T>> test) {
-    return 1;
-}
+import "std/io/dir" as dir;
 
 f<int> main() {
-    dyn node = Node<Node<int>>{ Node<int>{ 12 } };
-    test(node);
-    /*RedBlackTree<int> tree = RedBlackTree<int>();
+    printf("Existing before create: %d\n", dirExists("./test"));
+    dyn mkReturnCode = mkDir("./test", dir::MODE_ALL_RWX);
+    printf("mkDir return code: %d\n", mkReturnCode);
+    printf("Existing after create: %d\n", dirExists("./test"));
+    dyn rmReturnCode = rmDir("./test");
+    printf("rmDir return code: %d\n", rmReturnCode);
+    printf("Existing after delete: %d\n", dirExists("./test"));
+}
+
+/*import "std/data/red-black-tree";
+
+f<int> main() {
+    RedBlackTree<int> tree = RedBlackTree<int>();
     tree.insert(12);
     tree.insert(5);
-    tree.insert(7);*/
-}
+    tree.insert(7);
+}*/
