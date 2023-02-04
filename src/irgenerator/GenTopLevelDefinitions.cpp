@@ -443,9 +443,17 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
 
 std::any IRGenerator::visitStructDef(const StructDefNode *node) {
   // Get all substantiated structs which result from this struct def
-  StructManifestationList *manifestations = StructManager::getManifestationList(currentScope, node->codeLoc);
-  if (manifestations) {
-    for (auto &[mangledName, spiceStruct] : *manifestations) {
+  StructManifestationList *manifestationList = StructManager::getManifestationList(currentScope, node->codeLoc);
+  if (manifestationList) {
+    std::vector<std::pair<std::string, Struct>> manifestations(manifestationList->begin(), manifestationList->end());
+
+    // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
+    std::sort(manifestations.begin(), manifestations.end(),
+              [](const std::pair<std::string, Struct> &lhs, const std::pair<std::string, Struct> &rhs) {
+                return lhs.second.manifestationIndex < rhs.second.manifestationIndex;
+              });
+
+    for (auto &[mangledName, spiceStruct] : manifestations) {
       // Skip structs, that are not fully substantiated
       if (!spiceStruct.isFullySubstantiated())
         continue;
@@ -470,7 +478,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
       fieldTypes.reserve(node->fields().size());
       for (const FieldNode *field : node->fields()) {
         SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
-        assert(fieldEntry && !fieldEntry->getType().is(TY_GENERIC));
+        assert(fieldEntry && !fieldEntry->getType().hasAnyGenericParts());
         fieldTypes.push_back(fieldEntry->getType().toLLVMType(context, currentScope));
       }
 

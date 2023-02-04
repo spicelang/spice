@@ -36,7 +36,6 @@ public:
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
-  // bool hasInfiniteSize(Scope *anchorScope = nullptr) const;
 
   // Public members
   std::string name;
@@ -47,7 +46,9 @@ public:
   SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
   ASTNode *declNode;
+  size_t manifestationIndex = 0;
   bool genericSubstantiation = false;
+  bool alreadyTypeChecked = false;
   bool used = false;
 
   // Json serializer/deserializer

@@ -83,6 +83,4 @@ int main(int argc, char **argv) {
     std::cout << e.what() << "\n";
     return EXIT_FAILURE;
   }
-
-  return EXIT_SUCCESS;
 }

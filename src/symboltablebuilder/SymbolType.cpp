@@ -5,6 +5,7 @@
 #include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
 #include <irgenerator/StdFunctionManager.h>
+#include <model/GenericType.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
@@ -186,6 +187,21 @@ bool SymbolType::isSameContainerTypeAs(const SymbolType &otherType) const {
 }
 
 /**
+ * Checks if the base type is generic itself or has generic parts in its template types
+ *
+ * @return Contains generic parts or not
+ */
+bool SymbolType::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
+  const SymbolType &baseType = getBaseType();
+  // Check if the type itself is generic
+  if (baseType.is(TY_GENERIC))
+    return true;
+  // Check if the type has generic template types
+  const auto templateTypes = baseType.getTemplateTypes();
+  return std::any_of(templateTypes.begin(), templateTypes.end(), [](const SymbolType &t) { return t.hasAnyGenericParts(); });
+}
+
+/**
  * Set the list of templates types
  */
 void SymbolType::setTemplateTypes(const std::vector<SymbolType> &templateTypes) {
@@ -201,6 +217,19 @@ void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTyp
   typeChain.front().templateTypes = templateTypes;
 }
 
+bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const {
+  const SymbolType baseType = getBaseType();
+  // Check if the symbol type itself is generic
+  if (baseType.is(TY_GENERIC))
+    return std::any_of(genericTypeList.begin(), genericTypeList.end(), [=](const GenericType &t) { return t == baseType; });
+  // Check if all template types are covered
+  for (const SymbolType &templateType : baseType.getTemplateTypes()) {
+    if (!templateType.isCoveredByGenericTypeList(genericTypeList))
+      return false;
+  }
+  return true;
+}
+
 /**
  * Get the name of the symbol type as a string
  *
@@ -212,7 +241,7 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLI
   // Copy the chain to not destroy the present one
   TypeChain chainCopy = typeChain;
   // Loop through all items
-  for (TypeChainElement &chainElement : chainCopy)
+  for (const TypeChainElement &chainElement : chainCopy)
     name << getNameFromChainElement(chainElement, withSize, mangledName);
   return name.str();
 }
@@ -225,7 +254,7 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLI
  *
  * @return Size
  */
-long SymbolType::getArraySize() const {
+size_t SymbolType::getArraySize() const {
   assert(getSuperType() == TY_ARRAY);
   return typeChain.back().data.arraySize;
 }
@@ -299,16 +328,6 @@ bool SymbolType::equalsIgnoreArraySize(const SymbolType &otherType) const {
       return false;
   }
   return true;
-}
-
-/**
- * Set the sub type of the top element
- *
- * @param newSubType New sub type
- */
-void SymbolType::setSubType(const std::string &newSubType) {
-  assert(!typeChain.empty());
-  typeChain.back().subType = newSubType;
 }
 
 /**

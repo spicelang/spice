@@ -6,6 +6,7 @@
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeChecker.h>
+#include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {
 
@@ -138,6 +139,8 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  */
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
                                          const std::vector<SymbolType> &requestedParamTypes, const ASTNode *callNode) {
+  assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT}));
+
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
@@ -171,6 +174,10 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       if (!matchArgTypes(candidate, requestedParamTypes, candidate.typeMapping))
         continue; // Leave this manifestation and try the next one
 
+      // We found a match! -> Set the actual candidate and its entry to used
+      candidate.used = true;
+      candidate.entry->used = true;
+
       const SymbolType &thisType = candidate.thisType;
       if (!thisType.is(TY_DYN)) {
         // Update struct scope of 'this' type to the substantiated struct scope
@@ -183,10 +190,6 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
         matchScope = substantiatedStructBodyScope;
       }
 
-      // We found a match! -> Set the actual candidate and its entry to used
-      candidate.used = true;
-      candidate.entry->used = true;
-
       // Check if the function is generic needs to be substantiated
       if (presetFunction.templateTypes.empty()) {
         assert(matchScope->functions.contains(defCodeLocStr) && matchScope->functions.at(defCodeLocStr).contains(mangledName));
@@ -198,12 +201,9 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       // Clear template types of candidate, since they are not needed anymore
       candidate.templateTypes.clear();
 
-      // Replace return type with concrete type
-      if (candidate.returnType.isBaseType(TY_GENERIC)) {
-        const std::string genericReturnTypeName = candidate.returnType.getBaseType().getSubType();
-        assert(candidate.typeMapping.contains(genericReturnTypeName));
-        candidate.returnType = candidate.returnType.replaceBaseType(candidate.typeMapping.at(genericReturnTypeName));
-      }
+      // Substantiate return type
+      if (candidate.returnType.hasAnyGenericParts())
+        TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType, candidate.typeMapping);
 
       // Check if we already have this manifestation and can simply re-use it
       if (matchScope->functions.at(defCodeLocStr).contains(candidate.getMangledName())) {
@@ -233,15 +233,16 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       for (const auto &[typeName, concreteType] : substantiatedFunction->typeMapping)
         childScope->insertGenericType(typeName, GenericType(concreteType));
 
-      // Substantiate the 'this' symbol table entry in the new function scope
+      // Substantiate the 'this' entry in the new function scope
       if (presetFunction.isMethod() && !presetFunction.templateTypes.empty()) {
         SymbolTableEntry *thisEntry = childScope->lookupStrict(THIS_VARIABLE_NAME);
         assert(thisEntry != nullptr);
-        thisEntry->updateType(requestedThisType.toPointer(callNode), /*overwriteExistingType=*/true);
+        thisEntry->updateType(candidate.thisType.toPointer(callNode), /*overwriteExistingType=*/true);
       }
 
       // Add to matched functions
       matches.push_back(substantiatedFunction);
+
       break; // Leave the whole manifestation list to not double-match the manifestation
     }
   }
@@ -278,47 +279,20 @@ bool FunctionManager::matchName(const Function &candidate, const std::string &re
  * @return Fulfilled or not
  */
 bool FunctionManager::matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping) {
-  const SymbolType &candidateThisType = candidate.thisType;
-  const SymbolType &requestedThisBaseType = requestedThisType.getBaseType();
+  SymbolType &candidateThisType = candidate.thisType;
 
-  // If the candidate 'this' type is non-generic, we can simpy check for equality of the types
-  if (candidateThisType.getTemplateTypes().empty())
-    return candidateThisType == requestedThisBaseType;
+  // Give the type matcher a way to retrieve instances of GenericType by their name
+  std::function<const GenericType *(const std::string &)> genericTypeResolver = [=](const std::string &genericTypeName) {
+    return getGenericTypeOfCandidateByName(candidate, genericTypeName);
+  };
 
-  assert(candidateThisType.is(TY_STRUCT) && requestedThisBaseType.is(TY_STRUCT)); // The 'this' type must always be a struct
-
-  // Compare this type template type list sizes
-  const std::vector<SymbolType> &candidateTemplateTypeList = candidateThisType.getTemplateTypes();
-  if (requestedThisBaseType.getTemplateTypes().size() != candidateTemplateTypeList.size())
+  // Check if the requested 'this' type matches the candidate 'this' type. The type mapping may be extended
+  if (!TypeMatcher::matchRequestedToCandidateType(candidateThisType, requestedThisType, typeMapping, genericTypeResolver))
     return false;
 
-  // Substantiate 'this' type
-  std::vector<SymbolType> concreteTemplateTypes;
-  concreteTemplateTypes.reserve(candidateThisType.getTemplateTypes().size());
-  for (size_t i = 0; i < requestedThisBaseType.getTemplateTypes().size(); i++) {
-    const SymbolType &templateType = candidateTemplateTypeList.at(i);
-    const SymbolType &concreteTemplateType = requestedThisBaseType.getTemplateTypes().at(i);
-
-    // If the template type is non-generic, check it directly
-    if (!templateType.is(TY_GENERIC)) {
-      if (templateType != concreteTemplateType)
-        return false;
-      concreteTemplateTypes.push_back(templateType);
-      continue;
-    }
-
-    // Append to concrete template types mapping
-    if (!typeMapping.contains(templateType.getSubType()))
-      typeMapping.insert({templateType.getSubType(), concreteTemplateType});
-    else if (typeMapping.at(templateType.getSubType()) != concreteTemplateType)
-      return false;
-
-    // Add to the list of concrete template types
-    concreteTemplateTypes.push_back(concreteTemplateType);
-  }
-
-  // Mount the new concrete template type list to the 'this' type
-  candidate.thisType.setBaseTemplateTypes(concreteTemplateTypes);
+  // Substantiate the candidate param type, based on the type mapping
+  if (candidateThisType.hasAnyGenericParts())
+    TypeMatcher::substantiateTypeWithTypeMapping(candidateThisType, typeMapping);
 
   return true;
 }
@@ -340,53 +314,22 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
   // Loop over all parameters
   for (size_t i = 0; i < requestedParamTypes.size(); i++) {
     // Retrieve actual and requested types
-    SymbolType requestedParamType = requestedParamTypes.at(i);
-    SymbolType originalParamType = candidate.paramList.at(i).type;
-    SymbolType paramType = originalParamType;
+    const SymbolType &requestedParamType = requestedParamTypes.at(i);
+    assert(!candidate.paramList.at(i).isOptional);
+    SymbolType &candidateParamType = candidate.paramList.at(i).type;
 
-    // If this is a non-generic type, we can do the type check straight away and move to the next param
-    if (!paramType.isBaseType(TY_GENERIC)) {
-      if (paramType.equalsIgnoreArraySize(requestedParamType))
-        continue;
-      return false;
-    }
+    // Give the type matcher a way to retrieve instances of GenericType by their name
+    std::function<const GenericType *(const std::string &)> genericTypeResolver = [=](const std::string &genericTypeName) {
+      return getGenericTypeOfCandidateByName(candidate, genericTypeName);
+    };
 
-    // Unwrap both types
-    while (paramType.isSameContainerTypeAs(requestedParamType)) {
-      requestedParamType = requestedParamType.getContainedTy();
-      paramType = paramType.getContainedTy();
-    }
-
-    // Check if all wrappers around the generic type are removed now
-    if (!paramType.is(TY_GENERIC))
+    // Check if the requested param type matches the candidate param type. The type mapping may be extended
+    if (!TypeMatcher::matchRequestedToCandidateType(candidateParamType, requestedParamType, typeMapping, genericTypeResolver))
       return false;
 
-    // Check if we have an information mismatch
-    const std::string &genericTypeName = paramType.getSubType();
-    if (typeMapping.contains(genericTypeName)) { // Known type name
-      const SymbolType &knownConcreteType = typeMapping.at(paramType.getSubType());
-
-      // Check if the concrete type matches the requested type
-      if (knownConcreteType != requestedParamType)
-        return false;
-
-      // If the already known and the given type match, accept the type straight away and move to the next param
-      SymbolType newParamType = originalParamType.replaceBaseType(knownConcreteType);
-      candidate.paramList.at(i) = Param{newParamType, false};
-      continue;
-    }
-
-    // Check if the given type matches all conditions of the generic type
-    const GenericType *genericType = getGenericTypeOfCandidateByName(candidate, genericTypeName);
-    if (!genericType->checkConditionsOf(requestedParamType, true))
-      return false;
-
-    // Add new type mapping entry
-    typeMapping.insert({genericTypeName, requestedParamType});
-
-    // Substantiate generic type with the requested type
-    const SymbolType &newParamType = originalParamType.replaceBaseType(requestedParamType);
-    candidate.paramList.at(i) = Param{newParamType, false};
+    // Substantiate the candidate param type, based on the type mapping
+    if (candidateParamType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType, typeMapping);
   }
 
   return true;
@@ -401,7 +344,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
  */
 const GenericType *FunctionManager::getGenericTypeOfCandidateByName(const Function &candidate,
                                                                     const std::string &templateTypeName) {
-  for (const auto &templateType : candidate.templateTypes) {
+  for (const GenericType &templateType : candidate.templateTypes) {
     if (templateType.getSubType() == templateTypeName)
       return &templateType;
   }

@@ -74,10 +74,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     assert(structEntry != nullptr);
     // Set struct to used
     structEntry->used = true;
-    auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
+    /*auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
     if (manifestations)
       for (auto &manifestation : *manifestations)
-        manifestation.second.used = true;
+        manifestation.second.used = true;*/
     // Get type and ptr type
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
@@ -107,14 +107,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     for (const NamedParam &param : namedParamList) {
       paramNames.push_back(param.name);
       paramTypes.push_back({param.type, param.isOptional});
-      if (!param.type.getBaseType().is(TY_GENERIC))
-        continue;
       // Check if the type is present in the template for generic types
-      const bool found = std::any_of(usedGenericTypes.begin(), usedGenericTypes.end(),
-                                     [&](const GenericType &t) { return t == param.type.getBaseType(); });
-      if (!found)
+      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
-                            "Generic argument type not included in function template types");
+                            "Generic param type not included in the template type list of the function");
     }
   }
 
@@ -182,10 +178,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     assert(structEntry != nullptr);
     // Set struct to used
     structEntry->used = true;
-    auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
+    /*auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
     if (manifestations)
       for (auto &manifestation : *manifestations)
-        manifestation.second.used = true;
+        manifestation.second.used = true;*/
     // Get type and ptr type
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
@@ -210,14 +206,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     for (const NamedParam &param : namedParamList) {
       paramNames.push_back(param.name);
       paramTypes.push_back({param.type, param.isOptional});
-      if (!param.type.getBaseType().is(TY_GENERIC))
-        continue;
       // Check if the type is present in the template for generic types
-      const bool found = std::none_of(usedGenericTypes.begin(), usedGenericTypes.end(),
-                                      [&](const GenericType &t) { return t == param.type.getBaseType(); });
-      if (found)
+      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
-                            "Generic argument type not included in procedure template types");
+                            "Generic param type not included in the template type list of the procedure");
     }
   }
 
@@ -250,12 +242,12 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
 std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   std::vector<SymbolType> usedTemplateTypes;
-  std::vector<GenericType> usedTemplateTypesGeneric;
+  std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve struct template types
   if (node->isGeneric) {
     usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
-    usedTemplateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
+    templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
@@ -266,7 +258,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
       GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedTemplateTypes.push_back(*genericType);
-      usedTemplateTypesGeneric.push_back(*genericType);
+      templateTypesGeneric.push_back(*genericType);
     }
   }
 
@@ -314,12 +306,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     assert(fieldEntry != nullptr);
     fieldEntry->updateType(fieldType, false);
 
-    if (!fieldType.isBaseType(TY_GENERIC))
-      continue;
-
     // Check if the template type list contains this type
-    if (std::none_of(usedTemplateTypesGeneric.begin(), usedTemplateTypesGeneric.end(),
-                     [&](const GenericType &t) { return t == fieldType.getBaseType(); }))
+    if (!fieldType.isCoveredByGenericTypeList(templateTypesGeneric))
       throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
   }
 
@@ -328,14 +316,9 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   assert(currentScope->type == SCOPE_GLOBAL);
 
   // Build struct object
-  Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, usedTemplateTypesGeneric, interfaceTypes,
-                     node);
+  Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, templateTypesGeneric, interfaceTypes, node);
   node->spiceStruct = StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
   spiceStruct.structScope = node->structScope;
-
-  // Check for infinite size
-  // if (spiceStruct.hasInfiniteSize())
-  //  throw SemanticError(node, STRUCT_INFINITE_SIZE, "This struct was detected as infinite sized");
 
   return nullptr;
 }
@@ -425,7 +408,8 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   typeConditions.reserve(node->typeAltsLst()->dataTypes().size());
   for (const auto &typeAlt : node->typeAltsLst()->dataTypes()) {
     auto typeCondition = std::any_cast<SymbolType>(visit(typeAlt));
-    typeConditions.push_back(typeCondition);
+    if (!typeCondition.is(TY_DYN))
+      typeConditions.push_back(typeCondition);
   }
 
   // Add generic type to the scope

@@ -31,14 +31,4 @@ std::string CommonUtil::getLastFragment(const std::string &haystack, const std::
   return index == std::string::npos ? haystack : haystack.substr(index + needle.length());
 }
 
-/**
- * Get scope prefix from scope name
- *
- * @param haystack Scope name
- * @return Scope prefix
- */
-std::string CommonUtil::getPrefix(const std::string &haystack, const std::string &needle) {
-  return haystack.substr(0, haystack.find(needle) + needle.length());
-}
-
 } // namespace spice::compiler

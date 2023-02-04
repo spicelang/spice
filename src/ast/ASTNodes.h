@@ -904,13 +904,13 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
   // Util methods
-  [[nodiscard]] bool isParam() const { return dynamic_cast<ParamLstNode *>(parent); }
   void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount, nullptr); }
 
   // Public members
   std::string varName;
   bool hasAssignment = false;
   std::vector<SymbolTableEntry *> entries;
+  bool isParam = false;
 };
 
 // ======================================================= SpecifierLstNode ======================================================
@@ -1689,6 +1689,9 @@ public:
   std::string fqTypeName;
   std::vector<std::string> typeNameFragments;
   std::vector<SymbolTableEntry *> customTypes;
+  bool isParamType = false;
+  bool isFieldType = false;
+  bool isReturnType = false;
 };
 
 } // namespace spice::compiler

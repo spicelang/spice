@@ -1,0 +1,14 @@
+type T dyn;
+
+type Node<T> struct {
+    T data
+}
+
+f<int> test(Node<T>* test) {
+    return 1;
+}
+
+f<int> main() {
+    dyn node = Node<int>{ 12 };
+    test(&node);
+}
