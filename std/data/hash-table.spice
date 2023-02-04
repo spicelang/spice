@@ -1,0 +1,49 @@
+import "std/data/vector";
+import "std/data/doubly-linked-list";
+import "std/data/pair";
+
+type Size alias long;
+
+// Generic types for key and value
+type K dyn;
+type V dyn;
+
+public type HashTable<K, V> struct {
+    Vector<DoublyLinkedList<Pair<K, V>>> table
+    Size bucketCount
+}
+
+public p HashTable.ctor(Size bucketCount = 1000l) {
+    this.bucketCount = bucketCount;
+}
+
+public p HashTable.insert(const K& key, const V& value) {
+    Size index = hash(key);
+    this.table.at(index).pushBack(Pair(key, value));
+}
+
+public p HashTable.delete(const K& key) {
+    Size index = hash(key);
+    const DoublyLinkedList<Pair<K, V>>& bucket = this.table.at(index);
+
+    for Size i = 0l; i < bucket.getSize(); i++ {
+        Pair<K, V>& candidate = bucket.at(i);
+        if candidate.first() == key {
+            bucket.remove(i);
+            return;
+        }
+    }
+}
+
+public f<V*> HashTable.search(const K& key) {
+    Size index = hash(key);
+    const DoublyLinkedList<Pair<K, V>>& bucket = this.table.at(index);
+
+    for Size i = 0l; i < bucket.getSize(); i++ {
+        Pair<K, V>& candidate = bucket.at(i);
+        if candidate.first() == key {
+            return &candidate.second();
+        }
+    }
+    return nil<V*>;
+}
