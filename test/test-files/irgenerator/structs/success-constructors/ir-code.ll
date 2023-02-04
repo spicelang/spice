@@ -52,31 +52,28 @@ define private ptr @_mf__Vector__string__test(ptr noundef nonnull %0) {
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %1 = alloca %__Vector__bool_string, align 8
   %vec = alloca %__Vector__bool_string, align 8
-  %2 = alloca %__Vector__bool_string, align 8
+  %1 = alloca %__Vector__bool_string, align 8
   store i32 0, ptr %result, align 4
-  call void @_mp__Vector__void__ctor(ptr %1)
-  %3 = load %__Vector__bool_string, ptr %1, align 8
-  store %__Vector__bool_string %3, ptr %vec, align 8
+  call void @_mp__Vector__void__ctor(ptr %vec)
   %field1 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
-  %4 = load i1, ptr %field1, align 1
-  %5 = zext i1 %4 to i32
+  %2 = load i1, ptr %field1, align 1
+  %3 = zext i1 %2 to i32
   %field2 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
-  %6 = load ptr, ptr %field2, align 8
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %5, ptr %6)
-  call void @_mp__Vector__void__ctor__string(ptr %2, ptr @anon.string.2)
-  call void @llvm.memcpy.p0.p0.i64(ptr %vec, ptr %2, i64 16, i1 false)
+  %4 = load ptr, ptr %field2, align 8
+  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3, ptr %4)
+  call void @_mp__Vector__void__ctor__string(ptr %1, ptr @anon.string.2)
+  call void @llvm.memcpy.p0.p0.i64(ptr %vec, ptr %1, i64 16, i1 false)
   %field11 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
-  %8 = load i1, ptr %field11, align 1
-  %9 = zext i1 %8 to i32
+  %6 = load i1, ptr %field11, align 1
+  %7 = zext i1 %6 to i32
   %field22 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
-  %10 = load ptr, ptr %field22, align 8
-  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %9, ptr %10)
-  %12 = call ptr @_mf__Vector__string__test(ptr %vec)
-  %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %12)
-  %14 = load i32, ptr %result, align 4
-  ret i32 %14
+  %8 = load ptr, ptr %field22, align 8
+  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %7, ptr %8)
+  %10 = call ptr @_mf__Vector__string__test(ptr %vec)
+  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %10)
+  %12 = load i32, ptr %result, align 4
+  ret i32 %12
 }
 
 declare i32 @printf(ptr noundef, ...)

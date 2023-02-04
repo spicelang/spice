@@ -121,6 +121,7 @@ private:
   const StdFunctionManager &stdFunctionManager;
 
   // Private methods
+  bool callsOverloadedOpFct(const ASTNode *node, size_t opIdx) const;
   PtrAndValue callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhs, auto &rhs, size_t opIdx = 0);
   [[nodiscard]] static inline uint32_t getTypeCombination(const SymbolType &lhsTy, const SymbolType &rhsTy) {
     return COMB(lhsTy.getSuperType(), rhsTy.getSuperType());

@@ -119,6 +119,7 @@ private:
   void materializeConstant(ExprResult &exprResult);
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
   void changeToScope(Scope *scope, const ScopeType scopeType);
+  const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
 
   // Private members
   llvm::LLVMContext &context;

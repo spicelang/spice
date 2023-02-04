@@ -1044,6 +1044,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     if (!memberEntry)
       throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE,
                           "Field '" + node->identifier + "' not found in struct " + structName);
+    SymbolType memberType = memberEntry->getType();
 
     // Check for insufficient visibility
     if (structScope->isImportedBy(rootScope) && !memberEntry->specifiers.isPublic())
@@ -1052,8 +1053,11 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     // Set field to used
     memberEntry->used = true;
 
+    // Remove reference wrappers
+    memberType = memberType.removeReferenceWrappers();
+
     // Overwrite type and entry of left side with member type and entry
-    lhsType = memberEntry->getType();
+    lhsType = memberType;
     lhsEntry = memberEntry;
     break;
   }
@@ -1135,7 +1139,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   assert(accessScope != nullptr);
   node->entries.at(manIdx) = varEntry;
   node->accessScopes.at(manIdx) = accessScope;
-  const SymbolType varType = varEntry->getType();
+  SymbolType varType = varEntry->getType();
 
   if (varType.is(TY_INVALID))
     throw SemanticError(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.");
@@ -1159,8 +1163,12 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Set symbol table entry to used
   varEntry->used = true;
 
+  // De-reference references
+  while (varType.isRef())
+    varType = varType.getContainedTy();
+
   // Retrieve scope for the new scope path fragment
-  if (varType.isBaseType(TY_STRUCT)) { // Base type struct
+  if (varType.isBaseType(TY_STRUCT)) {
     // Set access scope to struct scope
     const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(varType.getBaseType().getSubType());
     assert(nameRegistryEntry != nullptr);
@@ -1873,6 +1881,17 @@ void TypeChecker::changeToScope(Scope *scope, const ScopeType scopeType) {
 void TypeChecker::autoDeReference(SymbolType &symbolType) {
   while (symbolType.isPtr() || symbolType.isRef())
     symbolType = symbolType.getContainedTy();
+}
+
+/**
+ * Returns the operator function list for the current manifestation and the given node
+ *
+ * @param node Node to retrieve the op fct pointer list from
+ * @return Op fct pointer list
+ */
+std::vector<const Function *> &TypeChecker::getOpFctPointers(ASTNode *node) const {
+  assert(node->opFct.size() > manIdx);
+  return node->opFct.at(manIdx);
 }
 
 } // namespace spice::compiler

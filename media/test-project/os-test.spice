@@ -1,12 +1,23 @@
-type T dyn;
-type U int|double;
+type Struct struct {
+    int f1
+}
 
-type Node<T, U> struct {
-    T* data1
-    U data2
+f<int> operator+(Struct* a, int b) {
+    result = a.f1 + b;
 }
 
 f<int> main() {
-    dyn node = Node<Node<Node<string, double>, int>, double>{};
-    printf("%f", node.data2);
+    dyn str = Struct{};
+    printf("%d\n", &str + 10);
 }
+
+/*type Struct struct {
+    int ref
+}
+
+f<int> main() {
+    int i = 123;
+    Struct str = Struct { i };
+    str.ref = 1234;
+    printf("%d, %d", str.ref, i);
+}*/

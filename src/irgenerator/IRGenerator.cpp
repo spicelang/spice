@@ -266,33 +266,17 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
   const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT);
 
-  if (lhsEntry && lhsEntry->getType().isRef()) {
-    if (isDecl) { // Reference gets assigned
-      // Get address of right side
-      llvm::Value *rhsAddress = resolveAddress(rhsNode);
-      assert(rhsAddress != nullptr);
+  if (lhsEntry && lhsEntry->getType().isRef() && isDecl) { // Reference gets assigned
+    // Get address of right side
+    llvm::Value *rhsAddress = resolveAddress(rhsNode);
+    assert(rhsAddress != nullptr);
 
-      // Allocate space for the reference and store the address
-      llvm::Value *refAddress = insertAlloca(rhsAddress->getType());
-      builder.CreateStore(rhsAddress, refAddress);
-      lhsEntry->updateAddress(refAddress);
+    // Allocate space for the reference and store the address
+    llvm::Value *refAddress = insertAlloca(rhsAddress->getType());
+    builder.CreateStore(rhsAddress, refAddress);
+    lhsEntry->updateAddress(refAddress);
 
-      return ExprResult{.ptr = refAddress, .value = rhsAddress, .entry = lhsEntry};
-    } else { // Referenced address gets assigned
-      // Get value of right side
-      llvm::Value *rhsValue = resolveValue(rhsNode);
-      assert(rhsValue != nullptr);
-
-      // Load the referenced address
-      assert(lhsAddress != nullptr);
-      llvm::Type *referencedAddressTy = lhsEntry->getType().toLLVMType(context, currentScope);
-      llvm::Value *referencedAddress = builder.CreateLoad(referencedAddressTy, lhsAddress);
-
-      // Store the rhs to the referenced address
-      builder.CreateStore(rhsValue, referencedAddress);
-
-      return ExprResult{.ptr = lhsAddress, .value = rhsValue, .entry = lhsEntry};
-    }
+    return ExprResult{.ptr = refAddress, .value = rhsAddress, .entry = lhsEntry};
   }
 
   // Check if we need to copy the rhs to the lhs. This happens for structs
@@ -310,14 +294,22 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
     return ExprResult{.ptr = newAddress, .entry = lhsEntry};
   }
 
-  // ToDo: Had to comment out this, because it led to wrong values for operator overloading and var declarations
-  /*if (isDecl && rhsSType.is(TY_STRUCT)) {
+  if (isDecl && rhsSType.is(TY_STRUCT)) {
     auto result = std::any_cast<ExprResult>(visit(rhsNode));
     materializeConstant(result);
+
+    // Directly set the address to the lhs entry
     lhsEntry->updateAddress(resolveAddress(result, lhsEntry->isVolatile));
+
+    // If we have value, store it to the address
+    if (result.value) {
+      assert(result.ptr != nullptr);
+      builder.CreateStore(result.value, result.ptr);
+    }
+
     result.entry = lhsEntry;
     return result;
-  }*/
+  }
 
   // We can load the value from the right side and store it to the left side
   // Retrieve value of the right side
@@ -326,8 +318,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   if (!lhsAddress) {
     assert(lhsEntry != nullptr);
     lhsAddress = insertAlloca(lhsEntry->getType().toLLVMType(context, currentScope));
-    if (lhsEntry)
-      lhsEntry->updateAddress(lhsAddress);
+    lhsEntry->updateAddress(lhsAddress);
   }
   // Store the value to the address
   builder.CreateStore(rhsValue, lhsAddress);
@@ -467,6 +458,17 @@ void IRGenerator::changeToScope(Scope *scope, const ScopeType scopeType) {
   scope->symbolTable.parent = &currentScope->symbolTable;
   // Set the scope
   currentScope = scope;
+}
+
+/**
+ * Returns the operator function list for the current manifestation and the given node
+ *
+ * @param node Node to retrieve the op fct pointer list from
+ * @return Op fct pointer list
+ */
+const std::vector<const Function *> &IRGenerator::getOpFctPointers(const ASTNode *node) const {
+  assert(node->opFct.size() > manIdx);
+  return node->opFct.at(manIdx);
 }
 
 } // namespace spice::compiler

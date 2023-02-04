@@ -552,7 +552,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
   // Evaluate lhs
   PrefixUnaryExprNode *lhsNode = node->prefixUnary();
-  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx).removeReferenceWrappers();
+  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
 
   switch (node->op) {
@@ -678,7 +678,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
   // Evaluate lhs
   PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
-  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx).removeReferenceWrappers();
+  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
 
   switch (node->op) {
@@ -832,7 +832,7 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(varEntry != nullptr);
   Scope *accessScope = node->accessScopes.at(manIdx);
   assert(accessScope != nullptr);
-  const SymbolType varSymbolType = varEntry->getType();
+  SymbolType varSymbolType = varEntry->getType();
   llvm::Type *varType = varSymbolType.toLLVMType(context, accessScope);
 
   // Check if external global variable
@@ -853,9 +853,10 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(address != nullptr);
 
   // Load the address of the referenced variable
-  if (varEntry->getType().isRef()) {
-    llvm::Type *referencedType = varEntry->getType().toLLVMType(context, currentScope);
+  while (varSymbolType.isRef()) {
+    llvm::Type *referencedType = varSymbolType.toLLVMType(context, currentScope);
     address = builder.CreateLoad(referencedType, address);
+    varSymbolType = varSymbolType.getContainedTy();
   }
 
   return ExprResult{.ptr = address, .entry = varEntry};
