@@ -28,7 +28,7 @@ public p HashTable.delete(const K& key) {
 
     for Size i = 0l; i < bucket.getSize(); i++ {
         Pair<K, V>& candidate = bucket.at(i);
-        if candidate.first() == key {
+        if candidate.getFirst() == key {
             bucket.remove(i);
             return;
         }
@@ -41,8 +41,8 @@ public f<V*> HashTable.search(const K& key) {
 
     for Size i = 0l; i < bucket.getSize(); i++ {
         Pair<K, V>& candidate = bucket.at(i);
-        if candidate.first() == key {
-            return &candidate.second();
+        if candidate.getFirst() == key {
+            return &candidate.getSecond();
         }
     }
     return nil<V*>;

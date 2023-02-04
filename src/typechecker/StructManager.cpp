@@ -10,7 +10,7 @@
 
 namespace spice::compiler {
 
-Struct *StructManager::insertStruct(Scope *insertScope, const Struct &spiceStruct, std::vector<Struct *> *nodeStructList) {
+Struct *StructManager::insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
   insertScope->structs.insert({spiceStruct.declNode->codeLoc.toString(), std::unordered_map<std::string, Struct>()});
 
@@ -26,7 +26,7 @@ StructManifestationList *StructManager::getManifestationList(Scope *lookupScope,
   return lookupScope->structs.contains(codeLocStr) ? &lookupScope->structs.at(codeLocStr) : nullptr;
 }
 
-Struct *StructManager::insertSubstantiation(Scope *insertScope, const Struct &newManifestation, const ASTNode *declNode) {
+Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManifestation, const ASTNode *declNode) {
   const std::string mangledStructName = newManifestation.getMangledName();
   const std::string codeLocStr = declNode->codeLoc.toString();
   const std::string signature = newManifestation.getSignature();
@@ -40,6 +40,7 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, const Struct &ne
   StructManifestationList &manifestationList = insertScope->structs.at(codeLocStr);
 
   // Add substantiated struct
+  newManifestation.manifestationIndex = manifestationList.size();
   manifestationList.emplace(mangledStructName, newManifestation);
   return &manifestationList.at(mangledStructName);
 }
@@ -117,17 +118,18 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       substantiatedStruct->entry = matchScope->lookupStrict(newSignature);
       assert(substantiatedStruct->entry != nullptr);
 
-      // Attach the template types to the new struct entry
-      SymbolType entryType = substantiatedStruct->entry->getType();
-      entryType.setTemplateTypes(substantiatedStruct->getTemplateTypes());
-      substantiatedStruct->entry->updateType(entryType, true);
-
       // Copy struct scope
       const std::string newScopeName = STRUCT_SCOPE_PREFIX + newSignature;
       matchScope->copyChildScope(STRUCT_SCOPE_PREFIX + presetStruct.name, newScopeName);
       substantiatedStruct->structScope = matchScope->getChildScope(newScopeName);
       assert(substantiatedStruct->structScope != nullptr);
       substantiatedStruct->structScope->isGenericScope = false;
+
+      // Attach the template types to the new struct entry
+      SymbolType entryType = substantiatedStruct->entry->getType();
+      entryType.setTemplateTypes(substantiatedStruct->getTemplateTypes());
+      entryType.setStructBodyScope(substantiatedStruct->structScope);
+      substantiatedStruct->entry->updateType(entryType, true);
 
       // Replace field types with concrete template types
       assert(substantiatedStruct->structScope != nullptr);

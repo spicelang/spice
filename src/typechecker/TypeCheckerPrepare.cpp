@@ -74,10 +74,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     assert(structEntry != nullptr);
     // Set struct to used
     structEntry->used = true;
-    auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
+    /*auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
     if (manifestations)
       for (auto &manifestation : *manifestations)
-        manifestation.second.used = true;
+        manifestation.second.used = true;*/
     // Get type and ptr type
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
@@ -178,10 +178,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     assert(structEntry != nullptr);
     // Set struct to used
     structEntry->used = true;
-    auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
+    /*auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
     if (manifestations)
       for (auto &manifestation : *manifestations)
-        manifestation.second.used = true;
+        manifestation.second.used = true;*/
     // Get type and ptr type
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
