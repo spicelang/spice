@@ -729,11 +729,20 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
     // Retrieve field entry
     lhs.entry = structScope->lookupStrict(fieldName);
+    assert(lhs.entry != nullptr);
+    SymbolType fieldSymbolType = lhs.entry->getType();
 
     // Get address of the field in the struct instance
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(lhs.entry->orderIndex)};
     lhs.ptr = builder.CreateInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices);
     lhs.ptr->setName(fieldName);
+
+    // Load the address of the referenced variable
+    while (fieldSymbolType.isRef()) {
+      llvm::Type *referencedType = fieldSymbolType.toLLVMType(context, currentScope);
+      lhs.ptr = builder.CreateLoad(referencedType, lhs.ptr);
+      fieldSymbolType = fieldSymbolType.getContainedTy();
+    }
 
     // Reset the value
     lhs.value = nullptr;

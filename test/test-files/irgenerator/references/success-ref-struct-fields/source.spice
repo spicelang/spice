@@ -6,7 +6,7 @@ type TestStruct struct {
 f<int> main() {
     int t = 123;
     dyn ts = TestStruct { true, t };
-    printf("Test: %d", ts.f2);
+    printf("Before: %d\n", ts.f2);
     ts.f2++;
-    printf("Test: %d", t);
+    printf("After: %d", t);
 }

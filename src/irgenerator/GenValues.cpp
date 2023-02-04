@@ -263,7 +263,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   // Get struct object
   const Struct *spiceStruct = node->instantiatedStructs.at(manIdx);
   assert(spiceStruct != nullptr);
-  const size_t numFields = spiceStruct->fieldTypes.size();
+  const std::vector<SymbolType> &fieldTypes = spiceStruct->fieldTypes;
 
   // Get struct type
   assert(spiceStruct->entry != nullptr);
@@ -278,12 +278,12 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   // Visit struct field values
   bool canBeConstant = true;
   std::vector<ExprResult> fieldValueResults;
-  fieldValueResults.reserve(numFields);
+  fieldValueResults.reserve(spiceStruct->fieldTypes.size());
   for (AssignExprNode *fieldValueNode : node->fieldLst()->args()) {
     auto fieldValue = std::any_cast<ExprResult>(visit(fieldValueNode));
-    canBeConstant &= fieldValue.constant != nullptr;
     fieldValue.node = fieldValueNode;
     fieldValueResults.push_back(fieldValue);
+    canBeConstant &= fieldValue.constant != nullptr;
   }
 
   if (canBeConstant) { // All field values are constants, so we can create a global constant struct instantiation
@@ -309,7 +309,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     for (size_t i = 0; i < fieldValueResults.size(); i++) {
       ExprResult &exprResult = fieldValueResults.at(i);
       // Get field value
-      llvm::Value *itemValue = resolveValue(exprResult.node, exprResult);
+      llvm::Value *itemValue = fieldTypes.at(i).isRef() ? resolveAddress(exprResult) : resolveValue(exprResult.node, exprResult);
       // Get field address
       indices[1] = builder.getInt32(i);
       llvm::Value *currentFieldAddress = builder.CreateInBoundsGEP(structType, structAddr, indices);

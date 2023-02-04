@@ -1,23 +1,10 @@
 type Struct struct {
-    int f1
-}
-
-f<int> operator+(Struct* a, int b) {
-    result = a.f1 + b;
-}
-
-f<int> main() {
-    dyn str = Struct{};
-    printf("%d\n", &str + 10);
-}
-
-/*type Struct struct {
-    int ref
+    int& ref
 }
 
 f<int> main() {
     int i = 123;
-    Struct str = Struct { i };
+    Struct str = Struct { i }; // test 123
     str.ref = 1234;
     printf("%d, %d", str.ref, i);
-}*/
+}
