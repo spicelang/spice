@@ -460,7 +460,6 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitGlobalVarDef(this); }
 
   // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
 
@@ -840,7 +839,6 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitField(this); }
 
   // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
 
   // Public members
@@ -903,7 +901,6 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDeclStmt(this); }
 
   // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
@@ -1634,6 +1631,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDataType(this); }
 
   // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
 
   // Public members

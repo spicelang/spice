@@ -337,9 +337,7 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
-      currentNode = globalVarDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = globalVarDefNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) { // Constant
       currentNode = globalVarDefNode->createChild<ConstantNode>(CodeLoc(rule->start, filePath));
@@ -794,9 +792,7 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
-      currentNode = fieldNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = fieldNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
     else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -879,9 +875,7 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // DeclSpecifiers
-      currentNode = declStmtNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = declStmtNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
       currentNode = declStmtNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
@@ -1715,7 +1709,9 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   for (int i = 0; i < ctx->children.size(); i++) {
     auto subTree = ctx->children[i];
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::BaseDataTypeContext *>(subTree); rule != nullptr) // BaseDataType
+    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // SpecifierLst
+      currentNode = dataTypeNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::BaseDataTypeContext *>(subTree); rule != nullptr) // BaseDataType
       currentNode = dataTypeNode->createChild<BaseDataTypeNode>(CodeLoc(rule->start, filePath));
     else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::MUL)
       dataTypeNode->tmQueue.push({DataTypeNode::TYPE_PTR, false, 0});
