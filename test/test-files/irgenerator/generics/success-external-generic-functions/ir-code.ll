@@ -28,7 +28,7 @@ define dso_local i32 @main() #0 {
   %3 = load ptr, ptr %iPtr, align 8
   %4 = load i32, ptr %3, align 4
   %5 = icmp eq i32 %4, 13
-  br i1 %5, label %assert.exit.L12, label %assert.then.L12
+  br i1 %5, label %assert.exit.L12, label %assert.then.L12, !prof !0
 
 assert.then.L12:                                  ; preds = %0
   %6 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
@@ -59,3 +59,5 @@ declare void @exit(i32)
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+
+!0 = !{!"branch_weights", i32 2000, i32 1}

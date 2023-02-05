@@ -109,4 +109,14 @@ std::vector<SymbolType> Struct::getTemplateTypes() const {
   return templateSymbolTypes;
 }
 
+/**
+ * Checks at least one field is a reference.
+ * This is used to prohibit constant instantiations.
+ *
+ * @return Has reference as field type or not
+ */
+bool Struct::hasReferenceFields() const {
+  return std::any_of(fieldTypes.begin(), fieldTypes.end(), [](const SymbolType &fieldType) { return fieldType.isRef(); });
+}
+
 } // namespace spice::compiler

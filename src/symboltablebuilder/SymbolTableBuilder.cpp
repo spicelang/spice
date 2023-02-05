@@ -546,7 +546,7 @@ std::any SymbolTableBuilder::visitField(FieldNode *node) {
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_CONST)
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Struct fields cannot have the const specifier attached");
+        specifiers.setConst(true);
       else if (specifier->type == SpecifierNode::TY_SIGNED)
         specifiers.setSigned(true);
       else if (specifier->type == SpecifierNode::TY_UNSIGNED)

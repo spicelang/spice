@@ -12,6 +12,10 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
     candidateType = candidateType.getContainedTy();
   }
 
+  // Remove one reference wrapper of candidate type if required
+  if (candidateType.isRef())
+    candidateType = candidateType.getContainedTy();
+
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts())
     return requestedType.equalsIgnoreArraySize(candidateType);

@@ -156,10 +156,15 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
       const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
       // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
-      if (actualSTy == expectedSTy) {
-        argValues.push_back(resolveValue(argNode));
-      } else {
-        argValues.push_back(doImplicitCast(resolveAddress(argNode), expectedSTy, actualSTy));
+      if (actualSTy == expectedSTy) { // The arg type matches the param type
+        llvm::Value *argValue = resolveValue(argNode);
+        argValues.push_back(argValue);
+      } else if (expectedSTy.isRef() && actualSTy == expectedSTy.getContainedTy()) { // The arg type matches the param with ref
+        llvm::Value *argAddress = resolveAddress(argNode);
+        argValues.push_back(argAddress);
+      } else { // Need implicit cast to match param type
+        llvm::Value *argAddress = resolveAddress(argNode);
+        argValues.push_back(doImplicitCast(argAddress, expectedSTy, actualSTy));
       }
     }
   }
@@ -265,6 +270,9 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   assert(spiceStruct != nullptr);
   const std::vector<SymbolType> &fieldTypes = spiceStruct->fieldTypes;
 
+  // Can only be constant if none of the fields is of type reference
+  bool canBeConstant = !spiceStruct->hasReferenceFields();
+
   // Get struct type
   assert(spiceStruct->entry != nullptr);
   llvm::StructType *structType = spiceStruct->entry->getStructLLVMType();
@@ -276,7 +284,6 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   }
 
   // Visit struct field values
-  bool canBeConstant = true;
   std::vector<ExprResult> fieldValueResults;
   fieldValueResults.reserve(spiceStruct->fieldTypes.size());
   for (AssignExprNode *fieldValueNode : node->fieldLst()->args()) {

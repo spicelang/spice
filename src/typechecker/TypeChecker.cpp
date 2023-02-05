@@ -1344,8 +1344,12 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   }
 
   // Procedures always have the return type 'bool'
-  if (data.callee->isProcedure() || returnType.is(TY_DYN))
+  if (data.callee->isProcedure() || (data.callee->isMethodProcedure() && !data.isConstructorCall) || returnType.is(TY_DYN))
     returnType = SymbolType(TY_BOOL);
+
+  // Check if the return value gets used
+  if ((data.callee->isFunction() || data.callee->isMethodFunction()) && !node->hasReturnValueReceiver())
+    warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
 
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx)};
 }
@@ -1595,11 +1599,19 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       const SymbolTableEntry *expectedField = structScope->symbolTable.lookupByIndex(i);
       assert(expectedField != nullptr);
       SymbolType expectedType = expectedField->getType();
+      // Also accept, if expected type is reference of actual type
+      if (expectedType.isRef() && expectedType.getContainedTy() == actualType)
+        expectedType = expectedType.getContainedTy();
       // Check if type matches declaration
       if (actualType != expectedType)
         throw SemanticError(assignExpr, FIELD_TYPE_NOT_MATCHING,
                             "Expected type " + expectedType.getName() + " for the field '" + expectedField->name + "', but got " +
                                 actualType.getName());
+      // Check if immediate assigned to non-const reference
+      if (expectedType.isRef() && !expectedField->specifiers.isConst() && assignExpr->hasCompileTimeValue())
+        throw SemanticError(
+            assignExpr, FIELD_TYPE_NOT_MATCHING,
+            "Cannot assign immediate to non-const reference field. Either make the reference const or reference a variable");
     }
   } else {
     for (SymbolType &fieldType : spiceStruct->fieldTypes) {

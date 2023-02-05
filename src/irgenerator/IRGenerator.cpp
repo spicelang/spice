@@ -221,11 +221,21 @@ void IRGenerator::insertJump(llvm::BasicBlock *targetBlock) {
   blockAlreadyTerminated = true;
 }
 
-void IRGenerator::insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock) {
+void IRGenerator::insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock,
+                                 Likeliness likeliness /*=UNSPECIFIED*/) {
   if (blockAlreadyTerminated)
     return;
-  builder.CreateCondBr(condition, trueBlock, falseBlock);
+  llvm::BranchInst *jumpInst = builder.CreateCondBr(condition, trueBlock, falseBlock);
   blockAlreadyTerminated = true;
+
+  if (likeliness != UNSPECIFIED) {
+    const bool likely = likeliness == LIKELY;
+    llvm::Metadata *name = llvm::MDString::get(context, "branch_weights");
+    llvm::Metadata *trueBranchWeight = llvm::ConstantAsMetadata::get(builder.getInt32(likely ? 2000 : 1));
+    llvm::Metadata *falseBranchWeight = llvm::ConstantAsMetadata::get(builder.getInt32(likely ? 1 : 2000));
+    auto profMetadata = llvm::MDNode::get(context, {name, trueBranchWeight, falseBranchWeight});
+    jumpInst->setMetadata("prof", profMetadata);
+  }
 }
 
 void IRGenerator::verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) const {

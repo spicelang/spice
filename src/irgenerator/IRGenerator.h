@@ -15,6 +15,8 @@ const char *const ANON_GLOBAL_STRING_NAME = "anon.string.";
 const char *const ANON_GLOBAL_ARRAY_NAME = "anon.array.";
 const char *const ANON_GLOBAL_STRUCT_NAME = "anon.struct.";
 
+enum Likeliness { UNSPECIFIED, LIKELY, UNLIKELY };
+
 // Forward declarations
 class SourceFile;
 
@@ -106,7 +108,8 @@ private:
   llvm::BasicBlock *createBlock(const std::string &blockName = "");
   void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
   void insertJump(llvm::BasicBlock *targetBlock);
-  void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock);
+  void insertCondJump(llvm::Value *condition, llvm::BasicBlock *trueBlock, llvm::BasicBlock *falseBlock,
+                      Likeliness likeliness = UNSPECIFIED);
   void verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) const;
   void verifyModule(const CodeLoc &codeLoc) const;
   ExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);

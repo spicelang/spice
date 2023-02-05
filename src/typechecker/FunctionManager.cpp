@@ -174,6 +174,9 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       if (!matchArgTypes(candidate, requestedParamTypes, candidate.typeMapping))
         continue; // Leave this manifestation and try the next one
 
+      // Substantiate return type
+      substantiateReturnType(candidate, candidate.typeMapping);
+
       // We found a match! -> Set the actual candidate and its entry to used
       candidate.used = true;
       candidate.entry->used = true;
@@ -200,10 +203,6 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 
       // Clear template types of candidate, since they are not needed anymore
       candidate.templateTypes.clear();
-
-      // Substantiate return type
-      if (candidate.returnType.hasAnyGenericParts())
-        TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType, candidate.typeMapping);
 
       // Check if we already have this manifestation and can simply re-use it
       if (matchScope->functions.at(defCodeLocStr).contains(candidate.getMangledName())) {
@@ -301,20 +300,20 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
  * Checks if the matching candidate fulfills the argument types requirement
  *
  * @param candidate Matching candidate function
- * @param requestedParamTypes Requested argument types
+ * @param requestedArgTypes Requested argument types
  * @param typeMapping Concrete template type mapping
  * @return Fulfilled or not
  */
-bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedParamTypes,
+bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedArgTypes,
                                     TypeMapping &typeMapping) {
   // If the number of arguments does not match with the number of params, the matching fails
-  if (requestedParamTypes.size() != candidate.paramList.size())
+  if (requestedArgTypes.size() != candidate.paramList.size())
     return false;
 
   // Loop over all parameters
-  for (size_t i = 0; i < requestedParamTypes.size(); i++) {
+  for (size_t i = 0; i < requestedArgTypes.size(); i++) {
     // Retrieve actual and requested types
-    const SymbolType &requestedParamType = requestedParamTypes.at(i);
+    const SymbolType &requestedParamType = requestedArgTypes.at(i);
     assert(!candidate.paramList.at(i).isOptional);
     SymbolType &candidateParamType = candidate.paramList.at(i).type;
 
@@ -333,6 +332,17 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
   }
 
   return true;
+}
+
+/**
+ * Substantiates the candidate return type, based on the given type mapping
+ *
+ * @param candidate Matching candidate function
+ * @param typeMapping Concrete template type mapping
+ */
+void FunctionManager::substantiateReturnType(Function &candidate, TypeMapping &typeMapping) {
+  if (candidate.returnType.hasAnyGenericParts())
+    TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType, typeMapping);
 }
 
 /**
