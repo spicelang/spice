@@ -38,7 +38,7 @@ f<int> main() {
     printf("Non-equal: %d\n", String("Hello") != String("Hello"));
 
     // PlusEquals
-    /*String s4 = String("Hello");
+    String s4 = String("Hello");
     s4 += 'l';
     printf("Result: %s\n", s4);
     String s5 = String("Hi");
@@ -48,5 +48,5 @@ f<int> main() {
     // MulEquals
     String s6 = String("Hi");
     s6 *= 3;
-    printf("Result: %s\n", s6);*/
+    printf("Result: %s\n", s6);
 }

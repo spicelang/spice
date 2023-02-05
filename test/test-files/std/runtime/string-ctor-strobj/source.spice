@@ -2,7 +2,7 @@ f<int> main() {
     String s1 = String("Hello World!");
     printf("S1: %s\n", s1);
     String s2 = String(s1);
-    //s2 += " Hi!";
+    s2 += " Hi!";
     printf("S1: %s\n", s1);
     printf("S2: %s\n", s2);
 }
