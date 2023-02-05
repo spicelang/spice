@@ -11,14 +11,13 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %1 = alloca %__char__TestStruct__char_int, align 8
   %s = alloca %__char__TestStruct__char_int, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.struct.0, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr %s, ptr @anon.struct.0, i64 8, i1 false)
   store %__char__TestStruct__char_int { i8 97, i32 1 }, ptr %s, align 4
   call void @_mp__TestStruct_char__void__printTest(ptr %s)
-  %2 = load i32, ptr %result, align 4
-  ret i32 %2
+  %1 = load i32, ptr %result, align 4
+  ret i32 %1
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)

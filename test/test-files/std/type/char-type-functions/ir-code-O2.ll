@@ -15,7 +15,7 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() local_unnamed_addr #0 {
   %1 = tail call double @_f__void__double__toDouble__char(i8 100) #2
   %2 = fcmp oeq double %1, 1.000000e+02
-  br i1 %2, label %assert.exit.L6, label %assert.then.L6
+  br i1 %2, label %assert.exit.L6, label %assert.then.L6, !prof !0
 
 assert.then.L6:                                   ; preds = %0
   %3 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.0)
@@ -25,7 +25,7 @@ assert.then.L6:                                   ; preds = %0
 assert.exit.L6:                                   ; preds = %0
   %4 = tail call i32 @_f__void__int__toInt__char(i8 84) #2
   %5 = icmp eq i32 %4, 84
-  br i1 %5, label %assert.exit.L10, label %assert.then.L10
+  br i1 %5, label %assert.exit.L10, label %assert.then.L10, !prof !0
 
 assert.then.L10:                                  ; preds = %assert.exit.L6
   %6 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.1)
@@ -35,7 +35,7 @@ assert.then.L10:                                  ; preds = %assert.exit.L6
 assert.exit.L10:                                  ; preds = %assert.exit.L6
   %7 = tail call i16 @_f__void__short__toShort__char(i8 106) #2
   %8 = icmp eq i16 %7, 106
-  br i1 %8, label %assert.exit.L14, label %assert.then.L14
+  br i1 %8, label %assert.exit.L14, label %assert.then.L14, !prof !0
 
 assert.then.L14:                                  ; preds = %assert.exit.L10
   %9 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.2)
@@ -45,7 +45,7 @@ assert.then.L14:                                  ; preds = %assert.exit.L10
 assert.exit.L14:                                  ; preds = %assert.exit.L10
   %10 = tail call i64 @_f__void__long__toLong__char(i8 75) #2
   %11 = icmp eq i64 %10, 75
-  br i1 %11, label %assert.exit.L18, label %assert.then.L18
+  br i1 %11, label %assert.exit.L18, label %assert.then.L18, !prof !0
 
 assert.then.L18:                                  ; preds = %assert.exit.L14
   %12 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.3)
@@ -54,7 +54,7 @@ assert.then.L18:                                  ; preds = %assert.exit.L14
 
 assert.exit.L18:                                  ; preds = %assert.exit.L14
   %13 = tail call i1 @_f__void__bool__toBool__char(i8 49) #2
-  br i1 %13, label %assert.exit.L26, label %assert.then.L26
+  br i1 %13, label %assert.exit.L26, label %assert.then.L26, !prof !0
 
 assert.then.L26:                                  ; preds = %assert.exit.L18
   %14 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.4)
@@ -63,7 +63,7 @@ assert.then.L26:                                  ; preds = %assert.exit.L18
 
 assert.exit.L26:                                  ; preds = %assert.exit.L18
   %15 = tail call i1 @_f__void__bool__toBool__char(i8 48) #2
-  br i1 %15, label %assert.then.L28, label %assert.exit.L28
+  br i1 %15, label %assert.then.L28, label %assert.exit.L28, !prof !1
 
 assert.then.L28:                                  ; preds = %assert.exit.L26
   %16 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.5)
@@ -93,3 +93,6 @@ declare i1 @_f__void__bool__toBool__char(i8) local_unnamed_addr
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { nounwind }
+
+!0 = !{!"branch_weights", i32 2000, i32 1}
+!1 = !{!"branch_weights", i32 1, i32 2000}

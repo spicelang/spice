@@ -171,6 +171,8 @@ public:
     return nullptr;
   }
 
+  [[nodiscard]] virtual bool isStmtNode() const { return false; }
+
   // Public members
   ASTNode *parent;
   std::vector<ASTNode *> children;
@@ -885,6 +887,8 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStmt(this); }
+
+  [[nodiscard]] bool isStmtNode() const override { return true; }
 };
 
 // ========================================================= DeclStmtNode ========================================================
@@ -1555,6 +1559,7 @@ public:
 
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
+  [[nodiscard]] bool hasReturnValueReceiver() const;
 
   // Public members
   std::string fqFunctionName;

@@ -23,7 +23,7 @@ PtrAndValue OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprR
   const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
-  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+  if (callsOverloadedOpFct(node, opIdx))
     return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -71,7 +71,7 @@ llvm::Value *OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, Exp
   const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
-  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+  if (callsOverloadedOpFct(node, opIdx))
     return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -120,7 +120,7 @@ PtrAndValue OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprRe
   const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
-  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+  if (callsOverloadedOpFct(node, opIdx))
     return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -163,7 +163,7 @@ llvm::Value *OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprR
   const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
-  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+  if (callsOverloadedOpFct(node, opIdx))
     return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -448,6 +448,10 @@ llvm::Value *OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResu
   const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
   const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, opIdx))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
+
   // Check if both values are of type pointer
   if (lhsSTy.isPtr() && rhsSTy.isPtr())
     return builder.CreateICmpEQ(lhsV(), rhsV());
@@ -457,10 +461,6 @@ llvm::Value *OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResu
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV(), rhsT);
     return builder.CreateICmpEQ(lhsInt, rhsV());
   }
-
-  // Handle operator overloads
-  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   // Check for primitive type combinations
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -564,6 +564,10 @@ llvm::Value *OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprR
   const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
   const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, opIdx))
+    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
+
   // Check if both values are of type pointer
   if (lhsSTy.isPtr() && rhsSTy.isPtr())
     return builder.CreateICmpNE(lhsV(), rhsV());
@@ -573,10 +577,6 @@ llvm::Value *OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprR
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV(), rhsT);
     return builder.CreateICmpNE(lhsInt, rhsV());
   }
-
-  // Handle operator overloads
-  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1003,7 +1003,7 @@ PtrAndValue OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult
   const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
-  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+  if (callsOverloadedOpFct(node, opIdx))
     return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -1079,7 +1079,7 @@ llvm::Value *OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResu
   const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
-  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+  if (callsOverloadedOpFct(node, opIdx))
     return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -1155,7 +1155,7 @@ PtrAndValue OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult 
   const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
-  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+  if (callsOverloadedOpFct(node, opIdx))
     return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -1219,7 +1219,7 @@ llvm::Value *OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult
   const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
-  if (lhsSTy.is(TY_STRUCT) || rhsSTy.is(TY_STRUCT))
+  if (callsOverloadedOpFct(node, opIdx))
     return callBinaryOperatorOverloadFct(node, lhsV, rhsV, opIdx).value;
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -1484,6 +1484,11 @@ llvm::Value *OpRuleConversionManager::getCastInst(const ASTNode *node, const Sym
     return lhsSTy.getContainedTy() == rhsSTy.getContainedTy() ? rhsV() : builder.CreatePointerCast(rhsV(), lhsT);
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
+}
+
+bool OpRuleConversionManager::callsOverloadedOpFct(const ASTNode *node, size_t opIdx) const {
+  const std::vector<const Function *> &opFctList = irGenerator->getOpFctPointers(node);
+  return opFctList.size() > opIdx && opFctList.at(opIdx) != nullptr;
 }
 
 PtrAndValue OpRuleConversionManager::callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhs, auto &rhs, size_t opIdx) {

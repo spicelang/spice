@@ -36,6 +36,7 @@ public:
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
+  [[nodiscard]] bool hasReferenceFields() const;
 
   // Public members
   std::string name;

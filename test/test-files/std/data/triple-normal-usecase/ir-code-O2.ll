@@ -12,26 +12,15 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %1 = alloca %__string_int_bool__Triple__string_int_bool, align 8
   %stringIntBoolTriple = alloca %__string_int_bool__Triple__string_int_bool, align 8
-  call void @_mp__Triple_string_int_bool__void__ctor__string_int_bool(ptr nonnull %1, ptr nonnull @anon.string.0, i32 1234, i1 true) #2
-  %.fca.0.load = load ptr, ptr %1, align 8
-  %.fca.1.gep2 = getelementptr inbounds %__string_int_bool__Triple__string_int_bool, ptr %1, i64 0, i32 1
-  %.fca.1.load = load i32, ptr %.fca.1.gep2, align 8
-  %.fca.2.gep3 = getelementptr inbounds %__string_int_bool__Triple__string_int_bool, ptr %1, i64 0, i32 2
-  %.fca.2.load = load i1, ptr %.fca.2.gep3, align 4
-  store ptr %.fca.0.load, ptr %stringIntBoolTriple, align 8
-  %.fca.1.gep = getelementptr inbounds %__string_int_bool__Triple__string_int_bool, ptr %stringIntBoolTriple, i64 0, i32 1
-  store i32 %.fca.1.load, ptr %.fca.1.gep, align 8
-  %.fca.2.gep = getelementptr inbounds %__string_int_bool__Triple__string_int_bool, ptr %stringIntBoolTriple, i64 0, i32 2
-  store i1 %.fca.2.load, ptr %.fca.2.gep, align 4
-  %2 = call ptr @_mf__Triple_string_int_bool__string__getFirst(ptr nonnull %stringIntBoolTriple) #2
-  %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %2)
-  %4 = call i32 @_mf__Triple_string_int_bool__int__getSecond(ptr nonnull %stringIntBoolTriple) #2
-  %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %4)
-  %6 = call i1 @_mf__Triple_string_int_bool__bool__getThird(ptr nonnull %stringIntBoolTriple) #2
-  %7 = zext i1 %6 to i32
-  %8 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, i32 %7)
+  call void @_mp__Triple_string_int_bool__void__ctor__string_int_bool(ptr nonnull %stringIntBoolTriple, ptr nonnull @anon.string.0, i32 1234, i1 true) #2
+  %1 = call ptr @_mf__Triple_string_int_bool__string__getFirst(ptr nonnull %stringIntBoolTriple) #2
+  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %1)
+  %3 = call i32 @_mf__Triple_string_int_bool__int__getSecond(ptr nonnull %stringIntBoolTriple) #2
+  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 %3)
+  %5 = call i1 @_mf__Triple_string_int_bool__bool__getThird(ptr nonnull %stringIntBoolTriple) #2
+  %6 = zext i1 %5 to i32
+  %7 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, i32 %6)
   ret i32 0
 }
 

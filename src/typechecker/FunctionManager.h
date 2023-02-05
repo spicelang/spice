@@ -42,8 +42,9 @@ private:
                                                       const ASTNode *declNode);
   [[nodiscard]] static bool matchName(const Function &candidate, const std::string &requestedName);
   [[nodiscard]] static bool matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping);
-  [[nodiscard]] static bool matchArgTypes(Function &genericTypeName, const std::vector<SymbolType> &requestedParamTypes,
+  [[nodiscard]] static bool matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedArgTypes,
                                           TypeMapping &typeMapping);
+  static void substantiateReturnType(Function &candidate, TypeMapping &typeMapping);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Function &candidate,
                                                                           const std::string &templateTypeName);
 };

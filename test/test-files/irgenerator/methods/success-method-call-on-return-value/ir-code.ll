@@ -40,22 +40,22 @@ define private %__Stamp__double_bool @_mf__Letter__Stamp__getStamp(ptr noundef n
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %1 = alloca %__Letter__string_Stamp, align 8
   %letter = alloca %__Letter__string_Stamp, align 8
   %stamp1 = alloca %__Stamp__double_bool, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.struct.0, i64 24, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr %letter, ptr @anon.struct.0, i64 24, i1 false)
   store %__Letter__string_Stamp { ptr @anon.string.0, %__Stamp__double_bool { double 3.400000e+00, i1 true } }, ptr %letter, align 8
   %stamp = getelementptr inbounds %__Letter__string_Stamp, ptr %letter, i32 0, i32 1
   %glued = getelementptr inbounds %__Stamp__double_bool, ptr %stamp, i32 0, i32 1
-  %2 = load i1, ptr %glued, align 1
-  %3 = zext i1 %2 to i32
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %3)
-  %5 = call %__Stamp__double_bool @_mf__Letter__Stamp__getStamp(ptr %letter)
-  store %__Stamp__double_bool %5, ptr %stamp1, align 8
+  %1 = load i1, ptr %glued, align 1
+  %2 = zext i1 %1 to i32
+  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %2)
+  %4 = call %__Stamp__double_bool @_mf__Letter__Stamp__getStamp(ptr %letter)
+  store %__Stamp__double_bool %4, ptr %stamp1, align 8
+  store %__Stamp__double_bool %4, ptr %stamp1, align 8
   call void @_mp__Stamp__void__print(ptr %stamp1)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  %5 = load i32, ptr %result, align 4
+  ret i32 %5
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)

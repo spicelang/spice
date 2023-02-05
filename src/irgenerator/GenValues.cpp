@@ -156,10 +156,15 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
       const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
       // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
-      if (actualSTy == expectedSTy) {
-        argValues.push_back(resolveValue(argNode));
-      } else {
-        argValues.push_back(doImplicitCast(resolveAddress(argNode), expectedSTy, actualSTy));
+      if (actualSTy == expectedSTy) { // The arg type matches the param type
+        llvm::Value *argValue = resolveValue(argNode);
+        argValues.push_back(argValue);
+      } else if (expectedSTy.isRef() && actualSTy == expectedSTy.getContainedTy()) { // The arg type matches the param with ref
+        llvm::Value *argAddress = resolveAddress(argNode);
+        argValues.push_back(argAddress);
+      } else { // Need implicit cast to match param type
+        llvm::Value *argAddress = resolveAddress(argNode);
+        argValues.push_back(doImplicitCast(argAddress, expectedSTy, actualSTy));
       }
     }
   }
@@ -263,7 +268,10 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   // Get struct object
   const Struct *spiceStruct = node->instantiatedStructs.at(manIdx);
   assert(spiceStruct != nullptr);
-  const size_t numFields = spiceStruct->fieldTypes.size();
+  const std::vector<SymbolType> &fieldTypes = spiceStruct->fieldTypes;
+
+  // Can only be constant if none of the fields is of type reference
+  bool canBeConstant = !spiceStruct->hasReferenceFields();
 
   // Get struct type
   assert(spiceStruct->entry != nullptr);
@@ -276,14 +284,13 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   }
 
   // Visit struct field values
-  bool canBeConstant = true;
   std::vector<ExprResult> fieldValueResults;
-  fieldValueResults.reserve(numFields);
+  fieldValueResults.reserve(spiceStruct->fieldTypes.size());
   for (AssignExprNode *fieldValueNode : node->fieldLst()->args()) {
     auto fieldValue = std::any_cast<ExprResult>(visit(fieldValueNode));
-    canBeConstant &= fieldValue.constant != nullptr;
     fieldValue.node = fieldValueNode;
     fieldValueResults.push_back(fieldValue);
+    canBeConstant &= fieldValue.constant != nullptr;
   }
 
   if (canBeConstant) { // All field values are constants, so we can create a global constant struct instantiation
@@ -309,7 +316,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     for (size_t i = 0; i < fieldValueResults.size(); i++) {
       ExprResult &exprResult = fieldValueResults.at(i);
       // Get field value
-      llvm::Value *itemValue = resolveValue(exprResult.node, exprResult);
+      llvm::Value *itemValue = fieldTypes.at(i).isRef() ? resolveAddress(exprResult) : resolveValue(exprResult.node, exprResult);
       // Get field address
       indices[1] = builder.getInt32(i);
       llvm::Value *currentFieldAddress = builder.CreateInBoundsGEP(structType, structAddr, indices);

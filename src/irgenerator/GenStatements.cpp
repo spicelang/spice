@@ -137,7 +137,7 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   llvm::Function *parentFct = builder.GetInsertBlock()->getParent();
 
   // Create condition check
-  insertCondJump(condValue, bExit, bThen);
+  insertCondJump(condValue, bExit, bThen, LIKELY);
 
   // Switch to then block
   switchToBlock(bThen);
