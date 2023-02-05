@@ -50,6 +50,7 @@ docker_manifests:
     skip_push: auto
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    rlcp: true # Only explicitly stated temporarily, as the default behaviour changes
     files:
       - LICENSE
       - std
