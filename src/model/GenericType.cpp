@@ -4,10 +4,15 @@
 
 namespace spice::compiler {
 
-GenericType::GenericType(const SymbolType &type) { this->typeChain = type.typeChain; }
+GenericType::GenericType(const SymbolType &type) {
+  this->typeChain = type.typeChain;
+  this->specifiers = type.specifiers;
+}
 
-GenericType::GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions) {
+GenericType::GenericType(const std::string &name, const SymbolSpecifiers &specifiers,
+                         const std::vector<SymbolType> &typeConditions) {
   this->typeChain.push_back({TY_GENERIC, name, 0, {}});
+  this->specifiers = specifiers;
   this->typeConditions = typeConditions;
 }
 

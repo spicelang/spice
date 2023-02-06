@@ -18,7 +18,8 @@ class GenericType : public SymbolType {
 public:
   // Constructors
   explicit GenericType(const SymbolType &type);
-  explicit GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions);
+  explicit GenericType(const std::string &name, const SymbolSpecifiers &specifiers,
+                       const std::vector<SymbolType> &typeConditions);
   explicit GenericType(const std::string &name);
   GenericType() = default;
 

@@ -118,10 +118,25 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   currentScope = node->fctScope->parent;
   assert(currentScope->type == SCOPE_GLOBAL || currentScope->type == SCOPE_STRUCT);
 
+  // Prepare function type
+  SymbolType functionType(TY_FUNCTION);
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_INLINE)
+        functionType.specifiers.setInline(true);
+      else if (specifier->type == SpecifierNode::TY_PUBLIC)
+        functionType.specifiers.setPublic(true);
+      else if (specifier->type == SpecifierNode::TY_CONST)
+        functionType.specifiers.setConst(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
+    }
+  }
+
   // Update type of function entry
   SymbolTableEntry *functionEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
   assert(functionEntry != nullptr);
-  functionEntry->updateType(SymbolType(TY_FUNCTION), false);
+  functionEntry->updateType(functionType, false);
 
   // Build function object
   const Function spiceFunc(node->fctName->name, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node,
@@ -217,10 +232,25 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   currentScope = node->procScope->parent;
   assert(currentScope->type == SCOPE_GLOBAL || currentScope->type == SCOPE_STRUCT);
 
+  // Prepare procedure type
+  SymbolType procedureType(TY_PROCEDURE);
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_INLINE)
+        procedureType.specifiers.setInline(true);
+      else if (specifier->type == SpecifierNode::TY_PUBLIC)
+        procedureType.specifiers.setPublic(true);
+      else if (specifier->type == SpecifierNode::TY_CONST)
+        procedureType.specifiers.setConst(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
+    }
+  }
+
   // Update type of procedure entry
   SymbolTableEntry *procedureEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
   assert(procedureEntry != nullptr);
-  procedureEntry->updateType(SymbolType(TY_PROCEDURE), false);
+  procedureEntry->updateType(procedureType, false);
 
   // Build procedure object
   const Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node,
@@ -277,9 +307,19 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     }
   }
 
-  // Update type of struct entry
+  // Prepare struct type
   assert(node->entry != nullptr);
-  const SymbolType structType(TY_STRUCT, node->structName, {.structBodyScope = node->structScope}, usedTemplateTypes);
+  SymbolType structType(TY_STRUCT, node->structName, {.structBodyScope = node->structScope}, usedTemplateTypes);
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
+        structType.specifiers.setPublic(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a struct definition");
+    }
+  }
+
+  // Update type of struct entry
   node->entry->updateType(structType, false);
 
   // Change to struct scope
@@ -324,8 +364,18 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 }
 
 std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
-  // Update type of interface entry
+  // Prepare interface type
   SymbolType interfaceType(TY_INTERFACE, node->interfaceName);
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
+        interfaceType.specifiers.setPublic(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an interface definition");
+    }
+  }
+
+  // Update type of interface entry
   assert(node->entry != nullptr);
   node->entry->updateType(interfaceType, false);
 
@@ -347,7 +397,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   assert(currentScope->type == SCOPE_GLOBAL);
 
   // Build interface object
-  Interface i(node->interfaceName, node->entry->specifiers, signatures, node);
+  Interface i(node->interfaceName, signatures, node);
   rootScope->insertInterface(i);
   i.interfaceScope = node->interfaceScope;
 
@@ -355,8 +405,18 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 }
 
 std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
-  // Update type of enum entry
+  // Prepare enum type
   SymbolType enumType(TY_ENUM, node->enumName);
+  if (node->specifierLst()) {
+    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
+        enumType.specifiers.setPublic(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an enum definition");
+    }
+  }
+
+  // Update type of enum entry
   assert(node->entry != nullptr);
   node->entry->updateType(enumType, false);
 
@@ -413,7 +473,7 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   }
 
   // Add generic type to the scope
-  const GenericType genericType(node->typeName, typeConditions);
+  const GenericType genericType(node->typeName, SymbolSpecifiers::of(TY_GENERIC), typeConditions);
   rootScope->insertGenericType(node->typeName, genericType);
 
   // Check if only one type condition is set
@@ -427,9 +487,19 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
 std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
   assert(node->entry != nullptr && node->aliasedTypeContainerEntry != nullptr);
 
+  // Prepare alias type
+  SymbolType aliasType(TY_ENUM, node->dataTypeString);
+  if (node->specifierLst()) {
+    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
+        aliasType.specifiers.setPublic(true);
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an alias definition");
+    }
+  }
+
   // Update type of alias entry
-  const SymbolType symbolType(TY_ALIAS, node->dataTypeString);
-  node->entry->updateType(symbolType, false);
+  node->entry->updateType(aliasType, false);
 
   // Update type of the aliased type container entry
   auto aliasedType = std::any_cast<SymbolType>(visit(node->dataType()));
@@ -469,7 +539,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
   node->entry->updateType(globalVarType, false);
 
   // Check if a value is attached
-  if (!node->constant() && node->entry->specifiers.isConst())
+  if (!node->constant() && node->entry->getType().isConst())
     throw SemanticError(node, GLOBAL_CONST_WITHOUT_VALUE, "You must specify a value for constant global variables");
 
   return nullptr;
@@ -510,7 +580,8 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   node->externalFunction = FunctionManager::insertFunction(currentScope, spiceFunc, nullptr);
 
   // Set type of external function
-  node->entry->updateType(SymbolType(TY_FUNCTION), false);
+  const SymbolType extFctType(node->returnType() ? TY_FUNCTION : TY_PROCEDURE);
+  node->entry->updateType(extFctType, false);
 
   return nullptr;
 }

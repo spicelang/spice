@@ -11,6 +11,8 @@ SymbolSpecifiers SymbolSpecifiers::of(const SymbolType &symbolType) { return of(
 
 SymbolSpecifiers SymbolSpecifiers::of(SymbolSuperType superType) {
   switch (superType) {
+  case TY_INVALID:
+    return SymbolSpecifiers(0);
   case TY_DOUBLE:
     return SymbolSpecifiers(SPECIFIER_DEFAULTS_DOUBLE);
   case TY_INT:

@@ -12,7 +12,7 @@ structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON t
 interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE IDENTIFIER typeAltsLst SEMICOLON;
-aliasDef: TYPE IDENTIFIER ALIAS dataType SEMICOLON;
+aliasDef: specifierLst? TYPE IDENTIFIER ALIAS dataType SEMICOLON;
 globalVarDef: dataType IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
 

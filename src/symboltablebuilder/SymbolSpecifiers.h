@@ -3,9 +3,12 @@
 #pragma once
 
 #include "../../lib/json/json.hpp"
-#include "SymbolType.h"
 
 namespace spice::compiler {
+
+// Forward declarations
+class SymbolType;
+enum SymbolSuperType : uint16_t;
 
 // Bit indices from right to left
 const unsigned short BIT_INDEX_PUBLIC = 0;
@@ -55,7 +58,6 @@ class SymbolSpecifiers {
 public:
   // Constructors
   SymbolSpecifiers() = default;
-  explicit SymbolSpecifiers(unsigned short initialValue) : specifierValue(initialValue) {}
 
   // Public static methods
   static SymbolSpecifiers of(const SymbolType &superType);
@@ -78,6 +80,9 @@ public:
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolSpecifiers, specifierValue)
 
 private:
+  // Private constructors
+  explicit SymbolSpecifiers(unsigned short initialValue) : specifierValue(initialValue) {}
+
   // Private members
   unsigned short specifierValue = 0;
   void setBit(unsigned short index);

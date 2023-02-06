@@ -10,49 +10,6 @@
 namespace spice::compiler {
 
 /**
- * Retrieve the symbol type of this symbol
- *
- * @return Current symbol type of this symbol
- */
-const SymbolType &SymbolTableEntry::getType() const { return type; }
-
-/**
- * Update the type of this symbol.
- *
- * @param newType New type of the current symbol
- * @param overwriteExistingType Overwrites the existing type without throwing an error
- */
-void SymbolTableEntry::updateType(const SymbolType &newType, bool overwriteExistingType) {
-  assert(overwriteExistingType || type.isOneOf({TY_INVALID, TY_DYN}));
-  type = newType;
-}
-
-/**
- * Update the state of the current symbol
- *
- * @throws SemanticError When trying to re-assign a constant variable
- * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
- *
- * @param newState New state of the current symbol
- * @param node AST node where the update takes place
- * @param force Force update. This can only be used compiler-internal
- */
-void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node, bool force) {
-  const LifecycleState oldState = lifecycle.getCurrentState();
-  // Check if this is a constant variable and is already initialized
-  if (newState != DEAD && oldState != DECLARED && specifiers.isConst() && !force)
-    throw SemanticError(node, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
-  // Check if the type is known at time of initialization
-  if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                      // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, "Could not determine type of variable '" + name + "'");   // GCOV_EXCL_LINE
-  if (newState == DEAD && oldState == DECLARED)                                                   // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, "Cannot destruct uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
-  if (newState == DEAD && oldState == DEAD)                                                       // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, "Cannot destruct already freed variable '" + name + "'"); // GCOV_EXCL_LINE
-  lifecycle.addEvent({newState, node});
-}
-
-/**
  * Retrieve the code location where the symbol was declared
  *
  * @return Declaration code location
@@ -165,7 +122,6 @@ nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   result["codeLoc"] = declNode->codeLoc.toString();
   result["orderIndex"] = orderIndex;
   result["state"] = stateStr;
-  result["specifiers"] = specifiers.toJSON();
   result["isGlobal"] = global;
   result["isVolatile"] = isVolatile;
   return result;

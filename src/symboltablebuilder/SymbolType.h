@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <ast/ASTBuilder.h>
+#include <symboltablebuilder/SymbolSpecifiers.h>
 #include <util/CommonUtil.h>
 
 #include <llvm/IR/Type.h>
@@ -56,7 +57,6 @@ public:
   union TypeChainElementData {
     // Union fields
     size_t arraySize = 0;   // TY_ARRAY
-    bool numericSigned;     // TY_INT, TY_SHORT, TY_LONG
     Scope *structBodyScope; // TY_STRUCT, TY_INTERFACE, TY_ENUM
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
@@ -111,12 +111,12 @@ public:
 
   // Constructors
   SymbolType() = default;
-  explicit SymbolType(SymbolSuperType superType) : typeChain({TypeChainElement{superType}}) {}
-  SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({TypeChainElement{superType, subType}}) {}
+  explicit SymbolType(SymbolSuperType superType, const std::string &subType = "")
+      : typeChain({TypeChainElement{superType, subType}}), specifiers(SymbolSpecifiers::of(superType)) {}
   SymbolType(SymbolSuperType superType, const std::string &subType, const TypeChainElementData &data,
              const std::vector<SymbolType> &templateTypes)
-      : typeChain({TypeChainElement{superType, subType, data, templateTypes}}) {}
-  explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
+      : typeChain({TypeChainElement{superType, subType, data, templateTypes}}), specifiers(SymbolSpecifiers::of(superType)) {}
+  SymbolType(TypeChain types, SymbolSpecifiers specifiers) : typeChain(std::move(types)), specifiers(specifiers) {}
 
   // Public methods
   [[nodiscard]] SymbolType toPointer(const ASTNode *node) const;
@@ -161,10 +161,13 @@ public:
       typeChainCopy.pop_back();
     return typeChainCopy;
   }
-  [[nodiscard]] inline SymbolType removeReferenceWrappers() const { return SymbolType(getTypeChainWithoutReferences()); }
+  [[nodiscard]] inline SymbolType removeReferenceWrappers() const {
+    assert(!typeChain.empty());
+    return SymbolType(getTypeChainWithoutReferences(), specifiers);
+  }
   [[nodiscard]] SymbolType getBaseType() const {
     assert(!typeChain.empty());
-    return SymbolType({typeChain.front()});
+    return SymbolType({typeChain.front()}, specifiers);
   }
   [[nodiscard]] bool hasAnyGenericParts() const;
   void setTemplateTypes(const std::vector<SymbolType> &templateTypes);
@@ -173,8 +176,14 @@ public:
   [[nodiscard]] bool isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] size_t getArraySize() const;
-  void setSigned(bool value = true);
-  [[nodiscard]] bool isSigned() const;
+  [[nodiscard]] inline bool isConst() const { return specifiers.isConst(); }
+  [[nodiscard]] inline bool isSigned() const {
+    assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
+    return specifiers.isSigned();
+  }
+  [[nodiscard]] inline bool isInline() const { return specifiers.isInline(); }
+  [[nodiscard]] inline bool isPublic() const { return specifiers.isPublic(); }
+  [[nodiscard]] inline bool isHeap() const { return specifiers.isHeap(); }
   void setStructBodyScope(Scope *bodyScope);
   [[nodiscard]] Scope *getStructBodyScope() const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
@@ -183,6 +192,7 @@ public:
 
   // Public members
   TypeChain typeChain;
+  SymbolSpecifiers specifiers;
 
 private:
   // Private methods

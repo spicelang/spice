@@ -28,15 +28,15 @@ union CompileTimeValue;
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, SymbolType type, Scope *scope, SymbolSpecifiers specifiers, ASTNode *declNode,
-                   size_t orderIndex, const bool global)
-      : name(std::move(name)), type(std::move(type)), scope(scope), specifiers(specifiers), declNode(declNode),
-        orderIndex(orderIndex), global(global){};
+  SymbolTableEntry(std::string name, SymbolType type, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
+      : name(std::move(name)), type(std::move(type)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global){};
 
   // Public methods
-  [[nodiscard]] const SymbolType &getType() const;
-  void updateType(const SymbolType &newType, bool overwriteExistingType);
-  void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);
+  [[nodiscard]] inline const SymbolType &getType() const { return type; }
+  inline void updateType(const SymbolType &newType, bool overwriteExistingType) {
+    assert(overwriteExistingType || type.isOneOf({TY_INVALID, TY_DYN}));
+    type = newType;
+  }
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] llvm::StructType *getStructLLVMType() const;
   void setStructLLVMType(llvm::StructType *newStructType);
@@ -50,7 +50,6 @@ public:
   // Public members
   const std::string name;
   Scope *scope;
-  SymbolSpecifiers specifiers;
   ASTNode *declNode;
   const size_t orderIndex;
   const bool global;

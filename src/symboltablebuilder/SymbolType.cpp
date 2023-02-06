@@ -25,7 +25,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_PTR, "", {}, {}});
-  return SymbolType(newTypeChain);
+  return SymbolType(newTypeChain, specifiers);
 }
 
 /**
@@ -41,7 +41,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_REF, "", {}, {}});
-  return SymbolType(newTypeChain);
+  return SymbolType(newTypeChain, specifiers);
 }
 
 /**
@@ -58,7 +58,7 @@ SymbolType SymbolType::toArray(const ASTNode *node, size_t size, bool skipDynChe
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_ARRAY, "", {.arraySize = size}, {}});
-  return SymbolType(newTypeChain);
+  return SymbolType(newTypeChain, specifiers);
 }
 
 /**
@@ -72,7 +72,7 @@ SymbolType SymbolType::getContainedTy() const {
   assert(typeChain.size() > 1);
   TypeChain newTypeChain = typeChain;
   newTypeChain.pop_back();
-  return SymbolType(newTypeChain);
+  return SymbolType(newTypeChain, specifiers);
 }
 
 /**
@@ -88,7 +88,7 @@ SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
   // Replace the first element
   chainCopy.front().subType = newSubType;
   // Return the new chain as a symbol type
-  return SymbolType(chainCopy);
+  return SymbolType(chainCopy, specifiers);
 }
 
 /**
@@ -103,7 +103,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   for (size_t i = 1; i < typeChain.size(); i++)
     newTypeChain.push_back(typeChain.at(i));
   // Return the new chain as a symbol type
-  return SymbolType(newTypeChain);
+  return SymbolType(newTypeChain, specifiers);
 }
 
 /**
@@ -238,11 +238,25 @@ bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &gene
  */
 std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLINT(misc-no-recursion)
   std::stringstream name;
+
+  // Loop through all specifiers
+  if (specifiers.isPublic())
+    name << "public ";
+  if (specifiers.isInline())
+    name << "inline ";
+  if (specifiers.isConst())
+    name << "const ";
+  if (specifiers.isHeap())
+    name << "heap ";
+  if (!specifiers.isSigned())
+    name << "unsigned ";
+
   // Copy the chain to not destroy the present one
   TypeChain chainCopy = typeChain;
   // Loop through all items
   for (const TypeChainElement &chainElement : chainCopy)
     name << getNameFromChainElement(chainElement, withSize, mangledName);
+
   return name.str();
 }
 
@@ -257,24 +271,6 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLI
 size_t SymbolType::getArraySize() const {
   assert(getSuperType() == TY_ARRAY);
   return typeChain.back().data.arraySize;
-}
-
-/**
- * Set the signedness of the current type
- *
- * @param value Signed or not signed
- */
-void SymbolType::setSigned(bool value) {
-  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
-  typeChain.back().data.numericSigned = value;
-}
-
-/**
- * Check if the current type is signed
- */
-bool SymbolType::isSigned() const {
-  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
-  return typeChain.back().data.numericSigned;
 }
 
 /**

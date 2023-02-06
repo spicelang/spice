@@ -1,5 +1,6 @@
 const f<int> test(const int& i) {
     printf("%d", i);
+    return 1;
 }
 
 f<int> main() {

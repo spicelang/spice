@@ -439,6 +439,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAliasDef(this); }
 
   // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
 
   // Public members
@@ -1636,6 +1637,9 @@ public:
 
   // Public members
   std::queue<TypeModifier> tmQueue;
+  bool isParamType = false;
+  bool isFieldType = false;
+  bool isReturnType = false;
 };
 
 // ==================================================== BaseDataTypeNode =========================================================
@@ -1692,9 +1696,6 @@ public:
   std::string fqTypeName;
   std::vector<std::string> typeNameFragments;
   std::vector<SymbolTableEntry *> customTypes;
-  bool isParamType = false;
-  bool isFieldType = false;
-  bool isReturnType = false;
 };
 
 } // namespace spice::compiler

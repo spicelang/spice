@@ -1,0 +1,5 @@
+import "source1";
+
+f<int> main() {
+    Size test = 23l;
+}
