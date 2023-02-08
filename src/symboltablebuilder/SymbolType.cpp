@@ -25,7 +25,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_PTR, "", {}, {}});
-  return SymbolType(newTypeChain, specifiers);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -41,7 +41,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_REF, "", {}, {}});
-  return SymbolType(newTypeChain, specifiers);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -58,7 +58,7 @@ SymbolType SymbolType::toArray(const ASTNode *node, size_t size, bool skipDynChe
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_ARRAY, "", {.arraySize = size}, {}});
-  return SymbolType(newTypeChain, specifiers);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -72,7 +72,7 @@ SymbolType SymbolType::getContainedTy() const {
   assert(typeChain.size() > 1);
   TypeChain newTypeChain = typeChain;
   newTypeChain.pop_back();
-  return SymbolType(newTypeChain, specifiers);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -88,7 +88,7 @@ SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
   // Replace the first element
   chainCopy.front().subType = newSubType;
   // Return the new chain as a symbol type
-  return SymbolType(chainCopy, specifiers);
+  return {chainCopy, specifiers};
 }
 
 /**
@@ -103,7 +103,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   for (size_t i = 1; i < typeChain.size(); i++)
     newTypeChain.push_back(typeChain.at(i));
   // Return the new chain as a symbol type
-  return SymbolType(newTypeChain, specifiers);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -223,11 +223,9 @@ bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &gene
   if (baseType.is(TY_GENERIC))
     return std::any_of(genericTypeList.begin(), genericTypeList.end(), [=](const GenericType &t) { return t == baseType; });
   // Check if all template types are covered
-  for (const SymbolType &templateType : baseType.getTemplateTypes()) {
-    if (!templateType.isCoveredByGenericTypeList(genericTypeList))
-      return false;
-  }
-  return true;
+  auto &baseTemplateTypes = baseType.getTemplateTypes();
+  return std::all_of(baseTemplateTypes.begin(), baseTemplateTypes.end(),
+                     [&](const SymbolType &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); });
 }
 
 /**

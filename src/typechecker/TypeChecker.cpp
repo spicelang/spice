@@ -1243,7 +1243,12 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through");
   }
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(superType), manIdx)};
+
+  // Create symbol type
+  SymbolType symbolType(superType);
+  symbolType.specifiers = SymbolSpecifiers::of(superType);
+
+  return ExprResult{node->setEvaluatedSymbolType(symbolType, manIdx)};
 }
 
 std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {

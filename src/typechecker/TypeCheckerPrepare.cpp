@@ -488,7 +488,7 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
   assert(node->entry != nullptr && node->aliasedTypeContainerEntry != nullptr);
 
   // Prepare alias type
-  SymbolType aliasType(TY_ENUM, node->dataTypeString);
+  SymbolType aliasType(TY_ALIAS, node->dataTypeString);
   if (node->specifierLst()) {
     for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
