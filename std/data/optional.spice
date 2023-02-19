@@ -1,0 +1,27 @@
+// Generic types
+type T dyn;
+
+public type Optional<T> struct {
+    T data
+}
+
+public p Optional.ctor(const T& data = nil<T>) {
+    this.data = data;
+}
+
+public inline p Optional.set(const T& data) {
+    this.data = data;
+}
+
+// ToDo: Make this return a reference instead of the value
+public inline f<T> Optional.get() {
+    return this.data;
+}
+
+public inline p Optional.clear() {
+    this.data = nil<T>;
+}
+
+public inline f<bool> Optional.isPresent() {
+    return this.data != nil<T>;
+}

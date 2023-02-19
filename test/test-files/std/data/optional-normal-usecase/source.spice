@@ -9,8 +9,7 @@ f<int> main() {
     printf("%d\n", oi.isPresent());
     oi.set(doubleStack);
     printf("%d\n", oi.isPresent());
-    dyn res = oi.get();
-    printf("%d\n", res.getSize());
+    printf("%d\n", oi.get().getSize());
     oi.clear();
     printf("%d\n", oi.isPresent());
     assert oi.get() == nil<Stack<double>>;

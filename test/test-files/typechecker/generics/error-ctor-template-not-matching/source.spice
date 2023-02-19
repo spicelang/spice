@@ -1,0 +1,9 @@
+type T dyn;
+
+type Optional<T> struct {}
+
+p Optional.ctor() {}
+
+f<int> main() {
+     dyn oi = Optional();
+}
