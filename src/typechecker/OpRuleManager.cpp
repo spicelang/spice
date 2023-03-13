@@ -140,10 +140,6 @@ SymbolType OpRuleManager::getEqualResultType(ASTNode *node, SymbolType lhs, Symb
   if (lhs.isPtr() && rhs.is(TY_INT))
     return SymbolType(TY_BOOL);
 
-  // Allow 'struct == struct' straight away
-  if (lhs.is(TY_STRUCT) && rhs.is(TY_STRUCT) && lhs == rhs)
-    return SymbolType(TY_BOOL);
-
   // Check primitive type combinations
   return validateBinaryOperation(node, EQUAL_OP_RULES, ARRAY_LENGTH(EQUAL_OP_RULES), "==", lhs, rhs);
 }
@@ -160,10 +156,6 @@ SymbolType OpRuleManager::getNotEqualResultType(ASTNode *node, SymbolType lhs, S
 
   // Allow 'pointer != int' straight away
   if (lhs.isPtr() && rhs.is(TY_INT))
-    return SymbolType(TY_BOOL);
-
-  // Allow 'struct != struct' straight away
-  if (lhs.is(TY_STRUCT) && rhs.is(TY_STRUCT) && lhs == rhs)
     return SymbolType(TY_BOOL);
 
   // Check primitive type combinations

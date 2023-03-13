@@ -3,25 +3,35 @@ type T dyn;
 
 public type Optional<T> struct {
     T data
+    bool isPresent
 }
 
-public p Optional.ctor(const T& data = nil<T>) {
+public p Optional.ctor() {
+    this.isPresent = false;
+}
+
+public p Optional.ctor(const T& data) {
     this.data = data;
+    this.isPresent = true;
 }
 
 public inline p Optional.set(const T& data) {
     this.data = data;
+    this.isPresent = true;
 }
 
 // ToDo: Make this return a reference instead of the value
 public inline f<T> Optional.get() {
-    return this.data;
+    if this.isPresent() {
+        return this.data;
+    }
+    return nil<T>;
 }
 
 public inline p Optional.clear() {
-    this.data = nil<T>;
+    this.isPresent = false;
 }
 
 public inline f<bool> Optional.isPresent() {
-    return this.data != nil<T>;
+    return this.isPresent;
 }
