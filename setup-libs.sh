@@ -3,7 +3,7 @@
 mkdir lib
 cd lib || exit
 
-git clone --depth 1 --branch 4.11.1 https://github.com/antlr/antlr4.git
+git clone --depth 1 --branch 4.12.0 https://github.com/antlr/antlr4.git
 
 git clone --depth 1 --branch v1.13.0 https://github.com/google/googletest.git
 

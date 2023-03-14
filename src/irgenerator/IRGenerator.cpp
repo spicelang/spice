@@ -299,7 +299,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
     const std::string copyName = lhsEntry ? lhsEntry->name : "";
     llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
     // Set address of lhs to the copy
-    if (lhsEntry)
+    if (lhsEntry && lhsEntry->scope->type != SCOPE_STRUCT && lhsEntry->scope->type != SCOPE_INTERFACE)
       lhsEntry->updateAddress(newAddress);
     return ExprResult{.ptr = newAddress, .entry = lhsEntry};
   }
