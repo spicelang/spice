@@ -44,12 +44,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-16.0.0-rc2-linux-x64
+          key: llvm-16.0.0-rc4-linux-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          git clone --depth 1 --branch llvmorg-16.0.0-rc2 https://github.com/llvm/llvm-project.git llvm
+          git clone --depth 1 --branch llvmorg-16.0.0-rc4 https://github.com/llvm/llvm-project.git llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
@@ -122,12 +122,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: D:/a/spice/spice/llvm
-          key: llvm-16.0.0-rc2-win-x64
+          key: llvm-16.0.0-rc4-win-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          git clone --depth 1 --branch llvmorg-16.0.0-rc2 https://github.com/llvm/llvm-project.git llvm
+          git clone --depth 1 --branch llvmorg-16.0.0-rc4 https://github.com/llvm/llvm-project.git llvm
           setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           echo "Adding MinGW to path done."
@@ -251,7 +251,7 @@ jobs:
         uses: battila7/get-version-action@v2
 
       - name: Download dist output
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: dist-output
 
@@ -352,7 +352,7 @@ jobs:
           tag: ${{ github.ref }}
 
       - name: Deploy to WinGet
-        uses: vedantmgoyal2009/winget-releaser@v1
+        uses: vedantmgoyal2009/winget-releaser@v2
         with:
           identifier: ChilliBits.Spice
           version: ${{ github.ref_name }}

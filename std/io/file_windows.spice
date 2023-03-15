@@ -122,16 +122,15 @@ public f<long> File.getSize() {
  *
  * @return Content in form of a string
  */
-public f<string> readFile(string path) {
+public f<String> readFile(string path) {
     // Open the file in read mode
     File file = openFile(path, MODE_READ);
     // Read from the file char by char
     int buffer;
-    string output = "";
-    // ToDo: Uncomment when string += char is defined
-    /*while (buffer = file.readChar()) != EOF {
+    String output = String();
+    while (buffer = file.readChar()) != EOF {
         output += (char) buffer;
-    }*/
+    }
     // Close the file
     file.close();
     return output;
@@ -181,7 +180,7 @@ public f<bool> fileExists(string path) {
  *
  * @return Readable / not readable
  */
-public f<bool> fileReadable(string path) {
+public f<bool> isFileReadable(string path) {
     return access(path, R_OK) == 0;
 }
 
@@ -190,7 +189,7 @@ public f<bool> fileReadable(string path) {
  *
  * @return Writable / not writable
  */
-public f<bool> fileWritable(string path) {
+public f<bool> isFileWritable(string path) {
     return access(path, W_OK) == 0;
 }
 
@@ -199,6 +198,6 @@ public f<bool> fileWritable(string path) {
  *
  * @return Executable / not executable
  */
-public f<bool> fileExecutable(string path) {
+public f<bool> isFileExecutable(string path) {
     return access(path, X_OK) == 0;
 }

@@ -1424,7 +1424,11 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
 
     // Substantiate potentially generic this struct
     Struct *thisStruct = StructManager::matchStruct(structEntry->scope, structName, concreteTemplateTypes, node);
-    assert(thisStruct != nullptr);
+    if (!thisStruct) {
+      const std::string signature = Struct::getSignature(structName, concreteTemplateTypes);
+      throw SemanticError(node, UNKNOWN_DATATYPE,
+                          "Could not find struct candidate for struct '" + signature + "'. Do the template types match?");
+    }
 
     // Override function name
     functionName = CTOR_FUNCTION_NAME;
