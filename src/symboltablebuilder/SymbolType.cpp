@@ -237,17 +237,19 @@ bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &gene
 std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLINT(misc-no-recursion)
   std::stringstream name;
 
-  // Loop through all specifiers
-  if (specifiers.isPublic())
-    name << "public ";
-  if (specifiers.isInline())
-    name << "inline ";
-  if (specifiers.isConst())
-    name << "const ";
-  if (specifiers.isHeap())
-    name << "heap ";
-  if (!specifiers.isSigned())
-    name << "unsigned ";
+  if (!mangledName) {
+    // Loop through all specifiers
+    if (specifiers.isPublic())
+      name << "public ";
+    if (specifiers.isInline())
+      name << "inline ";
+    if (specifiers.isConst())
+      name << "const ";
+    if (specifiers.isHeap())
+      name << "heap ";
+    if (!specifiers.isSigned())
+      name << "unsigned ";
+  }
 
   // Copy the chain to not destroy the present one
   TypeChain chainCopy = typeChain;

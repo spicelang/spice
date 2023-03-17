@@ -173,17 +173,4 @@ void SymbolSpecifiers::clearBit(unsigned short index) { specifierValue &= ~(1 <<
  */
 bool SymbolSpecifiers::getBit(unsigned short index) const { return ((specifierValue >> index) & 1) == 1; }
 
-/**
- * Returns the JSON representation of the specifier collection
- *
- * @return Specifiers as JSON object
- */
-nlohmann::ordered_json SymbolSpecifiers::toJSON() const {
-  nlohmann::json result;
-  result["const"] = isConst();
-  result["signed"] = isSigned();
-  result["public"] = isPublic();
-  return result;
-}
-
 } // namespace spice::compiler

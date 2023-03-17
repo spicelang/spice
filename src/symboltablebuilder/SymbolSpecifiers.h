@@ -74,7 +74,6 @@ public:
   [[nodiscard]] bool isPublic() const;
   void setHeap(bool heap);
   [[nodiscard]] bool isHeap() const;
-  [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
   // JSON serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolSpecifiers, specifierValue)
