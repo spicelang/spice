@@ -103,7 +103,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   for (size_t i = 1; i < typeChain.size(); i++)
     newTypeChain.push_back(typeChain.at(i));
   // Return the new chain as a symbol type
-  return {newTypeChain, specifiers};
+  return {newTypeChain, newBaseType.specifiers};
 }
 
 /**
