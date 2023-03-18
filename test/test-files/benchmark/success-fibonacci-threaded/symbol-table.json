@@ -7,11 +7,6 @@
       "isVolatile": false,
       "name": "main(int, string[])",
       "orderIndex": 1,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
       "state": "destructed",
       "type": "function"
     },
@@ -21,11 +16,6 @@
       "isVolatile": false,
       "name": "fib:L1",
       "orderIndex": 0,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
       "state": "destructed",
       "type": "function"
     }

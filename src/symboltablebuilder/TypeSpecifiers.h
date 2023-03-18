@@ -25,8 +25,8 @@ const unsigned short SPECIFIER_DEFAULTS_LONG = 0b0010;
 const unsigned short SPECIFIER_DEFAULTS_BYTE = 0b0000;
 // Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_CHAR = 0b0000;
-// Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_STRING = 0b0100;
+// Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_STRING = 0b0000;
 // Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_BOOL = 0b0000;
 // Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0

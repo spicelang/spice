@@ -1,1 +1,3 @@
-import "os-test3";
+type Vector struct {
+    int i
+}

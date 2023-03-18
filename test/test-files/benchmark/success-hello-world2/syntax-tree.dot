@@ -10,14 +10,14 @@ digraph {
  L4C5_StmtLst -> L4C5_Stmt;
  L4C5_DeclStmt [color="lightgreen",label="DeclStmt"];
  L4C5_Stmt -> L4C5_DeclStmt;
+ L4C5_DataType [color="lightgreen",label="DataType"];
+ L4C5_DeclStmt -> L4C5_DataType;
  L4C5_SpecifierLst [color="lightgreen",label="SpecifierLst"];
- L4C5_DeclStmt -> L4C5_SpecifierLst;
+ L4C5_DataType -> L4C5_SpecifierLst;
  L4C5_Specifier [color="lightgreen",label="Specifier"];
  L4C5_SpecifierLst -> L4C5_Specifier;
- L4C14_DataType [color="lightgreen",label="DataType"];
- L4C5_DeclStmt -> L4C14_DataType;
  L4C14_BaseDataType [color="lightgreen",label="BaseDataType"];
- L4C14_DataType -> L4C14_BaseDataType;
+ L4C5_DataType -> L4C14_BaseDataType;
  L4C24_AssignExpr [color="lightgreen",label="AssignExpr"];
  L4C5_DeclStmt -> L4C24_AssignExpr;
  L4C24_TernaryExpr [color="lightgreen",label="TernaryExpr"];

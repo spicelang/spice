@@ -118,7 +118,8 @@ public:
   SymbolType(SymbolSuperType superType, const std::string &subType, const TypeChainElementData &data,
              const std::vector<SymbolType> &templateTypes)
       : typeChain({TypeChainElement{superType, subType, data, templateTypes}}), specifiers(TypeSpecifiers::of(superType)) {}
-  explicit SymbolType(TypeChain types) : typeChain(std::move(types)), specifiers(TypeSpecifiers::of(types.front().superType)) {}
+  explicit SymbolType(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
+  SymbolType(const TypeChain &types, TypeSpecifiers specifiers) : typeChain(types), specifiers(specifiers) {}
 
   // Public methods
   [[nodiscard]] SymbolType toPointer(const ASTNode *node) const;

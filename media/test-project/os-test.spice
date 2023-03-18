@@ -6,8 +6,4 @@ f<int> main() {
     testPtr = &test1; // Valid
 
     *testPtr = 13; // Error
-
-
-
-
 }

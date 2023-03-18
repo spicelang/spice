@@ -1185,10 +1185,9 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
     // Check if the entry is public if it is imported
     assert(nameRegistryEntry->targetEntry != nullptr);
-    const SymbolTableEntry *structEntry = nameRegistryEntry->targetEntry;
-    if (!structEntry->getType().isPublic() && accessScope->parent->isImportedBy(currentScope))
+    if (!nameRegistryEntry->targetEntry->getType().isPublic() && accessScope->parent->isImportedBy(currentScope))
       throw SemanticError(node, INSUFFICIENT_VISIBILITY,
-                          "Cannot access struct '" + structEntry->name + "' due to its private visibility");
+                          "Cannot access struct '" + nameRegistryEntry->targetEntry->name + "' due to its private visibility");
   }
 
   return ExprResult{node->setEvaluatedSymbolType(varType, manIdx), varEntry};
@@ -1248,7 +1247,12 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through");
   }
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(superType), manIdx)};
+
+  // Create symbol type
+  SymbolType symbolType(superType);
+  symbolType.specifiers = TypeSpecifiers::of(superType);
+
+  return ExprResult{node->setEvaluatedSymbolType(symbolType, manIdx)};
 }
 
 std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
@@ -1643,6 +1647,35 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
   // Visit base data type
   auto type = std::any_cast<SymbolType>(visit(node->baseDataType()));
 
+  // Attach the specifiers to the type
+  if (node->specifierLst()) {
+    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_CONST)
+        type.specifiers.setConst(true);
+      else if (specifier->type == SpecifierNode::TY_SIGNED)
+        type.specifiers.setSigned(true);
+      else if (specifier->type == SpecifierNode::TY_UNSIGNED)
+        type.specifiers.setSigned(false);
+      else if (specifier->type == SpecifierNode::TY_HEAP)
+        type.specifiers.setHeap(true);
+      else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType))
+        type.specifiers.setPublic(true);
+      else {
+        const char *entryName = "local variable";
+        if (node->isGlobalType)
+          entryName = "global variable";
+        else if (node->isFieldType)
+          entryName = "field";
+        else if (node->isParamType)
+          entryName = "param";
+        else if (node->isReturnType)
+          entryName = "return variable";
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                            "Cannot use this specifier on a " + std::string(entryName) + " definition");
+      }
+    }
+  }
+
   size_t assignExprCounter = 0;
   std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
   while (!tmQueue.empty()) {
@@ -1770,7 +1803,9 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
       throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
 
-    const bool isParamOrFieldOrReturnType = node->isParamType || node->isFieldType || node->isReturnType;
+    const DataTypeNode *dataTypeNode = dynamic_cast<DataTypeNode *>(node->parent->parent);
+    assert(dataTypeNode != nullptr);
+    const bool isParamOrFieldOrReturnType = dataTypeNode->isParamType || dataTypeNode->isFieldType || dataTypeNode->isReturnType;
 
     // Collect the concrete template types
     std::vector<SymbolType> templateTypes;

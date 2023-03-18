@@ -875,6 +875,9 @@ public:
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
 
+  // Other methods
+  std::vector<Function *> *getFctManifestations() override { return &signatureManifestations; }
+
   // Public members
   Type signatureType = SignatureNode::TYPE_NONE;
   std::string methodName;
@@ -1645,6 +1648,10 @@ public:
 
   // Public members
   std::queue<TypeModifier> tmQueue;
+  bool isParamType = false;
+  bool isGlobalType = false;
+  bool isFieldType = false;
+  bool isReturnType = false;
 };
 
 // ==================================================== BaseDataTypeNode =========================================================

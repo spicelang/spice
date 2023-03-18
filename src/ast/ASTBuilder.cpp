@@ -337,9 +337,10 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
       currentNode = globalVarDefNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) { // Constant
+      isGlobal = true;
+    } else if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) { // Constant
       currentNode = globalVarDefNode->createChild<ConstantNode>(CodeLoc(rule->start, filePath));
       globalVarDefNode->hasValue = true;
     } else
@@ -348,6 +349,7 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
     if (currentNode != globalVarDefNode) {
       visit(rule);
       currentNode = globalVarDefNode;
+      isGlobal = false;
     }
   }
   return nullptr;
@@ -1706,6 +1708,11 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   dataTypeNode->reserveChildren(ctx->children.size());
   saveErrorMessage(dataTypeNode, ctx);
 
+  dataTypeNode->isParamType = isParam;
+  dataTypeNode->isGlobalType = isGlobal;
+  dataTypeNode->isFieldType = isField;
+  dataTypeNode->isReturnType = isReturnType;
+
   for (int i = 0; i < ctx->children.size(); i++) {
     auto subTree = ctx->children[i];
     ParserRuleContext *rule;
@@ -1787,10 +1794,6 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
   auto customDataTypeNode = static_cast<CustomDataTypeNode *>(currentNode);
   customDataTypeNode->reserveChildren(ctx->children.size());
   saveErrorMessage(customDataTypeNode, ctx);
-
-  customDataTypeNode->isParamType = isParam;
-  customDataTypeNode->isFieldType = isField;
-  customDataTypeNode->isReturnType = isReturnType;
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
