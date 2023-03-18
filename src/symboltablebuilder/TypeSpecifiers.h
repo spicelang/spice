@@ -3,7 +3,6 @@
 #pragma once
 
 #include "../../lib/json/json.hpp"
-#include "SymbolType.h"
 
 namespace spice::compiler {
 
@@ -26,8 +25,8 @@ const unsigned short SPECIFIER_DEFAULTS_LONG = 0b0010;
 const unsigned short SPECIFIER_DEFAULTS_BYTE = 0b0000;
 // Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_CHAR = 0b0000;
-// Defaults: Heap: 0, Const: 1, Signed: 0, Public: 0
-const unsigned short SPECIFIER_DEFAULTS_STRING = 0b0100;
+// Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
+const unsigned short SPECIFIER_DEFAULTS_STRING = 0b0000;
 // Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
 const unsigned short SPECIFIER_DEFAULTS_BOOL = 0b0000;
 // Defaults: Heap: 0, Const: 0, Signed: 0, Public: 0
@@ -51,15 +50,14 @@ const unsigned short SPECIFIER_DEFAULTS_PROCEDURE = 0b0100;
 // Defaults: Heap: 0, Const: 1, Signed: 0, Public: 1
 const unsigned short SPECIFIER_DEFAULTS_IMPORT = 0b0101;
 
-class SymbolSpecifiers {
+class TypeSpecifiers {
 public:
   // Constructors
-  SymbolSpecifiers() = default;
-  explicit SymbolSpecifiers(unsigned short initialValue) : specifierValue(initialValue) {}
+  TypeSpecifiers() = default;
+  explicit TypeSpecifiers(unsigned short initialValue) : specifierValue(initialValue) {}
 
   // Public static methods
-  static SymbolSpecifiers of(const SymbolType &superType);
-  static SymbolSpecifiers of(SymbolSuperType superType);
+  static TypeSpecifiers of(uint16_t superType);
 
   // Public methods
   void setConst(bool value);
@@ -72,10 +70,9 @@ public:
   [[nodiscard]] bool isPublic() const;
   void setHeap(bool heap);
   [[nodiscard]] bool isHeap() const;
-  [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
   // JSON serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolSpecifiers, specifierValue)
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeSpecifiers, specifierValue)
 
 private:
   // Private members

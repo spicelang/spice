@@ -7,11 +7,6 @@
       "isVolatile": false,
       "name": "main(int, string[])",
       "orderIndex": 2,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
       "state": "destructed",
       "type": "function"
     },
@@ -21,11 +16,6 @@
       "isVolatile": false,
       "name": "calledFunction:L7",
       "orderIndex": 1,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
       "state": "destructed",
       "type": "function"
     },
@@ -35,11 +25,6 @@
       "isVolatile": false,
       "name": "calledFunction:L1",
       "orderIndex": 0,
-      "specifiers": {
-        "const": true,
-        "public": false,
-        "signed": false
-      },
       "state": "destructed",
       "type": "function"
     }

@@ -111,6 +111,7 @@ private:
   const std::string &filePath;
   antlr4::ANTLRInputStream *inputStream;
   bool isParam = false;
+  bool isGlobal = false;
   bool isField = false;
   bool isReturnType = false;
 

@@ -61,7 +61,7 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
     throw SemanticError(node, DUPLICATE_IMPORT_NAME, "Duplicate import '" + node->importName + "'");
 
   // Create symbol for import
-  node->entry = rootScope->insert(node->importName, SymbolSpecifiers(TY_IMPORT), node);
+  node->entry = rootScope->insert(node->importName, node);
 
   // Create the imported source file
   const auto importedSourceFile = sourceFile->createSourceFile(node->importName, importPath, isStd);

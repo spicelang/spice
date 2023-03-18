@@ -118,10 +118,14 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   currentScope = node->fctScope->parent;
   assert(currentScope->type == SCOPE_GLOBAL || currentScope->type == SCOPE_STRUCT);
 
+  // Prepare type of function
+  SymbolType functionType(TY_FUNCTION);
+  functionType.specifiers = node->functionSpecifiers;
+
   // Update type of function entry
   SymbolTableEntry *functionEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
   assert(functionEntry != nullptr);
-  functionEntry->updateType(SymbolType(TY_FUNCTION), false);
+  functionEntry->updateType(functionType, false);
 
   // Build function object
   const Function spiceFunc(node->fctName->name, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node,
@@ -217,10 +221,14 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   currentScope = node->procScope->parent;
   assert(currentScope->type == SCOPE_GLOBAL || currentScope->type == SCOPE_STRUCT);
 
+  // Prepare type of procedure
+  SymbolType procedureType(TY_PROCEDURE);
+  procedureType.specifiers = node->procedureSpecifiers;
+
   // Update type of procedure entry
   SymbolTableEntry *procedureEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
   assert(procedureEntry != nullptr);
-  procedureEntry->updateType(SymbolType(TY_PROCEDURE), false);
+  procedureEntry->updateType(procedureType, false);
 
   // Build procedure object
   const Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node,
@@ -279,7 +287,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Update type of struct entry
   assert(node->entry != nullptr);
-  const SymbolType structType(TY_STRUCT, node->structName, {.structBodyScope = node->structScope}, usedTemplateTypes);
+  SymbolType structType(TY_STRUCT, node->structName, {.structBodyScope = node->structScope}, usedTemplateTypes);
+  structType.specifiers = node->structSpecifiers;
   node->entry->updateType(structType, false);
 
   // Change to struct scope
@@ -326,6 +335,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   // Update type of interface entry
   SymbolType interfaceType(TY_INTERFACE, node->interfaceName);
+  interfaceType.specifiers = node->interfaceSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(interfaceType, false);
 
@@ -347,7 +357,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   assert(currentScope->type == SCOPE_GLOBAL);
 
   // Build interface object
-  Interface i(node->interfaceName, node->entry->specifiers, signatures, node);
+  Interface i(node->interfaceName, node->interfaceSpecifiers, signatures, node);
   rootScope->insertInterface(i);
   i.interfaceScope = node->interfaceScope;
 
@@ -357,6 +367,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Update type of enum entry
   SymbolType enumType(TY_ENUM, node->enumName);
+  enumType.specifiers = node->enumSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(enumType, false);
 
@@ -469,7 +480,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
   node->entry->updateType(globalVarType, false);
 
   // Check if a value is attached
-  if (!node->constant() && node->entry->specifiers.isConst())
+  if (!node->constant() && globalVarType.isConst())
     throw SemanticError(node, GLOBAL_CONST_WITHOUT_VALUE, "You must specify a value for constant global variables");
 
   return nullptr;
@@ -517,8 +528,9 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
 
 std::any TypeChecker::visitImportStmtPrepare(ImportStmtNode *node) {
   // Set entry to import type
+  const SymbolType importType(TY_IMPORT, node->importName);
   assert(node->entry != nullptr);
-  node->entry->updateType(SymbolType(TY_IMPORT, node->importName), false);
+  node->entry->updateType(importType, false);
 
   return nullptr;
 }

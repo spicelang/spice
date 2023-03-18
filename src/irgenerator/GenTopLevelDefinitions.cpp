@@ -134,8 +134,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     }
 
     // Do not generate this manifestation if it is private and used by nobody
-    const SymbolSpecifiers &specifiers = manifestation->entry->specifiers;
-    const bool isPublic = specifiers.isPublic();
+    const bool isPublic = manifestation->entry->getType().isPublic();
     if (!isPublic && !manifestation->used) {
       manIdx++; // Increment symbolTypeIndex
       continue;
@@ -192,7 +191,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     llvm::Type *returnType = manifestation->returnType.toLLVMType(context, currentScope);
 
     // Check if function is explicitly inlined
-    const bool explicitlyInlined = manifestation->entry->specifiers.isInline();
+    const bool explicitlyInlined = manifestation->entry->getType().isInline();
     // Get function linkage
     llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
@@ -298,8 +297,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     }
 
     // Do not generate this manifestation if it is private and used by nobody
-    const SymbolSpecifiers &specifiers = manifestation->entry->specifiers;
-    const bool isPublic = specifiers.isPublic();
+    const bool isPublic = manifestation->entry->getType().isPublic();
     if (!isPublic && !manifestation->used) {
       manIdx++; // Increment symbolTypeIndex
       continue;
@@ -356,7 +354,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     llvm::Type *returnType = builder.getVoidTy();
 
     // Check if procedure is explicitly inlined
-    const bool explicitlyInlined = manifestation->entry->specifiers.isInline();
+    const bool explicitlyInlined = manifestation->entry->getType().isInline();
     // Get procedure linkage
     llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
@@ -459,7 +457,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
         continue;
 
       // Do not generate this struct if it is private and used by nobody
-      if (!spiceStruct.used && !spiceStruct.entry->specifiers.isPublic())
+      if (!spiceStruct.used && !spiceStruct.entry->getType().isPublic())
         continue;
 
       // Change scope to struct scope, specific to substantiation
@@ -515,8 +513,9 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
 
   // Retrieve some information about the variable
   assert(node->entry != nullptr);
-  const bool isPublic = node->entry->specifiers.isPublic();
-  const bool isConst = node->entry->specifiers.isConst();
+  const SymbolType &entryType = node->entry->getType();
+  const bool isPublic = entryType.isPublic();
+  const bool isConst = entryType.isConst();
 
   // Get correct type and linkage type
   auto varType = std::any_cast<llvm::Type *>(visit(node->dataType()));

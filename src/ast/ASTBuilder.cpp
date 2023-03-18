@@ -337,11 +337,10 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // SpecifierLst
-      currentNode = globalVarDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
       currentNode = globalVarDefNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) { // Constant
+      isGlobal = true;
+    } else if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) { // Constant
       currentNode = globalVarDefNode->createChild<ConstantNode>(CodeLoc(rule->start, filePath));
       globalVarDefNode->hasValue = true;
     } else
@@ -350,6 +349,7 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
     if (currentNode != globalVarDefNode) {
       visit(rule);
       currentNode = globalVarDefNode;
+      isGlobal = false;
     }
   }
   return nullptr;
@@ -794,9 +794,7 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // SpecifierLst
-      currentNode = fieldNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = fieldNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
     else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -817,16 +815,16 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   // Extract method name
   signatureNode->methodName = getIdentifier(ctx->IDENTIFIER());
   // Extract signature type
-  signatureNode->signatureType = ctx->F() != nullptr ? SignatureNode::TYPE_FUNCTION : SignatureNode::TYPE_PROCEDURE;
+  signatureNode->signatureType = ctx->F() ? SignatureNode::TYPE_FUNCTION : SignatureNode::TYPE_PROCEDURE;
+  signatureNode->signatureSpecifiers = ctx->F() ? TypeSpecifiers::of(TY_FUNCTION) : TypeSpecifiers::of(TY_PROCEDURE);
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // SpecifierLst
       currentNode = signatureNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
+    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = signatureNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
-      signatureNode->signatureType = SignatureNode::TYPE_FUNCTION;
-    } else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
+    else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
       currentNode = signatureNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
       signatureNode->hasParams = true;
     } else
@@ -879,9 +877,7 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // SpecifierLst
-      currentNode = declStmtNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = declStmtNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) { // AssignExpr
       currentNode = declStmtNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
@@ -1712,10 +1708,17 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   dataTypeNode->reserveChildren(ctx->children.size());
   saveErrorMessage(dataTypeNode, ctx);
 
+  dataTypeNode->isParamType = isParam;
+  dataTypeNode->isGlobalType = isGlobal;
+  dataTypeNode->isFieldType = isField;
+  dataTypeNode->isReturnType = isReturnType;
+
   for (int i = 0; i < ctx->children.size(); i++) {
     auto subTree = ctx->children[i];
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::BaseDataTypeContext *>(subTree); rule != nullptr) // BaseDataType
+    if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // SpecifierLst
+      currentNode = dataTypeNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::BaseDataTypeContext *>(subTree); rule != nullptr) // BaseDataType
       currentNode = dataTypeNode->createChild<BaseDataTypeNode>(CodeLoc(rule->start, filePath));
     else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::MUL)
       dataTypeNode->tmQueue.push({DataTypeNode::TYPE_PTR, false, 0});
@@ -1791,10 +1794,6 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
   auto customDataTypeNode = static_cast<CustomDataTypeNode *>(currentNode);
   customDataTypeNode->reserveChildren(ctx->children.size());
   saveErrorMessage(customDataTypeNode, ctx);
-
-  customDataTypeNode->isParamType = isParam;
-  customDataTypeNode->isFieldType = isField;
-  customDataTypeNode->isReturnType = isReturnType;
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;

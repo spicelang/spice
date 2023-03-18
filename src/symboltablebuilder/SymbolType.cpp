@@ -41,7 +41,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_REF, "", {}, {}});
-  return SymbolType(newTypeChain);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -58,7 +58,7 @@ SymbolType SymbolType::toArray(const ASTNode *node, size_t size, bool skipDynChe
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_ARRAY, "", {.arraySize = size}, {}});
-  return SymbolType(newTypeChain);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -72,7 +72,7 @@ SymbolType SymbolType::getContainedTy() const {
   assert(typeChain.size() > 1);
   TypeChain newTypeChain = typeChain;
   newTypeChain.pop_back();
-  return SymbolType(newTypeChain);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -84,11 +84,11 @@ SymbolType SymbolType::getContainedTy() const {
 SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
   assert(!typeChain.empty());
   // Copy the stack to not destroy the present one
-  TypeChain chainCopy = typeChain;
+  TypeChain newTypeChain = typeChain;
   // Replace the first element
-  chainCopy.front().subType = newSubType;
+  newTypeChain.front().subType = newSubType;
   // Return the new chain as a symbol type
-  return SymbolType(chainCopy);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -103,7 +103,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   for (size_t i = 1; i < typeChain.size(); i++)
     newTypeChain.push_back(typeChain.at(i));
   // Return the new chain as a symbol type
-  return SymbolType(newTypeChain);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -222,11 +222,9 @@ bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &gene
   // Check if the symbol type itself is generic
   if (baseType.is(TY_GENERIC))
     return std::any_of(genericTypeList.begin(), genericTypeList.end(), [=](const GenericType &t) { return t == baseType; });
-  // Check if all template types are covered
-  for (const SymbolType &templateType : baseType.getTemplateTypes()) {
-    if (!templateType.isCoveredByGenericTypeList(genericTypeList))
-      return false;
-  }
+  auto &baseTemplateTypes = baseType.getTemplateTypes();
+  return std::all_of(baseTemplateTypes.begin(), baseTemplateTypes.end(),
+                     [&](const SymbolType &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); });
   return true;
 }
 
@@ -260,13 +258,11 @@ size_t SymbolType::getArraySize() const {
 }
 
 /**
- * Set the signedness of the current type
- *
- * @param value Signed or not signed
+ * Check if the current type is const
  */
-void SymbolType::setSigned(bool value) {
-  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
-  typeChain.back().data.numericSigned = value;
+bool SymbolType::isConst() const {
+  assert(isPrimitive() || isOneOf({TY_STRUCT, TY_FUNCTION, TY_PROCEDURE}));
+  return specifiers.isConst();
 }
 
 /**
@@ -274,7 +270,31 @@ void SymbolType::setSigned(bool value) {
  */
 bool SymbolType::isSigned() const {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
-  return typeChain.back().data.numericSigned;
+  return specifiers.isSigned();
+}
+
+/**
+ * Check if the current type is inline
+ */
+bool SymbolType::isInline() const {
+  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  return specifiers.isInline();
+}
+
+/**
+ * Check if the current type is public
+ */
+bool SymbolType::isPublic() const {
+  assert(isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
+  return specifiers.isPublic();
+}
+
+/**
+ * Check if the current type is heap
+ */
+bool SymbolType::isHeap() const {
+  assert(isPrimitive() /* Global variables */ || is(TY_STRUCT));
+  return specifiers.isHeap();
 }
 
 /**

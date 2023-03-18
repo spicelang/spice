@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <ast/ASTBuilder.h>
+#include <symboltablebuilder/TypeSpecifiers.h>
 #include <util/CommonUtil.h>
 
 #include <llvm/IR/Type.h>
@@ -56,7 +57,6 @@ public:
   union TypeChainElementData {
     // Union fields
     size_t arraySize = 0;   // TY_ARRAY
-    bool numericSigned;     // TY_INT, TY_SHORT, TY_LONG
     Scope *structBodyScope; // TY_STRUCT, TY_INTERFACE, TY_ENUM
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
@@ -111,12 +111,15 @@ public:
 
   // Constructors
   SymbolType() = default;
-  explicit SymbolType(SymbolSuperType superType) : typeChain({TypeChainElement{superType}}) {}
-  SymbolType(SymbolSuperType superType, const std::string &subType) : typeChain({TypeChainElement{superType, subType}}) {}
+  explicit SymbolType(SymbolSuperType superType)
+      : typeChain({TypeChainElement{superType}}), specifiers(TypeSpecifiers::of(superType)) {}
+  SymbolType(SymbolSuperType superType, const std::string &subType)
+      : typeChain({TypeChainElement{superType, subType}}), specifiers(TypeSpecifiers::of(superType)) {}
   SymbolType(SymbolSuperType superType, const std::string &subType, const TypeChainElementData &data,
              const std::vector<SymbolType> &templateTypes)
-      : typeChain({TypeChainElement{superType, subType, data, templateTypes}}) {}
-  explicit SymbolType(TypeChain types) : typeChain(std::move(types)) {}
+      : typeChain({TypeChainElement{superType, subType, data, templateTypes}}), specifiers(TypeSpecifiers::of(superType)) {}
+  explicit SymbolType(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
+  SymbolType(const TypeChain &types, TypeSpecifiers specifiers) : typeChain(types), specifiers(specifiers) {}
 
   // Public methods
   [[nodiscard]] SymbolType toPointer(const ASTNode *node) const;
@@ -173,8 +176,11 @@ public:
   [[nodiscard]] bool isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] size_t getArraySize() const;
-  void setSigned(bool value = true);
+  [[nodiscard]] bool isConst() const;
   [[nodiscard]] bool isSigned() const;
+  [[nodiscard]] bool isInline() const;
+  [[nodiscard]] bool isPublic() const;
+  [[nodiscard]] bool isHeap() const;
   void setStructBodyScope(Scope *bodyScope);
   [[nodiscard]] Scope *getStructBodyScope() const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
@@ -183,6 +189,7 @@ public:
 
   // Public members
   TypeChain typeChain;
+  TypeSpecifiers specifiers;
 
 private:
   // Private methods
