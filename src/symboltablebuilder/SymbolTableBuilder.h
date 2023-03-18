@@ -51,6 +51,7 @@ public:
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
   std::any visitEnumItem(EnumItemNode *node) override;
   std::any visitField(FieldNode *node) override;
+  std::any visitSignature(SignatureNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
 
 private:

@@ -7,7 +7,7 @@
 #include <vector>
 
 #include <model/GenericType.h>
-#include <symboltablebuilder/SymbolSpecifiers.h>
+#include <symboltablebuilder/TypeSpecifiers.h>
 
 #include "../../lib/json/json.hpp"
 

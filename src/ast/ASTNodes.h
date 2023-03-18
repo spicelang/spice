@@ -13,6 +13,7 @@
 #include <model/Function.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
+#include <symboltablebuilder/TypeSpecifiers.h>
 #include <util/CodeLoc.h>
 
 namespace spice::compiler {
@@ -295,6 +296,7 @@ public:
   bool hasTemplateTypes = false;
   bool hasParams = false;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers functionSpecifiers = TypeSpecifiers::of(TY_FUNCTION);
   Scope *structScope = nullptr;
   Scope *fctScope = nullptr;
   std::vector<Function *> fctManifestations;
@@ -333,6 +335,7 @@ public:
   bool hasTemplateTypes = false;
   bool hasParams = false;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers procedureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
   Scope *structScope = nullptr;
   Scope *procScope = nullptr;
   std::vector<Function *> procManifestations;
@@ -361,6 +364,7 @@ public:
   bool isGeneric = false;
   bool hasInterfaces = false;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers structSpecifiers = TypeSpecifiers::of(TY_STRUCT);
   std::vector<Struct *> structManifestations;
   Scope *structScope = nullptr;
   Struct *spiceStruct = nullptr;
@@ -384,6 +388,7 @@ public:
   // Public members
   std::string interfaceName;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
   Scope *interfaceScope = nullptr;
   Interface *spiceInterface = nullptr;
 };
@@ -405,8 +410,9 @@ public:
 
   // Public members
   std::string enumName;
-  Scope *enumScope;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers enumSpecifiers = TypeSpecifiers::of(TY_ENUM);
+  Scope *enumScope;
 };
 
 // ====================================================== GenericTypeDefNode =====================================================
@@ -460,7 +466,6 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitGlobalVarDef(this); }
 
   // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
 
@@ -840,7 +845,6 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitField(this); }
 
   // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
 
   // Public members
@@ -854,6 +858,7 @@ class SignatureNode : public ASTNode {
 public:
   // Enums
   enum Type {
+    TYPE_NONE,
     TYPE_FUNCTION,
     TYPE_PROCEDURE,
   };
@@ -871,8 +876,10 @@ public:
   [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Public members
+  Type signatureType = SignatureNode::TYPE_NONE;
   std::string methodName;
-  Type signatureType = SignatureNode::TYPE_PROCEDURE;
+  SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers signatureSpecifiers;
   bool hasParams = false;
   std::vector<Function *> signatureManifestations;
 };
@@ -903,7 +910,6 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDeclStmt(this); }
 
   // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
@@ -1634,6 +1640,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDataType(this); }
 
   // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
 
   // Public members

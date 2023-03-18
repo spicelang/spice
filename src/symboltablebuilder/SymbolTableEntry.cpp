@@ -40,7 +40,7 @@ void SymbolTableEntry::updateType(const SymbolType &newType, bool overwriteExist
 void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node, bool force) {
   const LifecycleState oldState = lifecycle.getCurrentState();
   // Check if this is a constant variable and is already initialized
-  if (newState != DEAD && oldState != DECLARED && specifiers.isConst() && !force)
+  if (newState != DEAD && oldState != DECLARED && type.isConst() && !force)
     throw SemanticError(node, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
   // Check if the type is known at time of initialization
   if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                      // GCOV_EXCL_LINE
@@ -165,7 +165,6 @@ nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   result["codeLoc"] = declNode->codeLoc.toString();
   result["orderIndex"] = orderIndex;
   result["state"] = stateStr;
-  result["specifiers"] = specifiers.toJSON();
   result["isGlobal"] = global;
   result["isVolatile"] = isVolatile;
   return result;

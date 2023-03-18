@@ -260,13 +260,11 @@ size_t SymbolType::getArraySize() const {
 }
 
 /**
- * Set the signedness of the current type
- *
- * @param value Signed or not signed
+ * Check if the current type is const
  */
-void SymbolType::setSigned(bool value) {
-  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
-  typeChain.back().data.numericSigned = value;
+bool SymbolType::isConst() const {
+  assert(isPrimitive() || isOneOf({TY_STRUCT, TY_FUNCTION, TY_PROCEDURE}));
+  return specifiers.isConst();
 }
 
 /**
@@ -274,7 +272,31 @@ void SymbolType::setSigned(bool value) {
  */
 bool SymbolType::isSigned() const {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
-  return typeChain.back().data.numericSigned;
+  return specifiers.isSigned();
+}
+
+/**
+ * Check if the current type is inline
+ */
+bool SymbolType::isInline() const {
+  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  return specifiers.isInline();
+}
+
+/**
+ * Check if the current type is public
+ */
+bool SymbolType::isPublic() const {
+  assert(isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
+  return specifiers.isSigned();
+}
+
+/**
+ * Check if the current type is heap
+ */
+bool SymbolType::isHeap() const {
+  assert(isPrimitive() /* Global variables */ || is(TY_STRUCT));
+  return specifiers.isSigned();
 }
 
 /**

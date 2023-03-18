@@ -13,7 +13,7 @@ interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: TYPE IDENTIFIER ALIAS dataType SEMICOLON;
-globalVarDef: specifierLst? dataType IDENTIFIER (ASSIGN constant)? SEMICOLON;
+globalVarDef: dataType IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
 
 // Control structures
@@ -37,10 +37,10 @@ paramLst: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
 enumItemLst: enumItem (COMMA enumItem)*;
 enumItem: IDENTIFIER (ASSIGN INT_LIT)?;
-field: specifierLst? dataType IDENTIFIER;
+field: dataType IDENTIFIER;
 signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER LPAREN typeLst? RPAREN SEMICOLON;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
-declStmt: specifierLst? dataType IDENTIFIER (ASSIGN assignExpr)?;
+declStmt: dataType IDENTIFIER (ASSIGN assignExpr)?;
 specifierLst: specifier+;
 specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC | HEAP;
 importStmt: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;
@@ -83,7 +83,7 @@ arrayInitialization: LBRACE argLst? RBRACE;
 structInstantiation: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
 
 // Types
-dataType: baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | IDENTIFIER)? RBRACKET)*;
+dataType: specifierLst? baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | IDENTIFIER)? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | customDataType;
 customDataType: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)?;
 

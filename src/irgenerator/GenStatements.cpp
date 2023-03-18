@@ -134,7 +134,6 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
 
   // Visit the assignExpr
   llvm::Value *condValue = resolveValue(node->assignExpr());
-  llvm::Function *parentFct = builder.GetInsertBlock()->getParent();
 
   // Create condition check
   insertCondJump(condValue, bExit, bThen, LIKELY);

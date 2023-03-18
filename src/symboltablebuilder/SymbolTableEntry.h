@@ -6,7 +6,6 @@
 #include <utility>
 
 #include <borrowchecker/Lifecycle.h>
-#include <symboltablebuilder/SymbolSpecifiers.h>
 #include <symboltablebuilder/SymbolType.h>
 
 #include <llvm/IR/DerivedTypes.h>
@@ -28,10 +27,8 @@ union CompileTimeValue;
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, SymbolType type, Scope *scope, SymbolSpecifiers specifiers, ASTNode *declNode,
-                   size_t orderIndex, const bool global)
-      : name(std::move(name)), type(std::move(type)), scope(scope), specifiers(specifiers), declNode(declNode),
-        orderIndex(orderIndex), global(global){};
+  SymbolTableEntry(std::string name, SymbolType type, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
+      : name(std::move(name)), type(std::move(type)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global){};
 
   // Public methods
   [[nodiscard]] const SymbolType &getType() const;
@@ -50,7 +47,6 @@ public:
   // Public members
   const std::string name;
   Scope *scope;
-  SymbolSpecifiers specifiers;
   ASTNode *declNode;
   const size_t orderIndex;
   const bool global;

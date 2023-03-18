@@ -1,16 +1,16 @@
 // Std imports
-import "std/data/map" as map;
-import "std/data/vector" as vec;
+import "std/data/map";
+import "std/data/vector";
 
 // Own imports
-import "../ast/AstNodes" as ast;
-import "SymbolType" as st;
-import "SymbolTableEntry" as ste;
-import "SymbolSpecifiers" as ss;
-import "Capture" as cpt;
-import "GenericType" as gt;
-import "Function" as fct;
-import "Interface" as itf;
+import "../ast/AstNodes";
+import "SymbolType";
+import "SymbolTableEntry";
+import "TypeSpecifiers";
+import "Capture";
+import "GenericType";
+import "Function";
+import "Interface";
 
 public type ScopeType enum {
     SCOPE_GLOBAL,
@@ -33,15 +33,15 @@ public type ScopeType enum {
 public type SymbolTable struct {
     SymbolTable* parent
     ScopeType scopeType
-    map::Map<string, SymbolTable *> children
-    map::Map<string, ste::SymbolTableEntry> symbols
-    map::Map<string, cpt::Capture> captures
-    map::Map<string, gt::GenericType> genericTypes
-    map::Map<string, map::Map<string, fct::Function>> functions // <code-loc, vector-of-representations>
-    map::Map<string, fct::Function*> functionAccessPointers
-    map::Map<string, map::Map<string, sct::Struct>> structs // <code-loc, vector-of-representations>
-    map::Map<string, sct::Struct*> structAccessPointers
-    map::Map<string, itf::Interface> interfaces
+    Map<string, SymbolTable *> children
+    Map<string, SymbolTableEntry> symbols
+    Map<string, Capture> captures
+    Map<string, GenericType> genericTypes
+    Map<string, Map<string, Function>> functions // <code-loc, vector-of-representations>
+    Map<string, Function*> functionAccessPointers
+    Map<string, Map<string, Struct>> structs // <code-loc, vector-of-representations>
+    Map<string, Struct*> structAccessPointers
+    Map<string, Interface> interfaces
 
     bool inMainSourceFile
     bool isSourceFileRootScope
@@ -75,15 +75,15 @@ public p SymbolTable.ctor(
  */
 public p SymbolTable.insert(
     const string name,
-    const st::SymbolType symbolType,
-    const ss::SymbolSpecifiers specifiers,
-    const ste::SymbolState state,
-    const ast::AstNode* declNode
+    const SymbolType symbolType,
+    const TypeSpecifiers specifiers,
+    const SymbolState state,
+    const AstNode* declNode
 ) {
     bool global = this.parent == nil<SymbolTable*>;
     unsigned int orderIndex = this.symbols.getSize();
     // Insert into symbols map
-    symbols.insert(ste::SymbolTableEntry{name, symbolType, this, specifiers, state, declNode, orderIndex, global});
+    symbols.insert(SymbolTableEntry{name, symbolType, this, specifiers, state, declNode, orderIndex, global});
 }
 
 /**
@@ -93,9 +93,9 @@ public p SymbolTable.insert(
  * @param symbolType Type of the symbol
  * @param declNode AST node where the symbol is declared
  */
-public p SymbolTable.insertAnonymous(const st::SymbolType symbolType, const ast::AstNode* declNode) {
+public p SymbolTable.insertAnonymous(const SymbolType symbolType, const AstNode* declNode) {
     string name = "anon." + declNode.codeLoc.toString();
-    this.insert(name, symbolType, ss::SymbolSpecifiers(symbolType), ste::SymbolState.DECLARED, declNode);
+    this.insert(name, symbolType, TypeSpecifiers(symbolType), SymbolState.DECLARED, declNode);
     this.lookupAnonymous(declNode.codeLoc).used = true;
 }
 
@@ -115,20 +115,20 @@ public p SymbolTable.insertCapture(const string name, const Capture capture) {
  * @param name Name of the desired symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
-public f<ste::SymbolTableEntry*> SymbolTable.lookup(const string name) {
+public f<SymbolTableEntry*> SymbolTable.lookup(const string name) {
     // Check if the symbol exists in the current scope. If yes, take it
-    ste::SymbolTableEntry* entry = this.lookupStrict(name);
-    if entry != nil<ste::SymbolTableEntry*> { // Symbol was not found in the current scope
+    SymbolTableEntry* entry = this.lookupStrict(name);
+    if entry != nil<SymbolTableEntry*> { // Symbol was not found in the current scope
         // We reached the root scope, the symbol does not exist at all
-        if parent == nil<SymbolTable*> { return nil<ste::SymbolTableEntry*>; }
+        if parent == nil<SymbolTable*> { return nil<SymbolTableEntry*>; }
         // If there is a parent scope, continue the search there
         entry = this.parent.lookup(name);
         // Symbol was also not found in all the parent scopes, return nullptr
-        if entry == nil<SymbolTable*> { return nil<ste::SymbolTableEntry*>; }
+        if entry == nil<SymbolTable*> { return nil<SymbolTableEntry*>; }
 
         // Check if this scope requires capturing and capture the variable if appropriate
         if this.capturingRequired && !this.captures.contains(name) && !entry.ty.isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}) {
-            this.captures.insert(name, cpt::Capture(entry));
+            this.captures.insert(name, Capture(entry));
         }
     }
     return entry;
@@ -140,14 +140,14 @@ public f<ste::SymbolTableEntry*> SymbolTable.lookup(const string name) {
  * @param name Name of the desired symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
-public f<ste::SymbolTableEntry*> SymbolTable.lookupStrict(const string name) {
-    if name.isEmpty() { return nil<ste::SymbolTableEntry*>; }
+public f<SymbolTableEntry*> SymbolTable.lookupStrict(const string name) {
+    if name.isEmpty() { return nil<SymbolTableEntry*>; }
     // Check if a symbol with this name exists in this scope
     if this.symbols.contains(name) { return &this.symbols.get(name); }
     // Check if a capture with this name exists in this scope
     if this.captures.contains(name) { return &this.captures.get(name).capturedEntry; }
     // Otherwise, return a nullptr
-    return nil<ste::SymbolTableEntry*>;
+    return nil<SymbolTableEntry*>;
 }
 
 /**
@@ -157,9 +157,9 @@ public f<ste::SymbolTableEntry*> SymbolTable.lookupStrict(const string name) {
  * @param orderIndex Order index of the desired symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
-public f<ste::SymbolTableEntry*> SymbolTable.lookupByIndex(const unsigned int orderIndex) {
+public f<SymbolTableEntry*> SymbolTable.lookupByIndex(const unsigned int orderIndex) {
     // ToDo
-    return nil<ste::SymbolTableEntry*>;
+    return nil<SymbolTableEntry*>;
 }
 
 /**
@@ -169,15 +169,15 @@ public f<ste::SymbolTableEntry*> SymbolTable.lookupByIndex(const unsigned int or
  * @param skipThisScope Skip the current scope while searching
  * @return Desired symbol / nullptr if the global was not found
  */
-public f<ste::SymbolTableEntry*> SymbolTable.lookupGlobal(const string globalName, const bool skipThisScope = false) {
+public f<SymbolTableEntry*> SymbolTable.lookupGlobal(const string globalName, const bool skipThisScope = false) {
     // Search in the current scope
     if !skipThisScope {
-        ste::SymbolTableEntry* globalSymbol = this.lookupStrict(globalName);
-        if globalSymbol != nil<ste::SymbolTableEntry*> { return globalSymbol; }
+        SymbolTableEntry* globalSymbol = this.lookupStrict(globalName);
+        if globalSymbol != nil<SymbolTableEntry*> { return globalSymbol; }
     }
     // Loop through all children to find the global var
     // ToDo
-    return nil<ste::SymbolTableEntry*>;
+    return nil<SymbolTableEntry*>;
 }
 
 /**
@@ -186,7 +186,7 @@ public f<ste::SymbolTableEntry*> SymbolTable.lookupGlobal(const string globalNam
  * @param codeLoc Definition code loc
  * @return Anonymous symbol
  */
-public f<ste::SymbolTableEntry*> SymbolTable.lookupAnonymous(const cl::CodeLoc codeLoc) {
+public f<SymbolTableEntry*> SymbolTable.lookupAnonymous(const CodeLoc codeLoc) {
     return this.lookup("anon." + codeLoc.toString());
 }
 
@@ -196,10 +196,10 @@ public f<ste::SymbolTableEntry*> SymbolTable.lookupAnonymous(const cl::CodeLoc c
  * @param captureName Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
  */
-public f<cpt::Capture> SymbolTable.lookupCapture(const string captureName) {
+public f<Capture> SymbolTable.lookupCapture(const string captureName) {
     // Check if the capture exists in the current scope. If yes, take it
-    cpt::Capture* capture = this.lookupCaptureStrict(name);
-    if capture != nil<cpt::Capture*> { return capture; }
+    Capture* capture = this.lookupCaptureStrict(name);
+    if capture != nil<Capture*> { return capture; }
 
     // We reached the root scope, the symbol does not exist at all
     if this.parent == nil<SymbolTable*> { return nullptr; }
@@ -213,7 +213,7 @@ public f<cpt::Capture> SymbolTable.lookupCapture(const string captureName) {
  * @param captureName Name of the desired captured symbol
  * @return Capture / nullptr if the capture was not found
  */
-public f<cpt::Capture> SymbolTable.lookupCaptureStrict(const string captureName) {
+public f<Capture> SymbolTable.lookupCaptureStrict(const string captureName) {
 
 }
 
@@ -250,7 +250,7 @@ public f<SymbolTable*> SymbolTable.createChildBlock(const string tableName, cons
  * @param typeName Name of the generic type
  * @param genericType Generic type itself
  */
-public p SymbolTable.insertGenericType(const string typeName, const gt::GenericType genericType) {
+public p SymbolTable.insertGenericType(const string typeName, const GenericType genericType) {
     this.genericTypes.insert(typeName, genericType);
 }
 
@@ -261,11 +261,11 @@ public p SymbolTable.insertGenericType(const string typeName, const gt::GenericT
  * @param typeName Name of the generic type
  * @return Generic type
  */
-public f<gt::GenericType> SymbolTable.lookupGenericType(const string typeName) {
+public f<GenericType> SymbolTable.lookupGenericType(const string typeName) {
     if this.genericTypes.contains(typeName) {
         return &this.genericTypes.get(typeName);
     }
-    return this.parent != nil<SymbolTable*> ? this.parent.lookupGenericType(typeName) : nil<gt::GenericType*>;
+    return this.parent != nil<SymbolTable*> ? this.parent.lookupGenericType(typeName) : nil<GenericType*>;
 }
 
 /**
@@ -326,9 +326,9 @@ public f<SymbolTable*> SymbolTable.getChild(const string tableName) {
  * @param filterForDtorStructs Get only struct variables
  * @return Variables that can be de-allocated
  */
-public f<vec::Vector<ste::SymbolTableEntry*>> SymbolTable.getVarsGoingOutOfScope(const bool filterForDtorStructs = false) {
+public f<Vector<SymbolTableEntry*>> SymbolTable.getVarsGoingOutOfScope(const bool filterForDtorStructs = false) {
     assert this.parent != nil<SymbolTable*>; // Should not be called in root scope
-    vec::Vector<ste::SymbolTableEntry*> varsGoingOutOfScope;
+    Vector<SymbolTableEntry*> varsGoingOutOfScope;
 
     // Collect all variables in this scope
     // ToDo
@@ -344,7 +344,7 @@ public f<vec::Vector<ste::SymbolTableEntry*>> SymbolTable.getVarsGoingOutOfScope
  *
  * @return Map of names and the corresponding symbol table entries
  */
-public f<map::Map<string, SymbolTableEntry>*> SymbolTable.getSymbols() {
+public f<Map<string, SymbolTableEntry>*> SymbolTable.getSymbols() {
     return &this.symbols;
 }
 
@@ -353,7 +353,7 @@ public f<map::Map<string, SymbolTableEntry>*> SymbolTable.getSymbols() {
  *
  * @return Map of names and the corresponding capture
  */
-public f<map::Map<string, Capture>*> SymbolTable.getCaptures() {
+public f<Map<string, Capture>*> SymbolTable.getCaptures() {
     return &this.captures;
 }
 
@@ -375,10 +375,10 @@ public f<long> SymbolTable.getFieldCount() {
  * @param function Function object
  * @param err Error factory
  */
-public f<fct::Function*> SymbolTable.insertFunction(const fct::Function *function) {
+public f<Function*> SymbolTable.insertFunction(const Function *function) {
     const AstNode *declNode = function.declNode;
     // ToDo
-    return nil<fct::Function*>;
+    return nil<Function*>;
 }
 
 /**
@@ -392,19 +392,19 @@ public f<fct::Function*> SymbolTable.insertFunction(const fct::Function *functio
  * @param node Declaration node for a potential error message
  * @return Matched function or nullptr
  */
-public f<fct::Function*> SymbolTable.matchFunction(
+public f<Function*> SymbolTable.matchFunction(
     SymbolTable* currentScope,
     const string callFunctionName,
-    const st::SymbolType callThisType,
-    const vec::Vector<st::SymbolType>* callArgTypes,
-    const ast::AstNode* node
+    const SymbolType callThisType,
+    const Vector<SymbolType>* callArgTypes,
+    const AstNode* node
 ) {
-    vec::Vector<fct::Function*> matches;
+    Vector<Function*> matches;
 
     // Loop through functions and add any matches to the matches vector
     // ToDo
 
-    if matches.isEmpty() { return nil<fct::Function*>; }
+    if matches.isEmpty() { return nil<Function*>; }
 
     // Throw error if more than one function matches the criteria
     if matches.getSize() > 1 {
@@ -426,9 +426,9 @@ public f<fct::Function*> SymbolTable.matchFunction(
  * @param defCodeLoc Definition code location
  * @return Function manifestations
  */
-public f<map::Map<string, fct::Function>*> SymbolTable.getFunctionManifestations(const cl::CodeLoc defCodeLoc) {
+public f<Map<string, Function>*> SymbolTable.getFunctionManifestations(const CodeLoc defCodeLoc) {
     string codeLocStr = defCodeLoc.toString();
-    return this.functions.contains(codeLocStr) ? this.functions.get(codeLocStr) : nil<map::Map<string, fct::Function>*>;
+    return this.functions.contains(codeLocStr) ? this.functions.get(codeLocStr) : nil<Map<string, Function>*>;
 }
 
 /**
@@ -439,8 +439,8 @@ public f<map::Map<string, fct::Function>*> SymbolTable.getFunctionManifestations
  * @param suffix Key suffix
  */
 public p SymbolTable.insertFunctionAccessPointer(
-    const fct::Function* spiceFunc,
-    const cl::CodeLoc codeLoc,
+    const Function* spiceFunc,
+    const CodeLoc codeLoc,
     const string suffix
 ) {
     string mapKey = codeLoc.toString() + ":" + suffix;
@@ -455,9 +455,9 @@ public p SymbolTable.insertFunctionAccessPointer(
  *
  * @return Function pointer for the function access
  */
-public f<fct::Function*> SymbolTable.getFunctionAccessPointer(const cl::CodeLoc codeLoc, const string suffix) {
+public f<Function*> SymbolTable.getFunctionAccessPointer(const CodeLoc codeLoc, const string suffix) {
     string mapKey = codeLoc.toString() + ":" + suffix;
-    return this.functionAccessPointers.contains(mapKey) ? this.functionAccessPointers.get(mapKey) : nil<fct::Function*>;
+    return this.functionAccessPointers.contains(mapKey) ? this.functionAccessPointers.get(mapKey) : nil<Function*>;
 }
 
 /**
@@ -467,7 +467,7 @@ public f<fct::Function*> SymbolTable.getFunctionAccessPointer(const cl::CodeLoc 
  * @param function Substantiated function
  * @param declNode Declaration AST node
  */
-f<fct::Function*> SymbolTable.insertSubstantiatedFunction(const fct::Function spiceFunc, const ast::AstNode* declNode) {
+f<Function*> SymbolTable.insertSubstantiatedFunction(const Function spiceFunc, const AstNode* declNode) {
     // ToDo
 }
 
@@ -476,7 +476,7 @@ f<fct::Function*> SymbolTable.insertSubstantiatedFunction(const fct::Function sp
  *
  * @param spiceStruct Struct object
  */
-public f<sct::Struct*> SymbolTable.insertStruct(const sct::Struct *spiceStruct) {
+public f<Struct*> SymbolTable.insertStruct(const Struct *spiceStruct) {
     // Open a new struct declaration pointer list. Which gets filled by the 'insertSubstantiatedStruct' method
     string codeLocStr = spiceStruct.declNode.codeLoc.toString();
     //this.stucts.insert(codeLocStr, );
@@ -493,13 +493,13 @@ public f<sct::Struct*> SymbolTable.insertStruct(const sct::Struct *spiceStruct) 
  * @param node Declaration node for the error message
  * @return Matched struct or nullptr
  */
-public f<sct::Struct*> SymbolTable.matchStruct(
+public f<Struct*> SymbolTable.matchStruct(
     SymbolTable* currentScope,
     const string structName,
-    const vec::Vector<st::SymbolType>* templateTypes,
-    const ast::AstNode* node
+    const Vector<SymbolType>* templateTypes,
+    const AstNode* node
 ) {
-    vec::Vector<sct::Struct*> matches;
+    Vector<Struct*> matches;
 
     // ToDo
 }
@@ -509,7 +509,7 @@ public f<sct::Struct*> SymbolTable.matchStruct(
  *
  * @return Struct manifestations
  */
-public f<map::Map<string, sct::Struct>*> SymbolTable.getStructManifestations(const cl::CodeLoc defCodeLoc) {
+public f<Map<string, Struct>*> SymbolTable.getStructManifestations(const CodeLoc defCodeLoc) {
     string codeLocStr = defCodeLoc.toString();
     if !this.structs.contains(codeLocStr) {
         // ToDo
@@ -523,7 +523,7 @@ public f<map::Map<string, sct::Struct>*> SymbolTable.getStructManifestations(con
  * @param codeLoc Reference code location
  * @param struct Struct
  */
-public p SymbolTable.insertStructAccessPointer(const cl::CodeLoc codeLoc, const sct::Struct* spiceStruct) {
+public p SymbolTable.insertStructAccessPointer(const CodeLoc codeLoc, const Struct* spiceStruct) {
     this.structAccessPointers.insert(codeLoc.toString, spiceStruct);
 }
 
@@ -532,7 +532,7 @@ public p SymbolTable.insertStructAccessPointer(const cl::CodeLoc codeLoc, const 
  *
  * @return Struct pointer for the struct access
  */
-public f<sct::Struct*> SymbolTable.getStructAccessPointer(const cl::CodeLoc codeLoc, const string suffix = "") {
+public f<Struct*> SymbolTable.getStructAccessPointer(const CodeLoc codeLoc, const string suffix = "") {
     string codeLocStr = codeLoc.toString();
     if !this.structAccessPointers.contains(codeLocStr) {
         // ToDo
@@ -547,7 +547,7 @@ public f<sct::Struct*> SymbolTable.getStructAccessPointer(const cl::CodeLoc code
  * @param s Substantiated struct
  * @param declNode Declaration AST node
  */
-f<sct::Struct*> SymbolTable.insertSubstantiatedStruct(const sct::Struct spiceStruct, const ast::AstNode* declNode) {
+f<Struct*> SymbolTable.insertSubstantiatedStruct(const Struct spiceStruct, const AstNode* declNode) {
     // ToDo
 }
 
@@ -557,8 +557,8 @@ f<sct::Struct*> SymbolTable.insertSubstantiatedStruct(const sct::Struct spiceStr
  * @param interfaceName Name of the interface
  * @return Interface object
  */
-public f<itf::Interface*> SymbolTable.lookupInterface(const string interfaceName) {
-    if !this.interfaces.contains(interfaceName) { return nil<itf::Interface*>; }
+public f<Interface*> SymbolTable.lookupInterface(const string interfaceName) {
+    if !this.interfaces.contains(interfaceName) { return nil<Interface*>; }
     return &this.interfaces.get(interfaceName);
 }
 
@@ -567,18 +567,18 @@ public f<itf::Interface*> SymbolTable.lookupInterface(const string interfaceName
  *
  * @param i Interface object
  */
-public p SymbolTable.insertInterface(const itf::Interface* i) {
+public p SymbolTable.insertInterface(const Interface* i) {
     // Add interface to interface list
     assert !this.interfaces.contains(i.name);
     this.interfaces.insert(i.name, i);
     // Add symbol table entry for the interface
-    this.insert(i.name, st::SymbolType(TY_INTERFACE), i.specifiers, INITIALIZED, i.declNode);
+    this.insert(i.name, SymbolType(TY_INTERFACE), i.specifiers, INITIALIZED, i.declNode);
 }
 
 /**
  * Retrieves compiler warnings from this table
  */
-public f<vec::Vector<cw::CompilerWarning>> SymbolTable.collectWarnings() {
+public f<Vector<CompilerWarning>> SymbolTable.collectWarnings() {
     // ToDo
 }
 
