@@ -99,11 +99,17 @@ SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
  */
 SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   assert(!typeChain.empty());
+
+  // Create new type chain
   TypeChain newTypeChain = newBaseType.typeChain;
   for (size_t i = 1; i < typeChain.size(); i++)
     newTypeChain.push_back(typeChain.at(i));
+
+  // Create new specifiers
+  TypeSpecifiers newSpecifiers = specifiers.merge(newBaseType.specifiers);
+
   // Return the new chain as a symbol type
-  return {newTypeChain, specifiers | newBaseType.specifiers};
+  return {newTypeChain, newSpecifiers};
 }
 
 /**
@@ -237,19 +243,21 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLI
   std::stringstream name;
 
   // Append the specifiers
-  const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
-  if (specifiers.isPublic() && !defaultForSuperType.isPublic())
-    name << "public ";
-  if (specifiers.isInline() && !defaultForSuperType.isInline())
-    name << "inline ";
-  if (specifiers.isConst() && !defaultForSuperType.isConst())
-    name << "const ";
-  if (specifiers.isHeap() && !defaultForSuperType.isHeap())
-    name << "heap ";
-  if (specifiers.isSigned() && !defaultForSuperType.isSigned())
-    name << "signed ";
-  if (!specifiers.isSigned() && defaultForSuperType.isSigned())
-    name << "unsigned ";
+  if (!mangledName) {
+    const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
+    if (specifiers.isPublic() && !defaultForSuperType.isPublic())
+      name << "public ";
+    if (specifiers.isInline() && !defaultForSuperType.isInline())
+      name << "inline ";
+    if (specifiers.isConst() && !defaultForSuperType.isConst())
+      name << "const ";
+    if (specifiers.isHeap() && !defaultForSuperType.isHeap())
+      name << "heap ";
+    if (specifiers.isSigned() && !defaultForSuperType.isSigned())
+      name << "signed ";
+    if (!specifiers.isSigned() && defaultForSuperType.isSigned())
+      name << "unsigned ";
+  }
 
   // Loop through all items
   for (const TypeChainElement &chainElement : typeChain)
@@ -336,13 +344,15 @@ bool operator==(const SymbolType &lhs, const SymbolType &rhs) {
 bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs == rhs); }
 
 /**
- * Compare two symbol types, ignoring array sizes.
- * This can be used for function argument matching or similar
+ * Check for the equality of two types.
+ * Useful for struct and function matching.
  *
- * @param lhs Other symbol type
+ * @param otherType Type to compare against
+ * @param ignoreArraySize Ignore array sizes
+ * @param ignoreSpecifiers Ignore specifiers, except for pointer and reference types
  * @return Equal or not
  */
-bool SymbolType::equalsIgnoreArraySize(const SymbolType &otherType) const {
+bool SymbolType::equals(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers) const {
   // If the size does not match, it is not equal
   if (typeChain.size() != otherType.typeChain.size())
     return false;
@@ -352,14 +362,16 @@ bool SymbolType::equalsIgnoreArraySize(const SymbolType &otherType) const {
     const SymbolType::TypeChainElement &rhsElement = otherType.typeChain.at(i);
 
     // Ignore differences in array size
-    if (lhsElement.superType == TY_ARRAY && rhsElement.superType == TY_ARRAY)
+    if (ignoreArraySize && lhsElement.superType == TY_ARRAY && rhsElement.superType == TY_ARRAY)
       continue;
 
     // Not both types are arrays -> compare them as usual
     if (lhsElement != rhsElement)
       return false;
   }
-  return true;
+  if (ignoreSpecifiers && !isPtr() && !isRef())
+    return true;
+  return specifiers == otherType.specifiers;
 }
 
 /**

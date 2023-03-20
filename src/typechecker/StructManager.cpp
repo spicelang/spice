@@ -191,7 +191,7 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
       return getGenericTypeOfCandidateByName(candidate, genericTypeName);
     };
 
-    // Check if the requested param type matches the candidate template type. The type mapping may be extended
+    // Check if the requested template type matches the candidate template type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver))
       return false;
 

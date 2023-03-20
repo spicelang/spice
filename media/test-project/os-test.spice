@@ -1,10 +1,23 @@
 type T int|long;
 
 type TestStruct<T> struct {
-    unsigned T f1
+    T f1
     unsigned long length
 }
 
+p TestStruct.ctor(const unsigned long initialLength) {
+    this.length = initialLength;
+}
+
+p TestStruct.printLength() {
+    printf("%d\n", this.length);
+}
+
+type Alias alias TestStruct<long>;
+
 f<int> main() {
-    dyn a = TestStruct<long>{(unsigned long) 12345l, (unsigned long) 54321l};
+    Alias a = Alias{12345l, 54321l};
+    a.printLength();
+    dyn b = Alias(12l);
+    b.printLength();
 }

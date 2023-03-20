@@ -58,12 +58,7 @@ TypeSpecifiers TypeSpecifiers::of(uint16_t superType) {
  *
  * @param value True or false
  */
-void TypeSpecifiers::setConst(bool value) {
-  if (value)
-    setBit(BIT_INDEX_CONST);
-  else
-    clearBit(BIT_INDEX_CONST);
-}
+void TypeSpecifiers::setConst(bool value) { writeBit(BIT_INDEX_CONST, value); }
 
 /**
  * Check if the const flag is set
@@ -78,10 +73,8 @@ bool TypeSpecifiers::isConst() const { return getBit(BIT_INDEX_CONST); }
  * @param value True or false
  */
 void TypeSpecifiers::setSigned(bool value) {
-  if (value)
-    setBit(BIT_INDEX_SIGNED);
-  else
-    clearBit(BIT_INDEX_SIGNED);
+  writeBit(BIT_INDEX_SIGNED, value);
+  writeBit(BIT_INDEX_UNSIGNED, !value);
 }
 
 /**
@@ -96,12 +89,7 @@ bool TypeSpecifiers::isSigned() const { return getBit(BIT_INDEX_SIGNED); }
  *
  * @param value True or false
  */
-void TypeSpecifiers::setInline(bool value) {
-  if (value)
-    setBit(BIT_INDEX_INLINE);
-  else
-    clearBit(BIT_INDEX_INLINE);
-}
+void TypeSpecifiers::setInline(bool value) { writeBit(BIT_INDEX_INLINE, value); }
 
 /**
  * Check if the inline flag is set
@@ -115,12 +103,7 @@ bool TypeSpecifiers::isInline() const { return getBit(BIT_INDEX_INLINE); }
  *
  * @param value True or false
  */
-void TypeSpecifiers::setPublic(bool value) {
-  if (value)
-    setBit(BIT_INDEX_PUBLIC);
-  else
-    clearBit(BIT_INDEX_PUBLIC);
-}
+void TypeSpecifiers::setPublic(bool value) { writeBit(BIT_INDEX_PUBLIC, value); }
 
 /**
  * Check if the public flag is set
@@ -134,12 +117,7 @@ bool TypeSpecifiers::isPublic() const { return getBit(BIT_INDEX_PUBLIC); }
  *
  * @param value True or false
  */
-void TypeSpecifiers::setHeap(bool value) {
-  if (value)
-    setBit(BIT_INDEX_HEAP);
-  else
-    clearBit(BIT_INDEX_HEAP);
-}
+void TypeSpecifiers::setHeap(bool value) { writeBit(BIT_INDEX_HEAP, value); }
 
 /**
  * Check if the heap flag is set
@@ -149,11 +127,23 @@ void TypeSpecifiers::setHeap(bool value) {
 bool TypeSpecifiers::isHeap() const { return getBit(BIT_INDEX_HEAP); }
 
 /**
- * Set or clear bit in specifier value
+ * Set bit in specifier value
  *
  * @param index Index of the bit to set
  */
 void TypeSpecifiers::setBit(unsigned short index) { specifierValue |= (1 << index); }
+
+/**
+ * Write the specified boolean value to the bit at the specified index
+ *
+ * @param index Index of the bit to modify
+ */
+void TypeSpecifiers::writeBit(unsigned short index, bool value) {
+  if (value)
+    setBit(index);
+  else
+    clearBit(index);
+}
 
 /**
  * Clear bit in specifier value
@@ -170,10 +160,28 @@ void TypeSpecifiers::clearBit(unsigned short index) { specifierValue &= ~(1 << i
  */
 bool TypeSpecifiers::getBit(unsigned short index) const { return ((specifierValue >> index) & 1) == 1; }
 
-bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) { return lhs.specifierValue == rhs.specifierValue; }
+/**
+ * Merge two type specifiers. If possible, prefer the opposite of the default of the super type
+ *
+ * @param other Other type specifiers object
+ * @return Merged specifiers object
+ */
+TypeSpecifiers TypeSpecifiers::merge(const TypeSpecifiers &other) const {
+  TypeSpecifiers result;
+  bool isGeneric = !getBit(BIT_INDEX_SIGNED) && !getBit(BIT_INDEX_UNSIGNED);
+  for (short i = 0; i < BIT_INDEX_HEAP; i++) {
+    const bool x = getBit(i);
+    const bool y = other.getBit(i);
 
-TypeSpecifiers operator|(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) {
-  return TypeSpecifiers(lhs.specifierValue | rhs.specifierValue);
+    if (i == BIT_INDEX_SIGNED || i == BIT_INDEX_UNSIGNED) {
+      result.writeBit(i, isGeneric ? y : x);
+    } else {
+      result.writeBit(i, x | y);
+    }
+  }
+  return result;
 }
+
+bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) { return lhs.specifierValue == rhs.specifierValue; }
 
 } // namespace spice::compiler
