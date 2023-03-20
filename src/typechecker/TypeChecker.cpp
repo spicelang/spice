@@ -399,7 +399,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       rhsTy = localVarType;
 
     // Check if type has to be inferred or both types are fixed
-    localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0);
+    localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0, true);
 
     // Push symbolType to the declaration data type
     node->dataType()->setEvaluatedSymbolType(localVarType, manIdx);

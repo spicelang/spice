@@ -598,7 +598,7 @@ public:
   explicit OpRuleManager(TypeChecker *typeChecker) : typeChecker(typeChecker) {}
 
   // Public methods
-  static SymbolType getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool isDecl = false);
   SymbolType getPlusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   SymbolType getMinusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   SymbolType getMulEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
@@ -646,10 +646,12 @@ private:
   SymbolType isBinaryOperatorOverloadingFctAvailable(const char *const fctName, SymbolType &lhs, SymbolType &rhs, ASTNode *node,
                                                      size_t opIdx);
   static SymbolType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
-                                            const char *name, const SymbolType &lhs, const SymbolType &rhs);
+                                            const char *name, const SymbolType &lhs, const SymbolType &rhs,
+                                            bool preserveSpecifiersFromLhs = false);
   static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                            const SymbolType &lhs);
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs) const;
+  static void ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs);
   static SemanticError printErrorMessageBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
                                                const SymbolType &rhs);
   static SemanticError printErrorMessageUnary(const ASTNode *node, const char *name, const SymbolType &lhs);

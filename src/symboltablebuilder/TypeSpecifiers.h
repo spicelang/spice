@@ -71,6 +71,10 @@ public:
   void setHeap(bool heap);
   [[nodiscard]] bool isHeap() const;
 
+  // Overloaded operators
+  friend bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs);
+  friend TypeSpecifiers operator|(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs);
+
   // JSON serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeSpecifiers, specifierValue)
 

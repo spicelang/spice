@@ -170,4 +170,10 @@ void TypeSpecifiers::clearBit(unsigned short index) { specifierValue &= ~(1 << i
  */
 bool TypeSpecifiers::getBit(unsigned short index) const { return ((specifierValue >> index) & 1) == 1; }
 
+bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) { return lhs.specifierValue == rhs.specifierValue; }
+
+TypeSpecifiers operator|(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) {
+  return TypeSpecifiers(lhs.specifierValue | rhs.specifierValue);
+}
+
 } // namespace spice::compiler

@@ -25,7 +25,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_PTR, "", {}, {}});
-  return SymbolType(newTypeChain);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -103,7 +103,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   for (size_t i = 1; i < typeChain.size(); i++)
     newTypeChain.push_back(typeChain.at(i));
   // Return the new chain as a symbol type
-  return {newTypeChain, specifiers};
+  return {newTypeChain, specifiers | newBaseType.specifiers};
 }
 
 /**
@@ -225,7 +225,6 @@ bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &gene
   auto &baseTemplateTypes = baseType.getTemplateTypes();
   return std::all_of(baseTemplateTypes.begin(), baseTemplateTypes.end(),
                      [&](const SymbolType &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); });
-  return true;
 }
 
 /**
@@ -236,11 +235,26 @@ bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &gene
  */
 std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLINT(misc-no-recursion)
   std::stringstream name;
-  // Copy the chain to not destroy the present one
-  TypeChain chainCopy = typeChain;
+
+  // Append the specifiers
+  const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
+  if (specifiers.isPublic() && !defaultForSuperType.isPublic())
+    name << "public ";
+  if (specifiers.isInline() && !defaultForSuperType.isInline())
+    name << "inline ";
+  if (specifiers.isConst() && !defaultForSuperType.isConst())
+    name << "const ";
+  if (specifiers.isHeap() && !defaultForSuperType.isHeap())
+    name << "heap ";
+  if (specifiers.isSigned() && !defaultForSuperType.isSigned())
+    name << "signed ";
+  if (!specifiers.isSigned() && defaultForSuperType.isSigned())
+    name << "unsigned ";
+
   // Loop through all items
-  for (const TypeChainElement &chainElement : chainCopy)
+  for (const TypeChainElement &chainElement : typeChain)
     name << getNameFromChainElement(chainElement, withSize, mangledName);
+
   return name.str();
 }
 
@@ -258,12 +272,10 @@ size_t SymbolType::getArraySize() const {
 }
 
 /**
- * Check if the current type is const
+ * Check if the current type is const.
+ * Only base types can be const. Pointer and references are always non-const
  */
-bool SymbolType::isConst() const {
-  assert(isPrimitive() || isOneOf({TY_STRUCT, TY_FUNCTION, TY_PROCEDURE}));
-  return specifiers.isConst();
-}
+bool SymbolType::isConst() const { return typeChain.size() == 1 && specifiers.isConst(); }
 
 /**
  * Check if the current type is signed
@@ -293,7 +305,7 @@ bool SymbolType::isPublic() const {
  * Check if the current type is heap
  */
 bool SymbolType::isHeap() const {
-  assert(isPrimitive() /* Global variables */ || is(TY_STRUCT));
+  assert(isPrimitive() /* Local variables */ || is(TY_STRUCT));
   return specifiers.isHeap();
 }
 
@@ -317,7 +329,9 @@ Scope *SymbolType::getStructBodyScope() const {
   return typeChain.back().data.structBodyScope;
 }
 
-bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain == rhs.typeChain; }
+bool operator==(const SymbolType &lhs, const SymbolType &rhs) {
+  return lhs.typeChain == rhs.typeChain && lhs.specifiers == rhs.specifiers;
+}
 
 bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs == rhs); }
 

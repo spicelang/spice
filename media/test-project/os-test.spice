@@ -1,9 +1,10 @@
+type T int|long;
+
+type TestStruct<T> struct {
+    unsigned T f1
+    unsigned long length
+}
+
 f<int> main() {
-    const unsigned int test = 12;
-    const unsigned int* testPtr = &test; // Non-const pointer to const int
-
-    const unsigned int test1 = 13;
-    testPtr = &test1; // Valid
-
-    *testPtr = 13; // Error
+    dyn a = TestStruct<long>{(unsigned long) 12345l, (unsigned long) 54321l};
 }
