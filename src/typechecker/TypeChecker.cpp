@@ -449,13 +449,11 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
 
   // Visit right side
   SymbolType returnValueType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
-  // Check if types match
-  if (returnValueType != returnType)
-    throw SemanticError(node->assignExpr(), OPERATOR_WRONG_DATA_TYPE,
-                        "Passed wrong data type to return statement. Expected " + returnType.getName() + " but got " +
-                            returnValueType.getName());
 
-  return nullptr;
+  // Check if types match
+  OpRuleManager::getAssignResultType(node->assignExpr(), returnType, returnValueType, 0, false, ERROR_MSG_RETURN);
+
+  return node->setEvaluatedSymbolType(returnType, manIdx);
 }
 
 std::any TypeChecker::visitBreakStmt(BreakStmtNode *node) {

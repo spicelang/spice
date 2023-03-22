@@ -31,6 +31,10 @@ const char *const OP_FCT_MINUS_EQUAL = "op.minusequal";
 const char *const OP_FCT_MUL_EQUAL = "op.mulequal";
 const char *const OP_FCT_DIV_EQUAL = "op.divequal";
 
+// Custom error message prefixes
+const char *const ERROR_MSG_RETURN = "Passed wrong data type to return statement";
+const char *const ERROR_FIELD_ASSIGN = "Given type of the field value does not match declaration";
+
 // Unary operator rule:        lhs type, result type, unsafe
 using UnaryOpRule = std::tuple<uint32_t, uint32_t, bool>;
 // Binary operator rule:        lhs type, rhs type, result type, unsafe
@@ -598,7 +602,8 @@ public:
   explicit OpRuleManager(TypeChecker *typeChecker) : typeChecker(typeChecker) {}
 
   // Public methods
-  static SymbolType getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool isDecl = false);
+  static SymbolType getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool isDecl = false,
+                                        const char *errorMessagePrefix = "");
   static SymbolType getFieldAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool imm);
   SymbolType getPlusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   SymbolType getMinusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
@@ -644,18 +649,18 @@ private:
   TypeChecker *typeChecker;
 
   // Private methods
-  SymbolType isBinaryOperatorOverloadingFctAvailable(const char *const fctName, SymbolType &lhs, SymbolType &rhs, ASTNode *node,
+  SymbolType isBinaryOperatorOverloadingFctAvailable(const char *fctName, SymbolType &lhs, SymbolType &rhs, ASTNode *node,
                                                      size_t opIdx);
-  static SymbolType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
-                                            const char *name, const SymbolType &lhs, const SymbolType &rhs,
-                                            bool preserveSpecifiersFromLhs = false);
   static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                            const SymbolType &lhs);
+  static SymbolType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
+                                            const char *name, const SymbolType &lhs, const SymbolType &rhs,
+                                            bool preserveSpecifiersFromLhs = false, const char *customMessagePrefix = "");
+  static SemanticError getExceptionUnary(const ASTNode *node, const char *name, const SymbolType &lhs);
+  static SemanticError getExceptionBinary(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs,
+                                          const char *messagePrefix);
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs) const;
   static void ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs);
-  static SemanticError printErrorMessageBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
-                                               const SymbolType &rhs);
-  static SemanticError printErrorMessageUnary(const ASTNode *node, const char *name, const SymbolType &lhs);
 };
 
 } // namespace spice::compiler
