@@ -10,7 +10,7 @@
 namespace spice::compiler {
 
 SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx,
-                                              bool isDecl /*=false*/) {
+                                              bool isDecl /*=false*/, const char *errorMessagePrefix /*=""*/) {
   // Check if we try to assign a constant value
   if (!isDecl)
     ensureNoConstAssign(node, lhs);
@@ -37,7 +37,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
   if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING) && lhs.specifiers == rhs.specifiers)
     return lhs;
   // Check primitive type combinations
-  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhs, rhs, true);
+  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhs, rhs, true, errorMessagePrefix);
 }
 
 SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool imm) {
@@ -63,7 +63,7 @@ SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, SymbolTy
   if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING) && lhs.specifiers == rhs.specifiers)
     return lhs;
   // Check primitive type combinations
-  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "= (field assign)", lhs, rhs, true);
+  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhs, rhs, true, ERROR_FIELD_ASSIGN);
 }
 
 SymbolType OpRuleManager::getPlusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
@@ -384,7 +384,7 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
   return validateBinaryOperation(node, CAST_OP_RULES, ARRAY_LENGTH(CAST_OP_RULES), "(cast)", lhs, rhs, true);
 }
 
-SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *const fctName, SymbolType &lhs, SymbolType &rhs,
+SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *fctName, SymbolType &lhs, SymbolType &rhs,
                                                                   ASTNode *node, size_t opIdx) {
   const NameRegistryEntry *registryEntry = typeChecker->sourceFile->getNameRegistryEntry(fctName);
   if (!registryEntry)
@@ -425,9 +425,19 @@ SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *co
   return localReturnType;
 }
 
+SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,
+                                                 const char *name, const SymbolType &lhs) {
+  for (size_t i = 0; i < opRulesSize; i++) {
+    const UnaryOpRule &rule = opRules[i];
+    if (std::get<0>(rule) == lhs.getSuperType())
+      return SymbolType(SymbolSuperType(std::get<1>(rule)));
+  }
+  throw getExceptionUnary(node, name, lhs);
+}
+
 SymbolType OpRuleManager::validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
                                                   const char *name, const SymbolType &lhs, const SymbolType &rhs,
-                                                  bool preserveSpecifiersFromLhs /*=false*/) {
+                                                  bool preserveSpecifiersFromLhs, const char *customMessagePrefix) {
   for (size_t i = 0; i < opRulesSize; i++) {
     const BinaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType() && std::get<1>(rule) == rhs.getSuperType()) {
@@ -437,17 +447,27 @@ SymbolType OpRuleManager::validateBinaryOperation(const ASTNode *node, const Bin
       return resultType;
     }
   }
-  throw printErrorMessageBinary(node, name, lhs, rhs);
+  throw getExceptionBinary(node, name, lhs, rhs, customMessagePrefix);
 }
 
-SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,
-                                                 const char *name, const SymbolType &lhs) {
-  for (size_t i = 0; i < opRulesSize; i++) {
-    const UnaryOpRule &rule = opRules[i];
-    if (std::get<0>(rule) == lhs.getSuperType())
-      return SymbolType(SymbolSuperType(std::get<1>(rule)));
+SemanticError OpRuleManager::getExceptionUnary(const ASTNode *node, const char *name, const SymbolType &lhs) {
+  return {node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + std::string(name) + "' operator on type " + lhs.getName(true)};
+}
+
+SemanticError OpRuleManager::getExceptionBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
+                                                const SymbolType &rhs, const char *messagePrefix) {
+  // Build error message
+  std::string errorMsg;
+  if (strlen(messagePrefix) != 0) {
+    errorMsg += messagePrefix;
+    errorMsg += ". Expected " + lhs.getName(true) + " but got " + rhs.getName(true);
+  } else {
+    errorMsg += "Cannot apply '";
+    errorMsg += name;
+    errorMsg += "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true);
   }
-  throw printErrorMessageUnary(node, name, lhs);
+  // Return the exception
+  return {node, OPERATOR_WRONG_DATA_TYPE, errorMsg};
 }
 
 void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs,
@@ -466,16 +486,6 @@ void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const SymbolType &l
   // Check if we try to assign a constant value
   if (lhs.isConst())
     throw SemanticError(node, REASSIGN_CONST_VARIABLE, "Trying to assign value to a constant");
-}
-
-SemanticError OpRuleManager::printErrorMessageBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
-                                                     const SymbolType &rhs) {
-  return {node, OPERATOR_WRONG_DATA_TYPE,
-          "Cannot apply '" + std::string(name) + "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true)};
-}
-
-SemanticError OpRuleManager::printErrorMessageUnary(const ASTNode *node, const char *name, const SymbolType &lhs) {
-  return {node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + std::string(name) + "' operator on type " + lhs.getName(true)};
 }
 
 } // namespace spice::compiler

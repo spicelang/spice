@@ -1,5 +1,6 @@
+import "std/data/optional";
+
 f<int> main() {
-    String str = String();
-    unsigned long i = 123l;
-    str.reserve(i);
+    Optional<int> iO = Optional<int>(12);
+    printf("%d", iO.get());
 }

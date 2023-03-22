@@ -195,12 +195,17 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
   assert(callee != nullptr);
 
   // Generate function call
-  llvm::Value *resultValue = builder.CreateCall(callee, argValues);
+  llvm::Value *result = builder.CreateCall(callee, argValues);
 
+  // In case this is a constructor call, return the thisPtr as pointer
   if (data.isConstructorCall)
     return ExprResult{.ptr = thisPtr};
 
-  return ExprResult{.value = resultValue};
+  // In case this is a callee, returning a reference, load the address
+  if (data.callee->returnType.isRef())
+    result = builder.CreateLoad(data.callee->returnType.getContainedTy().toLLVMType(context, nullptr), result);
+
+  return ExprResult{.value = result};
 }
 
 std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *node) {

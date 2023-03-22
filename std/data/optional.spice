@@ -20,12 +20,8 @@ public inline p Optional.set(const T& data) {
     this.isPresent = true;
 }
 
-// ToDo: Make this return a reference instead of the value
-public inline f<T> Optional.get() {
-    if this.isPresent() {
-        return this.data;
-    }
-    return nil<T>;
+public inline f<T&> Optional.get() {
+    return this.data;
 }
 
 public inline p Optional.clear() {
