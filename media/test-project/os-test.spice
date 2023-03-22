@@ -1,9 +1,5 @@
 f<int> main() {
-    const unsigned int test = 12;
-    const unsigned int* testPtr = &test; // Non-const pointer to const int
-
-    const unsigned int test1 = 13;
-    testPtr = &test1; // Valid
-
-    *testPtr = 13; // Error
+    String str = String();
+    unsigned long i = 123l;
+    str.reserve(i);
 }

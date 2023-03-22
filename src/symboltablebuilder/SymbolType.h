@@ -185,7 +185,7 @@ public:
   [[nodiscard]] Scope *getStructBodyScope() const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
-  [[nodiscard]] bool equalsIgnoreArraySize(const SymbolType &otherType) const;
+  [[nodiscard]] bool equals(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers) const;
 
   // Public members
   TypeChain typeChain;

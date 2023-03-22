@@ -1,0 +1,1 @@
+[Error|Parser] ./test-files/parser/error-signed-and-unsigned/source.spice:2:20: Invalid specifier combination: A variable can not be signed and unsigned

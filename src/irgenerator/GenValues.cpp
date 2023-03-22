@@ -156,13 +156,13 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
       const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
       // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
-      if (actualSTy == expectedSTy) { // The arg type matches the param type
+      if (actualSTy.equals(expectedSTy, false, true)) { // Matches the param type
         llvm::Value *argValue = resolveValue(argNode);
         argValues.push_back(argValue);
-      } else if (expectedSTy.isRef() && actualSTy == expectedSTy.getContainedTy()) { // The arg type matches the param with ref
+      } else if (expectedSTy.isRef() && actualSTy.equals(expectedSTy.getContainedTy(), false, true)) { // Matches with ref
         llvm::Value *argAddress = resolveAddress(argNode);
         argValues.push_back(argAddress);
-      } else { // Need implicit cast to match param type
+      } else { // Need implicit cast
         llvm::Value *argAddress = resolveAddress(argNode);
         argValues.push_back(doImplicitCast(argAddress, expectedSTy, actualSTy));
       }

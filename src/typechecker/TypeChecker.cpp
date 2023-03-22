@@ -399,7 +399,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       rhsTy = localVarType;
 
     // Check if type has to be inferred or both types are fixed
-    localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0);
+    localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0, true);
 
     // Push symbolType to the declaration data type
     node->dataType()->setEvaluatedSymbolType(localVarType, manIdx);
@@ -698,8 +698,10 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     throw SemanticError(condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool");
 
   // Check if trueType and falseType are matching
-  if (trueType != falseType)
-    throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "True and false operands in ternary must be of same data type");
+  if (!trueType.equals(falseType, false, true))
+    throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE,
+                        "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
+                            falseType.getName(true));
 
   return ExprResult{node->setEvaluatedSymbolType(trueType, manIdx)};
 }
@@ -1356,6 +1358,9 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   if (data.callee->isProcedure() || (data.callee->isMethodProcedure() && !data.isConstructorCall) || returnType.is(TY_DYN))
     returnType = SymbolType(TY_BOOL);
 
+  // Remove public specifier to not have public local variables
+  returnType.specifiers.setPublic(false);
+
   // Check if the return value gets used
   if ((data.callee->isFunction() || data.callee->isMethodFunction()) && !node->hasReturnValueReceiver())
     warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
@@ -1612,19 +1617,9 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       const SymbolTableEntry *expectedField = structScope->symbolTable.lookupByIndex(i);
       assert(expectedField != nullptr);
       SymbolType expectedType = expectedField->getType();
-      // Also accept, if expected type is reference of actual type
-      if (expectedType.isRef() && expectedType.getContainedTy() == actualType)
-        expectedType = expectedType.getContainedTy();
-      // Check if type matches declaration
-      if (actualType != expectedType)
-        throw SemanticError(assignExpr, FIELD_TYPE_NOT_MATCHING,
-                            "Expected type " + expectedType.getName() + " for the field '" + expectedField->name + "', but got " +
-                                actualType.getName());
-      // Check if immediate assigned to non-const reference
-      if (expectedType.isRef() && !expectedField->getType().isConst() && assignExpr->hasCompileTimeValue())
-        throw SemanticError(
-            assignExpr, FIELD_TYPE_NOT_MATCHING,
-            "Cannot assign immediate to non-const reference field. Either make the reference const or reference a variable");
+      const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
+      // Check if actual type matches expected type
+      OpRuleManager::getFieldAssignResultType(assignExpr, expectedType, actualType, 0, rhsIsImmediate);
     }
   } else {
     for (SymbolType &fieldType : spiceStruct->fieldTypes) {
@@ -1639,6 +1634,9 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // Insert anonymous symbol to keep track of dtor calls for de-allocation
   SymbolTableEntry *anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
+
+  // Remove public specifier to not have public local variables
+  structType.specifiers.setPublic(false);
 
   return ExprResult{node->setEvaluatedSymbolType(structType, manIdx), anonymousEntry};
 }
@@ -1830,6 +1828,9 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
         entryType.setStructBodyScope(spiceStruct->structScope);
     }
 
+    // Remove public specifier
+    entryType.specifiers.setPublic(false);
+
     return node->setEvaluatedSymbolType(entryType, manIdx);
   }
 
@@ -1843,6 +1844,9 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     Interface *spiceInterface = localAccessScope->lookupInterface(node->typeNameFragments.back());
     assert(spiceInterface != nullptr);
     spiceInterface->used = true;
+
+    // Remove public specifier
+    entryType.specifiers.setPublic(false);
 
     return node->setEvaluatedSymbolType(entryType, manIdx);
   }

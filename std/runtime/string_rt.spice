@@ -306,13 +306,13 @@ public p String.clear() {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned long startIndex = 0l) {
+public f<unsigned long> String.find(string needle, unsigned long startIndex = 0l) {
     // Return -1 if the startIndex is out of bounds
-    if startIndex >= this.length { return -1l; }
+    if startIndex >= this.length { return (unsigned long) -1l; }
 
     unsigned long needleLength = getRawLength(needle);
     // Return false if the needle is longer than the haystack
-    if this.length < needleLength { return -1l; }
+    if this.length < needleLength { return (unsigned long) -1l; }
 
     // Search needle in haystack
     for unsigned long idx = startIndex; idx <= this.length - needleLength; idx++ {
@@ -327,7 +327,7 @@ public f<long> String.find(string needle, unsigned long startIndex = 0l) {
         // Whole string was matched
         return idx;
     }
-    return -1l;
+    return (unsigned long) -1l;
 }
 
 /**
@@ -336,8 +336,8 @@ public f<long> String.find(string needle, unsigned long startIndex = 0l) {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned int startIndex) {
-    return this.find(needle, (long) startIndex);
+public f<unsigned long> String.find(string needle, unsigned int startIndex) {
+    return this.find(needle, (unsigned long) startIndex);
 }
 
 /**
@@ -346,8 +346,8 @@ public f<long> String.find(string needle, unsigned int startIndex) {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned short startIndex) {
-    return this.find(needle, (long) startIndex);
+public f<unsigned long> String.find(string needle, unsigned short startIndex) {
+    return this.find(needle, (unsigned long) startIndex);
 }
 
 /**

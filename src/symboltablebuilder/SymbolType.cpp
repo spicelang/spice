@@ -25,7 +25,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_PTR, "", {}, {}});
-  return SymbolType(newTypeChain);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -99,11 +99,17 @@ SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
  */
 SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   assert(!typeChain.empty());
+
+  // Create new type chain
   TypeChain newTypeChain = newBaseType.typeChain;
   for (size_t i = 1; i < typeChain.size(); i++)
     newTypeChain.push_back(typeChain.at(i));
+
+  // Create new specifiers
+  TypeSpecifiers newSpecifiers = specifiers.merge(newBaseType.specifiers);
+
   // Return the new chain as a symbol type
-  return {newTypeChain, specifiers};
+  return {newTypeChain, newSpecifiers};
 }
 
 /**
@@ -225,7 +231,6 @@ bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &gene
   auto &baseTemplateTypes = baseType.getTemplateTypes();
   return std::all_of(baseTemplateTypes.begin(), baseTemplateTypes.end(),
                      [&](const SymbolType &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); });
-  return true;
 }
 
 /**
@@ -236,11 +241,28 @@ bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &gene
  */
 std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLINT(misc-no-recursion)
   std::stringstream name;
-  // Copy the chain to not destroy the present one
-  TypeChain chainCopy = typeChain;
+
+  // Append the specifiers
+  if (!mangledName) {
+    const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
+    if (specifiers.isPublic() && !defaultForSuperType.isPublic())
+      name << "public ";
+    if (specifiers.isInline() && !defaultForSuperType.isInline())
+      name << "inline ";
+    if (specifiers.isConst() && !defaultForSuperType.isConst())
+      name << "const ";
+    if (specifiers.isHeap() && !defaultForSuperType.isHeap())
+      name << "heap ";
+    if (specifiers.isSigned() && !defaultForSuperType.isSigned())
+      name << "signed ";
+    if (!specifiers.isSigned() && defaultForSuperType.isSigned())
+      name << "unsigned ";
+  }
+
   // Loop through all items
-  for (const TypeChainElement &chainElement : chainCopy)
+  for (const TypeChainElement &chainElement : typeChain)
     name << getNameFromChainElement(chainElement, withSize, mangledName);
+
   return name.str();
 }
 
@@ -258,12 +280,10 @@ size_t SymbolType::getArraySize() const {
 }
 
 /**
- * Check if the current type is const
+ * Check if the current type is const.
+ * Only base types can be const. Pointer and references are always non-const
  */
-bool SymbolType::isConst() const {
-  assert(isPrimitive() || isOneOf({TY_STRUCT, TY_FUNCTION, TY_PROCEDURE}));
-  return specifiers.isConst();
-}
+bool SymbolType::isConst() const { return typeChain.size() == 1 && specifiers.isConst(); }
 
 /**
  * Check if the current type is signed
@@ -293,7 +313,7 @@ bool SymbolType::isPublic() const {
  * Check if the current type is heap
  */
 bool SymbolType::isHeap() const {
-  assert(isPrimitive() /* Global variables */ || is(TY_STRUCT));
+  assert(isPrimitive() /* Local variables */ || is(TY_STRUCT));
   return specifiers.isHeap();
 }
 
@@ -317,18 +337,22 @@ Scope *SymbolType::getStructBodyScope() const {
   return typeChain.back().data.structBodyScope;
 }
 
-bool operator==(const SymbolType &lhs, const SymbolType &rhs) { return lhs.typeChain == rhs.typeChain; }
+bool operator==(const SymbolType &lhs, const SymbolType &rhs) {
+  return lhs.typeChain == rhs.typeChain && lhs.specifiers == rhs.specifiers;
+}
 
 bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs == rhs); }
 
 /**
- * Compare two symbol types, ignoring array sizes.
- * This can be used for function argument matching or similar
+ * Check for the equality of two types.
+ * Useful for struct and function matching.
  *
- * @param lhs Other symbol type
+ * @param otherType Type to compare against
+ * @param ignoreArraySize Ignore array sizes
+ * @param ignoreSpecifiers Ignore specifiers, except for pointer and reference types
  * @return Equal or not
  */
-bool SymbolType::equalsIgnoreArraySize(const SymbolType &otherType) const {
+bool SymbolType::equals(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers) const {
   // If the size does not match, it is not equal
   if (typeChain.size() != otherType.typeChain.size())
     return false;
@@ -338,14 +362,16 @@ bool SymbolType::equalsIgnoreArraySize(const SymbolType &otherType) const {
     const SymbolType::TypeChainElement &rhsElement = otherType.typeChain.at(i);
 
     // Ignore differences in array size
-    if (lhsElement.superType == TY_ARRAY && rhsElement.superType == TY_ARRAY)
+    if (ignoreArraySize && lhsElement.superType == TY_ARRAY && rhsElement.superType == TY_ARRAY)
       continue;
 
     // Not both types are arrays -> compare them as usual
     if (lhsElement != rhsElement)
       return false;
   }
-  return true;
+  if (ignoreSpecifiers && !isPtr() && !isRef())
+    return true;
+  return specifiers == otherType.specifiers;
 }
 
 /**

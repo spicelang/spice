@@ -10,11 +10,9 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %i = alloca i32, align 4
   %str = alloca %__Struct__intref, align 8
   %1 = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  store i32 123, ptr %i, align 4
   store i32 123, ptr %1, align 4
   %2 = getelementptr inbounds %__Struct__intref, ptr %str, i32 0, i32 0
   store ptr %1, ptr %2, align 8

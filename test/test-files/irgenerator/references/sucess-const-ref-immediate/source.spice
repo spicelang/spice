@@ -3,7 +3,6 @@ type Struct struct {
 }
 
 f<int> main() {
-    int i = 123;
     Struct str = Struct { 123 };
     printf("Field value: %d", str.ref);
 }

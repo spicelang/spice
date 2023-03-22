@@ -18,7 +18,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts())
-    return requestedType.equalsIgnoreArraySize(candidateType);
+    return requestedType.equals(candidateType, true, true);
 
   // Check if the candidate type itself is generic
   if (candidateType.isBaseType(TY_GENERIC)) { // The candidate type itself is generic
@@ -28,7 +28,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
     if (typeMapping.contains(genericTypeName)) {
       const SymbolType &knownConcreteType = typeMapping.at(candidateType.getSubType());
       // Check if the known concrete type matches the requested type
-      return knownConcreteType == requestedType;
+      return knownConcreteType.equals(requestedType, true, true);
     } else {
       // Retrieve generic candidate type by its name
       const GenericType *genericCandidateType = resolveGenericType(genericTypeName);
@@ -72,7 +72,8 @@ void TypeMatcher::substantiateTypeWithTypeMapping(SymbolType &symbolType, const 
   if (symbolType.isBaseType(TY_GENERIC)) { // The symbol type itself is generic
     const std::string genericTypeName = symbolType.getBaseType().getSubType();
     assert(typeMapping.contains(genericTypeName));
-    symbolType = symbolType.replaceBaseType(typeMapping.at(genericTypeName));
+    const SymbolType &replacementType = typeMapping.at(genericTypeName);
+    symbolType = symbolType.replaceBaseType(replacementType);
   } else { // The symbol type itself is non-generic, but one or several template types are
     std::vector<SymbolType> templateTypes = symbolType.getBaseType().getTemplateTypes();
     // Substantiate every template type

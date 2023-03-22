@@ -11,7 +11,13 @@ namespace spice::compiler {
 // Forward declarations
 struct CodeLoc;
 
-enum ParserErrorType { PARSING_FAILED, NUMBER_OUT_OF_RANGE, INVALID_CHAR_LITERAL, RESERVED_KEYWORD };
+enum ParserErrorType {
+  PARSING_FAILED,
+  NUMBER_OUT_OF_RANGE,
+  INVALID_SPECIFIER_COMBINATION,
+  INVALID_CHAR_LITERAL,
+  RESERVED_KEYWORD
+};
 
 /**
  * Custom exception for errors, occurring while parsing

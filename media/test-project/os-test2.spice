@@ -1,3 +1,15 @@
-type Vector struct {
-    int i
+public type NestedSocket struct {
+    public string testString
+    long testLong
+}
+
+public type Socket struct {
+    public int sock // Actual socket
+    short errorCode
+    public NestedSocket nested
+}
+
+public f<Socket> openServerSocket(unsigned short port) {
+    dyn nested = NestedSocket { "Test", 2345l };
+    return Socket{ 2, 0s, nested };
 }
