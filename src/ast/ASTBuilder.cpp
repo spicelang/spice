@@ -910,6 +910,17 @@ std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
       currentNode = specifierLstNode;
     }
   }
+
+  // Check if we have both, signed and unsigned specifier
+  bool seenSignedOrUnsigned = false;
+  for (const SpecifierNode *specifier : specifierLstNode->specifiers()) {
+    if (specifier->type != SpecifierNode::TY_SIGNED && specifier->type != SpecifierNode::TY_UNSIGNED)
+      continue;
+    if (seenSignedOrUnsigned)
+      throw ParserError(specifier->codeLoc, INVALID_SPECIFIER_COMBINATION, "A variable can not be signed and unsigned");
+    seenSignedOrUnsigned = true;
+  }
+
   return nullptr;
 }
 

@@ -27,6 +27,8 @@ TypeSpecifiers TypeSpecifiers::of(uint16_t superType) {
     return TypeSpecifiers(SPECIFIER_DEFAULTS_BOOL);
   case TY_PTR:
     return TypeSpecifiers(SPECIFIER_DEFAULTS_PTR);
+  case TY_REF:
+    return TypeSpecifiers(SPECIFIER_DEFAULTS_REF);
   case TY_ARRAY:
     return TypeSpecifiers(SPECIFIER_DEFAULTS_ARRAY);
   case TY_GENERIC:
@@ -131,14 +133,14 @@ bool TypeSpecifiers::isHeap() const { return getBit(BIT_INDEX_HEAP); }
  *
  * @param index Index of the bit to set
  */
-void TypeSpecifiers::setBit(unsigned short index) { specifierValue |= (1 << index); }
+void TypeSpecifiers::setBit(uint8_t index) { specifierValue |= (1 << index); }
 
 /**
  * Write the specified boolean value to the bit at the specified index
  *
  * @param index Index of the bit to modify
  */
-void TypeSpecifiers::writeBit(unsigned short index, bool value) {
+void TypeSpecifiers::writeBit(uint8_t index, bool value) {
   if (value)
     setBit(index);
   else
@@ -150,7 +152,7 @@ void TypeSpecifiers::writeBit(unsigned short index, bool value) {
  *
  * @param index Index of the bit to clear
  */
-void TypeSpecifiers::clearBit(unsigned short index) { specifierValue &= ~(1 << index); }
+void TypeSpecifiers::clearBit(uint8_t index) { specifierValue &= ~(1 << index); }
 
 /**
  * Get the bit at a specific index
@@ -158,7 +160,7 @@ void TypeSpecifiers::clearBit(unsigned short index) { specifierValue &= ~(1 << i
  * @param index Index of the bit to get
  * @return True or false
  */
-bool TypeSpecifiers::getBit(unsigned short index) const { return ((specifierValue >> index) & 1) == 1; }
+bool TypeSpecifiers::getBit(uint8_t index) const { return ((specifierValue >> index) & 1) == 1; }
 
 /**
  * Merge two type specifiers. If possible, prefer the opposite of the default of the super type

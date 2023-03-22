@@ -21,8 +21,11 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
     resultType.specifiers.setConst(false);
     return resultType;
   }
-  // Allow pointers, arrays and structs of the same type straight away
+  // Allow pointers and arrays of the same type straight away
   if (lhs.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhs == rhs)
+    return rhs;
+  // Allow struct of the same type straight away
+  if (lhs.is(TY_STRUCT) && lhs.equals(rhs, false, true))
     return rhs;
   // Allow type to ref type of the same contained type straight away
   if (lhs.is(TY_REF) && lhs.getContainedTy() == rhs)
@@ -31,10 +34,36 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
   if (lhs.is(TY_PTR) && rhs.is(TY_ARRAY) && lhs.getContainedTy() == rhs.getContainedTy())
     return lhs;
   // Allow char* = string
-  if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING))
+  if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING) && lhs.specifiers == rhs.specifiers)
     return lhs;
   // Check primitive type combinations
   return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhs, rhs, true);
+}
+
+SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool imm) {
+  // Check if we try to assign a constant value
+  ensureNoConstAssign(node, lhs);
+
+  // Allow pointers and arrays of the same type straight away
+  if (lhs.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhs == rhs)
+    return rhs;
+  // Allow struct of the same type straight away
+  if (lhs.is(TY_STRUCT) && lhs.equals(rhs, false, true))
+    return rhs;
+  // Allow type to ref type of the same contained type straight away
+  if (lhs.is(TY_REF) && lhs.getContainedTy() == rhs)
+    return rhs;
+  // Allow immediate value to const ref of the same contained type straight away
+  if (lhs.is(TY_REF) && lhs.getContainedTy().isConst() && imm)
+    return rhs;
+  // Allow array to pointer
+  if (lhs.is(TY_PTR) && rhs.is(TY_ARRAY) && lhs.getContainedTy() == rhs.getContainedTy())
+    return lhs;
+  // Allow char* = string
+  if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING) && lhs.specifiers == rhs.specifiers)
+    return lhs;
+  // Check primitive type combinations
+  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "= (field assign)", lhs, rhs, true);
 }
 
 SymbolType OpRuleManager::getPlusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {

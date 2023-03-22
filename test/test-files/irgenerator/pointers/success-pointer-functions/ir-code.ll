@@ -7,7 +7,6 @@ target triple = "x86_64-w64-windows-gnu"
 
 @anon.string.0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 1
 @anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 1
-@anon.struct.0 = private unnamed_addr constant %__Person__string_string_int { ptr @anon.string.0, ptr @anon.string.1, i32 32 }
 @printf.str.0 = private unnamed_addr constant [16 x i8] c"Person: %s, %s\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [25 x i8] c"Age before birthday: %d\0A\00", align 1
 @printf.str.2 = private unnamed_addr constant [24 x i8] c"Age after birthday: %d\0A\00", align 1
@@ -28,28 +27,28 @@ define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %mike = alloca %__Person__string_string_int, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %mike, ptr @anon.struct.0, i64 24, i1 false)
-  store %__Person__string_string_int { ptr @anon.string.0, ptr @anon.string.1, i32 32 }, ptr %mike, align 8
+  %1 = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 0
+  store ptr @anon.string.0, ptr %1, align 8
+  %2 = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 1
+  store ptr @anon.string.1, ptr %2, align 8
+  %3 = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 2
+  store i32 32, ptr %3, align 4
   %lastName = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 1
-  %1 = load ptr, ptr %lastName, align 8
+  %4 = load ptr, ptr %lastName, align 8
   %firstName = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 0
-  %2 = load ptr, ptr %firstName, align 8
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %1, ptr %2)
+  %5 = load ptr, ptr %firstName, align 8
+  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %4, ptr %5)
   %age = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 2
-  %4 = load i32, ptr %age, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %4)
+  %7 = load i32, ptr %age, align 4
+  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %7)
   call void @_p__void__void__birthday__Personptr(ptr %mike)
   %age1 = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 2
-  %6 = load i32, ptr %age1, align 4
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %6)
-  %8 = load i32, ptr %result, align 4
-  ret i32 %8
+  %9 = load i32, ptr %age1, align 4
+  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %9)
+  %11 = load i32, ptr %result, align 4
+  ret i32 %11
 }
-
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
 
 declare i32 @printf(ptr noundef, ...)
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
