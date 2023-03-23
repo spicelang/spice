@@ -252,8 +252,8 @@ public f<bool> operator!=(const String& a, const String& b) {
  *
  * @return Raw immutable string
  */
-public inline f<char*> String.getRaw() {
-    return this.contents;
+public inline f<string> String.getRaw() {
+    return (string) this.contents;
 }
 
 /**

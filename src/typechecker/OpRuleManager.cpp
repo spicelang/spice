@@ -22,14 +22,14 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
     return resultType;
   }
   // Allow pointers and arrays of the same type straight away
-  if (lhs.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhs == rhs)
-    return rhs;
-  // Allow struct of the same type straight away
-  if (lhs.is(TY_STRUCT) && lhs.equals(rhs, false, true))
+  if (lhs.is(TY_PTR) && lhs == rhs)
     return rhs;
   // Allow type to ref type of the same contained type straight away
   if (lhs.is(TY_REF) && lhs.getContainedTy() == rhs)
     return lhs;
+  // Allow struct of the same type straight away
+  if (lhs.isOneOf({TY_ARRAY, TY_STRUCT}) && lhs.equals(rhs, false, true))
+    return rhs;
   // Allow array to pointer
   if (lhs.is(TY_PTR) && rhs.is(TY_ARRAY) && lhs.getContainedTy() == rhs.getContainedTy())
     return lhs;

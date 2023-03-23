@@ -1,6 +1,6 @@
-import "std/data/optional";
+import "std/iterators/ranges";
 
 f<int> main() {
-    Optional<int> iO = Optional<int>(12);
-    printf("%d", iO.get());
+    dyn it = range(1, 10);
+    assert it.hasNext();
 }

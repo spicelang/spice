@@ -1,28 +1,47 @@
+import "std/iterators/iterator";
+
+// Generic type definitions
+type T int|long|short;
+
 /**
- * A NumberIterator in Spice can be used to iterate over
+ * A NumberIterator in Spice can be used to iterate over a range of numbers
  */
-public type NumberIterator<U> struct : Iterable<U> {
-    U lowerBound
-    U upperBound
-    unsigned long index
+public type NumberIterator<T> struct : Iterable<T> {
+    T lowerBound // Inclusive
+    T upperBound // Inclusive
+    unsigned long cursor
 }
 
-public p NumberIterator.ctor(U lowerBound, U upperBound) {
+public p NumberIterator.ctor(T lowerBound, T upperBound) {
     this.lowerBound = lowerBound;
     this.upperBound = upperBound;
-    this.index = 0;
+    this.cursor = 0;
 }
 
+/**
+ * Check if the number range has another number
+ *
+ * @return true or false
+ */
 public inline const f<bool> NumberIterator.hasNext() {
-    return this.lowerBound + this.index <= this.upperBound;
+    return this.lowerBound + this.cursor <= this.upperBound;
 }
 
-public inline f<U*> NumberIterator.next() {
+/**
+ * Returns the current number of the number range and moves the cursor to the next item
+ *
+ * @return current item
+ */
+public inline f<T&> NumberIterator.next() {
     assert this.hasNext();
-    this.index++;
-    return this.data;
+    U& currentItem = this.get();
+    this.cursor++;
+    return currentItem;
 }
 
-public inline f<U&> NumberIterator.get() {
-    return this.lowerBound + this.index;
+/**
+ * Returns the current number of the number range
+ */
+public inline f<T&> NumberIterator.get() {
+    return this.lowerBound + this.cursor;
 }
