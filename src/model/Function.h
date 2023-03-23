@@ -5,8 +5,8 @@
 #include <utility>
 
 #include <model/GenericType.h>
-#include <symboltablebuilder/SymbolSpecifiers.h>
 #include <symboltablebuilder/SymbolType.h>
+#include <symboltablebuilder/TypeSpecifiers.h>
 
 namespace spice::compiler {
 

@@ -31,7 +31,7 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
     throw SemanticError(node, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
 
   // Insert symbol for main function
-  SymbolTableEntry *mainFctEntry = currentScope->insert(node->getSignature(), SymbolSpecifiers::of(TY_FUNCTION), node);
+  SymbolTableEntry *mainFctEntry = currentScope->insert(node->getSignature(), node);
   mainFctEntry->used = true;
 
   // Create scope for main function body
@@ -39,7 +39,7 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   currentScope->isGenericScope = false;
 
   // Declare variable for the return value in the function scope
-  SymbolTableEntry *resultVarEntry = node->fctScope->insert(RETURN_VARIABLE_NAME, SymbolSpecifiers::of(TY_INT), node);
+  SymbolTableEntry *resultVarEntry = node->fctScope->insert(RETURN_VARIABLE_NAME, node);
   resultVarEntry->used = true;
 
   // Visit arguments in new scope
@@ -58,15 +58,14 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
 
 std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   // Build function specifiers
-  SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_FUNCTION);
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
-        specifiers.setInline(true);
+        node->functionSpecifiers.setInline(true);
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
-        specifiers.setPublic(true);
+        node->functionSpecifiers.setPublic(true);
       else if (specifier->type == SpecifierNode::TY_CONST)
-        specifiers.setConst(true);
+        node->functionSpecifiers.setConst(true);
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
     }
@@ -84,14 +83,11 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   currentScope->isGenericScope = node->hasTemplateTypes || (node->structScope && node->structScope->isGenericScope);
 
   // Create symbol for 'this' variable
-  if (node->isMethod) {
-    SymbolSpecifiers thisVarSpecifiers = SymbolSpecifiers::of(TY_STRUCT);
-    thisVarSpecifiers.setConst(specifiers.isConst()); // Make this 'const' if the function is 'const'
-    currentScope->insert(THIS_VARIABLE_NAME, thisVarSpecifiers, node);
-  }
+  if (node->isMethod)
+    currentScope->insert(THIS_VARIABLE_NAME, node);
 
   // Create symbol for 'result' variable
-  currentScope->insert(RETURN_VARIABLE_NAME, SymbolSpecifiers(), node);
+  currentScope->insert(RETURN_VARIABLE_NAME, node);
 
   // Create symbols for the parameters
   if (node->hasParams)
@@ -104,7 +100,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   currentScope = node->fctScope->parent;
 
   // Insert symbol for function into the symbol table
-  node->entry = currentScope->insert(node->getSymbolTableEntryName(), specifiers, node);
+  node->entry = currentScope->insert(node->getSymbolTableEntryName(), node);
 
   // Add to external name registry
   // if a function has overloads, they both refer to the same entry in the registry. So we only register the name once
@@ -120,15 +116,14 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
 std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   // Build procedure specifiers
-  SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_PROCEDURE);
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
-        specifiers.setInline(true);
+        node->procedureSpecifiers.setInline(true);
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
-        specifiers.setPublic(true);
+        node->procedureSpecifiers.setPublic(true);
       else if (specifier->type == SpecifierNode::TY_CONST)
-        specifiers.setConst(true);
+        node->procedureSpecifiers.setConst(true);
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
     }
@@ -146,11 +141,8 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   currentScope->isGenericScope = node->hasTemplateTypes || (node->structScope && node->structScope->isGenericScope);
 
   // Create symbol for 'this' variable
-  if (node->isMethod) {
-    SymbolSpecifiers thisVarSpecifiers = SymbolSpecifiers::of(TY_STRUCT);
-    thisVarSpecifiers.setConst(specifiers.isConst()); // Make this 'const' if the procedure is 'const'
-    currentScope->insert(THIS_VARIABLE_NAME, thisVarSpecifiers, node);
-  }
+  if (node->isMethod)
+    currentScope->insert(THIS_VARIABLE_NAME, node);
 
   // Create symbols for the parameters
   if (node->hasParams)
@@ -163,7 +155,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   currentScope = node->procScope->parent;
 
   // Insert symbol for procedure into the symbol table
-  node->entry = currentScope->insert(node->getSymbolTableEntryName(), specifiers, node);
+  node->entry = currentScope->insert(node->getSymbolTableEntryName(), node);
 
   // Add to external name registry
   // if a procedure has overloads, they both refer to the same entry in the registry. So we only register the name once
@@ -195,18 +187,17 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   currentScope = node->structScope->parent;
 
   // Build struct specifiers
-  auto specifiers = SymbolSpecifiers::of(TY_STRUCT);
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
-        specifiers.setPublic(true);
+        node->structSpecifiers.setPublic(true);
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a struct definition");
     }
   }
 
   // Add the struct to the symbol table
-  node->entry = rootScope->insert(node->structName, specifiers, node);
+  node->entry = rootScope->insert(node->structName, node);
   // Register the name in the exported name registry
   sourceFile->addNameRegistryEntry(node->structName, node->entry, node->structScope, /*keepNewOnCollision=*/true);
 
@@ -230,18 +221,17 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   currentScope = node->interfaceScope->parent;
 
   // Build interface specifiers
-  auto specifiers = SymbolSpecifiers::of(TY_INTERFACE);
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
-        specifiers.setPublic(true);
+        node->interfaceSpecifiers.setPublic(true);
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an interface definition");
     }
   }
 
   // Add the interface to the symbol table
-  node->entry = rootScope->insert(node->interfaceName, specifiers, node);
+  node->entry = rootScope->insert(node->interfaceName, node);
   // Register the name in the exported name registry
   sourceFile->addNameRegistryEntry(node->interfaceName, node->entry, node->interfaceScope, /*keepNewOnCollision=*/true);
 
@@ -263,18 +253,17 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   currentScope = node->enumScope->parent;
 
   // Build enum specifiers
-  auto specifiers = SymbolSpecifiers(TY_ENUM);
   if (node->specifierLst()) {
     for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
-        specifiers.setPublic(true);
+        node->enumSpecifiers.setPublic(true);
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an enum definition");
     }
   }
 
   // Add the enum to the symbol table
-  node->entry = rootScope->insert(node->enumName, specifiers, node);
+  node->entry = rootScope->insert(node->enumName, node);
   // Register the name in the exported name registry
   sourceFile->addNameRegistryEntry(node->enumName, node->entry, node->enumScope, /*keepNewOnCollision=*/true);
 
@@ -295,12 +284,11 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->aliasName + "'");
 
   // Add the alias to the symbol table
-  const SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_ALIAS);
-  node->entry = rootScope->insert(node->aliasName, specifiers, node);
+  node->entry = rootScope->insert(node->aliasName, node);
 
   // Add another symbol for the aliased type container
   const std::string aliasedTypeContainerName = node->aliasName + ALIAS_CONTAINER_SUFFIX;
-  node->aliasedTypeContainerEntry = rootScope->insert(aliasedTypeContainerName, specifiers, node);
+  node->aliasedTypeContainerEntry = rootScope->insert(aliasedTypeContainerName, node);
 
   return nullptr;
 }
@@ -317,25 +305,8 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
       throw SemanticError(node, GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + node->varName + "' in other module");
   }
 
-  // Create global specifiers
-  SymbolSpecifiers specifiers;
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
-      if (specifier->type == SpecifierNode::TY_CONST)
-        specifiers.setConst(true);
-      else if (specifier->type == SpecifierNode::TY_SIGNED)
-        specifiers.setSigned(true);
-      else if (specifier->type == SpecifierNode::TY_UNSIGNED)
-        specifiers.setSigned(false);
-      else if (specifier->type == SpecifierNode::TY_PUBLIC)
-        specifiers.setPublic(true);
-      else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a global variable definition");
-    }
-  }
-
   // Add the global to the symbol table
-  node->entry = rootScope->insert(node->varName, specifiers, node);
+  node->entry = rootScope->insert(node->varName, node);
   // Register the name in the exported name registry
   sourceFile->addNameRegistryEntry(node->varName, node->entry, currentScope, /*keepNewOnCollision=*/true);
 
@@ -347,11 +318,8 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   if (rootScope->lookup(node->extFunctionName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->extFunctionName + "'");
 
-  // Build external declaration specifiers
-  SymbolSpecifiers specifiers = SymbolSpecifiers::of(node->returnType() ? TY_FUNCTION : TY_PROCEDURE);
-
   // Add the external declaration to the symbol table
-  node->entry = rootScope->insert(node->extFunctionName, specifiers, node);
+  node->entry = rootScope->insert(node->extFunctionName, node);
   // Register the name in the exported name registry
   sourceFile->addNameRegistryEntry(node->extFunctionName, node->entry, rootScope, /*keepNewOnCollision=*/true);
 
@@ -409,12 +377,8 @@ std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
   if (node->idxVarDecl()) {
     visit(node->idxVarDecl());
   } else {
-    // Build default index variable specifiers
-    SymbolSpecifiers specifiers(TY_INT);
-    specifiers.setConst(true);
-
     // Add default index variable to symbol table
-    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, specifiers, node);
+    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, node);
   }
 
   // Visit item variable declaration
@@ -521,12 +485,8 @@ std::any SymbolTableBuilder::visitEnumItem(EnumItemNode *node) {
   if (currentScope->lookupStrict(node->itemName))
     throw SemanticError(node, VARIABLE_DECLARED_TWICE, "The enum item '" + node->itemName + "' was declared more than once");
 
-  // Build enum item specifiers
-  SymbolSpecifiers specifiers = SymbolSpecifiers::of(TY_INT);
-  specifiers.setSigned(false); // Enum items are unsigned integers
-
   // Add enum item entry to symbol table
-  SymbolTableEntry *enumItemEntry = currentScope->insert(node->itemName, specifiers, node);
+  SymbolTableEntry *enumItemEntry = currentScope->insert(node->itemName, node);
 
   // Add external registry entry
   assert(node->enumDef != nullptr);
@@ -541,25 +501,15 @@ std::any SymbolTableBuilder::visitField(FieldNode *node) {
   if (currentScope->lookupStrict(node->fieldName))
     throw SemanticError(node, VARIABLE_DECLARED_TWICE, "The field '" + node->fieldName + "' was declared more than once");
 
-  // Build field specifiers
-  SymbolSpecifiers specifiers;
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
-      if (specifier->type == SpecifierNode::TY_CONST)
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Struct fields cannot have the const specifier attached");
-      else if (specifier->type == SpecifierNode::TY_SIGNED)
-        specifiers.setSigned(true);
-      else if (specifier->type == SpecifierNode::TY_UNSIGNED)
-        specifiers.setSigned(false);
-      else if (specifier->type == SpecifierNode::TY_PUBLIC)
-        specifiers.setPublic(true);
-      else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a field definition");
-    }
-  }
-
   // Add field entry to symbol table
-  currentScope->insert(node->fieldName, specifiers, node);
+  currentScope->insert(node->fieldName, node);
+
+  return nullptr;
+}
+
+std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
+  // Add signature entry to symbol table
+  node->entry = currentScope->insert(node->methodName, node);
 
   return nullptr;
 }
@@ -573,23 +523,8 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
   if (node->hasAssignment)
     visit(node->assignExpr());
 
-  // Build variable specifiers
-  SymbolSpecifiers specifiers;
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
-      if (specifier->type == SpecifierNode::TY_CONST)
-        specifiers.setConst(true);
-      else if (specifier->type == SpecifierNode::TY_SIGNED)
-        specifiers.setSigned(true);
-      else if (specifier->type == SpecifierNode::TY_UNSIGNED)
-        specifiers.setSigned(false);
-      else
-        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a local variable declaration");
-    }
-  }
-
   // Add variable entry to symbol table
-  currentScope->insert(node->varName, specifiers, node);
+  currentScope->insert(node->varName, node);
 
   return nullptr;
 }

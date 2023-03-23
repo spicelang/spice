@@ -1,0 +1,1 @@
+[Warning] ./test-files/typechecker/warnings/warning-unused-return-value/source.spice:6:5: Unused return value: The return value of the function call is unused

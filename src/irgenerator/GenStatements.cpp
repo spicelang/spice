@@ -77,7 +77,10 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
 
   llvm::Value *returnValue = nullptr;
   if (node->hasReturnValue) { // Return value is attached to the return statement
-    returnValue = resolveValue(node->assignExpr());
+    if (node->getEvaluatedSymbolType(manIdx).isRef())
+      returnValue = resolveAddress(node->assignExpr());
+    else
+      returnValue = resolveValue(node->assignExpr());
   } else { // Try to load return variable value
     SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (resultEntry != nullptr) {
@@ -134,10 +137,9 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
 
   // Visit the assignExpr
   llvm::Value *condValue = resolveValue(node->assignExpr());
-  llvm::Function *parentFct = builder.GetInsertBlock()->getParent();
 
   // Create condition check
-  insertCondJump(condValue, bExit, bThen);
+  insertCondJump(condValue, bExit, bThen, LIKELY);
 
   // Switch to then block
   switchToBlock(bThen);

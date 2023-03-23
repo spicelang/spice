@@ -5,6 +5,7 @@
 #include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
 #include <irgenerator/StdFunctionManager.h>
+#include <model/GenericType.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
@@ -24,7 +25,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_PTR, "", {}, {}});
-  return SymbolType(newTypeChain);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -40,7 +41,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_REF, "", {}, {}});
-  return SymbolType(newTypeChain);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -57,7 +58,7 @@ SymbolType SymbolType::toArray(const ASTNode *node, size_t size, bool skipDynChe
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_ARRAY, "", {.arraySize = size}, {}});
-  return SymbolType(newTypeChain);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -71,7 +72,7 @@ SymbolType SymbolType::getContainedTy() const {
   assert(typeChain.size() > 1);
   TypeChain newTypeChain = typeChain;
   newTypeChain.pop_back();
-  return SymbolType(newTypeChain);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -83,11 +84,11 @@ SymbolType SymbolType::getContainedTy() const {
 SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
   assert(!typeChain.empty());
   // Copy the stack to not destroy the present one
-  TypeChain chainCopy = typeChain;
+  TypeChain newTypeChain = typeChain;
   // Replace the first element
-  chainCopy.front().subType = newSubType;
+  newTypeChain.front().subType = newSubType;
   // Return the new chain as a symbol type
-  return SymbolType(chainCopy);
+  return {newTypeChain, specifiers};
 }
 
 /**
@@ -98,11 +99,17 @@ SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
  */
 SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
   assert(!typeChain.empty());
+
+  // Create new type chain
   TypeChain newTypeChain = newBaseType.typeChain;
   for (size_t i = 1; i < typeChain.size(); i++)
     newTypeChain.push_back(typeChain.at(i));
+
+  // Create new specifiers
+  TypeSpecifiers newSpecifiers = specifiers.merge(newBaseType.specifiers);
+
   // Return the new chain as a symbol type
-  return SymbolType(newTypeChain);
+  return {newTypeChain, newSpecifiers};
 }
 
 /**
@@ -186,6 +193,21 @@ bool SymbolType::isSameContainerTypeAs(const SymbolType &otherType) const {
 }
 
 /**
+ * Checks if the base type is generic itself or has generic parts in its template types
+ *
+ * @return Contains generic parts or not
+ */
+bool SymbolType::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
+  const SymbolType &baseType = getBaseType();
+  // Check if the type itself is generic
+  if (baseType.is(TY_GENERIC))
+    return true;
+  // Check if the type has generic template types
+  const auto templateTypes = baseType.getTemplateTypes();
+  return std::any_of(templateTypes.begin(), templateTypes.end(), [](const SymbolType &t) { return t.hasAnyGenericParts(); });
+}
+
+/**
  * Set the list of templates types
  */
 void SymbolType::setTemplateTypes(const std::vector<SymbolType> &templateTypes) {
@@ -201,6 +223,16 @@ void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTyp
   typeChain.front().templateTypes = templateTypes;
 }
 
+bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const {
+  const SymbolType baseType = getBaseType();
+  // Check if the symbol type itself is generic
+  if (baseType.is(TY_GENERIC))
+    return std::any_of(genericTypeList.begin(), genericTypeList.end(), [=](const GenericType &t) { return t == baseType; });
+  auto &baseTemplateTypes = baseType.getTemplateTypes();
+  return std::all_of(baseTemplateTypes.begin(), baseTemplateTypes.end(),
+                     [&](const SymbolType &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); });
+}
+
 /**
  * Get the name of the symbol type as a string
  *
@@ -209,11 +241,28 @@ void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTyp
  */
 std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLINT(misc-no-recursion)
   std::stringstream name;
-  // Copy the chain to not destroy the present one
-  TypeChain chainCopy = typeChain;
+
+  // Append the specifiers
+  if (!mangledName) {
+    const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
+    if (specifiers.isPublic() && !defaultForSuperType.isPublic())
+      name << "public ";
+    if (specifiers.isInline() && !defaultForSuperType.isInline())
+      name << "inline ";
+    if (specifiers.isConst() && !defaultForSuperType.isConst())
+      name << "const ";
+    if (specifiers.isHeap() && !defaultForSuperType.isHeap())
+      name << "heap ";
+    if (specifiers.isSigned() && !defaultForSuperType.isSigned())
+      name << "signed ";
+    if (!specifiers.isSigned() && defaultForSuperType.isSigned())
+      name << "unsigned ";
+  }
+
   // Loop through all items
-  for (TypeChainElement &chainElement : chainCopy)
+  for (const TypeChainElement &chainElement : typeChain)
     name << getNameFromChainElement(chainElement, withSize, mangledName);
+
   return name.str();
 }
 
@@ -225,27 +274,47 @@ std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLI
  *
  * @return Size
  */
-long SymbolType::getArraySize() const {
+size_t SymbolType::getArraySize() const {
   assert(getSuperType() == TY_ARRAY);
   return typeChain.back().data.arraySize;
 }
 
 /**
- * Set the signedness of the current type
- *
- * @param value Signed or not signed
+ * Check if the current type is const.
+ * Only base types can be const. Pointer and references are always non-const
  */
-void SymbolType::setSigned(bool value) {
-  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
-  typeChain.back().data.numericSigned = value;
-}
+bool SymbolType::isConst() const { return typeChain.size() == 1 && specifiers.isConst(); }
 
 /**
  * Check if the current type is signed
  */
 bool SymbolType::isSigned() const {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
-  return typeChain.back().data.numericSigned;
+  return specifiers.isSigned();
+}
+
+/**
+ * Check if the current type is inline
+ */
+bool SymbolType::isInline() const {
+  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  return specifiers.isInline();
+}
+
+/**
+ * Check if the current type is public
+ */
+bool SymbolType::isPublic() const {
+  assert(isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
+  return specifiers.isPublic();
+}
+
+/**
+ * Check if the current type is heap
+ */
+bool SymbolType::isHeap() const {
+  assert(isPrimitive() /* Local variables */ || is(TY_STRUCT));
+  return specifiers.isHeap();
 }
 
 /**
@@ -269,19 +338,21 @@ Scope *SymbolType::getStructBodyScope() const {
 }
 
 bool operator==(const SymbolType &lhs, const SymbolType &rhs) {
-  return lhs.getTypeChainWithoutReferences() == rhs.getTypeChainWithoutReferences();
+  return lhs.typeChain == rhs.typeChain && lhs.specifiers == rhs.specifiers;
 }
 
 bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs == rhs); }
 
 /**
- * Compare two symbol types, ignoring array sizes.
- * This can be used for function argument matching or similar
+ * Check for the equality of two types.
+ * Useful for struct and function matching.
  *
- * @param lhs Other symbol type
+ * @param otherType Type to compare against
+ * @param ignoreArraySize Ignore array sizes
+ * @param ignoreSpecifiers Ignore specifiers, except for pointer and reference types
  * @return Equal or not
  */
-bool SymbolType::equalsIgnoreArraySize(const SymbolType &otherType) const {
+bool SymbolType::equals(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers) const {
   // If the size does not match, it is not equal
   if (typeChain.size() != otherType.typeChain.size())
     return false;
@@ -291,24 +362,16 @@ bool SymbolType::equalsIgnoreArraySize(const SymbolType &otherType) const {
     const SymbolType::TypeChainElement &rhsElement = otherType.typeChain.at(i);
 
     // Ignore differences in array size
-    if (lhsElement.superType == TY_ARRAY && rhsElement.superType == TY_ARRAY)
+    if (ignoreArraySize && lhsElement.superType == TY_ARRAY && rhsElement.superType == TY_ARRAY)
       continue;
 
     // Not both types are arrays -> compare them as usual
     if (lhsElement != rhsElement)
       return false;
   }
-  return true;
-}
-
-/**
- * Set the sub type of the top element
- *
- * @param newSubType New sub type
- */
-void SymbolType::setSubType(const std::string &newSubType) {
-  assert(!typeChain.empty());
-  typeChain.back().subType = newSubType;
+  if (ignoreSpecifiers && !isPtr() && !isRef())
+    return true;
+  return specifiers == otherType.specifiers;
 }
 
 /**

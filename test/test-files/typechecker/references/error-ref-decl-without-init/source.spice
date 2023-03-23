@@ -1,0 +1,4 @@
+f<int> main() {
+    int& ref;
+    ref = 123;
+}

@@ -42,7 +42,7 @@ std::string CliError::getMessagePrefix(CliErrorType type) {
   case COMING_SOON_CLI:
     return "Coming soon";
   }
-  return "Unknown error"; // GCOV_EXCL_LINE
+  return "Unknown error";
 }
 
 // GCOV_EXCL_STOP

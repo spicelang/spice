@@ -34,37 +34,37 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       // Retrieve lhs
       auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
 
-      PtrAndValue result;
+      ExprResult result;
       switch (node->op) {
       case AssignExprNode::OP_PLUS_EQUAL:
         result = conversionManager.getPlusEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       case AssignExprNode::OP_MINUS_EQUAL:
-        result.value = conversionManager.getMinusEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+        result = conversionManager.getMinusEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       case AssignExprNode::OP_MUL_EQUAL:
         result = conversionManager.getMulEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       case AssignExprNode::OP_DIV_EQUAL:
-        result.value = conversionManager.getDivEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+        result = conversionManager.getDivEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       case AssignExprNode::OP_REM_EQUAL:
-        result.value = conversionManager.getRemEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+        result = conversionManager.getRemEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       case AssignExprNode::OP_SHL_EQUAL:
-        result.value = conversionManager.getSHLEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+        result = conversionManager.getSHLEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       case AssignExprNode::OP_SHR_EQUAL:
-        result.value = conversionManager.getSHREqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+        result = conversionManager.getSHREqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       case AssignExprNode::OP_AND_EQUAL:
-        result.value = conversionManager.getAndEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+        result = conversionManager.getAndEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       case AssignExprNode::OP_OR_EQUAL:
-        result.value = conversionManager.getOrEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+        result = conversionManager.getOrEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       case AssignExprNode::OP_XOR_EQUAL:
-        result.value = conversionManager.getXorEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+        result = conversionManager.getXorEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
         break;
       default:
         throw CompilerError(UNHANDLED_BRANCH, "Assign op fall-through"); // GCOV_EXCL_LINE
@@ -73,7 +73,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       if (result.ptr) { // The operation allocated more memory
         if (lhs.entry)
           lhs.entry->updateAddress(result.ptr);
-      } else { // The operation only updated the value
+      } else if (result.value) { // The operation only updated the value
         // Store the result
         lhs.value = result.value;
         builder.CreateStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
@@ -233,7 +233,7 @@ std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
   // Evaluate first operand
   BitwiseXorExprNode *lhsNode = node->operands().front();
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
-  auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
+  auto result = std::any_cast<ExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands().size(); i++) {
@@ -241,11 +241,11 @@ std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
     BitwiseXorExprNode *rhsNode = node->operands()[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
-    lhs.value = conversionManager.getBitwiseOrInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
+    result = conversionManager.getBitwiseOrInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
   }
 
   // Return result
-  return ExprResult{.value = lhs.value};
+  return result;
 }
 
 std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
@@ -259,7 +259,7 @@ std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
   // Evaluate first operand
   BitwiseAndExprNode *lhsNode = node->operands().front();
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
-  auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
+  auto result = std::any_cast<ExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands().size(); i++) {
@@ -267,11 +267,11 @@ std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
     BitwiseAndExprNode *rhsNode = node->operands()[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
-    lhs.value = conversionManager.getBitwiseXorInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
+    result = conversionManager.getBitwiseXorInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
   }
 
   // Return result
-  return ExprResult{.value = lhs.value};
+  return result;
 }
 
 std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
@@ -285,7 +285,7 @@ std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
   // Evaluate first operand
   EqualityExprNode *lhsNode = node->operands().front();
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
-  auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
+  auto result = std::any_cast<ExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands().size(); i++) {
@@ -293,11 +293,11 @@ std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
     EqualityExprNode *rhsNode = node->operands()[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
-    lhs.value = conversionManager.getBitwiseAndInst(rhsNode, lhs, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
+    result = conversionManager.getBitwiseAndInst(rhsNode, result, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
   }
 
   // Return result
-  return ExprResult{.value = lhs.value};
+  return result;
 }
 
 std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
@@ -311,7 +311,7 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
   // Evaluate lhs
   RelationalExprNode *lhsNode = node->operands()[0];
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
-  auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
+  auto result = std::any_cast<ExprResult>(visit(lhsNode));
 
   // Evaluate rhs
   RelationalExprNode *rhsNode = node->operands()[1];
@@ -319,20 +319,19 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
   auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
 
   // Retrieve the result value, based on the exact operator
-  llvm::Value *result;
   switch (node->op) {
   case EqualityExprNode::OP_EQUAL:
-    result = conversionManager.getEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+    result = conversionManager.getEqualInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   case EqualityExprNode::OP_NOT_EQUAL:
-    result = conversionManager.getNotEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+    result = conversionManager.getNotEqualInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   default:
     throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   // Return the result
-  return ExprResult{.value = result};
+  return result;
 }
 
 std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
@@ -346,7 +345,7 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
   // Evaluate lhs
   ShiftExprNode *lhsNode = node->operands()[0];
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
-  auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
+  auto result = std::any_cast<ExprResult>(visit(lhsNode));
 
   // Evaluate rhs
   ShiftExprNode *rhsNode = node->operands()[1];
@@ -354,26 +353,25 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
   auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
 
   // Retrieve the result value, based on the exact operator
-  llvm::Value *result;
   switch (node->op) {
   case RelationalExprNode::OP_LESS:
-    result = conversionManager.getLessInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+    result = conversionManager.getLessInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   case RelationalExprNode::OP_GREATER:
-    result = conversionManager.getGreaterInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+    result = conversionManager.getGreaterInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   case RelationalExprNode::OP_LESS_EQUAL:
-    result = conversionManager.getLessEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+    result = conversionManager.getLessEqualInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   case RelationalExprNode::OP_GREATER_EQUAL:
-    result = conversionManager.getGreaterEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+    result = conversionManager.getGreaterEqualInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   default:
     throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   // Return the result
-  return ExprResult{.value = result};
+  return result;
 }
 
 std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
@@ -387,7 +385,7 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
   // Evaluate lhs
   AdditiveExprNode *lhsNode = node->operands()[0];
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
-  auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
+  auto result = std::any_cast<ExprResult>(visit(lhsNode));
 
   // Evaluate rhs
   AdditiveExprNode *rhsNode = node->operands()[1];
@@ -395,20 +393,19 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
   auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
 
   // Retrieve the result value, based on the exact operator
-  llvm::Value *result;
   switch (node->op) {
   case ShiftExprNode::OP_SHIFT_LEFT:
-    result = conversionManager.getShiftLeftInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+    result = conversionManager.getShiftLeftInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   case ShiftExprNode::OP_SHIFT_RIGHT:
-    result = conversionManager.getShiftRightInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, 0);
+    result = conversionManager.getShiftRightInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
   default:
     throw CompilerError(UNHANDLED_BRANCH, "ShiftExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   // Return the result
-  return ExprResult{.value = result};
+  return result;
 }
 
 std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
@@ -435,13 +432,12 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
 
     // Retrieve the result, based on the exact operator
-    PtrAndValue result = {nullptr, nullptr};
     switch (opQueue.front().first) {
     case AdditiveExprNode::OP_PLUS:
-      result = conversionManager.getPlusInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
+      lhs = conversionManager.getPlusInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
       break;
     case AdditiveExprNode::OP_MINUS:
-      result.value = conversionManager.getMinusInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
+      lhs = conversionManager.getMinusInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
       break;
     default:
       throw CompilerError(UNHANDLED_BRANCH, "AdditiveExpr fall-through"); // GCOV_EXCL_LINE
@@ -449,13 +445,6 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
 
     // Retrieve the new lhs symbol type
     lhsSTy = opQueue.front().second;
-
-    // Load value from pointer if it is not present already
-    if (result.value) {
-      lhs.value = result.value;
-    } else if (result.ptr) {
-      lhs.value = builder.CreateLoad(lhsSTy.toLLVMType(context, currentScope), result.ptr);
-    }
 
     opQueue.pop();
   }
@@ -475,7 +464,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
   // Evaluate first operand
   CastExprNode *lhsNode = node->operands()[0];
   SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
-  auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
+  auto result = std::any_cast<ExprResult>(visit(lhsNode));
 
   auto opQueue = node->opQueue;
   size_t operandIndex = 1;
@@ -488,16 +477,15 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
     auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
 
     // Retrieve the result, based on the exact operator
-    PtrAndValue result = {nullptr, nullptr};
     switch (opQueue.front().first) {
     case MultiplicativeExprNode::OP_MUL:
-      result = conversionManager.getMulInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
+      result = conversionManager.getMulInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
       break;
     case MultiplicativeExprNode::OP_DIV:
-      result.value = conversionManager.getDivInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
+      result = conversionManager.getDivInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
       break;
     case MultiplicativeExprNode::OP_REM:
-      result.value = conversionManager.getRemInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
+      result = conversionManager.getRemInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
       break;
     default:
       throw CompilerError(UNHANDLED_BRANCH, "MultiplicativeExpr fall-through"); // GCOV_EXCL_LINE
@@ -505,19 +493,11 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
 
     // Retrieve the new lhs symbol type
     lhsSTy = opQueue.front().second;
-
-    // Load value from pointer if it is not present already
-    if (result.value) {
-      lhs.value = result.value;
-    } else if (result.ptr) {
-      lhs.value = builder.CreateLoad(lhsSTy.toLLVMType(context, currentScope), result.ptr);
-    }
-
     opQueue.pop();
   }
 
   // Return the result
-  return lhs;
+  return result;
 }
 
 std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
@@ -537,10 +517,10 @@ std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
   auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
 
   // Retrieve the result value
-  llvm::Value *result = conversionManager.getCastInst(node, targetSTy, rhs, rhsSTy, currentScope, 0);
+  const ExprResult result = conversionManager.getCastInst(node, targetSTy, rhs, rhsSTy, currentScope, 0);
 
   // Return the result
-  return ExprResult{.value = result};
+  return result;
 }
 
 std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
@@ -552,13 +532,13 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
   // Evaluate lhs
   PrefixUnaryExprNode *lhsNode = node->prefixUnary();
-  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx).removeReferenceWrappers();
+  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
 
   switch (node->op) {
   case PrefixUnaryExprNode::OP_MINUS: {
     // Execute operation
-    lhs.value = conversionManager.getPrefixMinusInst(node, lhs, lhsSTy, currentScope, 0);
+    lhs = conversionManager.getPrefixMinusInst(node, lhs, lhsSTy, currentScope, 0);
 
     // This operator can not work in-place, so we need additional memory
     lhs.ptr = insertAlloca(lhs.value->getType());
@@ -573,7 +553,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     resolveValue(lhsNode, lhs);
 
     // Execute operation
-    lhs.value = conversionManager.getPrefixPlusPlusInst(node, lhs, lhsSTy, currentScope, 0);
+    lhs.value = conversionManager.getPrefixPlusPlusInst(node, lhs, lhsSTy, currentScope, 0).value;
 
     // If this operation happens on a volatile variable, store the value directly
     if (lhs.entry && lhs.entry->isVolatile)
@@ -593,7 +573,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     resolveValue(lhsNode, lhs);
 
     // Execute operation
-    lhs.value = conversionManager.getPrefixMinusMinusInst(node, lhs, lhsSTy, currentScope, 0);
+    lhs.value = conversionManager.getPrefixMinusMinusInst(node, lhs, lhsSTy, currentScope, 0).value;
 
     // If this operation happens on a volatile variable, store the value directly
     if (lhs.entry && lhs.entry->isVolatile)
@@ -613,7 +593,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     resolveValue(lhsNode, lhs);
 
     // Execute operation
-    lhs.value = conversionManager.getPrefixNotInst(node, lhs, lhsSTy, currentScope, 0);
+    lhs = conversionManager.getPrefixNotInst(node, lhs, lhsSTy, currentScope, 0);
 
     // This operator can not work in-place, so we need additional memory
     lhs.ptr = insertAlloca(lhs.value->getType());
@@ -628,7 +608,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     resolveValue(lhsNode, lhs);
 
     // Execute operation
-    lhs.value = conversionManager.getPrefixBitwiseNotInst(node, lhs, lhsSTy, currentScope, 0);
+    lhs = conversionManager.getPrefixBitwiseNotInst(node, lhs, lhsSTy, currentScope, 0);
 
     // This operator can not work in-place, so we need additional memory
     lhs.ptr = insertAlloca(lhs.value->getType());
@@ -678,7 +658,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
   // Evaluate lhs
   PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
-  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx).removeReferenceWrappers();
+  SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
 
   switch (node->op) {
@@ -729,11 +709,20 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
     // Retrieve field entry
     lhs.entry = structScope->lookupStrict(fieldName);
+    assert(lhs.entry != nullptr);
+    SymbolType fieldSymbolType = lhs.entry->getType();
 
     // Get address of the field in the struct instance
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(lhs.entry->orderIndex)};
     lhs.ptr = builder.CreateInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices);
     lhs.ptr->setName(fieldName);
+
+    // Load the address of the referenced variable
+    while (fieldSymbolType.isRef()) {
+      llvm::Type *referencedType = fieldSymbolType.toLLVMType(context, currentScope);
+      lhs.ptr = builder.CreateLoad(referencedType, lhs.ptr);
+      fieldSymbolType = fieldSymbolType.getContainedTy();
+    }
 
     // Reset the value
     lhs.value = nullptr;
@@ -750,10 +739,10 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
 
     // Execute operation
-    llvm::Value *newLhsValue = conversionManager.getPostfixPlusPlusInst(node, lhs, lhsSTy, currentScope, 0);
+    const ExprResult result = conversionManager.getPostfixPlusPlusInst(node, lhs, lhsSTy, currentScope, 0);
 
     // Save the new value to the old address
-    builder.CreateStore(newLhsValue, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
+    builder.CreateStore(result.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
 
     // Reset the address
     lhs.ptr = nullptr;
@@ -771,10 +760,10 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
 
     // Execute operation
-    llvm::Value *newLhsValue = conversionManager.getPostfixMinusMinusInst(node, lhs, lhsSTy, currentScope, 0);
+    const ExprResult result = conversionManager.getPostfixMinusMinusInst(node, lhs, lhsSTy, currentScope, 0);
 
     // Save the new value to the old address
-    builder.CreateStore(newLhsValue, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
+    builder.CreateStore(result.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
 
     // Reset the address
     lhs.ptr = nullptr;
@@ -832,7 +821,7 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(varEntry != nullptr);
   Scope *accessScope = node->accessScopes.at(manIdx);
   assert(accessScope != nullptr);
-  const SymbolType varSymbolType = varEntry->getType();
+  SymbolType varSymbolType = varEntry->getType();
   llvm::Type *varType = varSymbolType.toLLVMType(context, accessScope);
 
   // Check if external global variable
@@ -853,9 +842,10 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(address != nullptr);
 
   // Load the address of the referenced variable
-  if (varEntry->getType().isRef()) {
-    llvm::Type *referencedType = varEntry->getType().toLLVMType(context, currentScope);
+  while (varSymbolType.isRef()) {
+    llvm::Type *referencedType = varSymbolType.toLLVMType(context, currentScope);
     address = builder.CreateLoad(referencedType, address);
+    varSymbolType = varSymbolType.getContainedTy();
   }
 
   return ExprResult{.ptr = address, .entry = varEntry};

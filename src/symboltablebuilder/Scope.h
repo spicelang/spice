@@ -85,9 +85,7 @@ public:
   [[nodiscard]] nlohmann::json getSymbolTableJSON() const;
 
   // Wrapper methods for symbol table
-  inline SymbolTableEntry *insert(const std::string &name, const SymbolSpecifiers &specifiers, ASTNode *declNode) {
-    return symbolTable.insert(name, specifiers, declNode);
-  }
+  inline SymbolTableEntry *insert(const std::string &name, ASTNode *declNode) { return symbolTable.insert(name, declNode); }
   inline SymbolTableEntry *lookup(const std::string &symbolName) { return symbolTable.lookup(symbolName); }
   inline SymbolTableEntry *lookupStrict(const std::string &symbolName) { return symbolTable.lookupStrict(symbolName); }
 

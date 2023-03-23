@@ -44,12 +44,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-16.0.0-rc1-linux-x64
+          key: llvm-16.0.0-linux-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          git clone --depth 1 --branch llvmorg-16.0.0-rc1 https://github.com/llvm/llvm-project.git llvm
+          git clone --depth 1 --branch llvmorg-16.0.0 https://github.com/llvm/llvm-project.git llvm
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -GNinja -Wno-dev -Wattributes ../llvm
@@ -122,12 +122,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: D:/a/spice/spice/llvm
-          key: llvm-16.0.0-rc1-win-x64
+          key: llvm-16.0.0-win-x64
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          git clone --depth 1 --branch llvmorg-16.0.0-rc1 https://github.com/llvm/llvm-project.git llvm
+          git clone --depth 1 --branch llvmorg-16.0.0 https://github.com/llvm/llvm-project.git llvm
           setx /M PATH "%PATH%;C:\mingw64\mingw64\bin"
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           echo "Adding MinGW to path done."
@@ -180,9 +180,9 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
-          go-version: 1.19
+          go-version: '1.20'
 
       - name: Restore Go modules cache
         uses: actions/cache@v3
@@ -220,14 +220,10 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         with:
-          version: v1.14.1
-          args: release --rm-dist
+          version: v1.16.1
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          #TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
-          #TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
-          #TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
-          #TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
 
       - uses: actions/upload-artifact@v3
         with:
@@ -251,7 +247,7 @@ jobs:
         uses: battila7/get-version-action@v2
 
       - name: Download dist output
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: dist-output
 
@@ -352,7 +348,7 @@ jobs:
           tag: ${{ github.ref }}
 
       - name: Deploy to WinGet
-        uses: vedantmgoyal2009/winget-releaser@v1
+        uses: vedantmgoyal2009/winget-releaser@v2
         with:
           identifier: ChilliBits.Spice
           version: ${{ github.ref_name }}

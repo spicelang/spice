@@ -1,0 +1,60 @@
+// Link external functions
+ext<byte*> malloc(long);
+ext free(byte*);
+
+// Add generic type definitions
+type T dyn;
+
+// Enums
+type NodeColor enum { RED, BLACK }
+
+/**
+ * Node of a Red-Black Tree
+ */
+type Node<T> struct {
+    T data
+    Node<T>* childLeft
+    Node<T>* childRight
+    NodeColor color
+}
+
+f<Node<T>*> createNode<T>(T data) {
+    Node<T>* newNode = malloc(sizeof(type Node<T>) / 8);
+    newNode.data = data;
+    newNode.childLeft = nil<Node<T>*>;
+    newNode.childRight = nil<Node<T>*>;
+    newNode.color = NodeColor::RED;
+    return newNode;
+}
+
+inline f<bool> Node.isRoot() {
+    return this.parent == nil<Node<T>*>;
+}
+
+/**
+ * A Red-Black Tree is a self-balancing search tree, which is used e.g. in the implementation of maps.
+ *
+ * Insertion time: O(log n)
+ * Lookup time: O(log n)
+ * Deletion time: O(log n)
+ */
+public type RedBlackTree<T> struct {
+    Node<T>* rootNode
+}
+
+public p RedBlackTree.ctor() {
+    this.rootNode = nil<Node<T>*>;
+}
+
+public p RedBlackTree.insert(T newItem) {
+    this.insertAdd(newItem);
+    this.insertRebalance(newItem);
+}
+
+p RedBlackTree.insertAdd(T newItem) {
+
+}
+
+p RedBlackTree.insertRebalance(T newItem) {
+
+}

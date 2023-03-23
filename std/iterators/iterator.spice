@@ -1,6 +1,5 @@
 // Add generic type definitions
 type T dyn;
-type U int|short|long;
 
 /**
  * The Iterable interface must be implemented in order to be handled as an iterator by Spice. For instance, all elements,
@@ -8,6 +7,6 @@ type U int|short|long;
  */
 public type Iterable<T> interface {
     f<bool> hasNext();
-    f<T> next();
+    f<T&> next();
     f<T&> get();
 }

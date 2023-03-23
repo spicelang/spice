@@ -141,7 +141,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 }
 
 std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
-  // Change to struct scope
+  // Change to generic struct scope
   currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->structName);
   assert(currentScope != nullptr && currentScope->type == SCOPE_STRUCT);
 

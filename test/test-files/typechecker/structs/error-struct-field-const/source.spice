@@ -1,9 +1,0 @@
-type TestStruct struct {
-    const string f1
-    unsigned int f2
-}
-
-f<int> main() {
-    dyn testStruct = TestStruct { "test", 3 };
-    printf("Field1: %s", testStruct.f1);
-}

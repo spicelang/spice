@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/structs/error-struct-fields-match-declaration/source.spice:8:37:
-The type of a field value does not match the declaration: Expected type double* for the field 'dbl', but got double
+Wrong data type for operator: Given type of the field value does not match declaration. Expected double* but got double
 
 8  ance = TestStruct { 6.987, "Hello!", false };
                        ^^^^^

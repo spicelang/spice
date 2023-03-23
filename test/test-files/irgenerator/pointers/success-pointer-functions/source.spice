@@ -9,7 +9,7 @@ p birthday(Person* person) {
 }
 
 f<int> main() {
-    dyn mike = Person { "Mike", "Miller", 32 };
+    dyn mike = Person { "Mike", "Miller", (unsigned int) 32 };
     printf("Person: %s, %s\n", mike.lastName, mike.firstName);
     printf("Age before birthday: %d\n", mike.age);
     birthday(&mike);

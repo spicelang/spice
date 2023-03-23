@@ -1,0 +1,27 @@
+type Struct struct {
+    int& ref
+    bool b
+}
+
+p proc(int& intRef, const Struct& structRef) {
+    intRef += 12;
+    printf("From procedure: %d\n", structRef.ref);
+}
+
+f<int> func(double& doubleRef, const Struct& structRef) {
+    doubleRef *= -1.56;
+    printf("From function: %d\n", structRef.b);
+    return 0;
+}
+
+f<int> main() {
+    int i = -4321;
+    proc(i, Struct{ i, true });
+    assert i == -4309;
+
+    double d = 69.0;
+    func(d, Struct{ i, false});
+    assert d == -107.64;
+
+    printf("All assertions passed!");
+}

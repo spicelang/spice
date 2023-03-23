@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/generics/error-not-in-template1/source.spice:4:16:
-Generic type not contained in template: Generic argument type not included in function template types
+Generic type not contained in template: Generic param type not included in the template type list of the function
 
 4  f<T> getDyn<T>(T a1, U a2) {
                   ^^^^^^^^^^

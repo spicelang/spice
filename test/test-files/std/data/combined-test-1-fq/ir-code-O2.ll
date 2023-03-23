@@ -12,48 +12,33 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %1 = alloca %"__pair::Pair<int,string>__Vector__pair::Pair<int,string>ptr_long_long_int", align 8
   %pairVector = alloca %"__pair::Pair<int,string>__Vector__pair::Pair<int,string>ptr_long_long_int", align 8
+  %1 = alloca %__int_string__Pair__int_string, align 8
   %2 = alloca %__int_string__Pair__int_string, align 8
-  %3 = alloca %__int_string__Pair__int_string, align 8
   %p1 = alloca %__int_string__Pair__int_string, align 8
-  call void @"_mp__Vector_pair::Pair<int,string>__void__ctor"(ptr nonnull %1) #2
-  %.fca.0.load14 = load ptr, ptr %1, align 8
-  %.fca.1.gep16 = getelementptr inbounds %"__pair::Pair<int,string>__Vector__pair::Pair<int,string>ptr_long_long_int", ptr %1, i64 0, i32 1
-  %.fca.1.load17 = load i64, ptr %.fca.1.gep16, align 8
-  %.fca.2.gep19 = getelementptr inbounds %"__pair::Pair<int,string>__Vector__pair::Pair<int,string>ptr_long_long_int", ptr %1, i64 0, i32 2
-  %.fca.2.load = load i64, ptr %.fca.2.gep19, align 8
-  %.fca.3.gep20 = getelementptr inbounds %"__pair::Pair<int,string>__Vector__pair::Pair<int,string>ptr_long_long_int", ptr %1, i64 0, i32 3
-  %.fca.3.load = load i32, ptr %.fca.3.gep20, align 8
-  store ptr %.fca.0.load14, ptr %pairVector, align 8
-  %.fca.1.gep12 = getelementptr inbounds %"__pair::Pair<int,string>__Vector__pair::Pair<int,string>ptr_long_long_int", ptr %pairVector, i64 0, i32 1
-  store i64 %.fca.1.load17, ptr %.fca.1.gep12, align 8
-  %.fca.2.gep = getelementptr inbounds %"__pair::Pair<int,string>__Vector__pair::Pair<int,string>ptr_long_long_int", ptr %pairVector, i64 0, i32 2
-  store i64 %.fca.2.load, ptr %.fca.2.gep, align 8
-  %.fca.3.gep = getelementptr inbounds %"__pair::Pair<int,string>__Vector__pair::Pair<int,string>ptr_long_long_int", ptr %pairVector, i64 0, i32 3
-  store i32 %.fca.3.load, ptr %.fca.3.gep, align 8
-  call void @_mp__Pair_int_string__void__ctor__int_string(ptr nonnull %2, i32 0, ptr nonnull @anon.string.0) #2
-  %.fca.0.load4 = load i32, ptr %2, align 8
-  %.fca.0.insert5 = insertvalue %__int_string__Pair__int_string poison, i32 %.fca.0.load4, 0
-  %.fca.1.gep6 = getelementptr inbounds %__int_string__Pair__int_string, ptr %2, i64 0, i32 1
-  %.fca.1.load7 = load ptr, ptr %.fca.1.gep6, align 8
-  %.fca.1.insert8 = insertvalue %__int_string__Pair__int_string %.fca.0.insert5, ptr %.fca.1.load7, 1
-  call void @"_mp__Vector_pair::Pair<int,string>__void__pushBack__pair::Pair<int,string>"(ptr nonnull %pairVector, %__int_string__Pair__int_string %.fca.1.insert8) #2
-  call void @_mp__Pair_int_string__void__ctor__int_string(ptr nonnull %3, i32 1, ptr nonnull @anon.string.1) #2
-  %.fca.0.load = load i32, ptr %3, align 8
+  call void @"_mp__Vector_pair::Pair<int,string>__void__ctor"(ptr nonnull %pairVector) #2
+  call void @_mp__Pair_int_string__void__ctor__int_string(ptr nonnull %1, i32 0, ptr nonnull @anon.string.0) #2
+  %.fca.0.load8 = load i32, ptr %1, align 8
+  %.fca.0.insert9 = insertvalue %__int_string__Pair__int_string poison, i32 %.fca.0.load8, 0
+  %.fca.1.gep10 = getelementptr inbounds %__int_string__Pair__int_string, ptr %1, i64 0, i32 1
+  %.fca.1.load11 = load ptr, ptr %.fca.1.gep10, align 8
+  %.fca.1.insert12 = insertvalue %__int_string__Pair__int_string %.fca.0.insert9, ptr %.fca.1.load11, 1
+  call void @"_mp__Vector_pair::Pair<int,string>__void__pushBack__pair::Pair<int,string>"(ptr nonnull %pairVector, %__int_string__Pair__int_string %.fca.1.insert12) #2
+  call void @_mp__Pair_int_string__void__ctor__int_string(ptr nonnull %2, i32 1, ptr nonnull @anon.string.1) #2
+  %.fca.0.load = load i32, ptr %2, align 8
   %.fca.0.insert = insertvalue %__int_string__Pair__int_string poison, i32 %.fca.0.load, 0
-  %.fca.1.gep2 = getelementptr inbounds %__int_string__Pair__int_string, ptr %3, i64 0, i32 1
-  %.fca.1.load = load ptr, ptr %.fca.1.gep2, align 8
+  %.fca.1.gep6 = getelementptr inbounds %__int_string__Pair__int_string, ptr %2, i64 0, i32 1
+  %.fca.1.load = load ptr, ptr %.fca.1.gep6, align 8
   %.fca.1.insert = insertvalue %__int_string__Pair__int_string %.fca.0.insert, ptr %.fca.1.load, 1
   call void @"_mp__Vector_pair::Pair<int,string>__void__pushBack__pair::Pair<int,string>"(ptr nonnull %pairVector, %__int_string__Pair__int_string %.fca.1.insert) #2
-  %4 = call %__int_string__Pair__int_string @"_mf__Vector_pair::Pair<int,string>__pair::Pair<int,string>__get__int"(ptr nonnull %pairVector, i32 1) #2
-  %.fca.0.extract = extractvalue %__int_string__Pair__int_string %4, 0
-  store i32 %.fca.0.extract, ptr %p1, align 8
-  %.fca.1.extract = extractvalue %__int_string__Pair__int_string %4, 1
+  %3 = call %__int_string__Pair__int_string @"_mf__Vector_pair::Pair<int,string>__pair::Pair<int,string>__get__int"(ptr nonnull %pairVector, i32 1) #2
+  %.fca.0.extract = extractvalue %__int_string__Pair__int_string %3, 0
+  %.fca.1.extract = extractvalue %__int_string__Pair__int_string %3, 1
   %.fca.1.gep = getelementptr inbounds %__int_string__Pair__int_string, ptr %p1, i64 0, i32 1
+  store i32 %.fca.0.extract, ptr %p1, align 8
   store ptr %.fca.1.extract, ptr %.fca.1.gep, align 8
-  %5 = call ptr @_mf__Pair_int_string__string__getSecond(ptr nonnull %p1) #2
-  %6 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %5)
+  %4 = call ptr @_mf__Pair_int_string__string__getSecond(ptr nonnull %p1) #2
+  %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %4)
   ret i32 0
 }
 

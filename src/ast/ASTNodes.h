@@ -13,6 +13,7 @@
 #include <model/Function.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
+#include <symboltablebuilder/TypeSpecifiers.h>
 #include <util/CodeLoc.h>
 
 namespace spice::compiler {
@@ -171,6 +172,8 @@ public:
     return nullptr;
   }
 
+  [[nodiscard]] virtual bool isStmtNode() const { return false; }
+
   // Public members
   ASTNode *parent;
   std::vector<ASTNode *> children;
@@ -293,6 +296,7 @@ public:
   bool hasTemplateTypes = false;
   bool hasParams = false;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers functionSpecifiers = TypeSpecifiers::of(TY_FUNCTION);
   Scope *structScope = nullptr;
   Scope *fctScope = nullptr;
   std::vector<Function *> fctManifestations;
@@ -331,6 +335,7 @@ public:
   bool hasTemplateTypes = false;
   bool hasParams = false;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers procedureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
   Scope *structScope = nullptr;
   Scope *procScope = nullptr;
   std::vector<Function *> procManifestations;
@@ -359,6 +364,7 @@ public:
   bool isGeneric = false;
   bool hasInterfaces = false;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers structSpecifiers = TypeSpecifiers::of(TY_STRUCT);
   std::vector<Struct *> structManifestations;
   Scope *structScope = nullptr;
   Struct *spiceStruct = nullptr;
@@ -382,6 +388,7 @@ public:
   // Public members
   std::string interfaceName;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
   Scope *interfaceScope = nullptr;
   Interface *spiceInterface = nullptr;
 };
@@ -403,8 +410,9 @@ public:
 
   // Public members
   std::string enumName;
-  Scope *enumScope;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers enumSpecifiers = TypeSpecifiers::of(TY_ENUM);
+  Scope *enumScope;
 };
 
 // ====================================================== GenericTypeDefNode =====================================================
@@ -458,7 +466,6 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitGlobalVarDef(this); }
 
   // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
 
@@ -838,7 +845,6 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitField(this); }
 
   // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
 
   // Public members
@@ -852,6 +858,7 @@ class SignatureNode : public ASTNode {
 public:
   // Enums
   enum Type {
+    TYPE_NONE,
     TYPE_FUNCTION,
     TYPE_PROCEDURE,
   };
@@ -868,9 +875,14 @@ public:
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
 
+  // Other methods
+  std::vector<Function *> *getFctManifestations() override { return &signatureManifestations; }
+
   // Public members
+  Type signatureType = SignatureNode::TYPE_NONE;
   std::string methodName;
-  Type signatureType = SignatureNode::TYPE_PROCEDURE;
+  SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers signatureSpecifiers;
   bool hasParams = false;
   std::vector<Function *> signatureManifestations;
 };
@@ -885,6 +897,8 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStmt(this); }
+
+  [[nodiscard]] bool isStmtNode() const override { return true; }
 };
 
 // ========================================================= DeclStmtNode ========================================================
@@ -899,18 +913,17 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDeclStmt(this); }
 
   // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
   // Util methods
-  [[nodiscard]] bool isParam() const { return dynamic_cast<ParamLstNode *>(parent); }
   void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount, nullptr); }
 
   // Public members
   std::string varName;
   bool hasAssignment = false;
   std::vector<SymbolTableEntry *> entries;
+  bool isParam = false;
 };
 
 // ======================================================= SpecifierLstNode ======================================================
@@ -1555,6 +1568,7 @@ public:
 
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
+  [[nodiscard]] bool hasReturnValueReceiver() const;
 
   // Public members
   std::string fqFunctionName;
@@ -1629,10 +1643,15 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDataType(this); }
 
   // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
 
   // Public members
   std::queue<TypeModifier> tmQueue;
+  bool isParamType = false;
+  bool isGlobalType = false;
+  bool isFieldType = false;
+  bool isReturnType = false;
 };
 
 // ==================================================== BaseDataTypeNode =========================================================
@@ -1689,6 +1708,9 @@ public:
   std::string fqTypeName;
   std::vector<std::string> typeNameFragments;
   std::vector<SymbolTableEntry *> customTypes;
+  bool isParamType = false;
+  bool isFieldType = false;
+  bool isReturnType = false;
 };
 
 } // namespace spice::compiler

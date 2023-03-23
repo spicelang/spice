@@ -20,8 +20,8 @@ public type String struct {
 // Generic type definitions
 type IntLong      int|long;
 type IntLongShort int|long|short;
-type StrTy1       String|string;
-type StrTy2       String|string;
+type StrTy        String|string;
+type RawStrChar   string|char;
 type StrTyChar    String|string|char;
 
 public p String.ctor(const string value = "") {
@@ -59,7 +59,7 @@ public p String.ctor(const char value) {
     }
 }
 
-public p String.ctor(const String value) {
+public p String.ctor(const String& value) {
     this.length = value.length;
     this.capacity = value.capacity;
 
@@ -108,7 +108,7 @@ public p String.append(const string appendix) {
  *
  * @param appendix String to be appended
  */
-public p String.append(const String appendix) {
+public p String.append(const String& appendix) {
     this.append((string) appendix.getRaw());
 }
 
@@ -137,7 +137,7 @@ public p String.append(const char c) {
  * @param b String b
  * @return Concatenated string
  */
-public f<String> operator+<StrTy1, StrTy2>(const StrTy1 a, const StrTy2 b) {
+public f<String> operator+<StrTy, StrTyChar>(const StrTy& a, const StrTyChar& b) {
     result = String(a);
     result.append(b);
 }
@@ -146,9 +146,9 @@ public f<String> operator+<StrTy1, StrTy2>(const StrTy1 a, const StrTy2 b) {
  * Concatenates b to the end of a
  *
  * @param a String a
- * @param b String/char b
+ * @param b String/string/char b
  */
-public p operator+=<StrTyChar>(String& a, const StrTyChar b) {
+public p operator+=<StrTyChar>(String& a, const StrTyChar& b) {
     a.append(b);
 }
 
@@ -159,7 +159,7 @@ public p operator+=<StrTyChar>(String& a, const StrTyChar b) {
  * @param n Multiplication operand
  * @return Result string
  */
-public f<String> operator*<IntLongShort>(const String str, const IntLongShort n) {
+public f<String> operator*<IntLongShort>(const String& str, const IntLongShort n) {
     // Cancel if operand is less than 2
     if n < 2 { return; }
 
@@ -185,7 +185,7 @@ public f<String> operator*<IntLongShort>(const String str, const IntLongShort n)
  * @param str Input string
  * @return Result string
  */
-public f<String> operator*<IntLongShort>(const IntLongShort n, const String str) {
+public f<String> operator*<IntLongShort>(const IntLongShort n, const String& str) {
     return str * n;
 }
 
@@ -220,7 +220,7 @@ public p operator*=<IntLongShort>(String& str, const IntLongShort n) {
  * @param b Second input string
  * @return Equal or not
  */
-public f<bool> operator==(const String a, const String b) {
+public f<bool> operator==(const String& a, const String& b) {
     // Compare sizes
     if a.length != b.length { return false; }
 
@@ -243,7 +243,7 @@ public f<bool> operator==(const String a, const String b) {
  * @param b Second input string
  * @return Not equal or not
  */
-public f<bool> operator!=(const String a, const String b) {
+public f<bool> operator!=(const String& a, const String& b) {
     return !(a == b);
 }
 
@@ -252,8 +252,8 @@ public f<bool> operator!=(const String a, const String b) {
  *
  * @return Raw immutable string
  */
-public inline f<char*> String.getRaw() {
-    return this.contents;
+public inline f<string> String.getRaw() {
+    return (string) this.contents;
 }
 
 /**
@@ -306,13 +306,13 @@ public p String.clear() {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned long startIndex = 0l) {
+public f<unsigned long> String.find(string needle, unsigned long startIndex = 0l) {
     // Return -1 if the startIndex is out of bounds
-    if startIndex >= this.length { return -1l; }
+    if startIndex >= this.length { return (unsigned long) -1l; }
 
     unsigned long needleLength = getRawLength(needle);
     // Return false if the needle is longer than the haystack
-    if this.length < needleLength { return -1l; }
+    if this.length < needleLength { return (unsigned long) -1l; }
 
     // Search needle in haystack
     for unsigned long idx = startIndex; idx <= this.length - needleLength; idx++ {
@@ -327,7 +327,7 @@ public f<long> String.find(string needle, unsigned long startIndex = 0l) {
         // Whole string was matched
         return idx;
     }
-    return -1l;
+    return (unsigned long) -1l;
 }
 
 /**
@@ -336,8 +336,8 @@ public f<long> String.find(string needle, unsigned long startIndex = 0l) {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned int startIndex) {
-    return this.find(needle, (long) startIndex);
+public f<unsigned long> String.find(string needle, unsigned int startIndex) {
+    return this.find(needle, (unsigned long) startIndex);
 }
 
 /**
@@ -346,8 +346,8 @@ public f<long> String.find(string needle, unsigned int startIndex) {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned short startIndex) {
-    return this.find(needle, (long) startIndex);
+public f<unsigned long> String.find(string needle, unsigned short startIndex) {
+    return this.find(needle, (unsigned long) startIndex);
 }
 
 /**
@@ -366,9 +366,10 @@ public inline f<bool> String.contains(string needle) {
 public p String.reverse() {
     unsafe {
         for unsigned long i = 0l; i < this.length / 2l; i++ {
-            this.contents[i] ^= this.contents[this.length - i - 1l];
-            this.contents[this.length - i - 1l] ^= this.contents[i];
-            this.contents[i] ^= this.contents[this.length - i - 1l];
+            unsigned long currentUpperIdx = this.length - i - 1l;
+            this.contents[i] ^= this.contents[currentUpperIdx];
+            this.contents[currentUpperIdx] ^= this.contents[i];
+            this.contents[i] ^= this.contents[currentUpperIdx];
         }
     }
 }

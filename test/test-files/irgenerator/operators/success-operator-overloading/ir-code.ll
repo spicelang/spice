@@ -51,30 +51,25 @@ define private %__Counter__long @_f__void__Counter__op.plus__Counter_Counter(%__
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %1 = alloca %__Counter__long, align 8
   %counter1 = alloca %__Counter__long, align 8
-  %2 = alloca %__Counter__long, align 8
   %counter2 = alloca %__Counter__long, align 8
   %counter3 = alloca %__Counter__long, align 8
   store i32 0, ptr %result, align 4
-  call void @_mp__Counter__void__ctor__long(ptr %1, i64 2)
-  %3 = load %__Counter__long, ptr %1, align 8
-  store %__Counter__long %3, ptr %counter1, align 8
-  call void @_mp__Counter__void__ctor__long(ptr %2, i64 3)
-  %4 = load %__Counter__long, ptr %2, align 8
-  store %__Counter__long %4, ptr %counter2, align 8
-  %5 = call i64 @_mf__Counter__long__getValue(ptr %counter1)
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %5)
-  %7 = call i64 @_mf__Counter__long__getValue(ptr %counter2)
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 %7)
-  %9 = load %__Counter__long, ptr %counter1, align 8
-  %10 = load %__Counter__long, ptr %counter2, align 8
-  %11 = call %__Counter__long @_f__void__Counter__op.plus__Counter_Counter(%__Counter__long %9, %__Counter__long %10)
-  store %__Counter__long %11, ptr %counter3, align 8
-  %12 = call i64 @_mf__Counter__long__getValue(ptr %counter3)
-  %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i64 %12)
-  %14 = load i32, ptr %result, align 4
-  ret i32 %14
+  call void @_mp__Counter__void__ctor__long(ptr %counter1, i64 2)
+  call void @_mp__Counter__void__ctor__long(ptr %counter2, i64 3)
+  %1 = call i64 @_mf__Counter__long__getValue(ptr %counter1)
+  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %1)
+  %3 = call i64 @_mf__Counter__long__getValue(ptr %counter2)
+  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 %3)
+  %5 = load %__Counter__long, ptr %counter1, align 8
+  %6 = load %__Counter__long, ptr %counter2, align 8
+  %7 = call %__Counter__long @_f__void__Counter__op.plus__Counter_Counter(%__Counter__long %5, %__Counter__long %6)
+  store %__Counter__long %7, ptr %counter3, align 8
+  store %__Counter__long %7, ptr %counter3, align 8
+  %8 = call i64 @_mf__Counter__long__getValue(ptr %counter3)
+  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i64 %8)
+  %10 = load i32, ptr %result, align 4
+  ret i32 %10
 }
 
 declare i32 @printf(ptr noundef, ...)

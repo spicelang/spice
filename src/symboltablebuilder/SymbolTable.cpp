@@ -2,13 +2,8 @@
 
 #include "SymbolTable.h"
 
-#include <stdexcept>
-#include <utility>
-
 #include <ast/ASTNodes.h>
-#include <model/Function.h>
 #include <model/GenericType.h>
-#include <model/Struct.h>
 #include <util/CodeLoc.h>
 #include <util/CompilerWarning.h>
 
@@ -18,15 +13,14 @@ namespace spice::compiler {
  * Insert a new symbol into the current symbol table. If it is a parameter, append its name to the paramNames vector
  *
  * @param name Name of the symbol
- * @param specifiers Specifiers of the symbol
  * @param declNode AST node where the symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *SymbolTable::insert(const std::string &name, const SymbolSpecifiers &specifiers, ASTNode *declNode) {
+SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode) {
   bool isGlobal = parent == nullptr;
   size_t orderIndex = symbols.size();
   // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
-  symbols.insert({name, SymbolTableEntry(name, SymbolType(TY_INVALID), scope, specifiers, declNode, orderIndex, isGlobal)});
+  symbols.insert({name, SymbolTableEntry(name, SymbolType(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
   return &symbols.at(name);
 }
 
@@ -44,7 +38,7 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, ASTNode *
     return anonSymbol;
   // Otherwise, create an anonymous entry
   const std::string name = "anon." + declNode->codeLoc.toString();
-  insert(name, SymbolSpecifiers::of(type), declNode);
+  insert(name, declNode);
   SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc);
   anonSymbol->updateType(type, false);
   anonSymbol->anonymous = true;

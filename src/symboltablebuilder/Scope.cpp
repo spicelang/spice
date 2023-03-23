@@ -162,7 +162,7 @@ void Scope::insertInterface(const Interface &interface) {
   assert(!interfaces.contains(interface.name));
   interfaces.insert({interface.name, interface});
   // Add symbol table entry for the interface
-  SymbolTableEntry *interfaceEntry = insert(interface.name, interface.specifiers, interface.declNode);
+  SymbolTableEntry *interfaceEntry = insert(interface.name, interface.declNode);
   interfaceEntry->updateType(SymbolType(TY_INTERFACE, interface.name), true);
 }
 

@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  br i1 true, label %assert.exit.L2, label %assert.then.L2
+  br i1 true, label %assert.exit.L2, label %assert.then.L2, !prof !0
 
 assert.then.L2:                                   ; preds = %0
   %1 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
@@ -21,7 +21,7 @@ assert.then.L2:                                   ; preds = %0
 
 assert.exit.L2:                                   ; preds = %0
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  br i1 false, label %assert.exit.L5, label %assert.then.L5
+  br i1 false, label %assert.exit.L5, label %assert.then.L5, !prof !0
 
 assert.then.L5:                                   ; preds = %assert.exit.L2
   %3 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
@@ -39,3 +39,5 @@ declare i32 @printf(ptr noundef, ...)
 declare void @exit(i32)
 
 attributes #0 = { noinline nounwind optnone uwtable }
+
+!0 = !{!"branch_weights", i32 2000, i32 1}

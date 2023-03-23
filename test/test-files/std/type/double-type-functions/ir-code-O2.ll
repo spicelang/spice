@@ -10,7 +10,7 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
   %1 = tail call i1 @_f__void__bool__toBool__double(double 1.000000e+00) #2
-  br i1 %1, label %assert.exit.L26, label %assert.then.L26
+  br i1 %1, label %assert.exit.L26, label %assert.then.L26, !prof !0
 
 assert.then.L26:                                  ; preds = %0
   %2 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.0)
@@ -19,7 +19,7 @@ assert.then.L26:                                  ; preds = %0
 
 assert.exit.L26:                                  ; preds = %0
   %3 = tail call i1 @_f__void__bool__toBool__double(double 0.000000e+00) #2
-  br i1 %3, label %assert.then.L28, label %assert.exit.L28
+  br i1 %3, label %assert.then.L28, label %assert.exit.L28, !prof !1
 
 assert.then.L28:                                  ; preds = %assert.exit.L26
   %4 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.1)
@@ -41,3 +41,6 @@ declare void @exit(i32) local_unnamed_addr
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { nounwind }
+
+!0 = !{!"branch_weights", i32 2000, i32 1}
+!1 = !{!"branch_weights", i32 1, i32 2000}

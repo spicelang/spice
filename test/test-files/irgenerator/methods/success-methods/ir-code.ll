@@ -35,16 +35,15 @@ define private void @_mp__Letter__void__setContent__string(ptr noundef nonnull %
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %1 = alloca %__Letter__string, align 8
   %letter = alloca %__Letter__string, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.struct.0, i64 8, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr %letter, ptr @anon.struct.0, i64 8, i1 false)
   store %__Letter__string { ptr @anon.string.0 }, ptr %letter, align 8
   call void @_mp__Letter__void__setContent__string(ptr %letter, ptr @anon.string.1)
-  %2 = call ptr @_mf__Letter__string__getContent(ptr %letter)
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %2)
-  %4 = load i32, ptr %result, align 4
-  ret i32 %4
+  %1 = call ptr @_mf__Letter__string__getContent(ptr %letter)
+  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %1)
+  %3 = load i32, ptr %result, align 4
+  ret i32 %3
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)

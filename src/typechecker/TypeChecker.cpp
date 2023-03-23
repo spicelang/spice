@@ -375,6 +375,11 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Add signature to current scope
   FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
 
+  // Set entry to signature type
+  SymbolType signatureType(node->signatureType == SignatureNode::TYPE_FUNCTION ? TY_FUNCTION : TY_PROCEDURE);
+  assert(node->entry != nullptr);
+  node->entry->updateType(signatureType, false);
+
   return &node->signatureManifestations;
 }
 
@@ -396,7 +401,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       rhsTy = localVarType;
 
     // Check if type has to be inferred or both types are fixed
-    localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0);
+    localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0, true);
 
     // Push symbolType to the declaration data type
     node->dataType()->setEvaluatedSymbolType(localVarType, manIdx);
@@ -405,7 +410,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
 
     // References with no initialization are illegal
-    if (localVarType.isRef() && !node->isParam())
+    if (localVarType.isRef() && !node->isParam)
       throw SemanticError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
   }
 
@@ -446,13 +451,11 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
 
   // Visit right side
   SymbolType returnValueType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
-  // Check if types match
-  if (returnValueType != returnType)
-    throw SemanticError(node->assignExpr(), OPERATOR_WRONG_DATA_TYPE,
-                        "Passed wrong data type to return statement. Expected " + returnType.getName() + " but got " +
-                            returnValueType.getName());
 
-  return nullptr;
+  // Check if types match
+  OpRuleManager::getAssignResultType(node->assignExpr(), returnType, returnValueType, 0, false, ERROR_MSG_RETURN);
+
+  return node->setEvaluatedSymbolType(returnType, manIdx);
 }
 
 std::any TypeChecker::visitBreakStmt(BreakStmtNode *node) {
@@ -695,8 +698,10 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     throw SemanticError(condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool");
 
   // Check if trueType and falseType are matching
-  if (trueType != falseType)
-    throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "True and false operands in ternary must be of same data type");
+  if (!trueType.equals(falseType, false, true))
+    throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE,
+                        "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
+                            falseType.getName(true));
 
   return ExprResult{node->setEvaluatedSymbolType(trueType, manIdx)};
 }
@@ -1046,16 +1051,20 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     if (!memberEntry)
       throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE,
                           "Field '" + node->identifier + "' not found in struct " + structName);
+    SymbolType memberType = memberEntry->getType();
 
     // Check for insufficient visibility
-    if (structScope->isImportedBy(rootScope) && !memberEntry->specifiers.isPublic())
+    if (structScope->isImportedBy(rootScope) && !memberEntry->getType().isPublic())
       throw SemanticError(node, INSUFFICIENT_VISIBILITY, "Cannot access field '" + fieldName + "' due to its private visibility");
 
     // Set field to used
     memberEntry->used = true;
 
+    // Remove reference wrappers
+    memberType = memberType.removeReferenceWrappers();
+
     // Overwrite type and entry of left side with member type and entry
-    lhsType = memberEntry->getType();
+    lhsType = memberType;
     lhsEntry = memberEntry;
     break;
   }
@@ -1137,7 +1146,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   assert(accessScope != nullptr);
   node->entries.at(manIdx) = varEntry;
   node->accessScopes.at(manIdx) = accessScope;
-  const SymbolType varType = varEntry->getType();
+  SymbolType varType = varEntry->getType();
 
   if (varType.is(TY_INVALID))
     throw SemanticError(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.");
@@ -1149,7 +1158,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Check if is an imported variable
   if (accessScope->isImportedBy(currentScope)) {
     // Check if the entry is public
-    if (!varEntry->specifiers.isPublic())
+    if (!varEntry->getType().isPublic())
       throw SemanticError(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility");
   }
 
@@ -1161,8 +1170,12 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Set symbol table entry to used
   varEntry->used = true;
 
+  // De-reference references
+  while (varType.isRef())
+    varType = varType.getContainedTy();
+
   // Retrieve scope for the new scope path fragment
-  if (varType.isBaseType(TY_STRUCT)) { // Base type struct
+  if (varType.isBaseType(TY_STRUCT)) {
     // Set access scope to struct scope
     const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(varType.getBaseType().getSubType());
     assert(nameRegistryEntry != nullptr);
@@ -1174,10 +1187,9 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
     // Check if the entry is public if it is imported
     assert(nameRegistryEntry->targetEntry != nullptr);
-    const SymbolTableEntry *structEntry = nameRegistryEntry->targetEntry;
-    if (!structEntry->specifiers.isPublic() && accessScope->parent->isImportedBy(currentScope))
+    if (!nameRegistryEntry->targetEntry->getType().isPublic() && accessScope->parent->isImportedBy(currentScope))
       throw SemanticError(node, INSUFFICIENT_VISIBILITY,
-                          "Cannot access struct '" + structEntry->name + "' due to its private visibility");
+                          "Cannot access struct '" + nameRegistryEntry->targetEntry->name + "' due to its private visibility");
   }
 
   return ExprResult{node->setEvaluatedSymbolType(varType, manIdx), varEntry};
@@ -1237,7 +1249,12 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through");
   }
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(superType), manIdx)};
+
+  // Create symbol type
+  SymbolType symbolType(superType);
+  symbolType.specifiers = TypeSpecifiers::of(superType);
+
+  return ExprResult{node->setEvaluatedSymbolType(symbolType, manIdx)};
 }
 
 std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
@@ -1250,7 +1267,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     for (AssignExprNode *arg : node->argLst()->args()) {
       // Visit argument
       const SymbolType argType = any_cast<ExprResult>(visit(arg)).type;
-      assert(!argType.isBaseType(TY_GENERIC));
+      assert(!argType.hasAnyGenericParts());
       // Save arg type to arg types list
       data.argTypes.push_back(argType);
     }
@@ -1326,7 +1343,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
 
   // Check if the called function has sufficient visibility
   data.isImported = data.calleeParentScope->isImportedBy(rootScope);
-  if (data.isImported && !functionEntry->specifiers.isPublic())
+  if (data.isImported && !functionEntry->getType().isPublic())
     throw SemanticError(node, INSUFFICIENT_VISIBILITY,
                         "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility");
 
@@ -1338,8 +1355,15 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   }
 
   // Procedures always have the return type 'bool'
-  if (data.callee->isProcedure() || returnType.is(TY_DYN))
+  if (data.callee->isProcedure() || (data.callee->isMethodProcedure() && !data.isConstructorCall) || returnType.is(TY_DYN))
     returnType = SymbolType(TY_BOOL);
+
+  // Remove public specifier to not have public local variables
+  returnType.specifiers.setPublic(false);
+
+  // Check if the return value gets used
+  if ((data.callee->isFunction() || data.callee->isMethodFunction()) && !node->hasReturnValueReceiver())
+    warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
 
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx)};
 }
@@ -1409,7 +1433,11 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
 
     // Substantiate potentially generic this struct
     Struct *thisStruct = StructManager::matchStruct(structEntry->scope, structName, concreteTemplateTypes, node);
-    assert(thisStruct != nullptr);
+    if (!thisStruct) {
+      const std::string signature = Struct::getSignature(structName, concreteTemplateTypes);
+      throw SemanticError(node, UNKNOWN_DATATYPE,
+                          "Could not find struct candidate for struct '" + signature + "'. Do the template types match?");
+    }
 
     // Override function name
     functionName = CTOR_FUNCTION_NAME;
@@ -1589,11 +1617,9 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       const SymbolTableEntry *expectedField = structScope->symbolTable.lookupByIndex(i);
       assert(expectedField != nullptr);
       SymbolType expectedType = expectedField->getType();
-      // Check if type matches declaration
-      if (actualType != expectedType)
-        throw SemanticError(assignExpr, FIELD_TYPE_NOT_MATCHING,
-                            "Expected type " + expectedType.getName() + " for the field '" + expectedField->name + "', but got " +
-                                actualType.getName());
+      const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
+      // Check if actual type matches expected type
+      OpRuleManager::getFieldAssignResultType(assignExpr, expectedType, actualType, 0, rhsIsImmediate);
     }
   } else {
     for (SymbolType &fieldType : spiceStruct->fieldTypes) {
@@ -1609,12 +1635,44 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Insert anonymous symbol to keep track of dtor calls for de-allocation
   SymbolTableEntry *anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
+  // Remove public specifier to not have public local variables
+  structType.specifiers.setPublic(false);
+
   return ExprResult{node->setEvaluatedSymbolType(structType, manIdx), anonymousEntry};
 }
 
 std::any TypeChecker::visitDataType(DataTypeNode *node) {
   // Visit base data type
   auto type = std::any_cast<SymbolType>(visit(node->baseDataType()));
+
+  // Attach the specifiers to the type
+  if (node->specifierLst()) {
+    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_CONST)
+        type.specifiers.setConst(true);
+      else if (specifier->type == SpecifierNode::TY_SIGNED)
+        type.specifiers.setSigned(true);
+      else if (specifier->type == SpecifierNode::TY_UNSIGNED)
+        type.specifiers.setSigned(false);
+      else if (specifier->type == SpecifierNode::TY_HEAP)
+        type.specifiers.setHeap(true);
+      else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType))
+        type.specifiers.setPublic(true);
+      else {
+        const char *entryName = "local variable";
+        if (node->isGlobalType)
+          entryName = "global variable";
+        else if (node->isFieldType)
+          entryName = "field";
+        else if (node->isParamType)
+          entryName = "param";
+        else if (node->isReturnType)
+          entryName = "return variable";
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                            "Cannot use this specifier on a " + std::string(entryName) + " definition");
+      }
+    }
+  }
 
   size_t assignExprCounter = 0;
   std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
@@ -1641,7 +1699,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
         SymbolTableEntry *globalVar = rootScope->lookupStrict(varName);
         if (!globalVar)
           throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + varName + "' ");
-        if (!globalVar->specifiers.isConst())
+        if (!globalVar->getType().isConst())
           throw SemanticError(node, EXPECTED_CONST_VARIABLE, "The size of the array must be known at compile time");
         if (!globalVar->getType().is(TY_INT))
           throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "Expected variable of type int");
@@ -1739,30 +1797,39 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return SymbolType(TY_INT);
 
   if (entryType.is(TY_STRUCT)) {
-    // Check if struct is defined before the current code location
+    // Check if struct is defined before the current code location, if defined in the same source file
     if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
       throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
 
+    const DataTypeNode *dataTypeNode = dynamic_cast<DataTypeNode *>(node->parent->parent);
+    assert(dataTypeNode != nullptr);
+    const bool isParamOrFieldOrReturnType = dataTypeNode->isParamType || dataTypeNode->isFieldType || dataTypeNode->isReturnType;
+
     // Collect the concrete template types
-    std::vector<SymbolType> concreteTemplateTypes;
+    std::vector<SymbolType> templateTypes;
     if (node->templateTypeLst()) {
-      concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
+      templateTypes.reserve(node->templateTypeLst()->dataTypes().size());
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
-        auto concreteType = std::any_cast<SymbolType>(visit(dataType));
-        // Check if generic type
-        if (concreteType.is(TY_GENERIC))
+        auto templateType = std::any_cast<SymbolType>(visit(dataType));
+        // Generic types are only allowed for parameters and fields at this point
+        if (templateType.is(TY_GENERIC) && !isParamOrFieldOrReturnType)
           throw SemanticError(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here");
-        concreteTemplateTypes.push_back(concreteType);
+        templateTypes.push_back(templateType);
       }
-      entryType.setTemplateTypes(concreteTemplateTypes);
+      entryType.setTemplateTypes(templateTypes);
     }
 
-    // Set the struct instance to used, if found
-    // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
-    const std::string structName = node->typeNameFragments.back();
-    Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, concreteTemplateTypes, node);
-    if (spiceStruct)
-      entryType.setStructBodyScope(spiceStruct->structScope);
+    if (!node->templateTypeLst() || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
+      // Set the struct instance to used, if found
+      // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
+      const std::string structName = node->typeNameFragments.back();
+      Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
+      if (spiceStruct)
+        entryType.setStructBodyScope(spiceStruct->structScope);
+    }
+
+    // Remove public specifier
+    entryType.specifiers.setPublic(false);
 
     return node->setEvaluatedSymbolType(entryType, manIdx);
   }
@@ -1777,6 +1844,9 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     Interface *spiceInterface = localAccessScope->lookupInterface(node->typeNameFragments.back());
     assert(spiceInterface != nullptr);
     spiceInterface->used = true;
+
+    // Remove public specifier
+    entryType.specifiers.setPublic(false);
 
     return node->setEvaluatedSymbolType(entryType, manIdx);
   }
@@ -1871,6 +1941,17 @@ void TypeChecker::changeToScope(Scope *scope, const ScopeType scopeType) {
 void TypeChecker::autoDeReference(SymbolType &symbolType) {
   while (symbolType.isPtr() || symbolType.isRef())
     symbolType = symbolType.getContainedTy();
+}
+
+/**
+ * Returns the operator function list for the current manifestation and the given node
+ *
+ * @param node Node to retrieve the op fct pointer list from
+ * @return Op fct pointer list
+ */
+std::vector<const Function *> &TypeChecker::getOpFctPointers(ASTNode *node) const {
+  assert(node->opFct.size() > manIdx);
+  return node->opFct.at(manIdx);
 }
 
 } // namespace spice::compiler

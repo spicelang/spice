@@ -79,6 +79,7 @@ define dso_local i32 @main() #1 {
   store i32 0, ptr %result, align 4
   %2 = call %__ShoppingCart__string_ShoppingItemarray @_f__void__ShoppingCart__newShoppingCart()
   store %__ShoppingCart__string_ShoppingItemarray %2, ptr %shoppingCart, align 8
+  store %__ShoppingCart__string_ShoppingItemarray %2, ptr %shoppingCart, align 8
   %items = getelementptr inbounds %__ShoppingCart__string_ShoppingItemarray, ptr %shoppingCart, i32 0, i32 1
   %3 = getelementptr inbounds [3 x %__ShoppingItem__string_double_string], ptr %items, i32 0, i32 1
   %name = getelementptr inbounds %__ShoppingItem__string_double_string, ptr %3, i32 0, i32 0

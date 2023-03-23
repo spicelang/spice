@@ -24,7 +24,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %5 = tail call i8 @_f__void__byte__toByte__string(ptr nonnull @anon.string.4) #2
   %6 = tail call i8 @_f__void__char__toChar__string(ptr nonnull @anon.string.5) #2
   %7 = tail call i1 @_f__void__bool__toBool__string(ptr nonnull @anon.string.6) #2
-  br i1 %7, label %assert.exit.L35, label %assert.then.L35
+  br i1 %7, label %assert.exit.L35, label %assert.then.L35, !prof !0
 
 assert.then.L35:                                  ; preds = %0
   %8 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.7)
@@ -33,7 +33,7 @@ assert.then.L35:                                  ; preds = %0
 
 assert.exit.L35:                                  ; preds = %0
   %9 = tail call i1 @_f__void__bool__toBool__string(ptr nonnull @anon.string.8) #2
-  br i1 %9, label %assert.then.L37, label %assert.exit.L37
+  br i1 %9, label %assert.then.L37, label %assert.exit.L37, !prof !1
 
 assert.then.L37:                                  ; preds = %assert.exit.L35
   %10 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.9)
@@ -67,3 +67,6 @@ declare void @exit(i32) local_unnamed_addr
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
 attributes #2 = { nounwind }
+
+!0 = !{!"branch_weights", i32 2000, i32 1}
+!1 = !{!"branch_weights", i32 1, i32 2000}

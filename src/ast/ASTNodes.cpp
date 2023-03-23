@@ -126,4 +126,14 @@ const CompileTimeValue &LogicalOrExprNode::getCompileTimeValue() const {
   return ops.front()->getCompileTimeValue();
 }
 
+bool FunctionCallNode::hasReturnValueReceiver() const {
+  ASTNode *node = parent;
+  while (!node->isStmtNode()) {
+    if (node->children.size() > 1)
+      return true;
+    node = node->parent;
+  }
+  return false;
+}
+
 } // namespace spice::compiler

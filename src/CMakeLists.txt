@@ -57,8 +57,8 @@ set(SOURCES
         symboltablebuilder/Capture.h
         symboltablebuilder/SymbolType.cpp
         symboltablebuilder/SymbolType.h
-        symboltablebuilder/SymbolSpecifiers.cpp
-        symboltablebuilder/SymbolSpecifiers.h
+        symboltablebuilder/TypeSpecifiers.cpp
+        symboltablebuilder/TypeSpecifiers.h
         # Type checker
         typechecker/TypeChecker.cpp
         typechecker/TypeChecker.h
@@ -70,6 +70,8 @@ set(SOURCES
         typechecker/FunctionManager.h
         typechecker/StructManager.cpp
         typechecker/StructManager.h
+        typechecker/TypeMatcher.cpp
+        typechecker/TypeMatcher.h
         # Borrow checker
         borrowchecker/BorrowChecker.cpp
         borrowchecker/BorrowChecker.h

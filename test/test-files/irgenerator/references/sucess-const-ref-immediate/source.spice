@@ -1,0 +1,8 @@
+type Struct struct {
+    const int& ref
+}
+
+f<int> main() {
+    Struct str = Struct { 123 };
+    printf("Field value: %d", str.ref);
+}

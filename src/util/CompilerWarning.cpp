@@ -58,6 +58,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused type alias";
   case UNUSED_VARIABLE:
     return "Unused variable";
+  case UNUSED_RETURN_VALUE:
+    return "Unused return value";
   case UNREACHABLE_CODE:
     return "Unreachable code detected";
   case SINGLE_GENERIC_TYPE_CONDITION:

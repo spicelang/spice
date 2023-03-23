@@ -110,6 +110,10 @@ private:
   ASTNode *currentNode;
   const std::string &filePath;
   antlr4::ANTLRInputStream *inputStream;
+  bool isParam = false;
+  bool isGlobal = false;
+  bool isField = false;
+  bool isReturnType = false;
 
   // Private methods
   int32_t parseInt(ConstantNode *constantNode, TerminalNode *terminal);

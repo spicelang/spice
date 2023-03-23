@@ -1,0 +1,80 @@
+// Inspired by offset allocator (https://github.com/sebbbi/OffsetAllocator)
+
+// Type defs
+type uint32 alias unsigned int;
+type uint8 alias byte;
+
+// Constants
+const uint32 NO_SPACE = 0xffffffff;
+const uint32 UNUSED_NODE = 0xffffffff;
+const uint32 NUM_TOP_BINS = 32;
+const uint32 BINS_PER_LEAF = 8;
+const uint32 TOP_BINS_INDEX_SHIFT = 3;
+const uint32 LEAF_BINS_INDEX_MASK = 0x7;
+const uint32 NUM_LEAF_BINS = 256; // NUM_TOP_BINS * BINS_PER_LEAF
+
+// External functions
+ext<byte*> malloc(long);
+ext free(byte*);
+
+type Allocation struct {
+    uint32 offset
+    uint32 metadata
+}
+
+type Region struct {
+    uint32 size
+    uint32 count
+}
+
+public type StorageReport struct {
+    uint32 totalFreeSpace
+    uint32 largestFreeRegion
+}
+
+public type StorageReportFull struct {
+    uint32[NUM_LEAF_BINS] freeRegions
+}
+
+type Node struct {
+    uint32 dataOffset
+    uint32 dataSize
+    uint32 binListPrev
+    uint32 heighborPrev
+    uint32 neighborNext
+    bool used
+}
+
+public type Allocator struct {
+    uint32 size
+    uint32 freeStorage
+    uint8[NUM_TOP_BINS] usedBins
+    uint32[NUM_LEAF_BINS] binIndices
+    Node* nodes
+    uint32* freeNodes
+    uint32 freeOffset
+}
+
+public p Allocator.ctor(uint32 size, uint32 maxAllocas = 128 * 1024) {
+    // ToDo
+}
+
+public p Allocator.dtor() {
+    // ToDo
+}
+
+public f<Allocation> Allocator.allocate(uint32 size) {
+    // ToDo
+}
+
+public p Allocator.free(Allocation allocation) {
+    // ToDo
+}
+
+public const f<StorageReport> getStorageReport() {
+    // ToDo
+}
+
+public const f<StorageReportFull> getStorageReportFull() {
+    // ToDo
+}

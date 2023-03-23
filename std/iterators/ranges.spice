@@ -1,0 +1,11 @@
+import "std/iterators/number-iterator";
+
+// Generic type definitions
+type Numeric int|long|short;
+
+/**
+ * Convenience wrapper for creating a simple number iterator
+ */
+public inline f<NumberIterator> range<Numeric>(Numeric begin, Numeric end) {
+    return NumberIterator(begin, end);
+}

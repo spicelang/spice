@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/references/error-ref-decl-without-init/source.spice:2:5:
+Reference without initializer: References must always be initialized directly
+
+2  int& ref;
+   ^^^^^^^^

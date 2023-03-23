@@ -86,7 +86,7 @@ void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global
   const size_t lineNumber = globalEntry->getDeclCodeLoc().line;
   llvm::StringRef name = global->getName();
   llvm::DIType *type = getDITypeForSymbolType(globalEntry->getType());
-  const bool isLocal = globalEntry->specifiers.isPublic();
+  const bool isLocal = globalEntry->getType().isPublic();
 
   global->addDebugInfo(diBuilder->createGlobalVariableExpression(unit, name, name, unit, lineNumber, type, isLocal));
 }
