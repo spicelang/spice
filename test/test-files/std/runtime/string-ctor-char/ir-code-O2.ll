@@ -15,14 +15,14 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() local_unnamed_addr #0 {
   %s = alloca %__String__charptr_long_long, align 8
   call void @_mp__String__void__ctor__char(ptr nonnull %s, i8 72) #2
-  %1 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #2
+  %1 = call ptr @_mf__String__string__getRaw(ptr nonnull %s) #2
   %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, ptr %1)
   %3 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #2
   %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4, i64 %3)
   %5 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #2
   %6 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, i64 %5)
   call void @_mp__String__void__append__string(ptr nonnull %s, ptr nonnull @anon.string.0) #2
-  %7 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #2
+  %7 = call ptr @_mf__String__string__getRaw(ptr nonnull %s) #2
   %8 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, ptr %7)
   %9 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #2
   %10 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4, i64 %9)
@@ -36,7 +36,7 @@ declare void @_mp__String__void__ctor__char(ptr, i8) local_unnamed_addr
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
-declare ptr @_mf__String__charptr__getRaw(ptr) local_unnamed_addr
+declare ptr @_mf__String__string__getRaw(ptr) local_unnamed_addr
 
 declare i64 @_mf__String__long__getLength(ptr) local_unnamed_addr
 

@@ -19,42 +19,42 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %s = alloca %__String__charptr_long_long, align 8
   %1 = alloca %__String__charptr_long_long, align 8
   call void @_mp__String__void__ctor__string(ptr nonnull %s, ptr nonnull @anon.string.0) #3
-  %2 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %2 = call ptr @_mf__String__string__getRaw(ptr nonnull %s) #3
   %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %2)
   %4 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
   %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %4)
   %6 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
   %7 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %6)
   call void @_mp__String__void__append__string(ptr nonnull %s, ptr nonnull @anon.string.1) #3
-  %8 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %8 = call ptr @_mf__String__string__getRaw(ptr nonnull %s) #3
   %9 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %8)
   %10 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
   %11 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %10)
   %12 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
   %13 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %12)
   call void @_mp__String__void__append__char(ptr nonnull %s, i8 63) #3
-  %14 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %14 = call ptr @_mf__String__string__getRaw(ptr nonnull %s) #3
   %15 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %14)
   %16 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
   %17 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %16)
   %18 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
   %19 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %18)
   call void @_mp__String__void__append__char(ptr nonnull %s, i8 33) #3
-  %20 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %20 = call ptr @_mf__String__string__getRaw(ptr nonnull %s) #3
   %21 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %20)
   %22 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
   %23 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %22)
   %24 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
   %25 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %24)
   call void @_mp__String__void__clear(ptr nonnull %s) #3
-  %26 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %26 = call ptr @_mf__String__string__getRaw(ptr nonnull %s) #3
   %27 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %26)
   %28 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
   %29 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %28)
   %30 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #3
   %31 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.17, i64 %30)
   call void @_mp__String__void__reserve__long(ptr nonnull %s, i64 100) #3
-  %32 = call ptr @_mf__String__charptr__getRaw(ptr nonnull %s) #3
+  %32 = call ptr @_mf__String__string__getRaw(ptr nonnull %s) #3
   %33 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.15, ptr %32)
   %34 = call i64 @_mf__String__long__getLength(ptr nonnull %s) #3
   %35 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.16, i64 %34)
@@ -77,7 +77,7 @@ declare void @_mp__String__void__ctor__string(ptr, ptr) local_unnamed_addr
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
-declare ptr @_mf__String__charptr__getRaw(ptr) local_unnamed_addr
+declare ptr @_mf__String__string__getRaw(ptr) local_unnamed_addr
 
 declare i64 @_mf__String__long__getLength(ptr) local_unnamed_addr
 
