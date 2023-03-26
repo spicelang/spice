@@ -9,7 +9,7 @@ functionDef: specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER
 procedureDef: specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 fctName: (IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
 structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
-interfaceDef: specifierLst? TYPE IDENTIFIER INTERFACE LBRACE signature+ RBRACE;
+interfaceDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: TYPE IDENTIFIER ALIAS dataType SEMICOLON;
@@ -38,7 +38,7 @@ argLst: assignExpr (COMMA assignExpr)*;
 enumItemLst: enumItem (COMMA enumItem)*;
 enumItem: IDENTIFIER (ASSIGN INT_LIT)?;
 field: dataType IDENTIFIER;
-signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER LPAREN typeLst? RPAREN SEMICOLON;
+signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER (LESS typeLst GREATER)? LPAREN typeLst? RPAREN SEMICOLON;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: dataType IDENTIFIER (ASSIGN assignExpr)?;
 specifierLst: specifier+;

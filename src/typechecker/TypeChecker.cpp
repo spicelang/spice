@@ -354,7 +354,25 @@ std::any TypeChecker::visitField(FieldNode *node) {
 
 std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Visit return type
-  auto returnType = std::any_cast<SymbolType>(visit(node->dataType()));
+  SymbolType returnType(TY_DYN);
+  if (node->signatureType == SignatureNode::TYPE_FUNCTION)
+    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+
+  // Retrieve function template types
+  std::vector<GenericType> usedGenericTypes;
+  if (node->hasTemplateTypes) {
+    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+      // Visit template type
+      auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      // Check if it is a generic type
+      if (!templateType.is(TY_GENERIC))
+        throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+      // Convert generic symbol type to generic type
+      GenericType *genericType = rootScope->lookupGenericType(templateType.getSubType());
+      assert(genericType != nullptr);
+      usedGenericTypes.push_back(*genericType);
+    }
+  }
 
   // Visit params
   ParamList paramTypes;
@@ -362,21 +380,28 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
     paramTypes.reserve(node->paramTypeLst()->dataTypes().size());
     for (DataTypeNode *param : node->paramTypeLst()->dataTypes()) {
       auto paramType = std::any_cast<SymbolType>(visit(param));
+
+      // Check if the type is present in the template for generic types
+      if (!paramType.isCoveredByGenericTypeList(usedGenericTypes))
+        throw SemanticError(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+                            "Generic param type not included in the template type list of the function");
+
       paramTypes.push_back({paramType, false});
     }
   }
 
   // Build signature object
-  Function signature(node->methodName, /*entry=*/nullptr, /*thisType=*/SymbolType(TY_DYN), returnType, paramTypes, {}, node,
-                     /*external=*/false);
+  Function signature(node->methodName, nullptr, SymbolType(TY_DYN), returnType, paramTypes, usedGenericTypes, node, false);
 
   // Add signature to current scope
-  FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
+  Function *manifestation = FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
+  manifestation->used = true;
 
   // Set entry to signature type
   SymbolType signatureType(node->signatureType == SignatureNode::TYPE_FUNCTION ? TY_FUNCTION : TY_PROCEDURE);
   assert(node->entry != nullptr);
   node->entry->updateType(signatureType, false);
+  node->entry->used = true;
 
   return &node->signatureManifestations;
 }
@@ -1460,12 +1485,12 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
 
   // Map local types to imported types
   Scope *functionParentScope = functionRegistryEntry->targetScope;
-  std::vector<SymbolType> importedArgTypes = data.argTypes;
-  for (SymbolType &symbolType : importedArgTypes)
+  std::vector<SymbolType> localArgTypes = data.argTypes;
+  for (SymbolType &symbolType : localArgTypes)
     symbolType = mapLocalTypeToImportedScopeType(functionParentScope, symbolType);
 
   // Retrieve function object
-  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, data.thisType, importedArgTypes, node);
+  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, data.thisType, localArgTypes, false, node);
 
   return std::make_tuple(functionParentScope, data.thisType, knownStructName);
 }
@@ -1502,11 +1527,11 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   // 'this' type
   SymbolType thisType = data.thisType;
   TypeChecker::autoDeReference(thisType);
-  SymbolType importedThisType = mapLocalTypeToImportedScopeType(functionParentScope, thisType);
+  SymbolType localThisType = mapLocalTypeToImportedScopeType(functionParentScope, thisType);
 
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
-  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, importedThisType, importedArgTypes, node);
+  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, localThisType, importedArgTypes, false, node);
 
   return std::make_pair(functionParentScope, data.thisType);
 }
@@ -1794,11 +1819,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   if (entryType.is(TY_ENUM))
     return SymbolType(TY_INT);
 
-  if (entryType.is(TY_STRUCT)) {
-    // Check if struct is defined before the current code location, if defined in the same source file
-    if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
-      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
-
+  if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
     const DataTypeNode *dataTypeNode = dynamic_cast<DataTypeNode *>(node->parent->parent);
     assert(dataTypeNode != nullptr);
     const bool isParamOrFieldOrReturnType = dataTypeNode->isParamType || dataTypeNode->isFieldType || dataTypeNode->isReturnType;
@@ -1810,38 +1831,36 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
         auto templateType = std::any_cast<SymbolType>(visit(dataType));
         // Generic types are only allowed for parameters and fields at this point
-        if (templateType.is(TY_GENERIC) && !isParamOrFieldOrReturnType)
+        if (entryType.is(TY_STRUCT) && templateType.is(TY_GENERIC) && !isParamOrFieldOrReturnType)
           throw SemanticError(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here");
         templateTypes.push_back(templateType);
       }
       entryType.setTemplateTypes(templateTypes);
     }
 
-    if (!node->templateTypeLst() || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
-      // Set the struct instance to used, if found
-      // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
-      const std::string structName = node->typeNameFragments.back();
-      Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
-      if (spiceStruct)
-        entryType.setStructBodyScope(spiceStruct->structScope);
+    if (entryType.is(TY_STRUCT)) {
+      // Check if struct is defined before the current code location, if defined in the same source file
+      if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
+        throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
+
+      if (!node->templateTypeLst() || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
+        // Set the struct instance to used, if found
+        // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
+        const std::string structName = node->typeNameFragments.back();
+        Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
+        if (spiceStruct)
+          entryType.setStructBodyScope(spiceStruct->structScope);
+      }
     }
 
-    // Remove public specifier
-    entryType.specifiers.setPublic(false);
-
-    return node->setEvaluatedSymbolType(entryType, manIdx);
-  }
-
-  if (entryType.is(TY_INTERFACE)) {
-    // Check if template types are given
-    if (node->templateTypeLst())
-      throw SemanticError(node->templateTypeLst(), INTERFACE_WITH_TEMPLATE_LIST,
-                          "Referencing interfaces with template lists is not allowed");
-
-    // Set the interface instance to used
-    Interface *spiceInterface = localAccessScope->lookupInterface(node->typeNameFragments.back());
-    assert(spiceInterface != nullptr);
-    spiceInterface->used = true;
+    if (entryType.is(TY_INTERFACE)) {
+      // Set the interface instance to used, if found
+      const std::string interfaceName = node->typeNameFragments.back();
+      Interface *spiceInterface = InterfaceManager::matchInterface(localAccessScope, interfaceName, templateTypes, node);
+      if (!spiceInterface)
+        throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown interface " + Interface::getSignature(interfaceName, templateTypes));
+      entryType.setStructBodyScope(spiceInterface->interfaceScope);
+    }
 
     // Remove public specifier
     entryType.specifiers.setPublic(false);

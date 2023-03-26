@@ -24,8 +24,7 @@ using StructRegistry = std::unordered_map</*codeLoc=*/std::string, /*manifestati
 class StructManager {
 public:
   // Public methods
-  [[nodiscard]] static Struct *insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList);
-  [[nodiscard]] static StructManifestationList *getManifestationList(Scope *lookupScope, const CodeLoc &defCodeLoc);
+  static Struct *insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList);
   [[nodiscard]] static Struct *matchStruct(Scope *matchScope, const std::string &requestedName,
                                            const std::vector<SymbolType> &requestedTemplateTypes, const ASTNode *node);
 

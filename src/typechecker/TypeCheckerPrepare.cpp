@@ -326,15 +326,36 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Build struct object
   Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, templateTypesGeneric, interfaceTypes, node);
-  node->spiceStruct = StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
+  StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
   spiceStruct.structScope = node->structScope;
 
   return nullptr;
 }
 
 std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
+  std::vector<SymbolType> usedTemplateTypes;
+  std::vector<GenericType> templateTypesGeneric;
+
+  // Retrieve interface template types
+  if (node->isGeneric) {
+    usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
+    templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
+    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+      // Visit template type
+      auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      // Check if it is a generic type
+      if (!templateType.is(TY_GENERIC))
+        throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+      // Convert generic symbol type to generic type
+      GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
+      assert(genericType != nullptr);
+      usedTemplateTypes.push_back(*genericType);
+      templateTypesGeneric.push_back(*genericType);
+    }
+  }
+
   // Update type of interface entry
-  SymbolType interfaceType(TY_INTERFACE, node->interfaceName);
+  SymbolType interfaceType(TY_INTERFACE, node->interfaceName, {.structBodyScope = node->interfaceScope}, usedTemplateTypes);
   interfaceType.specifiers = node->interfaceSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(interfaceType, false);
@@ -357,9 +378,9 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   assert(currentScope->type == SCOPE_GLOBAL);
 
   // Build interface object
-  Interface i(node->interfaceName, node->interfaceSpecifiers, signatures, node);
-  rootScope->insertInterface(i);
-  i.interfaceScope = node->interfaceScope;
+  Interface spiceInterface(node->interfaceName, node->entry, node->interfaceScope, signatures, templateTypesGeneric, node);
+  InterfaceManager::insertInterface(currentScope, spiceInterface, &node->interfaceManifestations);
+  spiceInterface.interfaceScope = node->interfaceScope;
 
   return nullptr;
 }

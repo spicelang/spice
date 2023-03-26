@@ -1,0 +1,26 @@
+type Driveable interface {
+    public p drive(int);
+    public f<bool> isDriving();
+}
+
+type Car struct : Driveable {
+    bool driving
+}
+
+public p Car.ctor() {
+    this.driving = false;
+}
+
+public p Car.drive(int param) {
+    this.driving = true;
+}
+
+public f<bool> Car.isDriving() {
+    return this.driving;
+}
+
+f<int> main() {
+    Driveable car = Car();
+    car.drive(12);
+    printf("Is driving: %d", car.isDriving());
+}

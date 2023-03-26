@@ -238,10 +238,14 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
     ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // SpecifierLst
       currentNode = interfaceDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::SignatureContext *>(subTree); rule != nullptr) // Signature
+    else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
+      currentNode = interfaceDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
+      interfaceDefNode->isGeneric = true;
+    } else if (rule = dynamic_cast<SpiceParser::SignatureContext *>(subTree); rule != nullptr) { // Signature
       currentNode = interfaceDefNode->createChild<SignatureNode>(CodeLoc(rule->start, filePath));
-    else
+    } else {
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
+    }
 
     if (currentNode != interfaceDefNode) {
       visit(rule);
@@ -818,6 +822,7 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   signatureNode->signatureType = ctx->F() ? SignatureNode::TYPE_FUNCTION : SignatureNode::TYPE_PROCEDURE;
   signatureNode->signatureSpecifiers = ctx->F() ? TypeSpecifiers::of(TY_FUNCTION) : TypeSpecifiers::of(TY_PROCEDURE);
 
+  bool seenLParen = false;
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // SpecifierLst
@@ -825,10 +830,19 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
     else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = signatureNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
-      currentNode = signatureNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
-      signatureNode->hasParams = true;
-    } else
-      assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
+      if (seenLParen) {                                                                      // Param type list
+        currentNode = signatureNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
+        signatureNode->hasParams = true;
+      } else { // Template type list
+        currentNode = signatureNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
+        signatureNode->hasTemplateTypes = true;
+      }
+    } else {
+      auto token = dynamic_cast<TerminalNode *>(subTree);
+      assert(token); // Fail if we did not get a terminal
+      if (token->getSymbol()->getType() == SpiceParser::LPAREN)
+        seenLParen = true;
+    }
 
     if (currentNode != signatureNode) {
       visit(rule);

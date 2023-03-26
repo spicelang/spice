@@ -141,32 +141,6 @@ GenericType *Scope::lookupGenericType(const std::string &typeName) { // NOLINT(m
 }
 
 /**
- * Retrieve an interface instance by its name
- *
- * @param interfaceName Name of the interface
- * @return Interface object
- */
-Interface *Scope::lookupInterface(const std::string &interfaceName) {
-  if (!interfaces.contains(interfaceName))
-    return nullptr;
-  return &interfaces.at(interfaceName);
-}
-
-/**
- * Insert an interface object into this symbol table scope
- *
- * @param interface Interface object
- */
-void Scope::insertInterface(const Interface &interface) {
-  // Add interface to interface list
-  assert(!interfaces.contains(interface.name));
-  interfaces.insert({interface.name, interface});
-  // Add symbol table entry for the interface
-  SymbolTableEntry *interfaceEntry = insert(interface.name, interface.declNode);
-  interfaceEntry->updateType(SymbolType(TY_INTERFACE, interface.name), true);
-}
-
-/**
  * Get the number of fields if this is a struct scope
  *
  * @return Number of fields
@@ -209,7 +183,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
   std::string warningMessage;
   for (const auto &[_, entry] : symbolTable.symbols) {
     // Do not produce a warning if the symbol is used or has a special name
-    if (entry.used || entry.name == UNUSED_VARIABLE_NAME)
+    if (entry.used || entry.name.starts_with(UNUSED_VARIABLE_NAME))
       continue;
 
     switch (entry.getType().getSuperType()) {

@@ -25,25 +25,29 @@ using FunctionRegistry = std::unordered_map</*codeLoc=*/std::string, /*manifesta
 
 class FunctionManager {
 public:
+  // Friend classes
+  friend class InterfaceManager;
+
   // Public methods
   static Function *insertFunction(Scope *insertScope, const Function &baseFunction,
                                   std::vector<Function *> *nodeFunctionList = nullptr);
   static void substantiateOptionalParams(const Function &baseFunction, std::vector<Function> &manifestations);
-  [[nodiscard]] static FunctionManifestationList *getManifestationList(Scope *lookupScope, const CodeLoc &defCodeLoc);
   [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const std::vector<SymbolType> &paramTypes,
                                                    ASTNode *declNode);
   [[nodiscard]] static Function *matchFunction(Scope *matchScope, const std::string &requestedName,
                                                const SymbolType &requestedThisType,
-                                               const std::vector<SymbolType> &requestedParamTypes, const ASTNode *callNode);
+                                               const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
+                                               const ASTNode *callNode);
 
 private:
   // Private methods
   [[nodiscard]] static Function *insertSubstantiation(Scope *insertScope, const Function &newManifestation,
                                                       const ASTNode *declNode);
   [[nodiscard]] static bool matchName(const Function &candidate, const std::string &requestedName);
-  [[nodiscard]] static bool matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping);
+  [[nodiscard]] static bool matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping,
+                                          bool strictSpecifierMatching);
   [[nodiscard]] static bool matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedArgTypes,
-                                          TypeMapping &typeMapping);
+                                          TypeMapping &typeMapping, bool strictSpecifierMatching);
   static void substantiateReturnType(Function &candidate, TypeMapping &typeMapping);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Function &candidate,
                                                                           const std::string &templateTypeName);

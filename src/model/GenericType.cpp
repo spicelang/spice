@@ -17,27 +17,30 @@ GenericType::GenericType(const std::string &name) { this->typeChain.push_back({T
  * Checks if the given symbol type matches all conditions to get a manifestation of the current generic type
  *
  * @param symbolType Symbol type to be checked
- * @param ignoreArraySize Ignore the array size at type comparison
+ * @param ignoreArraySize Ignore the array size for type comparison
+ * @param ignoreSpecifiers Ignore the type specifiers for type comparison
  * @return True or false
  */
-bool GenericType::checkConditionsOf(const SymbolType &symbolType, bool ignoreArraySize /*=false*/) const {
-  return checkTypeConditionOf(symbolType, ignoreArraySize);
+bool GenericType::checkConditionsOf(const SymbolType &symbolType, bool ignoreArraySize /*=false*/,
+                                    bool ignoreSpecifiers /*=false*/) const {
+  return checkTypeConditionOf(symbolType, ignoreArraySize, ignoreSpecifiers);
 }
 
 /**
  * Checks if the given symbol type matches all type conditions to get a manifestation of the current generic type
  *
  * @param symbolType Symbol type to be checked
- * @param ignoreArraySize Ignore the array size at type comparison
+ * @param ignoreArraySize Ignore the array size for type comparison
+ * @param ignoreSpecifiers Ignore the type specifiers for type comparison
  * @return True or false
  */
-bool GenericType::checkTypeConditionOf(const SymbolType &symbolType, bool ignoreArraySize) const {
+bool GenericType::checkTypeConditionOf(const SymbolType &symbolType, bool ignoreArraySize, bool ignoreSpecifiers) const {
   // Succeed if no type conditions are set
   if (typeConditions.empty())
     return true;
   // Check type conditions
   return std::ranges::any_of(typeConditions, [&](const SymbolType &typeCondition) {
-    return typeCondition.is(TY_DYN) || typeCondition.equals(symbolType, ignoreArraySize, true);
+    return typeCondition.is(TY_DYN) || typeCondition.equals(symbolType, ignoreArraySize, ignoreSpecifiers);
   });
 }
 

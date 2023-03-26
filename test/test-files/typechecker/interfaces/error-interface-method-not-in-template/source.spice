@@ -1,0 +1,9 @@
+type T int|long|short;
+
+type Compareable<T> interface {
+    f<T**> compare(const T&, const T&);
+}
+
+f<int> main() {
+
+}

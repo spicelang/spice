@@ -21,19 +21,14 @@ Struct *StructManager::insertStruct(Scope *insertScope, Struct &spiceStruct, std
   return substantiation;
 }
 
-StructManifestationList *StructManager::getManifestationList(Scope *lookupScope, const CodeLoc &defCodeLoc) {
-  const std::string codeLocStr = defCodeLoc.toString();
-  return lookupScope->structs.contains(codeLocStr) ? &lookupScope->structs.at(codeLocStr) : nullptr;
-}
-
 Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManifestation, const ASTNode *declNode) {
   const std::string mangledStructName = newManifestation.getMangledName();
   const std::string codeLocStr = declNode->codeLoc.toString();
   const std::string signature = newManifestation.getSignature();
 
-  // Make sure that the struct does not exist already
+  // Make sure that the manifestation does not exist already
   for (const auto &manifestations : insertScope->structs)
-    assert(!manifestations.second.contains(newManifestation.getMangledName()));
+    assert(!manifestations.second.contains(mangledStructName));
 
   // Retrieve the matching manifestation list of the scope
   assert(insertScope->structs.contains(codeLocStr));
@@ -52,7 +47,6 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  * @param matchScope Scope to match against
  * @param requestedName Struct name requirement
  * @param requestedTemplateTypes Template types to substantiate generic types
- * @param requestedFieldTypes Struct field types requirement
  * @param node Instantiation AST node for printing error messages
  * @return Matched struct or nullptr
  */
@@ -131,7 +125,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       entryType.setStructBodyScope(substantiatedStruct->structScope);
       substantiatedStruct->entry->updateType(entryType, true);
 
-      // Replace field types with concrete template types
+      // Replace symbol types of field entries with concrete types
       assert(substantiatedStruct->structScope != nullptr);
       for (size_t i = 0; i < substantiatedStruct->fieldTypes.size(); i++) {
         // Replace field type with concrete template type
@@ -192,7 +186,7 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
     };
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
-    if (!TypeMatcher::matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver))
+    if (!TypeMatcher::matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver, false))
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
@@ -203,6 +197,12 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
   return true;
 }
 
+/**
+ * Come up with the concrete field types, by applying the type mapping onto the generic field types
+ *
+ * @param candidate Candidate struct
+ * @param typeMapping Generic type mapping
+ */
 void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping) {
   // Loop over all field types and substantiate the generic ones
   for (SymbolType &fieldType : candidate.fieldTypes)

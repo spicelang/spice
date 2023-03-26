@@ -91,11 +91,6 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
     manifestations.push_back(baseFunction);
 }
 
-FunctionManifestationList *FunctionManager::getManifestationList(Scope *lookupScope, const CodeLoc &defCodeLoc) {
-  const std::string codeLocStr = defCodeLoc.toString();
-  return lookupScope->functions.contains(codeLocStr) ? &lookupScope->functions.at(codeLocStr) : nullptr;
-}
-
 Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std::vector<SymbolType> &paramTypes,
                                              ASTNode *declNode) {
   ParamList paramList;
@@ -134,11 +129,13 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  * @param requestedThisType This type requirement
  * @param templateTypeHints Template types to substantiate generic types
  * @param requestedParamTypes Argument types requirement
+ * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
-                                         const std::vector<SymbolType> &requestedParamTypes, const ASTNode *callNode) {
+                                         const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
+                                         const ASTNode *callNode) {
   assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT}));
 
   // Copy the registry to prevent iterating over items, that are created within the loop
@@ -167,11 +164,11 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       candidate.typeMapping.reserve(candidate.templateTypes.size());
 
       // Check 'this' type requirement
-      if (!matchThisType(candidate, requestedThisType, candidate.typeMapping))
+      if (!matchThisType(candidate, requestedThisType, candidate.typeMapping, strictSpecifierMatching))
         continue; // Leave this manifestation and try the next one
 
       // Check arg types requirement
-      if (!matchArgTypes(candidate, requestedParamTypes, candidate.typeMapping))
+      if (!matchArgTypes(candidate, requestedParamTypes, candidate.typeMapping, strictSpecifierMatching))
         continue; // Leave this manifestation and try the next one
 
       // Substantiate return type
@@ -275,9 +272,11 @@ bool FunctionManager::matchName(const Function &candidate, const std::string &re
  * @param candidate Matching candidate function
  * @param requestedThisType Requested 'this' type
  * @param typeMapping Concrete template type mapping
+ * @param strictSpecifierMatching Match specifiers strictly
  * @return Fulfilled or not
  */
-bool FunctionManager::matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping) {
+bool FunctionManager::matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping,
+                                    bool strictSpecifierMatching) {
   SymbolType &candidateThisType = candidate.thisType;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
@@ -286,7 +285,8 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
   };
 
   // Check if the requested 'this' type matches the candidate 'this' type. The type mapping may be extended
-  if (!TypeMatcher::matchRequestedToCandidateType(candidateThisType, requestedThisType, typeMapping, genericTypeResolver))
+  if (!TypeMatcher::matchRequestedToCandidateType(candidateThisType, requestedThisType, typeMapping, genericTypeResolver,
+                                                  strictSpecifierMatching))
     return false;
 
   // Substantiate the candidate param type, based on the type mapping
@@ -302,10 +302,11 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
  * @param candidate Matching candidate function
  * @param requestedArgTypes Requested argument types
  * @param typeMapping Concrete template type mapping
+ * @param strictSpecifierMatching Match specifiers strictly
  * @return Fulfilled or not
  */
 bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedArgTypes,
-                                    TypeMapping &typeMapping) {
+                                    TypeMapping &typeMapping, bool strictSpecifierMatching) {
   // If the number of arguments does not match with the number of params, the matching fails
   if (requestedArgTypes.size() != candidate.paramList.size())
     return false;
@@ -323,7 +324,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
     };
 
     // Check if the requested param type matches the candidate param type. The type mapping may be extended
-    if (!TypeMatcher::matchRequestedToCandidateType(candidateParamType, requestedParamType, typeMapping, genericTypeResolver))
+    if (!TypeMatcher::matchRequestedToCandidateType(candidateParamType, requestedParamType, typeMapping, genericTypeResolver,
+                                                    strictSpecifierMatching))
       return false;
 
     // Substantiate the candidate param type, based on the type mapping

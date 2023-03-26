@@ -5,7 +5,8 @@
 namespace spice::compiler {
 
 bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
-                                                std::function<const GenericType *(const std::string &)> &resolveGenericType) {
+                                                std::function<const GenericType *(const std::string &)> &resolveGenericType,
+                                                bool strictSpecifierMatching) {
   // Unwrap both types as far as possible
   while (candidateType.isSameContainerTypeAs(requestedType)) {
     requestedType = requestedType.getContainedTy();
@@ -18,7 +19,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts())
-    return requestedType.equals(candidateType, true, true);
+    return requestedType.equals(candidateType, true, !strictSpecifierMatching);
 
   // Check if the candidate type itself is generic
   if (candidateType.isBaseType(TY_GENERIC)) { // The candidate type itself is generic
@@ -28,14 +29,14 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
     if (typeMapping.contains(genericTypeName)) {
       const SymbolType &knownConcreteType = typeMapping.at(candidateType.getSubType());
       // Check if the known concrete type matches the requested type
-      return knownConcreteType.equals(requestedType, true, true);
+      return knownConcreteType.equals(requestedType, true, !strictSpecifierMatching);
     } else {
       // Retrieve generic candidate type by its name
       const GenericType *genericCandidateType = resolveGenericType(genericTypeName);
       assert(genericCandidateType != nullptr);
 
       // Check if the requested type fulfills all conditions of the generic candidate type
-      if (!genericCandidateType->checkConditionsOf(requestedType, true))
+      if (!genericCandidateType->checkConditionsOf(requestedType, true, !strictSpecifierMatching))
         return false;
 
       // Add to type mapping
@@ -57,7 +58,8 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
       const SymbolType &candidateTypeTemplateType = candidateTypeTemplateTypes.at(i);
 
       // Match the pair of template types
-      if (!matchRequestedToCandidateType(candidateTypeTemplateType, requestedTypeTemplateType, typeMapping, resolveGenericType))
+      if (!matchRequestedToCandidateType(candidateTypeTemplateType, requestedTypeTemplateType, typeMapping, resolveGenericType,
+                                         strictSpecifierMatching))
         return false;
     }
 

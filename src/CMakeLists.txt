@@ -70,6 +70,8 @@ set(SOURCES
         typechecker/FunctionManager.h
         typechecker/StructManager.cpp
         typechecker/StructManager.h
+        typechecker/InterfaceManager.cpp
+        typechecker/InterfaceManager.h
         typechecker/TypeMatcher.cpp
         typechecker/TypeMatcher.h
         # Borrow checker

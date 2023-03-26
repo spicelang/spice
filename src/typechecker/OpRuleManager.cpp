@@ -36,6 +36,17 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
   // Allow char* = string
   if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING) && lhs.specifiers == rhs.specifiers)
     return lhs;
+  // Allow interface = struct that implements this interface
+  if (lhs.is(TY_INTERFACE) && rhs.is(TY_STRUCT)) {
+    Scope *structDefScope = rhs.getStructBodyScope()->parent;
+    Struct *spiceStruct = StructManager::matchStruct(structDefScope, rhs.getSubType(), rhs.getTemplateTypes(), node);
+    assert(spiceStruct != nullptr);
+    for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
+      assert(interfaceType.is(TY_INTERFACE));
+      if (interfaceType == lhs)
+        return lhs;
+    }
+  }
   // Check primitive type combinations
   return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhs, rhs, true, errorMessagePrefix);
 }
@@ -394,7 +405,8 @@ SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *fc
   // Get callee
   const SymbolType localLhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, lhs);
   const SymbolType localRhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, rhs);
-  Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, SymbolType(TY_DYN), {localLhs, localRhs}, node);
+  const SymbolType thisType(TY_DYN);
+  Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, thisType, {localLhs, localRhs}, false, node);
 
   // Return invalid type if the callee was not found
   if (!callee)
