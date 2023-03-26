@@ -91,11 +91,6 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
     manifestations.push_back(baseFunction);
 }
 
-FunctionManifestationList *FunctionManager::getManifestationList(Scope *lookupScope, const CodeLoc &defCodeLoc) {
-  const std::string codeLocStr = defCodeLoc.toString();
-  return lookupScope->functions.contains(codeLocStr) ? &lookupScope->functions.at(codeLocStr) : nullptr;
-}
-
 Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std::vector<SymbolType> &paramTypes,
                                              ASTNode *declNode) {
   ParamList paramList;

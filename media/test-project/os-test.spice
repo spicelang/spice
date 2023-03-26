@@ -1,26 +1,9 @@
-type Driveable interface {
-    public p drive(int);
-    public f<bool> isDriving();
+type Visitable interface {
+    f<bool> accept(int);
 }
 
-type Car struct : Driveable {
-    bool driving
+type AstNode struct : Visitable<Test> {
+    int f1
 }
 
-public p Car.ctor() {
-    this.driving = false;
-}
-
-public p Car.drive(int param) {
-    this.driving = true;
-}
-
-public f<bool> Car.isDriving() {
-    return this.driving;
-}
-
-f<int> main() {
-    Driveable car = Car();
-    car.drive(12);
-    printf("Is driving: %d", car.isDriving());
-}
+f<int> main() {}

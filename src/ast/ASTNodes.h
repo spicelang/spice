@@ -384,9 +384,11 @@ public:
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] std::vector<SignatureNode *> signatures() const { return getChildren<SignatureNode>(); }
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
 
   // Public members
   std::string interfaceName;
+  bool isGeneric = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
   Scope *interfaceScope = nullptr;

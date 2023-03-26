@@ -1796,11 +1796,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   if (entryType.is(TY_ENUM))
     return SymbolType(TY_INT);
 
-  if (entryType.is(TY_STRUCT)) {
-    // Check if struct is defined before the current code location, if defined in the same source file
-    if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
-      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
-
+  if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
     const DataTypeNode *dataTypeNode = dynamic_cast<DataTypeNode *>(node->parent->parent);
     assert(dataTypeNode != nullptr);
     const bool isParamOrFieldOrReturnType = dataTypeNode->isParamType || dataTypeNode->isFieldType || dataTypeNode->isReturnType;
@@ -1812,38 +1808,34 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
         auto templateType = std::any_cast<SymbolType>(visit(dataType));
         // Generic types are only allowed for parameters and fields at this point
-        if (templateType.is(TY_GENERIC) && !isParamOrFieldOrReturnType)
+        if (entryType.is(TY_STRUCT) && templateType.is(TY_GENERIC) && !isParamOrFieldOrReturnType)
           throw SemanticError(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here");
         templateTypes.push_back(templateType);
       }
       entryType.setTemplateTypes(templateTypes);
     }
 
-    if (!node->templateTypeLst() || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
-      // Set the struct instance to used, if found
-      // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
-      const std::string structName = node->typeNameFragments.back();
-      Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
-      if (spiceStruct)
-        entryType.setStructBodyScope(spiceStruct->structScope);
+    if (entryType.is(TY_STRUCT)) {
+      // Check if struct is defined before the current code location, if defined in the same source file
+      if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
+        throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
+
+      if (!node->templateTypeLst() || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
+        // Set the struct instance to used, if found
+        // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
+        const std::string structName = node->typeNameFragments.back();
+        Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
+        if (spiceStruct)
+          entryType.setStructBodyScope(spiceStruct->structScope);
+      }
     }
 
-    // Remove public specifier
-    entryType.specifiers.setPublic(false);
-
-    return node->setEvaluatedSymbolType(entryType, manIdx);
-  }
-
-  if (entryType.is(TY_INTERFACE)) {
-    // Check if template types are given
-    if (node->templateTypeLst())
-      throw SemanticError(node->templateTypeLst(), INTERFACE_WITH_TEMPLATE_LIST,
-                          "Referencing interfaces with template lists is not allowed");
-
-    // Set the interface instance to used
-    Interface *spiceInterface = localAccessScope->lookupInterface(node->typeNameFragments.back());
-    assert(spiceInterface != nullptr);
-    spiceInterface->used = true;
+    if (entryType.is(TY_INTERFACE)) {
+      // Set the interface instance to used
+      Interface *spiceInterface = localAccessScope->lookupInterface(node->typeNameFragments.back());
+      assert(spiceInterface != nullptr);
+      spiceInterface->used = true;
+    }
 
     // Remove public specifier
     entryType.specifiers.setPublic(false);

@@ -29,7 +29,6 @@ public:
   static Function *insertFunction(Scope *insertScope, const Function &baseFunction,
                                   std::vector<Function *> *nodeFunctionList = nullptr);
   static void substantiateOptionalParams(const Function &baseFunction, std::vector<Function> &manifestations);
-  [[nodiscard]] static FunctionManifestationList *getManifestationList(Scope *lookupScope, const CodeLoc &defCodeLoc);
   [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const std::vector<SymbolType> &paramTypes,
                                                    ASTNode *declNode);
   [[nodiscard]] static Function *matchFunction(Scope *matchScope, const std::string &requestedName,

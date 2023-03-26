@@ -1,0 +1,18 @@
+type T int|long|short;
+
+type CompareResult enum {
+    LESS,
+    EQUAL,
+    GREATER
+}
+
+type Compareable<T> interface {
+
+}
+
+
+f<int> main() {
+    Driveable car = Car();
+    car.drive(12);
+    printf("Is driving: %d", car.isDriving());
+}

@@ -441,52 +441,47 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
 
 std::any IRGenerator::visitStructDef(const StructDefNode *node) {
   // Get all substantiated structs which result from this struct def
-  StructManifestationList *manifestationList = StructManager::getManifestationList(currentScope, node->codeLoc);
-  if (manifestationList) {
-    std::vector<std::pair<std::string, Struct>> manifestations(manifestationList->begin(), manifestationList->end());
+  std::vector<Struct *> manifestations = node->structManifestations;
 
-    // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
-    std::sort(manifestations.begin(), manifestations.end(),
-              [](const std::pair<std::string, Struct> &lhs, const std::pair<std::string, Struct> &rhs) {
-                return lhs.second.manifestationIndex < rhs.second.manifestationIndex;
-              });
+  // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
+  std::sort(manifestations.begin(), manifestations.end(),
+            [](const Struct *lhs, Struct *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; });
 
-    for (auto &[mangledName, spiceStruct] : manifestations) {
-      // Skip structs, that are not fully substantiated
-      if (!spiceStruct.isFullySubstantiated())
-        continue;
+  for (Struct *spiceStruct : manifestations) {
+    // Skip structs, that are not fully substantiated
+    if (!spiceStruct->isFullySubstantiated())
+      continue;
 
-      // Do not generate this struct if it is private and used by nobody
-      if (!spiceStruct.used && !spiceStruct.entry->getType().isPublic())
-        continue;
+    // Do not generate this struct if it is private and used by nobody
+    if (!spiceStruct->used && !spiceStruct->entry->getType().isPublic())
+      continue;
 
-      // Change scope to struct scope, specific to substantiation
-      currentScope = spiceStruct.structScope;
-      assert(currentScope);
+    // Change scope to struct scope, specific to substantiation
+    currentScope = spiceStruct->structScope;
+    assert(currentScope);
 
-      // Create struct definition
-      llvm::StructType *structType = llvm::StructType::create(context, mangledName);
+    // Create struct definition
+    llvm::StructType *structType = llvm::StructType::create(context, spiceStruct->getMangledName());
 
-      // Set LLVM type to the struct entry
-      assert(spiceStruct.entry != nullptr);
-      spiceStruct.entry->setStructLLVMType(structType);
+    // Set LLVM type to the struct entry
+    assert(spiceStruct->entry != nullptr);
+    spiceStruct->entry->setStructLLVMType(structType);
 
-      // Collect concrete field types
-      std::vector<llvm::Type *> fieldTypes;
-      fieldTypes.reserve(node->fields().size());
-      for (const FieldNode *field : node->fields()) {
-        SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
-        assert(fieldEntry && !fieldEntry->getType().hasAnyGenericParts());
-        fieldTypes.push_back(fieldEntry->getType().toLLVMType(context, currentScope));
-      }
-
-      // Set field types to struct type
-      structType->setBody(fieldTypes);
-
-      // Return to root scope
-      currentScope = rootScope;
-      assert(currentScope);
+    // Collect concrete field types
+    std::vector<llvm::Type *> fieldTypes;
+    fieldTypes.reserve(node->fields().size());
+    for (const FieldNode *field : node->fields()) {
+      SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
+      assert(fieldEntry && !fieldEntry->getType().hasAnyGenericParts());
+      fieldTypes.push_back(fieldEntry->getType().toLLVMType(context, currentScope));
     }
+
+    // Set field types to struct type
+    structType->setBody(fieldTypes);
+
+    // Return to root scope
+    currentScope = rootScope;
+    assert(currentScope);
   }
 
   return nullptr;

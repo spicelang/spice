@@ -238,10 +238,14 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
     ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::SpecifierLstContext *>(subTree); rule != nullptr) // SpecifierLst
       currentNode = interfaceDefNode->createChild<SpecifierLstNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::SignatureContext *>(subTree); rule != nullptr) // Signature
+    else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
+      currentNode = interfaceDefNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
+      interfaceDefNode->isGeneric = true;
+    } else if (rule = dynamic_cast<SpiceParser::SignatureContext *>(subTree); rule != nullptr) { // Signature
       currentNode = interfaceDefNode->createChild<SignatureNode>(CodeLoc(rule->start, filePath));
-    else
+    } else {
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
+    }
 
     if (currentNode != interfaceDefNode) {
       visit(rule);

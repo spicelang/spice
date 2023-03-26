@@ -211,7 +211,7 @@ bool SymbolType::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
  * Set the list of templates types
  */
 void SymbolType::setTemplateTypes(const std::vector<SymbolType> &templateTypes) {
-  assert(is(TY_STRUCT));
+  assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
   typeChain.back().templateTypes = templateTypes;
 }
 
@@ -219,7 +219,7 @@ void SymbolType::setTemplateTypes(const std::vector<SymbolType> &templateTypes) 
  * Set the list of templates types of the base type
  */
 void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes) {
-  assert(isBaseType(TY_STRUCT));
+  assert(getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}));
   typeChain.front().templateTypes = templateTypes;
 }
 
