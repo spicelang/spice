@@ -16,7 +16,8 @@ class SymbolType;
 class TypeMatcher {
 public:
   static bool matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
-                                            std::function<const GenericType *(const std::string &)> &resolveGenericType);
+                                            std::function<const GenericType *(const std::string &)> &resolveGenericType,
+                                            bool genericTypeResolver);
   static void substantiateTypeWithTypeMapping(SymbolType &symbolType, const TypeMapping &typeMapping);
 };
 

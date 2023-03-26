@@ -7,12 +7,23 @@ type CompareResult enum {
 }
 
 type Compareable<T> interface {
-
+    f<CompareResult> compare<T>(const T&, const T&);
 }
 
+type Person struct : Compareable<long> {
+    string firstName
+    string lastName
+    unsigned int age
+}
+
+f<CompareResult> Person.compare(const long& a, const long& b) {
+    if a > b { return CompareResult::GREATER; }
+    if a < b { return CompareResult::LESS; }
+    return CompareResult::EQUAL;
+}
 
 f<int> main() {
-    Driveable car = Car();
-    car.drive(12);
-    printf("Is driving: %d", car.isDriving());
+    Person mike = Person{ "Mike", "Miller", 43 };
+    const bool isEqual = mike.compare(22l, 22l) == CompareResult::EQUAL;
+    printf("%d", isEqual);
 }

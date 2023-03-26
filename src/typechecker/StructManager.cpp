@@ -186,7 +186,7 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
     };
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
-    if (!TypeMatcher::matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver))
+    if (!TypeMatcher::matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver, false))
       return false;
 
     // Substantiate the candidate param type, based on the type mapping

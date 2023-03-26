@@ -883,8 +883,9 @@ public:
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
+  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
+  [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(hasTemplateTypes ? 1 : 0); }
 
   // Other methods
   std::vector<Function *> *getFctManifestations() override { return &signatureManifestations; }
@@ -895,6 +896,7 @@ public:
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers signatureSpecifiers;
   bool hasParams = false;
+  bool hasTemplateTypes = false;
   std::vector<Function *> signatureManifestations;
 };
 

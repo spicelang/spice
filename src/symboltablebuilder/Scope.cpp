@@ -183,7 +183,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
   std::string warningMessage;
   for (const auto &[_, entry] : symbolTable.symbols) {
     // Do not produce a warning if the symbol is used or has a special name
-    if (entry.used || entry.name == UNUSED_VARIABLE_NAME)
+    if (entry.used || entry.name.starts_with(UNUSED_VARIABLE_NAME))
       continue;
 
     switch (entry.getType().getSuperType()) {

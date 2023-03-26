@@ -23,7 +23,8 @@ public:
   GenericType() = default;
 
   // Public methods
-  [[nodiscard]] bool checkConditionsOf(const SymbolType &symbolType, bool ignoreArraySize = false) const;
+  [[nodiscard]] bool checkConditionsOf(const SymbolType &symbolType, bool ignoreArraySize = false,
+                                       bool ignoreSpecifiers = false) const;
 
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(GenericType, typeChain, typeConditions)
@@ -33,7 +34,7 @@ private:
   std::vector<SymbolType> typeConditions = {SymbolType(TY_DYN)};
 
   // Private methods
-  [[nodiscard]] bool checkTypeConditionOf(const SymbolType &symbolType, bool ignoreArraySize) const;
+  [[nodiscard]] bool checkTypeConditionOf(const SymbolType &symbolType, bool ignoreArraySize, bool ignoreSpecifiers) const;
 };
 
 } // namespace spice::compiler

@@ -356,7 +356,23 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Visit return type
   SymbolType returnType(TY_DYN);
   if (node->signatureType == SignatureNode::TYPE_FUNCTION)
-    returnType = std::any_cast<SymbolType>(visit(node->dataType()));
+    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+
+  // Retrieve function template types
+  std::vector<GenericType> usedGenericTypes;
+  if (node->hasTemplateTypes) {
+    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+      // Visit template type
+      auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      // Check if it is a generic type
+      if (!templateType.is(TY_GENERIC))
+        throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+      // Convert generic symbol type to generic type
+      GenericType *genericType = rootScope->lookupGenericType(templateType.getSubType());
+      assert(genericType != nullptr);
+      usedGenericTypes.push_back(*genericType);
+    }
+  }
 
   // Visit params
   ParamList paramTypes;
@@ -364,21 +380,28 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
     paramTypes.reserve(node->paramTypeLst()->dataTypes().size());
     for (DataTypeNode *param : node->paramTypeLst()->dataTypes()) {
       auto paramType = std::any_cast<SymbolType>(visit(param));
+
+      // Check if the type is present in the template for generic types
+      if (!paramType.isCoveredByGenericTypeList(usedGenericTypes))
+        throw SemanticError(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+                            "Generic param type not included in the template type list of the function");
+
       paramTypes.push_back({paramType, false});
     }
   }
 
   // Build signature object
-  Function signature(node->methodName, /*entry=*/nullptr, /*thisType=*/SymbolType(TY_DYN), returnType, paramTypes, {}, node,
-                     /*external=*/false);
+  Function signature(node->methodName, nullptr, SymbolType(TY_DYN), returnType, paramTypes, usedGenericTypes, node, false);
 
   // Add signature to current scope
-  FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
+  Function *manifestation = FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
+  manifestation->used = true;
 
   // Set entry to signature type
   SymbolType signatureType(node->signatureType == SignatureNode::TYPE_FUNCTION ? TY_FUNCTION : TY_PROCEDURE);
   assert(node->entry != nullptr);
   node->entry->updateType(signatureType, false);
+  node->entry->used = true;
 
   return &node->signatureManifestations;
 }
@@ -1462,12 +1485,12 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
 
   // Map local types to imported types
   Scope *functionParentScope = functionRegistryEntry->targetScope;
-  std::vector<SymbolType> importedArgTypes = data.argTypes;
-  for (SymbolType &symbolType : importedArgTypes)
+  std::vector<SymbolType> localArgTypes = data.argTypes;
+  for (SymbolType &symbolType : localArgTypes)
     symbolType = mapLocalTypeToImportedScopeType(functionParentScope, symbolType);
 
   // Retrieve function object
-  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, data.thisType, importedArgTypes, node);
+  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, data.thisType, localArgTypes, false, node);
 
   return std::make_tuple(functionParentScope, data.thisType, knownStructName);
 }
@@ -1504,11 +1527,11 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   // 'this' type
   SymbolType thisType = data.thisType;
   TypeChecker::autoDeReference(thisType);
-  SymbolType importedThisType = mapLocalTypeToImportedScopeType(functionParentScope, thisType);
+  SymbolType localThisType = mapLocalTypeToImportedScopeType(functionParentScope, thisType);
 
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
-  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, importedThisType, importedArgTypes, node);
+  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, localThisType, importedArgTypes, false, node);
 
   return std::make_pair(functionParentScope, data.thisType);
 }

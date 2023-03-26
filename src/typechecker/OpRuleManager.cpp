@@ -405,7 +405,8 @@ SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *fc
   // Get callee
   const SymbolType localLhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, lhs);
   const SymbolType localRhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, rhs);
-  Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, SymbolType(TY_DYN), {localLhs, localRhs}, node);
+  const SymbolType thisType(TY_DYN);
+  Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, thisType, {localLhs, localRhs}, false, node);
 
   // Return invalid type if the callee was not found
   if (!callee)

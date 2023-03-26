@@ -355,7 +355,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   }
 
   // Update type of interface entry
-  SymbolType interfaceType(TY_INTERFACE, node->interfaceName);
+  SymbolType interfaceType(TY_INTERFACE, node->interfaceName, {.structBodyScope = node->interfaceScope}, usedTemplateTypes);
   interfaceType.specifiers = node->interfaceSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(interfaceType, false);

@@ -17,7 +17,7 @@ const char *const ALIAS_CONTAINER_SUFFIX = ".container";
 const char *const STRUCT_SCOPE_PREFIX = "struct:";
 const char *const INTERFACE_SCOPE_PREFIX = "interface:";
 const char *const ENUM_SCOPE_PREFIX = "enum:";
-const char *const UNUSED_VARIABLE_NAME = "_";
+const char UNUSED_VARIABLE_NAME = '_';
 
 /**
  * Jobs:

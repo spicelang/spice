@@ -1,4 +1,4 @@
-type T int|long|short|string;
+type T int|long|short;
 
 type CompareResult enum {
     LESS,
@@ -7,20 +7,23 @@ type CompareResult enum {
 }
 
 type Compareable<T> interface {
-    f<CompareResult> compare(const T&, const T&);
+    f<CompareResult> compare<T>(const T&, const T&);
 }
 
-type Person struct : Compareable<string> {
+type Person struct : Compareable<long> {
     string firstName
     string lastName
     unsigned int age
 }
 
-f<CompareResult> Person.compare(const string& a, const string& b) {
+f<CompareResult> Person.compare(const long& a, const long& b) {
+    if a > b { return CompareResult::GREATER; }
+    if a < b { return CompareResult::LESS; }
     return CompareResult::EQUAL;
 }
 
 f<int> main() {
     Person mike = Person{ "Mike", "Miller", 43 };
-    mike.compare("test", "t");
+    const bool isEqual = mike.compare(22l, 22l) == CompareResult::EQUAL;
+    printf("%d", isEqual);
 }
