@@ -146,15 +146,18 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
   assert(currentScope != nullptr && currentScope->type == SCOPE_STRUCT);
 
   // Check if the struct implements all methods of all attached interfaces
-  for (const SymbolType &interfaceType : node->spiceStruct->interfaceTypes) {
-    // Lookup interface by its name
-    const Interface *interface = rootScope->lookupInterface(interfaceType.getSubType());
+  for (const SymbolType &interfaceType : node->structManifestations.front()->interfaceTypes) {
+    // Retrieve interface instance
+    const std::string interfaceName = interfaceType.getSubType();
+    Interface *interface = InterfaceManager::matchInterface(rootScope, interfaceName, interfaceType.getTemplateTypes(), node);
     assert(interface != nullptr);
 
+    // Check for all methods, that it is implemented by the struct
+    const SymbolType &thisType = node->entry->getType();
     for (const Function *expectedMethod : interface->methods) {
-      // Check if the struct implements the method
-      Function *actualMethod = FunctionManager::matchFunction(
-          currentScope, expectedMethod->name, node->spiceStruct->entry->getType(), expectedMethod->getParamTypes(), node);
+      const std::string methodName = expectedMethod->name;
+      const std::vector<SymbolType> methodParams = expectedMethod->getParamTypes();
+      Function *actualMethod = FunctionManager::matchFunction(currentScope, methodName, thisType, methodParams, node);
       if (!actualMethod)
         throw SemanticError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                             "The struct '" + node->structName + "' does not implement the method '" +

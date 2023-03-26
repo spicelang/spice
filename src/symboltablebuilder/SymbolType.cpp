@@ -323,7 +323,7 @@ bool SymbolType::isHeap() const {
  * @param bodyScope Struct body scope
  */
 void SymbolType::setStructBodyScope(Scope *bodyScope) {
-  assert(is(TY_STRUCT));
+  assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
   typeChain.back().data.structBodyScope = bodyScope;
 }
 
@@ -333,7 +333,7 @@ void SymbolType::setStructBodyScope(Scope *bodyScope) {
  * @return Struct body scope
  */
 Scope *SymbolType::getStructBodyScope() const {
-  assert(is(TY_STRUCT));
+  assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
   return typeChain.back().data.structBodyScope;
 }
 

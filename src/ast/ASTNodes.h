@@ -172,6 +172,11 @@ public:
     return nullptr;
   }
 
+  [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() {
+    assert(false && "Must be called on a InterfaceDefNode");
+    return nullptr;
+  }
+
   [[nodiscard]] virtual bool isStmtNode() const { return false; }
 
   // Public members
@@ -357,6 +362,8 @@ public:
   [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
   [[nodiscard]] TypeLstNode *interfaceTypeLst() const { return getChild<TypeLstNode>(isGeneric ? 1 : 0); }
+
+  // Other methods
   std::vector<Struct *> *getStructManifestations() override { return &structManifestations; }
 
   // Public members
@@ -367,7 +374,6 @@ public:
   TypeSpecifiers structSpecifiers = TypeSpecifiers::of(TY_STRUCT);
   std::vector<Struct *> structManifestations;
   Scope *structScope = nullptr;
-  Struct *spiceStruct = nullptr;
 };
 
 // ======================================================= InterfaceDefNode ======================================================
@@ -386,13 +392,16 @@ public:
   [[nodiscard]] std::vector<SignatureNode *> signatures() const { return getChildren<SignatureNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
 
+  // Other methods
+  std::vector<Interface *> *getInterfaceManifestations() override { return &interfaceManifestations; }
+
   // Public members
   std::string interfaceName;
   bool isGeneric = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
+  std::vector<Interface *> interfaceManifestations;
   Scope *interfaceScope = nullptr;
-  Interface *spiceInterface = nullptr;
 };
 
 // ========================================================== EnumDefNode ========================================================

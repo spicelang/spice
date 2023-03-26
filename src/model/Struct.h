@@ -49,7 +49,6 @@ public:
   ASTNode *declNode;
   size_t manifestationIndex = 0;
   bool genericSubstantiation = false;
-  bool alreadyTypeChecked = false;
   bool used = false;
 
   // Json serializer/deserializer

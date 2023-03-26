@@ -1831,10 +1831,12 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     }
 
     if (entryType.is(TY_INTERFACE)) {
-      // Set the interface instance to used
-      Interface *spiceInterface = localAccessScope->lookupInterface(node->typeNameFragments.back());
-      assert(spiceInterface != nullptr);
-      spiceInterface->used = true;
+      // Set the interface instance to used, if found
+      const std::string interfaceName = node->typeNameFragments.back();
+      Interface *spiceInterface = InterfaceManager::matchInterface(localAccessScope, interfaceName, templateTypes, node);
+      if (!spiceInterface)
+        throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown interface " + Interface::getSignature(interfaceName, templateTypes));
+      entryType.setStructBodyScope(spiceInterface->interfaceScope);
     }
 
     // Remove public specifier

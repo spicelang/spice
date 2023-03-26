@@ -25,6 +25,9 @@ using FunctionRegistry = std::unordered_map</*codeLoc=*/std::string, /*manifesta
 
 class FunctionManager {
 public:
+  // Friend classes
+  friend class InterfaceManager;
+
   // Public methods
   static Function *insertFunction(Scope *insertScope, const Function &baseFunction,
                                   std::vector<Function *> *nodeFunctionList = nullptr);

@@ -26,9 +26,9 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
   const std::string codeLocStr = declNode->codeLoc.toString();
   const std::string signature = newManifestation.getSignature();
 
-  // Make sure that the struct does not exist already
+  // Make sure that the manifestation does not exist already
   for (const auto &manifestations : insertScope->structs)
-    assert(!manifestations.second.contains(newManifestation.getMangledName()));
+    assert(!manifestations.second.contains(mangledStructName));
 
   // Retrieve the matching manifestation list of the scope
   assert(insertScope->structs.contains(codeLocStr));
@@ -47,7 +47,6 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  * @param matchScope Scope to match against
  * @param requestedName Struct name requirement
  * @param requestedTemplateTypes Template types to substantiate generic types
- * @param requestedFieldTypes Struct field types requirement
  * @param node Instantiation AST node for printing error messages
  * @return Matched struct or nullptr
  */
@@ -126,7 +125,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       entryType.setStructBodyScope(substantiatedStruct->structScope);
       substantiatedStruct->entry->updateType(entryType, true);
 
-      // Replace field types with concrete template types
+      // Replace symbol types of field entries with concrete types
       assert(substantiatedStruct->structScope != nullptr);
       for (size_t i = 0; i < substantiatedStruct->fieldTypes.size(); i++) {
         // Replace field type with concrete template type
@@ -198,6 +197,12 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
   return true;
 }
 
+/**
+ * Come up with the concrete field types, by applying the type mapping onto the generic field types
+ *
+ * @param candidate Candidate struct
+ * @param typeMapping Generic type mapping
+ */
 void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping) {
   // Loop over all field types and substantiate the generic ones
   for (SymbolType &fieldType : candidate.fieldTypes)

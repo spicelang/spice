@@ -6,6 +6,7 @@
 #include <model/Struct.h>
 #include <symboltablebuilder/SymbolTable.h>
 #include <typechecker/FunctionManager.h>
+#include <typechecker/InterfaceManager.h>
 #include <typechecker/StructManager.h>
 
 namespace spice::compiler {
@@ -58,6 +59,7 @@ public:
   // Friend classes
   friend class FunctionManager;
   friend class StructManager;
+  friend class InterfaceManager;
 
   // Public methods
   // Scope management
@@ -70,10 +72,6 @@ public:
   // Generic types
   void insertGenericType(const std::string &typeName, const GenericType &genericType);
   GenericType *lookupGenericType(const std::string &typeName);
-
-  // Interfaces
-  Interface *lookupInterface(const std::string &interfaceName);
-  void insertInterface(const Interface &interface);
 
   // Util
   void collectWarnings(std::vector<CompilerWarning> &warnings) const;
@@ -103,7 +101,7 @@ private:
   std::vector<Scope *> parents;
   FunctionRegistry functions;
   StructRegistry structs;
-  std::unordered_map<std::string, Interface> interfaces;
+  InterfaceRegistry interfaces;
   std::unordered_map<std::string, GenericType> genericTypes;
 };
 

@@ -8,7 +8,7 @@
 namespace spice::compiler {
 
 /**
- * Mange the struct and return the mangled string
+ * Mangle the struct and return the mangled string
  *
  * @return Mangled string
  */

@@ -43,6 +43,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Function ambiguity";
   case STRUCT_AMBIGUITY:
     return "Struct ambiguity";
+  case INTERFACE_AMBIGUITY:
+    return "Interface ambiguity";
   case DUPLICATE_SYMBOL:
     return "Duplicate symbol";
   case VARIABLE_DECLARED_TWICE:

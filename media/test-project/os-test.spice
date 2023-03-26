@@ -1,9 +1,26 @@
-type Visitable interface {
-    f<bool> accept(int);
+type T int|long|short|string;
+
+type CompareResult enum {
+    LESS,
+    EQUAL,
+    GREATER
 }
 
-type AstNode struct : Visitable<Test> {
-    int f1
+type Compareable<T> interface {
+    f<CompareResult> compare(const T&, const T&);
 }
 
-f<int> main() {}
+type Person struct : Compareable<string> {
+    string firstName
+    string lastName
+    unsigned int age
+}
+
+f<CompareResult> Person.compare(const string& a, const string& b) {
+    return CompareResult::EQUAL;
+}
+
+f<int> main() {
+    Person mike = Person{ "Mike", "Miller", 43 };
+    mike.compare("test", "t");
+}

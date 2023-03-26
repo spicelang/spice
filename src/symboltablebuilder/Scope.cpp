@@ -141,32 +141,6 @@ GenericType *Scope::lookupGenericType(const std::string &typeName) { // NOLINT(m
 }
 
 /**
- * Retrieve an interface instance by its name
- *
- * @param interfaceName Name of the interface
- * @return Interface object
- */
-Interface *Scope::lookupInterface(const std::string &interfaceName) {
-  if (!interfaces.contains(interfaceName))
-    return nullptr;
-  return &interfaces.at(interfaceName);
-}
-
-/**
- * Insert an interface object into this symbol table scope
- *
- * @param interface Interface object
- */
-void Scope::insertInterface(const Interface &interface) {
-  // Add interface to interface list
-  assert(!interfaces.contains(interface.name));
-  interfaces.insert({interface.name, interface});
-  // Add symbol table entry for the interface
-  SymbolTableEntry *interfaceEntry = insert(interface.name, interface.declNode);
-  interfaceEntry->updateType(SymbolType(TY_INTERFACE, interface.name), true);
-}
-
-/**
  * Get the number of fields if this is a struct scope
  *
  * @return Number of fields
