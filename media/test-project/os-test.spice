@@ -1,9 +1,14 @@
 //import "std/iterators/ranges";
 import "std/data/vector";
+import "std/data/pair";
 
 f<int> main() {
-    Vector<Vector<int>> v = Vector<Vector<int>>();
-    v.
+    Vector<Pair<int, string>> pairVector = Vector<Pair<int, string>>();
+    pairVector.pushBack(Pair<int, string>(0, "Hello"));
+    pairVector.pushBack(Pair<int, string>(1, "World"));
+
+    Pair<int, string> p1 = pairVector.get(1);
+    printf("Hello %s!\n", p1.getSecond());
 
     //NumberIterator<int> it = range(1, 5);
     /*for (
