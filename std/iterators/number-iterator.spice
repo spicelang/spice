@@ -1,4 +1,4 @@
-import "std/iterators/iterator";
+import "std/iterators/iterable";
 
 // Generic type definitions
 type T int|long|short;

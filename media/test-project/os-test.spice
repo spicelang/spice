@@ -1,14 +1,18 @@
-import "std/iterators/ranges";
+//import "std/iterators/ranges";
+import "std/data/vector";
 
 f<int> main() {
+    Vector<Vector<int>> v = Vector<Vector<int>>();
+    v.
+
     //NumberIterator<int> it = range(1, 5);
-    for (
+    /*for (
         dyn it = range(1l, 10l);
         it.hasNext();
         it.next()
     ) {
         printf("%d\n", it.get());
-    }
+    }*/
 
     /*foreach int i : range(1, 3) {
         printf("%d\n", i);
