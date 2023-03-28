@@ -22,7 +22,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
     return resultType;
   }
   // Allow pointers and arrays of the same type straight away
-  if (lhs.is(TY_PTR) && lhs == rhs)
+  if (lhs.isOneOf({TY_PTR, TY_REF}) && lhs == rhs)
     return rhs;
   // Allow type to ref type of the same contained type straight away
   if (lhs.is(TY_REF) && lhs.getContainedTy() == rhs)

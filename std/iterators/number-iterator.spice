@@ -15,7 +15,7 @@ public type NumberIterator<T> struct : Iterable<T> {
 public p NumberIterator.ctor(T lowerBound, T upperBound) {
     this.lowerBound = lowerBound;
     this.upperBound = upperBound;
-    this.cursor = 0;
+    this.cursor = 0l;
 }
 
 /**
@@ -32,9 +32,9 @@ public inline const f<bool> NumberIterator.hasNext() {
  *
  * @return current item
  */
-public inline f<T&> NumberIterator.next() {
+public inline f<T> NumberIterator.next() {
     assert this.hasNext();
-    U& currentItem = this.get();
+    T currentItem = this.get();
     this.cursor++;
     return currentItem;
 }
@@ -42,6 +42,6 @@ public inline f<T&> NumberIterator.next() {
 /**
  * Returns the current number of the number range
  */
-public inline f<T&> NumberIterator.get() {
-    return this.lowerBound + this.cursor;
+public inline f<T> NumberIterator.get() {
+    return (T) (this.lowerBound + this.cursor);
 }
