@@ -41,6 +41,30 @@ void ObjectEmitter::emit() const {
   resourceManager.objectEmitLock.unlock();
 }
 
+std::string ObjectEmitter::getASMString() const {
+  const std::string tempPath = std::tmpnam(nullptr);
+  std::error_code errorCode;
+  llvm::raw_fd_ostream ostream(tempPath, errorCode);
+
+  llvm::legacy::PassManager passManager;
+  // GCOV_EXCL_START
+  if (resourceManager.targetMachine->addPassesToEmitFile(passManager, ostream, nullptr, llvm::CGFT_AssemblyFile,
+                                                         cliOptions.disableVerifier))
+    throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type");
+  // GCOV_EXCL_STOP
+
+  // Emit object file
+  passManager.run(module);
+  ostream.flush();
+
+  // Read contents of temp file to return it
+  std::ifstream is(tempPath);
+  std::stringstream buffer;
+  buffer << is.rdbuf();
+
+  return buffer.str();
+}
+
 void ObjectEmitter::dumpAsm() const {
   llvm::legacy::PassManager passManager;
   // GCOV_EXCL_START

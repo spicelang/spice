@@ -72,6 +72,7 @@ struct CompilerOutput {
   std::string symbolTableString;
   std::string irString;
   std::string irOptString;
+  std::string asmString;
   std::vector<CompilerWarning> warnings;
   TimerOutput times;
 };
