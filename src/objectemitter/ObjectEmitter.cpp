@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "ObjectEmitter.h"
+#include "util/FileUtil.h"
 
 #include <exception/IRError.h>
 
@@ -45,6 +46,7 @@ std::string ObjectEmitter::getASMString() const {
   const std::string tempPath = std::tmpnam(nullptr);
   std::error_code errorCode;
   llvm::raw_fd_ostream ostream(tempPath, errorCode);
+  assert(!ostream.has_error());
 
   llvm::legacy::PassManager passManager;
   // GCOV_EXCL_START
@@ -59,6 +61,7 @@ std::string ObjectEmitter::getASMString() const {
 
   // Read contents of temp file to return it
   std::ifstream is(tempPath);
+  assert(is.good());
   std::stringstream buffer;
   buffer << is.rdbuf();
 
