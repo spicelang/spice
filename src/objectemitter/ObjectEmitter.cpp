@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "ObjectEmitter.h"
+#include "util/FileUtil.h"
 
 #include <exception/IRError.h>
 
@@ -39,6 +40,32 @@ void ObjectEmitter::emit() const {
 
   // Unlock the mutex
   resourceManager.objectEmitLock.unlock();
+}
+
+std::string ObjectEmitter::getASMString() const {
+  const std::string assemblyPath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + "assembly.asm";
+  std::error_code errorCode;
+  llvm::raw_fd_ostream ostream(assemblyPath, errorCode);
+  assert(!ostream.has_error());
+
+  llvm::legacy::PassManager passManager;
+  // GCOV_EXCL_START
+  if (resourceManager.targetMachine->addPassesToEmitFile(passManager, ostream, nullptr, llvm::CGFT_AssemblyFile,
+                                                         cliOptions.disableVerifier))
+    throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type");
+  // GCOV_EXCL_STOP
+
+  // Emit object file
+  passManager.run(module);
+  ostream.flush();
+
+  // Read contents of temp file to return it
+  std::ifstream inputStream(assemblyPath);
+  assert(inputStream.good());
+  std::stringstream buffer;
+  buffer << inputStream.rdbuf();
+
+  return buffer.str();
 }
 
 void ObjectEmitter::dumpAsm() const {

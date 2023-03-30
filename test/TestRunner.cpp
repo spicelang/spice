@@ -134,6 +134,17 @@ void execTestCase(const TestCase &testCase) {
           });
     }
 
+    // Check assembly code
+    bool objectFilesEmitted = false;
+    if (!skipNonGitHubTests) {
+      TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ASM, [&]() {
+        mainSourceFile.runObjectEmitter();
+        objectFilesEmitted = true;
+
+        return mainSourceFile.compilerOutput.asmString;
+      });
+    }
+
     // Check warnings
     mainSourceFile.collectAndPrintWarnings();
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_WARNING_OUTPUT, [&]() {
@@ -154,8 +165,11 @@ void execTestCase(const TestCase &testCase) {
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           resourceManager.linker.addLinkerFlag(linkerFlag);
 
-      // Emit main source file object
-      mainSourceFile.runObjectEmitter();
+      // Emit main source file object if not done already
+      if (!objectFilesEmitted)
+        mainSourceFile.runObjectEmitter();
+
+      // Conclude the compilation
       mainSourceFile.concludeCompilation();
 
       // Prepare and run linker
