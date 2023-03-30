@@ -136,12 +136,14 @@ void execTestCase(const TestCase &testCase) {
 
     // Check assembly code
     bool objectFilesEmitted = false;
-    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ASM, [&]() {
-      mainSourceFile.runObjectEmitter();
-      objectFilesEmitted = true;
+    if (!skipNonGitHubTests) {
+      TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ASM, [&]() {
+        mainSourceFile.runObjectEmitter();
+        objectFilesEmitted = true;
 
-      return mainSourceFile.compilerOutput.asmString;
-    });
+        return mainSourceFile.compilerOutput.asmString;
+      });
+    }
 
     // Check warnings
     mainSourceFile.collectAndPrintWarnings();
