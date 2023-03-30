@@ -351,7 +351,7 @@ void SourceFile::runIRGenerator() {
   IRGenerator irGenerator(resourceManager, this);
   irGenerator.visit(static_cast<EntryNode *>(ast.get()));
 
-  // Save the JSON version in the compiler output
+  // Save the ir string in the compiler output
   compilerOutput.irString = irGenerator.getIRString();
 
   // Dump unoptimized IR code
@@ -378,7 +378,7 @@ void SourceFile::runIROptimizer() {
   IROptimizer irOptimizer(resourceManager, this);
   irOptimizer.optimize();
 
-  // Save the JSON version in the compiler output
+  // Save the optimized ir string in the compiler output
   compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
 
   // Dump optimized IR code
@@ -400,6 +400,9 @@ void SourceFile::runObjectEmitter() {
   // Emit object for this source file
   ObjectEmitter objectEmitter(resourceManager, this);
   objectEmitter.emit();
+
+  // Save assembly string in the compiler output
+  compilerOutput.asmString = objectEmitter.getASMString();
 
   // Dump assembly code
   if (resourceManager.cliOptions.dumpAssembly) { // GCOV_EXCL_START
