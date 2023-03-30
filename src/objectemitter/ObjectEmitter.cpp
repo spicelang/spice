@@ -43,9 +43,9 @@ void ObjectEmitter::emit() const {
 }
 
 std::string ObjectEmitter::getASMString() const {
-  const std::string tempPath = std::tmpnam(nullptr);
+  const std::string assemblyPath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + "assembly.asm";
   std::error_code errorCode;
-  llvm::raw_fd_ostream ostream(tempPath, errorCode);
+  llvm::raw_fd_ostream ostream(assemblyPath, errorCode);
   assert(!ostream.has_error());
 
   llvm::legacy::PassManager passManager;
@@ -60,10 +60,10 @@ std::string ObjectEmitter::getASMString() const {
   ostream.flush();
 
   // Read contents of temp file to return it
-  std::ifstream is(tempPath);
-  assert(is.good());
+  std::ifstream inputStream(assemblyPath);
+  assert(inputStream.good());
   std::stringstream buffer;
-  buffer << is.rdbuf();
+  buffer << inputStream.rdbuf();
 
   return buffer.str();
 }
