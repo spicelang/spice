@@ -178,6 +178,7 @@ public:
   }
 
   [[nodiscard]] virtual bool isStmtNode() const { return false; }
+  [[nodiscard]] virtual bool isAssignExpr() const { return false; }
 
   // Public members
   ASTNode *parent;
@@ -911,6 +912,7 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStmt(this); }
 
+  // Other methods
   [[nodiscard]] bool isStmtNode() const override { return true; }
 };
 
@@ -1175,6 +1177,7 @@ public:
 
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool isAssignExpr() const override { return true; }
 
   // Public members
   AssignOp op = OP_NONE;

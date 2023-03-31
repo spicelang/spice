@@ -160,6 +160,10 @@ public:
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
     return typeChain.back().subType;
   }
+  [[nodiscard]] inline std::string getOriginalSubType() const {
+    assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
+    return CommonUtil::getLastFragment(typeChain.back().subType, SCOPE_ACCESS_TOKEN);
+  }
   [[nodiscard]] inline TypeChain getTypeChainWithoutReferences() const {
     assert(!typeChain.empty());
     TypeChain typeChainCopy = typeChain;

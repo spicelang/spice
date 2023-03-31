@@ -126,14 +126,19 @@ const CompileTimeValue &LogicalOrExprNode::getCompileTimeValue() const {
   return ops.front()->getCompileTimeValue();
 }
 
+/**
+ * Check if right above the closest assign expression ancestor is a statement node
+ *
+ * @return Has return value receiver or not
+ */
 bool FunctionCallNode::hasReturnValueReceiver() const {
   ASTNode *node = parent;
-  while (!node->isStmtNode()) {
+  while (!node->isAssignExpr()) {
     if (node->children.size() > 1)
       return true;
     node = node->parent;
   }
-  return false;
+  return !node->parent->isStmtNode();
 }
 
 } // namespace spice::compiler

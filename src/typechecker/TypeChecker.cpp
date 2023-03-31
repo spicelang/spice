@@ -1384,6 +1384,18 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   // Remove public specifier to not have public local variables
   returnType.specifiers.setPublic(false);
 
+  // Initialize return type
+  if (returnType.isBaseType(TY_STRUCT)) {
+    SymbolType returnBaseType = returnType.getBaseType();
+    const std::string structName = returnBaseType.getOriginalSubType();
+    Scope *matchScope = returnBaseType.getStructBodyScope()->parent;
+    assert(matchScope != nullptr);
+    Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
+    assert(spiceStruct != nullptr);
+    returnBaseType.setStructBodyScope(spiceStruct->structScope);
+    returnType = returnType.replaceBaseType(returnBaseType);
+  }
+
   // Check if the return value gets used
   if ((data.callee->isFunction() || data.callee->isMethodFunction()) && !node->hasReturnValueReceiver())
     warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
@@ -1486,8 +1498,8 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
   // Map local types to imported types
   Scope *functionParentScope = functionRegistryEntry->targetScope;
   std::vector<SymbolType> localArgTypes = data.argTypes;
-  for (SymbolType &symbolType : localArgTypes)
-    symbolType = mapLocalTypeToImportedScopeType(functionParentScope, symbolType);
+  for (SymbolType &localArgType : localArgTypes)
+    localArgType = mapLocalTypeToImportedScopeType(functionParentScope, localArgType);
 
   // Retrieve function object
   data.callee = FunctionManager::matchFunction(functionParentScope, functionName, data.thisType, localArgTypes, false, node);
@@ -1521,17 +1533,17 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   // Map local types to imported types
   Scope *functionParentScope = structScope;
   // Arg types
-  std::vector<SymbolType> importedArgTypes = data.argTypes;
-  for (SymbolType &symbolType : importedArgTypes)
-    symbolType = mapLocalTypeToImportedScopeType(functionParentScope, symbolType);
+  std::vector<SymbolType> localArgTypes = data.argTypes;
+  for (SymbolType &localArgType : localArgTypes)
+    localArgType = mapLocalTypeToImportedScopeType(functionParentScope, localArgType);
   // 'this' type
-  SymbolType thisType = data.thisType;
-  TypeChecker::autoDeReference(thisType);
-  SymbolType localThisType = mapLocalTypeToImportedScopeType(functionParentScope, thisType);
+  SymbolType localThisType = data.thisType;
+  TypeChecker::autoDeReference(localThisType);
+  localThisType = mapLocalTypeToImportedScopeType(functionParentScope, localThisType);
 
   // Retrieve function object
   const std::string functionName = node->functionNameFragments.back();
-  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, localThisType, importedArgTypes, false, node);
+  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, localThisType, localArgTypes, false, node);
 
   return std::make_pair(functionParentScope, data.thisType);
 }
@@ -1825,6 +1837,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     const bool isParamOrFieldOrReturnType = dataTypeNode->isParamType || dataTypeNode->isFieldType || dataTypeNode->isReturnType;
 
     // Collect the concrete template types
+    bool allTemplateTypesConcrete = true;
     std::vector<SymbolType> templateTypes;
     if (node->templateTypeLst()) {
       templateTypes.reserve(node->templateTypeLst()->dataTypes().size());
@@ -1833,6 +1846,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
         // Generic types are only allowed for parameters and fields at this point
         if (entryType.is(TY_STRUCT) && templateType.is(TY_GENERIC) && !isParamOrFieldOrReturnType)
           throw SemanticError(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here");
+        if (entryType.is(TY_GENERIC))
+          allTemplateTypesConcrete = false;
         templateTypes.push_back(templateType);
       }
       entryType.setTemplateTypes(templateTypes);
@@ -1843,7 +1858,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
         throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage");
 
-      if (!node->templateTypeLst() || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
+      if (allTemplateTypesConcrete || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
         // Set the struct instance to used, if found
         // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
         const std::string structName = node->typeNameFragments.back();
