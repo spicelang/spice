@@ -23,11 +23,7 @@ public type Queue<T> struct {
     unsigned int itemSize   // Size of a single item
 }
 
-public p Queue.ctor(unsigned int initAllocItems, T defaultValue) {
-    this.ctor((long) initAllocItems, defaultValue);
-}
-
-public p Queue.ctor(unsigned long initAllocItems, T defaultValue) {
+public p Queue.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Allocate space for the initial number of elements
     this.ctor(initAllocItems);
     // Fill in the default values
@@ -66,7 +62,7 @@ public p Queue.dtor() {
 /**
  * Add an item at the end of the queue
  */
-public p Queue.push(T item) {
+public p Queue.push(const T& item) {
     // Check if we need to re-allocate memory
     if this.isFull() {
         this.resize(this.capacity * RESIZE_FACTOR);
@@ -86,12 +82,11 @@ public p Queue.push(T item) {
  *
  * @return First item
  */
-public f<T> Queue.pop() {
+public f<T&> Queue.pop() {
     this.size--;
     unsafe {
         return this.contents[(int) this.idxFront++];
     }
-    return nil<T>;
 }
 
 /**
@@ -99,14 +94,11 @@ public f<T> Queue.pop() {
  *
  * @return First item
  */
-public f<T> Queue.front() {
-    // Check if the queue is empty
-    if !this.isEmpty() {
-        unsafe {
-            return this.contents[(int) this.idxFront];
-        }
+public f<T&> Queue.front() {
+    assert !this.isEmpty();
+    unsafe {
+        return this.contents[(int) this.idxFront];
     }
-    return nil<T>;
 }
 
 /**
@@ -114,14 +106,11 @@ public f<T> Queue.front() {
  *
  * @return Last item
  */
-public f<T> Queue.back() {
-    // Check if the queue is empty
-    if !this.isEmpty() {
-        unsafe {
-            return this.contents[(int) this.idxBack];
-        }
+public f<T&> Queue.back() {
+    assert !this.isEmpty();
+    unsafe {
+        return this.contents[(int) this.idxBack];
     }
-    return nil<T>;
 }
 
 /**

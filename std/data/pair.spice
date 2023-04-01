@@ -10,15 +10,15 @@ public type Pair<V1, V2> struct {
     V2 second
 }
 
-public p Pair.ctor(V1 first, V2 second) {
+public p Pair.ctor(const V1& first, const V2& second) {
     this.first = first;
     this.second = second;
 }
 
-public f<V1> Pair.getFirst() {
+public f<V1&> Pair.getFirst() {
     return this.first;
 }
 
-public f<V2> Pair.getSecond() {
+public f<V2&> Pair.getSecond() {
     return this.second;
 }
