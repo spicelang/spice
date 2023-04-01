@@ -21,15 +21,11 @@ public type Stack<T> struct {
     unsigned int itemSize   // Size of a single item
 }
 
-public p Stack.ctor(unsigned int initAllocItems, T defaultValue) {
-    this.ctor((long) initAllocItems, defaultValue);
-}
-
-public p Stack.ctor(unsigned long initAllocItems, T defaultValue) {
+public p Stack.ctor(unsigned long initAllocItems, const T &defaultValue) {
     // Allocate space for the initial number of elements
     this.ctor(initAllocItems);
     // Fill in the default values
-    for int index = 0; index < initAllocItems; index++ {
+    for unsigned long index = 0; index < initAllocItems; index++ {
         unsafe {
             this.contents[index] = defaultValue;
         }
@@ -38,7 +34,7 @@ public p Stack.ctor(unsigned long initAllocItems, T defaultValue) {
 }
 
 public p Stack.ctor(unsigned int initAllocItems) {
-    this.ctor((long) initAllocItems);
+    this.ctor((unsigned long) initAllocItems);
 }
 
 public p Stack.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
@@ -61,7 +57,7 @@ public p Stack.dtor() {
 /**
  * Add an item to the stack
  */
-public p Stack.push(T item) {
+public p Stack.push(const T& item) {
     // Check if we need to re-allocate memory
     if this.isFull() {
         this.resize(this.capacity * RESIZE_FACTOR);
@@ -76,12 +72,11 @@ public p Stack.push(T item) {
 /**
  * Retrieve item and remove it from the stack
  */
-public f<T> Stack.pop() {
+public f<T&> Stack.pop() {
     // Pop the element from the stack
     unsafe {
         return this.contents[(int) --this.size];
     }
-    return nil<T>;
 }
 
 /**

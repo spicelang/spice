@@ -12,27 +12,41 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
   %v1 = alloca %__double__Vector__doubleptr_long_long_int, align 8
+  %1 = alloca double, align 8
+  %2 = alloca double, align 8
+  %3 = alloca double, align 8
+  %4 = alloca double, align 8
+  %5 = alloca double, align 8
+  %6 = alloca double, align 8
+  %7 = alloca double, align 8
   call void @_mp__Vector_double__void__ctor__int(ptr nonnull %v1, i32 3) #2
-  call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 1.200000e+00) #2
-  call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 0x401DFC5FF5331D64) #2
-  call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 5.300000e+00) #2
-  call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 0xC10D2BF1D70A3D71) #2
-  call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 2.323420e+04) #2
-  call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double -1.234900e+03) #2
-  call void @_mp__Vector_double__void__pushBack__double(ptr nonnull %v1, double 0.000000e+00) #2
-  %1 = call i64 @_mf__Vector_double__long__getSize(ptr nonnull %v1) #2
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %1)
-  %3 = call i64 @_mf__Vector_double__long__getCapacity(ptr nonnull %v1) #2
-  %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i64 %3)
-  %5 = call ptr @_mf__Vector_double__doubleref__get__int(ptr nonnull %v1, i32 5) #2
-  %6 = load double, ptr %5, align 8
-  %7 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, double %6)
+  store double 1.200000e+00, ptr %1, align 8
+  call void @_mp__Vector_double__void__pushBack__doubleref(ptr nonnull %v1, ptr nonnull %1) #2
+  store double 0x401DFC5FF5331D64, ptr %2, align 8
+  call void @_mp__Vector_double__void__pushBack__doubleref(ptr nonnull %v1, ptr nonnull %2) #2
+  store double 5.300000e+00, ptr %3, align 8
+  call void @_mp__Vector_double__void__pushBack__doubleref(ptr nonnull %v1, ptr nonnull %3) #2
+  store double 0xC10D2BF1D70A3D71, ptr %4, align 8
+  call void @_mp__Vector_double__void__pushBack__doubleref(ptr nonnull %v1, ptr nonnull %4) #2
+  store double 2.323420e+04, ptr %5, align 8
+  call void @_mp__Vector_double__void__pushBack__doubleref(ptr nonnull %v1, ptr nonnull %5) #2
+  store double -1.234900e+03, ptr %6, align 8
+  call void @_mp__Vector_double__void__pushBack__doubleref(ptr nonnull %v1, ptr nonnull %6) #2
+  store double 0.000000e+00, ptr %7, align 8
+  call void @_mp__Vector_double__void__pushBack__doubleref(ptr nonnull %v1, ptr nonnull %7) #2
+  %8 = call i64 @_mf__Vector_double__long__getSize(ptr nonnull %v1) #2
+  %9 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %8)
+  %10 = call i64 @_mf__Vector_double__long__getCapacity(ptr nonnull %v1) #2
+  %11 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i64 %10)
+  %12 = call ptr @_mf__Vector_double__doubleref__get__int(ptr nonnull %v1, i32 5) #2
+  %13 = load double, ptr %12, align 8
+  %14 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, double %13)
   ret i32 0
 }
 
 declare void @_mp__Vector_double__void__ctor__int(ptr, i32) local_unnamed_addr
 
-declare void @_mp__Vector_double__void__pushBack__double(ptr, double) local_unnamed_addr
+declare void @_mp__Vector_double__void__pushBack__doubleref(ptr, ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1

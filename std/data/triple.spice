@@ -12,20 +12,20 @@ public type Triple<V1, V2, V3> struct {
     V3 third
 }
 
-public p Triple.ctor(V1 first, V2 second, V3 third) {
+public p Triple.ctor(const V1& first, const V2& second, const V3& third) {
     this.first = first;
     this.second = second;
     this.third = third;
 }
 
-public f<V1> Triple.getFirst() {
+public f<V1&> Triple.getFirst() {
     return this.first;
 }
 
-public f<V2> Triple.getSecond() {
+public f<V2&> Triple.getSecond() {
     return this.second;
 }
 
-public f<V3> Triple.getThird() {
+public f<V3&> Triple.getThird() {
     return this.third;
 }
