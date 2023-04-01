@@ -2,12 +2,12 @@
 
 type ShoppingItem struct {
     string name
-    double amount
+    double _amount
     string unit
 }
 
 type ShoppingCart struct {
-    string label
+    string _label
     ShoppingItem[3] items
 }
 

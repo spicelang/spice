@@ -1,7 +1,7 @@
 type Struct struct {
-    int fieldA
-    bool fieldB
-    string fieldC
+    int _fieldA
+    bool _fieldB
+    string _fieldC
 }
 
 f<int> main() {

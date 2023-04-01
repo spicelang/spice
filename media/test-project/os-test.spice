@@ -1,25 +1,41 @@
-//import "std/iterators/ranges";
-import "std/data/vector";
-import "std/data/pair";
+import "std/type/string";
 
 f<int> main() {
-    Vector<Pair<int, string>> pairVector = Vector<Pair<int, string>>();
-    pairVector.pushBack(Pair<int, string>(0, "Hello"));
-    pairVector.pushBack(Pair<int, string>(1, "World"));
+    // toDouble()
+    double asDouble = toDouble("5.67");
+    printf("%f", asDouble);
+    assert asDouble == 5.67;
 
-    Pair<int, string> p1 = pairVector.get(1);
-    printf("Hello %s!\n", p1.getSecond());
+    // toInt()
+    int asInt = toInt("-6546");
+    assert asInt == -6546;
 
-    //NumberIterator<int> it = range(1, 5);
-    /*for (
-        dyn it = range(1l, 10l);
-        it.hasNext();
-        it.next()
-    ) {
-        printf("%d\n", it.get());
-    }*/
+    // toLong()
+    long asLong = toLong("56");
+    assert asLong == 56l;
 
-    /*foreach int i : range(1, 3) {
-        printf("%d\n", i);
-    }*/
+    // toShort()
+    short asShort = toShort("-12");
+    assert asShort == -12s;
+
+    // toByte()
+    byte asByte = toByte("12");
+    assert asByte == (byte) 12;
+
+    // toChar()
+    char asChar = toChar("i");
+    assert asChar == 'i';
+
+    // toString()
+    //string asString = toString(15);
+    //assert asString == "15";
+    //printf("Str: %s\n", asString);
+
+    // toBool()
+    bool asBool1 = toBool("true");
+    assert asBool1 == true;
+    bool asBool2 = toBool("false");
+    assert asBool2 == false;
+
+    printf("All assertions succeeded");
 }

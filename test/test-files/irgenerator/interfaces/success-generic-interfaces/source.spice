@@ -11,9 +11,9 @@ type Compareable<T> interface {
 }
 
 type Person struct : Compareable<long> {
-    string firstName
-    string lastName
-    unsigned int age
+    string _firstName
+    string _lastName
+    unsigned int _age
 }
 
 f<CompareResult> Person.compare(const long& a, const long& b) {

@@ -11,9 +11,7 @@ f<int> main() {
     long k = 1l;
     long k_new;
     long m = 3l;
-    long m_new;
     long x = 3l;
-    long x_new;
 
     int iterations = 20; // Change here
     int printedDigits = 0;

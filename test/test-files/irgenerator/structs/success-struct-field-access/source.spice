@@ -1,6 +1,6 @@
 type Person struct {
-	string firstName
-	string lastName
+	string _firstName
+	string _lastName
 	int age
 }
 

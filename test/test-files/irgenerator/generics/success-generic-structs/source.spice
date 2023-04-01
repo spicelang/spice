@@ -1,7 +1,7 @@
 type T double|int;
 
 type Vector<T> struct {
-    T* contents
+    T* _contents
     int cap
 }
 

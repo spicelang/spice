@@ -1,7 +1,7 @@
 type T string|char;
 
 type TestStruct<T> struct {
-    T base
+    T _base
     int test
 }
 

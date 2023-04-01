@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.2 = private unnamed_addr constant [23 x i8] c"Hello from the thread\0A\00", align 1
 @printf.str.3 = private unnamed_addr constant [21 x i8] c"Hello from original\0A\00", align 1
 
-declare i32 @usleep(i32)
+declare void @usleep(i32)
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -41,10 +41,10 @@ for.tail.L5:                                      ; preds = %for.body.L5
   br label %for.head.L5
 
 for.exit.L5:                                      ; preds = %for.head.L5
-  %12 = call i32 @usleep(i32 1000000)
-  %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3)
-  %14 = load i32, ptr %result, align 4
-  ret i32 %14
+  call void @usleep(i32 1000000)
+  %12 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3)
+  %13 = load i32, ptr %result, align 4
+  ret i32 %13
 }
 
 declare i32 @printf(ptr noundef, ...)
@@ -55,8 +55,8 @@ define private ptr @_thread0(ptr %0) {
   %4 = load i32, ptr %3, align 4
   %5 = mul i32 100, %4
   %6 = mul i32 %5, 1000
-  %7 = call i32 @usleep(i32 %6)
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  call void @usleep(i32 %6)
+  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
   ret ptr null
 }
 

@@ -4,11 +4,12 @@ f<int> testFunc() {
 }
 
 f<int> testFunc(string param) {
-    printf("Test func 2\n");
+    printf("Test func 2: %s\n", param);
     return 2;
 }
 
 f<int> main() {
     int res = testFunc();
     printf("Result: %d\n", res);
+    res = testFunc("param value");
 }

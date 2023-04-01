@@ -48,12 +48,11 @@ main:
 .LBB0_1:
 	movq	%r14, %rax
 	shlq	$2, %rax
-	movq	%r12, %rcx
-	addq	%rax, %rcx
-	subq	%rbx, %rcx
+	subq	%rbx, %rax
+	addq	%r12, %rax
 	movq	%rbx, %r15
 	imulq	%rsi, %r15
-	cmpq	%r15, %rcx
+	cmpq	%r15, %rax
 	jge	.LBB0_5
 	movq	%rdx, (%rbp)
 	movq	%r10, -8(%rbp)
@@ -80,8 +79,8 @@ main:
 	idivq	%rbx
 	imulq	$-10, %rsi, %rdx
 	addq	%rdx, %rax
-	movq	%rax, %rsi
 	movq	%r8, %r12
+	movq	%rax, %rsi
 	movq	%rcx, %r14
 	movq	-8(%rbp), %r10
 	movq	(%rbp), %rdx
@@ -94,4 +93,4 @@ main:
 	movq	%r12, %r8
 	addq	%rax, %r8
 	imulq	%r10, %r8
-	
+	imulq	%r10, %rbx

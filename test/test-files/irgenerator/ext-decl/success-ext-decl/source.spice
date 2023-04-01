@@ -1,5 +1,3 @@
-const int MODE_ALL_RWX = 0o0000777;
-
 ext<byte*> malloc(long);
 ext free(byte*);
 
