@@ -276,7 +276,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
   const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT);
 
-  if (lhsEntry && lhsEntry->getType().isRef() && isDecl) { // Reference gets assigned
+  if (isRefAssign && isDecl) { // Reference gets initially assigned
     // Get address of right side
     llvm::Value *rhsAddress = resolveAddress(rhsNode);
     assert(rhsAddress != nullptr);

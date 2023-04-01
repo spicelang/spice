@@ -35,10 +35,6 @@ public p Vector.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     this.capacity = initAllocItems;
 }
 
-public p Vector.ctor(unsigned int initAllocItems, T defaultValue) {
-    this.ctor((long) initAllocItems, defaultValue);
-}
-
 public p Vector.ctor(unsigned long initAllocItems, T defaultValue) {
     // Allocate space for the initial number of elements
     this.ctor(initAllocItems);
@@ -96,8 +92,11 @@ public p Vector.pushBack<T>(T item) {
  *
  * @return item at index
  */
-public f<T> Vector.get(long index) {
-    return this.get((int) index);
+public f<T&> Vector.get(unsigned long index) {
+    assert index < this.size;
+    unsafe {
+        return this.contents[index];
+    }
 }
 
 /**
@@ -105,14 +104,8 @@ public f<T> Vector.get(long index) {
  *
  * @return item at index
  */
-public f<T> Vector.get(int index) {
-    // Check if index exists
-    if (index < this.size) {
-        unsafe {
-            return this.contents[index];
-        }
-    }
-    return nil<T>;
+public f<T&> Vector.get(unsigned int index) {
+    return this.get((unsigned long) index);
 }
 
 /**

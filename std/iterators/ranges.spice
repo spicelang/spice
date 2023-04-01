@@ -6,6 +6,6 @@ type Numeric int|long|short;
 /**
  * Convenience wrapper for creating a simple number iterator
  */
-public inline f<NumberIterator> range<Numeric>(Numeric begin, Numeric end) {
-    return NumberIterator(begin, end);
+public inline f<NumberIterator<Numeric>> range<Numeric>(Numeric begin, Numeric end) {
+    return NumberIterator<Numeric>(begin, end);
 }

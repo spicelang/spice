@@ -1,29 +1,25 @@
-type T int|long|short;
-
-type CompareResult enum {
-    LESS,
-    EQUAL,
-    GREATER
-}
-
-type Compareable<T> interface {
-    f<CompareResult> compare<T>(const T&, const T&);
-}
-
-type Person struct : Compareable<long> {
-    string firstName
-    string lastName
-    unsigned int age
-}
-
-f<CompareResult> Person.compare(const long& a, const long& b) {
-    if a > b { return CompareResult::GREATER; }
-    if a < b { return CompareResult::LESS; }
-    return CompareResult::EQUAL;
-}
+//import "std/iterators/ranges";
+import "std/data/vector";
+import "std/data/pair";
 
 f<int> main() {
-    Person mike = Person{ "Mike", "Miller", 43 };
-    const bool isEqual = mike.compare(22l, 22l) == CompareResult::EQUAL;
-    printf("%d", isEqual);
+    Vector<Pair<int, string>> pairVector = Vector<Pair<int, string>>();
+    pairVector.pushBack(Pair<int, string>(0, "Hello"));
+    pairVector.pushBack(Pair<int, string>(1, "World"));
+
+    Pair<int, string> p1 = pairVector.get(1);
+    printf("Hello %s!\n", p1.getSecond());
+
+    //NumberIterator<int> it = range(1, 5);
+    /*for (
+        dyn it = range(1l, 10l);
+        it.hasNext();
+        it.next()
+    ) {
+        printf("%d\n", it.get());
+    }*/
+
+    /*foreach int i : range(1, 3) {
+        printf("%d\n", i);
+    }*/
 }
