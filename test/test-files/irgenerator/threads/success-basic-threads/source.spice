@@ -1,4 +1,4 @@
-ext<int> usleep(int);
+ext usleep(int);
 
 f<int> main() {
     printf("Starting one thread ...\n");

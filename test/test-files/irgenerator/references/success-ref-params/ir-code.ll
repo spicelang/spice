@@ -78,6 +78,7 @@ assert.exit.L20:                                  ; preds = %0
   %9 = getelementptr inbounds %__Struct__intref_bool, ptr %2, i32 0, i32 1
   store i1 false, ptr %9, align 1
   %10 = call i32 @_f__void__int__func__doubleref_Structref(ptr %d, ptr %2)
+  store i32 %10, ptr %result, align 4
   %11 = load double, ptr %d, align 8
   %12 = fcmp oeq double %11, -1.076400e+02
   br i1 %12, label %assert.exit.L24, label %assert.then.L24, !prof !0

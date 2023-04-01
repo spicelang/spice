@@ -5,5 +5,5 @@ f<int> main() {
     v.print();
 
     dyn v1 = Vec{};
-    v.print();
+    v1.print();
 }

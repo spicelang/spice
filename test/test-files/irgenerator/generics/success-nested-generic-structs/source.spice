@@ -2,10 +2,10 @@ type T dyn;
 type U int|double;
 
 type Node<T, U> struct {
-    T* data1
-    U data2
+    T* _data1
+    U _data2
 }
 
 f<int> main() {
-    dyn node = Node<Node<Node<Node<Node<string, double>, int>, double>, int>, double>{};
+    dyn _node = Node<Node<Node<Node<Node<string, double>, int>, double>, int>, double>{};
 }

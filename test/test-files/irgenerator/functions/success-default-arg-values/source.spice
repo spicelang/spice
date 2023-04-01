@@ -1,4 +1,4 @@
-f<string> getTestString(int arg0, double arg1, bool arg2 = false, double arg3 = 1.34) {
+f<string> getTestString(int _arg0, double _arg1, bool _arg2 = false, double _arg3 = 1.34) {
     return "Test";
 }
 

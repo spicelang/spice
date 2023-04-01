@@ -20,7 +20,7 @@ f<int> main() {
     assert i == -4309;
 
     double d = 69.0;
-    func(d, Struct{ i, false});
+    result = func(d, Struct{ i, false});
     assert d == -107.64;
 
     printf("All assertions passed!");

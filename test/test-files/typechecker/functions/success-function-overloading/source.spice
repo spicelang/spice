@@ -12,5 +12,5 @@ f<double> calledFunction(string testString) {
 f<int> main() {
     dyn res = calledFunction(1, false);
     printf("Result: %f\n", res);
-    calledFunction("test");
+    res = calledFunction("test");
 }

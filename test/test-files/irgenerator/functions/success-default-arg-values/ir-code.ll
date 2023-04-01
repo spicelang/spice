@@ -8,14 +8,14 @@ target triple = "x86_64-w64-windows-gnu"
 
 define private ptr @_f__void__string__getTestString__int_double_bool(i32 %0, double %1, i1 %2) {
   %result = alloca ptr, align 8
-  %arg0 = alloca i32, align 4
-  %arg1 = alloca double, align 8
-  %arg2 = alloca i1, align 1
-  %arg3 = alloca double, align 8
-  store i32 %0, ptr %arg0, align 4
-  store double %1, ptr %arg1, align 8
-  store i1 %2, ptr %arg2, align 1
-  store double 1.340000e+00, ptr %arg3, align 8
+  %_arg0 = alloca i32, align 4
+  %_arg1 = alloca double, align 8
+  %_arg2 = alloca i1, align 1
+  %_arg3 = alloca double, align 8
+  store i32 %0, ptr %_arg0, align 4
+  store double %1, ptr %_arg1, align 8
+  store i1 %2, ptr %_arg2, align 1
+  store double 1.340000e+00, ptr %_arg3, align 8
   ret ptr @anon.string.0
 }
 

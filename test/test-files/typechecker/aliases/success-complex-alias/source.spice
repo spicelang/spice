@@ -1,7 +1,7 @@
 type T int|long;
 
 type TestStruct<T> struct {
-    T f1
+    T _f1
     unsigned long length
 }
 

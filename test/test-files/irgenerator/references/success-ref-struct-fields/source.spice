@@ -1,5 +1,5 @@
 type TestStruct struct {
-    bool f1
+    bool _f1
     int& f2
 }
 

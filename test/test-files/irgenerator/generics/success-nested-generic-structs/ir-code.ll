@@ -8,9 +8,9 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %node = alloca %"__Node<Node<Node<Node<string,double>,int>,double>,int>_double__Node__Node<Node<Node<Node<string,double>,int>,double>,int>ptr_double", align 8
+  %_node = alloca %"__Node<Node<Node<Node<string,double>,int>,double>,int>_double__Node__Node<Node<Node<Node<string,double>,int>,double>,int>ptr_double", align 8
   store i32 0, ptr %result, align 4
-  store %"__Node<Node<Node<Node<string,double>,int>,double>,int>_double__Node__Node<Node<Node<Node<string,double>,int>,double>,int>ptr_double" zeroinitializer, ptr %node, align 8
+  store %"__Node<Node<Node<Node<string,double>,int>,double>,int>_double__Node__Node<Node<Node<Node<string,double>,int>,double>,int>ptr_double" zeroinitializer, ptr %_node, align 8
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }

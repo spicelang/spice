@@ -18,9 +18,7 @@ define dso_local i32 @main() #0 {
   %k = alloca i64, align 8
   %k_new = alloca i64, align 8
   %m = alloca i64, align 8
-  %m_new = alloca i64, align 8
   %x = alloca i64, align 8
-  %x_new = alloca i64, align 8
   %iterations = alloca i32, align 4
   %printedDigits = alloca i32, align 4
   %i = alloca i32, align 4
@@ -34,21 +32,19 @@ define dso_local i32 @main() #0 {
   store i64 1, ptr %k, align 8
   store i64 0, ptr %k_new, align 8
   store i64 3, ptr %m, align 8
-  store i64 0, ptr %m_new, align 8
   store i64 3, ptr %x, align 8
-  store i64 0, ptr %x_new, align 8
   store i32 20, ptr %iterations, align 4
   store i32 0, ptr %printedDigits, align 4
   store i32 0, ptr %i, align 4
-  br label %for.head.L21
+  br label %for.head.L19
 
-for.head.L21:                                     ; preds = %for.tail.L21, %0
+for.head.L19:                                     ; preds = %for.tail.L19, %0
   %1 = load i32, ptr %iterations, align 4
   %2 = load i32, ptr %i, align 4
   %3 = icmp slt i32 %2, %1
-  br i1 %3, label %for.body.L21, label %for.exit.L21
+  br i1 %3, label %for.body.L19, label %for.exit.L19
 
-for.body.L21:                                     ; preds = %for.head.L21
+for.body.L19:                                     ; preds = %for.head.L19
   %4 = load i64, ptr %q, align 8
   %5 = mul i64 4, %4
   %6 = load i64, ptr %r, align 8
@@ -59,20 +55,20 @@ for.body.L21:                                     ; preds = %for.head.L21
   %11 = load i64, ptr %m, align 8
   %12 = mul i64 %11, %10
   %13 = icmp slt i64 %9, %12
-  br i1 %13, label %if.then.L22, label %if.else.L22
+  br i1 %13, label %if.then.L20, label %if.else.L20
 
-if.then.L22:                                      ; preds = %for.body.L21
+if.then.L20:                                      ; preds = %for.body.L19
   %14 = load i64, ptr %m, align 8
   %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %14)
   %16 = load i32, ptr %printedDigits, align 4
   %17 = icmp eq i32 %16, 0
-  br i1 %17, label %if.then.L24, label %if.exit.L24
+  br i1 %17, label %if.then.L22, label %if.exit.L22
 
-if.then.L24:                                      ; preds = %if.then.L22
+if.then.L22:                                      ; preds = %if.then.L20
   %18 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
-  br label %if.exit.L24
+  br label %if.exit.L22
 
-if.exit.L24:                                      ; preds = %if.then.L24, %if.then.L22
+if.exit.L22:                                      ; preds = %if.then.L22, %if.then.L20
   %19 = load i32, ptr %printedDigits, align 4
   %20 = add i32 %19, 1
   store i32 %20, ptr %printedDigits, align 4
@@ -101,9 +97,9 @@ if.exit.L24:                                      ; preds = %if.then.L24, %if.th
   store i64 %39, ptr %q, align 8
   %40 = load i64, ptr %r_new, align 8
   store i64 %40, ptr %r, align 8
-  br label %if.exit.L22
+  br label %if.exit.L20
 
-if.else.L22:                                      ; preds = %for.body.L21
+if.else.L20:                                      ; preds = %for.body.L19
   %41 = load i64, ptr %k, align 8
   %42 = load i64, ptr %q, align 8
   %43 = mul i64 %42, %41
@@ -147,18 +143,18 @@ if.else.L22:                                      ; preds = %for.body.L21
   store i64 %72, ptr %t, align 8
   %73 = load i64, ptr %k_new, align 8
   store i64 %73, ptr %k, align 8
-  br label %if.exit.L22
+  br label %if.exit.L20
 
-if.exit.L22:                                      ; preds = %if.else.L22, %if.exit.L24
-  br label %for.tail.L21
+if.exit.L20:                                      ; preds = %if.else.L20, %if.exit.L22
+  br label %for.tail.L19
 
-for.tail.L21:                                     ; preds = %if.exit.L22
+for.tail.L19:                                     ; preds = %if.exit.L20
   %74 = load i32, ptr %i, align 4
   %75 = add i32 %74, 1
   store i32 %75, ptr %i, align 4
-  br label %for.head.L21
+  br label %for.head.L19
 
-for.exit.L21:                                     ; preds = %for.head.L21
+for.exit.L19:                                     ; preds = %for.head.L19
   %76 = load i32, ptr %result, align 4
   ret i32 %76
 }

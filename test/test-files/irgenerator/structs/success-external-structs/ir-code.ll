@@ -17,7 +17,7 @@ define dso_local i32 @main() #0 {
   store %__Vec__int_bool { i32 11, i1 false }, ptr %v, align 4
   call void @_mp__Vec__void__print(ptr %v)
   store %__Vec__int_bool zeroinitializer, ptr %v1, align 4
-  call void @_mp__Vec__void__print(ptr %v)
+  call void @_mp__Vec__void__print(ptr %v1)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }

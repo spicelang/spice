@@ -1,4 +1,4 @@
-ext<int> usleep(int);
+ext usleep(int);
 
 f<int> main() {
     byte* t1;

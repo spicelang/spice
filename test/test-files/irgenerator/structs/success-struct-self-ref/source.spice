@@ -12,7 +12,7 @@ type TreeNode struct {
 */
 f<int> main() {
     dyn rootNode = TreeNode { nil<TreeNode*>, 0 };
-    dyn childNode1 = TreeNode { &rootNode, 1 };
+    dyn _childNode1 = TreeNode { &rootNode, 1 };
     dyn childNode2 = TreeNode { &rootNode, 2 };
     dyn childNode21 = TreeNode { &childNode2, 3 };
 

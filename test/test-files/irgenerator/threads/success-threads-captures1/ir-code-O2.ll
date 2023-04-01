@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @str.1 = private unnamed_addr constant [20 x i8] c"Hello from original\00", align 1
 @str.2 = private unnamed_addr constant [22 x i8] c"Hello from the thread\00", align 1
 
-declare i32 @usleep(i32) local_unnamed_addr
+declare void @usleep(i32) local_unnamed_addr
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
@@ -31,7 +31,7 @@ for.body.L5:                                      ; preds = %0, %for.body.L5
   br i1 %7, label %for.body.L5, label %for.exit.L5
 
 for.exit.L5:                                      ; preds = %for.body.L5
-  %8 = call i32 @usleep(i32 1000000) #2
+  call void @usleep(i32 1000000) #2
   %puts1 = call i32 @puts(ptr nonnull dereferenceable(1) @str.1)
   ret i32 0
 }
@@ -43,7 +43,7 @@ define private noalias ptr @_thread0(ptr nocapture readonly %0) {
   %2 = load ptr, ptr %0, align 8
   %3 = load i32, ptr %2, align 4
   %4 = mul i32 %3, 100000
-  %5 = tail call i32 @usleep(i32 %4)
+  tail call void @usleep(i32 %4)
   %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.2)
   ret ptr null
 }

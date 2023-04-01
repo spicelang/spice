@@ -8,4 +8,8 @@ type TokenType enum {
 
 f<int> main() {
     printf("%d\n", TokenType::DOT);
+    printf("%d\n", TokenType::COMMA);
+    printf("%d\n", TokenType::IDENTIFIER);
+    printf("%d\n", TokenType::WS);
+    printf("%d\n", TokenType::SIZEOF);
 }

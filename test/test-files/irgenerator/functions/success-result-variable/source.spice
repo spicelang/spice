@@ -6,7 +6,6 @@ f<int> getAge() {
     } else if (i = false) {
         result = 19;
     }
-    return 15;
 }
 
 f<int> main() {

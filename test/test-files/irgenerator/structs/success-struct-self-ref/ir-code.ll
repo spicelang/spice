@@ -12,16 +12,16 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %rootNode = alloca %__TreeNode__TreeNodeptr_int, align 8
-  %childNode1 = alloca %__TreeNode__TreeNodeptr_int, align 8
+  %_childNode1 = alloca %__TreeNode__TreeNodeptr_int, align 8
   %childNode2 = alloca %__TreeNode__TreeNodeptr_int, align 8
   %childNode21 = alloca %__TreeNode__TreeNodeptr_int, align 8
   %curNode = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr %rootNode, ptr @anon.struct.0, i64 16, i1 false)
   store %__TreeNode__TreeNodeptr_int zeroinitializer, ptr %rootNode, align 8
-  %1 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode1, i32 0, i32 0
+  %1 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %_childNode1, i32 0, i32 0
   store ptr %rootNode, ptr %1, align 8
-  %2 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode1, i32 0, i32 1
+  %2 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %_childNode1, i32 0, i32 1
   store i32 1, ptr %2, align 4
   %3 = getelementptr inbounds %__TreeNode__TreeNodeptr_int, ptr %childNode2, i32 0, i32 0
   store ptr %rootNode, ptr %3, align 8

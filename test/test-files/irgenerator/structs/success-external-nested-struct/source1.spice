@@ -1,15 +1,15 @@
 public type NestedSocket struct {
     public string testString
-    long testLong
+    long _testLong
 }
 
 public type Socket struct {
     public int sock // Actual socket
-    short errorCode
+    short _errorCode
     public NestedSocket nested
 }
 
-public f<Socket> openServerSocket(unsigned short port) {
+public f<Socket> openServerSocket(unsigned short _port) {
     dyn nested = NestedSocket { "Test", 2345l };
     return Socket{ 2, 0s, nested };
 }

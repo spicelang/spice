@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @str.2 = private unnamed_addr constant [18 x i8] c"Thread 2 finished\00", align 1
 @str.3 = private unnamed_addr constant [18 x i8] c"Thread 3 finished\00", align 1
 
-declare i32 @usleep(i32) local_unnamed_addr
+declare void @usleep(i32) local_unnamed_addr
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
@@ -37,7 +37,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
 }
 
 define private noalias ptr @_thread0(ptr nocapture readnone %0) {
-  %2 = tail call i32 @usleep(i32 300000)
+  tail call void @usleep(i32 300000)
   %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.1)
   ret ptr null
 }
@@ -59,7 +59,7 @@ define private noalias ptr @_thread1(ptr nocapture readonly %0) {
 declare i32 @pthread_join(ptr, ptr) local_unnamed_addr
 
 define private noalias ptr @_thread2(ptr nocapture readnone %0) {
-  %2 = tail call i32 @usleep(i32 200000)
+  tail call void @usleep(i32 200000)
   %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.3)
   ret ptr null
 }

@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @str.2 = private unnamed_addr constant [24 x i8] c"Hello from the thread 1\00", align 1
 @str.3 = private unnamed_addr constant [24 x i8] c"Hello from the thread 2\00", align 1
 
-declare i32 @usleep(i32) local_unnamed_addr
+declare void @usleep(i32) local_unnamed_addr
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
@@ -18,13 +18,13 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %3 = call i32 @pthread_create(ptr nonnull %2, ptr null, ptr nonnull @_thread0, ptr nonnull %1) #2
   %4 = alloca ptr, align 8
   %5 = call i32 @pthread_create(ptr nonnull %4, ptr null, ptr nonnull @_thread1, ptr nonnull %1) #2
-  %6 = call i32 @usleep(i32 1000000) #2
+  call void @usleep(i32 1000000) #2
   %puts1 = call i32 @puts(ptr nonnull dereferenceable(1) @str.1)
   ret i32 0
 }
 
 define private noalias ptr @_thread0(ptr nocapture readnone %0) {
-  %2 = tail call i32 @usleep(i32 500000)
+  tail call void @usleep(i32 500000)
   %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.2)
   ret ptr null
 }
@@ -32,7 +32,7 @@ define private noalias ptr @_thread0(ptr nocapture readnone %0) {
 declare i32 @pthread_create(ptr, ptr, ptr, ptr) local_unnamed_addr
 
 define private noalias ptr @_thread1(ptr nocapture readnone %0) {
-  %2 = tail call i32 @usleep(i32 200000)
+  tail call void @usleep(i32 200000)
   %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.3)
   ret ptr null
 }

@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.2 = private unnamed_addr constant [19 x i8] c"Thread 3 finished\0A\00", align 1
 @printf.str.3 = private unnamed_addr constant [18 x i8] c"Program finished\0A\00", align 1
 
-declare i32 @usleep(i32)
+declare void @usleep(i32)
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -47,8 +47,8 @@ define dso_local i32 @main() #0 {
 }
 
 define private ptr @_thread0(ptr %0) {
-  %2 = call i32 @usleep(i32 300000)
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  call void @usleep(i32 300000)
+  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret ptr null
 }
 
@@ -72,8 +72,8 @@ define private ptr @_thread1(ptr %0) {
 declare i32 @pthread_join(ptr, ptr)
 
 define private ptr @_thread2(ptr %0) {
-  %2 = call i32 @usleep(i32 200000)
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  call void @usleep(i32 200000)
+  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
   ret ptr null
 }
 
