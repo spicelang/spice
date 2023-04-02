@@ -9,40 +9,38 @@
 
 namespace spice::compiler {
 
-SourceFile *RuntimeModuleManager::requestModule(SourceFile *sourceFile, const RuntimeModuleName &moduleName) {
-  // Make the module available
-  bool available = isModuleAvailable(moduleName);
+SourceFile *RuntimeModuleManager::requestModule(SourceFile *sourceFile, RuntimeModule requestedModule) {
+  // Check if the requested module is available already
+  bool available = isModuleAvailable(requestedModule);
+
+  // If not, try to make it available
   if (!available)
-    available = addModule(sourceFile, moduleName);
+    available = addModule(sourceFile, requestedModule);
 
-  return available ? modules.at(moduleName) : nullptr;
+  // If the module is still not available, cancel here
+  if (!available)
+    return nullptr;
+
+  // Merge the module name registry with the one of the source file
+  const ModuleNamePair names = resolveNamePair(requestedModule);
+  SourceFile *runtimeModuleFile = modules.at(requestedModule);
+  sourceFile->mergeNameRegistries(*runtimeModuleFile, names.importName);
+
+  // Tell the source file, that the requested runtime has been imported
+  sourceFile->importedRuntimeModules |= requestedModule;
+
+  return runtimeModuleFile;
 }
 
-Scope *RuntimeModuleManager::getModuleScope(const RuntimeModuleName &moduleName) const {
-  assert(modules.contains(moduleName));
-  return modules.at(moduleName)->globalScope.get();
-}
+bool RuntimeModuleManager::isModuleAvailable(RuntimeModule requestedModule) const { return modules.contains(requestedModule); }
 
-bool RuntimeModuleManager::isModuleAvailable(const RuntimeModuleName &module) const { return modules.contains(module); }
+bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, RuntimeModule requestedModule) {
+  const auto [importName, fileName] = resolveNamePair(requestedModule);
 
-bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const RuntimeModuleName &moduleName) {
-  std::string importName;
-  std::string fileName;
-  switch (moduleName) {
-  case STRING_RT:
-    importName = STRING_RT_IMPORT_NAME;
-    fileName = "string_rt";
-    break;
-  case THREAD_RT:
-    importName = THREAD_RT_IMPORT_NAME;
-    fileName = "thread_rt";
-    break;
-  default:
-    throw CompilerError(INTERNAL_ERROR, "Requested unknown runtime module");
-  }
-  std::string filePath = FileUtil::getStdDir() + "runtime" + FileUtil::DIR_SEPARATOR + fileName + ".spice";
+  const std::string filePath = FileUtil::getStdDir() + "runtime" + FileUtil::DIR_SEPARATOR + fileName + ".spice";
   if (filePath == parentSourceFile->filePath)
     return false;
+
   const auto moduleSourceFile = parentSourceFile->createSourceFile(importName, filePath, true);
   parentSourceFile->addDependency(moduleSourceFile, parentSourceFile->ast.get(), importName, filePath);
 
@@ -50,12 +48,20 @@ bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, const Runtime
   const auto runtimeFile = parentSourceFile->dependencies.at(importName).first;
   runtimeFile->runFrontEnd();
   runtimeFile->runTypeChecker();
-  modules.emplace(moduleName, runtimeFile.get());
-
-  // Merge the module name registry with the one of the source file
-  parentSourceFile->mergeNameRegistries(*runtimeFile, importName);
+  modules.emplace(requestedModule, runtimeFile.get());
 
   return true;
+}
+
+ModuleNamePair RuntimeModuleManager::resolveNamePair(spice::compiler::RuntimeModule runtimeModule) {
+  switch (runtimeModule) {
+  case STRING_RT:
+    return {STRING_RT_IMPORT_NAME, "string_rt"};
+  case THREAD_RT:
+    return {THREAD_RT_IMPORT_NAME, "thread_rt"};
+  default:
+    throw CompilerError(INTERNAL_ERROR, "Requested unknown runtime module");
+  }
 }
 
 } // namespace spice::compiler
