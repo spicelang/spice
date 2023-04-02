@@ -1,4 +1,4 @@
-// Add generic type definitions
+// Generic type definitions
 type T dyn;
 
 /**

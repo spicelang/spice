@@ -13,6 +13,7 @@ public type NumberIterator<T> struct : Iterable<T> {
 }
 
 public p NumberIterator.ctor(T lowerBound, T upperBound) {
+    assert lowerBound <= upperBound;
     this.lowerBound = lowerBound;
     this.upperBound = upperBound;
     this.cursor = 0l;
@@ -34,9 +35,7 @@ public inline const f<bool> NumberIterator.hasNext() {
  */
 public inline f<T> NumberIterator.next() {
     assert this.hasNext();
-    T currentItem = this.get();
-    this.cursor++;
-    return currentItem;
+    return (T) (this.lowerBound + this.cursor++);
 }
 
 /**
@@ -44,4 +43,24 @@ public inline f<T> NumberIterator.next() {
  */
 public inline f<T> NumberIterator.get() {
     return (T) (this.lowerBound + this.cursor);
+}
+
+/**
+ * Advances the cursor by the given offset
+ *
+ * @param it Number iterator
+ * @param offset Offset
+ */
+public p operator+=<T>(NumberIterator<T>& it, T offset) {
+    it.cursor += offset;
+}
+
+/**
+ * Move the cursor back by the given offset
+ *
+ * @param it Number iterator
+ * @param offset Offset
+ */
+public p operator-=<T>(NumberIterator<T>& it, T offset) {
+    it.cursor -= offset;
 }

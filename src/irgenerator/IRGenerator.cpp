@@ -174,7 +174,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
   // Struct
   if (symbolType.is(TY_STRUCT)) {
     // Retrieve struct type
-    Scope *structScope = symbolType.getStructBodyScope();
+    Scope *structScope = symbolType.getBodyScope();
     assert(structScope != nullptr);
     const size_t fieldCount = structScope->getFieldCount();
     auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, structScope));

@@ -144,7 +144,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
     return llvm::Type::getInt1Ty(context);
 
   if (is(TY_STRUCT)) {
-    Scope *structBodyScope = getStructBodyScope();
+    Scope *structBodyScope = getBodyScope();
     const std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
     SymbolTableEntry *structSymbol = structBodyScope->parent->lookupStrict(structSignature);
     assert(structSymbol != nullptr);
@@ -168,6 +168,39 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
   }
 
   throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true));
+}
+
+/**
+ * Check if the current type is an iterator
+ *
+ * @param node ASTNode
+ * @return Iterator or not
+ */
+bool SymbolType::isIterator(const ASTNode *node) const {
+  if (!is(TY_STRUCT))
+    return false;
+  SymbolType genericType(TY_GENERIC, "T");
+  SymbolType iteratorType(TY_INTERFACE, "Iterable", {.bodyScope = nullptr}, {genericType});
+  return implements(iteratorType, node);
+}
+
+/**
+ * Check if the current type implements the given interface type
+ *
+ * @param symbolType Interface type
+ * @param node ASTNode
+ * @return Struct implements interface or not
+ */
+bool SymbolType::implements(const SymbolType &symbolType, const spice::compiler::ASTNode *node) const {
+  assert(is(TY_STRUCT) && symbolType.is(TY_INTERFACE));
+  Struct *spiceStruct = getStruct(node);
+  assert(spiceStruct != nullptr);
+  for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
+    assert(interfaceType.is(TY_INTERFACE));
+    if (symbolType.matches(interfaceType, false, false, true))
+      return true;
+  }
+  return false;
 }
 
 /**
@@ -318,23 +351,48 @@ bool SymbolType::isHeap() const {
 }
 
 /**
- * Set the struct body scope of the current type
+ * Set the body scope of the current type
+ * Available for structs and interfaces
  *
- * @param bodyScope Struct body scope
+ * @param bodyScope Body scope
  */
-void SymbolType::setStructBodyScope(Scope *bodyScope) {
+void SymbolType::setBodyScope(Scope *bodyScope) {
   assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
-  typeChain.back().data.structBodyScope = bodyScope;
+  typeChain.back().data.bodyScope = bodyScope;
 }
 
 /**
- * Return the struct body scope of the current type
+ * Return the body scope of the current type
  *
- * @return Struct body scope
+ * @return Body scope
  */
-Scope *SymbolType::getStructBodyScope() const {
+Scope *SymbolType::getBodyScope() const {
   assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
-  return typeChain.back().data.structBodyScope;
+  return typeChain.back().data.bodyScope;
+}
+
+/**
+ * Get the struct instance for a struct type
+ *
+ * @param node Accessing AST node
+ * @return Struct instance
+ */
+Struct *SymbolType::getStruct(const ASTNode *node) const {
+  assert(is(TY_STRUCT));
+  Scope *structDefScope = getBodyScope()->parent;
+  return StructManager::matchStruct(structDefScope, getSubType(), getTemplateTypes(), node);
+}
+
+/**
+ * Get the interface instance for an interface type
+ *
+ * @param node Accessing AST node
+ * @return Interface instance
+ */
+Interface *SymbolType::getInterface(const ASTNode *node) const {
+  assert(is(TY_INTERFACE));
+  Scope *interfaceDefScope = getBodyScope()->parent;
+  return InterfaceManager::matchInterface(interfaceDefScope, getSubType(), getTemplateTypes(), node);
 }
 
 bool operator==(const SymbolType &lhs, const SymbolType &rhs) {

@@ -1,0 +1,47 @@
+import "std/iterators/iterable";
+
+// Generic type definitions
+type I dyn;
+
+/**
+ * A ArrayIterator in Spice can be used to iterate over an arbitrary array
+ */
+public type ArrayIterator<I> struct : Iterable<I> {
+    I* array
+    unsigned long cursor
+    unsigned long size
+}
+
+public p ArrayIterator.ctor(I* array, unsigned long size) {
+    this.array = array;
+    this.size = size;
+    this.cursor = 0l;
+}
+
+/**
+ * Check if the array has another item
+ *
+ * @return true or false
+ */
+public inline const f<bool> ArrayIterator.hasNext() {
+    return this.cursor < this.size;
+}
+
+/**
+ * Returns the current item of the array and moves the cursor to the next one
+ *
+ * @return current item
+ */
+public inline f<I&> ArrayIterator.next() {
+    assert this.hasNext();
+    return this.array[this.cursor++];
+}
+
+/**
+ * Returns the current item of the array
+ */
+public inline f<I&> ArrayIterator.get() {
+    unsafe {
+        return this.array[this.cursor];
+    }
+}

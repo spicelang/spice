@@ -705,7 +705,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
     // Retrieve struct scope
     const std::string &fieldName = node->identifier;
-    Scope *structScope = lhsSTy.getStructBodyScope();
+    Scope *structScope = lhsSTy.getBodyScope();
 
     // Retrieve field entry
     lhs.entry = structScope->lookupStrict(fieldName);

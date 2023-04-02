@@ -23,7 +23,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
   // Check if the candidate type itself is generic
   if (candidateType.isBaseType(TY_GENERIC)) { // The candidate type itself is generic
-    const std::string &genericTypeName = candidateType.getSubType();
+    const std::string genericTypeName = candidateType.getBaseType().getSubType();
 
     // Check if we know the concrete type for that generic type name already
     if (typeMapping.contains(genericTypeName)) {

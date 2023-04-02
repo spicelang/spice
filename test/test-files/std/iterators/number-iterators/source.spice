@@ -1,0 +1,28 @@
+import "std/iterators/ranges";
+
+f<int> main() {
+    NumberIterator<int> itInt = range(1, 10);
+    assert itInt.hasNext();
+    assert itInt.get() == 1;
+    assert itInt.next() == 2;
+    itInt += 3;
+    assert itInt.get() == 5;
+    itInt -= 2;
+    assert itInt.get() == 3;
+    itInt += 8;
+    assert itInt.get() == 10;
+    assert !itInt.hasNext();
+
+
+    NumberIterator<long> itLong = range(1l, 50l);
+    assert itLong.hasNext();
+    assert itLong.get() == 1l;
+    assert itLong.next() == 2l;
+    itLong += 3l;
+    assert itLong.get() == 5l;
+    itLong -= 2l;
+    assert itLong.get() == 3l;
+    itLong += 8l;
+    assert itLong.get() == 10l;
+    assert !itLong.hasNext();
+}

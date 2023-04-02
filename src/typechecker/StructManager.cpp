@@ -122,7 +122,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       // Attach the template types to the new struct entry
       SymbolType entryType = substantiatedStruct->entry->getType();
       entryType.setTemplateTypes(substantiatedStruct->getTemplateTypes());
-      entryType.setStructBodyScope(substantiatedStruct->structScope);
+      entryType.setBodyScope(substantiatedStruct->structScope);
       substantiatedStruct->entry->updateType(entryType, true);
 
       // Replace symbol types of field entries with concrete types

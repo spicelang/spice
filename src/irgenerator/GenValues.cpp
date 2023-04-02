@@ -104,7 +104,7 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
     // Retrieve entry of the first fragment
     SymbolTableEntry *firstFragmentEntry = currentScope->lookup(node->functionNameFragments.front());
     assert(firstFragmentEntry != nullptr && firstFragmentEntry->getType().isBaseType(TY_STRUCT));
-    Scope *structScope = firstFragmentEntry->getType().getBaseType().getStructBodyScope();
+    Scope *structScope = firstFragmentEntry->getType().getBaseType().getBodyScope();
 
     // Get address of the referenced variable / struct instance
     thisPtr = firstFragmentEntry->getAddress();
@@ -121,7 +121,7 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
       SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
       assert(fieldEntry != nullptr && fieldEntry->getType().is(TY_STRUCT));
       // Get struct type and scope
-      structScope = fieldEntry->getType().getStructBodyScope();
+      structScope = fieldEntry->getType().getBodyScope();
       assert(structScope != nullptr);
       // Get address of field
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
@@ -139,7 +139,7 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
   if (data.isConstructorCall) {
     assert(!data.isMethodCall);
 
-    llvm::Type *thisType = spiceFunc->thisType.toLLVMType(context, spiceFunc->thisType.getStructBodyScope());
+    llvm::Type *thisType = spiceFunc->thisType.toLLVMType(context, spiceFunc->thisType.getBodyScope());
     thisPtr = insertAlloca(thisType);
 
     // Add 'this' pointer to the front of the argument list

@@ -287,7 +287,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Update type of struct entry
   assert(node->entry != nullptr);
-  SymbolType structType(TY_STRUCT, node->structName, {.structBodyScope = node->structScope}, usedTemplateTypes);
+  SymbolType structType(TY_STRUCT, node->structName, {.bodyScope = node->structScope}, usedTemplateTypes);
   structType.specifiers = node->structSpecifiers;
   node->entry->updateType(structType, false);
 
@@ -304,7 +304,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
     // Check for struct with infinite size.
     // This can happen if the struct A has a field with type A
-    if (fieldType.is(TY_STRUCT) && fieldType.getStructBodyScope() == node->structScope)
+    if (fieldType.is(TY_STRUCT) && fieldType.getBodyScope() == node->structScope)
       throw SemanticError(field, STRUCT_INFINITE_SIZE, "Struct with infinite size detected");
 
     // Add to field types
@@ -355,7 +355,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   }
 
   // Update type of interface entry
-  SymbolType interfaceType(TY_INTERFACE, node->interfaceName, {.structBodyScope = node->interfaceScope}, usedTemplateTypes);
+  SymbolType interfaceType(TY_INTERFACE, node->interfaceName, {.bodyScope = node->interfaceScope}, usedTemplateTypes);
   interfaceType.specifiers = node->interfaceSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(interfaceType, false);

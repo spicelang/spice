@@ -123,7 +123,7 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
       // Attach the template types to the new interface entry
       SymbolType entryType = substantiatedInterface->entry->getType();
       entryType.setTemplateTypes(substantiatedInterface->getTemplateTypes());
-      entryType.setStructBodyScope(substantiatedInterface->interfaceScope);
+      entryType.setBodyScope(substantiatedInterface->interfaceScope);
       substantiatedInterface->entry->updateType(entryType, true);
 
       // Replace symbol types of method entries with concrete types

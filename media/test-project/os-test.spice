@@ -1,5 +1,23 @@
 import "std/iterators/ranges";
 
+/*type T dyn;
+
+type Struct<T> struct {
+    T t
+}
+
+p operator+=<T>(Struct<T>& ts, T offset) {
+    ts.t += offset;
+}
+
+f<int> main() {
+    dyn ts = Struct<long>{ 34l };
+    ts += 2l;
+
+    //NumberIterator<int> itInt = range(1, 10);
+    //itInt += 8;
+}*/
+
 f<int> main() {
     foreach int i : range(1, 5) {
         printf("%d\n", i);

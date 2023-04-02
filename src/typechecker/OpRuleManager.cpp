@@ -43,8 +43,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
     return lhs;
   // Allow interface = struct that implements this interface
   if (lhs.is(TY_INTERFACE) && rhs.is(TY_STRUCT)) {
-    Scope *structDefScope = rhs.getStructBodyScope()->parent;
-    Struct *spiceStruct = StructManager::matchStruct(structDefScope, rhs.getSubType(), rhs.getTemplateTypes(), node);
+    Struct *spiceStruct = rhs.getStruct(node);
     assert(spiceStruct != nullptr);
     for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
       assert(interfaceType.is(TY_INTERFACE));

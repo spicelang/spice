@@ -187,7 +187,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
         const std::string structSignature = Struct::getSignature(thisType.getSubType(), concreteTemplateTypes);
         Scope *substantiatedStructBodyScope = matchScope->parent->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
         assert(substantiatedStructBodyScope != nullptr);
-        candidate.thisType.setStructBodyScope(substantiatedStructBodyScope);
+        candidate.thisType.setBodyScope(substantiatedStructBodyScope);
 
         // Set match scope to the substantiated struct scope
         matchScope = substantiatedStructBodyScope;
