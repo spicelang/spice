@@ -1,7 +1,32 @@
-f<bool> fn(int& ref) {
+/*import "std/data/vector";
+import "std/text/print";
+import "std/io/file" as io;
+
+f<int> main() {
+  dyn v = Vector<String>();
+  v.pushBack(String("Hello"));
+  v.pushBack(String("World!"));
+  createFile("output.txt");
+  const File file = openFile("output.txt", io::MODE_WRITE);
+
+  for int i = 0; i < v.getSize(); i++ {
+    String str = v.get(i);
+    file.writeString((string) str.getRaw());
+  }
+
+  file.close();
+}*/
+
+import "std/io/file";
+
+f<int> main() {
+    String test = String("test");
+}
+
+/*f<bool> fn(int& ref) {
     return false;
 }
 
 f<int> main() {
     fn(123);
-}
+}*/

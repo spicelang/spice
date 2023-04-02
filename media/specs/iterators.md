@@ -1,9 +1,10 @@
 # Technical Specification for Iterators in Spice
 
 ## Implementation steps:
-- [ ] 1. Implement iterators in std
+- [x] 1. Implement simple NumberIterator in std
 - [ ] 2. Adjust foreach loop to work with iterators
-- [ ] 3. Offer iterator modifiers
+- [ ] 3. Implement VectorIterator in std
+- [ ] 4. Offer iterator modifiers
 
 ## Usage
 

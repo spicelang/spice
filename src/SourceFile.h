@@ -132,7 +132,7 @@ public:
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   void collectAndPrintWarnings();
   void collectAllSourceFiles(std::vector<SourceFile *> &sourceFiles);
-  void requestRuntimeModule(const RuntimeModuleName &moduleName);
+  void requestRuntimeModule(RuntimeModule runtimeModule);
   void addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true,
                             SymbolTableEntry *importEntry = nullptr, const std::string &predecessorName = "");
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
@@ -160,6 +160,7 @@ private:
   // Private fields
   GlobalResourceManager &resourceManager;
   BS::synced_stream &tout;
+  uint8_t importedRuntimeModules = 0;
 
   // Private methods
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);

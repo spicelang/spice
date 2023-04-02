@@ -538,8 +538,12 @@ void SourceFile::collectAllSourceFiles(std::vector<SourceFile *> &sourceFiles) {
     dependency.second.first->collectAllSourceFiles(sourceFiles);
 }
 
-void SourceFile::requestRuntimeModule(const RuntimeModuleName &moduleName) {
-  resourceManager.runtimeModuleManager.requestModule(this, moduleName);
+void SourceFile::requestRuntimeModule(RuntimeModule runtimeModule) {
+  // Check if the module was already imported
+  if (importedRuntimeModules & runtimeModule)
+    return;
+
+  resourceManager.runtimeModuleManager.requestModule(this, runtimeModule);
 }
 
 void SourceFile::addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope,
