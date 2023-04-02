@@ -504,8 +504,6 @@ std::any IRGenerator::visitAliasDef(const AliasDefNode *node) {
 }
 
 std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Retrieve some information about the variable
   assert(node->entry != nullptr);
   const SymbolType &entryType = node->entry->getType();
@@ -541,8 +539,6 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
 }
 
 std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
-  diGenerator.setSourceLocation(node);
-
   // Get return type
   const Function *spiceFunc = node->externalFunction;
   assert(spiceFunc != nullptr);
