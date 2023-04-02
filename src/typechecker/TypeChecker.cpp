@@ -147,15 +147,14 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   changeToScope(node->bodyScope, SCOPE_FOREACH_BODY);
 
   // Check type of the array
-  SymbolType iteratorType = std::any_cast<ExprResult>(visit(node->arrayAssign())).type;
+  SymbolType iteratorType = std::any_cast<ExprResult>(visit(node->iteratorAssign())).type;
   if (!iteratorType.isIterator(node))
-    throw SemanticError(node->arrayAssign(), OPERATOR_WRONG_DATA_TYPE,
+    throw SemanticError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE,
                         "Can only apply foreach loop on an iterator type. You provided " + iteratorType.getName());
-
-  // Check size of the array
-  if (iteratorType.getArraySize() == ARRAY_SIZE_UNKNOWN)
-    throw SemanticError(node->arrayAssign(), ARRAY_SIZE_INVALID,
-                        "Can only apply foreach loop on an array type of which the size is known at compile time");
+  const std::vector<SymbolType> &iteratorTemplateTypes = iteratorType.getTemplateTypes();
+  if (iteratorTemplateTypes.empty())
+    throw SemanticError(node->iteratorAssign(), INVALID_ITERATOR,
+                        "Iterator has no generic arguments so that the item type could not be inferred");
 
   if (node->idxVarDecl()) {
     // Visit index declaration or assignment
@@ -174,19 +173,20 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Check type of the item
   auto itemType = std::any_cast<SymbolType>(visit(node->itemDecl()));
   if (itemType.is(TY_DYN)) { // Perform type inference
-    itemType = iteratorType.getContainedTy();
+    // The item type is the first template type of the iterator type
+    itemType = iteratorTemplateTypes.front();
     // Update evaluated symbol type of the declaration data type
     node->itemDecl()->dataType()->setEvaluatedSymbolType(itemType, manIdx);
-  } else if (itemType != iteratorType.getContainedTy()) { // Check types
+  } else if (!itemType.matches(iteratorTemplateTypes.front(), false, false, true)) { // Check types
     throw SemanticError(node->itemDecl(), OPERATOR_WRONG_DATA_TYPE,
-                        "Foreach loop item type does not match array type. Expected " + iteratorType.getName() + ", provided " +
-                            itemType.getName());
+                        "Foreach item type does not match  the item type of the iterator. Iterator produces " +
+                            iteratorTemplateTypes.front().getName() + ", the specified item type is " + itemType.getName());
   }
 
   // Update type of item
   SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemDecl()->varName);
   assert(itemVarSymbol != nullptr);
-  itemVarSymbol->updateType(itemType, false);
+  itemVarSymbol->updateType(itemType, true);
 
   // Visit body
   visit(node->body());

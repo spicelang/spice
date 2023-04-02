@@ -196,16 +196,22 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   breakBlocks.push_back(bExit);
   continueBlocks.push_back(bTail);
 
-  // Call .reset on iterator
-  // ToDo: implement
+  // Resolve iterator
+  AssignExprNode *iteratorAssignNode = node->iteratorAssign();
+  SymbolType iteratorType = iteratorAssignNode->getEvaluatedSymbolType(manIdx);
+  llvm::Value *iterator = resolveAddress(iteratorAssignNode);
+
+  // Allocate space for item
+  visit(node->itemDecl());
+
   // Create jump from original to head node
   insertJump(bHead);
 
   // Switch to head block
   switchToBlock(bHead);
-  // Call .isValid on iterator
-  // ToDo: implement
-  llvm::Value *condValue = nullptr;
+  // Call .hasNext() on iterator
+  llvm::Function *hasNextFunction = stdFunctionManager.getIteratorHasNextFct(iteratorType);
+  llvm::Value *condValue = builder.CreateCall(hasNextFunction, iterator);
   // Create conditional jump from head to body or exit block
   insertCondJump(condValue, bBody, bExit);
 
@@ -218,7 +224,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Switch to tail block
   switchToBlock(bTail);
-  // Call .next on iterator
+  // Call .next() on iterator
   // ToDo: implement
   // Create jump from tail to head block
   insertJump(bHead);

@@ -380,7 +380,9 @@ Scope *SymbolType::getBodyScope() const {
 Struct *SymbolType::getStruct(const ASTNode *node) const {
   assert(is(TY_STRUCT));
   Scope *structDefScope = getBodyScope()->parent;
-  return StructManager::matchStruct(structDefScope, getSubType(), getTemplateTypes(), node);
+  const std::string structName = getOriginalSubType();
+  const std::vector<SymbolType> &templateTypes = getTemplateTypes();
+  return StructManager::matchStruct(structDefScope, structName, templateTypes, node);
 }
 
 /**

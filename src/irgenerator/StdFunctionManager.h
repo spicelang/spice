@@ -9,6 +9,9 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+class SymbolType;
+
 class StdFunctionManager {
 public:
   // Constructors
@@ -23,6 +26,7 @@ public:
   [[nodiscard]] llvm::Function *getPthreadSelf() const;
   [[nodiscard]] llvm::Function *getPthreadJoin() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
+  [[nodiscard]] llvm::Function *getIteratorHasNextFct(const SymbolType &iteratorType) const;
 
 private:
   // Members

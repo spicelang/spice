@@ -89,6 +89,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Destructors must not have parameters";
   case OPERATOR_WRONG_DATA_TYPE:
     return "Wrong data type for operator";
+  case INVALID_ITERATOR:
+    return "Invalid iterator";
   case UNEXPECTED_DYN_TYPE:
     return "Unexpected dyn type";
   case REASSIGN_CONST_VARIABLE:

@@ -3,6 +3,7 @@
 #include "StdFunctionManager.h"
 
 #include <model/Function.h>
+#include <symboltablebuilder/SymbolType.h>
 
 namespace spice::compiler {
 
@@ -35,6 +36,13 @@ llvm::Function *StdFunctionManager::getPthreadJoin() const {
 
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   return getFunction("_f__void__bool__isRawEqual__string_string", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
+}
+
+llvm::Function *StdFunctionManager::getIteratorHasNextFct(const SymbolType &iteratorType) const {
+  assert(iteratorType.is(TY_STRUCT));
+  const std::string iteratorName = iteratorType.getOriginalSubType() + "_" + iteratorType.getTemplateTypes().front().getName();
+  const std::string functionName = "_mf__" + iteratorName + "__bool__hasNext";
+  return getFunction(functionName.c_str(), builder.getInt1Ty(), {builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getFunction(const char *funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
