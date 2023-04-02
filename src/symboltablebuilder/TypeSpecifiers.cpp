@@ -184,6 +184,23 @@ TypeSpecifiers TypeSpecifiers::merge(const TypeSpecifiers &other) const {
   return result;
 }
 
+/**
+ * Check if two type specifiers match
+ *
+ * @param otherSpecifiers The rhs specifiers
+ * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
+ * @return Matching or not
+ */
+bool TypeSpecifiers::match(const TypeSpecifiers &otherSpecifiers, bool allowConstify) const {
+  if (allowConstify) {
+    const uint8_t clearConstMask = ~(1 << BIT_INDEX_CONST);
+    bool otherSpecifiersMatch = (specifierValue & clearConstMask) == (otherSpecifiers.specifierValue & clearConstMask);
+    bool constMatches = getBit(BIT_INDEX_CONST) >= otherSpecifiers.getBit(BIT_INDEX_CONST);
+    return constMatches & otherSpecifiersMatch;
+  }
+  return specifierValue == otherSpecifiers.specifierValue;
+}
+
 bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) { return lhs.specifierValue == rhs.specifierValue; }
 
 } // namespace spice::compiler

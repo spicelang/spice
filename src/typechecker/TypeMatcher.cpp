@@ -19,7 +19,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts())
-    return requestedType.equals(candidateType, true, !strictSpecifierMatching);
+    return candidateType.matches(requestedType, true, !strictSpecifierMatching, true);
 
   // Check if the candidate type itself is generic
   if (candidateType.isBaseType(TY_GENERIC)) { // The candidate type itself is generic
@@ -29,7 +29,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
     if (typeMapping.contains(genericTypeName)) {
       const SymbolType &knownConcreteType = typeMapping.at(candidateType.getSubType());
       // Check if the known concrete type matches the requested type
-      return knownConcreteType.equals(requestedType, true, !strictSpecifierMatching);
+      return knownConcreteType.matches(requestedType, true, !strictSpecifierMatching, true);
     } else {
       // Retrieve generic candidate type by its name
       const GenericType *genericCandidateType = resolveGenericType(genericTypeName);

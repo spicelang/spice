@@ -18,23 +18,25 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference
   if (lhs.is(TY_DYN)) {
     SymbolType resultType = rhs;
-    resultType.specifiers.setConst(false);
     return resultType;
   }
   // Allow pointers and arrays of the same type straight away
-  if (lhs.isOneOf({TY_PTR, TY_REF}) && lhs == rhs)
+  if (lhs.isOneOf({TY_PTR, TY_REF}) && lhs.matches(rhs, false, false, true))
     return rhs;
   // Allow type to ref type of the same contained type straight away
-  if (lhs.isRef() && lhs.getContainedTy() == rhs)
+  if (lhs.isRef() && lhs.getContainedTy().matches(rhs, false, false, true))
     return lhs;
   // Allow ref type to type of the same contained type straight away
-  if (rhs.isRef() && rhs.getContainedTy() == lhs)
+  if (rhs.isRef() && rhs.getContainedTy().matches(rhs, false, false, true))
+    return lhs;
+  // Allow ref type to type of the same contained type straight away
+  if (rhs.is(TY_REF) && lhs.matches(rhs.getContainedTy(), false, !lhs.isRef(), true))
     return lhs;
   // Allow struct of the same type straight away
-  if (lhs.isOneOf({TY_ARRAY, TY_STRUCT}) && lhs.equals(rhs, false, true))
+  if (lhs.isOneOf({TY_ARRAY, TY_STRUCT}) && lhs.matches(rhs, false, true, true))
     return rhs;
   // Allow array to pointer
-  if (lhs.isPtr() && rhs.isArray() && lhs.getContainedTy() == rhs.getContainedTy())
+  if (lhs.isPtr() && rhs.isArray() && lhs.getContainedTy().matches(rhs.getContainedTy(), false, false, true))
     return lhs;
   // Allow char* = string
   if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING) && lhs.specifiers == rhs.specifiers)
@@ -46,7 +48,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
     assert(spiceStruct != nullptr);
     for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
       assert(interfaceType.is(TY_INTERFACE));
-      if (interfaceType == lhs)
+      if (lhs.matches(interfaceType, false, false, true))
         return lhs;
     }
   }
@@ -62,16 +64,19 @@ SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, SymbolTy
   if (lhs.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhs == rhs)
     return rhs;
   // Allow struct of the same type straight away
-  if (lhs.is(TY_STRUCT) && lhs.equals(rhs, false, true))
+  if (lhs.is(TY_STRUCT) && lhs.matches(rhs, false, true, true))
     return rhs;
   // Allow type to ref type of the same contained type straight away
-  if (lhs.is(TY_REF) && lhs.getContainedTy() == rhs)
+  if (lhs.is(TY_REF) && lhs.getContainedTy().matches(rhs, false, false, true))
     return rhs;
+  // Allow ref type to type of the same contained type straight away
+  if (rhs.is(TY_REF) && lhs.matches(rhs.getContainedTy(), false, false, true))
+    return lhs;
   // Allow immediate value to const ref of the same contained type straight away
   if (lhs.is(TY_REF) && lhs.getContainedTy().isConst() && imm)
     return rhs;
   // Allow array to pointer
-  if (lhs.is(TY_PTR) && rhs.is(TY_ARRAY) && lhs.getContainedTy() == rhs.getContainedTy())
+  if (lhs.is(TY_PTR) && rhs.is(TY_ARRAY) && lhs.getContainedTy().matches(rhs.getContainedTy(), false, false, true))
     return lhs;
   // Allow char* = string
   if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING) && lhs.specifiers == rhs.specifiers)

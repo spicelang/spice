@@ -4,6 +4,7 @@
 
 #include <stack>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <ast/ASTBuilder.h>
@@ -122,7 +123,7 @@ public:
              const std::vector<SymbolType> &templateTypes)
       : typeChain({TypeChainElement{superType, subType, data, templateTypes}}), specifiers(TypeSpecifiers::of(superType)) {}
   explicit SymbolType(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
-  SymbolType(const TypeChain &types, TypeSpecifiers specifiers) : typeChain(types), specifiers(specifiers) {}
+  SymbolType(TypeChain types, TypeSpecifiers specifiers) : typeChain(std::move(types)), specifiers(specifiers) {}
 
   // Public methods
   [[nodiscard]] SymbolType toPointer(const ASTNode *node) const;
@@ -192,7 +193,7 @@ public:
   [[nodiscard]] Scope *getStructBodyScope() const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
-  [[nodiscard]] bool equals(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers) const;
+  [[nodiscard]] bool matches(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
 
   // Public members
   TypeChain typeChain;

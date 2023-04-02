@@ -479,7 +479,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
     SymbolType rhsType = std::any_cast<ExprResult>(visit(node->constant())).type;
     if (globalVarType.is(TY_DYN)) { // Perform type inference
       globalVarType = rhsType;
-    } else if (!globalVarType.equals(rhsType, false, true)) { // Check if types are matching
+    } else if (!globalVarType.matches(rhsType, false, true, true)) { // Check if types are matching
       throw SemanticError(node->constant(), OPERATOR_WRONG_DATA_TYPE,
                           "Expected " + globalVarType.getName() + ", but got " + rhsType.getName());
     }

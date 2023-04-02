@@ -1,0 +1,19 @@
+f<int&> getIntRef(int& t) {
+    return t;
+}
+
+f<const int&> getConstIntRef(int& t) {
+    return t;
+}
+
+f<int> main() {
+    int t = 12;
+
+    int _1 = getIntRef(t);
+    int _2 = getConstIntRef(t);
+    const int _3 = getIntRef(t);
+    const int _4 = getConstIntRef(t);
+    int& _5 = getIntRef(t);
+    const int& _6 = getIntRef(t);
+    const int& _7 = getConstIntRef(t);
+}
