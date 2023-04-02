@@ -344,18 +344,20 @@ bool operator==(const SymbolType &lhs, const SymbolType &rhs) {
 bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs == rhs); }
 
 /**
- * Check for the equality of two types.
- * Useful for struct and function matching.
+ * Check for the matching compatibility of two types.
+ * Useful for struct and function matching as well as assignment type validation and function arg matching.
  *
  * @param otherType Type to compare against
  * @param ignoreArraySize Ignore array sizes
  * @param ignoreSpecifiers Ignore specifiers, except for pointer and reference types
- * @return Equal or not
+ * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
+ * @return Matching or not
  */
-bool SymbolType::equals(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers) const {
+bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const {
   // If the size does not match, it is not equal
   if (typeChain.size() != otherType.typeChain.size())
     return false;
+
   // Compare the elements
   for (size_t i = 0; i < typeChain.size(); i++) {
     const SymbolType::TypeChainElement &lhsElement = typeChain.at(i);
@@ -369,9 +371,12 @@ bool SymbolType::equals(const SymbolType &otherType, bool ignoreArraySize, bool 
     if (lhsElement != rhsElement)
       return false;
   }
+
+  // Ignore difference of specifiers
   if (ignoreSpecifiers && !isPtr() && !isRef())
     return true;
-  return specifiers == otherType.specifiers;
+
+  return specifiers.match(otherType.specifiers, allowConstify);
 }
 
 /**

@@ -1,0 +1,5 @@
+f<int> main() {
+    const int test = 12;
+    int& ref = test;
+    ref++;
+}

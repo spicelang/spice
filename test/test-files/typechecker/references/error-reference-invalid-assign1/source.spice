@@ -1,0 +1,9 @@
+f<const int&> getConstIntRef(const int& t) {
+    return t;
+}
+
+f<int> main() {
+    int t = 12;
+
+    int& _1 = getConstIntRef(t);
+}

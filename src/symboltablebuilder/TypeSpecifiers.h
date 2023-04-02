@@ -74,6 +74,7 @@ public:
   void setHeap(bool heap);
   [[nodiscard]] bool isHeap() const;
   [[nodiscard]] TypeSpecifiers merge(const TypeSpecifiers &other) const;
+  [[nodiscard]] bool match(const TypeSpecifiers &other, bool allowConstify) const;
 
   // Overloaded operators
   friend bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs);

@@ -10,23 +10,22 @@ f<int> main() {
   const File file = openFile("output.txt", io::MODE_WRITE);
 
   for int i = 0; i < v.getSize(); i++ {
-    String str = v.get(i);
-    file.writeString((string) str.getRaw());
+    const String& str = v.get(i);
+    file.writeString(str.getRaw());
   }
 
   file.close();
 }*/
 
-import "std/io/file";
-
-f<int> main() {
-    String test = String("test");
+type intref struct {
+    int test
 }
 
-/*f<bool> fn(int& ref) {
+f<bool> fn(const int& ref) {
     return false;
 }
 
 f<int> main() {
-    fn(123);
-}*/
+    const int x = 123;
+    fn(x);
+}

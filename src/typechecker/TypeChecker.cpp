@@ -721,7 +721,7 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     throw SemanticError(condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool");
 
   // Check if trueType and falseType are matching
-  if (!trueType.equals(falseType, false, true))
+  if (!trueType.matches(falseType, false, true, false))
     throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE,
                         "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
                             falseType.getName(true));
