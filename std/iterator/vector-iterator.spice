@@ -1,0 +1,71 @@
+import "std/iterator/iterable";
+import "std/data/vector";
+
+// Generic type definitions
+type I dyn;
+type Numeric int|long|short;
+
+/**
+ * Iterator to iterate over a vector data structure
+ */
+public type VectorIterator<I> struct : Iterable<I> {
+    Vector<I>& vector
+    unsigned long cursor
+}
+
+public p VectorIterator.ctor<I>(Vector<I>& vector) {
+    this.vector = vector;
+    this.cursor = 0l;
+}
+
+/**
+ * Check if the vector has another item
+ *
+ * @return true or false
+ */
+public inline const f<bool> VectorIterator.hasNext() {
+    return this.cursor < this.vector.getSize();
+}
+
+/**
+ * Returns the current item of the vector iterator and moves the cursor to the next item
+ *
+ * @return current item
+ */
+public inline f<I&> VectorIterator.next() {
+    assert this.hasNext();
+    return this.vector.get(this.cursor++);
+}
+
+public inline f<Pair<unsigned long, I&>> VectorIterator.nextIdx() {
+    assert this.hasNext();
+    I currentItem = this.vector.get(this.cursor++);
+    return Pair<unsigned long, I&>(this.cursor, currentItem);
+}
+
+/**
+ * Returns the current item of the vector iterator
+ */
+public inline f<I&> VectorIterator.get() {
+    return this.vector.get(this.cursor);
+}
+
+/**
+ * Advances the cursor by the given offset
+ *
+ * @param it VectorIterator
+ * @param offset Offset
+ */
+public inline p operator+=<I, Numeric>(VectorIterator<I>& it, Numeric offset) {
+    it.cursor += offset;
+}
+
+/**
+ * Move the cursor back by the given offset
+ *
+ * @param it VectorIterator
+ * @param offset Offset
+ */
+public inline p operator-=<I, Numeric>(VectorIterator<I>& it, Numeric offset) {
+    it.cursor -= offset;
+}

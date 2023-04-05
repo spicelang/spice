@@ -160,19 +160,20 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
         break; // Leave the whole manifestation list, because all manifestations in this list have the same name
 
       // Prepare mapping table from generic type name to concrete type
-      candidate.typeMapping.clear();
-      candidate.typeMapping.reserve(candidate.templateTypes.size());
+      TypeMapping &typeMapping = candidate.typeMapping;
+      typeMapping.clear();
+      typeMapping.reserve(candidate.templateTypes.size());
 
       // Check 'this' type requirement
-      if (!matchThisType(candidate, requestedThisType, candidate.typeMapping, strictSpecifierMatching))
+      if (!matchThisType(candidate, requestedThisType, typeMapping, strictSpecifierMatching))
         continue; // Leave this manifestation and try the next one
 
       // Check arg types requirement
-      if (!matchArgTypes(candidate, requestedParamTypes, candidate.typeMapping, strictSpecifierMatching))
+      if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching))
         continue; // Leave this manifestation and try the next one
 
       // Substantiate return type
-      substantiateReturnType(candidate, candidate.typeMapping);
+      substantiateReturnType(candidate, typeMapping);
 
       // We found a match! -> Set the actual candidate and its entry to used
       candidate.used = true;

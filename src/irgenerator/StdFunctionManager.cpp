@@ -38,11 +38,30 @@ llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   return getFunction("_f__void__bool__isRawEqual__string_string", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
 }
 
+llvm::Function *StdFunctionManager::getIteratorGetFct(const SymbolType &iteratorType, Scope *accessScope) const {
+  assert(iteratorType.is(TY_STRUCT));
+  const SymbolType &itemType = iteratorType.getTemplateTypes().front();
+  const std::string iteratorName = iteratorType.getOriginalSubType() + "_" + itemType.getName();
+  const std::string functionName = "_mf__" + iteratorName + "__" + itemType.getName() + "__get";
+  llvm::Type *returnType = itemType.toLLVMType(context, accessScope);
+  return getFunction(functionName.c_str(), returnType, builder.getPtrTy());
+}
+
 llvm::Function *StdFunctionManager::getIteratorHasNextFct(const SymbolType &iteratorType) const {
   assert(iteratorType.is(TY_STRUCT));
-  const std::string iteratorName = iteratorType.getOriginalSubType() + "_" + iteratorType.getTemplateTypes().front().getName();
+  const SymbolType &itemType = iteratorType.getTemplateTypes().front();
+  const std::string iteratorName = iteratorType.getOriginalSubType() + "_" + itemType.getName();
   const std::string functionName = "_mf__" + iteratorName + "__bool__hasNext";
-  return getFunction(functionName.c_str(), builder.getInt1Ty(), {builder.getPtrTy()});
+  return getFunction(functionName.c_str(), builder.getInt1Ty(), builder.getPtrTy());
+}
+
+llvm::Function *StdFunctionManager::getIteratorNextFct(const SymbolType &iteratorType, Scope *accessScope) const {
+  assert(iteratorType.is(TY_STRUCT));
+  const SymbolType &itemType = iteratorType.getTemplateTypes().front();
+  const std::string iteratorName = iteratorType.getOriginalSubType() + "_" + itemType.getName();
+  const std::string functionName = "_mf__" + iteratorName + "__" + itemType.getName() + "__next";
+  llvm::Type *returnType = itemType.toLLVMType(context, accessScope);
+  return getFunction(functionName.c_str(), returnType, builder.getPtrTy());
 }
 
 llvm::Function *StdFunctionManager::getFunction(const char *funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
@@ -55,9 +74,8 @@ llvm::Function *StdFunctionManager::getFunction(const char *funcName, llvm::Type
   return module->getFunction(funcName);
 }
 
-llvm::Function *StdFunctionManager::getProcedure(const char *procName, llvm::ArrayRef<llvm::Type *> args,
-                                                 bool varArg /*=false*/) const {
-  return getFunction(procName, builder.getVoidTy(), args, varArg);
+llvm::Function *StdFunctionManager::getProcedure(const char *procName, llvm::ArrayRef<llvm::Type *> args) const {
+  return getFunction(procName, builder.getVoidTy(), args, false);
 }
 
 } // namespace spice::compiler

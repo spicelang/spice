@@ -1,4 +1,4 @@
-import "std/iterators/iterable";
+import "std/iterator/iterable";
 
 // Generic type definitions
 type I dyn;

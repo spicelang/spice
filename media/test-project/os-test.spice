@@ -1,10 +1,14 @@
-import "std/iterators/ranges";
+import "std/iterator/number-iterator";
 
 f<int> main() {
-    //dyn it = range(1, 5);
-    //assert it.hasNext();
-    //assert it.next() == 2;
     foreach int i : range(1, 5) {
         printf("%d\n", i);
     }
+
+    /*int[5] testArray = { 1, 6, 3, 11, 5 };
+    foreach int idx, int i : array(testArray) {
+        printf("%d\n", i);
+    }*/
+
+
 }

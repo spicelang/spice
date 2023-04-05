@@ -10,8 +10,8 @@ The package `std/io` offers functions for reading/writing files, etc.
 ## Data
 The package `std/data` offers common data structures for organizing data, etc.
 
-## Iterators
-The package `std/iterators` offers the `Iterable` interface as well as commonly used iterators.
+## Iterator
+The package `std/iterator` offers the `Iterable` interface as well as commonly used iterators.
 
 ## Math
 The package `std/math` offers functions for mathematical operations, etc.

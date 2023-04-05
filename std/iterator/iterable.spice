@@ -1,3 +1,5 @@
+import "std/data/pair";
+
 // Generic type definitions
 type T dyn;
 
@@ -8,5 +10,6 @@ type T dyn;
 public type Iterable<T> interface {
     f<bool> hasNext();
     f<T&> next();
+    f<Pair<unsigned long, T&>> nextIdx();
     f<T&> get();
 }

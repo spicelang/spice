@@ -1,4 +1,4 @@
-import "std/iterators/iterable";
+import "std/iterator/iterable";
 
 // Generic type definitions
 type T int|long|short;
@@ -39,6 +39,18 @@ public inline f<T> NumberIterator.next() {
 }
 
 /**
+ * Returns the current number as well as the current iterator index and moves the cursor
+ * to the next item.
+ *
+ * @return pair of index and item
+ */
+public inline f<Pair<unsigned long, T>> NumberIterator.nextIdx() {
+    assert this.hasNext();
+    T currentNumber = (T) (this.lowerBound + this.cursor++);
+    return Pair<unsigned long, T>(this.cursor, currentNumber);
+}
+
+/**
  * Returns the current number of the number range
  */
 public inline f<T> NumberIterator.get() {
@@ -48,19 +60,26 @@ public inline f<T> NumberIterator.get() {
 /**
  * Advances the cursor by the given offset
  *
- * @param it Number iterator
+ * @param it NumberIterator
  * @param offset Offset
  */
-public p operator+=<T>(NumberIterator<T>& it, T offset) {
+public inline p operator+=<T>(NumberIterator<T>& it, T offset) {
     it.cursor += offset;
 }
 
 /**
  * Move the cursor back by the given offset
  *
- * @param it Number iterator
+ * @param it NumberIterator
  * @param offset Offset
  */
-public p operator-=<T>(NumberIterator<T>& it, T offset) {
+public inline p operator-=<T>(NumberIterator<T>& it, T offset) {
     it.cursor -= offset;
+}
+
+/**
+ * Convenience wrapper for creating a simple number iterator
+ */
+public inline f<NumberIterator<T>> range<T>(T begin, T end) {
+    return NumberIterator<T>(begin, end);
 }

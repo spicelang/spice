@@ -80,7 +80,8 @@ void TypeMatcher::substantiateTypeWithTypeMapping(SymbolType &symbolType, const 
     std::vector<SymbolType> templateTypes = symbolType.getBaseType().getTemplateTypes();
     // Substantiate every template type
     for (SymbolType &templateType : templateTypes)
-      substantiateTypeWithTypeMapping(templateType, typeMapping);
+      if (templateType.hasAnyGenericParts())
+        substantiateTypeWithTypeMapping(templateType, typeMapping);
     // Attach the list of concrete template types to the symbol type
     symbolType.setBaseTemplateTypes(templateTypes);
   }

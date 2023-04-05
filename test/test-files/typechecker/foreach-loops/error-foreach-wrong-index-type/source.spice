@@ -1,4 +1,4 @@
-import "std/iterators/ranges";
+import "std/iterator/number-iterator";
 
 f<int> main() {
     foreach double i, int item : range(1s, 12s) {

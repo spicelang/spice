@@ -1,4 +1,4 @@
-import "std/iterators/ranges";
+import "std/iterator/number-iterator";
 
 f<int> main() {
     NumberIterator<int> itInt = range(1, 10);

@@ -201,8 +201,29 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   SymbolType iteratorType = iteratorAssignNode->getEvaluatedSymbolType(manIdx);
   llvm::Value *iterator = resolveAddress(iteratorAssignNode);
 
+  // Resolve item type
+  DeclStmtNode *itemDeclNode = node->itemDecl();
+  SymbolType itemType = itemDeclNode->getEvaluatedSymbolType(manIdx);
+
+  // Get iterator functions
+  llvm::Function *getFct = stdFunctionManager.getIteratorGetFct(iteratorType, currentScope);
+  llvm::Function *hasNextFct = stdFunctionManager.getIteratorHasNextFct(iteratorType);
+  llvm::Function *nextFct = stdFunctionManager.getIteratorNextFct(iteratorType, currentScope);
+
   // Allocate space for item
   visit(node->itemDecl());
+  // Get address of item variable
+  llvm::Value *varAddress = itemDeclNode->entries.at(manIdx)->getAddress();
+  assert(varAddress != nullptr);
+
+  // Call .get() on iterator to get the first value
+  llvm::Value *value = builder.CreateCall(getFct, iterator);
+  // In case this returns a reference, load the address
+  const SymbolType &getReturnType = iteratorType.getTemplateTypes().front();
+  if (getReturnType.isRef())
+    value = builder.CreateLoad(getReturnType.getContainedTy().toLLVMType(context, nullptr), value);
+  // Store the first value to the item variable
+  builder.CreateStore(value, varAddress);
 
   // Create jump from original to head node
   insertJump(bHead);
@@ -210,10 +231,9 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Switch to head block
   switchToBlock(bHead);
   // Call .hasNext() on iterator
-  llvm::Function *hasNextFunction = stdFunctionManager.getIteratorHasNextFct(iteratorType);
-  llvm::Value *condValue = builder.CreateCall(hasNextFunction, iterator);
+  llvm::Value *hasNext = builder.CreateCall(hasNextFct, iterator);
   // Create conditional jump from head to body or exit block
-  insertCondJump(condValue, bBody, bExit);
+  insertCondJump(hasNext, bBody, bExit);
 
   // Switch to body block
   switchToBlock(bBody);
@@ -225,7 +245,13 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Switch to tail block
   switchToBlock(bTail);
   // Call .next() on iterator
-  // ToDo: implement
+  value = builder.CreateCall(nextFct, iterator);
+  // In case this returns a reference, load the address
+  const SymbolType &nextReturnType = iteratorType.getTemplateTypes().front();
+  if (nextReturnType.isRef())
+    value = builder.CreateLoad(nextReturnType.getContainedTy().toLLVMType(context, nullptr), value);
+  // Store the first value to the item variable
+  builder.CreateStore(value, varAddress);
   // Create jump from tail to head block
   insertJump(bHead);
 

@@ -26,7 +26,9 @@ public:
   [[nodiscard]] llvm::Function *getPthreadSelf() const;
   [[nodiscard]] llvm::Function *getPthreadJoin() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
+  [[nodiscard]] llvm::Function *getIteratorGetFct(const SymbolType &iteratorType, Scope *accessScope) const;
   [[nodiscard]] llvm::Function *getIteratorHasNextFct(const SymbolType &iteratorType) const;
+  [[nodiscard]] llvm::Function *getIteratorNextFct(const SymbolType &iteratorType, Scope *accessScope) const;
 
 private:
   // Members
@@ -37,7 +39,7 @@ private:
   // Private methods
   llvm::Function *getFunction(const char *funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
                               bool varArg = false) const;
-  [[nodiscard]] llvm::Function *getProcedure(const char *procName, llvm::ArrayRef<llvm::Type *> args, bool varArg = false) const;
+  [[nodiscard]] llvm::Function *getProcedure(const char *procName, llvm::ArrayRef<llvm::Type *> args) const;
 };
 
 } // namespace spice::compiler
