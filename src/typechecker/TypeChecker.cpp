@@ -191,6 +191,15 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Visit body
   visit(node->body());
 
+  // Set .get(), .hasNext() and .next() functions to used
+  Scope *matchScope = iteratorType.getBodyScope();
+  Function *getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, false, node);
+  assert(getFct != nullptr);
+  Function *hasNextFct = FunctionManager::matchFunction(matchScope, "hasNext", iteratorType, {}, false, node);
+  assert(hasNextFct != nullptr);
+  Function *nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, false, node);
+  assert(nextFct != nullptr);
+
   // Leave foreach body scope
   currentScope = node->bodyScope->parent;
 

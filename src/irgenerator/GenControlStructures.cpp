@@ -210,7 +210,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   llvm::Function *hasNextFct = stdFunctionManager.getIteratorHasNextFct(iteratorType);
   llvm::Function *nextFct = stdFunctionManager.getIteratorNextFct(iteratorType, currentScope);
 
-  // Allocate space for item
+  // Visit item declaration
   visit(node->itemDecl());
   // Get address of item variable
   llvm::Value *varAddress = itemDeclNode->entries.at(manIdx)->getAddress();

@@ -35,7 +35,8 @@ public inline const f<bool> NumberIterator.hasNext() {
  */
 public inline f<T> NumberIterator.next() {
     assert this.hasNext();
-    return (T) (this.lowerBound + this.cursor++);
+    this.cursor++;
+    return (T) (this.lowerBound + this.cursor);
 }
 
 /**
@@ -46,7 +47,8 @@ public inline f<T> NumberIterator.next() {
  */
 public inline f<Pair<unsigned long, T>> NumberIterator.nextIdx() {
     assert this.hasNext();
-    T currentNumber = (T) (this.lowerBound + this.cursor++);
+    this.cursor++;
+    T currentNumber = (T) (this.lowerBound + this.cursor);
     return Pair<unsigned long, T>(this.cursor, currentNumber);
 }
 

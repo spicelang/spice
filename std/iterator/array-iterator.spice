@@ -34,7 +34,20 @@ public inline const f<bool> ArrayIterator.hasNext() {
  */
 public inline f<I&> ArrayIterator.next() {
     assert this.hasNext();
-    return this.array[this.cursor++];
+    this.cursor++;
+    return this.array[this.cursor];
+}
+
+/**
+ * Returns the current item as well as the current iterator index and moves the cursor
+ * to the next item.
+ *
+ * @return pair of index and item
+ */
+public inline f<Pair<unsigned long, I&>> ArrayIterator.nextIdx() {
+    assert this.hasNext();
+    this.cursor++;
+    return Pair<unsigned long, I&>(this.cursor, this.array[this.cursor]);
 }
 
 /**

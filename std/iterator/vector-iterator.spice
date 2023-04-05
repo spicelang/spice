@@ -34,12 +34,20 @@ public inline const f<bool> VectorIterator.hasNext() {
  */
 public inline f<I&> VectorIterator.next() {
     assert this.hasNext();
-    return this.vector.get(this.cursor++);
+    this.cursor++;
+    return this.vector.get(this.cursor);
 }
 
+/**
+ * Returns the current item as well as the current iterator index and moves the cursor
+ * to the next item.
+ *
+ * @return pair of index and item
+ */
 public inline f<Pair<unsigned long, I&>> VectorIterator.nextIdx() {
     assert this.hasNext();
-    I currentItem = this.vector.get(this.cursor++);
+    this.cursor++;
+    I currentItem = this.vector.get(this.cursor);
     return Pair<unsigned long, I&>(this.cursor, currentItem);
 }
 
