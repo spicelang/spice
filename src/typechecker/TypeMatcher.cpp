@@ -40,7 +40,8 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
         return false;
 
       // Add to type mapping
-      typeMapping.insert({genericTypeName, requestedType});
+      const SymbolType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : requestedType;
+      typeMapping.insert({genericTypeName, newMappingType});
 
       return true; // The type was successfully matched, by enriching the type mapping
     }

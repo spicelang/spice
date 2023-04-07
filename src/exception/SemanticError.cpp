@@ -118,7 +118,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
   case CIRCULAR_DEPENDENCY:
     return "Circular import detected";
   case INVALID_MEMBER_ACCESS:
-    return "Member access is only allowed on enums and Strings";
+    return "Member access is only allowed on structs and Strings";
   case SCOPE_ACCESS_ONLY_IMPORTS:
     return "Scope access is only allowed on imports";
   case UNKNOWN_DATATYPE:

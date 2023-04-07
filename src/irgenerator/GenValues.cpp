@@ -119,17 +119,18 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
       const std::string identifier = node->functionNameFragments.at(i);
       // Retrieve field entry
       SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
-      assert(fieldEntry != nullptr && fieldEntry->getType().is(TY_STRUCT));
+      assert(fieldEntry != nullptr);
+      SymbolType fieldEntryType = fieldEntry->getType();
+      assert(fieldEntryType.isBaseType(TY_STRUCT));
       // Get struct type and scope
-      structScope = fieldEntry->getType().getBodyScope();
+      structScope = fieldEntryType.getBaseType().getBodyScope();
       assert(structScope != nullptr);
       // Get address of field
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
       thisPtr = builder.CreateInBoundsGEP(structTy, thisPtr, indices);
       // Auto de-reference pointer and get new struct type
-      SymbolType fieldEntryType = fieldEntry->getType();
       autoDeReferencePtr(thisPtr, fieldEntryType, structScope->parent);
-      structTy = fieldEntry->getType().getBaseType().toLLVMType(context, structScope->parent);
+      structTy = fieldEntryType.getBaseType().toLLVMType(context, structScope->parent);
     }
 
     // Add 'this' pointer to the front of the argument list

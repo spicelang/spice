@@ -35,6 +35,7 @@ public inline const f<bool> VectorIterator.hasNext() {
 public inline f<I&> VectorIterator.next() {
     assert this.hasNext();
     this.cursor++;
+    printf("Next: %d\n", this.vector.get(this.cursor));
     return this.vector.get(this.cursor);
 }
 
@@ -55,6 +56,7 @@ public inline f<Pair<unsigned long, I&>> VectorIterator.nextIdx() {
  * Returns the current item of the vector iterator
  */
 public inline f<I&> VectorIterator.get() {
+    printf("Get: %d\n", this.cursor);
     return this.vector.get(this.cursor);
 }
 

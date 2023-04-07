@@ -217,11 +217,9 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   assert(varAddress != nullptr);
 
   // Call .get() on iterator to get the first value
-  llvm::Value *value = builder.CreateCall(getFct, iterator);
-  // In case this returns a reference, load the address
   const SymbolType &getReturnType = iteratorType.getTemplateTypes().front();
-  if (getReturnType.isRef())
-    value = builder.CreateLoad(getReturnType.getContainedTy().toLLVMType(context, nullptr), value);
+  llvm::Value *value = builder.CreateCall(getFct, iterator);
+  value = builder.CreateLoad(getReturnType.toLLVMType(context, nullptr), value);
   // Store the first value to the item variable
   builder.CreateStore(value, varAddress);
 
@@ -245,11 +243,9 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Switch to tail block
   switchToBlock(bTail);
   // Call .next() on iterator
-  value = builder.CreateCall(nextFct, iterator);
-  // In case this returns a reference, load the address
   const SymbolType &nextReturnType = iteratorType.getTemplateTypes().front();
-  if (nextReturnType.isRef())
-    value = builder.CreateLoad(nextReturnType.getContainedTy().toLLVMType(context, nullptr), value);
+  value = builder.CreateCall(nextFct, iterator);
+  value = builder.CreateLoad(nextReturnType.toLLVMType(context, nullptr), value);
   // Store the first value to the item variable
   builder.CreateStore(value, varAddress);
   // Create jump from tail to head block

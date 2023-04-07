@@ -1,14 +1,19 @@
-import "std/iterator/number-iterator";
+//import "std/iterator/number-iterator";
+import "std/runtime/iterator_rt";
 
 f<int> main() {
-    foreach int i : range(1, 5) {
-        printf("%d\n", i);
-    }
-
-    /*int[5] testArray = { 1, 6, 3, 11, 5 };
-    foreach int idx, int i : array(testArray) {
+    /*foreach int i : range(1, 5) {
         printf("%d\n", i);
     }*/
 
-
+    Vector<int> vi = Vector<int>();
+    vi.pushBack(123);
+    vi.pushBack(4321);
+    printf("Item 1: %d\n", vi.get(0));
+    printf("Item 2: %d\n", vi.get(1));
+    dyn it = iterate(vi);
+    //printf("Get: %d\n", it.get());
+    /*foreach int i : it {
+        printf("Item: %d\n", i);
+    }*/
 }

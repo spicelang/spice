@@ -1523,18 +1523,18 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   if (node->hasTemplateTypes)
     throw SemanticError(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls");
 
-  // Traverse through structs - the first fragment is already looked up and the last one is the function name
+  // Traverse through structs - the first fragment is already looked up and the last one is the method name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
     const std::string identifier = node->functionNameFragments.at(i);
 
     // Retrieve field entry
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
-    if (!fieldEntry->getType().is(TY_STRUCT))
+    if (!fieldEntry->getType().isBaseType(TY_STRUCT))
       throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot call a method on '" + identifier + "', since it is no struct");
     fieldEntry->used = true;
 
     // Get struct type and scope
-    data.thisType = fieldEntry->getType();
+    data.thisType = fieldEntry->getType().getBaseType();
     structScope = data.thisType.getBodyScope();
     assert(structScope != nullptr);
   }

@@ -4,16 +4,12 @@ import "std/data/pair";
 type T dyn;
 
 /**
- * The Iterable interface must be implemented in order to be handled as an iterator by Spice. For instance, all elements,
- * implementing the Iterable interface can be looped over by a standard foreach loop.
+ * The Iterable interface must be implemented in order to be handled as an iterator by Spice. For instance,
+ * all elements, implementing the Iterable interface can be looped over by a standard foreach loop.
  */
 public type Iterable<T> interface {
-    // Check if another item is available
-    f<bool> hasNext();
-    // Advance the cursor and return the new item
-    f<T&> next();
-    // Advance the cursor and return the new index and item
-    f<Pair<unsigned long, T&>> nextIdx();
-    // Get the current item
-    f<T&> get();
+    f<bool> hasNext();                    // Check if another item is available
+    f<T&> next();                         // Advance the cursor and return the new item
+    f<Pair<unsigned long, T&>> nextIdx(); // Advance the cursor and return the new index and item
+    f<T&> get();                          // Get the current item
 }
