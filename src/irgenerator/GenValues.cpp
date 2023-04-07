@@ -202,10 +202,11 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
   if (data.isConstructorCall)
     return ExprResult{.ptr = thisPtr};
 
-  // In case this is a callee, returning a reference, load the address
+  // In case this is a callee, returning a reference, return the address
   if (data.callee->returnType.isRef())
-    result = builder.CreateLoad(data.callee->returnType.getContainedTy().toLLVMType(context, nullptr), result);
+    return ExprResult{.ptr = result};
 
+  // Otherwise return the value
   return ExprResult{.value = result};
 }
 

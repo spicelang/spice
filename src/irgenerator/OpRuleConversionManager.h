@@ -121,6 +121,7 @@ private:
   // Private methods
   bool callsOverloadedOpFct(const ASTNode *node, size_t opIdx) const;
   ExprResult callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhsV, auto &rhsV, auto &lhsP, auto &rhsP, size_t opIdx = 0);
+  [[nodiscard]] llvm::Value *generateIToFpCast(const SymbolType &srcType, llvm::Value *srcValue, llvm::Type *targetType) const;
   [[nodiscard]] static inline uint32_t getTypeCombination(const SymbolType &lhsTy, const SymbolType &rhsTy) {
     return COMB(lhsTy.getSuperType(), rhsTy.getSuperType());
   }

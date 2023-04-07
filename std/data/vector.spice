@@ -95,6 +95,7 @@ public p Vector.pushBack<T>(const T& item) {
 public f<T&> Vector.get(unsigned long index) {
     assert index < this.size;
     unsafe {
+        printf("Get: %f\n", this.contents[index]);
         return this.contents[index];
     }
 }

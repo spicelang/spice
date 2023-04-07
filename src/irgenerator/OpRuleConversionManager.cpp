@@ -469,11 +469,11 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFpCast(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpOEQ(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOEQ(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -492,7 +492,7 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
     return {.value = builder.CreateICmpEQ(lhsV(), rhsInt)};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), lhsT);
     return {.value = builder.CreateFCmpOEQ(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -511,7 +511,7 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
     return {.value = builder.CreateICmpEQ(lhsV(), rhsShort)};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOEQ(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -585,11 +585,11 @@ ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprRes
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFpCast(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpONE(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpONE(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -608,7 +608,7 @@ ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprRes
     return {.value = builder.CreateICmpNE(lhsV(), rhsInt)};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpONE(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -627,7 +627,7 @@ ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprRes
     return {.value = builder.CreateICmpNE(lhsV(), rhsShort)};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpONE(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -686,15 +686,19 @@ ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult 
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFpCast(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpOLT(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLT(lhsFP, rhsV())};
   }
-  case COMB(TY_INT, TY_INT):
-    return {.value = builder.CreateICmpSLT(lhsV(), rhsV())};
+  case COMB(TY_INT, TY_INT): {
+    if (lhsSTy.isSigned() && rhsSTy.isSigned())
+      return {.value = builder.CreateICmpSLT(lhsV(), rhsV())};
+    else
+      return {.value = builder.CreateICmpULT(lhsV(), rhsV())};
+  }
   case COMB(TY_INT, TY_SHORT): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, true);
     return {.value = builder.CreateICmpSLT(lhsV(), rhsInt)};
@@ -704,7 +708,7 @@ ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult 
     return {.value = builder.CreateICmpSLT(lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLT(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -718,7 +722,7 @@ ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult 
     return {.value = builder.CreateICmpSLT(lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLT(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -747,11 +751,11 @@ ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResu
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFpCast(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpOGT(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGT(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -765,7 +769,7 @@ ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResu
     return {.value = builder.CreateICmpSGT(lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGT(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -779,7 +783,7 @@ ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResu
     return {.value = builder.CreateICmpSGT(lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGT(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -809,11 +813,11 @@ ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprRe
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFpCast(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpOLE(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLE(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -827,7 +831,7 @@ ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprRe
     return {.value = builder.CreateICmpSLE(lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLE(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -841,7 +845,7 @@ ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprRe
     return {.value = builder.CreateICmpSLE(lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLE(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -871,11 +875,11 @@ ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, Exp
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFpCast(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpOGE(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGE(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -889,7 +893,7 @@ ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, Exp
     return {.value = builder.CreateICmpSGE(lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGE(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -903,7 +907,7 @@ ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, Exp
     return {.value = builder.CreateICmpSGE(lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGE(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -1014,11 +1018,11 @@ ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult 
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFpCast(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFAdd(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFAdd(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -1034,7 +1038,7 @@ ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult 
   case COMB(TY_INT, TY_PTR):
     return {.value = builder.CreateGEP(rhsSTy.getContainedTy().toLLVMType(context, accessScope), rhsV(), lhsV())};
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFAdd(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -1050,7 +1054,7 @@ ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult 
   case COMB(TY_SHORT, TY_PTR):
     return {.value = builder.CreateGEP(rhsSTy.getContainedTy().toLLVMType(context, accessScope), rhsV(), lhsV())};
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFAdd(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -1092,11 +1096,11 @@ ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFpCast(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFSub(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFSub(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -1112,7 +1116,7 @@ ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult
   case COMB(TY_INT, TY_PTR):
     return {.value = builder.CreateGEP(rhsSTy.getContainedTy().toLLVMType(context, accessScope), rhsV(), lhsV())};
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFSub(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -1128,7 +1132,7 @@ ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult
   case COMB(TY_SHORT, TY_PTR):
     return {.value = builder.CreateGEP(rhsSTy.getContainedTy().toLLVMType(context, accessScope), rhsV(), lhsV())};
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFSub(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -1170,11 +1174,11 @@ ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFpCast(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFMul(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFMul(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -1188,7 +1192,7 @@ ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &
     return {.value = builder.CreateMul(lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFMul(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -1202,7 +1206,7 @@ ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &
     return {.value = builder.CreateMul(lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFMul(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -1236,11 +1240,11 @@ ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFpCast(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFDiv(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFDiv(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -1254,7 +1258,7 @@ ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &
     return {.value = builder.CreateSDiv(lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFDiv(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -1268,7 +1272,7 @@ ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &
     return {.value = builder.CreateSDiv(lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFpCast(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFDiv(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -1554,6 +1558,13 @@ ExprResult OpRuleConversionManager::callBinaryOperatorOverloadFct(const ASTNode 
     return {};
 
   return {.value = resultValue};
+}
+
+llvm::Value *OpRuleConversionManager::generateIToFpCast(const SymbolType &srcType, llvm::Value *srcValue, llvm::Type *targetType) const {
+  if (srcType.isSigned())
+    return builder.CreateSIToFP(srcValue, targetType);
+  else
+    return builder.CreateUIToFP(srcValue, targetType);
 }
 
 } // namespace spice::compiler
