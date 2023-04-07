@@ -67,7 +67,7 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, ExprResult &exprResu
   return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult, accessScope);
 }
 
-llvm::Value *IRGenerator::resolveValue(SymbolType symbolType, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
+llvm::Value *IRGenerator::resolveValue(const SymbolType& symbolType, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
   // Set access scope to current scope if nullptr gets passed
   if (!accessScope)
     accessScope = currentScope;
@@ -84,15 +84,9 @@ llvm::Value *IRGenerator::resolveValue(SymbolType symbolType, ExprResult &exprRe
 
   assert(exprResult.ptr != nullptr);
 
-  // If we have a reference, load the referenced value ptr first
-  if (symbolType.isRef()) {
-    llvm::Type *valueTy = symbolType.toLLVMType(context, accessScope);
-    exprResult.ptr = builder.CreateLoad(valueTy, exprResult.ptr);
-    symbolType = symbolType.getContainedTy();
-  }
-
   // Load the value from the pointer
-  llvm::Type *valueTy = symbolType.toLLVMType(context, accessScope);
+  const SymbolType pointeeSTy = symbolType.isRef() ? symbolType.getContainedTy() : symbolType;
+  llvm::Type *valueTy = pointeeSTy.toLLVMType(context, accessScope);
   exprResult.value = builder.CreateLoad(valueTy, exprResult.ptr);
 
   return exprResult.value;

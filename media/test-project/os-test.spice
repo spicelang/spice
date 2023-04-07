@@ -1,32 +1,13 @@
-import "std/data/vector";
-
-f<int> main() {
-    Vector<double> v1 = Vector<double>(3);
-    v1.pushBack(1.2);
-    v1.pushBack(7.4964598);
-    v1.pushBack(5.3);
-    v1.pushBack(-238974.23);
-    v1.pushBack(23234.2);
-    v1.pushBack(-1234.9);
-    v1.pushBack(0.0);
-    printf("Vector size: %d\n", v1.getSize());
-    printf("Vector capacity: %d\n", v1.getCapacity());
-    printf("Vector item 5: %f\n", v1.get(5l));
-}
-
 //import "std/iterator/number-iterator";
-//import "std/runtime/iterator_rt";
-/*import "std/data/vector";
+import "std/runtime/iterator_rt";
 
 f<int> main() {
     Vector<int> vi = Vector<int>();
     vi.pushBack(123);
     vi.pushBack(4321);
-    printf("Item 1: %d\n", vi.get(0));
-    printf("Item 2: %d\n", vi.get(1));
-    //dyn it = iterate(vi);
-    //printf("Get: %d\n", it.get());
+    dyn it = iterate(vi);
+    printf("Get: %d\n", it.get());
     /*foreach int i : it {
         printf("Item: %d\n", i);
     }*/
-}*/
+}

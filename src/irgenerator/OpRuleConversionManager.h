@@ -121,7 +121,15 @@ private:
   // Private methods
   bool callsOverloadedOpFct(const ASTNode *node, size_t opIdx) const;
   ExprResult callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhsV, auto &rhsV, auto &lhsP, auto &rhsP, size_t opIdx = 0);
-  [[nodiscard]] llvm::Value *generateIToFpCast(const SymbolType &srcType, llvm::Value *srcValue, llvm::Type *targetType) const;
+  [[nodiscard]] llvm::Value *generateIToFp(const SymbolType &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const;
+  [[nodiscard]] llvm::Value *generateLT(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                        llvm::Value *rhsV) const;
+  [[nodiscard]] llvm::Value *generateGT(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                        llvm::Value *rhsV) const;
+  [[nodiscard]] llvm::Value *generateLE(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                        llvm::Value *rhsV) const;
+  [[nodiscard]] llvm::Value *generateGE(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                        llvm::Value *rhsV) const;
   [[nodiscard]] static inline uint32_t getTypeCombination(const SymbolType &lhsTy, const SymbolType &rhsTy) {
     return COMB(lhsTy.getSuperType(), rhsTy.getSuperType());
   }
