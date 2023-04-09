@@ -13,9 +13,9 @@ f<int> main() {
     assert itInt.hasNext();
     itInt -= 2;
     assert itInt.get() == 3;
-    dyn idxAndValue = itInt.nextIdx();
-    assert idxAndValue.getFirst() == 4l;
-    assert idxAndValue.getSecond() == 4;
+    dyn idxAndValueInt = itInt.nextIdx();
+    assert idxAndValueInt.getFirst() == 4l;
+    assert idxAndValueInt.getSecond() == 4;
     itInt += 6;
     assert itInt.get() == 10;
     assert !itInt.hasNext();
@@ -32,9 +32,9 @@ f<int> main() {
     assert itLong.get() == 3l;
     itLong += 8l;
     assert itLong.get() == 11l;
-    dyn idxAndValue = itLong.nextIdx();
-    assert idxAndValue.getFirst() == 4l;
-    assert idxAndValue.getSecond() == 15l;
+    dyn idxAndValueLong = itLong.nextIdx();
+    assert idxAndValueLong.getFirst() == 4l;
+    assert idxAndValueLong.getSecond() == 15l;
     assert itLong.hasNext();
     itLong += 30l;
     assert itLong.get() == 45;

@@ -541,7 +541,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     AssignExprNode *assignment = node->args().at(placeholderCount);
     // Visit assignment
     SymbolType argType = std::any_cast<ExprResult>(visit(assignment)).type;
-    argType = argType.removeReferenceWrappers();
+    argType = argType.removeReferenceWrapper();
 
     switch (node->templatedString.at(index + 1)) {
     case 'c': {
@@ -615,7 +615,7 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
   SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
-  argType = argType.removeReferenceWrappers();
+  argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.isArray())
@@ -635,7 +635,7 @@ std::any TypeChecker::visitJoinCall(JoinCallNode *node) {
   for (AssignExprNode *assignExpr : node->assignExpressions()) {
     // Visit assign expression
     SymbolType assignExprType = std::any_cast<ExprResult>(visit(assignExpr)).type;
-    assignExprType = assignExprType.removeReferenceWrappers();
+    assignExprType = assignExprType.removeReferenceWrapper();
     // Check if type is byte* or byte*[]
     if (assignExprType == bytePtr && assignExprType.isArrayOf(bytePtr))
       throw SemanticError(assignExpr, JOIN_ARG_MUST_BE_TID,
@@ -1093,7 +1093,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     memberEntry->used = true;
 
     // Remove reference wrappers
-    memberType = memberType.removeReferenceWrappers();
+    memberType = memberType.removeReferenceWrapper();
 
     // Overwrite type and entry of left side with member type and entry
     lhsType = memberType;

@@ -1,10 +1,6 @@
 import "std/iterator/number-iterator";
 
 f<int> main() {
-    int test = 123;
-    int& testRef = test;
-    bool equal = test == testRef;
-
     // Create iterator with range convinience helper
     NumberIterator<int> itInt = range(1, 10);
 
