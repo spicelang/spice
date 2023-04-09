@@ -1,79 +1,4 @@
-import "std/iterator/iterable";
-
-type T short|int|long;
-
-type MockIterator<T> struct : Iterable<T> {
-    T item
-    unsigned long cursor
-}
-
-p MockIterator.ctor(const T& initialItem) {
-    this.item = initialItem;
-    this.cursor = 0l;
-}
-
-f<bool> MockIterator.hasNext() {
-    return true;
-}
-
-f<T&> MockIterator.next() {
-    return this.item;
-}
-
-f<Pair<unsigned long, T&>> MockIterator.nextIdx() {
-    return Pair<unsigned long, T>(0l, this.item);
-}
-
-f<T&> MockIterator.get() {
-    return this.item;
-}
-
-f<int> main() {
-    unsigned int counter = 0;
-    foreach dyn item : MockIterator<short>(543s) {
-        if (counter >= 10) {
-            break;
-        }
-        printf("Demo item: %d\n", item);
-        counter++;
-    }
-}
-
-/*import "std/iterator/iterable";
-
-type MockIterator struct : Iterable<int> {
-    int item
-    unsigned long cursor
-}
-
-p MockIterator.ctor() {
-    this.cursor = 0l;
-}
-
-f<bool> MockIterator.hasNext() {
-    return true;
-}
-
-f<int&> MockIterator.next() {
-    return this.item;
-}
-
-f<Pair<unsigned long, int&>> MockIterator.nextIdx() {
-    return Pair<unsigned long, int&>(0l, this.item);
-    //return nil<Pair<unsigned long, int&>>;
-}
-
-f<int&> MockIterator.get() {
-    return this.item;
-}
-
-f<int> main() {
-    foreach dyn demoItem : MockIterator() {
-        printf("Demo item\n");
-    }
-}*/
-
-/*import "std/iterator/number-iterator";
+import "std/iterator/number-iterator";
 
 f<int> main() {
     // Create iterator with range convinience helper
@@ -89,7 +14,7 @@ f<int> main() {
     itInt -= 2;
     assert itInt.get() == 3;
     dyn idxAndValueInt = itInt.nextIdx();
-    assert idxAndValueInt.getFirst() == 4l;
+    /*assert idxAndValueInt.getFirst() == 4l;
     assert idxAndValueInt.getSecond() == 4;
     itInt += 6;
     assert itInt.get() == 10;
@@ -113,23 +38,7 @@ f<int> main() {
     assert itLong.hasNext();
     itLong += 30l;
     assert itLong.get() == 45;
-    assert !itLong.hasNext();
+    assert !itLong.hasNext();*/
 
     printf("All assertions passed!");
-}*/
-
-/*import "std/runtime/iterator_rt";
-
-f<int> main() {
-    Vector<int> vi = Vector<int>();
-    vi.pushBack(123);
-    vi.pushBack(4321);
-    dyn it = iterate(vi);
-    printf("Get: %d\n", it.get());
-    printf("Get: %d\n", it.get());
-    it.next();
-    printf("Get: %d\n", it.get());
-    /*foreach int i : it {
-        printf("Item: %d\n", i);
-    }*/
-}*/
+}

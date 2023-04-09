@@ -1408,6 +1408,9 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   if ((data.callee->isFunction() || data.callee->isMethodFunction()) && !node->hasReturnValueReceiver())
     warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
 
+  // Remove reference wrappers
+  returnType = returnType.removeReferenceWrapper();
+
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx)};
 }
 

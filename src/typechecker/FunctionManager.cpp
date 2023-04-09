@@ -265,7 +265,6 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
  *
  * @param matchScope Scope to match against
  * @param requestedName Function name requirement
- * @param requestedThisType This type requirement
  * @param templateTypeHints Template types to substantiate generic types
  * @param requestedParamTypes Argument types requirement
  * @param requestedReturnType Return type requirement
@@ -274,11 +273,8 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
  * @return Matched or not
  */
 bool FunctionManager::matchInterfaceMethod(Scope *matchScope, const std::string &requestedName,
-                                                const SymbolType &requestedThisType,
                                                 const std::vector<SymbolType> &requestedParamTypes,
                                                 const SymbolType &requestedReturnType, bool strictSpecifierMatching) {
-  assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT}));
-
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
@@ -304,10 +300,6 @@ bool FunctionManager::matchInterfaceMethod(Scope *matchScope, const std::string 
       TypeMapping &typeMapping = candidate.typeMapping;
       typeMapping.clear();
       typeMapping.reserve(candidate.templateTypes.size());
-
-      // Check 'this' type requirement
-      if (!matchThisType(candidate, requestedThisType, typeMapping, strictSpecifierMatching))
-        continue; // Leave this manifestation and try the next one
 
       // Check arg types requirement
       if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching))

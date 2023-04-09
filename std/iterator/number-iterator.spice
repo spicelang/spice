@@ -1,22 +1,22 @@
 import "std/iterator/iterable";
 
 // Generic type definitions
-type T int|long|short;
+type N int|long|short;
 
 /**
  * A NumberIterator in Spice can be used to iterate over a range of numbers
  */
-public type NumberIterator<T> struct : Iterable<T> {
-    T lowerBound // Inclusive
-    T upperBound // Inclusive
-    unsigned long cursor
+public type NumberIterator<N> struct : Iterable<N> {
+    N currentNumber
+    N lowerBound // Inclusive
+    N upperBound // Inclusive
 }
 
-public p NumberIterator.ctor(T lowerBound, T upperBound) {
+public p NumberIterator.ctor(N lowerBound, N upperBound) {
     assert lowerBound <= upperBound;
+    this.currentNumber = lowerBound;
     this.lowerBound = lowerBound;
     this.upperBound = upperBound;
-    this.cursor = 0l;
 }
 
 /**
@@ -25,7 +25,7 @@ public p NumberIterator.ctor(T lowerBound, T upperBound) {
  * @return true or false
  */
 public inline const f<bool> NumberIterator.hasNext() {
-    return this.lowerBound + this.cursor <= this.upperBound;
+    return this.currentNumber <= this.upperBound;
 }
 
 /**
@@ -33,10 +33,10 @@ public inline const f<bool> NumberIterator.hasNext() {
  *
  * @return current item
  */
-public inline f<T> NumberIterator.next() {
+public inline f<N&> NumberIterator.next() {
     assert this.hasNext();
-    this.cursor++;
-    return (T) (this.lowerBound + this.cursor);
+    this.currentNumber++;
+    return this.currentNumber;
 }
 
 /**
@@ -45,18 +45,18 @@ public inline f<T> NumberIterator.next() {
  *
  * @return pair of index and item
  */
-public inline f<Pair<unsigned long, T>> NumberIterator.nextIdx() {
+public inline f<Pair<unsigned long, N&>> NumberIterator.nextIdx() {
     assert this.hasNext();
-    this.cursor++;
-    T currentNumber = (T) (this.lowerBound + this.cursor);
-    return Pair<unsigned long, T>(this.cursor, currentNumber);
+    this.currentNumber++;
+    unsigned long idx = (unsigned long) this.currentNumber - this.lowerBound;
+    return Pair<unsigned long, N&>(idx, this.currentNumber);
 }
 
 /**
  * Returns the current number of the number range
  */
-public inline f<T> NumberIterator.get() {
-    return (T) (this.lowerBound + this.cursor);
+public inline f<N&> NumberIterator.get() {
+    return this.currentNumber;
 }
 
 /**
@@ -65,10 +65,10 @@ public inline f<T> NumberIterator.get() {
  * @param it NumberIterator
  * @param offset Offset
  */
-public inline p operator+=<T>(NumberIterator<T>& it, T offset) {
-    assert it.cursor + offset <= it.upperBound;
-    assert it.cursor + offset >= it.lowerBound;
-    it.cursor += offset;
+public inline p operator+=<N>(NumberIterator<N>& it, N offset) {
+    assert it.currentNumber + offset <= it.upperBound;
+    assert it.currentNumber + offset >= it.lowerBound;
+    it.currentNumber += offset;
 }
 
 /**
@@ -77,15 +77,15 @@ public inline p operator+=<T>(NumberIterator<T>& it, T offset) {
  * @param it NumberIterator
  * @param offset Offset
  */
-public inline p operator-=<T>(NumberIterator<T>& it, T offset) {
-    assert it.cursor - offset <= it.upperBound;
-    assert it.cursor - offset >= it.lowerBound;
-    it.cursor -= offset;
+public inline p operator-=<N>(NumberIterator<N>& it, N offset) {
+    assert it.currentNumber - offset <= it.upperBound;
+    assert it.currentNumber - offset >= it.lowerBound;
+    it.currentNumber -= offset;
 }
 
 /**
  * Convenience wrapper for creating a simple number iterator
  */
-public inline f<NumberIterator<T>> range<T>(T begin, T end) {
-    return NumberIterator<T>(begin, end);
+public inline f<NumberIterator<N>> range<N>(N begin, N end) {
+    return NumberIterator<N>(begin, end);
 }

@@ -23,7 +23,7 @@ public p VectorIterator.ctor<I>(Vector<I>& vector) {
  *
  * @return true or false
  */
-public inline const f<bool> VectorIterator.hasNext() {
+public inline f<bool> VectorIterator.hasNext() {
     return this.cursor < this.vector.getSize();
 }
 
@@ -47,7 +47,7 @@ public inline f<I&> VectorIterator.next() {
 public inline f<Pair<unsigned long, I&>> VectorIterator.nextIdx() {
     assert this.hasNext();
     this.cursor++;
-    I currentItem = this.vector.get(this.cursor);
+    I& currentItem = this.vector.get(this.cursor);
     return Pair<unsigned long, I&>(this.cursor, currentItem);
 }
 
