@@ -1,5 +1,55 @@
 {
   "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "if:L2C5",
+          "symbols": []
+        }
+      ],
+      "name": "int fibo(int)",
+      "symbols": [
+        {
+          "codeLoc": "L1C13",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "n",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L1C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "fct:main",
+      "symbols": [
+        {
+          "codeLoc": "L6C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    }
+  ],
   "symbols": [
     {
       "codeLoc": "L6C1",

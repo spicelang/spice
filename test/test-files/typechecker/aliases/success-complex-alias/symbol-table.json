@@ -1,5 +1,279 @@
 {
   "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "ctor(const unsigned long)",
+          "symbols": [
+            {
+              "codeLoc": "L8C19",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "initialLength",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "const unsigned long"
+            },
+            {
+              "codeLoc": "L8C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "TestStruct<long>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "printLength()",
+          "symbols": [
+            {
+              "codeLoc": "L12C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "TestStruct<long>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "printLength<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L12C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "TestStruct<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "ctor<generic(T)>(const unsigned long)",
+          "symbols": [
+            {
+              "codeLoc": "L8C19",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "initialLength",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "const unsigned long"
+            },
+            {
+              "codeLoc": "L8C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "TestStruct<generic(T)>*"
+            }
+          ]
+        }
+      ],
+      "name": "struct:TestStruct<long>",
+      "symbols": [
+        {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "printLength:L12",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L8C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L8",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "printLength:L12",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L8C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L8",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L5C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "length",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "unsigned long"
+        },
+        {
+          "codeLoc": "L4C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "_f1",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "long"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "fct:main",
+      "symbols": [
+        {
+          "codeLoc": "L21C13",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "anon.L21C13",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "TestStruct<long>"
+        },
+        {
+          "codeLoc": "L21C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "b",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "TestStruct<long>"
+        },
+        {
+          "codeLoc": "L19C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "a",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "TestStruct<long>"
+        },
+        {
+          "codeLoc": "L18C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "printLength<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L12C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "TestStruct<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "ctor<generic(T)>(const unsigned long)",
+          "symbols": [
+            {
+              "codeLoc": "L8C19",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "initialLength",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "const unsigned long"
+            },
+            {
+              "codeLoc": "L8C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "TestStruct<generic(T)>*"
+            }
+          ]
+        }
+      ],
+      "name": "struct:TestStruct",
+      "symbols": [
+        {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "printLength:L12",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L8C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L8",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L5C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "length",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "unsigned long"
+        },
+        {
+          "codeLoc": "L4C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "_f1",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "generic(T)"
+        }
+      ]
+    }
+  ],
   "symbols": [
     {
       "codeLoc": "L3C1",

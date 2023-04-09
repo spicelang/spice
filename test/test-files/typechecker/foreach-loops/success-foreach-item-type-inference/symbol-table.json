@@ -1,5 +1,559 @@
 {
   "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "bool hasNext()",
+          "symbols": [
+            {
+              "codeLoc": "L14C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "bool"
+            },
+            {
+              "codeLoc": "L14C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<short>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "short& get()",
+          "symbols": [
+            {
+              "codeLoc": "L26C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "short&"
+            },
+            {
+              "codeLoc": "L26C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<short>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "short& next()",
+          "symbols": [
+            {
+              "codeLoc": "L18C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "short&"
+            },
+            {
+              "codeLoc": "L18C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<short>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "std/iterator/iterable::Pair<unsigned long,generic(T)&> nextIdx<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L22C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L22C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "generic(T)& next<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L18C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L18C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "ctor()",
+          "symbols": [
+            {
+              "codeLoc": "L10C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<short>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "generic(T)& get<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L26C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L26C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "ctor<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L10C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "bool hasNext<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L14C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L14C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        }
+      ],
+      "name": "struct:MockIterator<short>",
+      "symbols": [
+        {
+          "codeLoc": "L10C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L10",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L26C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "get:L26",
+          "orderIndex": 6,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L14C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "hasNext:L14",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L18C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "next:L18",
+          "orderIndex": 4,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L18C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "next:L18",
+          "orderIndex": 4,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L14C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "hasNext:L14",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L10C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L10",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L22C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "nextIdx:L22",
+          "orderIndex": 5,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L7C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "cursor",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "unsigned long"
+        },
+        {
+          "codeLoc": "L26C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "get:L26",
+          "orderIndex": 6,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L6C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "item",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "short"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "foreach:L31C5",
+          "symbols": [
+            {
+              "codeLoc": "L31C24",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "anon.L31C24",
+              "orderIndex": 2,
+              "state": "destructed",
+              "type": "MockIterator<short>"
+            },
+            {
+              "codeLoc": "L31C13",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "item",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "short"
+            },
+            {
+              "codeLoc": "L31C5",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "idx",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "name": "fct:main",
+      "symbols": [
+        {
+          "codeLoc": "L30C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "std/iterator/iterable::Pair<unsigned long,generic(T)&> nextIdx<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L22C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L22C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "generic(T)& next<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L18C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L18C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "generic(T)& get<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L26C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L26C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "ctor<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L10C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "bool hasNext<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L14C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L14C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        }
+      ],
+      "name": "struct:MockIterator",
+      "symbols": [
+        {
+          "codeLoc": "L26C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "get:L26",
+          "orderIndex": 6,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L18C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "next:L18",
+          "orderIndex": 4,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L14C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "hasNext:L14",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L10C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L10",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L22C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "nextIdx:L22",
+          "orderIndex": 5,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L7C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "cursor",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "unsigned long"
+        },
+        {
+          "codeLoc": "L6C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "item",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "generic(T)"
+        }
+      ]
+    }
+  ],
   "symbols": [
     {
       "codeLoc": "L5C1",

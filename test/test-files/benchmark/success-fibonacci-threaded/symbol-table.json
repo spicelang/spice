@@ -1,5 +1,107 @@
 {
   "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "if:L2C5",
+          "symbols": []
+        }
+      ],
+      "name": "int fib(int)",
+      "symbols": [
+        {
+          "codeLoc": "L1C12",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "n",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L1C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [
+            {
+              "captures": [],
+              "children": [],
+              "name": "thread:L10C22",
+              "symbols": [
+                {
+                  "codeLoc": "L11C13",
+                  "isGlobal": false,
+                  "isVolatile": false,
+                  "name": "result",
+                  "orderIndex": 0,
+                  "state": "destructed",
+                  "type": "int"
+                }
+              ]
+            }
+          ],
+          "name": "for:L9C5",
+          "symbols": [
+            {
+              "codeLoc": "L9C9",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "i",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "name": "fct:main",
+      "symbols": [
+        {
+          "codeLoc": "L8C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "threads",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "byte*[8]"
+        },
+        {
+          "codeLoc": "L7C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "threadCount",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L6C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    }
+  ],
   "symbols": [
     {
       "codeLoc": "L6C1",

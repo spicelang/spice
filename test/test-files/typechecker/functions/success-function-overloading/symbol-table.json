@@ -1,5 +1,125 @@
 {
   "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [],
+      "name": "double calledFunction(string)",
+      "symbols": [
+        {
+          "codeLoc": "L7C26",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "testString",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "string"
+        },
+        {
+          "codeLoc": "L7C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "double calledFunction(int,bool)",
+      "symbols": [
+        {
+          "codeLoc": "L1C44",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "optionalArg",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "bool"
+        },
+        {
+          "codeLoc": "L1C26",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "mandatoryArg",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L1C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "double calledFunction(int)",
+      "symbols": [
+        {
+          "codeLoc": "L1C44",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "optionalArg",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "bool"
+        },
+        {
+          "codeLoc": "L1C26",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "mandatoryArg",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L1C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "fct:main",
+      "symbols": [
+        {
+          "codeLoc": "L13C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "res",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "double"
+        },
+        {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    }
+  ],
   "symbols": [
     {
       "codeLoc": "L12C1",
