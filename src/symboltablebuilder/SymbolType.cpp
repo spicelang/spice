@@ -22,6 +22,8 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
   // Do not allow pointers of dyn
   if (typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
+  if (typeChain.back().superType == TY_REF)
+    throw SemanticError(node, REF_POINTERS_ARE_NOT_ALLOWED, "Pointers to references are not allowed. Use pointer instead");
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_PTR, "", {}, {}});
@@ -40,7 +42,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
     throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
   // Do not allow references of references
   if (typeChain.back().superType == TY_REF)
-    throw SemanticError(node, DOUBLE_REFERENCES_NOT_ALLOWED, "References of references are not allowed");
+    return *this;
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_REF, "", {}, {}});
@@ -105,8 +107,10 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
 
   // Create new type chain
   TypeChain newTypeChain = newBaseType.typeChain;
+  const bool doubleRef = newTypeChain.back().superType == TY_REF && typeChain.back().superType == TY_REF;
   for (size_t i = 1; i < typeChain.size(); i++)
-    newTypeChain.push_back(typeChain.at(i));
+    if (!doubleRef || i > 1)
+      newTypeChain.push_back(typeChain.at(i));
 
   // Create new specifiers
   TypeSpecifiers newSpecifiers = specifiers.merge(newBaseType.specifiers);

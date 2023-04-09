@@ -325,7 +325,7 @@ bool Scope::doesAllowUnsafeOperations() const { // NOLINT(misc-no-recursion)
  *
  * @return Symbol table as JSON object
  */
-nlohmann::json Scope::getSymbolTableJSON() const {
+nlohmann::json Scope::getSymbolTableJSON() const { // NOLINT(misc-no-recursion)
   nlohmann::json result = symbolTable.toJSON();
 
   // Collect all children

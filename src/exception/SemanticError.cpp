@@ -143,10 +143,10 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Return with value in procedure";
   case DYN_POINTERS_NOT_ALLOWED:
     return "Dyn pointers not allowed";
+  case REF_POINTERS_ARE_NOT_ALLOWED:
+    return "Ref pointers not allowed";
   case DYN_REFERENCES_NOT_ALLOWED:
     return "Dyn references not allowed";
-  case DOUBLE_REFERENCES_NOT_ALLOWED:
-    return "Double references not allowed";
   case DYN_ARRAYS_NOT_ALLOWED:
     return "Dyn arrays not allowed";
   case REFERENCE_WITHOUT_INITIALIZER:

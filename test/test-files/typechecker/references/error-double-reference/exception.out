@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/typechecker/references/error-double-reference/source.spice:4:5:
-Double references not allowed: References of references are not allowed
-
-4  int& &testRef2 = testRef;
-   ^^^^^^

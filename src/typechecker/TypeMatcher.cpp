@@ -13,9 +13,9 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
     candidateType = candidateType.getContainedTy();
   }
 
-  // Remove one reference wrapper of candidate type if required
-  if (candidateType.isRef())
-    candidateType = candidateType.getContainedTy();
+  // Remove reference wrapper of candidate type if required
+  if (!requestedType.isRef())
+    candidateType = candidateType.removeReferenceWrapper();
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts())
@@ -27,7 +27,12 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
     // Check if we know the concrete type for that generic type name already
     if (typeMapping.contains(genericTypeName)) {
-      const SymbolType &knownConcreteType = typeMapping.at(candidateType.getSubType());
+      SymbolType knownConcreteType = typeMapping.at(candidateType.getSubType());
+
+      // Remove reference wrapper of candidate type if required
+      if (!requestedType.isRef())
+        knownConcreteType = knownConcreteType.removeReferenceWrapper();
+
       // Check if the known concrete type matches the requested type
       return knownConcreteType.matches(requestedType, true, !strictSpecifierMatching, true);
     } else {

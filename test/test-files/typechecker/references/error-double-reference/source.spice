@@ -1,6 +1,0 @@
-f<int> main() {
-    int test = 123;
-    int& testRef = test;
-    int& &testRef2 = testRef;
-    testRef2++;
-}

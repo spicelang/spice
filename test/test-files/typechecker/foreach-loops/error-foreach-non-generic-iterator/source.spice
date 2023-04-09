@@ -1,0 +1,32 @@
+import "std/iterator/iterable";
+
+type MockIterator struct : Iterable<int> {
+    int item
+    unsigned long cursor
+}
+
+p MockIterator.ctor() {
+    this.cursor = 0l;
+}
+
+f<bool> MockIterator.hasNext() {
+    return true;
+}
+
+f<int&> MockIterator.next() {
+    return this.item;
+}
+
+f<Pair<unsigned long, int&>> MockIterator.nextIdx() {
+    return Pair<unsigned long, int&>(0l, this.item);
+}
+
+f<int&> MockIterator.get() {
+    return this.item;
+}
+
+f<int> main() {
+    foreach dyn demoItem : MockIterator() {
+        printf("Demo item\n");
+    }
+}

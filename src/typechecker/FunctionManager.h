@@ -38,6 +38,10 @@ public:
                                                const SymbolType &requestedThisType,
                                                const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
                                                const ASTNode *callNode);
+  [[nodiscard]] static bool matchInterfaceMethod(Scope *matchScope, const std::string &requestedName,
+                                                 const SymbolType &requestedThisType,
+                                                 const std::vector<SymbolType> &requestedParamTypes,
+                                                 const SymbolType &requestedReturnType, bool strictSpecifierMatching);
 
 private:
   // Private methods
@@ -49,6 +53,8 @@ private:
   [[nodiscard]] static bool matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedArgTypes,
                                           TypeMapping &typeMapping, bool strictSpecifierMatching);
   static void substantiateReturnType(Function &candidate, TypeMapping &typeMapping);
+  static bool matchReturnType(Function &candidate, const SymbolType &requestedReturnType, TypeMapping &typeMapping,
+                              bool strictSpecifierMatching);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Function &candidate,
                                                                           const std::string &templateTypeName);
 };

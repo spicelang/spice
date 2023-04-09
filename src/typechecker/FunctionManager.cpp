@@ -260,6 +260,72 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 }
 
 /**
+ * Check if there is a function in the scope, fulfilling all given requirements and if found, return it.
+ * If more than one function matches the requirement, an error gets thrown.
+ *
+ * @param matchScope Scope to match against
+ * @param requestedName Function name requirement
+ * @param requestedThisType This type requirement
+ * @param templateTypeHints Template types to substantiate generic types
+ * @param requestedParamTypes Argument types requirement
+ * @param requestedReturnType Return type requirement
+ * @param strictSpecifierMatching Match argument and this type specifiers strictly
+ * @param callNode Call AST node for printing error messages
+ * @return Matched or not
+ */
+bool FunctionManager::matchInterfaceMethod(Scope *matchScope, const std::string &requestedName,
+                                                const SymbolType &requestedThisType,
+                                                const std::vector<SymbolType> &requestedParamTypes,
+                                                const SymbolType &requestedReturnType, bool strictSpecifierMatching) {
+  assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT}));
+
+  // Copy the registry to prevent iterating over items, that are created within the loop
+  FunctionRegistry functionRegistry = matchScope->functions;
+  // Loop over function registry to find functions, that match the requirements of the call
+  std::vector<Function *> matches;
+  for (const auto &[defCodeLocStr, m] : functionRegistry) {
+    // Copy the manifestation list to prevent iterating over items, that are created within the loop
+    const FunctionManifestationList manifestations = m;
+    for (const auto &[mangledName, presetFunction] : manifestations) {
+      assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
+
+      // Skip generic substantiations to prevent double matching of a function
+      if (presetFunction.genericSubstantiation)
+        continue;
+
+      // Copy the function to be able to substantiate types
+      Function candidate = presetFunction;
+
+      // Check name requirement
+      if (!matchName(candidate, requestedName))
+        break; // Leave the whole manifestation list, because all manifestations in this list have the same name
+
+      // Prepare mapping table from generic type name to concrete type
+      TypeMapping &typeMapping = candidate.typeMapping;
+      typeMapping.clear();
+      typeMapping.reserve(candidate.templateTypes.size());
+
+      // Check 'this' type requirement
+      if (!matchThisType(candidate, requestedThisType, typeMapping, strictSpecifierMatching))
+        continue; // Leave this manifestation and try the next one
+
+      // Check arg types requirement
+      if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching))
+        continue; // Leave this manifestation and try the next one
+
+      if (!matchReturnType(candidate, requestedReturnType, typeMapping, strictSpecifierMatching))
+        continue; // Leave this manifestation and try the next one
+
+      // We found a match
+      return true;
+    }
+  }
+
+  // We did not find a match
+  return false;
+}
+
+/**
  * Checks if the matching candidate fulfills the name requirement
  *
  * @param candidate Matching candidate function
@@ -349,6 +415,36 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
 void FunctionManager::substantiateReturnType(Function &candidate, TypeMapping &typeMapping) {
   if (candidate.returnType.hasAnyGenericParts())
     TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType, typeMapping);
+}
+
+/**
+ * Checks if the matching candidate fulfills the return type requirement
+ *
+ * @param candidate Matching candidate function
+ * @param requestedReturnType Requested return type
+ * @param typeMapping Concrete template type mapping
+ * @param strictSpecifierMatching Match specifiers strictly
+ * @return Fulfilled or not
+ */
+bool FunctionManager::matchReturnType(Function &candidate, const SymbolType &requestedReturnType, TypeMapping &typeMapping,
+                                      bool strictSpecifierMatching) {
+  SymbolType &candidateReturnType = candidate.returnType;
+
+  // Give the type matcher a way to retrieve instances of GenericType by their name
+  std::function<const GenericType *(const std::string &)> genericTypeResolver = [=](const std::string &genericTypeName) {
+    return getGenericTypeOfCandidateByName(candidate, genericTypeName);
+  };
+
+  // Check if the requested param type matches the candidate param type. The type mapping may be extended
+  if (!TypeMatcher::matchRequestedToCandidateType(candidateReturnType, requestedReturnType, typeMapping, genericTypeResolver,
+                                                  strictSpecifierMatching))
+    return false;
+
+  // Substantiate the candidate param type, based on the type mapping
+  if (candidateReturnType.hasAnyGenericParts())
+    TypeMatcher::substantiateTypeWithTypeMapping(candidateReturnType, typeMapping);
+
+  return true;
 }
 
 /**

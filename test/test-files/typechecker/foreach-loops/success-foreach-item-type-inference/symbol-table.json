@@ -1,0 +1,41 @@
+{
+  "captures": [],
+  "symbols": [
+    {
+      "codeLoc": "L5C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "MockIterator",
+      "orderIndex": 1,
+      "state": "destructed",
+      "type": "MockIterator<short>"
+    },
+    {
+      "codeLoc": "L30C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "main(int, string[])",
+      "orderIndex": 2,
+      "state": "destructed",
+      "type": "function"
+    },
+    {
+      "codeLoc": "L5C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "MockIterator",
+      "orderIndex": 1,
+      "state": "destructed",
+      "type": "MockIterator<generic(T)>"
+    },
+    {
+      "codeLoc": "L1C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "std/iterator/iterable",
+      "orderIndex": 0,
+      "state": "destructed",
+      "type": "import"
+    }
+  ]
+}
