@@ -1,28 +1,44 @@
 import "std/iterator/number-iterator";
 
 f<int> main() {
+    // Create iterator with range convinience helper
     NumberIterator<int> itInt = range(1, 10);
+
+    // Test functionality with int
     assert itInt.hasNext();
     assert itInt.get() == 1;
     assert itInt.next() == 2;
     itInt += 3;
     assert itInt.get() == 5;
+    assert itInt.hasNext();
     itInt -= 2;
     assert itInt.get() == 3;
-    itInt += 8;
+    dyn idxAndValue = itInt.nextIdx();
+    assert idxAndValue.getFirst() == 4l;
+    assert idxAndValue.getSecond() == 4;
+    itInt += 6;
     assert itInt.get() == 10;
     assert !itInt.hasNext();
 
-
-    NumberIterator<long> itLong = range(1l, 50l);
+    // Test functionality with long
+    NumberIterator<long> itLong = range(6l, 45l);
     assert itLong.hasNext();
     assert itLong.get() == 1l;
     assert itLong.next() == 2l;
     itLong += 3l;
     assert itLong.get() == 5l;
+    assert itInt.get() == 5;
     itLong -= 2l;
     assert itLong.get() == 3l;
     itLong += 8l;
-    assert itLong.get() == 10l;
+    assert itLong.get() == 11l;
+    dyn idxAndValue = itLong.nextIdx();
+    assert idxAndValue.getFirst() == 4l;
+    assert idxAndValue.getSecond() == 15l;
+    assert itLong.hasNext();
+    itLong += 30l;
+    assert itLong.get() == 45;
     assert !itLong.hasNext();
+
+    printf("All assertions passed!");
 }

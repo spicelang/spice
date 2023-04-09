@@ -169,14 +169,7 @@ public:
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
     return CommonUtil::getLastFragment(typeChain.back().subType, SCOPE_ACCESS_TOKEN);
   }
-  [[nodiscard]] inline TypeChain getTypeChainWithoutReferences() const {
-    assert(!typeChain.empty());
-    TypeChain typeChainCopy = typeChain;
-    while (typeChainCopy.back().superType == TY_REF)
-      typeChainCopy.pop_back();
-    return typeChainCopy;
-  }
-  [[nodiscard]] inline SymbolType removeReferenceWrappers() const { return SymbolType(getTypeChainWithoutReferences()); }
+  [[nodiscard]] inline SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
   [[nodiscard]] SymbolType getBaseType() const {
     assert(!typeChain.empty());
     return SymbolType({typeChain.front()});

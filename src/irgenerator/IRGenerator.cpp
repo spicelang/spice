@@ -68,11 +68,7 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, ExprResult &exprResu
 }
 
 llvm::Value *IRGenerator::resolveValue(const SymbolType& symbolType, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
-  // Set access scope to current scope if nullptr gets passed
-  if (!accessScope)
-    accessScope = currentScope;
-
-  // Check if the value is already present
+    // Check if the value is already present
   if (exprResult.value != nullptr)
     return exprResult.value;
 
@@ -83,6 +79,10 @@ llvm::Value *IRGenerator::resolveValue(const SymbolType& symbolType, ExprResult 
   }
 
   assert(exprResult.ptr != nullptr);
+
+  // Set access scope to current scope if nullptr gets passed
+  if (!accessScope)
+    accessScope = currentScope;
 
   // Load the value from the pointer
   const SymbolType pointeeSTy = symbolType.isRef() ? symbolType.getContainedTy() : symbolType;

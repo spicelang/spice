@@ -38,6 +38,9 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
   // Do not allow references of dyn
   if (typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
+  // Do not allow references of references
+  if (typeChain.back().superType == TY_REF)
+    throw SemanticError(node, DOUBLE_REFERENCES_NOT_ALLOWED, "References of references are not allowed");
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.push_back({TY_REF, "", {}, {}});

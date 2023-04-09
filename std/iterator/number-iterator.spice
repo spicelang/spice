@@ -66,6 +66,8 @@ public inline f<T> NumberIterator.get() {
  * @param offset Offset
  */
 public inline p operator+=<T>(NumberIterator<T>& it, T offset) {
+    assert it.cursor + offset <= it.upperBound;
+    assert it.cursor + offset >= it.lowerBound;
     it.cursor += offset;
 }
 
@@ -76,6 +78,8 @@ public inline p operator+=<T>(NumberIterator<T>& it, T offset) {
  * @param offset Offset
  */
 public inline p operator-=<T>(NumberIterator<T>& it, T offset) {
+    assert it.cursor - offset <= it.upperBound;
+    assert it.cursor - offset >= it.lowerBound;
     it.cursor -= offset;
 }
 
