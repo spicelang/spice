@@ -1203,8 +1203,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   varEntry->used = true;
 
   // De-reference references
-  while (varType.isRef())
-    varType = varType.getContainedTy();
+  varType = varType.removeReferenceWrapper();
 
   // Retrieve scope for the new scope path fragment
   if (varType.isBaseType(TY_STRUCT)) {

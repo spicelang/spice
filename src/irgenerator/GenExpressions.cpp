@@ -842,10 +842,9 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(address != nullptr);
 
   // Load the address of the referenced variable
-  while (varSymbolType.isRef()) {
+  if (varSymbolType.isRef()) {
     llvm::Type *referencedType = varSymbolType.toLLVMType(context, currentScope);
     address = builder.CreateLoad(referencedType, address);
-    varSymbolType = varSymbolType.getContainedTy();
   }
 
   return ExprResult{.ptr = address, .entry = varEntry};
