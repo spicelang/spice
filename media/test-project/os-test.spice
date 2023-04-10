@@ -1,44 +1,52 @@
-import "std/iterator/number-iterator";
-
 f<int> main() {
-    // Create iterator with range convinience helper
-    NumberIterator<int> itInt = range(1, 10);
+    // Plus
+    printf("Result: %s\n", String("Hello ") + String("World!"));
+    String s1 = String("Hello ") + String("World!");
+    printf("Result: %s\n", s1);
+    printf("Result: %s\n", s1 + " Hi!");
+    printf("Result: %s\n", String("Hi! ") + s1);
+    printf("Result: %s\n", s1 + s1);
+    printf("Result: %s\n", s1 + " " + s1);
+    printf("Result: %s\n", String("Prefix ") + s1 + " Suffix");
 
-    // Test functionality with int
-    assert itInt.hasNext();
-    assert itInt.get() == 1;
-    assert itInt.next() == 2;
-    itInt += 3;
-    assert itInt.get() == 5;
-    assert itInt.hasNext();
-    itInt -= 2;
-    assert itInt.get() == 3;
-    dyn idxAndValueInt = itInt.nextIdx();
-    /*assert idxAndValueInt.getFirst() == 4l;
-    assert idxAndValueInt.getSecond() == 4;
-    itInt += 6;
-    assert itInt.get() == 10;
-    assert !itInt.hasNext();
+    // Mul
+    printf("Result: %s\n", 4s * String("Hi"));
+    String s2 = String("Hello ") * 5;
+    printf("Result: %s\n", s2);
+    printf("Result: %s\n", 20 * String('a'));
+    String s3 = 2 * String('c') * 7;
+    printf("Result: %s\n", s3);
 
-    // Test functionality with long
-    NumberIterator<long> itLong = range(6l, 45l);
-    assert itLong.hasNext();
-    assert itLong.get() == 1l;
-    assert itLong.next() == 2l;
-    itLong += 3l;
-    assert itLong.get() == 5l;
-    assert itInt.get() == 5;
-    itLong -= 2l;
-    assert itLong.get() == 3l;
-    itLong += 8l;
-    assert itLong.get() == 11l;
-    dyn idxAndValueLong = itLong.nextIdx();
-    assert idxAndValueLong.getFirst() == 4l;
-    assert idxAndValueLong.getSecond() == 15l;
-    assert itLong.hasNext();
-    itLong += 30l;
-    assert itLong.get() == 45;
-    assert !itLong.hasNext();*/
+    // Equals raw
+    printf("Equal raw: %d\n", "Hello World!" == "Hello Programmers!");
+    printf("Equal raw: %d\n", "Hello" == "Hell2");
+    printf("Equal raw: %d\n", "Hello" == "Hello");
 
-    printf("All assertions passed!");
+    // Equals
+    printf("Equal: %d\n", String("Hello World!") == String("Hello Programmers!"));
+    printf("Equal: %d\n", String("Hello") == String("Hell2"));
+    printf("Equal: %d\n", String("Hello") == String("Hello"));
+
+    // Not equals raw
+    printf("Non-equal raw: %d\n", "Hello World!" != "Hello Programmers!");
+    printf("Non-equal raw: %d\n", "Hello" != "Hell2");
+    printf("Non-equal raw: %d\n", "Hello" != "Hello");
+
+    // Not equals
+    printf("Non-equal: %d\n", String("Hello World!") != String("Hello Programmers!"));
+    printf("Non-equal: %d\n", String("Hello") != String("Hell2"));
+    printf("Non-equal: %d\n", String("Hello") != String("Hello"));
+
+    // PlusEquals
+    String s4 = String("Hello");
+    s4 += 'l';
+    printf("Result: %s\n", s4);
+    String s5 = String("Hi");
+    s5 += " World!";
+    printf("Result: %s\n", s5);
+
+    // MulEquals
+    String s6 = String("Hi");
+    s6 *= 3;
+    printf("Result: %s\n", s6);
 }

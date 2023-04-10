@@ -9,7 +9,7 @@ type Numeric int|long|short;
  * Iterator to iterate over a vector data structure
  */
 public type VectorIterator<I> struct : Iterable<I> {
-    Vector<I> vector
+    Vector<I>& vector
     unsigned long cursor
 }
 
@@ -24,7 +24,7 @@ public p VectorIterator.ctor<I>(Vector<I>& vector) {
  * @return true or false
  */
 public inline f<bool> VectorIterator.hasNext() {
-    return this.cursor < this.vector.getSize();
+    return this.cursor < this.vector.getSize() - 1;
 }
 
 /**
@@ -65,7 +65,7 @@ public inline f<I&> VectorIterator.get() {
  * @param offset Offset
  */
 public inline p operator+=<I, Numeric>(VectorIterator<I>& it, Numeric offset) {
-    assert it.cursor + offset < this.vector.getSize();
+    assert it.cursor + offset < it.vector.getSize();
     assert it.cursor + offset >= 0;
     it.cursor += offset;
 }
@@ -77,7 +77,7 @@ public inline p operator+=<I, Numeric>(VectorIterator<I>& it, Numeric offset) {
  * @param offset Offset
  */
 public inline p operator-=<I, Numeric>(VectorIterator<I>& it, Numeric offset) {
-    assert it.cursor - offset < this.vector.getSize();
+    assert it.cursor - offset < it.vector.getSize();
     assert it.cursor - offset >= 0;
     it.cursor -= offset;
 }

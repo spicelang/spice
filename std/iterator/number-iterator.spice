@@ -24,8 +24,8 @@ public p NumberIterator.ctor(N lowerBound, N upperBound) {
  *
  * @return true or false
  */
-public inline const f<bool> NumberIterator.hasNext() {
-    return this.currentNumber <= this.upperBound;
+public inline f<bool> NumberIterator.hasNext() {
+    return this.currentNumber < this.upperBound;
 }
 
 /**

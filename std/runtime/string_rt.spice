@@ -109,7 +109,7 @@ public p String.append(const string appendix) {
  * @param appendix String to be appended
  */
 public p String.append(const String& appendix) {
-    this.append((string) appendix.getRaw());
+    this.append(appendix.getRaw());
 }
 
 /**

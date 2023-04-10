@@ -17,8 +17,12 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
   }
 
   // Remove reference wrapper of candidate type if required
-  if (!requestedType.isRef())
+  if (candidateType.isRef() && !requestedType.isRef())
     candidateType = candidateType.removeReferenceWrapper();
+
+  // Remove reference wrapper of requested type if required
+  if (!candidateType.isRef() && requestedType.isRef() && !candidateType.getBaseType().is(TY_GENERIC))
+    requestedType = requestedType.removeReferenceWrapper();
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts())

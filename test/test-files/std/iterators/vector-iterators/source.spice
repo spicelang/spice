@@ -6,7 +6,7 @@ f<int> main() {
     vi.pushBack(123);
     vi.pushBack(4321);
     vi.pushBack(9876);
-    assert vi.getSize() == 2;
+    assert vi.getSize() == 3;
 
     // Test base functionality
     dyn it = iterate(vi);
@@ -20,12 +20,17 @@ f<int> main() {
     assert it.get() == 9876;
     assert !it.hasNext();
 
+    // Add new items to the vector
+    vi.pushBack(321);
+    vi.pushBack(-99);
+    assert it.hasNext();
+
     // Test overloaded operators
     it -= 2;
-    assert it.get() == 321;
+    assert it.get() == 123;
     assert it.hasNext();
-    it += 2;
-    assert it.get() == 9876;
+    it += 4;
+    assert it.get() == -99;
     assert !it.hasNext();
 
     printf("All assertions passed!");

@@ -1092,9 +1092,6 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     // Set field to used
     memberEntry->used = true;
 
-    // Remove reference wrappers
-    memberType = memberType.removeReferenceWrapper();
-
     // Overwrite type and entry of left side with member type and entry
     lhsType = memberType;
     lhsEntry = memberEntry;
@@ -1201,9 +1198,6 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
   // Set symbol table entry to used
   varEntry->used = true;
-
-  // De-reference references
-  varType = varType.removeReferenceWrapper();
 
   // Retrieve scope for the new scope path fragment
   if (varType.isBaseType(TY_STRUCT)) {
@@ -1408,9 +1402,6 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   if ((data.callee->isFunction() || data.callee->isMethodFunction()) && !node->hasReturnValueReceiver())
     warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
 
-  // Remove reference wrappers
-  returnType = returnType.removeReferenceWrapper();
-
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx)};
 }
 
@@ -1553,7 +1544,7 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   localThisType = mapLocalTypeToImportedScopeType(functionParentScope, localThisType);
 
   // Retrieve function object
-  const std::string functionName = node->functionNameFragments.back();
+  const std::string &functionName = node->functionNameFragments.back();
   data.callee = FunctionManager::matchFunction(functionParentScope, functionName, localThisType, localArgTypes, false, node);
 
   return std::make_pair(functionParentScope, data.thisType);

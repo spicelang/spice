@@ -14,7 +14,7 @@ f<int> main() {
     itInt -= 2;
     assert itInt.get() == 3;
     dyn idxAndValueInt = itInt.nextIdx();
-    assert idxAndValueInt.getFirst() == 4l;
+    assert idxAndValueInt.getFirst() == 3l;
     assert idxAndValueInt.getSecond() == 4;
     itInt += 6;
     assert itInt.get() == 10;
@@ -23,20 +23,20 @@ f<int> main() {
     // Test functionality with long
     NumberIterator<long> itLong = range(6l, 45l);
     assert itLong.hasNext();
-    assert itLong.get() == 1l;
-    assert itLong.next() == 2l;
+    assert itLong.get() == 6l;
+    assert itLong.next() == 7l;
     itLong += 3l;
-    assert itLong.get() == 5l;
-    assert itInt.get() == 5;
+    assert itLong.get() == 10l;
+    assert itLong.get() == 10l;
     itLong -= 2l;
-    assert itLong.get() == 3l;
+    assert itLong.get() == 8l;
     itLong += 8l;
-    assert itLong.get() == 11l;
+    assert itLong.get() == 16l;
     dyn idxAndValueLong = itLong.nextIdx();
-    assert idxAndValueLong.getFirst() == 4l;
-    assert idxAndValueLong.getSecond() == 15l;
+    assert idxAndValueLong.getFirst() == 11l;
+    assert idxAndValueLong.getSecond() == 17l;
     assert itLong.hasNext();
-    itLong += 30l;
+    itLong += 28l;
     assert itLong.get() == 45;
     assert !itLong.hasNext();
 
