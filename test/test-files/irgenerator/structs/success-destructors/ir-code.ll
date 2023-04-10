@@ -16,11 +16,11 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr %vec, ptr @anon.struct.0, i64 16, i1 false)
   store %__Vector__bool_string { i1 true, ptr @anon.string.0 }, ptr %vec, align 8
-  %field1 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
-  %1 = load i1, ptr %field1, align 1
+  %field1_addr = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 0
+  %1 = load i1, ptr %field1_addr, align 1
   %2 = zext i1 %1 to i32
-  %field2 = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
-  %3 = load ptr, ptr %field2, align 8
+  %field2_addr = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
+  %3 = load ptr, ptr %field2_addr, align 8
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2, ptr %3)
   %5 = load i32, ptr %result, align 4
   ret i32 %5

@@ -16,8 +16,8 @@ define dso_local i32 @main() #0 {
   store i32 123, ptr %1, align 4
   %2 = getelementptr inbounds %__Struct__intref, ptr %str, i32 0, i32 0
   store ptr %1, ptr %2, align 8
-  %ref = getelementptr inbounds %__Struct__intref, ptr %str, i32 0, i32 0
-  %3 = load ptr, ptr %ref, align 8
+  %ref_addr = getelementptr inbounds %__Struct__intref, ptr %str, i32 0, i32 0
+  %3 = load ptr, ptr %ref_addr, align 8
   %4 = load i32, ptr %3, align 4
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %4)
   %6 = load i32, ptr %result, align 4

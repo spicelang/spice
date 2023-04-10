@@ -15,11 +15,11 @@ define private void @_mp__Stamp__void__print(ptr noundef nonnull %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %value = getelementptr inbounds %__Stamp__double_bool, ptr %2, i32 0, i32 0
-  %3 = load double, ptr %value, align 8
+  %value_addr = getelementptr inbounds %__Stamp__double_bool, ptr %2, i32 0, i32 0
+  %3 = load double, ptr %value_addr, align 8
   %4 = load ptr, ptr %this, align 8
-  %glued = getelementptr inbounds %__Stamp__double_bool, ptr %4, i32 0, i32 1
-  %5 = load i1, ptr %glued, align 1
+  %glued_addr = getelementptr inbounds %__Stamp__double_bool, ptr %4, i32 0, i32 1
+  %5 = load i1, ptr %glued_addr, align 1
   %6 = zext i1 %5 to i32
   %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double %3, i32 %6)
   ret void
@@ -32,8 +32,8 @@ define private %__Stamp__double_bool @_mf__Letter__Stamp__getStamp(ptr noundef n
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %stamp = getelementptr inbounds %__Letter__string_Stamp, ptr %2, i32 0, i32 1
-  %3 = load %__Stamp__double_bool, ptr %stamp, align 8
+  %stamp_addr = getelementptr inbounds %__Letter__string_Stamp, ptr %2, i32 0, i32 1
+  %3 = load %__Stamp__double_bool, ptr %stamp_addr, align 8
   ret %__Stamp__double_bool %3
 }
 
@@ -41,19 +41,19 @@ define private %__Stamp__double_bool @_mf__Letter__Stamp__getStamp(ptr noundef n
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %letter = alloca %__Letter__string_Stamp, align 8
-  %stamp1 = alloca %__Stamp__double_bool, align 8
+  %stamp = alloca %__Stamp__double_bool, align 8
   store i32 0, ptr %result, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr %letter, ptr @anon.struct.0, i64 24, i1 false)
   store %__Letter__string_Stamp { ptr @anon.string.0, %__Stamp__double_bool { double 3.400000e+00, i1 true } }, ptr %letter, align 8
-  %stamp = getelementptr inbounds %__Letter__string_Stamp, ptr %letter, i32 0, i32 1
-  %glued = getelementptr inbounds %__Stamp__double_bool, ptr %stamp, i32 0, i32 1
-  %1 = load i1, ptr %glued, align 1
+  %stamp_addr = getelementptr inbounds %__Letter__string_Stamp, ptr %letter, i32 0, i32 1
+  %glued_addr = getelementptr inbounds %__Stamp__double_bool, ptr %stamp_addr, i32 0, i32 1
+  %1 = load i1, ptr %glued_addr, align 1
   %2 = zext i1 %1 to i32
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %2)
   %4 = call %__Stamp__double_bool @_mf__Letter__Stamp__getStamp(ptr %letter)
-  store %__Stamp__double_bool %4, ptr %stamp1, align 8
-  store %__Stamp__double_bool %4, ptr %stamp1, align 8
-  call void @_mp__Stamp__void__print(ptr %stamp1)
+  store %__Stamp__double_bool %4, ptr %stamp, align 8
+  store %__Stamp__double_bool %4, ptr %stamp, align 8
+  call void @_mp__Stamp__void__print(ptr %stamp)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
 }

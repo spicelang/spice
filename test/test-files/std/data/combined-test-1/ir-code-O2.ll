@@ -19,6 +19,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %4 = alloca %__int_string__Pair__int_string, align 8
   %5 = alloca i32, align 4
   %6 = alloca ptr, align 8
+  %p1 = alloca %__int_string__Pair__int_string, align 8
   call void @"_mp__Vector_std/data/pair::Pair<int,string>__void__ctor"(ptr nonnull %pairVector) #2
   store i32 0, ptr %2, align 4
   store ptr @anon.string.0, ptr %3, align 8
@@ -28,10 +29,16 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   store ptr @anon.string.1, ptr %6, align 8
   call void @_mp__Pair_int_string__void__ctor__intref_stringref(ptr nonnull %4, ptr nonnull %5, ptr nonnull %6) #2
   call void @"_mp__Vector_std/data/pair::Pair<int,string>__void__pushBack__std/data/pair::Pair<int,string>ref"(ptr nonnull %pairVector, ptr nonnull %4) #2
-  %p1 = call ptr @"_mf__Vector_std/data/pair::Pair<int,string>__std/data/pair::Pair<int,string>ref__get__int"(ptr nonnull %pairVector, i32 1) #2
-  %7 = call ptr @_mf__Pair_int_string__stringref__getSecond(ptr %p1) #2
-  %8 = load ptr, ptr %7, align 8
-  %9 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %8)
+  %7 = call ptr @"_mf__Vector_std/data/pair::Pair<int,string>__std/data/pair::Pair<int,string>ref__get__int"(ptr nonnull %pairVector, i32 1) #2
+  %8 = load %__int_string__Pair__int_string, ptr %7, align 8
+  %.fca.0.extract = extractvalue %__int_string__Pair__int_string %8, 0
+  store i32 %.fca.0.extract, ptr %p1, align 8
+  %.fca.1.extract = extractvalue %__int_string__Pair__int_string %8, 1
+  %.fca.1.gep = getelementptr inbounds %__int_string__Pair__int_string, ptr %p1, i64 0, i32 1
+  store ptr %.fca.1.extract, ptr %.fca.1.gep, align 8
+  %9 = call ptr @_mf__Pair_int_string__stringref__getSecond(ptr nonnull %p1) #2
+  %10 = load ptr, ptr %9, align 8
+  %11 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %10)
   ret i32 0
 }
 

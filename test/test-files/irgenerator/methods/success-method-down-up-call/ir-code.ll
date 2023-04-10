@@ -39,25 +39,25 @@ define private i32 @_mf__TestStruct_char__int__getTest(ptr noundef nonnull %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %test = getelementptr inbounds %__char__TestStruct__char_int, ptr %2, i32 0, i32 1
-  %3 = load i32, ptr %test, align 4
+  %test_addr = getelementptr inbounds %__char__TestStruct__char_int, ptr %2, i32 0, i32 1
+  %3 = load i32, ptr %test_addr, align 4
   %4 = icmp eq i32 %3, 1
   br i1 %4, label %if.then.L18, label %if.exit.L18
 
 if.then.L18:                                      ; preds = %1
   %5 = load ptr, ptr %this, align 8
-  %test1 = getelementptr inbounds %__char__TestStruct__char_int, ptr %5, i32 0, i32 1
-  %6 = load i32, ptr %test1, align 4
+  %test_addr1 = getelementptr inbounds %__char__TestStruct__char_int, ptr %5, i32 0, i32 1
+  %6 = load i32, ptr %test_addr1, align 4
   %7 = add i32 %6, 1
-  store i32 %7, ptr %test1, align 4
+  store i32 %7, ptr %test_addr1, align 4
   %8 = load ptr, ptr %this, align 8
   call void @_mp__TestStruct_char__void__printTest(ptr %8)
   br label %if.exit.L18
 
 if.exit.L18:                                      ; preds = %if.then.L18, %1
   %9 = load ptr, ptr %this, align 8
-  %test2 = getelementptr inbounds %__char__TestStruct__char_int, ptr %9, i32 0, i32 1
-  %10 = load i32, ptr %test2, align 4
+  %test_addr2 = getelementptr inbounds %__char__TestStruct__char_int, ptr %9, i32 0, i32 1
+  %10 = load i32, ptr %test_addr2, align 4
   ret i32 %10
 }
 

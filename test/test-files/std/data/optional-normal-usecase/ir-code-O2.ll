@@ -30,20 +30,20 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %6 = call i1 @"_mf__Optional_std/data/stack::Stack<double>__bool__isPresent"(ptr nonnull %oi) #2
   %7 = zext i1 %6 to i32
   %8 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %7)
-  %res = call ptr @"_mf__Optional_std/data/stack::Stack<double>__std/data/stack::Stack<double>ref__get"(ptr nonnull %oi) #2
-  %9 = call i64 @_mf__Stack_double__long__getSize(ptr %res) #2
-  %10 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i64 %9)
+  %9 = call ptr @"_mf__Optional_std/data/stack::Stack<double>__std/data/stack::Stack<double>ref__get"(ptr nonnull %oi) #2
+  %10 = call i64 @_mf__Stack_double__long__getSize(ptr %9) #2
+  %11 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i64 %10)
   call void @"_mp__Optional_std/data/stack::Stack<double>__void__clear"(ptr nonnull %oi) #2
-  %11 = call i1 @"_mf__Optional_std/data/stack::Stack<double>__bool__isPresent"(ptr nonnull %oi) #2
-  %12 = zext i1 %11 to i32
-  %13 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %12)
+  %12 = call i1 @"_mf__Optional_std/data/stack::Stack<double>__bool__isPresent"(ptr nonnull %oi) #2
+  %13 = zext i1 %12 to i32
+  %14 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %13)
   call void @_mp__String__void__ctor__string(ptr nonnull %2, ptr nonnull @anon.string.0) #2
   call void @"_mp__Optional___rt_string::String__void__ctor____rt_string::Stringref"(ptr nonnull %oi2, ptr nonnull %2) #2
-  %14 = call i1 @"_mf__Optional___rt_string::String__bool__isPresent"(ptr nonnull %oi2) #2
-  br i1 %14, label %assert.exit.L18, label %assert.then.L18, !prof !0
+  %15 = call i1 @"_mf__Optional___rt_string::String__bool__isPresent"(ptr nonnull %oi2) #2
+  br i1 %15, label %assert.exit.L18, label %assert.then.L18, !prof !0
 
 assert.then.L18:                                  ; preds = %0
-  %15 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.1)
+  %16 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.1)
   call void @exit(i32 1) #2
   unreachable
 

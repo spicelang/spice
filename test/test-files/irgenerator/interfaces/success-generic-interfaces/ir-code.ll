@@ -18,22 +18,22 @@ define private i32 @_mf__Person__int__compare__longref_longref(ptr noundef nonnu
   store ptr %0, ptr %this, align 8
   store ptr %1, ptr %a, align 8
   store ptr %2, ptr %b, align 8
-  %4 = load ptr, ptr %a, align 8
-  %5 = load ptr, ptr %b, align 8
-  %6 = load i64, ptr %5, align 8
-  %7 = load i64, ptr %4, align 8
-  %8 = icmp sgt i64 %7, %6
+  %4 = load ptr, ptr %b, align 8
+  %5 = load i64, ptr %4, align 8
+  %6 = load ptr, ptr %a, align 8
+  %7 = load i64, ptr %6, align 8
+  %8 = icmp sgt i64 %7, %5
   br i1 %8, label %if.then.L20, label %if.exit.L20
 
 if.then.L20:                                      ; preds = %3
   ret i32 2
 
 if.exit.L20:                                      ; preds = %3
-  %9 = load ptr, ptr %a, align 8
-  %10 = load ptr, ptr %b, align 8
-  %11 = load i64, ptr %10, align 8
-  %12 = load i64, ptr %9, align 8
-  %13 = icmp slt i64 %12, %11
+  %9 = load ptr, ptr %b, align 8
+  %10 = load i64, ptr %9, align 8
+  %11 = load ptr, ptr %a, align 8
+  %12 = load i64, ptr %11, align 8
+  %13 = icmp slt i64 %12, %10
   br i1 %13, label %if.then.L21, label %if.exit.L21
 
 if.then.L21:                                      ; preds = %if.exit.L20
