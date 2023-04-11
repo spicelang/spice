@@ -30,19 +30,19 @@ define dso_local i32 @main() #0 {
   store double 4.634000e+01, ptr %4, align 8
   %5 = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 2
   store ptr %nestedInstance, ptr %5, align 8
-  %nested = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 2
-  %6 = load ptr, ptr %nested, align 8
-  %nested2 = getelementptr inbounds %__Nested__string_boolptr, ptr %6, i32 0, i32 1
-  %7 = load ptr, ptr %nested2, align 8
+  %nested_addr = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 2
+  %6 = load ptr, ptr %nested_addr, align 8
+  %nested2_addr = getelementptr inbounds %__Nested__string_boolptr, ptr %6, i32 0, i32 1
+  %7 = load ptr, ptr %nested2_addr, align 8
   %8 = load i1, ptr %7, align 1
   %9 = zext i1 %8 to i32
-  %field2 = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 1
-  %10 = load double, ptr %field2, align 8
+  %field2_addr = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 1
+  %10 = load double, ptr %field2_addr, align 8
   %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %9, double %10)
-  %nested1 = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 2
-  %12 = load ptr, ptr %nested1, align 8
-  %nested12 = getelementptr inbounds %__Nested__string_boolptr, ptr %12, i32 0, i32 0
-  %13 = load ptr, ptr %nested12, align 8
+  %nested_addr1 = getelementptr inbounds %__TestStruct__intptr_double_Nestedptr, ptr %instance1, i32 0, i32 2
+  %12 = load ptr, ptr %nested_addr1, align 8
+  %nested1_addr = getelementptr inbounds %__Nested__string_boolptr, ptr %12, i32 0, i32 0
+  %13 = load ptr, ptr %nested1_addr, align 8
   %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %13)
   %15 = load i32, ptr %result, align 4
   ret i32 %15

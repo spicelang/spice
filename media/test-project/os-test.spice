@@ -1,31 +1,52 @@
-/*import "std/data/vector";
-import "std/text/print";
-import "std/io/file" as io;
-
 f<int> main() {
-  dyn v = Vector<String>();
-  v.pushBack(String("Hello"));
-  v.pushBack(String("World!"));
-  createFile("output.txt");
-  const File file = openFile("output.txt", io::MODE_WRITE);
+    // Plus
+    printf("Result: %s\n", String("Hello ") + String("World!"));
+    String s1 = String("Hello ") + String("World!");
+    printf("Result: %s\n", s1);
+    printf("Result: %s\n", s1 + " Hi!");
+    printf("Result: %s\n", String("Hi! ") + s1);
+    printf("Result: %s\n", s1 + s1);
+    printf("Result: %s\n", s1 + " " + s1);
+    printf("Result: %s\n", String("Prefix ") + s1 + " Suffix");
 
-  for int i = 0; i < v.getSize(); i++ {
-    const String& str = v.get(i);
-    file.writeString(str.getRaw());
-  }
+    // Mul
+    printf("Result: %s\n", 4s * String("Hi"));
+    String s2 = String("Hello ") * 5;
+    printf("Result: %s\n", s2);
+    printf("Result: %s\n", 20 * String('a'));
+    String s3 = 2 * String('c') * 7;
+    printf("Result: %s\n", s3);
 
-  file.close();
-}*/
+    // Equals raw
+    printf("Equal raw: %d\n", "Hello World!" == "Hello Programmers!");
+    printf("Equal raw: %d\n", "Hello" == "Hell2");
+    printf("Equal raw: %d\n", "Hello" == "Hello");
 
-type intref struct {
-    int test
-}
+    // Equals
+    printf("Equal: %d\n", String("Hello World!") == String("Hello Programmers!"));
+    printf("Equal: %d\n", String("Hello") == String("Hell2"));
+    printf("Equal: %d\n", String("Hello") == String("Hello"));
 
-f<bool> fn(const int& ref) {
-    return false;
-}
+    // Not equals raw
+    printf("Non-equal raw: %d\n", "Hello World!" != "Hello Programmers!");
+    printf("Non-equal raw: %d\n", "Hello" != "Hell2");
+    printf("Non-equal raw: %d\n", "Hello" != "Hello");
 
-f<int> main() {
-    const int x = 123;
-    fn(x);
+    // Not equals
+    printf("Non-equal: %d\n", String("Hello World!") != String("Hello Programmers!"));
+    printf("Non-equal: %d\n", String("Hello") != String("Hell2"));
+    printf("Non-equal: %d\n", String("Hello") != String("Hello"));
+
+    // PlusEquals
+    String s4 = String("Hello");
+    s4 += 'l';
+    printf("Result: %s\n", s4);
+    String s5 = String("Hi");
+    s5 += " World!";
+    printf("Result: %s\n", s5);
+
+    // MulEquals
+    String s6 = String("Hi");
+    s6 *= 3;
+    printf("Result: %s\n", s6);
 }

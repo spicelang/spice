@@ -104,7 +104,7 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
     // Retrieve entry of the first fragment
     SymbolTableEntry *firstFragmentEntry = currentScope->lookup(node->functionNameFragments.front());
     assert(firstFragmentEntry != nullptr && firstFragmentEntry->getType().isBaseType(TY_STRUCT));
-    Scope *structScope = firstFragmentEntry->getType().getBaseType().getStructBodyScope();
+    Scope *structScope = firstFragmentEntry->getType().getBaseType().getBodyScope();
 
     // Get address of the referenced variable / struct instance
     thisPtr = firstFragmentEntry->getAddress();
@@ -119,17 +119,18 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
       const std::string identifier = node->functionNameFragments.at(i);
       // Retrieve field entry
       SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
-      assert(fieldEntry != nullptr && fieldEntry->getType().is(TY_STRUCT));
+      assert(fieldEntry != nullptr);
+      SymbolType fieldEntryType = fieldEntry->getType();
+      assert(fieldEntryType.isBaseType(TY_STRUCT));
       // Get struct type and scope
-      structScope = fieldEntry->getType().getStructBodyScope();
+      structScope = fieldEntryType.getBaseType().getBodyScope();
       assert(structScope != nullptr);
       // Get address of field
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
       thisPtr = builder.CreateInBoundsGEP(structTy, thisPtr, indices);
       // Auto de-reference pointer and get new struct type
-      SymbolType fieldEntryType = fieldEntry->getType();
       autoDeReferencePtr(thisPtr, fieldEntryType, structScope->parent);
-      structTy = fieldEntry->getType().getBaseType().toLLVMType(context, structScope->parent);
+      structTy = fieldEntryType.getBaseType().toLLVMType(context, structScope->parent);
     }
 
     // Add 'this' pointer to the front of the argument list
@@ -139,7 +140,7 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
   if (data.isConstructorCall) {
     assert(!data.isMethodCall);
 
-    llvm::Type *thisType = spiceFunc->thisType.toLLVMType(context, spiceFunc->thisType.getStructBodyScope());
+    llvm::Type *thisType = spiceFunc->thisType.toLLVMType(context, spiceFunc->thisType.getBodyScope());
     thisPtr = insertAlloca(thisType);
 
     // Add 'this' pointer to the front of the argument list
@@ -157,10 +158,14 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
 
       // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
       if (expectedSTy.matches(actualSTy, false, true, true)) { // Matches the param type
-        llvm::Value *argValue = resolveValue(argNode);
+        // Resolve address if actual type is reference, otherwise value
+        llvm::Value *argValue = actualSTy.isRef() ? resolveAddress(argNode) : resolveValue(argNode);
         argValues.push_back(argValue);
       } else if (expectedSTy.isRef() && expectedSTy.getContainedTy().matches(actualSTy, false, true, true)) { // Matches with ref
         llvm::Value *argAddress = resolveAddress(argNode);
+        argValues.push_back(argAddress);
+      } else if (actualSTy.isRef() && expectedSTy.matches(actualSTy.getContainedTy(), false, true, true)) { // Matches with ref
+        llvm::Value *argAddress = resolveValue(argNode);
         argValues.push_back(argAddress);
       } else { // Need implicit cast
         llvm::Value *argAddress = resolveAddress(argNode);
@@ -201,10 +206,11 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
   if (data.isConstructorCall)
     return ExprResult{.ptr = thisPtr};
 
-  // In case this is a callee, returning a reference, load the address
+  // In case this is a callee, returning a reference, return the address
   if (data.callee->returnType.isRef())
-    result = builder.CreateLoad(data.callee->returnType.getContainedTy().toLLVMType(context, nullptr), result);
+    return ExprResult{.ptr = result};
 
+  // Otherwise return the value
   return ExprResult{.value = result};
 }
 
@@ -244,7 +250,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
     llvm::Constant *constantArray = llvm::ConstantArray::get(arrayType, constants);
     llvm::Value *arrayAddr = createGlobalConstant(ANON_GLOBAL_ARRAY_NAME, constantArray);
 
-    return ExprResult{.ptr = arrayAddr, .constant = constantArray};
+    return ExprResult{.constant = constantArray, .ptr = arrayAddr};
   } else { // We have non-immediate values as items, so we need to take normal arrays as fallback
     llvm::Value *arrayAddr = insertAlloca(arrayType);
 
@@ -312,7 +318,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     llvm::Constant *constantStruct = llvm::ConstantStruct::get(structType, constants);
     llvm::Value *constantAddr = createGlobalConstant(ANON_GLOBAL_STRUCT_NAME, constantStruct);
 
-    return ExprResult{.ptr = constantAddr, .constant = constantStruct};
+    return ExprResult{.constant = constantStruct, .ptr = constantAddr};
   } else { // We have at least one non-immediate value, so we need to take normal struct instantiation as fallback
     llvm::Value *structAddr = insertAlloca(structType);
 
@@ -335,7 +341,9 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 }
 
 std::any IRGenerator::visitDataType(const DataTypeNode *node) {
-  diGenerator.setSourceLocation(node);
+  // Only set the source location if this is not the root scope
+  if (currentScope != rootScope)
+    diGenerator.setSourceLocation(node);
 
   // Retrieve symbol type
   SymbolType symbolType = node->getEvaluatedSymbolType(manIdx);

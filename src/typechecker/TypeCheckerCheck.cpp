@@ -149,17 +149,17 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
   for (const SymbolType &interfaceType : node->structManifestations.front()->interfaceTypes) {
     // Retrieve interface instance
     const std::string interfaceName = interfaceType.getOriginalSubType();
-    Scope *matchScope = interfaceType.getStructBodyScope()->parent;
+    Scope *matchScope = interfaceType.getBodyScope()->parent;
     Interface *interface = InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
     assert(interface != nullptr);
 
     // Check for all methods, that it is implemented by the struct
-    const SymbolType &thisType = node->entry->getType();
     for (const Function *expectedMethod : interface->methods) {
       const std::string methodName = expectedMethod->name;
-      const std::vector<SymbolType> methodParams = expectedMethod->getParamTypes();
-      Function *actualMethod = FunctionManager::matchFunction(currentScope, methodName, thisType, methodParams, true, node);
-      if (!actualMethod)
+      const std::vector<SymbolType> params = expectedMethod->getParamTypes();
+      const SymbolType &returnType = expectedMethod->returnType;
+      bool success = FunctionManager::matchInterfaceMethod(currentScope, methodName, params, returnType, true);
+      if (!success)
         throw SemanticError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                             "The struct '" + node->structName + "' does not implement the method '" +
                                 expectedMethod->getSignature() + "', requested of interface '" + interface->name + "'");

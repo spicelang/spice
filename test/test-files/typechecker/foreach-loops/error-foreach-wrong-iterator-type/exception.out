@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/foreach-loops/error-foreach-wrong-iterator-type/source.spice:3:27:
-Wrong data type for operator: Can only apply foreach loop on an array type. You provided bool
+Wrong data type for operator: Can only apply foreach loop on an iterator type. You provided bool
 
 3  reach string item : b {
                        ^

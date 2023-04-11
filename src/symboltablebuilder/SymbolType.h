@@ -23,6 +23,8 @@ class SymbolTable;
 class ASTNode;
 class Scope;
 class GenericType;
+class Struct;
+class Interface;
 
 // Constants
 const char *const STROBJ_NAME = "String";
@@ -57,8 +59,8 @@ public:
   // Unions
   union TypeChainElementData {
     // Union fields
-    size_t arraySize = 0;   // TY_ARRAY
-    Scope *structBodyScope; // TY_STRUCT, TY_INTERFACE, TY_ENUM
+    size_t arraySize = 0; // TY_ARRAY
+    Scope *bodyScope;     // TY_STRUCT, TY_INTERFACE, TY_ENUM
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
   };
@@ -76,7 +78,7 @@ public:
       case TY_ARRAY:
         return lhs.data.arraySize == rhs.data.arraySize;
       case TY_STRUCT: {
-        assert(lhs.data.structBodyScope != nullptr && rhs.data.structBodyScope != nullptr);
+        assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
         const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
         const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
         return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.templateTypes == rhs.templateTypes;
@@ -87,10 +89,10 @@ public:
         return lhsSubTypeSuffix == rhsSubTypeSuffix;
       }
       case TY_ENUM: {
-        assert(lhs.data.structBodyScope != nullptr && rhs.data.structBodyScope != nullptr);
+        assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
         const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
         const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
-        return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.structBodyScope == rhs.data.structBodyScope;
+        return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
       }
       case TY_GENERIC:
         return lhs.subType == rhs.subType;
@@ -147,6 +149,8 @@ public:
   [[nodiscard]] inline bool isPrimitive() const {
     return isOneOf({TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL});
   }
+  [[nodiscard]] bool isIterator(const ASTNode *node) const;
+  [[nodiscard]] bool implements(const SymbolType &symbolType, const ASTNode *node) const;
   [[nodiscard]] bool isBaseType(SymbolSuperType superType) const;
   [[nodiscard]] inline bool isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
     const SymbolSuperType superType = getSuperType();
@@ -165,14 +169,7 @@ public:
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
     return CommonUtil::getLastFragment(typeChain.back().subType, SCOPE_ACCESS_TOKEN);
   }
-  [[nodiscard]] inline TypeChain getTypeChainWithoutReferences() const {
-    assert(!typeChain.empty());
-    TypeChain typeChainCopy = typeChain;
-    while (typeChainCopy.back().superType == TY_REF)
-      typeChainCopy.pop_back();
-    return typeChainCopy;
-  }
-  [[nodiscard]] inline SymbolType removeReferenceWrappers() const { return SymbolType(getTypeChainWithoutReferences()); }
+  [[nodiscard]] inline SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
   [[nodiscard]] SymbolType getBaseType() const {
     assert(!typeChain.empty());
     return SymbolType({typeChain.front()});
@@ -189,8 +186,10 @@ public:
   [[nodiscard]] bool isInline() const;
   [[nodiscard]] bool isPublic() const;
   [[nodiscard]] bool isHeap() const;
-  void setStructBodyScope(Scope *bodyScope);
-  [[nodiscard]] Scope *getStructBodyScope() const;
+  void setBodyScope(Scope *bodyScope);
+  [[nodiscard]] Scope *getBodyScope() const;
+  [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
+  [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
   [[nodiscard]] bool matches(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;

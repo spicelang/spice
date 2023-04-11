@@ -1,0 +1,91 @@
+import "std/iterator/iterable";
+
+// Generic type definitions
+type N int|long|short;
+
+/**
+ * A NumberIterator in Spice can be used to iterate over a range of numbers
+ */
+public type NumberIterator<N> struct : Iterable<N> {
+    N currentNumber
+    N lowerBound // Inclusive
+    N upperBound // Inclusive
+}
+
+public p NumberIterator.ctor(N lowerBound, N upperBound) {
+    assert lowerBound <= upperBound;
+    this.currentNumber = lowerBound;
+    this.lowerBound = lowerBound;
+    this.upperBound = upperBound;
+}
+
+/**
+ * Check if the number range has another number
+ *
+ * @return true or false
+ */
+public inline f<bool> NumberIterator.hasNext() {
+    return this.currentNumber < this.upperBound;
+}
+
+/**
+ * Returns the current number of the number range and moves the cursor to the next item
+ *
+ * @return current item
+ */
+public inline f<N&> NumberIterator.next() {
+    assert this.hasNext();
+    this.currentNumber++;
+    return this.currentNumber;
+}
+
+/**
+ * Returns the current number as well as the current iterator index and moves the cursor
+ * to the next item.
+ *
+ * @return pair of index and item
+ */
+public inline f<Pair<unsigned long, N&>> NumberIterator.nextIdx() {
+    assert this.hasNext();
+    this.currentNumber++;
+    unsigned long idx = (unsigned long) this.currentNumber - this.lowerBound;
+    return Pair<unsigned long, N&>(idx, this.currentNumber);
+}
+
+/**
+ * Returns the current number of the number range
+ */
+public inline f<N&> NumberIterator.get() {
+    return this.currentNumber;
+}
+
+/**
+ * Advances the cursor by the given offset
+ *
+ * @param it NumberIterator
+ * @param offset Offset
+ */
+public inline p operator+=<N>(NumberIterator<N>& it, N offset) {
+    assert it.currentNumber + offset <= it.upperBound;
+    assert it.currentNumber + offset >= it.lowerBound;
+    it.currentNumber += offset;
+}
+
+/**
+ * Move the cursor back by the given offset
+ *
+ * @param it NumberIterator
+ * @param offset Offset
+ */
+public inline p operator-=<N>(NumberIterator<N>& it, N offset) {
+    assert it.currentNumber - offset <= it.upperBound;
+    assert it.currentNumber - offset >= it.lowerBound;
+    it.currentNumber -= offset;
+}
+
+/**
+ * Convenience wrapper for creating a simple number iterator
+ */
+public inline f<NumberIterator<N>> range<N>(N begin, N end) {
+    return NumberIterator<N>(begin, end);
+}

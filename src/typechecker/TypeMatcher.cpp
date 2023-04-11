@@ -4,6 +4,9 @@
 
 namespace spice::compiler {
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "misc-no-recursion"
+
 bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
                                                 std::function<const GenericType *(const std::string &)> &resolveGenericType,
                                                 bool strictSpecifierMatching) {
@@ -13,9 +16,13 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
     candidateType = candidateType.getContainedTy();
   }
 
-  // Remove one reference wrapper of candidate type if required
-  if (candidateType.isRef())
-    candidateType = candidateType.getContainedTy();
+  // Remove reference wrapper of candidate type if required
+  if (candidateType.isRef() && !requestedType.isRef())
+    candidateType = candidateType.removeReferenceWrapper();
+
+  // Remove reference wrapper of requested type if required
+  if (!candidateType.isRef() && requestedType.isRef() && !candidateType.getBaseType().is(TY_GENERIC))
+    requestedType = requestedType.removeReferenceWrapper();
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts())
@@ -23,11 +30,16 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
   // Check if the candidate type itself is generic
   if (candidateType.isBaseType(TY_GENERIC)) { // The candidate type itself is generic
-    const std::string &genericTypeName = candidateType.getSubType();
+    const std::string genericTypeName = candidateType.getBaseType().getSubType();
 
     // Check if we know the concrete type for that generic type name already
     if (typeMapping.contains(genericTypeName)) {
-      const SymbolType &knownConcreteType = typeMapping.at(candidateType.getSubType());
+      SymbolType knownConcreteType = typeMapping.at(candidateType.getSubType());
+
+      // Remove reference wrapper of candidate type if required
+      if (!requestedType.isRef())
+        knownConcreteType = knownConcreteType.removeReferenceWrapper();
+
       // Check if the known concrete type matches the requested type
       return knownConcreteType.matches(requestedType, true, !strictSpecifierMatching, true);
     } else {
@@ -40,7 +52,8 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
         return false;
 
       // Add to type mapping
-      typeMapping.insert({genericTypeName, requestedType});
+      const SymbolType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : requestedType;
+      typeMapping.insert({genericTypeName, newMappingType});
 
       return true; // The type was successfully matched, by enriching the type mapping
     }
@@ -80,10 +93,13 @@ void TypeMatcher::substantiateTypeWithTypeMapping(SymbolType &symbolType, const 
     std::vector<SymbolType> templateTypes = symbolType.getBaseType().getTemplateTypes();
     // Substantiate every template type
     for (SymbolType &templateType : templateTypes)
-      substantiateTypeWithTypeMapping(templateType, typeMapping);
+      if (templateType.hasAnyGenericParts())
+        substantiateTypeWithTypeMapping(templateType, typeMapping);
     // Attach the list of concrete template types to the symbol type
     symbolType.setBaseTemplateTypes(templateTypes);
   }
 }
+
+#pragma clang diagnostic pop
 
 } // namespace spice::compiler

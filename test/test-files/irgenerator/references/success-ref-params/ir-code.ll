@@ -21,8 +21,8 @@ define private void @_p__void__void__proc__intref_Structref(ptr %0, ptr %1) {
   %5 = add i32 %4, 12
   store i32 %5, ptr %3, align 4
   %6 = load ptr, ptr %structRef, align 8
-  %ref = getelementptr inbounds %__Struct__intref_bool, ptr %6, i32 0, i32 0
-  %7 = load ptr, ptr %ref, align 8
+  %ref_addr = getelementptr inbounds %__Struct__intref_bool, ptr %6, i32 0, i32 0
+  %7 = load ptr, ptr %ref_addr, align 8
   %8 = load i32, ptr %7, align 4
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %8)
   ret void
@@ -41,8 +41,8 @@ define private i32 @_f__void__int__func__doubleref_Structref(ptr %0, ptr %1) {
   %5 = fmul double %4, -1.560000e+00
   store double %5, ptr %3, align 8
   %6 = load ptr, ptr %structRef, align 8
-  %b = getelementptr inbounds %__Struct__intref_bool, ptr %6, i32 0, i32 1
-  %7 = load i1, ptr %b, align 1
+  %b_addr = getelementptr inbounds %__Struct__intref_bool, ptr %6, i32 0, i32 1
+  %7 = load i1, ptr %b_addr, align 1
   %8 = zext i1 %7 to i32
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %8)
   ret i32 0

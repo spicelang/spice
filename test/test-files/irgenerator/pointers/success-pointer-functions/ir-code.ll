@@ -15,10 +15,10 @@ define private void @_p__void__void__birthday__Personptr(ptr %0) {
   %person = alloca ptr, align 8
   store ptr %0, ptr %person, align 8
   %2 = load ptr, ptr %person, align 8
-  %age = getelementptr inbounds %__Person__string_string_int, ptr %2, i32 0, i32 2
-  %3 = load i32, ptr %age, align 4
+  %age_addr = getelementptr inbounds %__Person__string_string_int, ptr %2, i32 0, i32 2
+  %3 = load i32, ptr %age_addr, align 4
   %4 = add i32 %3, 1
-  store i32 %4, ptr %age, align 4
+  store i32 %4, ptr %age_addr, align 4
   ret void
 }
 
@@ -33,17 +33,17 @@ define dso_local i32 @main() #0 {
   store ptr @anon.string.1, ptr %2, align 8
   %3 = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 2
   store i32 32, ptr %3, align 4
-  %lastName = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 1
-  %4 = load ptr, ptr %lastName, align 8
-  %firstName = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 0
-  %5 = load ptr, ptr %firstName, align 8
+  %lastName_addr = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 1
+  %4 = load ptr, ptr %lastName_addr, align 8
+  %firstName_addr = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 0
+  %5 = load ptr, ptr %firstName_addr, align 8
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %4, ptr %5)
-  %age = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 2
-  %7 = load i32, ptr %age, align 4
+  %age_addr = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 2
+  %7 = load i32, ptr %age_addr, align 4
   %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %7)
   call void @_p__void__void__birthday__Personptr(ptr %mike)
-  %age1 = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 2
-  %9 = load i32, ptr %age1, align 4
+  %age_addr1 = getelementptr inbounds %__Person__string_string_int, ptr %mike, i32 0, i32 2
+  %9 = load i32, ptr %age_addr1, align 4
   %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %9)
   %11 = load i32, ptr %result, align 4
   ret i32 %11

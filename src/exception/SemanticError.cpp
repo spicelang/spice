@@ -89,6 +89,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Destructors must not have parameters";
   case OPERATOR_WRONG_DATA_TYPE:
     return "Wrong data type for operator";
+  case INVALID_ITERATOR:
+    return "Invalid iterator";
   case UNEXPECTED_DYN_TYPE:
     return "Unexpected dyn type";
   case REASSIGN_CONST_VARIABLE:
@@ -116,7 +118,7 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
   case CIRCULAR_DEPENDENCY:
     return "Circular import detected";
   case INVALID_MEMBER_ACCESS:
-    return "Member access is only allowed on enums and Strings";
+    return "Member access is only allowed on structs and Strings";
   case SCOPE_ACCESS_ONLY_IMPORTS:
     return "Scope access is only allowed on imports";
   case UNKNOWN_DATATYPE:
@@ -141,6 +143,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Return with value in procedure";
   case DYN_POINTERS_NOT_ALLOWED:
     return "Dyn pointers not allowed";
+  case REF_POINTERS_ARE_NOT_ALLOWED:
+    return "Ref pointers not allowed";
   case DYN_REFERENCES_NOT_ALLOWED:
     return "Dyn references not allowed";
   case DYN_ARRAYS_NOT_ALLOWED:

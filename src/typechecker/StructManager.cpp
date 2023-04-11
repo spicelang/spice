@@ -72,15 +72,16 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
         break; // Leave the whole manifestation list, because all manifestations in this list have the same name
 
       // Prepare mapping table from generic type name to concrete type
-      candidate.typeMapping.clear();
-      candidate.typeMapping.reserve(candidate.templateTypes.size());
+      TypeMapping &typeMapping = candidate.typeMapping;
+      typeMapping.clear();
+      typeMapping.reserve(candidate.templateTypes.size());
 
       // Check template types requirement
-      if (!matchTemplateTypes(candidate, requestedTemplateTypes, candidate.typeMapping))
+      if (!matchTemplateTypes(candidate, requestedTemplateTypes, typeMapping))
         continue; // Leave this manifestation and continue with the next one
 
       // Map field types from generic to concrete
-      substantiateFieldTypes(candidate, candidate.typeMapping);
+      substantiateFieldTypes(candidate, typeMapping);
 
       // We found a match! -> Set the actual candidate and its entry to used
       candidate.used = true;
@@ -122,7 +123,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       // Attach the template types to the new struct entry
       SymbolType entryType = substantiatedStruct->entry->getType();
       entryType.setTemplateTypes(substantiatedStruct->getTemplateTypes());
-      entryType.setStructBodyScope(substantiatedStruct->structScope);
+      entryType.setBodyScope(substantiatedStruct->structScope);
       substantiatedStruct->entry->updateType(entryType, true);
 
       // Replace symbol types of field entries with concrete types

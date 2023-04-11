@@ -597,7 +597,7 @@ public:
     return declStmtNodes.size() == 2 ? declStmtNodes.front() : nullptr;
   }
   [[nodiscard]] DeclStmtNode *itemDecl() const { return getChildren<DeclStmtNode>().back(); }
-  [[nodiscard]] AssignExprNode *arrayAssign() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] AssignExprNode *iteratorAssign() const { return getChild<AssignExprNode>(); }
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
   // Other methods

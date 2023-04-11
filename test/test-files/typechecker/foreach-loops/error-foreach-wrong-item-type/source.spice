@@ -1,6 +1,7 @@
+import "std/iterator/number-iterator";
+
 f<int> main() {
-    int[5] array = { 1, 2, 3, 4, 5 };
-    foreach double item : array {
+    foreach double item : range(1, 5) {
         printf("Item: %f", item);
     }
 }

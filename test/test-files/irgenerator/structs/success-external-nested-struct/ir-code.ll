@@ -18,11 +18,11 @@ define dso_local i32 @main() #0 {
   store %__Socket__int_short_NestedSocket %1, ptr %s, align 8
   store %__Socket__int_short_NestedSocket %1, ptr %s, align 8
   %n = getelementptr inbounds %__Socket__int_short_NestedSocket, ptr %s, i32 0, i32 2
-  %testString = getelementptr inbounds %__NestedSocket__string_long, ptr %n, i32 0, i32 0
-  %2 = load ptr, ptr %testString, align 8
+  %testString_addr = getelementptr inbounds %__NestedSocket__string_long, ptr %n, i32 0, i32 0
+  %2 = load ptr, ptr %testString_addr, align 8
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %2)
-  %sock = getelementptr inbounds %__Socket__int_short_NestedSocket, ptr %s, i32 0, i32 0
-  %4 = load i32, ptr %sock, align 4
+  %sock_addr = getelementptr inbounds %__Socket__int_short_NestedSocket, ptr %s, i32 0, i32 0
+  %4 = load i32, ptr %sock_addr, align 4
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %4)
   %6 = load i32, ptr %result, align 4
   ret i32 %6

@@ -73,15 +73,16 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
         break; // Leave the whole manifestation list, because all manifestations in this list have the same name
 
       // Prepare mapping table from generic type name to concrete type
-      candidate.typeMapping.clear();
-      candidate.typeMapping.reserve(candidate.templateTypes.size());
+      TypeMapping &typeMapping = candidate.typeMapping;
+      typeMapping.clear();
+      typeMapping.reserve(candidate.templateTypes.size());
 
       // Check template types requirement
-      if (!matchTemplateTypes(candidate, requestedTemplateTypes, candidate.typeMapping))
+      if (!matchTemplateTypes(candidate, requestedTemplateTypes, typeMapping))
         continue; // Leave this manifestation and continue with the next one
 
       // Map signatures from generic to concrete
-      substantiateSignatures(candidate, candidate.typeMapping);
+      substantiateSignatures(candidate, typeMapping);
 
       // We found a match! -> Set the actual candidate and its entry to used
       candidate.used = true;
@@ -123,7 +124,7 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
       // Attach the template types to the new interface entry
       SymbolType entryType = substantiatedInterface->entry->getType();
       entryType.setTemplateTypes(substantiatedInterface->getTemplateTypes());
-      entryType.setStructBodyScope(substantiatedInterface->interfaceScope);
+      entryType.setBodyScope(substantiatedInterface->interfaceScope);
       substantiatedInterface->entry->updateType(entryType, true);
 
       // Replace symbol types of method entries with concrete types

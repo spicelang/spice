@@ -147,15 +147,14 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   changeToScope(node->bodyScope, SCOPE_FOREACH_BODY);
 
   // Check type of the array
-  SymbolType arrayType = std::any_cast<ExprResult>(visit(node->arrayAssign())).type;
-  if (!arrayType.isArray())
-    throw SemanticError(node->arrayAssign(), OPERATOR_WRONG_DATA_TYPE,
-                        "Can only apply foreach loop on an array type. You provided " + arrayType.getName());
-
-  // Check size of the array
-  if (arrayType.getArraySize() == ARRAY_SIZE_UNKNOWN)
-    throw SemanticError(node->arrayAssign(), ARRAY_SIZE_INVALID,
-                        "Can only apply foreach loop on an array type of which the size is known at compile time");
+  SymbolType iteratorType = std::any_cast<ExprResult>(visit(node->iteratorAssign())).type;
+  if (!iteratorType.isIterator(node))
+    throw SemanticError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE,
+                        "Can only apply foreach loop on an iterator type. You provided " + iteratorType.getName());
+  const std::vector<SymbolType> &iteratorTemplateTypes = iteratorType.getTemplateTypes();
+  if (iteratorTemplateTypes.empty())
+    throw SemanticError(node->iteratorAssign(), INVALID_ITERATOR,
+                        "Iterator has no generic arguments so that the item type could not be inferred");
 
   if (node->idxVarDecl()) {
     // Visit index declaration or assignment
@@ -174,22 +173,32 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Check type of the item
   auto itemType = std::any_cast<SymbolType>(visit(node->itemDecl()));
   if (itemType.is(TY_DYN)) { // Perform type inference
-    itemType = arrayType.getContainedTy();
+    // The item type is the first template type of the iterator type
+    itemType = iteratorTemplateTypes.front();
     // Update evaluated symbol type of the declaration data type
     node->itemDecl()->dataType()->setEvaluatedSymbolType(itemType, manIdx);
-  } else if (itemType != arrayType.getContainedTy()) { // Check types
+  } else if (!itemType.matches(iteratorTemplateTypes.front(), false, false, true)) { // Check types
     throw SemanticError(node->itemDecl(), OPERATOR_WRONG_DATA_TYPE,
-                        "Foreach loop item type does not match array type. Expected " + arrayType.getName() + ", provided " +
-                            itemType.getName());
+                        "Foreach item type does not match  the item type of the iterator. Iterator produces " +
+                            iteratorTemplateTypes.front().getName() + ", the specified item type is " + itemType.getName());
   }
 
   // Update type of item
   SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemDecl()->varName);
   assert(itemVarSymbol != nullptr);
-  itemVarSymbol->updateType(itemType, false);
+  itemVarSymbol->updateType(itemType, true);
 
   // Visit body
   visit(node->body());
+
+  // Set .get(), .hasNext() and .next() functions to used
+  Scope *matchScope = iteratorType.getBodyScope();
+  Function *getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, false, node);
+  assert(getFct != nullptr);
+  Function *hasNextFct = FunctionManager::matchFunction(matchScope, "hasNext", iteratorType, {}, false, node);
+  assert(hasNextFct != nullptr);
+  Function *nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, false, node);
+  assert(nextFct != nullptr);
 
   // Leave foreach body scope
   currentScope = node->bodyScope->parent;
@@ -532,7 +541,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     AssignExprNode *assignment = node->args().at(placeholderCount);
     // Visit assignment
     SymbolType argType = std::any_cast<ExprResult>(visit(assignment)).type;
-    argType = argType.removeReferenceWrappers();
+    argType = argType.removeReferenceWrapper();
 
     switch (node->templatedString.at(index + 1)) {
     case 'c': {
@@ -606,7 +615,7 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
   SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
-  argType = argType.removeReferenceWrappers();
+  argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.isArray())
@@ -626,7 +635,7 @@ std::any TypeChecker::visitJoinCall(JoinCallNode *node) {
   for (AssignExprNode *assignExpr : node->assignExpressions()) {
     // Visit assign expression
     SymbolType assignExprType = std::any_cast<ExprResult>(visit(assignExpr)).type;
-    assignExprType = assignExprType.removeReferenceWrappers();
+    assignExprType = assignExprType.removeReferenceWrapper();
     // Check if type is byte* or byte*[]
     if (assignExprType == bytePtr && assignExprType.isArrayOf(bytePtr))
       throw SemanticError(assignExpr, JOIN_ARG_MUST_BE_TID,
@@ -1067,7 +1076,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // Retrieve registry entry
     const std::string &structName = lhsBaseTy.getSubType();
-    Scope *structScope = lhsBaseTy.getStructBodyScope();
+    Scope *structScope = lhsBaseTy.getBodyScope();
 
     // Get accessed field
     SymbolTableEntry *memberEntry = structScope->lookupStrict(fieldName);
@@ -1082,9 +1091,6 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // Set field to used
     memberEntry->used = true;
-
-    // Remove reference wrappers
-    memberType = memberType.removeReferenceWrappers();
 
     // Overwrite type and entry of left side with member type and entry
     lhsType = memberType;
@@ -1192,10 +1198,6 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
   // Set symbol table entry to used
   varEntry->used = true;
-
-  // De-reference references
-  while (varType.isRef())
-    varType = varType.getContainedTy();
 
   // Retrieve scope for the new scope path fragment
   if (varType.isBaseType(TY_STRUCT)) {
@@ -1314,7 +1316,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   if (data.isMethodCall) {
     // This is a method call
     data.thisType = firstFragmentEntry->getType();
-    Scope *structBodyScope = data.thisType.getBaseType().getStructBodyScope();
+    Scope *structBodyScope = data.thisType.getBaseType().getBodyScope();
     assert(structBodyScope != nullptr);
     auto [scope, type] = visitMethodCall(node, structBodyScope);
     data.calleeParentScope = scope;
@@ -1388,11 +1390,11 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   if (returnType.isBaseType(TY_STRUCT)) {
     SymbolType returnBaseType = returnType.getBaseType();
     const std::string structName = returnBaseType.getOriginalSubType();
-    Scope *matchScope = returnBaseType.getStructBodyScope()->parent;
+    Scope *matchScope = returnBaseType.getBodyScope()->parent;
     assert(matchScope != nullptr);
     Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
     assert(spiceStruct != nullptr);
-    returnBaseType.setStructBodyScope(spiceStruct->structScope);
+    returnBaseType.setBodyScope(spiceStruct->structScope);
     returnType = returnType.replaceBaseType(returnBaseType);
   }
 
@@ -1485,7 +1487,7 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
 
     // Set the 'this' type of the function to the struct type
     data.thisType = structEntry->getType();
-    data.thisType.setStructBodyScope(thisStruct->structScope);
+    data.thisType.setBodyScope(thisStruct->structScope);
 
     // Get the fully qualified name, that can be used in the current source file to identify the struct
     knownStructName = structRegistryEntry->name;
@@ -1514,19 +1516,19 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   if (node->hasTemplateTypes)
     throw SemanticError(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls");
 
-  // Traverse through structs - the first fragment is already looked up and the last one is the function name
+  // Traverse through structs - the first fragment is already looked up and the last one is the method name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
     const std::string identifier = node->functionNameFragments.at(i);
 
     // Retrieve field entry
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
-    if (!fieldEntry->getType().is(TY_STRUCT))
+    if (!fieldEntry->getType().isBaseType(TY_STRUCT))
       throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot call a method on '" + identifier + "', since it is no struct");
     fieldEntry->used = true;
 
     // Get struct type and scope
-    data.thisType = fieldEntry->getType();
-    structScope = data.thisType.getStructBodyScope();
+    data.thisType = fieldEntry->getType().getBaseType();
+    structScope = data.thisType.getBodyScope();
     assert(structScope != nullptr);
   }
 
@@ -1542,7 +1544,7 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   localThisType = mapLocalTypeToImportedScopeType(functionParentScope, localThisType);
 
   // Retrieve function object
-  const std::string functionName = node->functionNameFragments.back();
+  const std::string &functionName = node->functionNameFragments.back();
   data.callee = FunctionManager::matchFunction(functionParentScope, functionName, localThisType, localArgTypes, false, node);
 
   return std::make_pair(functionParentScope, data.thisType);
@@ -1629,7 +1631,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // Use scope of concrete substantiation and not the scope of the generic type
   structScope = spiceStruct->structScope;
-  structType.setStructBodyScope(structScope);
+  structType.setBodyScope(structScope);
 
   // Set template types to the struct
   std::vector<SymbolType> templateTypes;
@@ -1864,7 +1866,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
         const std::string structName = node->typeNameFragments.back();
         Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
         if (spiceStruct)
-          entryType.setStructBodyScope(spiceStruct->structScope);
+          entryType.setBodyScope(spiceStruct->structScope);
       }
     }
 
@@ -1874,7 +1876,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       Interface *spiceInterface = InterfaceManager::matchInterface(localAccessScope, interfaceName, templateTypes, node);
       if (!spiceInterface)
         throw SemanticError(node, UNKNOWN_DATATYPE, "Unknown interface " + Interface::getSignature(interfaceName, templateTypes));
-      entryType.setStructBodyScope(spiceInterface->interfaceScope);
+      entryType.setBodyScope(spiceInterface->interfaceScope);
     }
 
     // Remove public specifier
@@ -1902,7 +1904,7 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
   for (const auto &[_, entry] : targetSourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->structScope == symbolType.getBaseType().getStructBodyScope())
+        if (manifestation->structScope == symbolType.getBaseType().getBodyScope())
           return symbolType.replaceBaseSubType(manifestation->name);
 
   // The target source file does not know about the struct at all
@@ -1929,7 +1931,7 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
   for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->structScope == symbolType.getBaseType().getStructBodyScope()) {
+        if (manifestation->structScope == symbolType.getBaseType().getBodyScope()) {
           // Get the 'fullest-qualified' registry entry
           const NameRegistryEntry *mostQualifiedEntry = sourceFile->getNameRegistryEntry(entry.name);
           assert(mostQualifiedEntry != nullptr);

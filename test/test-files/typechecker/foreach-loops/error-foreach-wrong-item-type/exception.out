@@ -1,5 +1,5 @@
-[Error|Semantic] ./test-files/typechecker/foreach-loops/error-foreach-wrong-item-type/source.spice:3:13:
-Wrong data type for operator: Foreach loop item type does not match array type. Expected int[], provided double
+[Error|Semantic] ./test-files/typechecker/foreach-loops/error-foreach-wrong-item-type/source.spice:4:13:
+Wrong data type for operator: Foreach item type does not match  the item type of the iterator. Iterator produces int, the specified item type is double
 
-3  foreach double item : array {
+4  foreach double item : range(1, 5) {
            ^^^^^^^^^^^

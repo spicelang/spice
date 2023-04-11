@@ -1,5 +1,73 @@
 {
   "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "if:L2C5",
+          "symbols": []
+        }
+      ],
+      "name": "int faculty(int)",
+      "symbols": [
+        {
+          "codeLoc": "L1C16",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "input",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L1C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "fct:main",
+      "symbols": [
+        {
+          "codeLoc": "L9C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "input",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L10C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "faculty",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L8C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    }
+  ],
   "symbols": [
     {
       "codeLoc": "L8C1",

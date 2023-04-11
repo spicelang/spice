@@ -14,15 +14,17 @@ OpRuleConversionManager::OpRuleConversionManager(GlobalResourceManager &resource
     : context(resourceManager.context), builder(resourceManager.builder), irGenerator(irGenerator),
       stdFunctionManager(irGenerator->stdFunctionManager) {}
 
-ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                     ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                     ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                                                      size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
     return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
@@ -64,14 +66,16 @@ ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+ExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                      ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                                                       size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -114,13 +118,15 @@ ExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprR
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                    ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -158,13 +164,15 @@ ExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                    ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -202,11 +210,13 @@ ExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                    ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -240,11 +250,13 @@ ExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                    ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -270,11 +282,13 @@ ExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                    ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -300,11 +314,13 @@ ExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                    ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -330,11 +346,13 @@ ExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                   ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                   ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -360,11 +378,13 @@ ExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResu
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                    ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -391,11 +411,13 @@ ExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+ExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                      ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                                                       size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
@@ -407,11 +429,13 @@ ExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprR
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                     ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+ExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                     ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                                                      size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
@@ -423,11 +447,13 @@ ExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+ExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                      ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                                                       size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):     // fallthrough
@@ -439,14 +465,16 @@ ExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprR
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                 const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -469,11 +497,11 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFp(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpOEQ(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOEQ(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -492,7 +520,7 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
     return {.value = builder.CreateICmpEQ(lhsV(), rhsInt)};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), lhsT);
     return {.value = builder.CreateFCmpOEQ(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -511,7 +539,7 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
     return {.value = builder.CreateICmpEQ(lhsV(), rhsShort)};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOEQ(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -556,14 +584,16 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: =="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                    ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -585,11 +615,11 @@ ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprRes
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFp(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpONE(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpONE(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -608,7 +638,7 @@ ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprRes
     return {.value = builder.CreateICmpNE(lhsV(), rhsInt)};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpONE(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -627,7 +657,7 @@ ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprRes
     return {.value = builder.CreateICmpNE(lhsV(), rhsShort)};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpONE(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -673,12 +703,14 @@ ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -686,60 +718,62 @@ ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult 
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFp(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpOLT(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLT(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
-    return {.value = builder.CreateICmpSLT(lhsV(), rhsV())};
+    return {.value = generateLT(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_INT, TY_SHORT): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, true);
-    return {.value = builder.CreateICmpSLT(lhsV(), rhsInt)};
+    return {.value = generateLT(lhsSTy, rhsSTy, lhsV(), rhsInt)};
   }
   case COMB(TY_INT, TY_LONG): {
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSLT(lhsLong, rhsV())};
+    return {.value = generateLT(lhsSTy, rhsSTy, lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLT(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
     llvm::Value *lhsInt = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSLT(lhsInt, rhsV())};
+    return {.value = generateLT(lhsSTy, rhsSTy, lhsInt, rhsV())};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return {.value = builder.CreateICmpSLT(lhsV(), rhsV())};
+    return {.value = generateLT(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_SHORT, TY_LONG): {
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSLT(lhsLong, rhsV())};
+    return {.value = generateLT(lhsSTy, rhsSTy, lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLT(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, true);
-    return {.value = builder.CreateICmpSLT(lhsV(), rhsLong)};
+    return {.value = generateLT(lhsSTy, rhsSTy, lhsV(), rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return {.value = builder.CreateICmpSLT(lhsV(), rhsV())};
+    return {.value = generateLT(lhsSTy, rhsSTy, lhsV(), rhsV())};
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                   ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                   ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -747,61 +781,63 @@ ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResu
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFp(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpOGT(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGT(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
-    return {.value = builder.CreateICmpSGT(lhsV(), rhsV())};
+    return {.value = generateGT(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_INT, TY_SHORT): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, true);
-    return {.value = builder.CreateICmpSGT(lhsV(), rhsInt)};
+    return {.value = generateGT(lhsSTy, rhsSTy, lhsV(), rhsInt)};
   }
   case COMB(TY_INT, TY_LONG): {
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSGT(lhsLong, rhsV())};
+    return {.value = generateGT(lhsSTy, rhsSTy, lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGT(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
     llvm::Value *lhsInt = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSGT(lhsInt, rhsV())};
+    return {.value = generateGT(lhsSTy, rhsSTy, lhsInt, rhsV())};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return {.value = builder.CreateICmpSGT(lhsV(), rhsV())};
+    return {.value = generateGT(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_SHORT, TY_LONG): {
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSGT(lhsLong, rhsV())};
+    return {.value = generateGT(lhsSTy, rhsSTy, lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGT(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, true);
-    return {.value = builder.CreateICmpSGT(lhsV(), rhsLong)};
+    return {.value = generateGT(lhsSTy, rhsSTy, lhsV(), rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return {.value = builder.CreateICmpSGT(lhsV(), rhsV())};
+    return {.value = generateGT(lhsSTy, rhsSTy, lhsV(), rhsV())};
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                     ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                     ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                                                      size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -809,61 +845,63 @@ ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprRe
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFp(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpOLE(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLE(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
-    return {.value = builder.CreateICmpSLE(lhsV(), rhsV())};
+    return {.value = generateLE(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_INT, TY_SHORT): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, true);
-    return {.value = builder.CreateICmpSLE(lhsV(), rhsInt)};
+    return {.value = generateLE(lhsSTy, rhsSTy, lhsV(), rhsInt)};
   }
   case COMB(TY_INT, TY_LONG): {
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSLE(lhsLong, rhsV())};
+    return {.value = generateLE(lhsSTy, rhsSTy, lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLE(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
     llvm::Value *lhsInt = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSLE(lhsInt, rhsV())};
+    return {.value = generateLE(lhsSTy, rhsSTy, lhsInt, rhsV())};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return {.value = builder.CreateICmpSLE(lhsV(), rhsV())};
+    return {.value = generateLE(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_SHORT, TY_LONG): {
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSLE(lhsLong, rhsV())};
+    return {.value = generateLE(lhsSTy, rhsSTy, lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOLE(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, true);
-    return {.value = builder.CreateICmpSLE(lhsV(), rhsLong)};
+    return {.value = generateLE(lhsSTy, rhsSTy, lhsV(), rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return {.value = builder.CreateICmpSLE(lhsV(), rhsV())};
+    return {.value = generateLE(lhsSTy, rhsSTy, lhsV(), rhsV())};
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                        ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                        ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                                                         size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -871,60 +909,62 @@ ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, Exp
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFp(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFCmpOGE(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGE(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
-    return {.value = builder.CreateICmpSGE(lhsV(), rhsV())};
+    return {.value = generateGE(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_INT, TY_SHORT): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, true);
-    return {.value = builder.CreateICmpSGE(lhsV(), rhsInt)};
+    return {.value = generateGE(lhsSTy, rhsSTy, lhsV(), rhsInt)};
   }
   case COMB(TY_INT, TY_LONG): {
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSGE(lhsLong, rhsV())};
+    return {.value = generateGE(lhsSTy, rhsSTy, lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGE(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
     llvm::Value *lhsInt = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSGE(lhsInt, rhsV())};
+    return {.value = generateGE(lhsSTy, rhsSTy, lhsInt, rhsV())};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return {.value = builder.CreateICmpSGE(lhsV(), rhsV())};
+    return {.value = generateGE(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_SHORT, TY_LONG): {
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, true);
-    return {.value = builder.CreateICmpSGE(lhsLong, rhsV())};
+    return {.value = generateGE(lhsSTy, rhsSTy, lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFCmpOGE(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, true);
-    return {.value = builder.CreateICmpSGE(lhsV(), rhsLong)};
+    return {.value = generateGE(lhsSTy, rhsSTy, lhsV(), rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return {.value = builder.CreateICmpSGE(lhsV(), rhsV())};
+    return {.value = generateGE(lhsSTy, rhsSTy, lhsV(), rhsV())};
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                     ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+ExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                     ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                                                      size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -957,12 +997,14 @@ ExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
-                                                      ExprResult &rhs, const SymbolType &rhsSTy, Scope *accessScope,
+ExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
+                                                      ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                                                       size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -995,14 +1037,16 @@ ExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprR
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -1014,11 +1058,11 @@ ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult 
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFp(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFAdd(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFAdd(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -1034,7 +1078,7 @@ ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult 
   case COMB(TY_INT, TY_PTR):
     return {.value = builder.CreateGEP(rhsSTy.getContainedTy().toLLVMType(context, accessScope), rhsV(), lhsV())};
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFAdd(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -1050,7 +1094,7 @@ ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult 
   case COMB(TY_SHORT, TY_PTR):
     return {.value = builder.CreateGEP(rhsSTy.getContainedTy().toLLVMType(context, accessScope), rhsV(), lhsV())};
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFAdd(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -1073,14 +1117,16 @@ ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult 
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                 const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -1092,11 +1138,11 @@ ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFp(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFSub(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFSub(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -1112,7 +1158,7 @@ ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult
   case COMB(TY_INT, TY_PTR):
     return {.value = builder.CreateGEP(rhsSTy.getContainedTy().toLLVMType(context, accessScope), rhsV(), lhsV())};
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFSub(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -1128,7 +1174,7 @@ ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult
   case COMB(TY_SHORT, TY_PTR):
     return {.value = builder.CreateGEP(rhsSTy.getContainedTy().toLLVMType(context, accessScope), rhsV(), lhsV())};
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFSub(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -1151,14 +1197,16 @@ ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                               SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -1170,11 +1218,11 @@ ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFp(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFMul(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFMul(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -1188,7 +1236,7 @@ ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &
     return {.value = builder.CreateMul(lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFMul(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -1202,7 +1250,7 @@ ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &
     return {.value = builder.CreateMul(lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFMul(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -1217,14 +1265,16 @@ ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                               SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -1236,11 +1286,11 @@ ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &
   case COMB(TY_DOUBLE, TY_INT):   // fallthrough
   case COMB(TY_DOUBLE, TY_SHORT): // fallthrough
   case COMB(TY_DOUBLE, TY_LONG): {
-    llvm::Value *rhsFP = builder.CreateSIToFP(rhsV(), lhsT);
+    llvm::Value *rhsFP = generateIToFp(rhsSTy, rhsV(), lhsT);
     return {.value = builder.CreateFDiv(lhsV(), rhsFP)};
   }
   case COMB(TY_INT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFDiv(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
@@ -1254,7 +1304,7 @@ ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &
     return {.value = builder.CreateSDiv(lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFDiv(lhsFP, rhsV())};
   }
   case COMB(TY_SHORT, TY_INT): {
@@ -1268,7 +1318,7 @@ ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &
     return {.value = builder.CreateSDiv(lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
-    llvm::Value *lhsFP = builder.CreateSIToFP(lhsV(), rhsT);
+    llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFDiv(lhsFP, rhsV())};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
@@ -1284,12 +1334,14 @@ ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy, ExprResult &rhs,
-                                               const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                               SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
-  const auto rhsT = rhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1325,9 +1377,10 @@ ExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, ExprResult &
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+ExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                        Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
   case TY_DOUBLE:
@@ -1342,9 +1395,10 @@ ExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, Expr
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+ExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                           Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1359,9 +1413,10 @@ ExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, E
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+ExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                             Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1376,9 +1431,10 @@ ExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node,
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+ExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                      Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
   case TY_BOOL:
@@ -1389,9 +1445,10 @@ ExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, ExprResult &lhs, const SymbolType &lhsSTy,
+ExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                             Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:   // fallthrough
@@ -1407,6 +1464,7 @@ ExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node,
 ExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                            Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1424,6 +1482,7 @@ ExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, 
 ExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                              Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1438,10 +1497,12 @@ ExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, const SymbolType &lhsSTy, ExprResult &rhs,
-                                                const SymbolType &rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, SymbolType lhsSTy, ExprResult &rhs,
+                                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsT = lhsSTy.toLLVMType(context, accessScope);
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1554,6 +1615,45 @@ ExprResult OpRuleConversionManager::callBinaryOperatorOverloadFct(const ASTNode 
     return {};
 
   return {.value = resultValue};
+}
+
+llvm::Value *OpRuleConversionManager::generateIToFp(const SymbolType &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const {
+  if (srcSTy.isSigned())
+    return builder.CreateSIToFP(srcV, tgtT);
+  else
+    return builder.CreateUIToFP(srcV, tgtT);
+}
+
+llvm::Value *OpRuleConversionManager::generateLT(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                                 llvm::Value *rhsV) const {
+  if (lhsSTy.isSigned() && rhsSTy.isSigned())
+    return builder.CreateICmpSLT(lhsV, rhsV);
+  else
+    return builder.CreateICmpULT(lhsV, rhsV);
+}
+
+llvm::Value *OpRuleConversionManager::generateLE(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                                 llvm::Value *rhsV) const {
+  if (lhsSTy.isSigned() && rhsSTy.isSigned())
+    return builder.CreateICmpSLE(lhsV, rhsV);
+  else
+    return builder.CreateICmpULE(lhsV, rhsV);
+}
+
+llvm::Value *OpRuleConversionManager::generateGT(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                                 llvm::Value *rhsV) const {
+  if (lhsSTy.isSigned() && rhsSTy.isSigned())
+    return builder.CreateICmpSGT(lhsV, rhsV);
+  else
+    return builder.CreateICmpUGT(lhsV, rhsV);
+}
+
+llvm::Value *OpRuleConversionManager::generateGE(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                                 llvm::Value *rhsV) const {
+  if (lhsSTy.isSigned() && rhsSTy.isSigned())
+    return builder.CreateICmpSGE(lhsV, rhsV);
+  else
+    return builder.CreateICmpUGE(lhsV, rhsV);
 }
 
 } // namespace spice::compiler

@@ -78,7 +78,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
         lhs.value = result.value;
         builder.CreateStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
       }
-      return ExprResult{.ptr = lhs.ptr, .value = lhs.value, .entry = lhs.entry};
+      return ExprResult{.value = lhs.value, .ptr = lhs.ptr, .refPtr = lhs.refPtr, .entry = lhs.entry};
     }
   }
 
@@ -698,6 +698,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
   case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
     // Get the address of the struct instance
     resolveAddress(lhs);
+    lhsSTy = lhsSTy.removeReferenceWrapper();
 
     // Auto de-reference pointer
     autoDeReferencePtr(lhs.ptr, lhsSTy, currentScope);
@@ -705,7 +706,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
     // Retrieve struct scope
     const std::string &fieldName = node->identifier;
-    Scope *structScope = lhsSTy.getStructBodyScope();
+    Scope *structScope = lhsSTy.getBodyScope();
 
     // Retrieve field entry
     lhs.entry = structScope->lookupStrict(fieldName);
@@ -714,14 +715,16 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
     // Get address of the field in the struct instance
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(lhs.entry->orderIndex)};
-    lhs.ptr = builder.CreateInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices);
-    lhs.ptr->setName(fieldName);
+    llvm::Value *memberAddress = builder.CreateInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices);
+    memberAddress->setName(fieldName + "_addr");
 
-    // Load the address of the referenced variable
-    while (fieldSymbolType.isRef()) {
-      llvm::Type *referencedType = fieldSymbolType.toLLVMType(context, currentScope);
-      lhs.ptr = builder.CreateLoad(referencedType, lhs.ptr);
-      fieldSymbolType = fieldSymbolType.getContainedTy();
+    // Set as ptr or refPtr, depending on the type
+    if (fieldSymbolType.isRef()) {
+      lhs.ptr = nullptr;
+      lhs.refPtr = memberAddress;
+    } else {
+      lhs.ptr = memberAddress;
+      lhs.refPtr = nullptr;
     }
 
     // Reset the value
@@ -842,11 +845,8 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(address != nullptr);
 
   // Load the address of the referenced variable
-  while (varSymbolType.isRef()) {
-    llvm::Type *referencedType = varSymbolType.toLLVMType(context, currentScope);
-    address = builder.CreateLoad(referencedType, address);
-    varSymbolType = varSymbolType.getContainedTy();
-  }
+  if (varSymbolType.isRef())
+    return ExprResult{.refPtr = address, .entry = varEntry};
 
   return ExprResult{.ptr = address, .entry = varEntry};
 }

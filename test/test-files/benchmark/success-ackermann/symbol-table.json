@@ -1,5 +1,88 @@
 {
   "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "if:L3C5",
+          "symbols": []
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "if:L2C5",
+          "symbols": []
+        }
+      ],
+      "name": "int ack(int,int)",
+      "symbols": [
+        {
+          "codeLoc": "L1C19",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "n",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L1C12",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "m",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L1C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "fct:main",
+      "symbols": [
+        {
+          "codeLoc": "L9C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "baseN",
+          "orderIndex": 2,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L8C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "baseM",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L7C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    }
+  ],
   "symbols": [
     {
       "codeLoc": "L7C1",

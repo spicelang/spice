@@ -196,18 +196,42 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   breakBlocks.push_back(bExit);
   continueBlocks.push_back(bTail);
 
-  // Call .reset on iterator
-  // ToDo: implement
+  // Resolve iterator
+  AssignExprNode *iteratorAssignNode = node->iteratorAssign();
+  SymbolType iteratorType = iteratorAssignNode->getEvaluatedSymbolType(manIdx);
+  llvm::Value *iterator = resolveAddress(iteratorAssignNode);
+
+  // Resolve item type
+  DeclStmtNode *itemDeclNode = node->itemDecl();
+  SymbolType itemType = itemDeclNode->getEvaluatedSymbolType(manIdx);
+
+  // Get iterator functions
+  llvm::Function *getFct = stdFunctionManager.getIteratorGetFct(iteratorType, currentScope);
+  llvm::Function *hasNextFct = stdFunctionManager.getIteratorHasNextFct(iteratorType);
+  llvm::Function *nextFct = stdFunctionManager.getIteratorNextFct(iteratorType, currentScope);
+
+  // Visit item declaration
+  visit(node->itemDecl());
+  // Get address of item variable
+  llvm::Value *varAddress = itemDeclNode->entries.at(manIdx)->getAddress();
+  assert(varAddress != nullptr);
+
+  // Call .get() on iterator to get the first value
+  const SymbolType &getReturnType = iteratorType.getTemplateTypes().front();
+  llvm::Value *value = builder.CreateCall(getFct, iterator);
+  value = builder.CreateLoad(getReturnType.toLLVMType(context, nullptr), value);
+  // Store the first value to the item variable
+  builder.CreateStore(value, varAddress);
+
   // Create jump from original to head node
   insertJump(bHead);
 
   // Switch to head block
   switchToBlock(bHead);
-  // Call .isValid on iterator
-  // ToDo: implement
-  llvm::Value *condValue = nullptr;
+  // Call .hasNext() on iterator
+  llvm::Value *hasNext = builder.CreateCall(hasNextFct, iterator);
   // Create conditional jump from head to body or exit block
-  insertCondJump(condValue, bBody, bExit);
+  insertCondJump(hasNext, bBody, bExit);
 
   // Switch to body block
   switchToBlock(bBody);
@@ -218,8 +242,12 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Switch to tail block
   switchToBlock(bTail);
-  // Call .next on iterator
-  // ToDo: implement
+  // Call .next() on iterator
+  const SymbolType &nextReturnType = iteratorType.getTemplateTypes().front();
+  value = builder.CreateCall(nextFct, iterator);
+  value = builder.CreateLoad(nextReturnType.toLLVMType(context, nullptr), value);
+  // Store the first value to the item variable
+  builder.CreateStore(value, varAddress);
   // Create jump from tail to head block
   insertJump(bHead);
 

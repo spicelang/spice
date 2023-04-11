@@ -80,18 +80,18 @@ define dso_local i32 @main() #1 {
   %2 = call %__ShoppingCart__string_ShoppingItemarray @_f__void__ShoppingCart__newShoppingCart()
   store %__ShoppingCart__string_ShoppingItemarray %2, ptr %shoppingCart, align 8
   store %__ShoppingCart__string_ShoppingItemarray %2, ptr %shoppingCart, align 8
-  %items = getelementptr inbounds %__ShoppingCart__string_ShoppingItemarray, ptr %shoppingCart, i32 0, i32 1
-  %3 = getelementptr inbounds [3 x %__ShoppingItem__string_double_string], ptr %items, i32 0, i32 1
-  %name = getelementptr inbounds %__ShoppingItem__string_double_string, ptr %3, i32 0, i32 0
-  %4 = load ptr, ptr %name, align 8
+  %items_addr = getelementptr inbounds %__ShoppingCart__string_ShoppingItemarray, ptr %shoppingCart, i32 0, i32 1
+  %3 = getelementptr inbounds [3 x %__ShoppingItem__string_double_string], ptr %items_addr, i32 0, i32 1
+  %name_addr = getelementptr inbounds %__ShoppingItem__string_double_string, ptr %3, i32 0, i32 0
+  %4 = load ptr, ptr %name_addr, align 8
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %4)
   %6 = call %__ShoppingCart__string_ShoppingItemarray @_f__void__ShoppingCart__anotherShoppingCart()
   store %__ShoppingCart__string_ShoppingItemarray %6, ptr %1, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr %shoppingCart, ptr %1, i64 80, i1 false)
-  %items1 = getelementptr inbounds %__ShoppingCart__string_ShoppingItemarray, ptr %shoppingCart, i32 0, i32 1
-  %7 = getelementptr inbounds [3 x %__ShoppingItem__string_double_string], ptr %items1, i32 0, i32 2
-  %unit = getelementptr inbounds %__ShoppingItem__string_double_string, ptr %7, i32 0, i32 2
-  %8 = load ptr, ptr %unit, align 8
+  %items_addr1 = getelementptr inbounds %__ShoppingCart__string_ShoppingItemarray, ptr %shoppingCart, i32 0, i32 1
+  %7 = getelementptr inbounds [3 x %__ShoppingItem__string_double_string], ptr %items_addr1, i32 0, i32 2
+  %unit_addr = getelementptr inbounds %__ShoppingItem__string_double_string, ptr %7, i32 0, i32 2
+  %8 = load ptr, ptr %unit_addr, align 8
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %8)
   %10 = load i32, ptr %result, align 4
   ret i32 %10

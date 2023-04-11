@@ -67,11 +67,7 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, ExprResult &exprResu
   return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult, accessScope);
 }
 
-llvm::Value *IRGenerator::resolveValue(SymbolType symbolType, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
-  // Set access scope to current scope if nullptr gets passed
-  if (!accessScope)
-    accessScope = currentScope;
-
+llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
   // Check if the value is already present
   if (exprResult.value != nullptr)
     return exprResult.value;
@@ -82,17 +78,19 @@ llvm::Value *IRGenerator::resolveValue(SymbolType symbolType, ExprResult &exprRe
     return exprResult.value;
   }
 
-  assert(exprResult.ptr != nullptr);
+  assert(exprResult.ptr != nullptr || exprResult.refPtr != nullptr);
 
-  // If we have a reference, load the referenced value ptr first
-  if (symbolType.isRef()) {
-    llvm::Type *valueTy = symbolType.toLLVMType(context, accessScope);
-    exprResult.ptr = builder.CreateLoad(valueTy, exprResult.ptr);
-    symbolType = symbolType.getContainedTy();
-  }
+  // Set access scope to current scope if nullptr gets passed
+  if (!accessScope)
+    accessScope = currentScope;
+
+  // De-reference if reference type
+  SymbolType referencedType = symbolType.removeReferenceWrapper();
+  if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr)
+    exprResult.ptr = builder.CreateLoad(builder.getPtrTy(), exprResult.refPtr);
 
   // Load the value from the pointer
-  llvm::Type *valueTy = symbolType.toLLVMType(context, accessScope);
+  llvm::Type *valueTy = referencedType.toLLVMType(context, accessScope);
   exprResult.value = builder.CreateLoad(valueTy, exprResult.ptr);
 
   return exprResult.value;
@@ -108,6 +106,12 @@ llvm::Value *IRGenerator::resolveAddress(ExprResult &exprResult, bool storeVolat
   // Check if an address is already present
   if (exprResult.ptr != nullptr)
     return exprResult.ptr;
+
+  // Check if the reference address is already present
+  if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr) {
+    exprResult.ptr = builder.CreateLoad(builder.getPtrTy(), exprResult.refPtr);
+    return exprResult.ptr;
+  }
 
   if (exprResult.entry)
     storeVolatile |= exprResult.entry->isVolatile;
@@ -174,7 +178,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
   // Struct
   if (symbolType.is(TY_STRUCT)) {
     // Retrieve struct type
-    Scope *structScope = symbolType.getStructBodyScope();
+    Scope *structScope = symbolType.getBodyScope();
     assert(structScope != nullptr);
     const size_t fieldCount = structScope->getFieldCount();
     auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, structScope));
@@ -265,7 +269,8 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
 ExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {
   // Get entry of left side
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
-  return doAssignment(lhs.ptr, lhs.entry, rhsNode);
+  llvm::Value *lhsAddress = lhs.entry != nullptr && lhs.entry->getType().isRef() ? lhs.refPtr : lhs.ptr;
+  return doAssignment(lhsAddress, lhs.entry, rhsNode);
 }
 
 ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl) {
@@ -276,17 +281,33 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
   const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT);
 
-  if (isRefAssign && isDecl) { // Reference gets initially assigned
-    // Get address of right side
-    llvm::Value *rhsAddress = resolveAddress(rhsNode);
-    assert(rhsAddress != nullptr);
+  if (isRefAssign) {
+    if (isDecl) { // Reference gets initially assigned
+      // Get address of right side
+      llvm::Value *rhsAddress = resolveAddress(rhsNode);
+      assert(rhsAddress != nullptr);
 
-    // Allocate space for the reference and store the address
-    llvm::Value *refAddress = insertAlloca(rhsAddress->getType());
-    builder.CreateStore(rhsAddress, refAddress);
-    lhsEntry->updateAddress(refAddress);
+      // Allocate space for the reference and store the address
+      llvm::Value *refAddress = insertAlloca(rhsAddress->getType());
+      builder.CreateStore(rhsAddress, refAddress);
+      lhsEntry->updateAddress(refAddress);
 
-    return ExprResult{.ptr = refAddress, .value = rhsAddress, .entry = lhsEntry};
+      return ExprResult{.value = rhsAddress, .ptr = refAddress, .entry = lhsEntry};
+    }
+
+    if (rhsSType.isRef()) { // Reference to reference assignment
+      // Get address of right side
+      llvm::Value *referencedAddress = resolveAddress(rhsNode);
+      assert(referencedAddress != nullptr);
+
+      // Store the rhs* to the lhs**
+      builder.CreateStore(referencedAddress, lhsAddress);
+
+      return ExprResult{.value = referencedAddress, .ptr = lhsAddress, .entry = lhsEntry};
+    }
+
+    // Load referenced address
+    lhsAddress = builder.CreateLoad(builder.getPtrTy(), lhsAddress);
   }
 
   // Check if we need to copy the rhs to the lhs. This happens for structs
@@ -332,7 +353,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   }
   // Store the value to the address
   builder.CreateStore(rhsValue, lhsAddress);
-  return ExprResult{.ptr = lhsAddress, .value = rhsValue, .entry = lhsEntry};
+  return ExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
 }
 
 llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,

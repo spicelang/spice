@@ -12,7 +12,7 @@ public type Triple<V1, V2, V3> struct {
     V3 third
 }
 
-public p Triple.ctor(const V1& first, const V2& second, const V3& third) {
+public p Triple.ctor(V1& first, V2& second, V3& third) {
     this.first = first;
     this.second = second;
     this.third = third;

@@ -15,9 +15,9 @@ define private void @_mp__Counter__void__ctor__long(ptr noundef nonnull %0, i64 
   store ptr %0, ptr %this, align 8
   store i64 %1, ptr %initialValue, align 8
   %3 = load ptr, ptr %this, align 8
-  %value = getelementptr inbounds %__Counter__long, ptr %3, i32 0, i32 0
+  %value_addr = getelementptr inbounds %__Counter__long, ptr %3, i32 0, i32 0
   %4 = load i64, ptr %initialValue, align 8
-  store i64 %4, ptr %value, align 8
+  store i64 %4, ptr %value_addr, align 8
   ret void
 }
 
@@ -26,8 +26,8 @@ define private i64 @_mf__Counter__long__getValue(ptr noundef nonnull %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %value = getelementptr inbounds %__Counter__long, ptr %2, i32 0, i32 0
-  %3 = load i64, ptr %value, align 8
+  %value_addr = getelementptr inbounds %__Counter__long, ptr %2, i32 0, i32 0
+  %3 = load i64, ptr %value_addr, align 8
   ret i64 %3
 }
 
@@ -38,10 +38,10 @@ define private %__Counter__long @_f__void__Counter__op.plus__Counter_Counter(%__
   %3 = alloca %__Counter__long, align 8
   store %__Counter__long %0, ptr %c1, align 8
   store %__Counter__long %1, ptr %c2, align 8
-  %value = getelementptr inbounds %__Counter__long, ptr %c1, i32 0, i32 0
-  %value1 = getelementptr inbounds %__Counter__long, ptr %c2, i32 0, i32 0
-  %4 = load i64, ptr %value1, align 8
-  %5 = load i64, ptr %value, align 8
+  %value_addr = getelementptr inbounds %__Counter__long, ptr %c1, i32 0, i32 0
+  %value_addr1 = getelementptr inbounds %__Counter__long, ptr %c2, i32 0, i32 0
+  %4 = load i64, ptr %value_addr1, align 8
+  %5 = load i64, ptr %value_addr, align 8
   %6 = add i64 %5, %4
   call void @_mp__Counter__void__ctor__long(ptr %3, i64 %6)
   %7 = load %__Counter__long, ptr %3, align 8
