@@ -1614,7 +1614,7 @@ ExprResult OpRuleConversionManager::callBinaryOperatorOverloadFct(const ASTNode 
 
   // If this is a procedure, return true
   if (opFct->isProcedure() || opFct->isMethodProcedure())
-    return {.value = builder.getTrue()};
+    return {.constant = builder.getTrue()};
 
   // If the return type is reference, return the result value as pointer
   if (opFct->returnType.isRef())
@@ -1675,7 +1675,7 @@ ExprResult OpRuleConversionManager::callUnaryOperatorOverloadFct(const ASTNode *
 
   // If this is a procedure, return true
   if (opFct->isProcedure() || opFct->isMethodProcedure())
-    return {.value = builder.getTrue()};
+    return {.constant = builder.getTrue()};
 
   // If the return type is reference, return the result value as refPtr
   if (opFct->returnType.isRef())
