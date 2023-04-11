@@ -982,10 +982,10 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   // Determine action, based on the given operator
   switch (node->op) {
   case PrefixUnaryExprNode::OP_MINUS:
-    operandType = OpRuleManager::getPrefixMinusResultType(rhsNode, operandType, 0);
+    operandType = OpRuleManager::getPrefixMinusResultType(node, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_PLUS_PLUS:
-    operandType = OpRuleManager::getPrefixPlusPlusResultType(rhsNode, operandType, 0);
+    operandType = OpRuleManager::getPrefixPlusPlusResultType(node, operandType, 0);
 
     // In case the lhs is captured, notify the capture about the write access
     if (Capture *lhsCapture = operandEntry ? currentScope->symbolTable.lookupCapture(operandEntry->name) : nullptr; lhsCapture)
@@ -993,7 +993,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
     break;
   case PrefixUnaryExprNode::OP_MINUS_MINUS:
-    operandType = OpRuleManager::getPrefixMinusMinusResultType(rhsNode, operandType, 0);
+    operandType = OpRuleManager::getPrefixMinusMinusResultType(node, operandType, 0);
 
     // In case the lhs is captured, notify the capture about the write access
     if (Capture *lhsCapture = operandEntry ? currentScope->symbolTable.lookupCapture(operandEntry->name) : nullptr; lhsCapture)
@@ -1001,16 +1001,16 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
     break;
   case PrefixUnaryExprNode::OP_NOT:
-    operandType = OpRuleManager::getPrefixNotResultType(rhsNode, operandType, 0);
+    operandType = OpRuleManager::getPrefixNotResultType(node, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_BITWISE_NOT:
-    operandType = OpRuleManager::getPrefixBitwiseNotResultType(rhsNode, operandType, 0);
+    operandType = OpRuleManager::getPrefixBitwiseNotResultType(node, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_INDIRECTION:
-    operandType = OpRuleManager::getPrefixMulResultType(rhsNode, operandType, 0);
+    operandType = OpRuleManager::getPrefixMulResultType(node, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_ADDRESS_OF:
-    operandType = OpRuleManager::getPrefixBitwiseAndResultType(rhsNode, operandType, 0);
+    operandType = OpRuleManager::getPrefixBitwiseAndResultType(node, operandType, 0);
     break;
   default:
     throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExpr fall-through"); // GCOV_EXCL_LINE
@@ -1098,7 +1098,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     break;
   }
   case PostfixUnaryExprNode::OP_PLUS_PLUS: {
-    lhsType = OpRuleManager::getPostfixPlusPlusResultType(lhsNode, lhsType, 0);
+    lhsType = opRuleManager.getPostfixPlusPlusResultType(node, lhsType, 0);
 
     // In case the lhs is captured, notify the capture about the write access
     if (Capture *lhsCapture = lhsEntry ? currentScope->symbolTable.lookupCapture(lhsEntry->name) : nullptr; lhsCapture)
@@ -1107,7 +1107,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     break;
   }
   case PostfixUnaryExprNode::OP_MINUS_MINUS: {
-    lhsType = OpRuleManager::getPostfixMinusMinusResultType(lhsNode, lhsType, 0);
+    lhsType = opRuleManager.getPostfixMinusMinusResultType(node, lhsType, 0);
 
     // In case the lhs is captured, notify the capture about the write access
     if (Capture *lhsCapture = lhsEntry ? currentScope->symbolTable.lookupCapture(lhsEntry->name) : nullptr; lhsCapture)

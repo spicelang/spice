@@ -44,7 +44,7 @@ public:
     for (const ASTNode *child : children)
       delete child;
   }
-  void deleteRecursive(const ASTNode *anchorNode) {
+  void deleteRecursive(const ASTNode *anchorNode) { // NOLINT(misc-no-recursion)
     for (ASTNode *child : children) {
       if (child != anchorNode)
         child->deleteRecursive(anchorNode);
@@ -158,7 +158,7 @@ public:
     return children.front()->hasCompileTimeValue();
   }
 
-  [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *overrideUnreachable) const {
+  [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *overrideUnreachable) const { // NOLINT(misc-no-recursion)
     return children.size() == 1 && children.front()->returnsOnAllControlPaths(overrideUnreachable);
   }
 
@@ -253,7 +253,9 @@ public:
     OP_PLUS_EQUAL,
     OP_MINUS_EQUAL,
     OP_MUL_EQUAL,
-    OP_DIV_EQUAL
+    OP_DIV_EQUAL,
+    OP_PLUS_PLUS,
+    OP_MINUS_MINUS
   };
 
   // Visitor methods

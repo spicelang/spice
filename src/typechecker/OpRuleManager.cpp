@@ -497,7 +497,12 @@ SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, Sym
   return lhs.toPointer(node);
 }
 
-SymbolType OpRuleManager::getPostfixPlusPlusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
+SymbolType OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, SymbolType lhs, size_t opIdx) {
+  // Check is there is an overloaded operator function available
+  SymbolType resultType = isUnaryOperatorOverloadingFctAvailable(OP_FCT_POSTFIX_PLUS_PLUS, lhs, node, opIdx);
+  if (!resultType.is(TY_INVALID))
+    return resultType;
+
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
 
@@ -507,7 +512,12 @@ SymbolType OpRuleManager::getPostfixPlusPlusResultType(const ASTNode *node, Symb
   return validateUnaryOperation(node, POSTFIX_PLUS_PLUS_OP_RULES, ARRAY_LENGTH(POSTFIX_PLUS_PLUS_OP_RULES), "++", lhs);
 }
 
-SymbolType OpRuleManager::getPostfixMinusMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
+SymbolType OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, SymbolType lhs, size_t opIdx) {
+  // Check is there is an overloaded operator function available
+  SymbolType resultType = isUnaryOperatorOverloadingFctAvailable(OP_FCT_POSTFIX_MINUS_MINUS, lhs, node, opIdx);
+  if (!resultType.is(TY_INVALID))
+    return resultType;
+
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
 
@@ -549,6 +559,47 @@ SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *fc
   const SymbolType localRhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, rhs);
   const SymbolType thisType(TY_DYN);
   Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, thisType, {localLhs, localRhs}, false, node);
+
+  // Return invalid type if the callee was not found
+  if (!callee)
+    return SymbolType(TY_INVALID);
+
+  // Save the pointer to the operator function in the AST node
+  std::vector<const Function *> &opFctPointers = typeChecker->getOpFctPointers(node);
+  if (opFctPointers.size() <= opIdx)
+    opFctPointers.resize(opIdx + 1, nullptr);
+  opFctPointers.at(opIdx) = callee;
+
+  // Check if we need to request a re-visit, because the function body was not type-checked yet
+  if (!callee->alreadyTypeChecked)
+    typeChecker->reVisitRequested = true;
+
+  // Check if the called function has sufficient visibility
+  const bool isImported = calleeParentScope->isImportedBy(typeChecker->rootScope);
+  SymbolTableEntry *calleeEntry = callee->entry;
+  if (isImported && !calleeEntry->getType().isPublic())
+    throw SemanticError(node, INSUFFICIENT_VISIBILITY,
+                        "Overloaded operator '" + callee->getSignature() + "' has insufficient visibility");
+
+  // Procedures always have the return type 'bool'
+  if (callee->isProcedure() || callee->returnType.is(TY_DYN))
+    return SymbolType(TY_BOOL);
+
+  SymbolType localReturnType = typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType);
+  return localReturnType;
+}
+
+SymbolType OpRuleManager::isUnaryOperatorOverloadingFctAvailable(const char *fctName, const SymbolType &lhs, ASTNode *node,
+                                                                 size_t opIdx) {
+  const NameRegistryEntry *registryEntry = typeChecker->sourceFile->getNameRegistryEntry(fctName);
+  if (!registryEntry)
+    return SymbolType(TY_INVALID);
+  Scope *calleeParentScope = registryEntry->targetScope;
+
+  // Get callee
+  const SymbolType localLhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, lhs);
+  const SymbolType thisType(TY_DYN);
+  Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, thisType, {localLhs}, false, node);
 
   // Return invalid type if the callee was not found
   if (!callee)

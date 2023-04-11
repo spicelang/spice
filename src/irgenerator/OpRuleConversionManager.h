@@ -100,6 +100,9 @@ public:
   ExprResult getCastInst(const ASTNode *node, SymbolType lhsSTy, ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                          size_t opIdx);
 
+  // Util methods
+  bool callsOverloadedOpFct(const ASTNode *node, size_t opIdx) const;
+
 private:
   // Members
   llvm::LLVMContext &context;
@@ -108,8 +111,8 @@ private:
   const StdFunctionManager &stdFunctionManager;
 
   // Private methods
-  bool callsOverloadedOpFct(const ASTNode *node, size_t opIdx) const;
   ExprResult callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhsV, auto &rhsV, auto &lhsP, auto &rhsP, size_t opIdx = 0);
+  ExprResult callUnaryOperatorOverloadFct(const ASTNode *node, auto &lhsV, auto &lhsP, size_t opIdx = 0);
   [[nodiscard]] llvm::Value *generateIToFp(const SymbolType &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const;
   [[nodiscard]] llvm::Value *generateLT(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
                                         llvm::Value *rhsV) const;

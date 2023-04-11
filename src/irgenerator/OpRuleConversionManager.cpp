@@ -14,9 +14,8 @@ OpRuleConversionManager::OpRuleConversionManager(GlobalResourceManager &resource
     : context(resourceManager.context), builder(resourceManager.builder), irGenerator(irGenerator),
       stdFunctionManager(irGenerator->stdFunctionManager) {}
 
-ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                     ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                                                     size_t opIdx) {
+ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -24,7 +23,7 @@ ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprRe
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  
+
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
     return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
@@ -66,9 +65,8 @@ ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                      ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                                                      size_t opIdx) {
+ExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -118,8 +116,8 @@ ExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprR
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -164,8 +162,8 @@ ExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -210,8 +208,8 @@ ExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -250,8 +248,8 @@ ExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -282,8 +280,8 @@ ExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -314,8 +312,8 @@ ExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -346,8 +344,8 @@ ExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                   ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                   SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -378,8 +376,8 @@ ExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResu
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -411,9 +409,8 @@ ExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                      ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                                                      size_t opIdx) {
+ExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -429,9 +426,8 @@ ExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprR
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                     ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                                                     size_t opIdx) {
+ExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -447,9 +443,8 @@ ExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                      ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                                                      size_t opIdx) {
+ExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -584,8 +579,8 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: =="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                    ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -766,8 +761,8 @@ ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult 
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                   ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                   SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -829,9 +824,8 @@ ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResu
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                     ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                                                     size_t opIdx) {
+ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -893,9 +887,8 @@ ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                        ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                                                        size_t opIdx) {
+ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                        SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -957,9 +950,8 @@ ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, Exp
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                     ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                                                     size_t opIdx) {
+ExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -997,9 +989,8 @@ ExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                      ExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                                                      size_t opIdx) {
+ExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
+                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1431,8 +1422,8 @@ ExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node,
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                     Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, Scope *accessScope,
+                                                     size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1464,7 +1455,12 @@ ExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node,
 ExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                            Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, opIdx))
+    return callUnaryOperatorOverloadFct(node, lhsV, lhsP, opIdx);
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1482,7 +1478,12 @@ ExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, 
 ExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                              Scope *accessScope, size_t opIdx) {
   const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, opIdx))
+    return callUnaryOperatorOverloadFct(node, lhsV, lhsP, opIdx);
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1497,8 +1498,8 @@ ExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, SymbolType lhsSTy, ExprResult &rhs,
-                                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+ExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, SymbolType lhsSTy, ExprResult &rhs, SymbolType rhsSTy,
+                                                Scope *accessScope, size_t opIdx) {
   const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
@@ -1611,9 +1612,76 @@ ExprResult OpRuleConversionManager::callBinaryOperatorOverloadFct(const ASTNode 
   // Generate function call
   llvm::Value *resultValue = builder.CreateCall(callee, argValues);
 
+  // If this is a procedure, return true
   if (opFct->isProcedure() || opFct->isMethodProcedure())
-    return {};
+    return {.value = builder.getTrue()};
 
+  // If the return type is reference, return the result value as pointer
+  if (opFct->returnType.isRef())
+    return {.ptr = resultValue};
+
+  // Otherwise as value
+  return {.value = resultValue};
+}
+
+ExprResult OpRuleConversionManager::callUnaryOperatorOverloadFct(const ASTNode *node, auto &lhsV, auto &lhsP, size_t opIdx) {
+  const size_t manIdx = irGenerator->manIdx;
+  assert(!node->opFct.empty() && node->opFct.size() > manIdx);
+  assert(!node->opFct.at(manIdx).empty() && node->opFct.at(manIdx).size() > opIdx);
+  const Function *opFct = node->opFct.at(manIdx).at(opIdx);
+  assert(opFct != nullptr);
+
+  const std::string mangledName = opFct->getMangledName();
+  Scope *accessScope = opFct->entry->scope;
+  assert(accessScope != nullptr);
+
+  // Get arg values
+  const std::vector<SymbolType> &paramTypes = opFct->getParamTypes();
+  assert(paramTypes.size() == 1);
+  llvm::Value *argValues[1];
+  argValues[0] = paramTypes.at(0).isRef() ? lhsP() : lhsV();
+
+  // Obtain information about the call
+  const bool isImported = accessScope->isImportedBy(irGenerator->rootScope);
+  const CodeLoc &callLoc = node->codeLoc;
+  const CodeLoc &defLoc = opFct->entry->getDeclCodeLoc();
+  const bool isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
+
+  // Function is not defined in the current module -> declare it
+  // This can happen when:
+  // 1) If this is an imported source file
+  // 2) This is a down-call to a function, which is defined later in the same file
+  if (isImported || isDownCall) {
+    // Get returnType
+    llvm::Type *returnType = builder.getVoidTy();
+    if (!opFct->returnType.is(TY_DYN))
+      returnType = opFct->returnType.toLLVMType(context, accessScope);
+
+    // Get arg types
+    std::vector<llvm::Type *> argTypes;
+    for (const SymbolType &paramType : opFct->getParamTypes())
+      argTypes.push_back(paramType.toLLVMType(context, accessScope));
+
+    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
+    irGenerator->module->getOrInsertFunction(mangledName, fctType);
+  }
+
+  // Get callee function
+  llvm::Function *callee = irGenerator->module->getFunction(mangledName);
+  assert(callee != nullptr);
+
+  // Generate function call
+  llvm::Value *resultValue = builder.CreateCall(callee, argValues);
+
+  // If this is a procedure, return true
+  if (opFct->isProcedure() || opFct->isMethodProcedure())
+    return {.value = builder.getTrue()};
+
+  // If the return type is reference, return the result value as refPtr
+  if (opFct->returnType.isRef())
+    return {.ptr = resultValue};
+
+  // Otherwise as value
   return {.value = resultValue};
 }
 
