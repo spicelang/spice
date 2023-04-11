@@ -10,23 +10,26 @@ target triple = "x86_64-w64-windows-gnu"
 
 @anon.string.1 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'itInt.get() == 1' evaluated to false.\00", align 1
 @anon.string.2 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'itInt.next() == 2' evaluated to false.\00", align 1
-@anon.string.3 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'itInt.get() == 5' evaluated to false.\00", align 1
-@anon.string.4 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'itInt.hasNext()' evaluated to false.\00", align 1
 @anon.string.5 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'itInt.get() == 3' evaluated to false.\00", align 1
 @anon.string.6 = private unnamed_addr constant [82 x i8] c"Assertion failed: Condition 'idxAndValueInt.getFirst() == 3l' evaluated to false.\00", align 1
 @anon.string.7 = private unnamed_addr constant [82 x i8] c"Assertion failed: Condition 'idxAndValueInt.getSecond() == 4' evaluated to false.\00", align 1
-@anon.string.8 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'itInt.get() == 10' evaluated to false.\00", align 1
-@anon.string.9 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition '!itInt.hasNext()' evaluated to false.\00", align 1
-@anon.string.11 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition 'itLong.get() == 6l' evaluated to false.\00", align 1
-@anon.string.12 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'itLong.next() == 7l' evaluated to false.\00", align 1
-@anon.string.14 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'itLong.get() == 10l' evaluated to false.\00", align 1
-@anon.string.15 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition 'itLong.get() == 8l' evaluated to false.\00", align 1
-@anon.string.16 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'itLong.get() == 16l' evaluated to false.\00", align 1
-@anon.string.17 = private unnamed_addr constant [84 x i8] c"Assertion failed: Condition 'idxAndValueLong.getFirst() == 11l' evaluated to false.\00", align 1
-@anon.string.18 = private unnamed_addr constant [85 x i8] c"Assertion failed: Condition 'idxAndValueLong.getSecond() == 17l' evaluated to false.\00", align 1
-@anon.string.19 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'itLong.hasNext()' evaluated to false.\00", align 1
-@anon.string.20 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition 'itLong.get() == 45' evaluated to false.\00", align 1
-@anon.string.21 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition '!itLong.hasNext()' evaluated to false.\00", align 1
+@anon.string.8 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'itInt.get() == 5' evaluated to false.\00", align 1
+@anon.string.9 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'itInt.get() == 4' evaluated to false.\00", align 1
+@anon.string.10 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'itInt.hasNext()' evaluated to false.\00", align 1
+@anon.string.11 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'itInt.get() == 10' evaluated to false.\00", align 1
+@anon.string.12 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition '!itInt.hasNext()' evaluated to false.\00", align 1
+@anon.string.14 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition 'itLong.get() == 6l' evaluated to false.\00", align 1
+@anon.string.15 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'itLong.next() == 7l' evaluated to false.\00", align 1
+@anon.string.17 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'itLong.get() == 10l' evaluated to false.\00", align 1
+@anon.string.18 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition 'itLong.get() == 8l' evaluated to false.\00", align 1
+@anon.string.19 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'itLong.get() == 16l' evaluated to false.\00", align 1
+@anon.string.20 = private unnamed_addr constant [84 x i8] c"Assertion failed: Condition 'idxAndValueLong.getFirst() == 11l' evaluated to false.\00", align 1
+@anon.string.21 = private unnamed_addr constant [85 x i8] c"Assertion failed: Condition 'idxAndValueLong.getSecond() == 17l' evaluated to false.\00", align 1
+@anon.string.22 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'itLong.get() == 18l' evaluated to false.\00", align 1
+@anon.string.23 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'itLong.get() == 17l' evaluated to false.\00", align 1
+@anon.string.24 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'itLong.hasNext()' evaluated to false.\00", align 1
+@anon.string.25 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition 'itLong.get() == 45' evaluated to false.\00", align 1
+@anon.string.26 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition '!itLong.hasNext()' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -36,19 +39,19 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %itLong = alloca %__long__NumberIterator__long_long_long, align 8
   %idxAndValueLong = alloca %__long_longref__Pair__long_longref, align 8
   %1 = tail call %__int__NumberIterator__int_int_int @"_f__void__NumberIterator<int>__range__int_int"(i32 1, i32 10) #2
-  %.fca.0.extract23 = extractvalue %__int__NumberIterator__int_int_int %1, 0
-  %.fca.1.extract25 = extractvalue %__int__NumberIterator__int_int_int %1, 1
-  %.fca.1.gep26 = getelementptr inbounds %__int__NumberIterator__int_int_int, ptr %itInt, i64 0, i32 1
-  %.fca.2.extract27 = extractvalue %__int__NumberIterator__int_int_int %1, 2
-  %.fca.2.gep28 = getelementptr inbounds %__int__NumberIterator__int_int_int, ptr %itInt, i64 0, i32 2
-  store i32 %.fca.0.extract23, ptr %itInt, align 8
-  store i32 %.fca.1.extract25, ptr %.fca.1.gep26, align 4
-  store i32 %.fca.2.extract27, ptr %.fca.2.gep28, align 8
+  %.fca.0.extract35 = extractvalue %__int__NumberIterator__int_int_int %1, 0
+  %.fca.1.extract37 = extractvalue %__int__NumberIterator__int_int_int %1, 1
+  %.fca.1.gep38 = getelementptr inbounds %__int__NumberIterator__int_int_int, ptr %itInt, i64 0, i32 1
+  %.fca.2.extract39 = extractvalue %__int__NumberIterator__int_int_int %1, 2
+  %.fca.2.gep40 = getelementptr inbounds %__int__NumberIterator__int_int_int, ptr %itInt, i64 0, i32 2
+  store i32 %.fca.0.extract35, ptr %itInt, align 8
+  store i32 %.fca.1.extract37, ptr %.fca.1.gep38, align 4
+  store i32 %.fca.2.extract39, ptr %.fca.2.gep40, align 8
   %2 = call i1 @_mf__NumberIterator_int__bool__hasNext(ptr nonnull %itInt) #2
   br i1 %2, label %assert.exit.L8, label %assert.then.L8, !prof !0
 
 assert.then.L8:                                   ; preds = %0
-  %3 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.4)
+  %3 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.10)
   call void @exit(i32 1) #2
   unreachable
 
@@ -82,7 +85,7 @@ assert.exit.L10:                                  ; preds = %assert.exit.L9
   br i1 %14, label %assert.exit.L12, label %assert.then.L12, !prof !0
 
 assert.then.L12:                                  ; preds = %assert.exit.L10
-  %15 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.3)
+  %15 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.8)
   call void @exit(i32 1) #2
   unreachable
 
@@ -91,7 +94,7 @@ assert.exit.L12:                                  ; preds = %assert.exit.L10
   br i1 %16, label %assert.exit.L13, label %assert.then.L13, !prof !0
 
 assert.then.L13:                                  ; preds = %assert.exit.L12
-  %17 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.4)
+  %17 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.10)
   call void @exit(i32 1) #2
   unreachable
 
@@ -109,11 +112,11 @@ assert.then.L15:                                  ; preds = %assert.exit.L13
 
 assert.exit.L15:                                  ; preds = %assert.exit.L13
   %22 = call %__long_intref__Pair__long_intref @"_mf__NumberIterator_int__std/iterator/iterable::Pair<unsigned long,int&>__nextIdx"(ptr nonnull %itInt) #2
-  %.fca.0.extract15 = extractvalue %__long_intref__Pair__long_intref %22, 0
-  %.fca.1.extract17 = extractvalue %__long_intref__Pair__long_intref %22, 1
-  %.fca.1.gep18 = getelementptr inbounds %__long_intref__Pair__long_intref, ptr %idxAndValueInt, i64 0, i32 1
-  store i64 %.fca.0.extract15, ptr %idxAndValueInt, align 8
-  store ptr %.fca.1.extract17, ptr %.fca.1.gep18, align 8
+  %.fca.0.extract27 = extractvalue %__long_intref__Pair__long_intref %22, 0
+  %.fca.1.extract29 = extractvalue %__long_intref__Pair__long_intref %22, 1
+  %.fca.1.gep30 = getelementptr inbounds %__long_intref__Pair__long_intref, ptr %idxAndValueInt, i64 0, i32 1
+  store i64 %.fca.0.extract27, ptr %idxAndValueInt, align 8
+  store ptr %.fca.1.extract29, ptr %.fca.1.gep30, align 8
   %23 = call ptr @_mf__Pair_long_intref__longref__getFirst(ptr nonnull %idxAndValueInt) #2
   %24 = load i64, ptr %23, align 8
   %25 = icmp eq i64 %24, 3
@@ -136,10 +139,10 @@ assert.then.L18:                                  ; preds = %assert.exit.L17
   unreachable
 
 assert.exit.L18:                                  ; preds = %assert.exit.L17
-  call void @"_p__void__void__op.plusequal__NumberIterator<int>ref_int"(ptr nonnull %itInt, i32 6) #2
+  call void @"_p__void__void__op.plusplus.post__NumberIterator<int>ref"(ptr nonnull %itInt) #2
   %31 = call ptr @_mf__NumberIterator_int__intref__get(ptr nonnull %itInt) #2
   %32 = load i32, ptr %31, align 4
-  %33 = icmp eq i32 %32, 10
+  %33 = icmp eq i32 %32, 5
   br i1 %33, label %assert.exit.L20, label %assert.then.L20, !prof !0
 
 assert.then.L20:                                  ; preds = %assert.exit.L18
@@ -148,161 +151,218 @@ assert.then.L20:                                  ; preds = %assert.exit.L18
   unreachable
 
 assert.exit.L20:                                  ; preds = %assert.exit.L18
-  %35 = call i1 @_mf__NumberIterator_int__bool__hasNext(ptr nonnull %itInt) #2
-  br i1 %35, label %assert.then.L21, label %assert.exit.L21, !prof !1
+  call void @"_p__void__void__op.minusminus.post__NumberIterator<int>ref"(ptr nonnull %itInt) #2
+  %35 = call ptr @_mf__NumberIterator_int__intref__get(ptr nonnull %itInt) #2
+  %36 = load i32, ptr %35, align 4
+  %37 = icmp eq i32 %36, 4
+  br i1 %37, label %assert.exit.L22, label %assert.then.L22, !prof !0
 
-assert.then.L21:                                  ; preds = %assert.exit.L20
-  %36 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.9)
+assert.then.L22:                                  ; preds = %assert.exit.L20
+  %38 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.9)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L21:                                  ; preds = %assert.exit.L20
-  %37 = call %__long__NumberIterator__long_long_long @"_f__void__NumberIterator<long>__range__long_long"(i64 6, i64 45) #2
-  %.fca.0.extract5 = extractvalue %__long__NumberIterator__long_long_long %37, 0
-  %.fca.1.extract7 = extractvalue %__long__NumberIterator__long_long_long %37, 1
-  %.fca.1.gep8 = getelementptr inbounds %__long__NumberIterator__long_long_long, ptr %itLong, i64 0, i32 1
-  %.fca.2.extract = extractvalue %__long__NumberIterator__long_long_long %37, 2
-  %.fca.2.gep = getelementptr inbounds %__long__NumberIterator__long_long_long, ptr %itLong, i64 0, i32 2
-  store i64 %.fca.0.extract5, ptr %itLong, align 8
-  store i64 %.fca.1.extract7, ptr %.fca.1.gep8, align 8
-  store i64 %.fca.2.extract, ptr %.fca.2.gep, align 8
-  %38 = call i1 @_mf__NumberIterator_long__bool__hasNext(ptr nonnull %itLong) #2
-  br i1 %38, label %assert.exit.L25, label %assert.then.L25, !prof !0
+assert.exit.L22:                                  ; preds = %assert.exit.L20
+  %39 = call i1 @_mf__NumberIterator_int__bool__hasNext(ptr nonnull %itInt) #2
+  br i1 %39, label %assert.exit.L23, label %assert.then.L23, !prof !0
 
-assert.then.L25:                                  ; preds = %assert.exit.L21
-  %39 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.19)
+assert.then.L23:                                  ; preds = %assert.exit.L22
+  %40 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.10)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L25:                                  ; preds = %assert.exit.L21
-  %40 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
-  %41 = load i64, ptr %40, align 8
-  %42 = icmp eq i64 %41, 6
-  br i1 %42, label %assert.exit.L26, label %assert.then.L26, !prof !0
+assert.exit.L23:                                  ; preds = %assert.exit.L22
+  call void @"_p__void__void__op.plusequal__NumberIterator<int>ref_int"(ptr nonnull %itInt, i32 6) #2
+  %41 = call ptr @_mf__NumberIterator_int__intref__get(ptr nonnull %itInt) #2
+  %42 = load i32, ptr %41, align 4
+  %43 = icmp eq i32 %42, 10
+  br i1 %43, label %assert.exit.L25, label %assert.then.L25, !prof !0
+
+assert.then.L25:                                  ; preds = %assert.exit.L23
+  %44 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.11)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L25:                                  ; preds = %assert.exit.L23
+  %45 = call i1 @_mf__NumberIterator_int__bool__hasNext(ptr nonnull %itInt) #2
+  br i1 %45, label %assert.then.L26, label %assert.exit.L26, !prof !1
 
 assert.then.L26:                                  ; preds = %assert.exit.L25
-  %43 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.11)
+  %46 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.12)
   call void @exit(i32 1) #2
   unreachable
 
 assert.exit.L26:                                  ; preds = %assert.exit.L25
-  %44 = call ptr @_mf__NumberIterator_long__longref__next(ptr nonnull %itLong) #2
-  %45 = load i64, ptr %44, align 8
-  %46 = icmp eq i64 %45, 7
-  br i1 %46, label %assert.exit.L27, label %assert.then.L27, !prof !0
+  %47 = call %__long__NumberIterator__long_long_long @"_f__void__NumberIterator<long>__range__long_long"(i64 6, i64 45) #2
+  %.fca.0.extract5 = extractvalue %__long__NumberIterator__long_long_long %47, 0
+  %.fca.1.extract7 = extractvalue %__long__NumberIterator__long_long_long %47, 1
+  %.fca.1.gep8 = getelementptr inbounds %__long__NumberIterator__long_long_long, ptr %itLong, i64 0, i32 1
+  %.fca.2.extract = extractvalue %__long__NumberIterator__long_long_long %47, 2
+  %.fca.2.gep = getelementptr inbounds %__long__NumberIterator__long_long_long, ptr %itLong, i64 0, i32 2
+  store i64 %.fca.0.extract5, ptr %itLong, align 8
+  store i64 %.fca.1.extract7, ptr %.fca.1.gep8, align 8
+  store i64 %.fca.2.extract, ptr %.fca.2.gep, align 8
+  %48 = call i1 @_mf__NumberIterator_long__bool__hasNext(ptr nonnull %itLong) #2
+  br i1 %48, label %assert.exit.L30, label %assert.then.L30, !prof !0
 
-assert.then.L27:                                  ; preds = %assert.exit.L26
-  %47 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.12)
+assert.then.L30:                                  ; preds = %assert.exit.L26
+  %49 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.24)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L27:                                  ; preds = %assert.exit.L26
+assert.exit.L30:                                  ; preds = %assert.exit.L26
+  %50 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
+  %51 = load i64, ptr %50, align 8
+  %52 = icmp eq i64 %51, 6
+  br i1 %52, label %assert.exit.L31, label %assert.then.L31, !prof !0
+
+assert.then.L31:                                  ; preds = %assert.exit.L30
+  %53 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L31:                                  ; preds = %assert.exit.L30
+  %54 = call ptr @_mf__NumberIterator_long__longref__next(ptr nonnull %itLong) #2
+  %55 = load i64, ptr %54, align 8
+  %56 = icmp eq i64 %55, 7
+  br i1 %56, label %assert.exit.L32, label %assert.then.L32, !prof !0
+
+assert.then.L32:                                  ; preds = %assert.exit.L31
+  %57 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.15)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L32:                                  ; preds = %assert.exit.L31
   call void @"_p__void__void__op.plusequal__NumberIterator<long>ref_long"(ptr nonnull %itLong, i64 3) #2
-  %48 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
-  %49 = load i64, ptr %48, align 8
-  %50 = icmp eq i64 %49, 10
-  br i1 %50, label %assert.exit.L29, label %assert.then.L29, !prof !0
-
-assert.then.L29:                                  ; preds = %assert.exit.L27
-  %51 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
-  call void @exit(i32 1) #2
-  unreachable
-
-assert.exit.L29:                                  ; preds = %assert.exit.L27
-  %52 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
-  %53 = load i64, ptr %52, align 8
-  %54 = icmp eq i64 %53, 10
-  br i1 %54, label %assert.exit.L30, label %assert.then.L30, !prof !0
-
-assert.then.L30:                                  ; preds = %assert.exit.L29
-  %55 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
-  call void @exit(i32 1) #2
-  unreachable
-
-assert.exit.L30:                                  ; preds = %assert.exit.L29
-  call void @"_p__void__void__op.minusequal__NumberIterator<long>ref_long"(ptr nonnull %itLong, i64 2) #2
-  %56 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
-  %57 = load i64, ptr %56, align 8
-  %58 = icmp eq i64 %57, 8
-  br i1 %58, label %assert.exit.L32, label %assert.then.L32, !prof !0
-
-assert.then.L32:                                  ; preds = %assert.exit.L30
-  %59 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.15)
-  call void @exit(i32 1) #2
-  unreachable
-
-assert.exit.L32:                                  ; preds = %assert.exit.L30
-  call void @"_p__void__void__op.plusequal__NumberIterator<long>ref_long"(ptr nonnull %itLong, i64 8) #2
-  %60 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
-  %61 = load i64, ptr %60, align 8
-  %62 = icmp eq i64 %61, 16
-  br i1 %62, label %assert.exit.L34, label %assert.then.L34, !prof !0
+  %58 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
+  %59 = load i64, ptr %58, align 8
+  %60 = icmp eq i64 %59, 10
+  br i1 %60, label %assert.exit.L34, label %assert.then.L34, !prof !0
 
 assert.then.L34:                                  ; preds = %assert.exit.L32
-  %63 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.16)
+  %61 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.17)
   call void @exit(i32 1) #2
   unreachable
 
 assert.exit.L34:                                  ; preds = %assert.exit.L32
-  %64 = call %__long_longref__Pair__long_longref @"_mf__NumberIterator_long__std/iterator/iterable::Pair<unsigned long,long&>__nextIdx"(ptr nonnull %itLong) #2
-  %.fca.0.extract = extractvalue %__long_longref__Pair__long_longref %64, 0
-  %.fca.1.extract = extractvalue %__long_longref__Pair__long_longref %64, 1
+  %62 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
+  %63 = load i64, ptr %62, align 8
+  %64 = icmp eq i64 %63, 10
+  br i1 %64, label %assert.exit.L35, label %assert.then.L35, !prof !0
+
+assert.then.L35:                                  ; preds = %assert.exit.L34
+  %65 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.17)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L35:                                  ; preds = %assert.exit.L34
+  call void @"_p__void__void__op.minusequal__NumberIterator<long>ref_long"(ptr nonnull %itLong, i64 2) #2
+  %66 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
+  %67 = load i64, ptr %66, align 8
+  %68 = icmp eq i64 %67, 8
+  br i1 %68, label %assert.exit.L37, label %assert.then.L37, !prof !0
+
+assert.then.L37:                                  ; preds = %assert.exit.L35
+  %69 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.18)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L37:                                  ; preds = %assert.exit.L35
+  call void @"_p__void__void__op.plusequal__NumberIterator<long>ref_long"(ptr nonnull %itLong, i64 8) #2
+  %70 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
+  %71 = load i64, ptr %70, align 8
+  %72 = icmp eq i64 %71, 16
+  br i1 %72, label %assert.exit.L39, label %assert.then.L39, !prof !0
+
+assert.then.L39:                                  ; preds = %assert.exit.L37
+  %73 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.19)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L39:                                  ; preds = %assert.exit.L37
+  %74 = call %__long_longref__Pair__long_longref @"_mf__NumberIterator_long__std/iterator/iterable::Pair<unsigned long,long&>__nextIdx"(ptr nonnull %itLong) #2
+  %.fca.0.extract = extractvalue %__long_longref__Pair__long_longref %74, 0
+  %.fca.1.extract = extractvalue %__long_longref__Pair__long_longref %74, 1
   %.fca.1.gep = getelementptr inbounds %__long_longref__Pair__long_longref, ptr %idxAndValueLong, i64 0, i32 1
   store i64 %.fca.0.extract, ptr %idxAndValueLong, align 8
   store ptr %.fca.1.extract, ptr %.fca.1.gep, align 8
-  %65 = call ptr @_mf__Pair_long_longref__longref__getFirst(ptr nonnull %idxAndValueLong) #2
-  %66 = load i64, ptr %65, align 8
-  %67 = icmp eq i64 %66, 11
-  br i1 %67, label %assert.exit.L36, label %assert.then.L36, !prof !0
-
-assert.then.L36:                                  ; preds = %assert.exit.L34
-  %68 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.17)
-  call void @exit(i32 1) #2
-  unreachable
-
-assert.exit.L36:                                  ; preds = %assert.exit.L34
-  %69 = call ptr @_mf__Pair_long_longref__longref__getSecond(ptr nonnull %idxAndValueLong) #2
-  %70 = load i64, ptr %69, align 8
-  %71 = icmp eq i64 %70, 17
-  br i1 %71, label %assert.exit.L37, label %assert.then.L37, !prof !0
-
-assert.then.L37:                                  ; preds = %assert.exit.L36
-  %72 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.18)
-  call void @exit(i32 1) #2
-  unreachable
-
-assert.exit.L37:                                  ; preds = %assert.exit.L36
-  %73 = call i1 @_mf__NumberIterator_long__bool__hasNext(ptr nonnull %itLong) #2
-  br i1 %73, label %assert.exit.L38, label %assert.then.L38, !prof !0
-
-assert.then.L38:                                  ; preds = %assert.exit.L37
-  %74 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.19)
-  call void @exit(i32 1) #2
-  unreachable
-
-assert.exit.L38:                                  ; preds = %assert.exit.L37
-  call void @"_p__void__void__op.plusequal__NumberIterator<long>ref_long"(ptr nonnull %itLong, i64 28) #2
-  %75 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
+  %75 = call ptr @_mf__Pair_long_longref__longref__getFirst(ptr nonnull %idxAndValueLong) #2
   %76 = load i64, ptr %75, align 8
-  %77 = icmp eq i64 %76, 45
-  br i1 %77, label %assert.exit.L40, label %assert.then.L40, !prof !0
+  %77 = icmp eq i64 %76, 11
+  br i1 %77, label %assert.exit.L41, label %assert.then.L41, !prof !0
 
-assert.then.L40:                                  ; preds = %assert.exit.L38
+assert.then.L41:                                  ; preds = %assert.exit.L39
   %78 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.20)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L40:                                  ; preds = %assert.exit.L38
-  %79 = call i1 @_mf__NumberIterator_long__bool__hasNext(ptr nonnull %itLong) #2
-  br i1 %79, label %assert.then.L41, label %assert.exit.L41, !prof !1
+assert.exit.L41:                                  ; preds = %assert.exit.L39
+  %79 = call ptr @_mf__Pair_long_longref__longref__getSecond(ptr nonnull %idxAndValueLong) #2
+  %80 = load i64, ptr %79, align 8
+  %81 = icmp eq i64 %80, 17
+  br i1 %81, label %assert.exit.L42, label %assert.then.L42, !prof !0
 
-assert.then.L41:                                  ; preds = %assert.exit.L40
-  %80 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.21)
+assert.then.L42:                                  ; preds = %assert.exit.L41
+  %82 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.21)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L41:                                  ; preds = %assert.exit.L40
-  %81 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
+assert.exit.L42:                                  ; preds = %assert.exit.L41
+  call void @"_p__void__void__op.plusplus.post__NumberIterator<long>ref"(ptr nonnull %itLong) #2
+  %83 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
+  %84 = load i64, ptr %83, align 8
+  %85 = icmp eq i64 %84, 18
+  br i1 %85, label %assert.exit.L44, label %assert.then.L44, !prof !0
+
+assert.then.L44:                                  ; preds = %assert.exit.L42
+  %86 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.22)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L44:                                  ; preds = %assert.exit.L42
+  call void @"_p__void__void__op.minusminus.post__NumberIterator<long>ref"(ptr nonnull %itLong) #2
+  %87 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
+  %88 = load i64, ptr %87, align 8
+  %89 = icmp eq i64 %88, 17
+  br i1 %89, label %assert.exit.L46, label %assert.then.L46, !prof !0
+
+assert.then.L46:                                  ; preds = %assert.exit.L44
+  %90 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.23)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L46:                                  ; preds = %assert.exit.L44
+  %91 = call i1 @_mf__NumberIterator_long__bool__hasNext(ptr nonnull %itLong) #2
+  br i1 %91, label %assert.exit.L47, label %assert.then.L47, !prof !0
+
+assert.then.L47:                                  ; preds = %assert.exit.L46
+  %92 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.24)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L47:                                  ; preds = %assert.exit.L46
+  call void @"_p__void__void__op.plusequal__NumberIterator<long>ref_long"(ptr nonnull %itLong, i64 28) #2
+  %93 = call ptr @_mf__NumberIterator_long__longref__get(ptr nonnull %itLong) #2
+  %94 = load i64, ptr %93, align 8
+  %95 = icmp eq i64 %94, 45
+  br i1 %95, label %assert.exit.L49, label %assert.then.L49, !prof !0
+
+assert.then.L49:                                  ; preds = %assert.exit.L47
+  %96 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.25)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L49:                                  ; preds = %assert.exit.L47
+  %97 = call i1 @_mf__NumberIterator_long__bool__hasNext(ptr nonnull %itLong) #2
+  br i1 %97, label %assert.then.L50, label %assert.exit.L50, !prof !1
+
+assert.then.L50:                                  ; preds = %assert.exit.L49
+  %98 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.26)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L50:                                  ; preds = %assert.exit.L49
+  %99 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
   ret i32 0
 }
 
@@ -329,6 +389,10 @@ declare ptr @_mf__Pair_long_intref__longref__getFirst(ptr) local_unnamed_addr
 
 declare ptr @_mf__Pair_long_intref__intref__getSecond(ptr) local_unnamed_addr
 
+declare void @"_p__void__void__op.plusplus.post__NumberIterator<int>ref"(ptr) local_unnamed_addr
+
+declare void @"_p__void__void__op.minusminus.post__NumberIterator<int>ref"(ptr) local_unnamed_addr
+
 declare %__long__NumberIterator__long_long_long @"_f__void__NumberIterator<long>__range__long_long"(i64, i64) local_unnamed_addr
 
 declare i1 @_mf__NumberIterator_long__bool__hasNext(ptr) local_unnamed_addr
@@ -346,6 +410,10 @@ declare %__long_longref__Pair__long_longref @"_mf__NumberIterator_long__std/iter
 declare ptr @_mf__Pair_long_longref__longref__getFirst(ptr) local_unnamed_addr
 
 declare ptr @_mf__Pair_long_longref__longref__getSecond(ptr) local_unnamed_addr
+
+declare void @"_p__void__void__op.plusplus.post__NumberIterator<long>ref"(ptr) local_unnamed_addr
+
+declare void @"_p__void__void__op.minusminus.post__NumberIterator<long>ref"(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

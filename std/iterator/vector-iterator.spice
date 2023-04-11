@@ -59,6 +59,26 @@ public inline f<I&> VectorIterator.get() {
 }
 
 /**
+ * Advances the cursor by one
+ *
+ * @param it VectorIterator
+ */
+public inline p operator++<I>(VectorIterator<I>& it) {
+    assert it.cursor < it.vector.getSize() - 1;
+    it.cursor++;
+}
+
+/**
+ * Move the cursor back by one
+ *
+ * @param it VectorIterator
+ */
+public inline p operator--<I>(VectorIterator<I>& it) {
+    assert it.cursor > 0;
+    it.cursor--;
+}
+
+/**
  * Advances the cursor by the given offset
  *
  * @param it VectorIterator

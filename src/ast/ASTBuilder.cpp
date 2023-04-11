@@ -1945,6 +1945,12 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
   } else if (ctx->DIV_EQUAL()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_NOT_EQUAL;
     fctNameNode->name = OP_FCT_DIV_EQUAL;
+  } else if (ctx->PLUS_PLUS()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_PLUS_PLUS;
+    fctNameNode->name = OP_FCT_POSTFIX_PLUS_PLUS;
+  } else if (ctx->MINUS_MINUS()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_MINUS_MINUS;
+    fctNameNode->name = OP_FCT_POSTFIX_MINUS_MINUS;
   } else {
     assert(false);
   }

@@ -30,6 +30,8 @@ const char *const OP_FCT_PLUS_EQUAL = "op.plusequal";
 const char *const OP_FCT_MINUS_EQUAL = "op.minusequal";
 const char *const OP_FCT_MUL_EQUAL = "op.mulequal";
 const char *const OP_FCT_DIV_EQUAL = "op.divequal";
+const char *const OP_FCT_POSTFIX_PLUS_PLUS = "op.plusplus.post";
+const char *const OP_FCT_POSTFIX_MINUS_MINUS = "op.minusminus.post";
 
 // Custom error message prefixes
 const char *const ERROR_MSG_RETURN = "Passed wrong data type to return statement";
@@ -640,8 +642,8 @@ public:
   static SymbolType getPrefixBitwiseNotResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
   static SymbolType getPrefixMulResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
   static SymbolType getPrefixBitwiseAndResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
-  static SymbolType getPostfixPlusPlusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
-  static SymbolType getPostfixMinusMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  SymbolType getPostfixPlusPlusResultType(ASTNode *node, SymbolType lhs, size_t opIdx);
+  SymbolType getPostfixMinusMinusResultType(ASTNode *node, SymbolType lhs, size_t opIdx);
   SymbolType getCastResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
 
 private:
@@ -649,8 +651,9 @@ private:
   TypeChecker *typeChecker;
 
   // Private methods
-  SymbolType isBinaryOperatorOverloadingFctAvailable(const char *fctName, const SymbolType &lhs, const SymbolType &rhs,
-                                                     ASTNode *node, size_t opIdx);
+  template <size_t N>
+  SymbolType isOperatorOverloadingFctAvailable(ASTNode *node, const char *const fctName, const std::array<SymbolType, N> &op,
+                                               size_t opIdx);
   static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                            const SymbolType &lhs);
   static SymbolType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,

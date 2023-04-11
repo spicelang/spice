@@ -742,14 +742,16 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
 
     // Execute operation
-    const ExprResult result = conversionManager.getPostfixPlusPlusInst(node, lhs, lhsSTy, currentScope, 0);
+    ExprResult result = conversionManager.getPostfixPlusPlusInst(node, lhs, lhsSTy, currentScope, 0);
 
     // Save the new value to the old address
-    builder.CreateStore(result.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
-
-    // Reset the address
-    lhs.ptr = nullptr;
-
+    if (conversionManager.callsOverloadedOpFct(node, 0)) {
+      lhs.value = result.value;
+      lhs.ptr = result.ptr;
+    } else {
+      builder.CreateStore(result.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
+      lhs.ptr = nullptr;
+    }
     break;
   }
   case PostfixUnaryExprNode::OP_MINUS_MINUS: {
@@ -763,13 +765,16 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
 
     // Execute operation
-    const ExprResult result = conversionManager.getPostfixMinusMinusInst(node, lhs, lhsSTy, currentScope, 0);
+    ExprResult result = conversionManager.getPostfixMinusMinusInst(node, lhs, lhsSTy, currentScope, 0);
 
     // Save the new value to the old address
-    builder.CreateStore(result.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
-
-    // Reset the address
-    lhs.ptr = nullptr;
+    if (conversionManager.callsOverloadedOpFct(node, 0)) {
+      lhs.value = result.value;
+      lhs.ptr = result.ptr;
+    } else {
+      builder.CreateStore(result.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
+      lhs.ptr = nullptr;
+    }
     break;
   }
   default:

@@ -1,52 +1,53 @@
+import "std/iterator/number-iterator";
+
 f<int> main() {
-    // Plus
-    printf("Result: %s\n", String("Hello ") + String("World!"));
-    String s1 = String("Hello ") + String("World!");
-    printf("Result: %s\n", s1);
-    printf("Result: %s\n", s1 + " Hi!");
-    printf("Result: %s\n", String("Hi! ") + s1);
-    printf("Result: %s\n", s1 + s1);
-    printf("Result: %s\n", s1 + " " + s1);
-    printf("Result: %s\n", String("Prefix ") + s1 + " Suffix");
+    // Create iterator with range convinience helper
+    NumberIterator<int> itInt = range(1, 10);
 
-    // Mul
-    printf("Result: %s\n", 4s * String("Hi"));
-    String s2 = String("Hello ") * 5;
-    printf("Result: %s\n", s2);
-    printf("Result: %s\n", 20 * String('a'));
-    String s3 = 2 * String('c') * 7;
-    printf("Result: %s\n", s3);
+    // Test functionality with int
+    assert itInt.hasNext();
+    assert itInt.get() == 1;
+    assert itInt.next() == 2;
+    itInt += 3;
+    assert itInt.get() == 5;
+    assert itInt.hasNext();
+    itInt -= 2;
+    assert itInt.get() == 3;
+    dyn idxAndValueInt = itInt.nextIdx();
+    assert idxAndValueInt.getFirst() == 3l;
+    assert idxAndValueInt.getSecond() == 4;
+    itInt++;
+    assert itInt.get() == 5;
+    itInt--;
+    assert itInt.get() == 4;
+    assert itInt.hasNext();
+    itInt += 6;
+    assert itInt.get() == 10;
+    assert !itInt.hasNext();
 
-    // Equals raw
-    printf("Equal raw: %d\n", "Hello World!" == "Hello Programmers!");
-    printf("Equal raw: %d\n", "Hello" == "Hell2");
-    printf("Equal raw: %d\n", "Hello" == "Hello");
+    // Test functionality with long
+    NumberIterator<long> itLong = range(6l, 45l);
+    assert itLong.hasNext();
+    assert itLong.get() == 6l;
+    assert itLong.next() == 7l;
+    itLong += 3l;
+    assert itLong.get() == 10l;
+    assert itLong.get() == 10l;
+    itLong -= 2l;
+    assert itLong.get() == 8l;
+    itLong += 8l;
+    assert itLong.get() == 16l;
+    dyn idxAndValueLong = itLong.nextIdx();
+    assert idxAndValueLong.getFirst() == 11l;
+    assert idxAndValueLong.getSecond() == 17l;
+    itLong++;
+    assert itLong.get() == 18l;
+    itLong--;
+    assert itLong.get() == 17l;
+    assert itLong.hasNext();
+    itLong += 28l;
+    assert itLong.get() == 45;
+    assert !itLong.hasNext();
 
-    // Equals
-    printf("Equal: %d\n", String("Hello World!") == String("Hello Programmers!"));
-    printf("Equal: %d\n", String("Hello") == String("Hell2"));
-    printf("Equal: %d\n", String("Hello") == String("Hello"));
-
-    // Not equals raw
-    printf("Non-equal raw: %d\n", "Hello World!" != "Hello Programmers!");
-    printf("Non-equal raw: %d\n", "Hello" != "Hell2");
-    printf("Non-equal raw: %d\n", "Hello" != "Hello");
-
-    // Not equals
-    printf("Non-equal: %d\n", String("Hello World!") != String("Hello Programmers!"));
-    printf("Non-equal: %d\n", String("Hello") != String("Hell2"));
-    printf("Non-equal: %d\n", String("Hello") != String("Hello"));
-
-    // PlusEquals
-    String s4 = String("Hello");
-    s4 += 'l';
-    printf("Result: %s\n", s4);
-    String s5 = String("Hi");
-    s5 += " World!";
-    printf("Result: %s\n", s5);
-
-    // MulEquals
-    String s6 = String("Hi");
-    s6 *= 3;
-    printf("Result: %s\n", s6);
+    printf("All assertions passed!");
 }

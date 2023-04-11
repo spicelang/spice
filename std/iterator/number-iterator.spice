@@ -60,6 +60,26 @@ public inline f<N&> NumberIterator.get() {
 }
 
 /**
+ * Advances the cursor by one
+ *
+ * @param it NumberIterator
+ */
+public inline p operator++<N>(NumberIterator<N>& it) {
+    assert it.currentNumber < it.upperBound;
+    it.currentNumber++;
+}
+
+/**
+ * Move the cursor back by one
+ *
+ * @param it NumberIterator
+ */
+public inline p operator--<N>(NumberIterator<N>& it) {
+    assert it.currentNumber > it.lowerBound;
+    it.currentNumber--;
+}
+
+/**
  * Advances the cursor by the given offset
  *
  * @param it NumberIterator

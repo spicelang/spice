@@ -1,0 +1,17 @@
+type TestStruct struct {
+    long test
+}
+
+f<TestStruct&> operator++(TestStruct& ts) {
+    ts.test++;
+    return ts;
+}
+
+f<int> main() {
+    TestStruct ts = TestStruct{ 123l };
+    TestStruct& output = ts++;
+    ts.test++;
+    assert output.test == 125l;
+    assert ts.test == 125l;
+    printf("All assertions passed!");
+}
