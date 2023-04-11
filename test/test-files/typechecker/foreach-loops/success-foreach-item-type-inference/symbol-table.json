@@ -328,7 +328,7 @@
               "isGlobal": false,
               "isVolatile": false,
               "name": "anon.L31C24",
-              "orderIndex": 2,
+              "orderIndex": 1,
               "state": "destructed",
               "type": "MockIterator<short>"
             },
@@ -337,18 +337,9 @@
               "isGlobal": false,
               "isVolatile": false,
               "name": "item",
-              "orderIndex": 1,
-              "state": "destructed",
-              "type": "short"
-            },
-            {
-              "codeLoc": "L31C5",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "idx",
               "orderIndex": 0,
               "state": "destructed",
-              "type": "int"
+              "type": "short"
             }
           ]
         }

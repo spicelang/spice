@@ -274,9 +274,14 @@ ExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsN
 }
 
 ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl) {
-  // Get symbol types of left and right side
+  // Get symbol type of right side
   const SymbolType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
+  auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
+  return doAssignment(lhsAddress, lhsEntry, rhs, rhsSType, isDecl);
+}
 
+ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, ExprResult &rhs,
+                                     const SymbolType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
   const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT);
@@ -284,7 +289,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   if (isRefAssign) {
     if (isDecl) { // Reference gets initially assigned
       // Get address of right side
-      llvm::Value *rhsAddress = resolveAddress(rhsNode);
+      llvm::Value *rhsAddress = resolveAddress(rhs);
       assert(rhsAddress != nullptr);
 
       // Allocate space for the reference and store the address
@@ -297,7 +302,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
 
     if (rhsSType.isRef()) { // Reference to reference assignment
       // Get address of right side
-      llvm::Value *referencedAddress = resolveAddress(rhsNode);
+      llvm::Value *referencedAddress = resolveAddress(rhs);
       assert(referencedAddress != nullptr);
 
       // Store the rhs* to the lhs**
@@ -313,7 +318,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   // Check if we need to copy the rhs to the lhs. This happens for structs
   if (needsShallowCopy) {
     // Get address of right side
-    llvm::Value *rhsAddress = resolveAddress(rhsNode);
+    llvm::Value *rhsAddress = resolveAddress(rhs);
     assert(rhsAddress != nullptr);
     // Create shallow copy
     llvm::Type *rhsType = rhsSType.toLLVMType(context, currentScope);
@@ -326,25 +331,24 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   }
 
   if (isDecl && rhsSType.is(TY_STRUCT)) {
-    auto result = std::any_cast<ExprResult>(visit(rhsNode));
-    materializeConstant(result);
+    materializeConstant(rhs);
 
     // Directly set the address to the lhs entry
-    lhsEntry->updateAddress(resolveAddress(result, lhsEntry->isVolatile));
+    lhsEntry->updateAddress(resolveAddress(rhs, lhsEntry->isVolatile));
 
     // If we have value, store it to the address
-    if (result.value) {
-      assert(result.ptr != nullptr);
-      builder.CreateStore(result.value, result.ptr);
+    if (rhs.value) {
+      assert(rhs.ptr != nullptr);
+      builder.CreateStore(rhs.value, rhs.ptr);
     }
 
-    result.entry = lhsEntry;
-    return result;
+    rhs.entry = lhsEntry;
+    return rhs;
   }
 
   // We can load the value from the right side and store it to the left side
   // Retrieve value of the right side
-  llvm::Value *rhsValue = resolveValue(rhsNode);
+  llvm::Value *rhsValue = resolveValue(rhsSType, rhs, currentScope);
   // Allocate new memory if the lhs address does not exist
   if (!lhsAddress) {
     assert(lhsEntry != nullptr);

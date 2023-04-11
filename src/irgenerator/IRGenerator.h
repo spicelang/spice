@@ -97,7 +97,7 @@ public:
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const ASTNode *node, ExprResult &exprResult, Scope *accessScope = nullptr);
-  llvm::Value *resolveValue(const SymbolType& symbolType, ExprResult &exprResult, Scope *accessScope = nullptr);
+  llvm::Value *resolveValue(const SymbolType &symbolType, ExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveAddress(const ASTNode *node, bool storeVolatile = false);
   llvm::Value *resolveAddress(ExprResult &exprResult, bool storeVolatile = false);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
@@ -114,6 +114,8 @@ private:
   void verifyModule(const CodeLoc &codeLoc) const;
   ExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
   ExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl = false);
+  ExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, ExprResult &rhs, const SymbolType &rhsSType,
+                          bool isDecl);
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
                                  const std::string &name = "", bool isVolatile = false);
   void autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const;

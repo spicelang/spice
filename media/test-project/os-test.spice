@@ -1,53 +1,30 @@
-import "std/iterator/number-iterator";
-
 f<int> main() {
-    // Create iterator with range convinience helper
-    NumberIterator<int> itInt = range(1, 10);
+    // Simple address check
+    int test = 123;
+    int& testRef = test;
+    assert &test == &testRef;
 
-    // Test functionality with int
-    assert itInt.hasNext();
-    assert itInt.get() == 1;
-    assert itInt.next() == 2;
-    itInt += 3;
-    assert itInt.get() == 5;
-    assert itInt.hasNext();
-    itInt -= 2;
-    assert itInt.get() == 3;
-    dyn idxAndValueInt = itInt.nextIdx();
-    assert idxAndValueInt.getFirst() == 3l;
-    assert idxAndValueInt.getSecond() == 4;
-    itInt++;
-    assert itInt.get() == 5;
-    itInt--;
-    assert itInt.get() == 4;
-    assert itInt.hasNext();
-    itInt += 6;
-    assert itInt.get() == 10;
-    assert !itInt.hasNext();
-
-    // Test functionality with long
-    NumberIterator<long> itLong = range(6l, 45l);
-    assert itLong.hasNext();
-    assert itLong.get() == 6l;
-    assert itLong.next() == 7l;
-    itLong += 3l;
-    assert itLong.get() == 10l;
-    assert itLong.get() == 10l;
-    itLong -= 2l;
-    assert itLong.get() == 8l;
-    itLong += 8l;
-    assert itLong.get() == 16l;
-    dyn idxAndValueLong = itLong.nextIdx();
-    assert idxAndValueLong.getFirst() == 11l;
-    assert idxAndValueLong.getSecond() == 17l;
-    itLong++;
-    assert itLong.get() == 18l;
-    itLong--;
-    assert itLong.get() == 17l;
-    assert itLong.hasNext();
-    itLong += 28l;
-    assert itLong.get() == 45;
-    assert !itLong.hasNext();
+    // Try operators
+    testRef += 12;
+    assert test == 135;
+    testRef -= 11;
+    assert test == 124;
+    testRef = 123;
+    assert test == 123;
+    testRef = testRef + 4;
+    assert test == 127;
+    testRef = testRef - 4;
+    assert test == 123;
 
     printf("All assertions passed!");
 }
+
+/*import "std/iterator/number-iterator";
+
+f<int> main() {
+    foreach long idx, short item : range(1s, 19s) {
+        printf("%d: %d\n", idx, item);
+    }
+
+    printf("All assertions passed!");
+}*/
