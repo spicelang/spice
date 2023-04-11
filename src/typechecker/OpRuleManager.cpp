@@ -86,7 +86,7 @@ SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, SymbolTy
 
 SymbolType OpRuleManager::getPlusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_PLUS_EQUAL, lhs, rhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS_EQUAL, {lhs, rhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -108,7 +108,7 @@ SymbolType OpRuleManager::getPlusEqualResultType(ASTNode *node, SymbolType lhs, 
 
 SymbolType OpRuleManager::getMinusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_MINUS_EQUAL, lhs, rhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS_EQUAL, {lhs, rhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -130,7 +130,7 @@ SymbolType OpRuleManager::getMinusEqualResultType(ASTNode *node, SymbolType lhs,
 
 SymbolType OpRuleManager::getMulEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_MUL_EQUAL, lhs, rhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL_EQUAL, {lhs, rhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -146,7 +146,7 @@ SymbolType OpRuleManager::getMulEqualResultType(ASTNode *node, SymbolType lhs, S
 
 SymbolType OpRuleManager::getDivEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_DIV_EQUAL, lhs, rhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV_EQUAL, {lhs, rhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -268,7 +268,7 @@ SymbolType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, SymbolTyp
 
 SymbolType OpRuleManager::getEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_EQUAL, lhs, rhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_EQUAL, {lhs, rhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -290,7 +290,7 @@ SymbolType OpRuleManager::getEqualResultType(ASTNode *node, SymbolType lhs, Symb
 
 SymbolType OpRuleManager::getNotEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_NOT_EQUAL, lhs, rhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_NOT_EQUAL, {lhs, rhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -360,7 +360,7 @@ SymbolType OpRuleManager::getShiftRightResultType(const ASTNode *node, SymbolTyp
 
 SymbolType OpRuleManager::getPlusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_PLUS, lhs, rhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS, {lhs, rhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -384,7 +384,7 @@ SymbolType OpRuleManager::getPlusResultType(ASTNode *node, SymbolType lhs, Symbo
 
 SymbolType OpRuleManager::getMinusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_MINUS, lhs, rhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS, {lhs, rhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -408,7 +408,7 @@ SymbolType OpRuleManager::getMinusResultType(ASTNode *node, SymbolType lhs, Symb
 
 SymbolType OpRuleManager::getMulResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_MUL, lhs, rhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL, {lhs, rhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -421,7 +421,7 @@ SymbolType OpRuleManager::getMulResultType(ASTNode *node, SymbolType lhs, Symbol
 
 SymbolType OpRuleManager::getDivResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isBinaryOperatorOverloadingFctAvailable(OP_FCT_DIV, lhs, rhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV, {lhs, rhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -499,7 +499,7 @@ SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, Sym
 
 SymbolType OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, SymbolType lhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isUnaryOperatorOverloadingFctAvailable(OP_FCT_POSTFIX_PLUS_PLUS, lhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_PLUS_PLUS, {lhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -514,7 +514,7 @@ SymbolType OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, SymbolType
 
 SymbolType OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, SymbolType lhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isUnaryOperatorOverloadingFctAvailable(OP_FCT_POSTFIX_MINUS_MINUS, lhs, node, opIdx);
+  SymbolType resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_MINUS_MINUS, {lhs}, opIdx);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -547,59 +547,21 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
   return validateBinaryOperation(node, CAST_OP_RULES, ARRAY_LENGTH(CAST_OP_RULES), "(cast)", lhs, rhs, true);
 }
 
-SymbolType OpRuleManager::isBinaryOperatorOverloadingFctAvailable(const char *fctName, const SymbolType &lhs,
-                                                                  const SymbolType &rhs, ASTNode *node, size_t opIdx) {
+template <size_t N>
+SymbolType OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const char *const fctName,
+                                                            const std::array<SymbolType, N> &op, size_t opIdx) {
   const NameRegistryEntry *registryEntry = typeChecker->sourceFile->getNameRegistryEntry(fctName);
   if (!registryEntry)
     return SymbolType(TY_INVALID);
   Scope *calleeParentScope = registryEntry->targetScope;
 
   // Get callee
-  const SymbolType localLhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, lhs);
-  const SymbolType localRhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, rhs);
   const SymbolType thisType(TY_DYN);
-  Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, thisType, {localLhs, localRhs}, false, node);
-
-  // Return invalid type if the callee was not found
-  if (!callee)
-    return SymbolType(TY_INVALID);
-
-  // Save the pointer to the operator function in the AST node
-  std::vector<const Function *> &opFctPointers = typeChecker->getOpFctPointers(node);
-  if (opFctPointers.size() <= opIdx)
-    opFctPointers.resize(opIdx + 1, nullptr);
-  opFctPointers.at(opIdx) = callee;
-
-  // Check if we need to request a re-visit, because the function body was not type-checked yet
-  if (!callee->alreadyTypeChecked)
-    typeChecker->reVisitRequested = true;
-
-  // Check if the called function has sufficient visibility
-  const bool isImported = calleeParentScope->isImportedBy(typeChecker->rootScope);
-  SymbolTableEntry *calleeEntry = callee->entry;
-  if (isImported && !calleeEntry->getType().isPublic())
-    throw SemanticError(node, INSUFFICIENT_VISIBILITY,
-                        "Overloaded operator '" + callee->getSignature() + "' has insufficient visibility");
-
-  // Procedures always have the return type 'bool'
-  if (callee->isProcedure() || callee->returnType.is(TY_DYN))
-    return SymbolType(TY_BOOL);
-
-  SymbolType localReturnType = typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType);
-  return localReturnType;
-}
-
-SymbolType OpRuleManager::isUnaryOperatorOverloadingFctAvailable(const char *fctName, const SymbolType &lhs, ASTNode *node,
-                                                                 size_t opIdx) {
-  const NameRegistryEntry *registryEntry = typeChecker->sourceFile->getNameRegistryEntry(fctName);
-  if (!registryEntry)
-    return SymbolType(TY_INVALID);
-  Scope *calleeParentScope = registryEntry->targetScope;
-
-  // Get callee
-  const SymbolType localLhs = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, lhs);
-  const SymbolType thisType(TY_DYN);
-  Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, thisType, {localLhs}, false, node);
+  std::vector<SymbolType> paramTypes(N);
+  paramTypes[0] = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[0]);
+  if (N == 2)
+    paramTypes[1] = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[1]);
+  Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, thisType, paramTypes, false, node);
 
   // Return invalid type if the callee was not found
   if (!callee)

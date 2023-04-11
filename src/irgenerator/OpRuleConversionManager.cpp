@@ -16,17 +16,17 @@ OpRuleConversionManager::OpRuleConversionManager(GlobalResourceManager &resource
 
 ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
-  const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -67,17 +67,17 @@ ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprRe
 
 ExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                       SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
-  const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -118,17 +118,17 @@ ExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprR
 
 ExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
-  const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -164,17 +164,17 @@ ExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprRes
 
 ExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
-  const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -210,8 +210,8 @@ ExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprRes
 
 ExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -250,8 +250,8 @@ ExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprRes
 
 ExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -282,8 +282,8 @@ ExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprRes
 
 ExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -314,8 +314,8 @@ ExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprRes
 
 ExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -346,8 +346,8 @@ ExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprRes
 
 ExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -378,8 +378,8 @@ ExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResu
 
 ExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -411,8 +411,8 @@ ExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprRes
 
 ExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                       SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
 
@@ -428,8 +428,8 @@ ExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprR
 
 ExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
 
@@ -445,8 +445,8 @@ ExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprRe
 
 ExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                       SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
 
@@ -462,10 +462,10 @@ ExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprR
 
 ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                  SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
-  const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -473,7 +473,7 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   // Check if both values are of type pointer
   if (lhsSTy.isPtr() && rhsSTy.isPtr())
@@ -581,10 +581,10 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
 
 ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
-  const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -592,7 +592,7 @@ ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprRes
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   // Check if both values are of type pointer
   if (lhsSTy.isPtr() && rhsSTy.isPtr())
@@ -700,8 +700,8 @@ ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprRes
 
 ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -763,8 +763,8 @@ ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult 
 
 ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -826,8 +826,8 @@ ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResu
 
 ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -889,8 +889,8 @@ ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprRe
 
 ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                         SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -952,8 +952,8 @@ ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, Exp
 
 ExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -991,8 +991,8 @@ ExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprRe
 
 ExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                       SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -1030,10 +1030,10 @@ ExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprR
 
 ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
-  const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -1041,7 +1041,7 @@ ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult 
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1110,10 +1110,10 @@ ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult 
 
 ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                  SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
-  const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -1121,7 +1121,7 @@ ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1190,10 +1190,10 @@ ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult
 
 ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
-  const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -1201,7 +1201,7 @@ ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1258,10 +1258,10 @@ ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &
 
 ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
-  const auto rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -1269,7 +1269,7 @@ ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callBinaryOperatorOverloadFct(node, lhsV, rhsV, lhsP, rhsP, opIdx);
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1327,8 +1327,8 @@ ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &
 
 ExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
                                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -1370,7 +1370,7 @@ ExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, ExprResult &
 
 ExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                        Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
@@ -1388,7 +1388,7 @@ ExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, Expr
 
 ExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                           Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
@@ -1406,7 +1406,7 @@ ExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, E
 
 ExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                             Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
@@ -1424,7 +1424,7 @@ ExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node,
 
 ExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, Scope *accessScope,
                                                      size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
@@ -1438,7 +1438,7 @@ ExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprRe
 
 ExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                             Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
   switch (lhsSTy.getSuperType()) {
@@ -1454,13 +1454,13 @@ ExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node,
 
 ExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                            Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callUnaryOperatorOverloadFct(node, lhsV, lhsP, opIdx);
+    return callOperatorOverloadFct<1>(node, {lhsV, lhsP}, opIdx);
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1477,13 +1477,13 @@ ExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, 
 
 ExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
                                                              Scope *accessScope, size_t opIdx) {
-  const auto lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  const auto lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
-    return callUnaryOperatorOverloadFct(node, lhsV, lhsP, opIdx);
+    return callOperatorOverloadFct<1>(node, {lhsV, lhsP}, opIdx);
 
   switch (lhsSTy.getSuperType()) {
   case TY_INT:
@@ -1500,7 +1500,7 @@ ExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node
 
 ExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, SymbolType lhsSTy, ExprResult &rhs, SymbolType rhsSTy,
                                                 Scope *accessScope, size_t opIdx) {
-  const auto rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
@@ -1561,8 +1561,9 @@ bool OpRuleConversionManager::callsOverloadedOpFct(const ASTNode *node, size_t o
   return opFctList.size() > opIdx && opFctList.at(opIdx) != nullptr;
 }
 
-ExprResult OpRuleConversionManager::callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhsV, auto &rhsV, auto &lhsP,
-                                                                  auto &rhsP, size_t opIdx) {
+template <size_t N>
+ExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *node, const std::array<ResolverFct, N * 2> &opV,
+                                                            size_t opIdx) {
   const size_t manIdx = irGenerator->manIdx;
   assert(!node->opFct.empty() && node->opFct.size() > manIdx);
   assert(!node->opFct.at(manIdx).empty() && node->opFct.at(manIdx).size() > opIdx);
@@ -1575,71 +1576,11 @@ ExprResult OpRuleConversionManager::callBinaryOperatorOverloadFct(const ASTNode 
 
   // Get arg values
   const std::vector<SymbolType> &paramTypes = opFct->getParamTypes();
-  assert(paramTypes.size() == 2);
-  llvm::Value *argValues[2];
-  argValues[0] = paramTypes.at(0).isRef() ? lhsP() : lhsV();
-  argValues[1] = paramTypes.at(1).isRef() ? rhsP() : rhsV();
-
-  // Obtain information about the call
-  const bool isImported = accessScope->isImportedBy(irGenerator->rootScope);
-  const CodeLoc &callLoc = node->codeLoc;
-  const CodeLoc &defLoc = opFct->entry->getDeclCodeLoc();
-  const bool isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
-
-  // Function is not defined in the current module -> declare it
-  // This can happen when:
-  // 1) If this is an imported source file
-  // 2) This is a down-call to a function, which is defined later in the same file
-  if (isImported || isDownCall) {
-    // Get returnType
-    llvm::Type *returnType = builder.getVoidTy();
-    if (!opFct->returnType.is(TY_DYN))
-      returnType = opFct->returnType.toLLVMType(context, accessScope);
-
-    // Get arg types
-    std::vector<llvm::Type *> argTypes;
-    for (const SymbolType &paramType : opFct->getParamTypes())
-      argTypes.push_back(paramType.toLLVMType(context, accessScope));
-
-    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
-    irGenerator->module->getOrInsertFunction(mangledName, fctType);
-  }
-
-  // Get callee function
-  llvm::Function *callee = irGenerator->module->getFunction(mangledName);
-  assert(callee != nullptr);
-
-  // Generate function call
-  llvm::Value *resultValue = builder.CreateCall(callee, argValues);
-
-  // If this is a procedure, return true
-  if (opFct->isProcedure() || opFct->isMethodProcedure())
-    return {.constant = builder.getTrue()};
-
-  // If the return type is reference, return the result value as pointer
-  if (opFct->returnType.isRef())
-    return {.ptr = resultValue};
-
-  // Otherwise as value
-  return {.value = resultValue};
-}
-
-ExprResult OpRuleConversionManager::callUnaryOperatorOverloadFct(const ASTNode *node, auto &lhsV, auto &lhsP, size_t opIdx) {
-  const size_t manIdx = irGenerator->manIdx;
-  assert(!node->opFct.empty() && node->opFct.size() > manIdx);
-  assert(!node->opFct.at(manIdx).empty() && node->opFct.at(manIdx).size() > opIdx);
-  const Function *opFct = node->opFct.at(manIdx).at(opIdx);
-  assert(opFct != nullptr);
-
-  const std::string mangledName = opFct->getMangledName();
-  Scope *accessScope = opFct->entry->scope;
-  assert(accessScope != nullptr);
-
-  // Get arg values
-  const std::vector<SymbolType> &paramTypes = opFct->getParamTypes();
-  assert(paramTypes.size() == 1);
-  llvm::Value *argValues[1];
-  argValues[0] = paramTypes.at(0).isRef() ? lhsP() : lhsV();
+  assert(paramTypes.size() == N);
+  llvm::Value *argValues[N];
+  argValues[0] = paramTypes[0].isRef() ? opV[1]() : opV[0]();
+  if constexpr (N == 2)
+    argValues[1] = paramTypes[1].isRef() ? opV[3]() : opV[2]();
 
   // Obtain information about the call
   const bool isImported = accessScope->isImportedBy(irGenerator->rootScope);

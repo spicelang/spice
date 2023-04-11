@@ -651,9 +651,9 @@ private:
   TypeChecker *typeChecker;
 
   // Private methods
-  SymbolType isBinaryOperatorOverloadingFctAvailable(const char *fctName, const SymbolType &lhs, const SymbolType &rhs,
-                                                     ASTNode *node, size_t opIdx);
-  SymbolType isUnaryOperatorOverloadingFctAvailable(const char *fctName, const SymbolType &lhs, ASTNode *node, size_t opIdx);
+  template <size_t N>
+  SymbolType isOperatorOverloadingFctAvailable(ASTNode *node, const char *const fctName, const std::array<SymbolType, N> &op,
+                                               size_t opIdx);
   static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                            const SymbolType &lhs);
   static SymbolType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,

@@ -17,9 +17,12 @@ class StdFunctionManager;
 class SymbolTableEntry;
 struct CodeLoc;
 
+// Typedefs
+using ResolverFct = const std::function<llvm::Value *()>;
+
 #define COMB(en1, en2) (en1 | (en2 << 16))
 
-// For routing through the symbol type as well as the current variable entry
+// For routing through multiple LLVM values at once
 struct ExprResult {
   llvm::Value *value = nullptr;
   llvm::Constant *constant = nullptr;
@@ -111,8 +114,8 @@ private:
   const StdFunctionManager &stdFunctionManager;
 
   // Private methods
-  ExprResult callBinaryOperatorOverloadFct(const ASTNode *node, auto &lhsV, auto &rhsV, auto &lhsP, auto &rhsP, size_t opIdx = 0);
-  ExprResult callUnaryOperatorOverloadFct(const ASTNode *node, auto &lhsV, auto &lhsP, size_t opIdx = 0);
+  template <size_t N>
+  ExprResult callOperatorOverloadFct(const ASTNode *node, const std::array<ResolverFct, N * 2> &opV, size_t opIdx);
   [[nodiscard]] llvm::Value *generateIToFp(const SymbolType &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const;
   [[nodiscard]] llvm::Value *generateLT(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
                                         llvm::Value *rhsV) const;
