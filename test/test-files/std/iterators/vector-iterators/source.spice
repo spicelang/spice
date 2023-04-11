@@ -29,6 +29,10 @@ f<int> main() {
     it -= 2;
     assert it.get() == 123;
     assert it.hasNext();
+    it++;
+    assert it.get() == 4321;
+    it--;
+    assert it.get() == 123;
     it += 4;
     assert it.get() == -99;
     assert !it.hasNext();

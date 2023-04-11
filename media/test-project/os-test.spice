@@ -1,16 +1,53 @@
-type TestStruct struct {
-    long test
-}
-
-f<TestStruct&> operator++(TestStruct& ts) {
-    ts.test++;
-    return ts;
-}
+import "std/iterator/number-iterator";
 
 f<int> main() {
-    TestStruct ts = TestStruct{ 123l };
-    TestStruct& output = ts++;
-    ts.test++;
-    assert output.test == 125l;
-    assert ts.test == 125l;
+    // Create iterator with range convinience helper
+    NumberIterator<int> itInt = range(1, 10);
+
+    // Test functionality with int
+    assert itInt.hasNext();
+    assert itInt.get() == 1;
+    assert itInt.next() == 2;
+    itInt += 3;
+    assert itInt.get() == 5;
+    assert itInt.hasNext();
+    itInt -= 2;
+    assert itInt.get() == 3;
+    dyn idxAndValueInt = itInt.nextIdx();
+    assert idxAndValueInt.getFirst() == 3l;
+    assert idxAndValueInt.getSecond() == 4;
+    itInt++;
+    assert itInt.get() == 5;
+    itInt--;
+    assert itInt.get() == 4;
+    assert itInt.hasNext();
+    itInt += 6;
+    assert itInt.get() == 10;
+    assert !itInt.hasNext();
+
+    // Test functionality with long
+    NumberIterator<long> itLong = range(6l, 45l);
+    assert itLong.hasNext();
+    assert itLong.get() == 6l;
+    assert itLong.next() == 7l;
+    itLong += 3l;
+    assert itLong.get() == 10l;
+    assert itLong.get() == 10l;
+    itLong -= 2l;
+    assert itLong.get() == 8l;
+    itLong += 8l;
+    assert itLong.get() == 16l;
+    dyn idxAndValueLong = itLong.nextIdx();
+    assert idxAndValueLong.getFirst() == 11l;
+    assert idxAndValueLong.getSecond() == 17l;
+    itLong++;
+    assert itLong.get() == 18l;
+    itLong--;
+    assert itLong.get() == 17l;
+    assert itLong.hasNext();
+    itLong += 28l;
+    assert itLong.get() == 45;
+    assert !itLong.hasNext();
+
+    printf("All assertions passed!");
 }

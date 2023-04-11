@@ -8,13 +8,13 @@ target triple = "x86_64-w64-windows-gnu"
 
 @anon.string.0 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'vi.getSize() == 3' evaluated to false.\00", align 1
 @anon.string.4 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'it.next() == 4321' evaluated to false.\00", align 1
-@anon.string.5 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'it.get() == 4321' evaluated to false.\00", align 1
 @anon.string.7 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'it.next() == 9876' evaluated to false.\00", align 1
 @anon.string.8 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'it.get() == 9876' evaluated to false.\00", align 1
-@anon.string.11 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'it.get() == 123' evaluated to false.\00", align 1
 @anon.string.12 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 'it.hasNext()' evaluated to false.\00", align 1
-@anon.string.13 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'it.get() == -99' evaluated to false.\00", align 1
-@anon.string.14 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition '!it.hasNext()' evaluated to false.\00", align 1
+@anon.string.13 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'it.get() == 4321' evaluated to false.\00", align 1
+@anon.string.14 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'it.get() == 123' evaluated to false.\00", align 1
+@anon.string.15 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'it.get() == -99' evaluated to false.\00", align 1
+@anon.string.16 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition '!it.hasNext()' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -64,7 +64,7 @@ assert.exit.L13:                                  ; preds = %assert.exit.L9
   br i1 %14, label %assert.exit.L14, label %assert.then.L14, !prof !0
 
 assert.then.L14:                                  ; preds = %assert.exit.L13
-  %15 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.11)
+  %15 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
   call void @exit(i32 1) #2
   unreachable
 
@@ -75,7 +75,7 @@ assert.exit.L14:                                  ; preds = %assert.exit.L13
   br i1 %18, label %assert.exit.L15, label %assert.then.L15, !prof !0
 
 assert.then.L15:                                  ; preds = %assert.exit.L14
-  %19 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.11)
+  %19 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
   call void @exit(i32 1) #2
   unreachable
 
@@ -97,7 +97,7 @@ assert.exit.L16:                                  ; preds = %assert.exit.L15
   br i1 %26, label %assert.exit.L17, label %assert.then.L17, !prof !0
 
 assert.then.L17:                                  ; preds = %assert.exit.L16
-  %27 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.5)
+  %27 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.13)
   call void @exit(i32 1) #2
   unreachable
 
@@ -137,7 +137,7 @@ assert.exit.L20:                                  ; preds = %assert.exit.L19
   br i1 %38, label %assert.then.L21, label %assert.exit.L21, !prof !1
 
 assert.then.L21:                                  ; preds = %assert.exit.L20
-  %39 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
+  %39 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.16)
   call void @exit(i32 1) #2
   unreachable
 
@@ -162,7 +162,7 @@ assert.exit.L26:                                  ; preds = %assert.exit.L21
   br i1 %44, label %assert.exit.L30, label %assert.then.L30, !prof !0
 
 assert.then.L30:                                  ; preds = %assert.exit.L26
-  %45 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.11)
+  %45 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
   call void @exit(i32 1) #2
   unreachable
 
@@ -176,10 +176,10 @@ assert.then.L31:                                  ; preds = %assert.exit.L30
   unreachable
 
 assert.exit.L31:                                  ; preds = %assert.exit.L30
-  call void @"_p__void__void__op.plusequal__VectorIterator<int>ref_int"(ptr nonnull %it, i32 4) #2
+  call void @"_p__void__void__op.plusplus.post__VectorIterator<int>ref"(ptr nonnull %it) #2
   %48 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
   %49 = load i32, ptr %48, align 4
-  %50 = icmp eq i32 %49, -99
+  %50 = icmp eq i32 %49, 4321
   br i1 %50, label %assert.exit.L33, label %assert.then.L33, !prof !0
 
 assert.then.L33:                                  ; preds = %assert.exit.L31
@@ -188,16 +188,40 @@ assert.then.L33:                                  ; preds = %assert.exit.L31
   unreachable
 
 assert.exit.L33:                                  ; preds = %assert.exit.L31
-  %52 = call i1 @_mf__VectorIterator_int__bool__hasNext(ptr nonnull %it) #2
-  br i1 %52, label %assert.then.L34, label %assert.exit.L34, !prof !1
+  call void @"_p__void__void__op.minusminus.post__VectorIterator<int>ref"(ptr nonnull %it) #2
+  %52 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
+  %53 = load i32, ptr %52, align 4
+  %54 = icmp eq i32 %53, 123
+  br i1 %54, label %assert.exit.L35, label %assert.then.L35, !prof !0
 
-assert.then.L34:                                  ; preds = %assert.exit.L33
-  %53 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
+assert.then.L35:                                  ; preds = %assert.exit.L33
+  %55 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L34:                                  ; preds = %assert.exit.L33
-  %54 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
+assert.exit.L35:                                  ; preds = %assert.exit.L33
+  call void @"_p__void__void__op.plusequal__VectorIterator<int>ref_int"(ptr nonnull %it, i32 4) #2
+  %56 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
+  %57 = load i32, ptr %56, align 4
+  %58 = icmp eq i32 %57, -99
+  br i1 %58, label %assert.exit.L37, label %assert.then.L37, !prof !0
+
+assert.then.L37:                                  ; preds = %assert.exit.L35
+  %59 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.15)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L37:                                  ; preds = %assert.exit.L35
+  %60 = call i1 @_mf__VectorIterator_int__bool__hasNext(ptr nonnull %it) #2
+  br i1 %60, label %assert.then.L38, label %assert.exit.L38, !prof !1
+
+assert.then.L38:                                  ; preds = %assert.exit.L37
+  %61 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.16)
+  call void @exit(i32 1) #2
+  unreachable
+
+assert.exit.L38:                                  ; preds = %assert.exit.L37
+  %62 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
   ret i32 0
 }
 
@@ -221,6 +245,10 @@ declare ptr @_mf__VectorIterator_int__intref__get(ptr) local_unnamed_addr
 declare ptr @_mf__VectorIterator_int__intref__next(ptr) local_unnamed_addr
 
 declare void @"_p__void__void__op.minusequal__VectorIterator<int>ref_int"(ptr, i32) local_unnamed_addr
+
+declare void @"_p__void__void__op.plusplus.post__VectorIterator<int>ref"(ptr) local_unnamed_addr
+
+declare void @"_p__void__void__op.minusminus.post__VectorIterator<int>ref"(ptr) local_unnamed_addr
 
 declare void @"_p__void__void__op.plusequal__VectorIterator<int>ref_int"(ptr, i32) local_unnamed_addr
 
