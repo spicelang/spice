@@ -13,4 +13,5 @@ f<int> main() {
     ts.test++;
     assert output.test == 125l;
     assert ts.test == 125l;
+    printf("All assertions passed!");
 }
