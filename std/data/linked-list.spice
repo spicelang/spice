@@ -13,15 +13,6 @@ public type Node<T> struct {
     Node<T>* next
 }
 
-/**
- * A linked list is a common, dynamically resizable data structure to store uniform data in order.
- * It is characterized by the pointer for every item, pointing to the next one.
- */
-public type LinkedList<T> struct {
-    Node<T>* head
-    Node<T>* tail
-}
-
 public p Node.dtor() {
     if this.next != nil<Node<T>*> {
         this.next.dtor();
@@ -29,7 +20,28 @@ public p Node.dtor() {
     }
 }
 
-public p LinkedList.insert<T>(T newValue, Node<T>* prevNode = nil<Node<T>*>) {
+/**
+ * A linked list is a common, dynamically resizable data structure to store uniform data in order.
+ * It is characterized by the pointer for each item, pointing to the next one.
+ *
+ * Time complexity:
+ * Insert: O(1)
+ * Delete: O(1)
+ * Search: O(n)
+ *
+ * Beware that each add operation allocates memory and every remove operation frees memory.
+ */
+public type LinkedList<T> struct {
+    Node<T>* head
+    Node<T>* tail
+}
+
+public p LinkedList.ctor() {
+    this.head = nil<Node<T>*>;
+    this.tail = nil<Node<T>*>;
+}
+
+public p LinkedList.insert<T>(T newValue) {
     // Create new node
     Node<T>* newNode;
     unsafe {
@@ -37,28 +49,36 @@ public p LinkedList.insert<T>(T newValue, Node<T>* prevNode = nil<Node<T>*>) {
     }
     newNode.value = newValue;
 
-    if prevNode != nil<Node<T>*> { // Previous node was passed -> insert after this node
-        // Link the next node to this one
-        newNode.next = prevNode.next;
-        // Link this node to the previous node
-        prevNode.next = newNode;
+    // Insert at head
+    newNode.next = this.head;
+    this.head = newNode;
+}
 
-        // Check if the previous node was the last node
-        if prevNode == tail {
-            this.tail = newNode;
-        }
-    } else { // No previous node was passed -> insert at head
-        newNode.next = this.head;
-        this.head = newNode;
+public p LinkedList.insertAfter<T>(T newValue, Node<T>* prevNode) {
+    // Create new node
+    Node<T>* newNode;
+    unsafe {
+        newNode = (Node<T>*) malloc(sizeof(type Node<T>) / 8);
+    }
+    newNode.value = newValue;
+
+    // Link the next node to this one
+    newNode.next = prevNode.next;
+    // Link this node to the previous node
+    prevNode.next = newNode;
+
+    // Check if the previous node was the last node
+    if prevNode == tail {
+        this.tail = newNode;
     }
 }
 
-public p LinkedList.insertHead<T>(T newValue) {
+public inline p LinkedList.insertHead<T>(T newValue) {
     this.insert(newValue);
 }
 
 public inline p LinkedList.insertTail<T>(T newValue) {
-    this.insert(newValue, this.tail);
+    this.insertAfter(newValue, this.tail);
 }
 
 /*public f<Node<T>*> LinkedList.find(T value) {

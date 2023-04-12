@@ -29,5 +29,6 @@ while true {
 ```
 
 !!! tip "Usage of loop alternatives"
-    If you somehow know how many times you want to execute something, we recommend you to use a [for loop](../for-loops) instead.
-    Those have better possibilities for extensibility and are more programmer-friendly.
+    If you somehow know how many times you want to execute something, we recommend you to use a [for loop](../for-loops)
+    instead. If you want to iterate over a container of items, consider using the [foreach loop](../foreach-loops).
+    

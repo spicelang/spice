@@ -17,6 +17,11 @@ public type Node<T> struct {
 /**
  * A binary tree is a data structure to fasten up search speeds. Binary trees (when balanced) can be searched in O(log n).
  * Insert operations, on the other hand, are rather slow, because the tree might get re-balanced.
+ *
+ * Time complexity:
+ * Insert: O(n * m); n = inserted elements, m = moved elements
+ * Delete: O(n * m); n = deleted elements, m = moved elements
+ * Search: O(log n)
  */
 public type BinaryTree<T> struct {
     Node<T>* rootNode

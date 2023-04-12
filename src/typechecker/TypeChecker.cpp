@@ -166,27 +166,6 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
                           "Index in foreach loop must be of type long. You provided " + indexType.getName());
   }
 
-  // Check type of the item
-  auto itemType = std::any_cast<SymbolType>(visit(node->itemVarDecl()));
-  if (itemType.is(TY_DYN)) { // Perform type inference
-    // The item type is the first template type of the iterator type
-    itemType = iteratorTemplateTypes.front();
-    // Update evaluated symbol type of the declaration data type
-    node->itemVarDecl()->dataType()->setEvaluatedSymbolType(itemType, manIdx);
-  } else if (!itemType.matches(iteratorTemplateTypes.front(), false, false, true)) { // Check types
-    throw SemanticError(node->itemVarDecl(), OPERATOR_WRONG_DATA_TYPE,
-                        "Foreach item type does not match  the item type of the iterator. Iterator produces " +
-                            iteratorTemplateTypes.front().getName() + ", the specified item type is " + itemType.getName());
-  }
-
-  // Update type of item
-  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl()->varName);
-  assert(itemVarSymbol != nullptr);
-  itemVarSymbol->updateType(itemType, true);
-
-  // Visit body
-  visit(node->body());
-
   // Retrieve .get(), .hasNext(), .next() and .nextIdx() functions
   Scope *matchScope = iteratorType.getBodyScope();
   node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, false, node);
@@ -200,6 +179,26 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     node->nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, false, node);
     assert(node->nextFct != nullptr);
   }
+
+  // Check type of the item
+  SymbolType iteratorItemType = node->getFct->returnType.removeReferenceWrapper();
+  auto itemType = std::any_cast<SymbolType>(visit(node->itemVarDecl()));
+  if (itemType.is(TY_DYN)) { // Perform type inference
+    // Update evaluated symbol type of the declaration data type
+    node->itemVarDecl()->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
+  } else if (!itemType.matches(iteratorItemType, false, false, true)) { // Check types
+    throw SemanticError(node->itemVarDecl(), OPERATOR_WRONG_DATA_TYPE,
+                        "Foreach item type does not match  the item type of the iterator. Iterator produces " +
+                            iteratorItemType.getName() + ", the specified item type is " + itemType.getName());
+  }
+
+  // Update type of item
+  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl()->varName);
+  assert(itemVarSymbol != nullptr);
+  itemVarSymbol->updateType(itemType, true);
+
+  // Visit body
+  visit(node->body());
 
   // Leave foreach body scope
   currentScope = node->bodyScope->parent;

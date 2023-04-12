@@ -1,33 +1,64 @@
 // Generic types
 type T dyn;
 
+/**
+ * Optionals in Spice are wrappers around values, that allow them to be empty.
+ * This can be used as better alternative to nil for empty values.
+ */
 public type Optional<T> struct {
     T data
     bool isPresent
 }
 
+/**
+ * Initialize optional without a value
+ */
 public p Optional.ctor() {
     this.isPresent = false;
 }
 
+/**
+ * Initialize optional with an initial value
+ *
+ * @param data Initial data value
+ */
 public p Optional.ctor(const T& data) {
     this.data = data;
     this.isPresent = true;
 }
 
+/**
+ * Set the value of the optional
+ *
+ * @param data New data value
+ */
 public inline p Optional.set(const T& data) {
     this.data = data;
     this.isPresent = true;
 }
 
+/**
+ * Get the value of the optional
+ *
+ * @return Data value
+ */
 public inline f<T&> Optional.get() {
+    assert this.isPresent();
     return this.data;
 }
 
+/**
+ * Clears the value of the optional
+ */
 public inline p Optional.clear() {
     this.isPresent = false;
 }
 
+/**
+ * Checks if a value is present at the moment
+ *
+ * @return Present or not
+ */
 public inline f<bool> Optional.isPresent() {
     return this.isPresent;
 }

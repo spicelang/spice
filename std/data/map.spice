@@ -13,8 +13,17 @@ type K dyn;
 type V dyn;
 
 /**
- * A map in Spice is a commonly used data structure, which can be used to represent a list of key value pairs
+ * A map in Spice is a commonly used data structure, which can be used to represent a list of key value pairs.
+ *
+ * Time complexity:
+ * Insert: O(1)
+ * Delete:
+ * Search: O(1)
  */
 public type Map<K, V> struct {
+
+}
+
+public p Map.ctor() {
 
 }
