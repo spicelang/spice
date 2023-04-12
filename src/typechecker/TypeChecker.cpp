@@ -186,6 +186,8 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   if (itemType.is(TY_DYN)) { // Perform type inference
     // Update evaluated symbol type of the declaration data type
     node->itemVarDecl()->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
+    // Update item type
+    itemType = iteratorItemType;
   } else if (!itemType.matches(iteratorItemType, false, false, true)) { // Check types
     throw SemanticError(node->itemVarDecl(), OPERATOR_WRONG_DATA_TYPE,
                         "Foreach item type does not match  the item type of the iterator. Iterator produces " +

@@ -26,9 +26,13 @@ foreach (const int item : myIntArray) {
 As soon as you need to access the index of the current item as well, you can use the indexed `foreach` loop:
 
 ```spice
-string[3] welcomeMessage = { "Hello", "Spice", "programmers!" };
-foreach int i, string word : welcomeMessage {
-    printf("Word no. %d: %s\n", i, word);
+dyn welcomeMessage = Vector<string>();
+welcomeMessage.pushBack("Hello");
+welcomeMessage.pushBack("fellow");
+welcomeMessage.pushBack("Spice");
+welcomeMessage.pushBack("programmers!");
+foreach long idx, string word : welcomeMessage {
+    printf("Word no. %d: %s\n", idx, word);
 }
 ```
 

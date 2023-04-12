@@ -62,17 +62,17 @@ public inline f<I&> ArrayIterator.get() {
  *
  * @param it ArrayIterator
  */
-public inline p operator++<I>(ArrayIterator<I>& it) {
+/*public inline p operator++<I>(ArrayIterator<I>& it) {
     assert it.cursor < it.vector.getSize() - 1;
     it.cursor++;
-}
+}*/
 
 /**
  * Move the cursor back by one
  *
  * @param it ArrayIterator
  */
-public inline p operator--<I>(ArrayIterator<I>& it) {
+/*public inline p operator--<I>(ArrayIterator<I>& it) {
     assert it.cursor > 0;
     it.cursor--;
-}
+}*/

@@ -1,8 +1,50 @@
-import "std/data/linked-list";
+import "std/runtime/iterator_rt";
+
+f<int> main() {
+    // Create test vector to iterate over
+    Vector<int> vi = Vector<int>();
+    vi.pushBack(123);
+    vi.pushBack(4321);
+    vi.pushBack(9876);
+    assert vi.getSize() == 3;
+
+    // Test base functionality
+    dyn it = iterate(vi);
+    assert it.hasNext();
+    assert it.get() == 123;
+    assert it.get() == 123;
+    assert it.next() == 4321;
+    assert it.get() == 4321;
+    assert it.hasNext();
+    assert it.next() == 9876;
+    assert it.get() == 9876;
+    assert !it.hasNext();
+
+    // Add new items to the vector
+    vi.pushBack(321);
+    vi.pushBack(-99);
+    assert it.hasNext();
+
+    // Test overloaded operators
+    it -= 2;
+    assert it.get() == 123;
+    assert it.hasNext();
+    it++;
+    assert it.get() == 4321;
+    it--;
+    assert it.get() == 123;
+    it += 4;
+    assert it.get() == -99;
+    assert !it.hasNext();
+
+    printf("All assertions passed!");
+}
+
+/*import "std/data/linked-list";
 
 f<int> main() {
     LinkedList<int> linkedList = LinkedList<int>();
-}
+}*/
 
 /*import "std/iterator/number-iterator";
 
