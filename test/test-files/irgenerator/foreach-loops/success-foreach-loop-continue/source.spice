@@ -1,10 +1,11 @@
+import "std/iterator/number-iterator";
+
 f<int> main() {
-    dyn s1 = 5s;
-    short[5] shortArray = { 1s, s1, 25s, -27s, -63s };
-    foreach short s : shortArray {
+    dyn shortIterator = range(3s, 8s);
+    foreach short s : shortIterator {
         printf("Short %d\n", s);
         if ((s & 1s) == 1) {
-            foreach dyn l : { 1l, 2l } {
+            foreach dyn l : range(1l, 2l) {
                 printf("Long %d\n", l);
                 continue 2;
             }

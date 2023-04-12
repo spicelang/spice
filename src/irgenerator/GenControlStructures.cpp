@@ -243,7 +243,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Visit body
   visit(node->body());
   // Call .hasNext() on iterator
-  hasNext = builder.CreateCall(hasNextFct, iterator);
+  if (!blockAlreadyTerminated)
+    hasNext = builder.CreateCall(hasNextFct, iterator);
   // Create conditional jump from body to tail or exit block
   insertCondJump(hasNext, bTail, bExit);
 
