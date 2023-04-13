@@ -11,7 +11,7 @@ p MockIterator.ctor() {
     this.cursor = 0l;
 }
 
-f<bool> MockIterator.hasNext() {
+f<bool> MockIterator.isValid() {
     return true;
 }
 

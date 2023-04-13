@@ -255,8 +255,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
     llvm::Value *arrayAddr = insertAlloca(arrayType);
 
     // Retrieve address of first item
-    llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
-    llvm::Value *firstItemAddress = builder.CreateInBoundsGEP(arrayType, arrayAddr, indices);
+    llvm::Value *firstItemAddress = builder.CreateInBoundsGEP(arrayType, arrayAddr, builder.getInt32(0));
 
     // Store all array items at their corresponding offsets
     llvm::Value *currentItemAddress = firstItemAddress;
@@ -323,14 +322,12 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     llvm::Value *structAddr = insertAlloca(structType);
 
     // Store all field values at their corresponding offsets
-    llvm::Value *indices[2] = {builder.getInt32(0), nullptr};
     for (size_t i = 0; i < fieldValueResults.size(); i++) {
       ExprResult &exprResult = fieldValueResults.at(i);
       // Get field value
       llvm::Value *itemValue = fieldTypes.at(i).isRef() ? resolveAddress(exprResult) : resolveValue(exprResult.node, exprResult);
       // Get field address
-      indices[1] = builder.getInt32(i);
-      llvm::Value *currentFieldAddress = builder.CreateInBoundsGEP(structType, structAddr, indices);
+      llvm::Value *currentFieldAddress = builder.CreateStructGEP(structType, structAddr, i);
       // Store the item value
       const bool storeVolatile = exprResult.entry != nullptr && exprResult.entry->isVolatile;
       builder.CreateStore(itemValue, currentFieldAddress, storeVolatile);

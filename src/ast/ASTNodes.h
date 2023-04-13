@@ -598,7 +598,7 @@ public:
     std::vector<DeclStmtNode *> declStmtNodes = getChildren<DeclStmtNode>();
     return declStmtNodes.size() == 2 ? declStmtNodes.front() : nullptr;
   }
-  [[nodiscard]] DeclStmtNode *itemDecl() const { return getChildren<DeclStmtNode>().back(); }
+  [[nodiscard]] DeclStmtNode *itemVarDecl() const { return getChildren<DeclStmtNode>().back(); }
   [[nodiscard]] AssignExprNode *iteratorAssign() const { return getChild<AssignExprNode>(); }
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
@@ -607,6 +607,10 @@ public:
 
   // Public members
   Scope *bodyScope = nullptr;
+  Function *getFct = nullptr;
+  Function *isValidFct = nullptr;
+  Function *nextFct = nullptr;
+  Function *nextIdxFct = nullptr;
 };
 
 // ========================================================= WhileLoopNode =======================================================

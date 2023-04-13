@@ -70,10 +70,10 @@ assert.then.L13:                                  ; preds = %assert.exit.L11
 
 assert.exit.L13:                                  ; preds = %assert.exit.L11
   %20 = load ptr, ptr %testRef, align 8
-  %21 = load ptr, ptr %testRef, align 8
-  %22 = load i32, ptr %21, align 4
-  %23 = add i32 %22, 4
-  store i32 %23, ptr %20, align 4
+  %21 = load i32, ptr %20, align 4
+  %22 = add i32 %21, 4
+  %23 = load ptr, ptr %testRef, align 8
+  store i32 %22, ptr %23, align 4
   %24 = load i32, ptr %test, align 4
   %25 = icmp eq i32 %24, 127
   br i1 %25, label %assert.exit.L15, label %assert.then.L15, !prof !0
@@ -85,10 +85,10 @@ assert.then.L15:                                  ; preds = %assert.exit.L13
 
 assert.exit.L15:                                  ; preds = %assert.exit.L13
   %27 = load ptr, ptr %testRef, align 8
-  %28 = load ptr, ptr %testRef, align 8
-  %29 = load i32, ptr %28, align 4
-  %30 = sub i32 %29, 4
-  store i32 %30, ptr %27, align 4
+  %28 = load i32, ptr %27, align 4
+  %29 = sub i32 %28, 4
+  %30 = load ptr, ptr %testRef, align 8
+  store i32 %29, ptr %30, align 4
   %31 = load i32, ptr %test, align 4
   %32 = icmp eq i32 %31, 123
   br i1 %32, label %assert.exit.L17, label %assert.then.L17, !prof !0

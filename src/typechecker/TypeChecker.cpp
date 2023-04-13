@@ -156,49 +156,51 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     throw SemanticError(node->iteratorAssign(), INVALID_ITERATOR,
                         "Iterator has no generic arguments so that the item type could not be inferred");
 
-  if (node->idxVarDecl()) {
+  const bool hasIdx = node->idxVarDecl();
+  if (hasIdx) {
     // Visit index declaration or assignment
     auto indexType = std::any_cast<SymbolType>(visit(node->idxVarDecl()));
     // Check if index type is int
-    if (!indexType.is(TY_INT))
-      throw SemanticError(node->idxVarDecl(), ARRAY_INDEX_NOT_INT,
-                          "Index in foreach loop must be of type int. You provided " + indexType.getName());
+    if (!indexType.is(TY_LONG))
+      throw SemanticError(node->idxVarDecl(), FOREACH_IDX_NOT_LONG,
+                          "Index in foreach loop must be of type long. You provided " + indexType.getName());
+  }
+
+  // Retrieve .get(), .isValid(), .next() and .nextIdx() functions
+  Scope *matchScope = iteratorType.getBodyScope();
+  node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, false, node);
+  assert(node->getFct != nullptr);
+  node->isValidFct = FunctionManager::matchFunction(matchScope, "isValid", iteratorType, {}, false, node);
+  assert(node->isValidFct != nullptr);
+  if (hasIdx) {
+    node->nextIdxFct = FunctionManager::matchFunction(matchScope, "nextIdx", iteratorType, {}, false, node);
+    assert(node->nextIdxFct != nullptr);
   } else {
-    // Update type of default idx variable
-    SymbolTableEntry *idxVarEntry = currentScope->lookupStrict(FOREACH_DEFAULT_IDX_VARIABLE_NAME);
-    assert(idxVarEntry != nullptr);
-    idxVarEntry->updateType(SymbolType(TY_INT), false);
+    node->nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, false, node);
+    assert(node->nextFct != nullptr);
   }
 
   // Check type of the item
-  auto itemType = std::any_cast<SymbolType>(visit(node->itemDecl()));
+  SymbolType iteratorItemType = node->getFct->returnType.removeReferenceWrapper();
+  auto itemType = std::any_cast<SymbolType>(visit(node->itemVarDecl()));
   if (itemType.is(TY_DYN)) { // Perform type inference
-    // The item type is the first template type of the iterator type
-    itemType = iteratorTemplateTypes.front();
     // Update evaluated symbol type of the declaration data type
-    node->itemDecl()->dataType()->setEvaluatedSymbolType(itemType, manIdx);
-  } else if (!itemType.matches(iteratorTemplateTypes.front(), false, false, true)) { // Check types
-    throw SemanticError(node->itemDecl(), OPERATOR_WRONG_DATA_TYPE,
+    node->itemVarDecl()->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
+    // Update item type
+    itemType = iteratorItemType;
+  } else if (!itemType.matches(iteratorItemType, false, false, true)) { // Check types
+    throw SemanticError(node->itemVarDecl(), OPERATOR_WRONG_DATA_TYPE,
                         "Foreach item type does not match  the item type of the iterator. Iterator produces " +
-                            iteratorTemplateTypes.front().getName() + ", the specified item type is " + itemType.getName());
+                            iteratorItemType.getName() + ", the specified item type is " + itemType.getName());
   }
 
   // Update type of item
-  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemDecl()->varName);
+  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl()->varName);
   assert(itemVarSymbol != nullptr);
   itemVarSymbol->updateType(itemType, true);
 
   // Visit body
   visit(node->body());
-
-  // Set .get(), .hasNext() and .next() functions to used
-  Scope *matchScope = iteratorType.getBodyScope();
-  Function *getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, false, node);
-  assert(getFct != nullptr);
-  Function *hasNextFct = FunctionManager::matchFunction(matchScope, "hasNext", iteratorType, {}, false, node);
-  assert(hasNextFct != nullptr);
-  Function *nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, false, node);
-  assert(nextFct != nullptr);
 
   // Leave foreach body scope
   currentScope = node->bodyScope->parent;

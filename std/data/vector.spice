@@ -12,7 +12,15 @@ ext<byte*> memcpy(byte*, byte*, int);
 type T dyn;
 
 /**
- * A vector in Spice is a commonly used data structure, which can be used to represent a list of items
+ * A vector in Spice is a commonly used data structure, which can be used to represent a list of items.
+ *
+ * Time complexity:
+ * Insert: O(1)
+ * Delete: O(n * m); n = deleted elements, m = moved elements
+ * Search: O(n)
+ *
+ * Vectors pre-allocate space using an initial size and a resize factor to not have to re-allocate
+ * with every item pushed.
  */
 public type Vector<T> struct {
     T* contents             // Pointer to the first data element

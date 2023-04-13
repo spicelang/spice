@@ -38,28 +38,25 @@ llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   return getFunction("_f__void__bool__isRawEqual__string_string", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
 }
 
-llvm::Function *StdFunctionManager::getIteratorGetFct(const SymbolType &iteratorType, Scope *accessScope) const {
-  assert(iteratorType.is(TY_STRUCT));
-  const SymbolType &itemType = iteratorType.getTemplateTypes().front();
-  const std::string iteratorName = iteratorType.getOriginalSubType() + "_" + itemType.getName();
-  const std::string functionName = "_mf__" + iteratorName + "__" + itemType.getName() + "ref__get";
+llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *spiceFunc) const {
+  const std::string functionName = spiceFunc->getMangledName();
   return getFunction(functionName.c_str(), builder.getPtrTy(), builder.getPtrTy());
 }
 
-llvm::Function *StdFunctionManager::getIteratorHasNextFct(const SymbolType &iteratorType) const {
-  assert(iteratorType.is(TY_STRUCT));
-  const SymbolType &itemType = iteratorType.getTemplateTypes().front();
-  const std::string iteratorName = iteratorType.getOriginalSubType() + "_" + itemType.getName();
-  const std::string functionName = "_mf__" + iteratorName + "__bool__hasNext";
+llvm::Function *StdFunctionManager::getIteratorIsValidFct(const Function *spiceFunc) const {
+  const std::string functionName = spiceFunc->getMangledName();
   return getFunction(functionName.c_str(), builder.getInt1Ty(), builder.getPtrTy());
 }
 
-llvm::Function *StdFunctionManager::getIteratorNextFct(const SymbolType &iteratorType, Scope *accessScope) const {
-  assert(iteratorType.is(TY_STRUCT));
-  const SymbolType &itemType = iteratorType.getTemplateTypes().front();
-  const std::string iteratorName = iteratorType.getOriginalSubType() + "_" + itemType.getName();
-  const std::string functionName = "_mf__" + iteratorName + "__" + itemType.getName() + "ref__next";
+llvm::Function *StdFunctionManager::getIteratorNextFct(const Function *spiceFunc) const {
+  const std::string functionName = spiceFunc->getMangledName();
   return getFunction(functionName.c_str(), builder.getPtrTy(), builder.getPtrTy());
+}
+
+llvm::Function *StdFunctionManager::getIteratorNextIdxFct(const Function *nextFunc, Scope *accessScope) const {
+  const std::string functionName = nextFunc->getMangledName();
+  llvm::Type *pairTy = nextFunc->returnType.toLLVMType(context, accessScope);
+  return getFunction(functionName.c_str(), pairTy, builder.getPtrTy());
 }
 
 llvm::Function *StdFunctionManager::getFunction(const char *funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,

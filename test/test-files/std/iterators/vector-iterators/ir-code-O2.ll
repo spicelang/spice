@@ -10,11 +10,11 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.4 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'it.next() == 4321' evaluated to false.\00", align 1
 @anon.string.7 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'it.next() == 9876' evaluated to false.\00", align 1
 @anon.string.8 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'it.get() == 9876' evaluated to false.\00", align 1
-@anon.string.12 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 'it.hasNext()' evaluated to false.\00", align 1
+@anon.string.12 = private unnamed_addr constant [63 x i8] c"Assertion failed: Condition 'it.isValid()' evaluated to false.\00", align 1
 @anon.string.13 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'it.get() == 4321' evaluated to false.\00", align 1
 @anon.string.14 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'it.get() == 123' evaluated to false.\00", align 1
 @anon.string.15 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'it.get() == -99' evaluated to false.\00", align 1
-@anon.string.16 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition '!it.hasNext()' evaluated to false.\00", align 1
+@anon.string.16 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition '!it.isValid()' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -49,7 +49,7 @@ assert.exit.L9:                                   ; preds = %0
   %.fca.1.gep = getelementptr inbounds %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", ptr %it, i64 0, i32 1
   store ptr %.fca.0.extract, ptr %it, align 8
   store i64 %.fca.1.extract, ptr %.fca.1.gep, align 8
-  %10 = call i1 @_mf__VectorIterator_int__bool__hasNext(ptr nonnull %it) #2
+  %10 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr nonnull %it) #2
   br i1 %10, label %assert.exit.L13, label %assert.then.L13, !prof !0
 
 assert.then.L13:                                  ; preds = %assert.exit.L9
@@ -102,7 +102,7 @@ assert.then.L17:                                  ; preds = %assert.exit.L16
   unreachable
 
 assert.exit.L17:                                  ; preds = %assert.exit.L16
-  %28 = call i1 @_mf__VectorIterator_int__bool__hasNext(ptr nonnull %it) #2
+  %28 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr nonnull %it) #2
   br i1 %28, label %assert.exit.L18, label %assert.then.L18, !prof !0
 
 assert.then.L18:                                  ; preds = %assert.exit.L17
@@ -133,95 +133,97 @@ assert.then.L20:                                  ; preds = %assert.exit.L19
   unreachable
 
 assert.exit.L20:                                  ; preds = %assert.exit.L19
-  %38 = call i1 @_mf__VectorIterator_int__bool__hasNext(ptr nonnull %it) #2
-  br i1 %38, label %assert.then.L21, label %assert.exit.L21, !prof !1
+  %38 = call ptr @_mf__VectorIterator_int__intref__next(ptr nonnull %it) #2
+  %39 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr nonnull %it) #2
+  br i1 %39, label %assert.then.L22, label %assert.exit.L22, !prof !1
 
-assert.then.L21:                                  ; preds = %assert.exit.L20
-  %39 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.16)
+assert.then.L22:                                  ; preds = %assert.exit.L20
+  %40 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.16)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L21:                                  ; preds = %assert.exit.L20
+assert.exit.L22:                                  ; preds = %assert.exit.L20
   store i32 321, ptr %4, align 4
   call void @_mp__Vector_int__void__pushBack__intref(ptr nonnull %vi, ptr nonnull %4) #2
   store i32 -99, ptr %5, align 4
   call void @_mp__Vector_int__void__pushBack__intref(ptr nonnull %vi, ptr nonnull %5) #2
-  %40 = call i1 @_mf__VectorIterator_int__bool__hasNext(ptr nonnull %it) #2
-  br i1 %40, label %assert.exit.L26, label %assert.then.L26, !prof !0
+  %41 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr nonnull %it) #2
+  br i1 %41, label %assert.exit.L27, label %assert.then.L27, !prof !0
 
-assert.then.L26:                                  ; preds = %assert.exit.L21
-  %41 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.12)
+assert.then.L27:                                  ; preds = %assert.exit.L22
+  %42 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.12)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L26:                                  ; preds = %assert.exit.L21
-  call void @"_p__void__void__op.minusequal__VectorIterator<int>ref_int"(ptr nonnull %it, i32 2) #2
-  %42 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
-  %43 = load i32, ptr %42, align 4
-  %44 = icmp eq i32 %43, 123
-  br i1 %44, label %assert.exit.L30, label %assert.then.L30, !prof !0
+assert.exit.L27:                                  ; preds = %assert.exit.L22
+  call void @"_p__void__void__op.minusequal__VectorIterator<int>ref_int"(ptr nonnull %it, i32 3) #2
+  %43 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
+  %44 = load i32, ptr %43, align 4
+  %45 = icmp eq i32 %44, 123
+  br i1 %45, label %assert.exit.L31, label %assert.then.L31, !prof !0
 
-assert.then.L30:                                  ; preds = %assert.exit.L26
-  %45 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
+assert.then.L31:                                  ; preds = %assert.exit.L27
+  %46 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L30:                                  ; preds = %assert.exit.L26
-  %46 = call i1 @_mf__VectorIterator_int__bool__hasNext(ptr nonnull %it) #2
-  br i1 %46, label %assert.exit.L31, label %assert.then.L31, !prof !0
+assert.exit.L31:                                  ; preds = %assert.exit.L27
+  %47 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr nonnull %it) #2
+  br i1 %47, label %assert.exit.L32, label %assert.then.L32, !prof !0
 
-assert.then.L31:                                  ; preds = %assert.exit.L30
-  %47 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.12)
+assert.then.L32:                                  ; preds = %assert.exit.L31
+  %48 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.12)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L31:                                  ; preds = %assert.exit.L30
+assert.exit.L32:                                  ; preds = %assert.exit.L31
   call void @"_p__void__void__op.plusplus.post__VectorIterator<int>ref"(ptr nonnull %it) #2
-  %48 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
-  %49 = load i32, ptr %48, align 4
-  %50 = icmp eq i32 %49, 4321
-  br i1 %50, label %assert.exit.L33, label %assert.then.L33, !prof !0
+  %49 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
+  %50 = load i32, ptr %49, align 4
+  %51 = icmp eq i32 %50, 4321
+  br i1 %51, label %assert.exit.L34, label %assert.then.L34, !prof !0
 
-assert.then.L33:                                  ; preds = %assert.exit.L31
-  %51 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.13)
+assert.then.L34:                                  ; preds = %assert.exit.L32
+  %52 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.13)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L33:                                  ; preds = %assert.exit.L31
+assert.exit.L34:                                  ; preds = %assert.exit.L32
   call void @"_p__void__void__op.minusminus.post__VectorIterator<int>ref"(ptr nonnull %it) #2
-  %52 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
-  %53 = load i32, ptr %52, align 4
-  %54 = icmp eq i32 %53, 123
-  br i1 %54, label %assert.exit.L35, label %assert.then.L35, !prof !0
+  %53 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
+  %54 = load i32, ptr %53, align 4
+  %55 = icmp eq i32 %54, 123
+  br i1 %55, label %assert.exit.L36, label %assert.then.L36, !prof !0
 
-assert.then.L35:                                  ; preds = %assert.exit.L33
-  %55 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
+assert.then.L36:                                  ; preds = %assert.exit.L34
+  %56 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L35:                                  ; preds = %assert.exit.L33
+assert.exit.L36:                                  ; preds = %assert.exit.L34
   call void @"_p__void__void__op.plusequal__VectorIterator<int>ref_int"(ptr nonnull %it, i32 4) #2
-  %56 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
-  %57 = load i32, ptr %56, align 4
-  %58 = icmp eq i32 %57, -99
-  br i1 %58, label %assert.exit.L37, label %assert.then.L37, !prof !0
+  %57 = call ptr @_mf__VectorIterator_int__intref__get(ptr nonnull %it) #2
+  %58 = load i32, ptr %57, align 4
+  %59 = icmp eq i32 %58, -99
+  br i1 %59, label %assert.exit.L38, label %assert.then.L38, !prof !0
 
-assert.then.L37:                                  ; preds = %assert.exit.L35
-  %59 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.15)
+assert.then.L38:                                  ; preds = %assert.exit.L36
+  %60 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.15)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L37:                                  ; preds = %assert.exit.L35
-  %60 = call i1 @_mf__VectorIterator_int__bool__hasNext(ptr nonnull %it) #2
-  br i1 %60, label %assert.then.L38, label %assert.exit.L38, !prof !1
+assert.exit.L38:                                  ; preds = %assert.exit.L36
+  %61 = call ptr @_mf__VectorIterator_int__intref__next(ptr nonnull %it) #2
+  %62 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr nonnull %it) #2
+  br i1 %62, label %assert.then.L40, label %assert.exit.L40, !prof !1
 
-assert.then.L38:                                  ; preds = %assert.exit.L37
-  %61 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.16)
+assert.then.L40:                                  ; preds = %assert.exit.L38
+  %63 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.16)
   call void @exit(i32 1) #2
   unreachable
 
-assert.exit.L38:                                  ; preds = %assert.exit.L37
-  %62 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
+assert.exit.L40:                                  ; preds = %assert.exit.L38
+  %64 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
   ret i32 0
 }
 
@@ -238,7 +240,7 @@ declare void @exit(i32) local_unnamed_addr
 
 declare %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" @"_f__void__std/iterator/vector-iterator::VectorIterator<int>__iterate__std/iterator/vector-iterator::Vector<int>ref"(ptr) local_unnamed_addr
 
-declare i1 @_mf__VectorIterator_int__bool__hasNext(ptr) local_unnamed_addr
+declare i1 @_mf__VectorIterator_int__bool__isValid(ptr) local_unnamed_addr
 
 declare ptr @_mf__VectorIterator_int__intref__get(ptr) local_unnamed_addr
 

@@ -23,8 +23,8 @@ public p VectorIterator.ctor<I>(Vector<I>& vector) {
  *
  * @return true or false
  */
-public inline f<bool> VectorIterator.hasNext() {
-    return this.cursor < this.vector.getSize() - 1;
+public inline f<bool> VectorIterator.isValid() {
+    return this.cursor < this.vector.getSize();
 }
 
 /**
@@ -33,8 +33,12 @@ public inline f<bool> VectorIterator.hasNext() {
  * @return current item
  */
 public inline f<I&> VectorIterator.next() {
-    assert this.hasNext();
+    assert this.isValid();
     this.cursor++;
+    // ToDo: Remove this special handling later
+    if (this.cursor == this.vector.getSize()) {
+        return this.vector.get(this.cursor - 1);
+    }
     return this.vector.get(this.cursor);
 }
 
@@ -45,8 +49,13 @@ public inline f<I&> VectorIterator.next() {
  * @return pair of index and item
  */
 public inline f<Pair<unsigned long, I&>> VectorIterator.nextIdx() {
-    assert this.hasNext();
+    assert this.isValid();
     this.cursor++;
+    // ToDo: Remove this special handling later
+    if (this.cursor == this.vector.getSize()) {
+        I& currentItem = this.vector.get(this.cursor - 1);
+        return Pair<unsigned long, I&>(this.cursor, currentItem);
+    }
     I& currentItem = this.vector.get(this.cursor);
     return Pair<unsigned long, I&>(this.cursor, currentItem);
 }
@@ -64,7 +73,7 @@ public inline f<I&> VectorIterator.get() {
  * @param it VectorIterator
  */
 public inline p operator++<I>(VectorIterator<I>& it) {
-    assert it.cursor < it.vector.getSize() - 1;
+    assert it.cursor < it.vector.getSize();
     it.cursor++;
 }
 

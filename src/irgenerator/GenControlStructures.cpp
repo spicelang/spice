@@ -198,56 +198,89 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Resolve iterator
   AssignExprNode *iteratorAssignNode = node->iteratorAssign();
-  SymbolType iteratorType = iteratorAssignNode->getEvaluatedSymbolType(manIdx);
+  SymbolType iteratorType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
+  const SymbolType itemSTy = iteratorType.getTemplateTypes().front();
+  const SymbolType itemRefSTy = itemSTy.toReference(node);
+  assert(itemRefSTy == node->getFct->returnType);
   llvm::Value *iterator = resolveAddress(iteratorAssignNode);
 
-  // Resolve item type
-  DeclStmtNode *itemDeclNode = node->itemDecl();
-  SymbolType itemType = itemDeclNode->getEvaluatedSymbolType(manIdx);
+  // Visit idx variable declaration if required
+  const DeclStmtNode *idxDeclNode = node->idxVarDecl();
+  const bool hasIdx = idxDeclNode != nullptr;
+  SymbolTableEntry *idxEntry;
+  llvm::Value *idxAddress;
+  if (hasIdx) {
+    visit(idxDeclNode);
+    // Get address of idx variable
+    idxEntry = idxDeclNode->entries.at(manIdx);
+    idxAddress = idxEntry->getAddress();
+    assert(idxAddress != nullptr);
+    // Store 0 to the idx variable
+    builder.CreateStore(builder.getInt64(0), idxAddress);
+  }
 
-  // Get iterator functions
-  llvm::Function *getFct = stdFunctionManager.getIteratorGetFct(iteratorType, currentScope);
-  llvm::Function *hasNextFct = stdFunctionManager.getIteratorHasNextFct(iteratorType);
-  llvm::Function *nextFct = stdFunctionManager.getIteratorNextFct(iteratorType, currentScope);
-
-  // Visit item declaration
-  visit(node->itemDecl());
+  // Visit item variable declaration
+  const DeclStmtNode *itemDeclNode = node->itemVarDecl();
+  visit(itemDeclNode);
   // Get address of item variable
-  llvm::Value *varAddress = itemDeclNode->entries.at(manIdx)->getAddress();
-  assert(varAddress != nullptr);
+  SymbolTableEntry *itemEntry = itemDeclNode->entries.at(manIdx);
+  llvm::Value *itemAddress = itemEntry->getAddress();
+  assert(itemAddress != nullptr);
 
   // Call .get() on iterator to get the first value
-  const SymbolType &getReturnType = iteratorType.getTemplateTypes().front();
-  llvm::Value *value = builder.CreateCall(getFct, iterator);
-  value = builder.CreateLoad(getReturnType.toLLVMType(context, nullptr), value);
-  // Store the first value to the item variable
-  builder.CreateStore(value, varAddress);
+  llvm::Function *getFct = stdFunctionManager.getIteratorGetFct(node->getFct);
+  llvm::Value *itemPtr = builder.CreateCall(getFct, iterator);
+  ExprResult itemResult = {.ptr = itemPtr};
+  doAssignment(itemAddress, itemEntry, itemResult, node->getFct->returnType, false);
 
-  // Create jump from original to head node
+  // Create jump from original to head block
   insertJump(bHead);
 
   // Switch to head block
   switchToBlock(bHead);
-  // Call .hasNext() on iterator
-  llvm::Value *hasNext = builder.CreateCall(hasNextFct, iterator);
+  // Call .isValid() on iterator
+  llvm::Function *isValidFct = stdFunctionManager.getIteratorIsValidFct(node->isValidFct);
+  llvm::Value *isValid = builder.CreateCall(isValidFct, iterator);
   // Create conditional jump from head to body or exit block
-  insertCondJump(hasNext, bBody, bExit);
+  insertCondJump(isValid, bBody, bExit);
 
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
   visit(node->body());
-  // Create jump from body to tail block
-  insertJump(bTail);
+  // Call .isValid() on iterator
+  if (!blockAlreadyTerminated) {
+    isValid = builder.CreateCall(isValidFct, iterator);
+    // Create conditional jump from body to tail or exit block
+    insertCondJump(isValid, bTail, bExit);
+  }
 
   // Switch to tail block
   switchToBlock(bTail);
-  // Call .next() on iterator
-  const SymbolType &nextReturnType = iteratorType.getTemplateTypes().front();
-  value = builder.CreateCall(nextFct, iterator);
-  value = builder.CreateLoad(nextReturnType.toLLVMType(context, nullptr), value);
-  // Store the first value to the item variable
-  builder.CreateStore(value, varAddress);
+  if (hasIdx) {
+    // Allocate space to save pair
+    llvm::Type *pairTy = node->nextIdxFct->returnType.toLLVMType(context, currentScope);
+    llvm::Value *pairPtr = insertAlloca(pairTy, "pair_addr");
+    // Call .nextIdx() on iterator
+    llvm::Function *nextIdxFct = stdFunctionManager.getIteratorNextIdxFct(node->nextIdxFct, currentScope);
+    llvm::Value *pair = builder.CreateCall(nextIdxFct, iterator);
+    pair->setName("pair");
+    builder.CreateStore(pair, pairPtr);
+    // Store idx to idx var
+    llvm::Value *idxAddrInPair = builder.CreateStructGEP(pairTy, pairPtr, 0, "idx_addr");
+    ExprResult idxResult = {.ptr = idxAddrInPair};
+    doAssignment(idxAddress, idxEntry, idxResult, SymbolType(TY_LONG), false);
+    // Store item to item var
+    llvm::Value *itemAddrInPair = builder.CreateStructGEP(pairTy, pairPtr, 1, "item_addr");
+    itemResult = {.refPtr = itemAddrInPair};
+    doAssignment(itemAddress, itemEntry, itemResult, itemRefSTy, false);
+  } else {
+    // Call .next() on iterator
+    llvm::Function *nextFct = stdFunctionManager.getIteratorNextFct(node->nextFct);
+    llvm::Value *nextItemPtr = builder.CreateCall(nextFct, iterator);
+    ExprResult nextResult = {.ptr = nextItemPtr};
+    doAssignment(itemAddress, itemEntry, nextResult, itemRefSTy, false);
+  }
   // Create jump from tail to head block
   insertJump(bHead);
 

@@ -7,7 +7,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "bool hasNext()",
+          "name": "bool isValid()",
           "symbols": [
             {
               "codeLoc": "L14C1",
@@ -132,6 +132,31 @@
         {
           "captures": [],
           "children": [],
+          "name": "bool isValid<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L14C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L14C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
           "name": "ctor()",
           "symbols": [
             {
@@ -185,35 +210,19 @@
               "type": "MockIterator<generic(T)>*"
             }
           ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "bool hasNext<generic(T)>()",
-          "symbols": [
-            {
-              "codeLoc": "L14C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "result",
-              "orderIndex": 1,
-              "state": "destructed",
-              "type": "invalid"
-            },
-            {
-              "codeLoc": "L14C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "destructed",
-              "type": "MockIterator<generic(T)>*"
-            }
-          ]
         }
       ],
       "name": "struct:MockIterator<short>",
       "symbols": [
+        {
+          "codeLoc": "L18C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "next:L18",
+          "orderIndex": 4,
+          "state": "destructed",
+          "type": "function"
+        },
         {
           "codeLoc": "L10C1",
           "isGlobal": false,
@@ -233,24 +242,6 @@
           "type": "function"
         },
         {
-          "codeLoc": "L14C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "hasNext:L14",
-          "orderIndex": 3,
-          "state": "destructed",
-          "type": "function"
-        },
-        {
-          "codeLoc": "L18C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "next:L18",
-          "orderIndex": 4,
-          "state": "destructed",
-          "type": "function"
-        },
-        {
           "codeLoc": "L18C1",
           "isGlobal": false,
           "isVolatile": false,
@@ -263,7 +254,7 @@
           "codeLoc": "L14C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "hasNext:L14",
+          "name": "isValid:L14",
           "orderIndex": 3,
           "state": "destructed",
           "type": "function"
@@ -283,6 +274,15 @@
           "isVolatile": false,
           "name": "nextIdx:L22",
           "orderIndex": 5,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L14C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "isValid:L14",
+          "orderIndex": 3,
           "state": "destructed",
           "type": "function"
         },
@@ -328,7 +328,7 @@
               "isGlobal": false,
               "isVolatile": false,
               "name": "anon.L31C24",
-              "orderIndex": 2,
+              "orderIndex": 1,
               "state": "destructed",
               "type": "MockIterator<short>"
             },
@@ -337,18 +337,9 @@
               "isGlobal": false,
               "isVolatile": false,
               "name": "item",
-              "orderIndex": 1,
-              "state": "destructed",
-              "type": "short"
-            },
-            {
-              "codeLoc": "L31C5",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "idx",
               "orderIndex": 0,
               "state": "destructed",
-              "type": "int"
+              "type": "short"
             }
           ]
         }
@@ -422,6 +413,31 @@
         {
           "captures": [],
           "children": [],
+          "name": "bool isValid<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L14C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L14C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
           "name": "generic(T)& get<generic(T)>()",
           "symbols": [
             {
@@ -459,31 +475,6 @@
               "type": "MockIterator<generic(T)>*"
             }
           ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "bool hasNext<generic(T)>()",
-          "symbols": [
-            {
-              "codeLoc": "L14C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "result",
-              "orderIndex": 1,
-              "state": "destructed",
-              "type": "invalid"
-            },
-            {
-              "codeLoc": "L14C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "destructed",
-              "type": "MockIterator<generic(T)>*"
-            }
-          ]
         }
       ],
       "name": "struct:MockIterator",
@@ -507,15 +498,6 @@
           "type": "function"
         },
         {
-          "codeLoc": "L14C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "hasNext:L14",
-          "orderIndex": 3,
-          "state": "destructed",
-          "type": "function"
-        },
-        {
           "codeLoc": "L10C1",
           "isGlobal": false,
           "isVolatile": false,
@@ -530,6 +512,15 @@
           "isVolatile": false,
           "name": "nextIdx:L22",
           "orderIndex": 5,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L14C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "isValid:L14",
+          "orderIndex": 3,
           "state": "destructed",
           "type": "function"
         },

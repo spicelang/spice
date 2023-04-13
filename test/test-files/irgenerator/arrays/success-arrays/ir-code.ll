@@ -13,7 +13,7 @@ define dso_local i32 @main() #0 {
   %intArray = alloca [3 x i32], align 4
   store i32 0, ptr %result, align 4
   store i32 2, ptr %value0, align 4
-  %2 = getelementptr inbounds [3 x i32], ptr %1, i32 0, i32 0
+  %2 = getelementptr inbounds [3 x i32], ptr %1, i32 0
   %3 = load i32, ptr %value0, align 4
   store i32 %3, ptr %2, align 4
   %4 = getelementptr inbounds i32, ptr %2, i32 1

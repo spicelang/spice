@@ -8,8 +8,8 @@ type I dyn;
  */
 public type ArrayIterator<I> struct : Iterable<I> {
     I* array
-    unsigned long cursor
     unsigned long size
+    unsigned long cursor
 }
 
 public p ArrayIterator.ctor(I* array, unsigned long size) {
@@ -23,7 +23,7 @@ public p ArrayIterator.ctor(I* array, unsigned long size) {
  *
  * @return true or false
  */
-public inline const f<bool> ArrayIterator.hasNext() {
+public inline const f<bool> ArrayIterator.isValid() {
     return this.cursor < this.size;
 }
 
@@ -33,7 +33,7 @@ public inline const f<bool> ArrayIterator.hasNext() {
  * @return current item
  */
 public inline f<I&> ArrayIterator.next() {
-    assert this.hasNext();
+    assert this.isValid();
     this.cursor++;
     return this.array[this.cursor];
 }
@@ -45,7 +45,7 @@ public inline f<I&> ArrayIterator.next() {
  * @return pair of index and item
  */
 public inline f<Pair<unsigned long, I&>> ArrayIterator.nextIdx() {
-    assert this.hasNext();
+    assert this.isValid();
     this.cursor++;
     return Pair<unsigned long, I&>(this.cursor, this.array[this.cursor]);
 }
@@ -54,7 +54,25 @@ public inline f<Pair<unsigned long, I&>> ArrayIterator.nextIdx() {
  * Returns the current item of the array
  */
 public inline f<I&> ArrayIterator.get() {
-    unsafe {
-        return this.array[this.cursor];
-    }
+    return this.array[this.cursor];
 }
+
+/**
+ * Advances the cursor by one
+ *
+ * @param it ArrayIterator
+ */
+/*public inline p operator++<I>(ArrayIterator<I>& it) {
+    assert it.cursor < it.vector.getSize() - 1;
+    it.cursor++;
+}*/
+
+/**
+ * Move the cursor back by one
+ *
+ * @param it ArrayIterator
+ */
+/*public inline p operator--<I>(ArrayIterator<I>& it) {
+    assert it.cursor > 0;
+    it.cursor--;
+}*/

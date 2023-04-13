@@ -12,7 +12,15 @@ ext<byte*> memcpy(byte*, byte*, int);
 type T dyn;
 
 /**
- * A queue in Spice is a commonly used data structure, which uses the FiFo (first in, first out) principle
+ * A queue in Spice is a commonly used data structure, which uses the FiFo (first in, first out) principle.
+ *
+ * Time complexity:
+ * Insert: O(1)
+ * Delete: O(1)
+ * Search: O(n)
+ *
+ * Queues pre-allocate space using an initial size and a resize factor to not have to re-allocate
+ * with every item pushed.
  */
 public type Queue<T> struct {
     T* contents             // Pointer to the first data element

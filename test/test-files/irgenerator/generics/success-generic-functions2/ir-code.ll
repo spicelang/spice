@@ -142,7 +142,7 @@ define dso_local i32 @main() #0 {
   %6 = getelementptr inbounds [4 x i64], ptr %numberList2, i32 0, i32 0
   %7 = call i32 @_f__void__int__sumNumbers__longarray_int(ptr %6, i32 4)
   store i32 %7, ptr %result2, align 4
-  %8 = getelementptr inbounds [2 x i32], ptr %3, i32 0, i32 0
+  %8 = getelementptr inbounds [2 x i32], ptr %3, i32 0
   %9 = load i32, ptr %result1, align 4
   store i32 %9, ptr %8, align 4
   %10 = load i32, ptr %result2, align 4

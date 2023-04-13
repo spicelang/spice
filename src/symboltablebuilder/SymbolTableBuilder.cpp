@@ -374,15 +374,11 @@ std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FOREACH_BODY, &node->body()->codeLoc);
 
   // Visit index variable declaration
-  if (node->idxVarDecl()) {
+  if (node->idxVarDecl())
     visit(node->idxVarDecl());
-  } else {
-    // Add default index variable to symbol table
-    currentScope->insert(FOREACH_DEFAULT_IDX_VARIABLE_NAME, node);
-  }
 
   // Visit item variable declaration
-  visit(node->itemDecl());
+  visit(node->itemVarDecl());
 
   // Visit body
   visit(node->body());
