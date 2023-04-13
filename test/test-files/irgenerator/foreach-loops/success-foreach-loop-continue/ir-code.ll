@@ -22,16 +22,16 @@ define dso_local i32 @main() #0 {
   store %__short__NumberIterator__short_short_short %2, ptr %shortIterator, align 2
   store %__short__NumberIterator__short_short_short %2, ptr %shortIterator, align 2
   store i16 0, ptr %s, align 2
-  %3 = call ptr @_mf__NumberIterator_short__shortref__get(ptr %shortIterator)
-  %4 = load i16, ptr %3, align 2
-  store i16 %4, ptr %s, align 2
   br label %foreach.head.L5
 
 foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
-  %5 = call i1 @_mf__NumberIterator_short__bool__isValid(ptr %shortIterator)
-  br i1 %5, label %foreach.body.L5, label %foreach.exit.L5
+  %3 = call i1 @_mf__NumberIterator_short__bool__isValid(ptr %shortIterator)
+  br i1 %3, label %foreach.body.L5, label %foreach.exit.L5
 
 foreach.body.L5:                                  ; preds = %foreach.head.L5
+  %4 = call ptr @_mf__NumberIterator_short__shortref__get(ptr %shortIterator)
+  %5 = load i16, ptr %4, align 2
+  store i16 %5, ptr %s, align 2
   %6 = load i16, ptr %s, align 2
   %7 = sext i16 %6 to i32
   %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %7)
@@ -45,61 +45,56 @@ if.then.L7:                                       ; preds = %foreach.body.L5
   %13 = call %__long__NumberIterator__long_long_long @"_f__void__NumberIterator<long>__range__long_long"(i64 1, i64 2)
   store %__long__NumberIterator__long_long_long %13, ptr %1, align 8
   store i64 0, ptr %l, align 8
-  %14 = call ptr @_mf__NumberIterator_long__longref__get(ptr %1)
-  %15 = load i64, ptr %14, align 8
-  store i64 %15, ptr %l, align 8
   br label %foreach.head.L8
 
 foreach.head.L8:                                  ; preds = %foreach.tail.L8, %if.then.L7
-  %16 = call i1 @_mf__NumberIterator_long__bool__isValid(ptr %1)
-  br i1 %16, label %foreach.body.L8, label %foreach.exit.L8
+  %14 = call i1 @_mf__NumberIterator_long__bool__isValid(ptr %1)
+  br i1 %14, label %foreach.body.L8, label %foreach.exit.L8
 
 foreach.body.L8:                                  ; preds = %foreach.head.L8
+  %15 = call ptr @_mf__NumberIterator_long__longref__get(ptr %1)
+  %16 = load i64, ptr %15, align 8
+  store i64 %16, ptr %l, align 8
   %17 = load i64, ptr %l, align 8
   %18 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 %17)
   br label %foreach.tail.L5
 
 foreach.tail.L8:                                  ; No predecessors!
-  %19 = call ptr @_mf__NumberIterator_long__longref__next(ptr %1)
-  %20 = load i64, ptr %19, align 8
-  store i64 %20, ptr %l, align 8
+  call void @_mp__NumberIterator_long__void__next(ptr %1)
   br label %foreach.head.L8
 
 foreach.exit.L8:                                  ; preds = %foreach.head.L8
   br label %if.exit.L7
 
 if.exit.L7:                                       ; preds = %foreach.exit.L8, %foreach.body.L5
-  %21 = call i1 @_mf__NumberIterator_short__bool__isValid(ptr %shortIterator)
-  br i1 %21, label %foreach.tail.L5, label %foreach.exit.L5
+  br label %foreach.tail.L5
 
 foreach.tail.L5:                                  ; preds = %if.exit.L7, %foreach.body.L8
-  %22 = call ptr @_mf__NumberIterator_short__shortref__next(ptr %shortIterator)
-  %23 = load i16, ptr %22, align 2
-  store i16 %23, ptr %s, align 2
+  call void @_mp__NumberIterator_short__void__next(ptr %shortIterator)
   br label %foreach.head.L5
 
-foreach.exit.L5:                                  ; preds = %if.exit.L7, %foreach.head.L5
-  %24 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
-  %25 = load i32, ptr %result, align 4
-  ret i32 %25
+foreach.exit.L5:                                  ; preds = %foreach.head.L5
+  %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %20 = load i32, ptr %result, align 4
+  ret i32 %20
 }
 
 declare %__short__NumberIterator__short_short_short @"_f__void__NumberIterator<short>__range__short_short"(i16, i16)
 
-declare ptr @_mf__NumberIterator_short__shortref__get(ptr)
-
 declare i1 @_mf__NumberIterator_short__bool__isValid(ptr)
+
+declare ptr @_mf__NumberIterator_short__shortref__get(ptr)
 
 declare i32 @printf(ptr noundef, ...)
 
 declare %__long__NumberIterator__long_long_long @"_f__void__NumberIterator<long>__range__long_long"(i64, i64)
 
-declare ptr @_mf__NumberIterator_long__longref__get(ptr)
-
 declare i1 @_mf__NumberIterator_long__bool__isValid(ptr)
 
-declare ptr @_mf__NumberIterator_long__longref__next(ptr)
+declare ptr @_mf__NumberIterator_long__longref__get(ptr)
 
-declare ptr @_mf__NumberIterator_short__shortref__next(ptr)
+declare void @_mp__NumberIterator_long__void__next(ptr)
+
+declare void @_mp__NumberIterator_short__void__next(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }

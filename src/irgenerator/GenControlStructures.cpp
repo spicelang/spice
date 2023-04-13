@@ -201,7 +201,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   SymbolType iteratorType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
   const SymbolType itemSTy = iteratorType.getTemplateTypes().front();
   const SymbolType itemRefSTy = itemSTy.toReference(node);
-  assert(itemRefSTy == node->getFct->returnType);
+  assert(!node->getFct || itemRefSTy == node->getFct->returnType);
+  assert(!node->getIdxFct || itemRefSTy == node->getFct->returnType.getTemplateTypes().back());
   llvm::Value *iterator = resolveAddress(iteratorAssignNode);
 
   // Visit idx variable declaration if required
@@ -215,8 +216,6 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     idxEntry = idxDeclNode->entries.at(manIdx);
     idxAddress = idxEntry->getAddress();
     assert(idxAddress != nullptr);
-    // Store 0 to the idx variable
-    builder.CreateStore(builder.getInt64(0), idxAddress);
   }
 
   // Visit item variable declaration
@@ -227,18 +226,13 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   llvm::Value *itemAddress = itemEntry->getAddress();
   assert(itemAddress != nullptr);
 
-  // Call .get() on iterator to get the first value
-  llvm::Function *getFct = stdFunctionManager.getIteratorGetFct(node->getFct);
-  llvm::Value *itemPtr = builder.CreateCall(getFct, iterator);
-  ExprResult itemResult = {.ptr = itemPtr};
-  doAssignment(itemAddress, itemEntry, itemResult, node->getFct->returnType, false);
-
   // Create jump from original to head block
   insertJump(bHead);
 
   // Switch to head block
   switchToBlock(bHead);
   // Call .isValid() on iterator
+  assert(node->isValidFct);
   llvm::Function *isValidFct = stdFunctionManager.getIteratorIsValidFct(node->isValidFct);
   llvm::Value *isValid = builder.CreateCall(isValidFct, iterator);
   // Create conditional jump from head to body or exit block
@@ -246,24 +240,15 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Switch to body block
   switchToBlock(bBody);
-  // Visit body
-  visit(node->body());
-  // Call .isValid() on iterator
-  if (!blockAlreadyTerminated) {
-    isValid = builder.CreateCall(isValidFct, iterator);
-    // Create conditional jump from body to tail or exit block
-    insertCondJump(isValid, bTail, bExit);
-  }
-
-  // Switch to tail block
-  switchToBlock(bTail);
+  // Get the current iterator values
   if (hasIdx) {
     // Allocate space to save pair
-    llvm::Type *pairTy = node->nextIdxFct->returnType.toLLVMType(context, currentScope);
+    llvm::Type *pairTy = node->getIdxFct->returnType.toLLVMType(context, currentScope);
     llvm::Value *pairPtr = insertAlloca(pairTy, "pair_addr");
-    // Call .nextIdx() on iterator
-    llvm::Function *nextIdxFct = stdFunctionManager.getIteratorNextIdxFct(node->nextIdxFct, currentScope);
-    llvm::Value *pair = builder.CreateCall(nextIdxFct, iterator);
+    // Call .getIdx() on iterator
+    assert(node->getIdxFct);
+    llvm::Function *getIdxFct = stdFunctionManager.getIteratorGetIdxFct(node->getIdxFct, currentScope);
+    llvm::Value *pair = builder.CreateCall(getIdxFct, iterator);
     pair->setName("pair");
     builder.CreateStore(pair, pairPtr);
     // Store idx to idx var
@@ -272,15 +257,27 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     doAssignment(idxAddress, idxEntry, idxResult, SymbolType(TY_LONG), false);
     // Store item to item var
     llvm::Value *itemAddrInPair = builder.CreateStructGEP(pairTy, pairPtr, 1, "item_addr");
-    itemResult = {.refPtr = itemAddrInPair};
+    ExprResult itemResult = {.refPtr = itemAddrInPair};
     doAssignment(itemAddress, itemEntry, itemResult, itemRefSTy, false);
   } else {
-    // Call .next() on iterator
-    llvm::Function *nextFct = stdFunctionManager.getIteratorNextFct(node->nextFct);
-    llvm::Value *nextItemPtr = builder.CreateCall(nextFct, iterator);
-    ExprResult nextResult = {.ptr = nextItemPtr};
-    doAssignment(itemAddress, itemEntry, nextResult, itemRefSTy, false);
+    // Call .get() on iterator
+    assert(node->getFct);
+    llvm::Function *getFct = stdFunctionManager.getIteratorGetFct(node->getFct);
+    llvm::Value *getItemPtr = builder.CreateCall(getFct, iterator);
+    ExprResult getResult = {.ptr = getItemPtr};
+    doAssignment(itemAddress, itemEntry, getResult, itemRefSTy, false);
   }
+  // Visit body
+  visit(node->body());
+  // Create jump from body to tail block
+  insertJump(bTail);
+
+  // Switch to tail block
+  switchToBlock(bTail);
+  // Call .next() on iterator
+  assert(node->nextFct);
+  llvm::Function *nextFct = stdFunctionManager.getIteratorNextFct(node->nextFct);
+  builder.CreateCall(nextFct, iterator);
   // Create jump from tail to head block
   insertJump(bHead);
 

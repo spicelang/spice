@@ -7,13 +7,15 @@ f<int> main() {
     // Test functionality with int
     assert itInt.isValid();
     assert itInt.get() == 1;
-    assert itInt.next() == 2;
+    itInt.next();
+    assert itInt.get() == 2;
     itInt += 3;
     assert itInt.get() == 5;
     assert itInt.isValid();
     itInt -= 2;
     assert itInt.get() == 3;
-    dyn idxAndValueInt = itInt.nextIdx();
+    itInt.next();
+    dyn idxAndValueInt = itInt.getIdx();
     assert idxAndValueInt.getFirst() == 3l;
     assert idxAndValueInt.getSecond() == 4;
     itInt++;
@@ -30,7 +32,8 @@ f<int> main() {
     NumberIterator<long> itLong = range(6l, 45l);
     assert itLong.isValid();
     assert itLong.get() == 6l;
-    assert itLong.next() == 7l;
+    itLong.next();
+    assert itLong.get() == 7l;
     itLong += 3l;
     assert itLong.get() == 10l;
     assert itLong.get() == 10l;
@@ -38,7 +41,8 @@ f<int> main() {
     assert itLong.get() == 8l;
     itLong += 8l;
     assert itLong.get() == 16l;
-    dyn idxAndValueLong = itLong.nextIdx();
+    itLong.next();
+    dyn idxAndValueLong = itLong.getIdx();
     assert idxAndValueLong.getFirst() == 11l;
     assert idxAndValueLong.getSecond() == 17l;
     itLong++;

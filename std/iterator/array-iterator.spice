@@ -19,7 +19,20 @@ public p ArrayIterator.ctor(I* array, unsigned long size) {
 }
 
 /**
- * Check if the array has another item
+ * Returns the current item of the array
+ *
+ * @return Reference to the current item
+ */
+public inline f<I&> ArrayIterator.get() {
+    return this.array[this.cursor];
+}
+
+public inline f<Pair<unsigned long, I&>> ArrayIterator.getIdx() {
+    return Pair<unsigned long, I&>(this.cursor, this.array[this.cursor]);
+}
+
+/**
+ * Check if the iterator is valid
  *
  * @return true or false
  */
@@ -29,32 +42,10 @@ public inline const f<bool> ArrayIterator.isValid() {
 
 /**
  * Returns the current item of the array and moves the cursor to the next one
- *
- * @return current item
  */
-public inline f<I&> ArrayIterator.next() {
+public inline p ArrayIterator.next() {
     assert this.isValid();
     this.cursor++;
-    return this.array[this.cursor];
-}
-
-/**
- * Returns the current item as well as the current iterator index and moves the cursor
- * to the next item.
- *
- * @return pair of index and item
- */
-public inline f<Pair<unsigned long, I&>> ArrayIterator.nextIdx() {
-    assert this.isValid();
-    this.cursor++;
-    return Pair<unsigned long, I&>(this.cursor, this.array[this.cursor]);
-}
-
-/**
- * Returns the current item of the array
- */
-public inline f<I&> ArrayIterator.get() {
-    return this.array[this.cursor];
 }
 
 /**

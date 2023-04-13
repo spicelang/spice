@@ -1,5 +1,5 @@
-[Error|Semantic] ./test-files/typechecker/foreach-loops/error-foreach-non-generic-iterator/source.spice:29:28:
+[Error|Semantic] ./test-files/typechecker/foreach-loops/error-foreach-non-generic-iterator/source.spice:27:28:
 Invalid iterator: Iterator has no generic arguments so that the item type could not be inferred
 
-29  each dyn demoItem : MockIterator() {
+27  each dyn demoItem : MockIterator() {
                         ^^^^^^^^^^^^^^

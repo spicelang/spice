@@ -1,45 +1,17 @@
-import "std/runtime/iterator_rt";
+import "std/iterator/number-iterator";
 
 f<int> main() {
-    // Create test vector to iterate over
-    Vector<int> vi = Vector<int>();
-    vi.pushBack(123);
-    vi.pushBack(4321);
-    vi.pushBack(9876);
-    assert vi.getSize() == 3;
-
-    // Test base functionality
-    dyn it = iterate(vi);
-    assert it.isValid();
-    assert it.get() == 123;
-    assert it.get() == 123;
-    assert it.next() == 4321;
-    assert it.get() == 4321;
-    assert it.isValid();
-    assert it.next() == 9876;
-    assert it.get() == 9876;
-    it.next();
-    assert !it.isValid();
-
-    // Add new items to the vector
-    vi.pushBack(321);
-    vi.pushBack(-99);
-    assert it.isValid();
-
-    // Test overloaded operators
-    it -= 3;
-    assert it.get() == 123;
-    assert it.isValid();
-    it++;
-    assert it.get() == 4321;
-    it--;
-    assert it.get() == 123;
-    it += 4;
-    assert it.get() == -99;
-    it.next();
-    assert !it.isValid();
-
-    printf("All assertions passed!");
+    dyn shortIterator = range(3s, 8s);
+    foreach short s : shortIterator {
+        printf("Short %d\n", s);
+        if ((s & 1s) == 1) {
+            foreach dyn l : range(1l, 2l) {
+                printf("Long %d\n", l);
+                break 2;
+            }
+        }
+    }
+    printf("End.");
 }
 
 /*import "std/data/linked-list";
