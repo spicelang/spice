@@ -202,7 +202,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   const SymbolType itemSTy = iteratorType.getTemplateTypes().front();
   const SymbolType itemRefSTy = itemSTy.toReference(node);
   assert(!node->getFct || itemRefSTy == node->getFct->returnType);
-  assert(!node->getIdxFct || itemRefSTy == node->getFct->returnType.getTemplateTypes().back());
+  assert(!node->getIdxFct || itemRefSTy == node->getIdxFct->returnType.getTemplateTypes().back());
   llvm::Value *iterator = resolveAddress(iteratorAssignNode);
 
   // Visit idx variable declaration if required

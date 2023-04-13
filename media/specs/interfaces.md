@@ -6,9 +6,8 @@
 - [x] 2. Update IntelliJ plugin
 - [x] 3. Add semantic checks
 - [x] 4. Add tests for semantic checks
-- [ ] 5. Allow optional args for interface methods
-- [ ] 6. Allow template types for interface methods
-- [ ] 7. Match visibility modifiers
+- [x] 5. Allow template types for interface methods
+- [ ] 6. Allow optional args for interface methods
 
 ## Syntax
 
