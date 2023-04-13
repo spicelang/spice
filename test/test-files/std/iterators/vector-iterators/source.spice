@@ -10,32 +10,34 @@ f<int> main() {
 
     // Test base functionality
     dyn it = iterate(vi);
-    assert it.hasNext();
+    assert it.isValid();
     assert it.get() == 123;
     assert it.get() == 123;
     assert it.next() == 4321;
     assert it.get() == 4321;
-    assert it.hasNext();
+    assert it.isValid();
     assert it.next() == 9876;
     assert it.get() == 9876;
-    assert !it.hasNext();
+    it.next();
+    assert !it.isValid();
 
     // Add new items to the vector
     vi.pushBack(321);
     vi.pushBack(-99);
-    assert it.hasNext();
+    assert it.isValid();
 
     // Test overloaded operators
-    it -= 2;
+    it -= 3;
     assert it.get() == 123;
-    assert it.hasNext();
+    assert it.isValid();
     it++;
     assert it.get() == 4321;
     it--;
     assert it.get() == 123;
     it += 4;
     assert it.get() == -99;
-    assert !it.hasNext();
+    it.next();
+    assert !it.isValid();
 
     printf("All assertions passed!");
 }

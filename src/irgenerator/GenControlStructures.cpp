@@ -184,6 +184,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Create blocks
   const std::string codeLine = node->codeLoc.toPrettyLine();
+  llvm::BasicBlock *bHead = createBlock("foreach.head." + codeLine);
   llvm::BasicBlock *bBody = createBlock("foreach.body." + codeLine);
   llvm::BasicBlock *bTail = createBlock("foreach.tail." + codeLine);
   llvm::BasicBlock *bExit = createBlock("foreach.exit." + codeLine);
@@ -203,12 +204,12 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   assert(itemRefSTy == node->getFct->returnType);
   llvm::Value *iterator = resolveAddress(iteratorAssignNode);
 
+  // Visit idx variable declaration if required
   const DeclStmtNode *idxDeclNode = node->idxVarDecl();
   const bool hasIdx = idxDeclNode != nullptr;
   SymbolTableEntry *idxEntry;
   llvm::Value *idxAddress;
   if (hasIdx) {
-    // Visit idx variable declaration
     visit(idxDeclNode);
     // Get address of idx variable
     idxEntry = idxDeclNode->entries.at(manIdx);
@@ -229,24 +230,30 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Call .get() on iterator to get the first value
   llvm::Function *getFct = stdFunctionManager.getIteratorGetFct(node->getFct);
   llvm::Value *itemPtr = builder.CreateCall(getFct, iterator);
-  llvm::Value *item = builder.CreateLoad(node->getFct->returnType.toLLVMType(context, nullptr), itemPtr);
-  // Store the first value to the item variable
-  builder.CreateStore(item, itemAddress);
-  // Call .hasNext() on iterator
-  llvm::Function *hasNextFct = stdFunctionManager.getIteratorHasNextFct(node->hasNextFct);
-  llvm::Value *hasNext = builder.CreateCall(hasNextFct, iterator);
-  // Create conditional jump from original to body or exit block
-  insertCondJump(hasNext, bBody, bExit);
+  ExprResult itemResult = {.ptr = itemPtr};
+  doAssignment(itemAddress, itemEntry, itemResult, node->getFct->returnType, false);
+
+  // Create jump from original to head block
+  insertJump(bHead);
+
+  // Switch to head block
+  switchToBlock(bHead);
+  // Call .isValid() on iterator
+  llvm::Function *isValidFct = stdFunctionManager.getIteratorIsValidFct(node->isValidFct);
+  llvm::Value *isValid = builder.CreateCall(isValidFct, iterator);
+  // Create conditional jump from head to body or exit block
+  insertCondJump(isValid, bBody, bExit);
 
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
   visit(node->body());
-  // Call .hasNext() on iterator
-  if (!blockAlreadyTerminated)
-    hasNext = builder.CreateCall(hasNextFct, iterator);
-  // Create conditional jump from body to tail or exit block
-  insertCondJump(hasNext, bTail, bExit);
+  // Call .isValid() on iterator
+  if (!blockAlreadyTerminated) {
+    isValid = builder.CreateCall(isValidFct, iterator);
+    // Create conditional jump from body to tail or exit block
+    insertCondJump(isValid, bTail, bExit);
+  }
 
   // Switch to tail block
   switchToBlock(bTail);
@@ -260,14 +267,12 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     pair->setName("pair");
     builder.CreateStore(pair, pairPtr);
     // Store idx to idx var
-    llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
-    llvm::Value *idxAddrInPair = builder.CreateInBoundsGEP(pairTy, pairPtr, indices, "idx_addr");
+    llvm::Value *idxAddrInPair = builder.CreateStructGEP(pairTy, pairPtr, 0, "idx_addr");
     ExprResult idxResult = {.ptr = idxAddrInPair};
     doAssignment(idxAddress, idxEntry, idxResult, SymbolType(TY_LONG), false);
     // Store item to item var
-    indices[1] = builder.getInt32(1);
-    llvm::Value *itemAddrInPair = builder.CreateInBoundsGEP(pairTy, pairPtr, indices, "item_addr");
-    ExprResult itemResult = {.refPtr = itemAddrInPair};
+    llvm::Value *itemAddrInPair = builder.CreateStructGEP(pairTy, pairPtr, 1, "item_addr");
+    itemResult = {.refPtr = itemAddrInPair};
     doAssignment(itemAddress, itemEntry, itemResult, itemRefSTy, false);
   } else {
     // Call .next() on iterator
@@ -276,9 +281,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     ExprResult nextResult = {.ptr = nextItemPtr};
     doAssignment(itemAddress, itemEntry, nextResult, itemRefSTy, false);
   }
-
-  // Create jump from tail to body block
-  insertJump(bBody);
+  // Create jump from tail to head block
+  insertJump(bHead);
 
   // Switch to exit block
   switchToBlock(bExit);

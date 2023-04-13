@@ -5,12 +5,12 @@ f<int> main() {
     NumberIterator<int> itInt = range(1, 10);
 
     // Test functionality with int
-    assert itInt.hasNext();
+    assert itInt.isValid();
     assert itInt.get() == 1;
     assert itInt.next() == 2;
     itInt += 3;
     assert itInt.get() == 5;
-    assert itInt.hasNext();
+    assert itInt.isValid();
     itInt -= 2;
     assert itInt.get() == 3;
     dyn idxAndValueInt = itInt.nextIdx();
@@ -20,14 +20,15 @@ f<int> main() {
     assert itInt.get() == 5;
     itInt--;
     assert itInt.get() == 4;
-    assert itInt.hasNext();
+    assert itInt.isValid();
     itInt += 6;
     assert itInt.get() == 10;
-    assert !itInt.hasNext();
+    itInt++;
+    assert !itInt.isValid();
 
     // Test functionality with long
     NumberIterator<long> itLong = range(6l, 45l);
-    assert itLong.hasNext();
+    assert itLong.isValid();
     assert itLong.get() == 6l;
     assert itLong.next() == 7l;
     itLong += 3l;
@@ -44,10 +45,11 @@ f<int> main() {
     assert itLong.get() == 18l;
     itLong--;
     assert itLong.get() == 17l;
-    assert itLong.hasNext();
+    assert itLong.isValid();
     itLong += 28l;
     assert itLong.get() == 45;
-    assert !itLong.hasNext();
+    itLong++;
+    assert !itLong.isValid();
 
     printf("All assertions passed!");
 }

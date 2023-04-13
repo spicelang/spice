@@ -24,8 +24,8 @@ public p NumberIterator.ctor(N lowerBound, N upperBound) {
  *
  * @return true or false
  */
-public inline f<bool> NumberIterator.hasNext() {
-    return this.currentNumber < this.upperBound;
+public inline f<bool> NumberIterator.isValid() {
+    return this.currentNumber <= this.upperBound;
 }
 
 /**
@@ -34,7 +34,7 @@ public inline f<bool> NumberIterator.hasNext() {
  * @return current item
  */
 public inline f<N&> NumberIterator.next() {
-    assert this.hasNext();
+    assert this.isValid();
     this.currentNumber++;
     return this.currentNumber;
 }
@@ -46,7 +46,7 @@ public inline f<N&> NumberIterator.next() {
  * @return pair of index and item
  */
 public inline f<Pair<unsigned long, N&>> NumberIterator.nextIdx() {
-    assert this.hasNext();
+    assert this.isValid();
     this.currentNumber++;
     unsigned long idx = (unsigned long) this.currentNumber - this.lowerBound;
     return Pair<unsigned long, N&>(idx, this.currentNumber);
@@ -65,7 +65,7 @@ public inline f<N&> NumberIterator.get() {
  * @param it NumberIterator
  */
 public inline p operator++<N>(NumberIterator<N>& it) {
-    assert it.currentNumber < it.upperBound;
+    assert it.currentNumber <= it.upperBound;
     it.currentNumber++;
 }
 

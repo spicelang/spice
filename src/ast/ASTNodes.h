@@ -608,7 +608,7 @@ public:
   // Public members
   Scope *bodyScope = nullptr;
   Function *getFct = nullptr;
-  Function *hasNextFct = nullptr;
+  Function *isValidFct = nullptr;
   Function *nextFct = nullptr;
   Function *nextIdxFct = nullptr;
 };

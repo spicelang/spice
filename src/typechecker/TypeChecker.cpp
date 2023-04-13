@@ -166,12 +166,12 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
                           "Index in foreach loop must be of type long. You provided " + indexType.getName());
   }
 
-  // Retrieve .get(), .hasNext(), .next() and .nextIdx() functions
+  // Retrieve .get(), .isValid(), .next() and .nextIdx() functions
   Scope *matchScope = iteratorType.getBodyScope();
   node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, false, node);
   assert(node->getFct != nullptr);
-  node->hasNextFct = FunctionManager::matchFunction(matchScope, "hasNext", iteratorType, {}, false, node);
-  assert(node->hasNextFct != nullptr);
+  node->isValidFct = FunctionManager::matchFunction(matchScope, "isValid", iteratorType, {}, false, node);
+  assert(node->isValidFct != nullptr);
   if (hasIdx) {
     node->nextIdxFct = FunctionManager::matchFunction(matchScope, "nextIdx", iteratorType, {}, false, node);
     assert(node->nextIdxFct != nullptr);

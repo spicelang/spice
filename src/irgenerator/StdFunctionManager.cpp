@@ -38,24 +38,24 @@ llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   return getFunction("_f__void__bool__isRawEqual__string_string", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
 }
 
-llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *getFct) const {
-  const std::string functionName = getFct->getMangledName();
+llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *spiceFunc) const {
+  const std::string functionName = spiceFunc->getMangledName();
   return getFunction(functionName.c_str(), builder.getPtrTy(), builder.getPtrTy());
 }
 
-llvm::Function *StdFunctionManager::getIteratorHasNextFct(const Function *hasNextFct) const {
-  const std::string functionName = hasNextFct->getMangledName();
+llvm::Function *StdFunctionManager::getIteratorIsValidFct(const Function *spiceFunc) const {
+  const std::string functionName = spiceFunc->getMangledName();
   return getFunction(functionName.c_str(), builder.getInt1Ty(), builder.getPtrTy());
 }
 
-llvm::Function *StdFunctionManager::getIteratorNextFct(const Function *nextFct) const {
-  const std::string functionName = nextFct->getMangledName();
+llvm::Function *StdFunctionManager::getIteratorNextFct(const Function *spiceFunc) const {
+  const std::string functionName = spiceFunc->getMangledName();
   return getFunction(functionName.c_str(), builder.getPtrTy(), builder.getPtrTy());
 }
 
-llvm::Function *StdFunctionManager::getIteratorNextIdxFct(const Function *nextIdxFct, Scope *accessScope) const {
-  const std::string functionName = nextIdxFct->getMangledName();
-  llvm::Type *pairTy = nextIdxFct->returnType.toLLVMType(context, accessScope);
+llvm::Function *StdFunctionManager::getIteratorNextIdxFct(const Function *nextFunc, Scope *accessScope) const {
+  const std::string functionName = nextFunc->getMangledName();
+  llvm::Type *pairTy = nextFunc->returnType.toLLVMType(context, accessScope);
   return getFunction(functionName.c_str(), pairTy, builder.getPtrTy());
 }
 

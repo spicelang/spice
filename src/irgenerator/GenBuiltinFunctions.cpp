@@ -103,10 +103,11 @@ std::any IRGenerator::visitJoinCall(const JoinCallNode *node) {
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
       for (int i = 0; i < threadIdPtrTy->getArrayNumElements(); i++) {
         // Get thread id that has to be joined
-        threadIdPtr = builder.CreateGEP(threadIdPtrTy, threadIdPtr, indices);
+        threadIdPtr = builder.CreateInBoundsGEP(threadIdPtrTy, threadIdPtr, indices);
         threadIdPointers.push_back(threadIdPtr);
         // Use offset 1 for all other thread ids
-        indices[1] = builder.getInt32(1);
+        if (i == 0)
+          indices[1] = builder.getInt32(1);
       }
     } else { // Single id
       threadIdPointers.push_back(threadIdPtr);

@@ -23,7 +23,7 @@ public p ArrayIterator.ctor(I* array, unsigned long size) {
  *
  * @return true or false
  */
-public inline const f<bool> ArrayIterator.hasNext() {
+public inline const f<bool> ArrayIterator.isValid() {
     return this.cursor < this.size;
 }
 
@@ -33,7 +33,7 @@ public inline const f<bool> ArrayIterator.hasNext() {
  * @return current item
  */
 public inline f<I&> ArrayIterator.next() {
-    assert this.hasNext();
+    assert this.isValid();
     this.cursor++;
     return this.array[this.cursor];
 }
@@ -45,7 +45,7 @@ public inline f<I&> ArrayIterator.next() {
  * @return pair of index and item
  */
 public inline f<Pair<unsigned long, I&>> ArrayIterator.nextIdx() {
-    assert this.hasNext();
+    assert this.isValid();
     this.cursor++;
     return Pair<unsigned long, I&>(this.cursor, this.array[this.cursor]);
 }
