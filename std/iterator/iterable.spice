@@ -8,8 +8,8 @@ type T dyn;
  * all elements, implementing the Iterable interface can be looped over by a standard foreach loop.
  */
 public type Iterable<T> interface {
-    f<bool> isValid();                    // Check if another item is available
-    f<T&> next();                         // Advance the cursor and return the new item
-    f<Pair<unsigned long, T&>> nextIdx(); // Advance the cursor and return the new index and item
-    f<T&> get();                          // Get the current item
+    f<T&> get();                         // Get the current item
+    f<Pair<unsigned long, T&>> getIdx(); // Get the current index and item
+    f<bool> isValid();                   // Check if the iterator is still valid
+    p next();                            // Advance the cursor by one
 }

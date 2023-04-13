@@ -13,11 +13,13 @@ f<int> main() {
     assert it.isValid();
     assert it.get() == 123;
     assert it.get() == 123;
-    assert it.next() == 4321;
+    it.next();
     assert it.get() == 4321;
     assert it.isValid();
-    assert it.next() == 9876;
-    assert it.get() == 9876;
+    it.next();
+    dyn pair = it.getIdx();
+    assert pair.getFirst() == 2;
+    assert pair.getSecond() == 9876;
     it.next();
     assert !it.isValid();
 

@@ -166,22 +166,24 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
                           "Index in foreach loop must be of type long. You provided " + indexType.getName());
   }
 
-  // Retrieve .get(), .isValid(), .next() and .nextIdx() functions
+  // Retrieve .get(), .getIdx(), .isValid() and .next() functions
   Scope *matchScope = iteratorType.getBodyScope();
-  node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, false, node);
-  assert(node->getFct != nullptr);
+  SymbolType iteratorItemType;
+  if (hasIdx) {
+    node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType, {}, false, node);
+    assert(node->getIdxFct != nullptr);
+    iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back().removeReferenceWrapper();
+  } else {
+    node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, false, node);
+    assert(node->getFct != nullptr);
+    iteratorItemType = node->getFct->returnType.removeReferenceWrapper();
+  }
   node->isValidFct = FunctionManager::matchFunction(matchScope, "isValid", iteratorType, {}, false, node);
   assert(node->isValidFct != nullptr);
-  if (hasIdx) {
-    node->nextIdxFct = FunctionManager::matchFunction(matchScope, "nextIdx", iteratorType, {}, false, node);
-    assert(node->nextIdxFct != nullptr);
-  } else {
-    node->nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, false, node);
-    assert(node->nextFct != nullptr);
-  }
+  node->nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, false, node);
+  assert(node->nextFct != nullptr);
 
   // Check type of the item
-  SymbolType iteratorItemType = node->getFct->returnType.removeReferenceWrapper();
   auto itemType = std::any_cast<SymbolType>(visit(node->itemVarDecl()));
   if (itemType.is(TY_DYN)) { // Perform type inference
     // Update evaluated symbol type of the declaration data type

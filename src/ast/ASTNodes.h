@@ -608,9 +608,9 @@ public:
   // Public members
   Scope *bodyScope = nullptr;
   Function *getFct = nullptr;
+  Function *getIdxFct = nullptr;
   Function *isValidFct = nullptr;
   Function *nextFct = nullptr;
-  Function *nextIdxFct = nullptr;
 };
 
 // ========================================================= WhileLoopNode =======================================================

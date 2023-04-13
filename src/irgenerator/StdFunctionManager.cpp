@@ -43,6 +43,12 @@ llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *spiceFunc)
   return getFunction(functionName.c_str(), builder.getPtrTy(), builder.getPtrTy());
 }
 
+llvm::Function *StdFunctionManager::getIteratorGetIdxFct(const Function *spiceFunc, Scope *accessScope) const {
+  const std::string functionName = spiceFunc->getMangledName();
+  llvm::Type *pairTy = spiceFunc->returnType.toLLVMType(context, accessScope);
+  return getFunction(functionName.c_str(), pairTy, builder.getPtrTy());
+}
+
 llvm::Function *StdFunctionManager::getIteratorIsValidFct(const Function *spiceFunc) const {
   const std::string functionName = spiceFunc->getMangledName();
   return getFunction(functionName.c_str(), builder.getInt1Ty(), builder.getPtrTy());
@@ -50,13 +56,7 @@ llvm::Function *StdFunctionManager::getIteratorIsValidFct(const Function *spiceF
 
 llvm::Function *StdFunctionManager::getIteratorNextFct(const Function *spiceFunc) const {
   const std::string functionName = spiceFunc->getMangledName();
-  return getFunction(functionName.c_str(), builder.getPtrTy(), builder.getPtrTy());
-}
-
-llvm::Function *StdFunctionManager::getIteratorNextIdxFct(const Function *nextFunc, Scope *accessScope) const {
-  const std::string functionName = nextFunc->getMangledName();
-  llvm::Type *pairTy = nextFunc->returnType.toLLVMType(context, accessScope);
-  return getFunction(functionName.c_str(), pairTy, builder.getPtrTy());
+  return getProcedure(functionName.c_str(), builder.getPtrTy());
 }
 
 llvm::Function *StdFunctionManager::getFunction(const char *funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,

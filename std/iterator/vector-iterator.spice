@@ -19,7 +19,25 @@ public p VectorIterator.ctor<I>(Vector<I>& vector) {
 }
 
 /**
- * Check if the vector has another item
+ * Returns the current item of the vector
+ *
+ * @return Reference to the current item
+ */
+public inline f<I&> VectorIterator.get() {
+    return this.vector.get(this.cursor);
+}
+
+/**
+ * Returns the current index and the current item of the vector
+ *
+ * @return Pair of current index and reference to current item
+ */
+public inline f<Pair<unsigned long, I&>> VectorIterator.getIdx() {
+    return Pair<unsigned long, I&>(this.cursor, this.vector.get(this.cursor));
+}
+
+/**
+ * Check if the iterator is valid
  *
  * @return true or false
  */
@@ -29,42 +47,10 @@ public inline f<bool> VectorIterator.isValid() {
 
 /**
  * Returns the current item of the vector iterator and moves the cursor to the next item
- *
- * @return current item
  */
-public inline f<I&> VectorIterator.next() {
+public inline p VectorIterator.next() {
     assert this.isValid();
     this.cursor++;
-    // ToDo: Remove this special handling later
-    if (this.cursor == this.vector.getSize()) {
-        return this.vector.get(this.cursor - 1);
-    }
-    return this.vector.get(this.cursor);
-}
-
-/**
- * Returns the current item as well as the current iterator index and moves the cursor
- * to the next item.
- *
- * @return pair of index and item
- */
-public inline f<Pair<unsigned long, I&>> VectorIterator.nextIdx() {
-    assert this.isValid();
-    this.cursor++;
-    // ToDo: Remove this special handling later
-    if (this.cursor == this.vector.getSize()) {
-        I& currentItem = this.vector.get(this.cursor - 1);
-        return Pair<unsigned long, I&>(this.cursor, currentItem);
-    }
-    I& currentItem = this.vector.get(this.cursor);
-    return Pair<unsigned long, I&>(this.cursor, currentItem);
-}
-
-/**
- * Returns the current item of the vector iterator
- */
-public inline f<I&> VectorIterator.get() {
-    return this.vector.get(this.cursor);
 }
 
 /**
