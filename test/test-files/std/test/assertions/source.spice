@@ -13,19 +13,3 @@ f<int> main() {
     assertContains("This haystack contains some needles.", "needle");
     printf("All assertions passed!");
 }
-
-/*import "std/data/linked-list";
-
-f<int> main() {
-    LinkedList<int> linkedList = LinkedList<int>();
-}*/
-
-/*import "std/iterator/number-iterator";
-
-f<int> main() {
-    foreach long idx, short item : range(1s, 19s) {
-        printf("%d: %d\n", idx, item);
-    }
-
-    printf("All assertions passed!");
-}*/

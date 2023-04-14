@@ -1,0 +1,39 @@
+// Generic types
+type T dyn;
+
+public inline p assertTrue(bool actual) {
+    assert actual;
+}
+
+public inline p assertFalse(bool actual) {
+    assert !actual;
+}
+
+public inline p assertEqual<T>(T& expected, T& actual) {
+    assert expected == actual;
+}
+
+public inline p assertNotEqual<T>(T& expected, T& actual) {
+    assert expected != actual;
+}
+
+public inline p assertNil<T>(T& actual) {
+    assert actual == nil<T>;
+}
+
+public inline p assertNotNil<T>(T& actual) {
+    assert actual != nil<T>;
+}
+
+public inline p assertEmpty(string actual) {
+    assert actual == "";
+}
+
+public inline p assertNotEmpty(string actual) {
+    assert actual != "";
+}
+
+public inline p assertContains(string actual, string needle) {
+    dyn actualString = String(actual);
+    assert actualString.contains(needle);
+}
