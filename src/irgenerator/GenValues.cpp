@@ -339,7 +339,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
 std::any IRGenerator::visitDataType(const DataTypeNode *node) {
   // Only set the source location if this is not the root scope
-  if (currentScope != rootScope)
+  if (currentScope != rootScope && !node->isParamType && !node->isReturnType && !node->isFieldType)
     diGenerator.setSourceLocation(node);
 
   // Retrieve symbol type

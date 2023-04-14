@@ -1,20 +1,11 @@
-type TestStruct struct {
-    long lng
-    String str
-    int i
-}
+import "std/io/cli-parser";
 
-f<TestStruct> fct(int& ref) {
-    TestStruct ts = TestStruct{ 6l, String("test string"), ref };
-    return ts;
-}
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
 
-f<int> main() {
-    int test = 987654;
-    const TestStruct res = fct(test);
-    printf("Long: %d\n", res.lng);
-    printf("String: %s\n", res.str.getRaw());
-    printf("Int: %d\n", res.i);
+    return parser.parse(argc, argv);
 }
 
 /*import "std/data/linked-list";
