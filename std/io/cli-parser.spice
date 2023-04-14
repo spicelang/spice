@@ -1,0 +1,79 @@
+import "std/io/cli-option";
+import "std/runtime/iterator_rt";
+
+// Generic types
+type T bool|string|int|long|short;
+
+public type CliParser struct {
+    string appName
+    string appDescription
+    string footer
+    string versionString
+    //Vector<CliOption> options
+    //Vector<CliOption<bool>> flags
+}
+
+public p CliParser.ctor(string appName, string appDescription = "") {
+    this.appName = appName;
+    this.appDescription = appDescription;
+    //this.options = Vector<CliOption>();
+    //this.flags = Vector<CliOption<bool>>();
+}
+
+public p CliParser.setVersion(string versionString) {
+    this.versionString = versionString;
+}
+
+public p CliParser.setFooter(string footer) {
+    this.footer = footer;
+}
+
+public p CliParser.addOption<T>(string name, T& targetVariable, string description) {
+    //const CliOption option = CliOption<T>(name, targetVariable, description);
+    //this.options.pushBack(option);
+}
+
+public p CliParser.addFlag(string name, bool& targetVariable, string description) {
+    //const dyn flag = CliOption<bool>(name, targetVariable, description);
+    //this.flags.pushBack(flag);
+}
+
+public f<int> CliParser.parse(unsigned int argc, string[] argv) {
+    for unsigned int argNo = 1; argNo < argc; argNo++ {
+        const string arg = argv[argNo];
+
+        // Check all commonly used flags
+        if (arg == "-v" || arg == "--version") {     // Version info
+            this.printVersion();
+            return;
+        }
+        if (arg == "-h" || arg == "--help") { // Help
+            this.printHelp(argv[0]);
+            return;
+        }
+
+        // Check for flags
+        /*foreach CliOption<bool>& flag : iterate(this.flags) {
+            if (arg == flag.getName()) {
+                bool& target = flag.getTarget();
+                target = true;
+            }
+        }*/
+    }
+    return 0; // Parsing was successful, return exit code 0
+}
+
+p CliParser.printHelp(string fileName) {
+    printf("%s\n%s\n\n", this.appName, this.appDescription);
+    printf("Usage: %s [options]\n\n", fileName);
+    printf("Flags:\n");
+    /*foreach CliOption<bool>& flag : iterate(this.flags) {
+        printf("%s\t\t\t%s\n", flag.getName(), flag.getDescription());
+    }*/
+    printf("\n");
+    printf("%s\n", this.footer);
+}
+
+p CliParser.printVersion() {
+    printf("%s\n", this.versionString);
+}

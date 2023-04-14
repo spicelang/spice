@@ -97,7 +97,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     assert(paramSymbol != nullptr);
     paramSymbol->updateAddress(paramAddress);
     // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber);
+    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
     // Store the value at the new address
     builder.CreateStore(&arg, paramAddress);
   }

@@ -1,6 +1,6 @@
 import "std/runtime/iterator_rt";
 
-f<int> main() {
+f<int> main(int argc, string[] argv) {
     // Create test vector to iterate over
     Vector<int> vi = Vector<int>();
     vi.pushBack(123);

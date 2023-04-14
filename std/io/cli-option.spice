@@ -1,0 +1,26 @@
+// Generic types
+type T bool|string|int|long|short;
+
+public type CliOption<T> struct {
+    string name
+    T& targetVariable
+    string description
+}
+
+public p CliOption.ctor(string name, T& targetVariable, string description) {
+    this.name = name;
+    this.targetVariable = targetVariable;
+    this.description = description;
+}
+
+public f<string> CliOption.getName() {
+    return this.name;
+}
+
+public f<T&> CliOption.getTarget() {
+    return this.targetVariable;
+}
+
+public f<string> CliOption.getDescription() {
+    return this.description;
+}
