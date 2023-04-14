@@ -71,7 +71,9 @@ public:
   static std::vector<std::string> getFileContentLinesVector(const std::string &filePath);
   static std::string toCamelCase(std::string input);
   static std::string getDefaultExecutableName();
-  static bool isDisabled(const TestCase &testCase, const bool isGHActions);
+  static bool isDisabled(const TestCase &testCase, bool isGHActions);
+  static void eraseIRModuleHeader(std::string &irCode);
+  static void eraseLinesBySubstring(std::string &irCode, const char *const needle);
 };
 
 // GCOV_EXCL_STOP
