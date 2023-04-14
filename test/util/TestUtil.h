@@ -39,6 +39,7 @@ const char *const REF_NAME_EXIT_CODE = "exit-code.out";
 const char *const CTL_SKIP_DISABLED = "disabled";
 const char *const CTL_SKIP_GH = "skip-gh-actions";
 const char *const CTL_NAME_LINKER_FLAGS = "linker-flags.txt";
+const char *const CTL_NAME_CLI_FLAGS = "cli-flags.txt";
 
 struct TestCase {
   const std::string testSuite;

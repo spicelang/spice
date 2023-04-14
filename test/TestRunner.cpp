@@ -190,7 +190,11 @@ void execTestCase(const TestCase &testCase) {
       resourceManager.linker.link();
 
       // Execute binary
-      const ExecResult result = FileUtil::exec(TestUtil::getDefaultExecutableName());
+      std::string cmd = TestUtil::getDefaultExecutableName();
+      const std::string cliFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_NAME_CLI_FLAGS;
+      if (FileUtil::fileExists(cliFlagsFile))
+        cmd += " " + TestUtil::getFileContentLinesVector(cliFlagsFile)[0];
+      const ExecResult result = FileUtil::exec(cmd);
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
       // Check if the exit code matches the expected one

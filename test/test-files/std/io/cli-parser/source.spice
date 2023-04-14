@@ -1,0 +1,9 @@
+import "std/io/cli-parser";
+
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
+
+    return parser.parse(argc, argv);
+}
