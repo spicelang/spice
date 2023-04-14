@@ -116,6 +116,22 @@ void execTestCase(const TestCase &testCase) {
           }
         });
 
+    // Check unoptimized IR code with debug info
+    TestUtil::checkRefMatch(
+        testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_IR_DEBUG_INFO,
+        [&]() {
+          cliOptions.generateDebugInfo = true;
+          mainSourceFile.runIRGenerator();
+          return mainSourceFile.compilerOutput.irString;
+        },
+        [&](std::string &expectedOutput, std::string &actualOutput) {
+          // Cut of first n lines to have a target independent
+          for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
+            expectedOutput.erase(0, expectedOutput.find('\n') + 1);
+            actualOutput.erase(0, actualOutput.find('\n') + 1);
+          }
+        });
+
     // Check optimized IR code
     for (short i = 1; i <= 5; i++) {
       TestUtil::checkRefMatch(
