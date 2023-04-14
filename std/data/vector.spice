@@ -63,7 +63,7 @@ public p Vector.dtor() {
 }
 
 /**
- * Checks if the queue contains any items at the moment
+ * Checks if the vector contains any items at the moment
  *
  * @return Empty or not empty
  */
@@ -72,7 +72,7 @@ public f<bool> Vector.isEmpty() {
 }
 
 /**
- * Checks if the queue exhausts its capacity and needs to resize at the next call of push
+ * Checks if the vector exhausts its capacity and needs to resize at the next call of push
  *
  * @return Full or not full
  */

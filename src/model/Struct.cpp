@@ -2,8 +2,7 @@
 
 #include "Struct.h"
 
-#include <ast/ASTBuilder.h>
-#include <symboltablebuilder/Scope.h>
+#include <ast/ASTNodes.h>
 
 namespace spice::compiler {
 
@@ -118,5 +117,12 @@ std::vector<SymbolType> Struct::getTemplateTypes() const {
 bool Struct::hasReferenceFields() const {
   return std::any_of(fieldTypes.begin(), fieldTypes.end(), [](const SymbolType &fieldType) { return fieldType.isRef(); });
 }
+
+/**
+ * Retrieve the declaration code location of this struct
+ *
+ * @return Declaration code location
+ */
+const CodeLoc &Struct::getDeclCodeLoc() const { return declNode->codeLoc; }
 
 } // namespace spice::compiler

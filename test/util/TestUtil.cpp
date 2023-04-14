@@ -190,12 +190,48 @@ std::string TestUtil::getDefaultExecutableName() {
  * @param isGHActions Running tests with GitHub Actions
  * @return Disabled or not
  */
-bool TestUtil::isDisabled(const TestCase &testCase, const bool isGHActions) {
+bool TestUtil::isDisabled(const TestCase &testCase, bool isGHActions) {
   if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_SKIP_DISABLED))
     return true;
   if (isGHActions && FileUtil::fileExists(testCase.testPath + CTL_SKIP_GH))
     return true;
   return false;
+}
+
+/**
+ * Removes the first n lines of the IR code to not compare target dependent code
+ *
+ * @param irCode IR code to modify
+ */
+void TestUtil::eraseIRModuleHeader(std::string &irCode) {
+  for (unsigned int i = 0; i < IR_FILE_SKIP_LINES; i++)
+    irCode.erase(0, irCode.find('\n') + 1);
+}
+
+/**
+ * Remove lines, containing a certain substring to make the IR string comparable
+ *
+ * @param irCode IR code to modify
+ * @param needle Substring to search for
+ */
+void TestUtil::eraseLinesBySubstring(std::string &irCode, const char *const needle) {
+  std::string::size_type pos = 0;
+  while ((pos = irCode.find(needle, pos)) != std::string::npos) {
+    // Find the start of the line that contains the substring
+    std::string::size_type lineStart = irCode.rfind('\n', pos);
+    if (lineStart == std::string::npos)
+      lineStart = 0;
+    else
+      lineStart++; // move past the '\n'
+
+    // Find the end of the line that contains the substring
+    std::string::size_type lineEnd = irCode.find('\n', pos);
+    if (lineEnd == std::string::npos)
+      lineEnd = irCode.length();
+
+    // Erase the line
+    irCode.erase(lineStart, lineEnd - lineStart);
+  }
 }
 
 // GCOV_EXCL_STOP

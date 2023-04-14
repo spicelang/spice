@@ -28,6 +28,7 @@ const char *const REF_NAME_PARSE_TREE = "parse-tree.dot";
 const char *const REF_NAME_SYNTAX_TREE = "syntax-tree.dot";
 const char *const REF_NAME_SYMBOL_TABLE = "symbol-table.json";
 const char *const REF_NAME_IR = "ir-code.ll";
+const char *const REF_NAME_IR_DEBUG_INFO = "ir-code-dbg.ll";
 const char *const REF_NAME_ASM = "assembly.asm";
 const char *const REF_NAME_OPT_IR[5] = {"ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll"};
 const char *const REF_NAME_EXECUTION_OUTPUT = "cout.out";
@@ -70,7 +71,9 @@ public:
   static std::vector<std::string> getFileContentLinesVector(const std::string &filePath);
   static std::string toCamelCase(std::string input);
   static std::string getDefaultExecutableName();
-  static bool isDisabled(const TestCase &testCase, const bool isGHActions);
+  static bool isDisabled(const TestCase &testCase, bool isGHActions);
+  static void eraseIRModuleHeader(std::string &irCode);
+  static void eraseLinesBySubstring(std::string &irCode, const char *const needle);
 };
 
 // GCOV_EXCL_STOP

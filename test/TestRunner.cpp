@@ -109,11 +109,26 @@ void execTestCase(const TestCase &testCase) {
     TestUtil::checkRefMatch(
         testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_IR, [&]() { return mainSourceFile.compilerOutput.irString; },
         [&](std::string &expectedOutput, std::string &actualOutput) {
-          // Cut of first n lines to have a target independent
-          for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
-            expectedOutput.erase(0, expectedOutput.find('\n') + 1);
-            actualOutput.erase(0, actualOutput.find('\n') + 1);
-          }
+          // Cut of first n lines to be target independent
+          TestUtil::eraseIRModuleHeader(expectedOutput);
+          TestUtil::eraseIRModuleHeader(actualOutput);
+        });
+
+    // Check unoptimized IR code with debug info
+    TestUtil::checkRefMatch(
+        testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_IR_DEBUG_INFO,
+        [&]() {
+          cliOptions.generateDebugInfo = true;
+          mainSourceFile.runIRGenerator();
+          return mainSourceFile.compilerOutput.irString;
+        },
+        [&](std::string &expectedOutput, std::string &actualOutput) {
+          // Cut of first n lines to be target independent
+          TestUtil::eraseIRModuleHeader(expectedOutput);
+          TestUtil::eraseIRModuleHeader(actualOutput);
+          // Remove the lines, containing paths on the local file system
+          TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
+          TestUtil::eraseLinesBySubstring(actualOutput, " = !DIFile(filename:");
         });
 
     // Check optimized IR code
@@ -126,11 +141,9 @@ void execTestCase(const TestCase &testCase) {
             return mainSourceFile.compilerOutput.irOptString;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {
-            // Cut of first n lines to have a target independent
-            for (int i = 0; i < IR_FILE_SKIP_LINES; i++) {
-              expectedOutput.erase(0, expectedOutput.find('\n') + 1);
-              actualOutput.erase(0, actualOutput.find('\n') + 1);
-            }
+            // Cut of first n lines to be target independent
+            TestUtil::eraseIRModuleHeader(expectedOutput);
+            TestUtil::eraseIRModuleHeader(actualOutput);
           });
     }
 

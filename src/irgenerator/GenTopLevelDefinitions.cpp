@@ -62,6 +62,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     auto nonConstNode = const_cast<MainFctDefNode *>(node);
     const Function spiceFunc = FunctionManager::createMainFunction(node->entry, paramSymbolTypes, nonConstNode);
     diGenerator.generateFunctionDebugInfo(fct, &spiceFunc);
+    diGenerator.setSourceLocation(node);
   }
 
   // Create entry block
@@ -78,6 +79,8 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
   resultEntry->updateAddress(resultAddress);
+  // Generate debug info
+  diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddress, SIZE_MAX);
   // Store the default result value
   builder.CreateStore(builder.getInt32(0), resultAddress);
 
@@ -94,7 +97,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     assert(paramSymbol != nullptr);
     paramSymbol->updateAddress(paramAddress);
     // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(node->codeLoc, paramName, paramAddress, argNumber);
+    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber);
     // Store the value at the new address
     builder.CreateStore(&arg, paramAddress);
   }
@@ -230,6 +233,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
     assert(resultEntry != nullptr);
     resultEntry->updateAddress(resultAddr);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr, SIZE_MAX);
 
     // Store function argument values
     for (auto &arg : func->args()) {
@@ -244,7 +249,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       assert(paramSymbol != nullptr);
       paramSymbol->updateAddress(paramAddress);
       // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(node->codeLoc, paramName, paramAddress, argNumber + 1);
+      diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
       // Store the value at the new address
       builder.CreateStore(&arg, paramAddress);
     }
@@ -401,7 +406,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       assert(paramSymbol != nullptr);
       paramSymbol->updateAddress(paramAddress);
       // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(node->codeLoc, paramName, paramAddress, argNumber + 1);
+      diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
       // Store the value at the new address
       builder.CreateStore(&arg, paramAddress);
     }
