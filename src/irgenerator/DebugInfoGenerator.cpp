@@ -5,6 +5,8 @@
 #include <ast/ASTNodes.h>
 #include <irgenerator/IRGenerator.h>
 #include <model/Function.h>
+#include <model/Struct.h>
+#include <util/FileUtil.h>
 
 #include <llvm/BinaryFormat/Dwarf.h>
 
@@ -26,10 +28,14 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std
   diBuilder = std::make_unique<llvm::DIBuilder>(*module);
 
   // Create compilation unit
-  diFile = diBuilder->createFile(sourceFileName, sourceFileDir);
-  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C11, diFile, producerString,
+  const std::filesystem::path absolutePath = std::filesystem::absolute(sourceFileDir + FileUtil::DIR_SEPARATOR + sourceFileName);
+  llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir);
+  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C11, cuDiFile, producerString,
                                              irGenerator->cliOptions.optLevel > 0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
                                              false, false, llvm::DICompileUnit::DebugNameTableKind::None);
+
+  // Create another DIFile as scope for subprograms
+  diFile = diBuilder->createFile(sourceFileName, sourceFileDir);
 
   // Initialize primitive debug types
   doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
@@ -48,19 +54,32 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std
 void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) {
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
-  // Create function type
+
+  const ASTNode *node = spiceFunc->declNode;
+
+  // Collect arguments
   std::vector<llvm::Metadata *> argTypes;
-  argTypes.push_back(getDITypeForSymbolType(spiceFunc->returnType)); // Add result type
-  for (const SymbolType &argType : spiceFunc->getParamTypes())       // Add arg types
-    argTypes.push_back(getDITypeForSymbolType(argType));
+  if (spiceFunc->isProcedure() || spiceFunc->isMethodProcedure())
+    argTypes.push_back(voidTy);
+  else
+    argTypes.push_back(getDITypeForSymbolType(node, spiceFunc->returnType)); // Add result type
+  if (spiceFunc->isMethod())
+    argTypes.push_back(getDITypeForSymbolType(node, spiceFunc->thisType)); // Add this type
+  for (const SymbolType &argType : spiceFunc->getParamTypes())             // Add arg types
+    argTypes.push_back(getDITypeForSymbolType(node, argType));
+
+  // Create function type
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
 
-  llvm::DIFile *unit = diBuilder->createFile(compileUnit->getFilename(), compileUnit->getDirectory());
-  const size_t lineNumber = spiceFunc->getDeclCodeLoc().line;
-
-  llvm::DISubprogram *subprogram =
-      diBuilder->createFunction(unit, spiceFunc->name, spiceFunc->getMangledName(), unit, lineNumber, functionTy, lineNumber,
-                                llvm::DINode::FlagZero, llvm::DISubprogram::SPFlagDefinition);
+  const size_t lineNo = spiceFunc->getDeclCodeLoc().line;
+  llvm::DISubprogram *subprogram;
+  if (spiceFunc->isMethod()) {
+    subprogram = diBuilder->createMethod(diFile, spiceFunc->name, spiceFunc->getMangledName(), diFile, lineNo, functionTy, 0, 0,
+                                         nullptr, llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+  } else {
+    subprogram = diBuilder->createFunction(diFile, spiceFunc->name, spiceFunc->getMangledName(), diFile, lineNo, functionTy,
+                                           lineNo, llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+  }
 
   // Add debug info to LLVM function
   llvmFunction->setSubprogram(subprogram);
@@ -68,45 +87,36 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
   lexicalBlocks.push(subprogram);
 }
 
-/*llvm::DIType *IRGenerator::generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const {
-  if (!irGenerator->cliOptions.generateDebugInfo)
-    return;
-  llvm::DIFile *unit = diBuilder->createFile(debugInfo.compileUnit->getFilename(), debugInfo.compileUnit->getDirectory());
-  size_t lineNumber = spiceStruct->getDeclCodeLoc().line;
-  size_t sizeInBits = module->getDataLayout().getTypeSizeInBits(llvmStructTy);
-  llvm::DINode::DIFlags flags = spiceStruct->getSpecifiers().isPublic() ? llvm::DINode::FlagPublic : llvm::DINode::FlagPrivate;
-  llvm::DINodeArray elements = diBuilder->getOrCreateArray({}); // ToDo: fill
-  return diBuilder->createStructType(unit, spiceStruct->getName(), unit, lineNumber, sizeInBits, 0, flags, nullptr, elements);
-}*/
-
 void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry) {
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
-  llvm::DIFile *unit = diBuilder->createFile(compileUnit->getFilename(), compileUnit->getDirectory());
-  const size_t lineNumber = globalEntry->getDeclCodeLoc().line;
+
+  const size_t lineNo = globalEntry->getDeclCodeLoc().line;
   llvm::StringRef name = global->getName();
-  llvm::DIType *type = getDITypeForSymbolType(globalEntry->getType());
+  llvm::DIType *type = getDITypeForSymbolType(globalEntry->declNode, globalEntry->getType());
   const bool isLocal = globalEntry->getType().isPublic();
 
-  global->addDebugInfo(diBuilder->createGlobalVariableExpression(unit, name, name, unit, lineNumber, type, isLocal));
+  global->addDebugInfo(diBuilder->createGlobalVariableExpression(compileUnit, name, name, diFile, lineNo, type, isLocal));
 }
 
-void DebugInfoGenerator::generateLocalVarDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address,
-                                                   const size_t argNumber, bool moveToPrev) {
+void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, const size_t argNumber,
+                                                   bool moveToPrev) {
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
+
   // Get symbol table entry
   SymbolTableEntry *variableEntry = irGenerator->currentScope->lookupStrict(varName);
   assert(variableEntry != nullptr);
   // Build debug info
-  llvm::DIFile *unit = diBuilder->createFile(compileUnit->getFilename(), compileUnit->getDirectory());
   llvm::DIScope *scope = lexicalBlocks.top();
-  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->getType());
+  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->declNode, variableEntry->getType());
+  const size_t lineNo = variableEntry->declNode->codeLoc.line;
+
   llvm::DILocalVariable *varInfo;
   if (argNumber != SIZE_MAX)
-    varInfo = diBuilder->createParameterVariable(scope, varName, argNumber, unit, codeLoc.line, diType);
+    varInfo = diBuilder->createParameterVariable(scope, varName, argNumber, diFile, lineNo, diType);
   else
-    varInfo = diBuilder->createAutoVariable(scope, varName, unit, codeLoc.line, diType);
+    varInfo = diBuilder->createAutoVariable(scope, varName, diFile, lineNo, diType);
   llvm::DIExpression *expr = diBuilder->createExpression();
   llvm::DILocation *debugLocation = irGenerator->builder.getCurrentDebugLocation();
   assert(debugLocation != nullptr);
@@ -138,15 +148,19 @@ void DebugInfoGenerator::finalize() {
     diBuilder->finalize();
 }
 
-llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const SymbolType &symbolType) const { // NOLINT(misc-no-recursion)
-  if (symbolType.isPtr()) {                                                                    // Pointer type
-    llvm::DIType *pointeeTy = getDITypeForSymbolType(symbolType.getContainedTy());
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "misc-no-recursion"
+llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, const SymbolType &symbolType) const {
+  // Pointer or reference type
+  if (symbolType.isPtr() || symbolType.isRef()) {
+    llvm::DIType *pointeeTy = getDITypeForSymbolType(node, symbolType.getContainedTy());
     const unsigned int pointerWidth = irGenerator->module->getDataLayout().getPointerSizeInBits();
     return diBuilder->createPointerType(pointeeTy, pointerWidth);
   }
 
-  if (symbolType.isArray()) { // Array type
-    llvm::DIType *itemTy = getDITypeForSymbolType(symbolType.getContainedTy());
+  // Array type
+  if (symbolType.isArray()) {
+    llvm::DIType *itemTy = getDITypeForSymbolType(node, symbolType.getContainedTy());
     const size_t size = symbolType.getArraySize();
     llvm::DINodeArray subscripts = diBuilder->getOrCreateArray({});
     return diBuilder->createArrayType(size, 0, itemTy, subscripts);
@@ -170,9 +184,31 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const SymbolType &symbo
     return stringTy;
   case TY_BOOL:
     return boolTy;
+  case TY_STRUCT: {
+    Struct *spiceStruct = symbolType.getStruct(node);
+    assert(spiceStruct != nullptr);
+
+    // Retrieve information about the struct
+    const size_t lineNo = spiceStruct->getDeclCodeLoc().line;
+    llvm::Type *structType = spiceStruct->entry->getType().toLLVMType(irGenerator->context, irGenerator->currentScope);
+    assert(structType != nullptr);
+    const uint64_t sizeInBits = structType->getScalarSizeInBits();
+    const uint32_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value();
+
+    // Collect DI types for fields
+    std::vector<llvm::Metadata *> fieldTypes;
+    for (const SymbolType &fieldType : spiceStruct->fieldTypes)
+      fieldTypes.push_back(getDITypeForSymbolType(node, fieldType));
+
+    // Create struct type
+    llvm::MDTuple *elementTuple = llvm::MDTuple::get(irGenerator->context, fieldTypes);
+    return diBuilder->createStructType(diFile, spiceStruct->name, diFile, lineNo, sizeInBits, alignInBits,
+                                       llvm::DINode::FlagTypePassByValue, nullptr, elementTuple);
+  }
   default:
-    return nullptr;
+    throw CompilerError(UNHANDLED_BRANCH, "Debug Info Type fallthrough"); // GCOV_EXCL_LINE
   }
 }
+#pragma clang diagnostic pop
 
 } // namespace spice::compiler

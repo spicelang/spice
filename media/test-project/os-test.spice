@@ -1,45 +1,59 @@
-import "std/runtime/iterator_rt";
+import "std/iterator/number-iterator";
 
 f<int> main() {
-    // Create test vector to iterate over
-    Vector<int> vi = Vector<int>();
-    vi.pushBack(123);
-    vi.pushBack(4321);
-    vi.pushBack(9876);
-    assert vi.getSize() == 3;
+    // Create iterator with range convinience helper
+    NumberIterator<int> itInt = range(1, 10);
 
-    // Test base functionality
-    dyn it = iterate(vi);
-    assert it.isValid();
-    assert it.get() == 123;
-    assert it.get() == 123;
-    it.next();
-    assert it.get() == 4321;
-    assert it.isValid();
-    it.next();
-    Pair<unsigned long, int&> pair = it.getIdx();
-    assert pair.getFirst() == 2;
-    assert pair.getSecond() == 9876;
-    it.next();
-    assert !it.isValid();
+    // Test functionality with int
+    assert itInt.isValid();
+    assert itInt.get() == 1;
+    itInt.next();
+    assert itInt.get() == 2;
+    itInt += 3;
+    assert itInt.get() == 5;
+    assert itInt.isValid();
+    itInt -= 2;
+    assert itInt.get() == 3;
+    itInt.next();
+    dyn idxAndValueInt = itInt.getIdx();
+    assert idxAndValueInt.getFirst() == 3l;
+    assert idxAndValueInt.getSecond() == 4;
+    itInt++;
+    assert itInt.get() == 5;
+    itInt--;
+    assert itInt.get() == 4;
+    assert itInt.isValid();
+    itInt += 6;
+    assert itInt.get() == 10;
+    itInt++;
+    assert !itInt.isValid();
 
-    // Add new items to the vector
-    vi.pushBack(321);
-    vi.pushBack(-99);
-    assert it.isValid();
-
-    // Test overloaded operators
-    it -= 3;
-    assert it.get() == 123;
-    assert it.isValid();
-    it++;
-    assert it.get() == 4321;
-    it--;
-    assert it.get() == 123;
-    it += 4;
-    assert it.get() == -99;
-    it.next();
-    assert !it.isValid();
+    // Test functionality with long
+    NumberIterator<long> itLong = range(6l, 45l);
+    assert itLong.isValid();
+    assert itLong.get() == 6l;
+    itLong.next();
+    assert itLong.get() == 7l;
+    itLong += 3l;
+    assert itLong.get() == 10l;
+    assert itLong.get() == 10l;
+    itLong -= 2l;
+    assert itLong.get() == 8l;
+    itLong += 8l;
+    assert itLong.get() == 16l;
+    itLong.next();
+    dyn idxAndValueLong = itLong.getIdx();
+    assert idxAndValueLong.getFirst() == 11l;
+    assert idxAndValueLong.getSecond() == 17l;
+    itLong++;
+    assert itLong.get() == 18l;
+    itLong--;
+    assert itLong.get() == 17l;
+    assert itLong.isValid();
+    itLong += 28l;
+    assert itLong.get() == 45;
+    itLong++;
+    assert !itLong.isValid();
 
     printf("All assertions passed!");
 }

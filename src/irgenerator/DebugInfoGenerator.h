@@ -13,6 +13,7 @@ class IRGenerator;
 class SymbolTableEntry;
 class SymbolType;
 class Function;
+class Struct;
 class ASTNode;
 struct CodeLoc;
 
@@ -24,10 +25,9 @@ public:
   // Public methods
   void initialize(const std::string &sourceFileName, const std::string &sourceFileDir);
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
-  //[[nodiscard]] llvm::DIType *generateStructDebugInfo(llvm::StructType *llvmStructTy, const Struct *spiceStruct) const;
   void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
-  void generateLocalVarDebugInfo(const CodeLoc &codeLoc, const std::string &varName, llvm::Value *address,
-                             const size_t argNumber = SIZE_MAX, bool moveToPrev = false);
+  void generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, const size_t argNumber = SIZE_MAX,
+                                 bool moveToPrev = false);
   void setSourceLocation(const ASTNode *node);
   void concludeFunctionDebugInfo();
   void finalize();
@@ -36,8 +36,8 @@ private:
   // Private members
   IRGenerator *irGenerator;
   std::unique_ptr<llvm::DIBuilder> diBuilder;
-  llvm::DIFile *diFile = nullptr;
   llvm::DICompileUnit *compileUnit = nullptr;
+  llvm::DIFile *diFile = nullptr;
   std::stack<llvm::DIScope *> lexicalBlocks;
   // Debug types
   llvm::DIType *doubleTy = nullptr;
@@ -51,9 +51,10 @@ private:
   llvm::DIType *charTy = nullptr;
   llvm::DIType *stringTy = nullptr;
   llvm::DIType *boolTy = nullptr;
+  llvm::DIType *voidTy = nullptr;
 
   // Private methods
-  [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const SymbolType &symbolType) const;
+  [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const ASTNode *node, const SymbolType &symbolType) const;
 };
 
 } // namespace spice::compiler

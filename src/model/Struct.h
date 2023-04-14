@@ -37,6 +37,7 @@ public:
   [[nodiscard]] bool isFullySubstantiated() const;
   [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
   [[nodiscard]] bool hasReferenceFields() const;
+  [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
   // Public members
   std::string name;
