@@ -1,40 +1,73 @@
 // Imports
-import "std/text/print" as print;
-import "CliInterface" as cli;
-import "ast/AstNodes" as ast;
-import "symbol/SymbolTable" as st;
-import "analyzer/Analyzer" as alzr;
-import "generator/Generator" as gen;
+import "std/text/print";
+import "std/data/pair";
+import "CliInterface";
+import "ast/AstNodes";
+
+type CompileStageIOType enum {
+    IO_CODE,
+    IO_TOKENS,
+    IO_CST,
+    IO_AST,
+    IO_IR,
+    IO_OBJECT_FILE
+}
+
+type TimerOutput struct {
+  unsigned long lexer = 0
+  unsigned long parser = 0
+  unsigned long cstVisualizer = 0
+  unsigned long astBuilder = 0
+  unsigned long astOptimizer = 0
+  unsigned long astVisualizer = 0
+  unsigned long importCollector = 0
+  unsigned long symbolTableBuilder = 0
+  unsigned long typeCheckerPre = 0
+  unsigned long typeCheckerPost = 0
+  unsigned long borrowChecker = 0
+  unsigned long escapeAnalyzer = 0
+  unsigned long irGenerator = 0
+  unsigned long irOptimizer = 0
+  unsigned long objectEmitter = 0
+  unsigned long executionEngine = 0
+}
 
 /**
  * Collects the output of the compiler for debugging
  */
 type CompilerOutput struct {
-    string cstString
-    string astString
-    string symbolTableString
-    string irString
-    string irOptString
+    String cstString
+    String astString
+    String symbolTableString
+    String irString
+    String irOptString
+    String asmString
+    Vector<CompilerWarning> warnings
+    TimerOutput times
 }
 
 /**
  * Represents a single source file
  */
 public type SourceFile struct {
-    string name
-    string fileName
-    string filePath
-    string fileDir
-    string objectFilePath
-    bool stdFile
-    CompilerOutput compilerOutput
-    SourceFile* parent
-    cli::CliOptions* cliOptions
-    ast::EntryNode* ast
-    st::SymbolTable* symbolTable
-    alzr::Analyzer* analyzer
-    gen::Generator* generator
-    map::Map<string, pair::Pair<SourceFile*, CodeLoc*>> dependencies
+    public String name
+    public String fileName
+    public String filePath
+    public String fileDir
+    public String objectFilePath
+    public bool stdFile = false
+    public bool mainFile = true
+    public CompilerOutput compilerOutput
+    public SourceFile* parent
+    public String cacheKey
+    public bool restoredFromCache = false
+    public EntryNode ast
+    public Scope globalScope
+    //public llvm::Module llvmModule
+    public Map<String, Pair<SourceFile, const ASTNode*>> dependencies
+    public Map<String, NameRegistryEntry> exportedNameRegistry
+    GlobalResourceManager& resourceManager
+    unsigned short importedRuntimeModules = 0
 }
 
 public p SourceFile.ctor(CliOptions* cliOptions, SourceFile* parent, string name, string filePath, bool stdFile) {
@@ -50,102 +83,91 @@ public p SourceFile.ctor(CliOptions* cliOptions, SourceFile* parent, string name
     this.fileDir = ;*/
 }
 
-p SourceFile.runLexer() {
+public p SourceFile.runLexer() {
     // Lex this source file
 }
 
-p SourceFile.runParser() {
+public p SourceFile.runParser() {
     // Parse this source file
 }
 
-p SourceFile.visualizeCST(string* output) {
+public p SourceFile.runCSTVisualizer(string* output) {
     // Only execute if enabled
     if !cliOptions.dumpCST && !cliOptions.testMode { return; }
 
     // ToDo: Extend
 }
 
-p SourceFile.buildAST() {
+public p SourceFile.runASTBuilder() {
     // Transform the imported source files
     // ToDo: Extend
 }
 
-p SourceFile.visualizeAST(string* output) {
+public p SourceFile.runASTVisualizer(string* output) {
     // Only execute if enabled
     if !cliOptions.dumpAST && !cliOptions.testMode { return; }
 
     // ToDo: Extend
 }
 
-p SourceFile.preAnalyze() {
-    // Pre-analyze this source file
-    // ToDo: Extend
+public p SourceFile.runImportCollector() {
 
-    // Pre-analyze this source file
-    foreach dyn dependencyPair : this.dependencies {
-        SourceFile dependencyFile = dependencyPair.getSecond();
-        dependencyFile.runLexer();
-        dependencyFile.runParser();
-        dependencyFile.buildAST();
-        dependencyFile.preAnalyze();
-    }
 }
 
-p SourceFile.analyze() {
-    // Analyze the imported source files first
-    // ToDo: Extend
+public p SourceFile.runSymbolTableBuilder() {
 
-    // Analyze this source file
 }
 
-p SourceFile.reAnalyze() {
-    // Re-Analyze this source file
+public p SourceFile.runTypeChecker() {
 
-    // Analyze the imported source files first
-    // ToDo: Extend
-
-    // Save the JSON version in the compiler output
-
-    // Dump symbolTable
-    if cliOptions.dumpSymbolTable {
-        printf("\nSymbol table of file %s:\n\n", filePath);
-        printf("%s\n", compilerOutput.symbolTableString);
-    }
 }
 
-p SourceFile.generate() {
-    // Generate the imported source files
+p SourceFile.runTypeCheckerFirst() {
 
-    // Generate this source file
-
-    // Save the JSON version in the compiler output
-
-    // Dump unoptimized IR code
-
-    // Optimize IR code
-
-    // Dump assembly code
-
-    // Emit object file
-
-    // Add object file to the linker interface
-
-    // Print warning if verifier is disabled
-    if parent == nil<SymbolTable*> && cliOptions.disableVerifier {
-        print.emptyLine();
-        // ToDo
-        print.emptyLine();
-    }
 }
 
-p SourceFile.addDependency(const CodeLoc codeLoc, const string name, const string stringFilePath, bool stdFile) {
-    // Check if this would cause a circular dependency
-    if isAlreadyImported(filePath) {
-        // ToDo: Error out
-    }
+p SourceFile.runTypeCheckerSecond() {
 
-    // Add the dependency
-    // ToDo
+}
+
+public p SourceFile.runBorrowChecker() {
+
+}
+
+public p SourceFile.runEscapeAnalyzer() {
+
+}
+
+public p SourceFile.runIRGenerator() {
+
+}
+
+public p SourceFile.runIROptimizer() {
+
+}
+
+public p SourceFile.runObjectEmitter() {
+
+}
+
+public p SourceFile.concludeCompilation() {
+
+}
+
+public f<int> SourceFile.execute() {
+
+}
+
+public p SourceFile.runFrontEnd() {
+
+}
+
+public p SourceFile.runMiddleEnd() {
+
+}
+
+public p SourceFile.runBackEnd() {
+
 }
 
 f<bool> SourceFile.isAlreadyImported(const string filePathSearch) {

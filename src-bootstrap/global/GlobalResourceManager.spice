@@ -1,0 +1,22 @@
+import "../CliInterface";
+import "../util/ThreadFactory";
+
+/**
+ * The GlobalResourceManager is instantiated at startup of the compiler and serves as distribution point for globally used assets.
+ * Other components of the compiler can request the required global resources from the GlobalResourceManager.
+ */
+public type GlobalResourceManager struct {
+    const CliOptions& cliOptions
+    ThreadFactory threadFactory
+    //ExternalLinkerInterface linker
+    //CacheManager cacheManager
+    //RuntimeModuleManager runtimeModuleManager
+    //llvm::LLVMContext context
+    //llvm::IRBuilder builder
+    //llvm::TargetMachine* targetMachine
+}
+
+public p GlobalResourceManager.ctor(const CliOptions& cliOptions) {
+    this.cliOptions = cliOptions;
+    // ToDo: extend
+}

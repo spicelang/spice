@@ -1,31 +1,10 @@
-import "std/test/assertions";
+import "std/data/linked-list";
 
 f<int> main() {
-    assertTrue(2 != 1);
-    assertFalse(7 == 1);
-    assertEqual(6, 1 + 5);
-    assertEqual("expected", false ? "actual" : "expected");
-    assertNotEqual(7, 5 + 1);
-    assertNil(nil<int>);
-    assertNotNil(764s);
-    assertEmpty("");
-    assertNotEmpty("This is not an empty string");
-    assertContains("This haystack contains some needles.", "needle");
-    printf("All assertions passed!");
+    dyn linkedList = LinkedList<int>();
+    linkedList.insert(1234);
+    linkedList.insert(4567);
+    linkedList.insert(7890);
+    linkedList.insert(4567);
+    linkedList.remove(7890);
 }
-
-/*import "std/data/linked-list";
-
-f<int> main() {
-    LinkedList<int> linkedList = LinkedList<int>();
-}*/
-
-/*import "std/iterator/number-iterator";
-
-f<int> main() {
-    foreach long idx, short item : range(1s, 19s) {
-        printf("%d: %d\n", idx, item);
-    }
-
-    printf("All assertions passed!");
-}*/
