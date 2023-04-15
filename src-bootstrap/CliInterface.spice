@@ -1,36 +1,43 @@
 // Imports
-import "std/text/print" as print;
-import "std/os/cmd" as cmd;
+import "std/text/print";
+import "std/os/cmd";
+import "std/io/cli-parser";
 
 /**
  * Representation of the various cli options
  */
 public type CliOptions struct {
-    string mainSourceFile // e.g. main.spice
-    string targetTriple   // In format: <arch><sub>-<vendor>-<sys>-<abi>
-    string targetArch
-    string targetVendor
-    string targetOs
-    string outputDir      // Where the object files go. Should always be a temp directory
-    string outputPath     // Where the output binary goes.
-    bool printDebugInfo
-    bool dumpCST
-    bool dumpAST
-    bool dumpIR
-    bool dumpAssembly
-    bool dumpSymbolTables
-    short optLevel // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
-    bool generateDebugInfo
-    bool disableVerifier
-    bool testMode
+    public String mainSourceFile // e.g. main.spice
+    public String targetTriple   // In format: <arch><sub>-<vendor>-<sys>-<abi>
+    public String targetArch
+    public String targetVendor
+    public String targetOs
+    public bool execute
+    public bool isNativeTarget
+    public String cacheDir
+    public String outputDir      // Where the object files go. Should always be a temp directory
+    public String outputPath     // Where the output binary goes.
+    public unsigned short compileJobCount // O for auto
+    public bool ignoreCache
+    public bool printDebugOutput
+    public bool dumpCST
+    public bool dumpAST
+    public bool dumpIR
+    public bool dumpAssembly
+    public bool dumpSymbolTables
+    public bool disableAstOpt
+    public short optLevel // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
+    public bool generateDebugInfo
+    public bool disableVerifier
+    public bool testMode
 }
 
 /**
  * Helper class to setup the cli interface and command line parser
  */
 public type CliInterface struct {
-    //CliApp cliApp
-    CliOptions cliOptions
+    CliParser cliParser
+    public CliOptions cliOptions
     public bool shouldCompile
     public bool shouldInstall
     public bool shouldExecute
@@ -38,17 +45,50 @@ public type CliInterface struct {
 
 public p CliInterface.ctor() {
     // Initialize cli object
-    this.cliOptions = CliOptions{/* mainSourceFile */ "", /* targetTriple */ "", /* targetArch */ "", /* targetVendor */ "",
-        /* targetOs */ "", /* outputDir */ "", /* outputPath */ "", /* printDebugInfo */ false, /* dumpCST */ false,
-        /* dumpAST */ false, /* dumpIR */ false, /* dumpAssembly */ false, /* dumpSymbolTables */ false, /* optLevel */ 2s,
-        /* generateDebugInfo */ false, /* disableVerifier */ false, /* testMode */ false };
-    this.compile = false;
-    this.install = false;
-    this.run = false;
+    this.cliOptions = CliOptions{
+        /* mainSourceFile */ String(""),
+        /* targetTriple */ String(""),
+        /* targetArch */ String(""),
+        /* targetVendor */ String(""),
+        /* targetOs */ String(""),
+        /* execute */ false,
+        /* isNativeTarget */ false,
+        /* cacheDir */ String(""),
+        /* outputDir */ String(""),
+        /* outputPath */ String(""),
+        /* compileJobCount */ 0s,
+        /* ignoreCache */ false,
+        /* printDebugOutput */ false,
+        /* dumpCST */ false,
+        /* dumpAST */ false,
+        /* dumpIR */ false,
+        /* dumpAssembly */ false,
+        /* dumpSymbolTables */ false,
+        /* disableAstOpt */ false,
+        /* optLevel */ 2s,
+        /* generateDebugInfo */ false,
+        /* disableVerifier */ false,
+        /* testMode */ false
+    };
+    this.shouldCompile = false;
+    this.shouldInstall = false;
+    this.shouldExecute = false;
 }
 
-p CliInterface.createInterface() {
-    // ToDo: Extend
+public p CliInterface.createInterface() {
+    this.cliParser = CliParser("Spice", "Spice programming language");
+    this.cliParser.setFooter("Copyright (c) Marc Auberer 2021-2023");
+
+    // Add version flag
+    this.cliParser.setVersion("Spice version 0.14.3\nbuilt by: GitHub Actions\n\n(c) Marc Auberer 2021-2023");
+
+    // Create sub-commands
+    this.addBuildSubcommand();
+    this.addRunSubcommand();
+    this.addInstallSubcommand();
+    this.addUninstallSubcommand();
+
+    // ToDo: extend
 }
 
 /**
@@ -56,21 +96,29 @@ p CliInterface.createInterface() {
  *
  * @throws InvalidCliOptionsException if there were an invalid combination of cli options provided
  */
-p CliInterface.validate() {
-    // ToDo: Extend
+public p CliInterface.validate() {
+    if ((this.cliOptions.targetArch.isEmpty() && this.cliOptions.targetVendor.isEmpty() && this.cliOptions.targetOs.isEmpty()) ||
+        (!this.cliOptions.targetArch.isEmpty() && !this.cliOptions.targetVendor.isEmpty() && !this.cliOptions.targetOs.isEmpty())) {
+        // ToDo: throw cli error
+    }
+
+    // Error out when opt level > 0 and debug info enabled
+    if (this.cliOptions.optLevel > 0 && this.cliOptions.generateDebugInfo) {
+        // ToDo: throw cli error
+    }
 }
 
 /**
  * Initialize the cli options based on the input of the user
  */
-p CliInterface.enrich() {
+public p CliInterface.enrich() {
     // Propagate target information
-    if this.cliOptions.targetTriple.empty() {
+    if this.cliOptions.targetTriple.isEmpty() && this.cliOptions.targetArch.isEmpty() {
         // ToDo: Extend
     }
 
     // Dump AST, IR and symbol table if all debug output is enabled
-    if this.cliOptions.printDebugInfo {
+    if this.cliOptions.printDebugOutput {
         this.cliOptions.dumpAST = true;
         this.cliOptions.dumpIR = true;
         this.cliOptions.dumpSymbolTables = true;
@@ -116,9 +164,8 @@ p CliInterface.addUninstallSubcommand() {
  * @param argv Argument vector
  * @return Return code
  */
-f<int> CliInterface.parse(int argc, string[] argv) {
-    // ToDo: Extend
-    return 0;
+public f<int> CliInterface.parse(int argc, string[] argv) {
+    return this.cliParser.parse(argc, argv);
 }
 
 /**
@@ -127,9 +174,9 @@ f<int> CliInterface.parse(int argc, string[] argv) {
 p CliInterface.runBinary() {
     // Print status message
     if this.cliOptions.printDebugOutput {
-        print.println("Running executable ...\n");
+        println("Running executable ...\n");
     }
 
     // Run executable
-    cmd.execCmd(this.cliOptions.outputPath);
+    execCmd(this.cliOptions.outputPath.getRaw());
 }

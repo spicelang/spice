@@ -1,4 +1,5 @@
 // Imports
+import "../util/CodeLoc";
 
 // Enums
 public type TokenType enum {
@@ -17,6 +18,7 @@ public type TokenType enum {
     UNSIGNED,
     INLINE,
     PUBLIC,
+    HEAP,
     F,
     P,
     IF,
@@ -24,6 +26,7 @@ public type TokenType enum {
     ASSERT,
     FOR,
     FOREACH,
+    DO,
     WHILE,
     IMPORT,
     BREAK,
@@ -34,6 +37,8 @@ public type TokenType enum {
     INTERFACE,
     TYPE,
     ENUM,
+    OPERATOR,
+    ALIAS,
     THREAD,
     UNSAFE,
     NIL,
@@ -101,6 +106,7 @@ public type TokenType enum {
     STRING_LIT,
     IDENTIFIER,
     // Skipped tokens
+    DOC_COMMENT,
     BLOCK_COMMENT,
     LINE_COMMENT,
     WS
@@ -108,10 +114,6 @@ public type TokenType enum {
 
 public type Token struct {
     public TokenType tokenType
-    public string value
+    public string text
     public CodeLoc codeLoc
-}
-
-public f<string> getText() {
-    return this.value;
 }

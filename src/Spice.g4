@@ -130,7 +130,6 @@ OPERATOR: 'operator';
 ALIAS: 'alias';
 THREAD: 'thread';
 UNSAFE: 'unsafe';
-//NEW: 'new';
 NIL: 'nil';
 MAIN: 'main';
 PRINTF: 'printf';

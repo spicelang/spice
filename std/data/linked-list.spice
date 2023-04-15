@@ -13,16 +13,13 @@ public type Node<T> struct {
     Node<T>* next
 }
 
-public p Node.dtor() {
-    if this.next != nil<Node<T>*> {
-        this.next.dtor();
-        free((byte*) this.next);
-    }
-}
-
 /**
  * A linked list is a common, dynamically resizable data structure to store uniform data in order.
  * It is characterized by the pointer for each item, pointing to the next one.
+ *
+ * E.g. for a LinkedList<int>:
+ * 1234 -> 4567 -> 7890 -> 4567 -> nil<int*>
+ * tail                    head
  *
  * Time complexity:
  * Insert: O(1)
@@ -32,64 +29,88 @@ public p Node.dtor() {
  * Beware that each add operation allocates memory and every remove operation frees memory.
  */
 public type LinkedList<T> struct {
-    Node<T>* head
     Node<T>* tail
+    Node<T>* head
 }
 
 public p LinkedList.ctor() {
-    this.head = nil<Node<T>*>;
     this.tail = nil<Node<T>*>;
+    this.head = nil<Node<T>*>;
 }
 
-public p LinkedList.insert<T>(T newValue) {
+public p LinkedList.dtor() {
+    Node<T>* curr = this.tail;
+    while curr != nil<Node<T>*> {
+        Node<T>* next = curr.next;
+        free(curr);
+        curr = next;
+    }
+}
+
+public p LinkedList.insert(const T& value) {
     // Create new node
     Node<T>* newNode;
     unsafe {
-        newNode = (Node<T>*) malloc(sizeof(type Node<T>) / 8);
+        newNode = (Node<T>*) malloc(sizeof(type Node<T>) / 8l);
     }
-    newNode.value = newValue;
+    newNode.value = value;
+    newNode.next = nil<Node<T>*>;
 
     // Insert at head
-    newNode.next = this.head;
+    this.head.next = newNode;
     this.head = newNode;
 }
 
-public p LinkedList.insertAfter<T>(T newValue, Node<T>* prevNode) {
+public p LinkedList.insertAt(unsigned long idx, const T& value) {
     // Create new node
     Node<T>* newNode;
     unsafe {
         newNode = (Node<T>*) malloc(sizeof(type Node<T>) / 8);
     }
-    newNode.value = newValue;
+    newNode.value = value;
 
-    // Link the next node to this one
-    newNode.next = prevNode.next;
-    // Link this node to the previous node
-    prevNode.next = newNode;
+    // Search for item right before insert position
+    Node<T>* prev = this.tail;
+    while curr != nil<Node<T>*> && idx > 1 {
+        prev = prev.next;
+        idx--;
+    }
 
-    // Check if the previous node was the last node
-    if prevNode == tail {
+    // Link the next node to the new one
+    newNode.next = prev.next;
+    // Link the new node to the previous one
+    prev.next = newNode;
+
+    // Check if we have a new tail
+    if idx == 0l {
         this.tail = newNode;
     }
-}
-
-public inline p LinkedList.insertHead<T>(T newValue) {
-    this.insert(newValue);
-}
-
-public inline p LinkedList.insertTail<T>(T newValue) {
-    this.insertAfter(newValue, this.tail);
-}
-
-/*public f<Node<T>*> LinkedList.find(T value) {
-    Node<T>* currentNode = this.head;
-    while currentNode != nil<Node<T>*> {
-        // Check condition
-        if currentNode.value == value {
-            return currentNode;
-        }
-        // Move to next node
-        currentNode = currentNode.next;
+    // Check if the previous node was the last node
+    if this.head == prev {
+        this.head = newNode;
     }
-    return nil<Node<T>*>;
-}*/
+}
+
+public p LinkedList.remove(const T& valueToRemove) {
+    Node<T>* curr = this.tail;
+    Node<T>* prev = nil<T*>;
+    while curr != nil<Node<T>*> && curr.value != valueToRemove {
+        prev = curr;
+        curr = curr.next;
+    }
+    // Check if the item was found. If yes, delete its node
+    if curr != nil<Node<T>*> {
+        // Set the next node of the previous node
+        prev.next = curr.next;
+        // Free the removed node
+        free(curr);
+    }
+}
+
+public inline f<T&> LinkedList.getFirst() {
+    return this.head.value;
+}
+
+public inline f<T&> LinkedList.getLast() {
+    return this.tail.value;
+}

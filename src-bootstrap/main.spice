@@ -1,24 +1,41 @@
 // Imports
-import "util/ThreadFactory" as tf;
-import "SourceFile" as sf;
-import "CliInterface" as cli;
+import "std/io/cli-parser";
+
+import "SourceFile";
+import "CliInterface";
+import "global/GlobalResourceManager";
 
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *
  * @param options Command line options
  */
-p compileProject(const CliOptions* options) {
-    // ToDo: Initialize LLVM resources
-
-    // Prepare instance of thread factory, which has to exist exactly once per executable
-    tf::ThreadFactory threadFactory = tf::ThreadFactory();
-
-    // Prepare linker interface
-    // ToDo
+f<int> compileProject(const CliOptions& options) {
+// Instantiate GlobalResourceManager
+    dyn resourceManager = GlobalResourceManager(cliOptions);
 
     // Create source file instance for main source file
-    sf::SourceFile mainSourceFile = sf::SourceFile(options, nil<SourceFile*>, "root", options.mainSourceFile, false);
+    dyn mainSourceFile = SourceFile(options, nil<SourceFile*>, "root", options.mainSourceFile, false);
+
+    // Run compile pipeline for main source file. All dependent source files are triggered by their parents
+    mainSourceFile.runFrontEnd();
+    mainSourceFile.runMiddleEnd();
+    mainSourceFile.runBackEnd();
+
+    // Link the target executable (link object files to executable)
+    /*if !cliOptions.execute {
+        resourceManager.linker.prepare();
+        resourceManager.linker.link();
+    }*/
+
+    // Print compiler warnings
+    mainSourceFile.collectAndPrintWarnings();
+
+    if cliOptions.execute {
+        return mainSourceFile.execute();
+    }
+
+    return 0;
 }
 
 /**
@@ -30,5 +47,17 @@ p compileProject(const CliOptions* options) {
  */
 f<int> main(int argc, string[] argv) {
     // Initialize command line parser
+    CliInterface cli;
+    cli.createInterface();
+    if (cli.parse(argc, argv) != 0) {
+        return 1;
+    }
+    if (!cli.shouldCompile) {
+        return 0;
+    }
+    cli.validate(); // Check if all required fields are present
+    cli.enrich();   // Prepare the cli options
 
+    // Kick off the compiling process
+    return compileProject(cli.cliOptions);
 }

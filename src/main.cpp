@@ -30,7 +30,7 @@ bool compileProject(CliOptions &cliOptions) {
     mainSourceFile.runMiddleEnd();
     mainSourceFile.runBackEnd();
 
-    // Link the target executable (Link object files to executable)
+    // Link the target executable (link object files to executable)
     if (!cliOptions.execute) {
       resourceManager.linker.prepare();
       resourceManager.linker.link();

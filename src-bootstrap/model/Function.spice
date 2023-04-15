@@ -1,0 +1,33 @@
+import "std/data/vector";
+import "std/data/map";
+
+// Helper structs
+public type Param struct {
+    SymbolType sType
+    bool isOptional
+}
+
+public type NamedParam struct {
+    String name
+    SymbolType sType
+    bool isOptional
+}
+
+// Type aliases
+type ParamList alias Vector<Param>;
+type NamedParamList alias Vector<NamedParam>;
+
+public type Function struct {
+    String name
+    SymbolType thisType
+    SymbolType returnType
+    ParamLits paramList
+    Vector<GenericType> templateTypes
+    Map<String, SymbolType> typeMapping
+    SymbolTableEntry* entry
+    ASTNode* declNode
+    bool genericSubstantiation
+    bool alreadyTypeChecked
+    bool external
+    bool used
+}
