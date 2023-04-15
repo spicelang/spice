@@ -22,6 +22,9 @@ The package `std/net` offers functions for network communication, etc.
 ## OS
 The package `std/os` offers functions for interacting with the underlaying operating system e.g. calling another program, etc.
 
+## Test
+The package `std/test` offers basic mechanisms for testing in Spice, including assertions, etc.
+
 ## Text
 The package `std/text` offers functions for text processing, text output, etc.
 
