@@ -41,5 +41,28 @@ f<int> main() {
     it.next();
     assert !it.isValid();
 
+    // Test foreach value
+    foreach int item : iterate(vi) {
+        item++;
+    }
+    assert vi.get(0) == 123;
+    assert vi.get(1) == 4321;
+    assert vi.get(2) == 9876;
+
+    // Test foreach ref
+    foreach int& item : iterate(vi) {
+        item++;
+    }
+    assert vi.get(0) == 124;
+    assert vi.get(1) == 4322;
+    assert vi.get(2) == 9877;
+
+    foreach long idx, int& item : iterate(vi) {
+        item += idx;
+    }
+    assert vi.get(0) == 124;
+    assert vi.get(1) == 4323;
+    assert vi.get(2) == 9879;
+
     printf("All assertions passed!");
 }

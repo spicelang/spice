@@ -155,8 +155,25 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
     const std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
     SymbolTableEntry *structSymbol = structBodyScope->parent->lookupStrict(structSignature);
     assert(structSymbol != nullptr);
-    llvm::Type *structType = structSymbol->getStructLLVMType();
-    assert(structType != nullptr);
+    llvm::StructType *structType = structSymbol->getStructLLVMType();
+
+    // If the type is not known yet, build the LLVM type
+    if (structType == nullptr) {
+      Struct *spiceStruct = structSymbol->getType().getStruct(structSymbol->declNode);
+      assert(spiceStruct != nullptr);
+      structType = llvm::StructType::create(context, spiceStruct->getMangledName());
+      structSymbol->setStructLLVMType(structType);
+
+      // Collect concrete field types
+      std::vector<llvm::Type *> fieldTypes;
+      fieldTypes.reserve(spiceStruct->fieldTypes.size());
+      for (const SymbolType &fieldType : spiceStruct->fieldTypes)
+        fieldTypes.push_back(fieldType.toLLVMType(context, accessScope));
+
+      // Set field types to struct type
+      structType->setBody(fieldTypes);
+    }
+
     return structType;
   }
 

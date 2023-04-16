@@ -172,11 +172,11 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   if (hasIdx) {
     node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType, {}, false, node);
     assert(node->getIdxFct != nullptr);
-    iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back().removeReferenceWrapper();
+    iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
   } else {
     node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, false, node);
     assert(node->getFct != nullptr);
-    iteratorItemType = node->getFct->returnType.removeReferenceWrapper();
+    iteratorItemType = node->getFct->returnType;
   }
   node->isValidFct = FunctionManager::matchFunction(matchScope, "isValid", iteratorType, {}, false, node);
   assert(node->isValidFct != nullptr);
@@ -190,10 +190,9 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     node->itemVarDecl()->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
     // Update item type
     itemType = iteratorItemType;
-  } else if (!itemType.matches(iteratorItemType, false, false, true)) { // Check types
-    throw SemanticError(node->itemVarDecl(), OPERATOR_WRONG_DATA_TYPE,
-                        "Foreach item type does not match  the item type of the iterator. Iterator produces " +
-                            iteratorItemType.getName() + ", the specified item type is " + itemType.getName());
+  } else {
+    // Check item type
+    OpRuleManager::getAssignResultType(node->itemVarDecl(), itemType, iteratorItemType, manIdx, true, ERROR_FOREACH_ITEM);
   }
 
   // Update type of item
@@ -446,7 +445,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
 
     // References with no initialization are illegal
-    if (localVarType.isRef() && !node->isParam)
+    if (localVarType.isRef() && !node->isParam && !node->isForEachItem)
       throw SemanticError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
   }
 

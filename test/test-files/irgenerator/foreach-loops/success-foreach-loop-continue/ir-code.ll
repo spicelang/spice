@@ -16,12 +16,11 @@ define dso_local i32 @main() #0 {
   %shortIterator = alloca %__short__NumberIterator__short_short_short, align 8
   %s = alloca i16, align 2
   %1 = alloca %__long__NumberIterator__long_long_long, align 8
-  %l = alloca i64, align 8
+  %l = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   %2 = call %__short__NumberIterator__short_short_short @"_f__void__NumberIterator<short>__range__short_short"(i16 3, i16 8)
   store %__short__NumberIterator__short_short_short %2, ptr %shortIterator, align 2
   store %__short__NumberIterator__short_short_short %2, ptr %shortIterator, align 2
-  store i16 0, ptr %s, align 2
   br label %foreach.head.L5
 
 foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
@@ -44,7 +43,6 @@ foreach.body.L5:                                  ; preds = %foreach.head.L5
 if.then.L7:                                       ; preds = %foreach.body.L5
   %13 = call %__long__NumberIterator__long_long_long @"_f__void__NumberIterator<long>__range__long_long"(i64 1, i64 2)
   store %__long__NumberIterator__long_long_long %13, ptr %1, align 8
-  store i64 0, ptr %l, align 8
   br label %foreach.head.L8
 
 foreach.head.L8:                                  ; preds = %foreach.tail.L8, %if.then.L7
@@ -53,9 +51,9 @@ foreach.head.L8:                                  ; preds = %foreach.tail.L8, %i
 
 foreach.body.L8:                                  ; preds = %foreach.head.L8
   %15 = call ptr @_mf__NumberIterator_long__longref__get(ptr %1)
-  %16 = load i64, ptr %15, align 8
-  store i64 %16, ptr %l, align 8
-  %17 = load i64, ptr %l, align 8
+  store ptr %15, ptr %l, align 8
+  %16 = load ptr, ptr %l, align 8
+  %17 = load i64, ptr %16, align 8
   %18 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 %17)
   br label %foreach.tail.L5
 
