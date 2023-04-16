@@ -34,7 +34,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
     // Check if we know the concrete type for that generic type name already
     if (typeMapping.contains(genericTypeName)) {
-      SymbolType knownConcreteType = typeMapping.at(candidateType.getSubType());
+      SymbolType knownConcreteType = typeMapping.at(genericTypeName);
 
       // Remove reference wrapper of candidate type if required
       if (!requestedType.isRef())

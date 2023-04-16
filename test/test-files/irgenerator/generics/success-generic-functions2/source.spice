@@ -1,15 +1,15 @@
 type T int|double|short|long;
 type U bool[]|int[];
 
-f<int> sumNumbers<T>(T[] numberArray, int arrayLength) {
+f<int> sumNumbers<T>(T[] numberArray, long arrayLength) {
     result = 0;
-    for int i = 0; i < arrayLength; i++ {
+    for long i = 0l; i < arrayLength; i++ {
         result += numberArray[i];
     }
 }
 
-p printData<U>(int arrayLength, U list) {
-    for int i = 0; i < arrayLength; i++ {
+p printData<U>(long arrayLength, U list) {
+    for long i = 0l; i < arrayLength; i++ {
         printf("Data: %d\n", list[i]);
     }
 }

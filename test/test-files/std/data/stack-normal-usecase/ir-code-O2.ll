@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%__int__Stack__intptr_long_long_int = type { ptr, i64, i64, i32 }
+%__int__Stack__intptr_long_long = type { ptr, i64, i64 }
 
 @printf.str.0 = private unnamed_addr constant [16 x i8] c"Stack size: %d\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [20 x i8] c"Stack capacity: %d\0A\00", align 1
@@ -13,11 +13,11 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %s1 = alloca %__int__Stack__intptr_long_long_int, align 8
+  %s1 = alloca %__int__Stack__intptr_long_long, align 8
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
-  call void @llvm.memset.p0.i64(ptr noundef nonnull align 8 dereferenceable(28) %s1, i8 0, i64 28, i1 false)
+  call void @llvm.memset.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %s1, i8 0, i64 24, i1 false)
   call void @_mp__Stack_int__void__ctor(ptr nonnull %s1) #3
   store i32 123, ptr %1, align 4
   call void @_mp__Stack_int__void__push__intref(ptr nonnull %s1, ptr nonnull %1) #3

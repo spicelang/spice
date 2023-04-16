@@ -28,7 +28,6 @@ public type Queue<T> struct {
     unsigned long size      // Current number of items
     unsigned long idxFront  // Index for front access
     unsigned long idxBack   // Index for back access
-    unsigned int itemSize   // Size of a single item
 }
 
 public p Queue.ctor(unsigned long initAllocItems, const T& defaultValue) {
@@ -50,9 +49,9 @@ public p Queue.ctor(unsigned int initAllocItems) {
 
 public p Queue.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
-    this.itemSize = sizeof(type T) / 8;
+    const long itemSize = sizeof(type T) / 8l;
     unsafe {
-        this.contents = (T*) malloc(this.itemSize * initAllocItems);
+        this.contents = (T*) malloc(itemSize * initAllocItems);
     }
     this.size = 0l;
     this.capacity = initAllocItems;
@@ -181,9 +180,10 @@ public p Queue.pack() {
  */
 p Queue.resize(unsigned long itemCount) {
     // Allocate the new memory
+    const long itemSize = sizeof(type T) / 8l;
     unsafe {
         byte* oldAddress = (byte*) this.contents;
-        int newSize = (int) (this.itemSize * itemCount);
+        int newSize = (int) (itemSize * itemCount);
         T* newMemory = (T*) realloc(oldAddress, newSize);
         this.contents = newMemory;
     }

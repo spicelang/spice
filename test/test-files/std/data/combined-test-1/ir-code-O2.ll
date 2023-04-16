@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%"__std/data/pair::Pair<int,string>__Vector__std/data/pair::Pair<int,string>ptr_long_long_int" = type { ptr, i64, i64, i32 }
+%"__std/data/pair::Pair<int,string>__Vector__std/data/pair::Pair<int,string>ptr_long_long" = type { ptr, i64, i64 }
 %__int_string__Pair__int_string = type { i32, ptr }
 
 @anon.string.0 = private unnamed_addr constant [6 x i8] c"Hello\00", align 1
@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %pairVector = alloca %"__std/data/pair::Pair<int,string>__Vector__std/data/pair::Pair<int,string>ptr_long_long_int", align 8
+  %pairVector = alloca %"__std/data/pair::Pair<int,string>__Vector__std/data/pair::Pair<int,string>ptr_long_long", align 8
   %1 = alloca %__int_string__Pair__int_string, align 8
   %2 = alloca i32, align 4
   %3 = alloca ptr, align 8

@@ -12,7 +12,7 @@ public type ArrayIterator<I> struct : Iterable<I> {
     unsigned long cursor
 }
 
-public p ArrayIterator.ctor(I* array, unsigned long size) {
+public p ArrayIterator.ctor(I[] array, unsigned long size) {
     this.array = array;
     this.size = size;
     this.cursor = 0l;
@@ -24,7 +24,9 @@ public p ArrayIterator.ctor(I* array, unsigned long size) {
  * @return Reference to the current item
  */
 public inline f<I&> ArrayIterator.get() {
-    return this.array[this.cursor];
+    unsafe {
+        return this.array[this.cursor];
+    }
 }
 
 public inline f<Pair<unsigned long, I&>> ArrayIterator.getIdx() {

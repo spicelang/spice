@@ -7,7 +7,7 @@ type I dyn; // Item type
 /**
  * Convenience wrapper for creating a simple array iterator
  */
-/*public inline f<ArrayIterator<I>> array<I>(I* array, unsigned long size) {
+/*public inline f<ArrayIterator<I>> iterate<I>(I[] array, unsigned long size) {
     return ArrayIterator<I>(array, size);
 }*/
 
