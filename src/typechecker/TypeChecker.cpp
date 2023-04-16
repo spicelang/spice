@@ -1232,7 +1232,7 @@ std::any TypeChecker::visitValue(ValueNode *node) {
     return ExprResult{node->setEvaluatedSymbolType(nilType, manIdx)};
   }
 
-  throw CompilerError(UNHANDLED_BRANCH, "Value fall-through");
+  throw CompilerError(UNHANDLED_BRANCH, "Value fall-through"); // GCOV_EXCL_LINE
 }
 
 std::any TypeChecker::visitConstant(ConstantNode *node) {
@@ -1262,8 +1262,8 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   case ConstantNode::TYPE_BOOL:
     superType = TY_BOOL;
     break;
-  default:
-    throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through");
+  default:                                                          // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
   }
 
   // Create symbol type
@@ -1740,7 +1740,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       type = type.toArray(node, typeModifier.hardcodedSize);
       break;
     }
-    default:
+    default:                                                               // GCOV_EXCL_LINE
       throw CompilerError(UNHANDLED_BRANCH, "Modifier type fall-through"); // GCOV_EXCL_LINE
     }
     tmQueue.pop();
