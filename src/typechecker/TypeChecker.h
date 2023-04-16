@@ -58,7 +58,7 @@ public:
   std::any visitEnumDefPrepare(EnumDefNode *node);
   std::any visitGenericTypeDef(GenericTypeDefNode *node) override;
   std::any visitGenericTypeDefPrepare(GenericTypeDefNode *node);
-  std::any visitAliasDef(AliasDefNode *node);
+  std::any visitAliasDef(AliasDefNode *node) override;
   std::any visitAliasDefPrepare(AliasDefNode *node);
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
   std::any visitGlobalVarDefPrepare(GlobalVarDefNode *node);
@@ -75,11 +75,10 @@ public:
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
   std::any visitStmtLst(StmtLstNode *node) override;
   std::any visitParamLst(ParamLstNode *node) override;
-  std::any visitField(FieldNode *node) override;
   std::any visitSignature(SignatureNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
   std::any visitImportStmt(ImportStmtNode *node) override;
-  static std::any visitImportStmtPrepare(ImportStmtNode *node);
+  std::any visitImportStmtPrepare(ImportStmtNode *node);
   std::any visitReturnStmt(ReturnStmtNode *node) override;
   std::any visitBreakStmt(BreakStmtNode *node) override;
   std::any visitContinueStmt(ContinueStmtNode *node) override;

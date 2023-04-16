@@ -26,7 +26,6 @@ public type Vector<T> struct {
     T* contents             // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
     unsigned long size      // Current number of items
-    unsigned int itemSize   // Size of a single item
 }
 
 public p Vector.ctor(unsigned int initAllocItems) {
@@ -35,9 +34,9 @@ public p Vector.ctor(unsigned int initAllocItems) {
 
 public p Vector.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
-    this.itemSize = sizeof(type T) / 8;
+    const long itemSize = sizeof(type T) / 8l;
     unsafe {
-        this.contents = (T*) malloc(this.itemSize * initAllocItems);
+        this.contents = (T*) malloc(itemSize * initAllocItems);
     }
     this.size = 0l;
     this.capacity = initAllocItems;
@@ -174,9 +173,10 @@ public p Vector.pack() {
  */
 p Vector.resize(unsigned long itemCount) {
     // Allocate the new memory
+    const long itemSize = sizeof(type T) / 8l;
     unsafe {
         byte* oldAddress = (byte*) this.contents;
-        int newSize = (int) (this.itemSize * itemCount);
+        int newSize = (int) (itemSize * itemCount);
         T* newMemory = (T*) realloc(oldAddress, newSize);
         this.contents = newMemory;
     }

@@ -3,8 +3,8 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%__double__Stack__doubleptr_long_long_int = type { ptr, i64, i64, i32 }
-%"__std/data/stack::Stack<double>__Optional__std/data/stack::Stack<double>_bool" = type { %__double__Stack__doubleptr_long_long_int, i1 }
+%__double__Stack__doubleptr_long_long = type { ptr, i64, i64 }
+%"__std/data/stack::Stack<double>__Optional__std/data/stack::Stack<double>_bool" = type { %__double__Stack__doubleptr_long_long, i1 }
 %"____rt_string::String__Optional____rt_string::String_bool" = type { %__String__charptr_long_long, i1 }
 %__String__charptr_long_long = type { ptr, i64, i64 }
 
@@ -14,7 +14,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %doubleStack = alloca %__double__Stack__doubleptr_long_long_int, align 8
+  %doubleStack = alloca %__double__Stack__doubleptr_long_long, align 8
   %1 = alloca double, align 8
   %oi = alloca %"__std/data/stack::Stack<double>__Optional__std/data/stack::Stack<double>_bool", align 8
   %oi2 = alloca %"____rt_string::String__Optional____rt_string::String_bool", align 8

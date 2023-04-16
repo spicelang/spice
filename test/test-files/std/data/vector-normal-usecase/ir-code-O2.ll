@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%__double__Vector__doubleptr_long_long_int = type { ptr, i64, i64, i32 }
+%__double__Vector__doubleptr_long_long = type { ptr, i64, i64 }
 
 @printf.str.0 = private unnamed_addr constant [17 x i8] c"Vector size: %d\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [21 x i8] c"Vector capacity: %d\0A\00", align 1
@@ -11,7 +11,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %v1 = alloca %__double__Vector__doubleptr_long_long_int, align 8
+  %v1 = alloca %__double__Vector__doubleptr_long_long, align 8
   %1 = alloca double, align 8
   %2 = alloca double, align 8
   %3 = alloca double, align 8

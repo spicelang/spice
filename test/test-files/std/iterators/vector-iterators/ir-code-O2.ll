@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%__int__Vector__intptr_long_long_int = type { ptr, i64, i64, i32 }
+%__int__Vector__intptr_long_long = type { ptr, i64, i64 }
 %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" = type { ptr, i64 }
 %__long_intref__Pair__long_intref = type { i64, ptr }
 
@@ -27,7 +27,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %vi = alloca %__int__Vector__intptr_long_long_int, align 8
+  %vi = alloca %__int__Vector__intptr_long_long, align 8
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4

@@ -60,7 +60,7 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
   const unsigned int size = module->getDataLayout().getTypeSizeInBits(type);
 
   // Return size value
-  llvm::Value *sizeValue = builder.getInt32(size);
+  llvm::Value *sizeValue = builder.getInt64(size);
   return ExprResult{.value = sizeValue};
 }
 
@@ -68,7 +68,9 @@ std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
   const SymbolType assignExprSymbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
   assert(assignExprSymbolType.isArray() && assignExprSymbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
-  llvm::Value *lengthValue = builder.getInt32(assignExprSymbolType.getArraySize());
+
+  // Return length value
+  llvm::Value *lengthValue = builder.getInt64(assignExprSymbolType.getArraySize());
   return ExprResult{.value = lengthValue};
 }
 

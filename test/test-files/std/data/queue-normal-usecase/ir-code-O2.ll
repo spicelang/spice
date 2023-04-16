@@ -3,13 +3,13 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%__char__Queue__charptr_long_long_long_long_int = type { ptr, i64, i64, i64, i64, i32 }
+%__char__Queue__charptr_long_long_long_long = type { ptr, i64, i64, i64, i64 }
 
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"Size: %d, Capacity: %d\0A\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %q1 = alloca %__char__Queue__charptr_long_long_long_long_int, align 8
+  %q1 = alloca %__char__Queue__charptr_long_long_long_long, align 8
   %1 = alloca i8, align 1
   %2 = alloca i8, align 1
   %3 = alloca i8, align 1

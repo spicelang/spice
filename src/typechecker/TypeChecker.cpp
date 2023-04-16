@@ -352,18 +352,6 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
   return namedParams;
 }
 
-std::any TypeChecker::visitField(FieldNode *node) {
-  // Visit field type
-  const auto fieldType = std::any_cast<SymbolType>(node->dataType());
-
-  // Update type of field entry
-  SymbolTableEntry *fieldEntry = currentScope->lookupStrict(node->fieldName);
-  assert(fieldEntry != nullptr);
-  fieldEntry->updateType(fieldType, false);
-
-  return fieldType;
-}
-
 std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Visit return type
   SymbolType returnType(TY_DYN);
@@ -613,7 +601,7 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
     visit(node->assignExpr());
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_INT), manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
@@ -624,16 +612,16 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
   if (!argType.isArray())
     throw SemanticError(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays");
 
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_INT), manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitTidCall(TidCallNode *node) {
   // Nothing to check here. Tid builtin has no arguments
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_INT), manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitJoinCall(JoinCallNode *node) {
-  SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(node);
+  const SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(node);
 
   for (AssignExprNode *assignExpr : node->assignExpressions()) {
     // Visit assign expression
