@@ -498,11 +498,16 @@ std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
   foreachLoopNode->reserveChildren(ctx->children.size());
   saveErrorMessage(foreachLoopNode, ctx);
 
+  bool seenDeclStmt = false;
+
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::DeclStmtContext *>(subTree); rule != nullptr) // DeclStmt
-      currentNode = foreachLoopNode->createChild<DeclStmtNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
+    if (rule = dynamic_cast<SpiceParser::DeclStmtContext *>(subTree); rule != nullptr) { // DeclStmt
+      auto declStmtNode = foreachLoopNode->createChild<DeclStmtNode>(CodeLoc(rule->start, filePath));
+      declStmtNode->isForEachItem = !ctx->COMMA() || seenDeclStmt;
+      seenDeclStmt = true;
+      currentNode = declStmtNode;
+    } else if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = foreachLoopNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
     else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal

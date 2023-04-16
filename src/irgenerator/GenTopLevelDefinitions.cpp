@@ -449,8 +449,8 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
   std::vector<Struct *> manifestations = node->structManifestations;
 
   // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
-  std::sort(manifestations.begin(), manifestations.end(),
-            [](const Struct *lhs, Struct *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; });
+  auto comp = [](const Struct *lhs, Struct *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
+  std::sort(manifestations.begin(), manifestations.end(), comp);
 
   for (Struct *spiceStruct : manifestations) {
     // Skip structs, that are not fully substantiated

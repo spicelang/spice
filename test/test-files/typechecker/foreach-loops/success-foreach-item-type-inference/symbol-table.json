@@ -321,7 +321,7 @@
               "name": "item",
               "orderIndex": 0,
               "state": "destructed",
-              "type": "short"
+              "type": "short&"
             }
           ]
         }

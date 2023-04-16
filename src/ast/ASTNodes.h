@@ -945,6 +945,7 @@ public:
   bool hasAssignment = false;
   std::vector<SymbolTableEntry *> entries;
   bool isParam = false;
+  bool isForEachItem = false;
 };
 
 // ======================================================= SpecifierLstNode ======================================================

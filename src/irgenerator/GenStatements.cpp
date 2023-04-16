@@ -51,8 +51,10 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
     // Allocate memory
     varAddress = insertAlloca(varTy);
     // Retrieve default value for lhs symbol type and store it
-    llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);
-    builder.CreateStore(defaultValue, varAddress);
+    if (!node->isForEachItem) {
+      llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);
+      builder.CreateStore(defaultValue, varAddress);
+    }
     // Update address in symbol table
     varEntry->updateAddress(varAddress);
   }

@@ -35,6 +35,7 @@ const char *const OP_FCT_POSTFIX_MINUS_MINUS = "op.minusminus.post";
 
 // Custom error message prefixes
 const char *const ERROR_MSG_RETURN = "Passed wrong data type to return statement";
+const char *const ERROR_FOREACH_ITEM = "Passed wrong data type to foreach item";
 const char *const ERROR_FIELD_ASSIGN = "Given type of the field value does not match declaration";
 
 // Unary operator rule:        lhs type, result type, unsafe
