@@ -64,7 +64,7 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
   node->entry = rootScope->insert(node->importName, node);
 
   // Create the imported source file
-  const auto importedSourceFile = sourceFile->createSourceFile(node->importName, importPath, isStd);
+  const auto importedSourceFile = resourceManager.createSourceFile(sourceFile, node->importName, importPath, isStd);
   // Register it as a dependency to the current source file
   sourceFile->addDependency(importedSourceFile, node, node->importName, importPath);
 

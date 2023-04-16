@@ -300,8 +300,7 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
 
   // Check if global already exists in an imported source file
   for (const auto &[name, dependency] : sourceFile->dependencies) {
-    const SourceFile *importedSourceFile = dependency.first.get();
-    if (importedSourceFile->exportedNameRegistry.contains(node->varName))
+    if (dependency.first->exportedNameRegistry.contains(node->varName))
       throw SemanticError(node, GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + node->varName + "' in other module");
   }
 

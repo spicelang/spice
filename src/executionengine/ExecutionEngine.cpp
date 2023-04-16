@@ -17,10 +17,9 @@ ExecutionEngine::ExecutionEngine(GlobalResourceManager &resourceManager, SourceF
     executionEngine->setVerifyModules(false);
 
   // Add all modules to the execution engine
-  std::vector<SourceFile *> sourceFiles;
-  sourceFile->collectAllSourceFiles(sourceFiles);
-  for (SourceFile *sourceFile : sourceFiles)
-    executionEngine->addModule(std::move(sourceFile->llvmModule));
+  for (auto &sourceFile : resourceManager.sourceFiles)
+    if (!sourceFile.second->mainFile)
+      executionEngine->addModule(std::move(sourceFile.second->llvmModule));
 }
 
 /**
@@ -30,7 +29,7 @@ ExecutionEngine::ExecutionEngine(GlobalResourceManager &resourceManager, SourceF
  */
 int ExecutionEngine::executeMainFct() {
   std::vector<std::string> argv;
-  const char * const *envp = {};
+  const char *const *envp = {};
 
   llvm::Function *mainFct = executionEngine->FindFunctionNamed("main");
   assert(mainFct != nullptr);

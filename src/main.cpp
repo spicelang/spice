@@ -23,12 +23,12 @@ bool compileProject(CliOptions &cliOptions) {
     GlobalResourceManager resourceManager(cliOptions);
 
     // Create source file instance for main source file
-    SourceFile mainSourceFile(resourceManager, nullptr, "root", cliOptions.mainSourceFile, false);
+    SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, "root", cliOptions.mainSourceFile, false);
 
     // Run compile pipeline for main source file. All dependent source files are triggered by their parents
-    mainSourceFile.runFrontEnd();
-    mainSourceFile.runMiddleEnd();
-    mainSourceFile.runBackEnd();
+    mainSourceFile->runFrontEnd();
+    mainSourceFile->runMiddleEnd();
+    mainSourceFile->runBackEnd();
 
     // Link the target executable (link object files to executable)
     if (!cliOptions.execute) {
@@ -37,11 +37,11 @@ bool compileProject(CliOptions &cliOptions) {
     }
 
     // Print compiler warnings
-    mainSourceFile.collectAndPrintWarnings();
+    mainSourceFile->collectAndPrintWarnings();
 
     // Execute if required and return with the return code
     if (cliOptions.execute)
-      return mainSourceFile.execute();
+      return mainSourceFile->execute();
 
     return EXIT_SUCCESS;
   } catch (LexerError &e) {

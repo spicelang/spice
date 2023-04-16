@@ -8,6 +8,7 @@
 namespace spice::compiler {
 
 // Forward declaration
+class GlobalResourceManager;
 class SourceFile;
 class Scope;
 
@@ -27,7 +28,7 @@ struct ModuleNamePair {
 class RuntimeModuleManager {
 public:
   // Constructors
-  RuntimeModuleManager() = default;
+  explicit RuntimeModuleManager(GlobalResourceManager &resourceManager) : resourceManager(resourceManager){};
   RuntimeModuleManager(const RuntimeModuleManager &) = delete;
 
   // Public methods
@@ -39,7 +40,8 @@ private:
   bool addModule(SourceFile *parentSourceFile, RuntimeModule requestedModule);
   static ModuleNamePair resolveNamePair(RuntimeModule requestedModule);
 
-  // Private fields
+  // Private members
+  GlobalResourceManager &resourceManager;
   std::unordered_map<RuntimeModule, SourceFile *> modules;
 };
 

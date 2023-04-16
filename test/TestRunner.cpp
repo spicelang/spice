@@ -61,53 +61,53 @@ void execTestCase(const TestCase &testCase) {
 
   try {
     // Create source file instance for main source file
-    SourceFile mainSourceFile = SourceFile(resourceManager, nullptr, "root", cliOptions.mainSourceFile, false);
+    SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, "root", cliOptions.mainSourceFile, false);
 
     // Run Lexer and Parser
-    mainSourceFile.runLexer();
-    mainSourceFile.runParser();
+    mainSourceFile->runLexer();
+    mainSourceFile->runParser();
 
     // Check CST
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_PARSE_TREE, [&]() {
-      mainSourceFile.runCSTVisualizer();
-      return mainSourceFile.compilerOutput.cstString;
+      mainSourceFile->runCSTVisualizer();
+      return mainSourceFile->compilerOutput.cstString;
     });
 
     // Build and optimize AST
-    mainSourceFile.runASTBuilder();
-    mainSourceFile.runASTOptimizer();
+    mainSourceFile->runASTBuilder();
+    mainSourceFile->runASTOptimizer();
 
     // Check AST
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYNTAX_TREE, [&]() {
-      mainSourceFile.runASTVisualizer();
-      return mainSourceFile.compilerOutput.astString;
+      mainSourceFile->runASTVisualizer();
+      return mainSourceFile->compilerOutput.astString;
     });
 
     // Execute import collector and semantic analysis stages
-    mainSourceFile.runImportCollector();
-    mainSourceFile.runSymbolTableBuilder();
-    mainSourceFile.runTypeChecker();
-    mainSourceFile.runBorrowChecker();
-    mainSourceFile.runEscapeAnalyzer();
+    mainSourceFile->runImportCollector();
+    mainSourceFile->runSymbolTableBuilder();
+    mainSourceFile->runTypeChecker();
+    mainSourceFile->runBorrowChecker();
+    mainSourceFile->runEscapeAnalyzer();
 
     // Check symbol table output (check happens here, to include updates from type checker, borrow checker and escape analyzer)
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYMBOL_TABLE,
-                            [&]() { return mainSourceFile.globalScope->getSymbolTableJSON().dump(/*indent=*/2); });
+                            [&]() { return mainSourceFile->globalScope->getSymbolTableJSON().dump(/*indent=*/2); });
 
     // Fail if an error was expected
     if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT))
       FAIL() << "Expected error, but got no error";
 
     // Run backend for all dependencies
-    for (auto &dependency : mainSourceFile.dependencies)
+    for (auto &dependency : mainSourceFile->dependencies)
       dependency.second.first->runBackEnd();
 
     // Execute IR generator
-    mainSourceFile.runIRGenerator();
+    mainSourceFile->runIRGenerator();
 
     // Check unoptimized IR code
     TestUtil::checkRefMatch(
-        testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_IR, [&]() { return mainSourceFile.compilerOutput.irString; },
+        testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_IR, [&]() { return mainSourceFile->compilerOutput.irString; },
         [&](std::string &expectedOutput, std::string &actualOutput) {
           // Cut of first n lines to be target independent
           TestUtil::eraseIRModuleHeader(expectedOutput);
@@ -119,8 +119,8 @@ void execTestCase(const TestCase &testCase) {
         testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_IR_DEBUG_INFO,
         [&]() {
           cliOptions.generateDebugInfo = true;
-          mainSourceFile.runIRGenerator();
-          return mainSourceFile.compilerOutput.irString;
+          mainSourceFile->runIRGenerator();
+          return mainSourceFile->compilerOutput.irString;
         },
         [&](std::string &expectedOutput, std::string &actualOutput) {
           // Cut of first n lines to be target independent
@@ -137,8 +137,8 @@ void execTestCase(const TestCase &testCase) {
           testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_OPT_IR[i - 1],
           [&]() {
             cliOptions.optLevel = i;
-            mainSourceFile.runIROptimizer();
-            return mainSourceFile.compilerOutput.irOptString;
+            mainSourceFile->runIROptimizer();
+            return mainSourceFile->compilerOutput.irOptString;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {
             // Cut of first n lines to be target independent
@@ -151,18 +151,18 @@ void execTestCase(const TestCase &testCase) {
     bool objectFilesEmitted = false;
     if (!skipNonGitHubTests) {
       TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ASM, [&]() {
-        mainSourceFile.runObjectEmitter();
+        mainSourceFile->runObjectEmitter();
         objectFilesEmitted = true;
 
-        return mainSourceFile.compilerOutput.asmString;
+        return mainSourceFile->compilerOutput.asmString;
       });
     }
 
     // Check warnings
-    mainSourceFile.collectAndPrintWarnings();
+    mainSourceFile->collectAndPrintWarnings();
     TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_WARNING_OUTPUT, [&]() {
       std::stringstream actualWarningString;
-      for (const CompilerWarning &warning : mainSourceFile.compilerOutput.warnings)
+      for (const CompilerWarning &warning : mainSourceFile->compilerOutput.warnings)
         actualWarningString << warning.warningMessage << "\n";
       return actualWarningString.str();
     });
@@ -180,10 +180,10 @@ void execTestCase(const TestCase &testCase) {
 
       // Emit main source file object if not done already
       if (!objectFilesEmitted)
-        mainSourceFile.runObjectEmitter();
+        mainSourceFile->runObjectEmitter();
 
       // Conclude the compilation
-      mainSourceFile.concludeCompilation();
+      mainSourceFile->concludeCompilation();
 
       // Prepare and run linker
       resourceManager.linker.prepare();

@@ -6,7 +6,7 @@
 
 namespace spice::compiler {
 
-enum Mode { LEXER, PARSER };
+enum Mode { MODE_LEXER, MODE_PARSER };
 
 class AntlrThrowingErrorListener : public antlr4::BaseErrorListener {
 public:
