@@ -42,6 +42,10 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
 }
 
 void SourceFile::runLexer() {
+  // Check if this stage has already been done
+  if (previousStage >= LEXER)
+    return;
+
   Timer timer(&compilerOutput.times.lexer);
   timer.start();
 
@@ -70,14 +74,14 @@ void SourceFile::runLexer() {
   if (!resourceManager.cliOptions.ignoreCache)
     restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
 
-  lastStage = LEXER;
+  previousStage = LEXER;
   timer.stop();
   printStatusMessage("Lexer", IO_CODE, IO_TOKENS, compilerOutput.times.lexer);
 }
 
 void SourceFile::runParser() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= PARSER)
     return;
 
   Timer timer(&compilerOutput.times.parser);
@@ -89,7 +93,7 @@ void SourceFile::runParser() {
   antlrCtx.parser->addErrorListener(antlrCtx.parserErrorHandler.get());
   antlrCtx.parser->removeParseListeners();
 
-  lastStage = PARSER;
+  previousStage = PARSER;
   timer.stop();
   printStatusMessage("Parser", IO_TOKENS, IO_CST, compilerOutput.times.parser);
 }
@@ -97,6 +101,9 @@ void SourceFile::runParser() {
 void SourceFile::runCSTVisualizer() {
   // Only execute if enabled
   if (restoredFromCache || (!resourceManager.cliOptions.dumpCST && !resourceManager.cliOptions.testMode))
+    return;
+  // Check if this stage has already been done
+  if (previousStage >= CST_VISUALIZER)
     return;
 
   Timer timer(&compilerOutput.times.cstVisualizer);
@@ -116,14 +123,14 @@ void SourceFile::runCSTVisualizer() {
       visualizerOutput("CST", compilerOutput.cstString);
   }
 
-  lastStage = CST_VISUALIZER;
+  previousStage = CST_VISUALIZER;
   timer.stop();
   printStatusMessage("CST Visualizer", IO_CST, IO_CST, compilerOutput.times.cstVisualizer);
 }
 
 void SourceFile::runASTBuilder() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= AST_BUILDER)
     return;
 
   Timer timer(&compilerOutput.times.astBuilder);
@@ -140,14 +147,14 @@ void SourceFile::runASTBuilder() {
   // Create global scope
   globalScope = std::make_unique<Scope>(nullptr, this, SCOPE_GLOBAL, &ast->codeLoc);
 
-  lastStage = AST_BUILDER;
+  previousStage = AST_BUILDER;
   timer.stop();
   printStatusMessage("AST Builder", IO_CST, IO_AST, compilerOutput.times.astBuilder);
 }
 
 void SourceFile::runASTOptimizer() {
-  // Only execute if enabled
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= AST_OPTIMIZER)
     return;
 
   Timer timer(&compilerOutput.times.astOptimizer);
@@ -156,7 +163,7 @@ void SourceFile::runASTOptimizer() {
   ASTOptimizer astOptimizer(resourceManager, this);
   astOptimizer.visit(static_cast<EntryNode *>(ast.get()));
 
-  lastStage = AST_OPTIMIZER;
+  previousStage = AST_OPTIMIZER;
   timer.stop();
   printStatusMessage("AST Optimizer", IO_AST, IO_AST, compilerOutput.times.astOptimizer);
 }
@@ -164,6 +171,9 @@ void SourceFile::runASTOptimizer() {
 void SourceFile::runASTVisualizer() {
   // Only execute if enabled
   if (restoredFromCache || (!resourceManager.cliOptions.dumpAST && !resourceManager.cliOptions.testMode))
+    return;
+  // Check if this stage has already been done
+  if (previousStage >= AST_VISUALIZER)
     return;
 
   Timer timer(&compilerOutput.times.astVisualizer);
@@ -182,14 +192,14 @@ void SourceFile::runASTVisualizer() {
       visualizerOutput("AST", compilerOutput.astString);
   }
 
-  lastStage = AST_VISUALIZER;
+  previousStage = AST_VISUALIZER;
   timer.stop();
   printStatusMessage("AST Visualizer", IO_AST, IO_AST, compilerOutput.times.astVisualizer);
 }
 
 void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= IMPORT_COLLECTOR)
     return;
 
   Timer timer(&compilerOutput.times.importCollector);
@@ -199,7 +209,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   ImportCollector importCollector(resourceManager, this);
   importCollector.visit(static_cast<EntryNode *>(ast.get()));
 
-  lastStage = IMPORT_COLLECTOR;
+  previousStage = IMPORT_COLLECTOR;
   timer.stop();
 
   // Run first part of pipeline for the imported source file
@@ -210,8 +220,8 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runSymbolTableBuilder() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= SYMBOL_TABLE_BUILDER)
     return;
 
   Timer timer(&compilerOutput.times.symbolTableBuilder);
@@ -225,7 +235,7 @@ void SourceFile::runSymbolTableBuilder() {
   SymbolTableBuilder symbolTableBuilder(resourceManager, this);
   symbolTableBuilder.visit(static_cast<EntryNode *>(ast.get()));
 
-  lastStage = SYMBOL_TABLE_BUILDER;
+  previousStage = SYMBOL_TABLE_BUILDER;
   timer.stop();
   printStatusMessage("Symbol Table Builder", IO_AST, IO_AST, compilerOutput.times.symbolTableBuilder);
 }
@@ -239,8 +249,8 @@ void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= TYPE_CHECKER_PRE)
     return;
 
   // Type-check all dependencies first
@@ -254,14 +264,14 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
   TypeChecker typeChecker(resourceManager, this, TC_MODE_PREPARE);
   typeChecker.visit(static_cast<EntryNode *>(ast.get()));
 
-  lastStage = TYPE_CHECKER_PRE;
+  previousStage = TYPE_CHECKER_PRE;
   timer.stop();
   printStatusMessage("Type Checker Pre", IO_AST, IO_AST, compilerOutput.times.typeCheckerPre);
 }
 
 void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= TYPE_CHECKER_POST)
     return;
 
   Timer timer(&compilerOutput.times.typeCheckerPost);
@@ -292,7 +302,7 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
   // Check if all dyn variables were type-inferred successfully
   globalScope->checkSuccessfulTypeInference();
 
-  lastStage = TYPE_CHECKER_POST;
+  previousStage = TYPE_CHECKER_POST;
   timer.stop();
   printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost);
 
@@ -307,8 +317,12 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= BORROW_CHECKER)
+    return;
+
+  // Check if this stage has already been done
+  if (previousStage >= BORROW_CHECKER)
     return;
 
   // Borrow-check all dependencies first
@@ -322,14 +336,14 @@ void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
   BorrowChecker borrowChecker(resourceManager, this);
   borrowChecker.visit(static_cast<EntryNode *>(ast.get()));
 
-  lastStage = BORROW_CHECKER;
+  previousStage = BORROW_CHECKER;
   timer.stop();
   printStatusMessage("Borrow Checker", IO_AST, IO_AST, compilerOutput.times.borrowChecker);
 }
 
 void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= ESCAPE_ANALYZER)
     return;
 
   // Escape-analyze all dependencies first
@@ -343,14 +357,14 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
   EscapeAnalyzer escapeAnalyzer(resourceManager, this);
   escapeAnalyzer.visit(static_cast<EntryNode *>(ast.get()));
 
-  lastStage = ESCAPE_ANALYZER;
+  previousStage = ESCAPE_ANALYZER;
   timer.stop();
   printStatusMessage("Escape Analyzer", IO_AST, IO_AST, compilerOutput.times.escapeAnalyzer);
 }
 
 void SourceFile::runIRGenerator() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= IR_GENERATOR)
     return;
 
   Timer timer(&compilerOutput.times.irGenerator);
@@ -370,14 +384,14 @@ void SourceFile::runIRGenerator() {
   if (resourceManager.cliOptions.dumpIR)                                  // GCOV_EXCL_LINE
     tout.println("\nUnoptimized IR code:\n" + irGenerator.getIRString()); // GCOV_EXCL_LINE
 
-  lastStage = IR_GENERATOR;
+  previousStage = IR_GENERATOR;
   timer.stop();
   printStatusMessage("IR Generator", IO_AST, IO_IR, compilerOutput.times.irGenerator, true);
 }
 
 void SourceFile::runIROptimizer() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= IR_OPTIMIZER)
     return;
 
   // Skip this stage if optimization is disabled
@@ -398,14 +412,14 @@ void SourceFile::runIROptimizer() {
   if (resourceManager.cliOptions.dumpIR)                                         // GCOV_EXCL_LINE
     tout.println("\nOptimized IR code:\n" + irOptimizer.getOptimizedIRString()); // GCOV_EXCL_LINE
 
-  lastStage = IR_OPTIMIZER;
+  previousStage = IR_OPTIMIZER;
   timer.stop();
   printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irOptimizer, true);
 }
 
 void SourceFile::runObjectEmitter() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= OBJECT_EMITTER)
     return;
 
   Timer timer(&compilerOutput.times.objectEmitter);
@@ -427,7 +441,7 @@ void SourceFile::runObjectEmitter() {
   // Add object file to linker objects
   resourceManager.linker.addObjectFilePath(objectFilePath);
 
-  lastStage = OBJECT_EMITTER;
+  previousStage = OBJECT_EMITTER;
   timer.stop();
   printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, compilerOutput.times.objectEmitter, true);
 }

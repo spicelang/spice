@@ -28,7 +28,7 @@ class EntryNode;
 class ASTNode;
 class Timer;
 
-enum CompileStageType {
+enum CompileStageType : uint8_t {
   NONE,
   LEXER,
   PARSER,
@@ -153,7 +153,7 @@ public:
   std::string objectFilePath;
   bool stdFile = false;
   bool mainFile = true;
-  CompileStageType lastStage = NONE;
+  CompileStageType previousStage = NONE;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
   SourceFile *parent;
