@@ -59,14 +59,14 @@ such things like semantic analysis and type checker.
 
 13. **IR Optimizer** <br>
     Input/Output: IR -> IR <br>
-    Note: Uses the stated optimization level to call the LLVM optimizer. In case of -O0, the IR Optimizer is not called.
+    Note: Uses the stated optimization level to call the LLVM optimizer. In case of -O0, the IR Optimizer is not invoked.
 
 14. **Object Emitter** <br>
     Input/Output: IR -> Object file <br>
     Note: Calls LLVM to emit an object file from the generated IR.
 
 These stages are organized in classes, inheriting from the `CompilerPass` class. This class is responsible for holding
-general information like the current source file, or the global resource manager.
+general information like references to the current source file, or the global resource manager.
 
 When the compilation of a source file is triggered, it calls the stages one after another.
 
@@ -80,14 +80,14 @@ Source file A imports B and C.
 4. AST Builder for A
 5. AST Visualizer for A
 6. Import Collector for A
-   1. Trigger preparation for B
+   1. Trigger compilation of B
       1. Lexer for B
       2. Parser for B
       3. CST Visualizer for B
       4. AST Builder for B
       5. AST Visualizer for B
       6. Import Collector for B
-   2. Trigger preparation for C
+   2. Trigger compilation of C
        1. Lexer for C
        2. Parser for C
        3. CST Visualizer for C
@@ -116,6 +116,7 @@ Source file A imports B and C.
 26. IR Optimizer for A
 27. Object Emitter for A
 
-Note for parallelization: <br>
+## Note for parallelization:
+
 The last three steps (IR Generator, IR Optimizer, Object Emitter) are executed for every source file individually and
-could be potentially parallelized.
+can be parallelized.

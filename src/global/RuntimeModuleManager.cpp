@@ -47,7 +47,7 @@ bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, RuntimeModule
   // Run frontend and type checker for runtime module source file
   const auto runtimeFile = parentSourceFile->dependencies.at(importName).first;
   runtimeFile->runFrontEnd();
-  runtimeFile->runTypeCheckerFirst();
+  runtimeFile->runTypeCheckerPre();
   modules.emplace(requestedModule, runtimeFile);
 
   return true;

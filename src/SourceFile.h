@@ -119,8 +119,8 @@ public:
   void runTypeChecker();
 
 private:
-  void runTypeCheckerFirst();
-  void runTypeCheckerSecond();
+  void runTypeCheckerPre();
+  void runTypeCheckerPost();
 
 public:
   void runBorrowChecker();
@@ -163,6 +163,7 @@ public:
   std::unique_ptr<Scope> globalScope;
   std::unique_ptr<llvm::Module> llvmModule;
   std::unordered_map<std::string, std::pair<SourceFile *, const ASTNode *>> dependencies;
+  std::vector<const SourceFile *> dependants;
   std::unordered_map<std::string, NameRegistryEntry> exportedNameRegistry;
 
 private:
@@ -170,13 +171,15 @@ private:
   GlobalResourceManager &resourceManager;
   BS::synced_stream &tout;
   uint8_t importedRuntimeModules = 0;
+  unsigned short typeCheckerRuns = 0;
 
   // Private methods
+  bool haveAllDependantsBeenTypeChecked() const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
-  void printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out, uint64_t &stageRuntime,
-                          bool fromThread = false) const;
+  void printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out, uint64_t stageRuntime,
+                          bool fromThread = false, unsigned short stageRuns = 0) const;
 };
 
 } // namespace spice::compiler

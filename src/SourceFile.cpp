@@ -243,19 +243,19 @@ void SourceFile::runSymbolTableBuilder() {
 void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
   // We need two runs here due to generics.
   // The first run to determine all concrete substantiations of potentially generic elements
-  runTypeCheckerFirst(); // Visit dependency tree from bottom to top
+  runTypeCheckerPre(); // Visit dependency tree from bottom to top
   // The second run to ensure, also generic scopes are type-checked properly
-  runTypeCheckerSecond(); // Visit dependency tree from top to bottom
+  runTypeCheckerPost(); // Visit dependency tree from top to bottom
 }
 
-void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
+void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
   // Skip if restored from cache or this stage has already been done
   if (restoredFromCache || previousStage >= TYPE_CHECKER_PRE)
     return;
 
   // Type-check all dependencies first
   for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->runTypeCheckerFirst();
+    sourceFile.first->runTypeCheckerPre();
 
   Timer timer(&compilerOutput.times.typeCheckerPre);
   timer.start();
@@ -269,9 +269,9 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
   printStatusMessage("Type Checker Pre", IO_AST, IO_AST, compilerOutput.times.typeCheckerPre);
 }
 
-void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache or this stage has already been done
-  if (restoredFromCache || previousStage >= TYPE_CHECKER_POST)
+void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache, this stage has already been done or not all dependants finished type checking
+  if (restoredFromCache || previousStage >= TYPE_CHECKER_POST || !haveAllDependantsBeenTypeChecked())
     return;
 
   Timer timer(&compilerOutput.times.typeCheckerPost);
@@ -279,21 +279,20 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
 
   // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
   TypeChecker typeChecker(resourceManager, this, TC_MODE_CHECK);
-  unsigned short runNumber = 0;
   do {
-    runNumber++;
+    typeCheckerRuns++;
 
-    // Type-check the current file first, if requested multiple times
+    // Type-check the current file first. Multiple times, if requested
     timer.resume();
     typeChecker.visit(static_cast<EntryNode *>(ast.get()));
     timer.pause();
 
     // Then type-check all dependencies
     for (const auto &[importName, sourceFile] : dependencies)
-      sourceFile.first->runTypeCheckerSecond();
+      sourceFile.first->runTypeCheckerPost();
 
     // GCOV_EXCL_START
-    if (runNumber >= 25)
+    if (typeCheckerRuns >= 25)
       throw CompilerError(TYPE_CHECKER_RUNS_EXCEEDED, "Number of type checker runs for one source file exceeded. Please report "
                                                       "this as a bug on GitHub.");
     // GCOV_EXCL_STOP
@@ -304,7 +303,7 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
 
   previousStage = TYPE_CHECKER_POST;
   timer.stop();
-  printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost);
+  printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost, false, typeCheckerRuns);
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = globalScope->getSymbolTableJSON().dump(/*indent=*/2);
@@ -492,8 +491,8 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runMiddleEnd() {
-  runTypeCheckerFirst();
-  runTypeCheckerSecond();
+  runTypeCheckerPre();
+  runTypeCheckerPost();
   runBorrowChecker();
   runEscapeAnalyzer();
 }
@@ -530,6 +529,9 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
   // Add the dependency
   sourceFile->mainFile = false;
   dependencies.insert({dependencyName, {sourceFile, declNode}});
+
+  // Add the dependant
+  sourceFile->dependants.push_back(this);
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { // NOLINT(misc-no-recursion)
@@ -586,6 +588,11 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
     warning.print();
 }
 
+bool SourceFile::haveAllDependantsBeenTypeChecked() const {
+  return std::all_of(dependants.begin(), dependants.end(),
+                     [=](const SourceFile *dependant) { return dependant->typeCheckerRuns >= 1; });
+}
+
 /**
  * Acquire all publicly visible symbols from the imported source file and put them in the name registry of the current one.
  * Here, we also register privately visible symbols, to know that the symbol exist. The error handling regarding the visibility
@@ -640,14 +647,17 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
 }
 
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,
-                                    uint64_t &stageRuntime, bool fromThread /*=false*/) const {
+                                    uint64_t stageRuntime, bool fromThread /*=false*/, unsigned short stageRuns /*=0*/) const {
   if (resourceManager.cliOptions.printDebugOutput) {
     const char *const compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
     // Build output string
     std::stringstream outputStr;
     outputStr << "[" << stage << "] for " << fileName << ": ";
     outputStr << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
-    outputStr << " (" << std::to_string(stageRuntime) << " ms)\n";
+    outputStr << " (" << std::to_string(stageRuntime) << " ms";
+    if (stageRuns > 0)
+      outputStr << "; " << std::to_string(stageRuns) << " runs";
+    outputStr << ")\n";
     // Print
     if (fromThread) {
       tout.print(outputStr.str());
