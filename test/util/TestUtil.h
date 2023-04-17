@@ -23,12 +23,14 @@ extern bool updateRefs;
 extern bool runBenchmarks;
 extern bool skipNonGitHubTests;
 
+const char *const INPUT_NAME_LINKER_FLAGS = "linker-flags.txt";
+const char *const INPUT_NAME_CLI_FLAGS = "cli-flags.txt";
+
 const char *const REF_NAME_SOURCE = "source.spice";
 const char *const REF_NAME_PARSE_TREE = "parse-tree.dot";
 const char *const REF_NAME_SYNTAX_TREE = "syntax-tree.dot";
 const char *const REF_NAME_SYMBOL_TABLE = "symbol-table.json";
 const char *const REF_NAME_IR = "ir-code.ll";
-const char *const REF_NAME_IR_DEBUG_INFO = "ir-code-dbg.ll";
 const char *const REF_NAME_ASM = "assembly.asm";
 const char *const REF_NAME_OPT_IR[5] = {"ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll"};
 const char *const REF_NAME_EXECUTION_OUTPUT = "cout.out";
@@ -38,8 +40,7 @@ const char *const REF_NAME_EXIT_CODE = "exit-code.out";
 
 const char *const CTL_SKIP_DISABLED = "disabled";
 const char *const CTL_SKIP_GH = "skip-gh-actions";
-const char *const CTL_NAME_LINKER_FLAGS = "linker-flags.txt";
-const char *const CTL_NAME_CLI_FLAGS = "cli-flags.txt";
+const char *const CTL_DEBUG_INFO = "with-debug-info";
 
 struct TestCase {
   const std::string testSuite;

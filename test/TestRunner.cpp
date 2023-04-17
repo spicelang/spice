@@ -102,33 +102,22 @@ void execTestCase(const TestCase &testCase) {
     for (auto &dependency : mainSourceFile->dependencies)
       dependency.second.first->runBackEnd();
 
-    // Execute IR generator
+    // Execute IR generator in normal or debug mode
+    cliOptions.generateDebugInfo = FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_DEBUG_INFO);
     mainSourceFile->runIRGenerator();
 
     // Check unoptimized IR code
     TestUtil::checkRefMatch(
         testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_IR, [&]() { return mainSourceFile->compilerOutput.irString; },
         [&](std::string &expectedOutput, std::string &actualOutput) {
-          // Cut of first n lines to be target independent
+          // Cut of first few lines to be target independent
           TestUtil::eraseIRModuleHeader(expectedOutput);
           TestUtil::eraseIRModuleHeader(actualOutput);
-        });
-
-    // Check unoptimized IR code with debug info
-    TestUtil::checkRefMatch(
-        testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_IR_DEBUG_INFO,
-        [&]() {
-          cliOptions.generateDebugInfo = true;
-          mainSourceFile->runIRGenerator();
-          return mainSourceFile->compilerOutput.irString;
-        },
-        [&](std::string &expectedOutput, std::string &actualOutput) {
-          // Cut of first n lines to be target independent
-          TestUtil::eraseIRModuleHeader(expectedOutput);
-          TestUtil::eraseIRModuleHeader(actualOutput);
-          // Remove the lines, containing paths on the local file system
-          TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
-          TestUtil::eraseLinesBySubstring(actualOutput, " = !DIFile(filename:");
+          if (cliOptions.generateDebugInfo) {
+            // Remove the lines, containing paths on the local file system
+            TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
+            TestUtil::eraseLinesBySubstring(actualOutput, " = !DIFile(filename:");
+          }
         });
 
     // Check optimized IR code
@@ -173,7 +162,7 @@ void execTestCase(const TestCase &testCase) {
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
 
       // Parse linker flags
-      const std::string linkerFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_NAME_LINKER_FLAGS;
+      const std::string linkerFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + INPUT_NAME_LINKER_FLAGS;
       if (FileUtil::fileExists(linkerFlagsFile))
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           resourceManager.linker.addLinkerFlag(linkerFlag);
@@ -191,7 +180,7 @@ void execTestCase(const TestCase &testCase) {
 
       // Execute binary
       std::string cmd = TestUtil::getDefaultExecutableName();
-      const std::string cliFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_NAME_CLI_FLAGS;
+      const std::string cliFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + INPUT_NAME_CLI_FLAGS;
       if (FileUtil::fileExists(cliFlagsFile))
         cmd += " " + TestUtil::getFileContentLinesVector(cliFlagsFile)[0];
       const ExecResult result = FileUtil::exec(cmd);

@@ -32,7 +32,7 @@ f<Size> Counter.getValue() {
  * @param c2 Counter 2
  * @return New counter with the sum of c1 and c2
  */
-f<Counter> operator+(const Counter c1, const Counter c2) {
+f<Counter> operator+(const Counter& c1, const Counter& c2) {
     return Counter(c1.value + c2.value);
 }
 

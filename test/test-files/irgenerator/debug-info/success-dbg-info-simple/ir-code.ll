@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%"__TestStruct__long___rt_string::String_int.0" = type { i64, %__String__charptr_long_long, i32 }
+%"__TestStruct__long___rt_string::String_int" = type { i64, %__String__charptr_long_long, i32 }
 %__String__charptr_long_long = type { ptr, i64, i64 }
 
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"test string\00", align 1
@@ -11,27 +11,27 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 1
 @printf.str.2 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 1
 
-define private %"__TestStruct__long___rt_string::String_int.0" @_f__void__TestStruct__fct__intref(ptr %0) !dbg !6 {
-  %result = alloca %"__TestStruct__long___rt_string::String_int.0", align 8
+define private %"__TestStruct__long___rt_string::String_int" @_f__void__TestStruct__fct__intref(ptr %0) !dbg !6 {
+  %result = alloca %"__TestStruct__long___rt_string::String_int", align 8
   %ref = alloca ptr, align 8
   %2 = alloca %__String__charptr_long_long, align 8
-  %ts = alloca %"__TestStruct__long___rt_string::String_int.0", align 8
+  %ts = alloca %"__TestStruct__long___rt_string::String_int", align 8
   call void @llvm.dbg.declare(metadata ptr %result, metadata !21, metadata !DIExpression()), !dbg !22
   call void @llvm.dbg.declare(metadata ptr %ref, metadata !23, metadata !DIExpression()), !dbg !22
   store ptr %0, ptr %ref, align 8, !dbg !22
   call void @_mp__String__void__ctor__string(ptr %2, ptr @anon.string.0), !dbg !24
-  %3 = getelementptr inbounds %"__TestStruct__long___rt_string::String_int.0", ptr %ts, i32 0, i32 0, !dbg !25
+  %3 = getelementptr inbounds %"__TestStruct__long___rt_string::String_int", ptr %ts, i32 0, i32 0, !dbg !25
   store i64 6, ptr %3, align 8, !dbg !25
   %4 = load %__String__charptr_long_long, ptr %2, align 8, !dbg !25
-  %5 = getelementptr inbounds %"__TestStruct__long___rt_string::String_int.0", ptr %ts, i32 0, i32 1, !dbg !25
+  %5 = getelementptr inbounds %"__TestStruct__long___rt_string::String_int", ptr %ts, i32 0, i32 1, !dbg !25
   store %__String__charptr_long_long %4, ptr %5, align 8, !dbg !25
   %6 = load ptr, ptr %ref, align 8, !dbg !25
   %7 = load i32, ptr %6, align 4, !dbg !25
-  %8 = getelementptr inbounds %"__TestStruct__long___rt_string::String_int.0", ptr %ts, i32 0, i32 2, !dbg !25
+  %8 = getelementptr inbounds %"__TestStruct__long___rt_string::String_int", ptr %ts, i32 0, i32 2, !dbg !25
   call void @llvm.dbg.declare(metadata ptr %ts, metadata !26, metadata !DIExpression()), !dbg !25
   store i32 %7, ptr %8, align 4, !dbg !25
-  %9 = load %"__TestStruct__long___rt_string::String_int.0", ptr %ts, align 8, !dbg !27
-  ret %"__TestStruct__long___rt_string::String_int.0" %9, !dbg !27
+  %9 = load %"__TestStruct__long___rt_string::String_int", ptr %ts, align 8, !dbg !27
+  ret %"__TestStruct__long___rt_string::String_int" %9, !dbg !27
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
@@ -43,22 +43,22 @@ declare void @_mp__String__void__ctor__string(ptr, ptr)
 define dso_local i32 @main() #1 !dbg !28 {
   %result = alloca i32, align 4
   %test = alloca i32, align 4
-  %res = alloca %"__TestStruct__long___rt_string::String_int.0", align 8
+  %res = alloca %"__TestStruct__long___rt_string::String_int", align 8
   call void @llvm.dbg.declare(metadata ptr %result, metadata !31, metadata !DIExpression()), !dbg !32
   store i32 0, ptr %result, align 4, !dbg !32
   call void @llvm.dbg.declare(metadata ptr %test, metadata !33, metadata !DIExpression()), !dbg !34
   store i32 987654, ptr %test, align 4, !dbg !34
-  %1 = call %"__TestStruct__long___rt_string::String_int.0" @_f__void__TestStruct__fct__intref(ptr %test), !dbg !35
-  store %"__TestStruct__long___rt_string::String_int.0" %1, ptr %res, align 8, !dbg !35
+  %1 = call %"__TestStruct__long___rt_string::String_int" @_f__void__TestStruct__fct__intref(ptr %test), !dbg !35
+  store %"__TestStruct__long___rt_string::String_int" %1, ptr %res, align 8, !dbg !35
   call void @llvm.dbg.declare(metadata ptr %res, metadata !36, metadata !DIExpression()), !dbg !35
-  store %"__TestStruct__long___rt_string::String_int.0" %1, ptr %res, align 8, !dbg !35
-  %lng_addr = getelementptr inbounds %"__TestStruct__long___rt_string::String_int.0", ptr %res, i32 0, i32 0, !dbg !37
+  store %"__TestStruct__long___rt_string::String_int" %1, ptr %res, align 8, !dbg !35
+  %lng_addr = getelementptr inbounds %"__TestStruct__long___rt_string::String_int", ptr %res, i32 0, i32 0, !dbg !37
   %2 = load i64, ptr %lng_addr, align 8, !dbg !37
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %2), !dbg !37
-  %4 = getelementptr inbounds %"__TestStruct__long___rt_string::String_int.0", ptr %res, i32 0, i32 1, !dbg !38
+  %4 = getelementptr inbounds %"__TestStruct__long___rt_string::String_int", ptr %res, i32 0, i32 1, !dbg !38
   %5 = call ptr @_mf__String__string__getRaw(ptr %4), !dbg !38
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %5), !dbg !38
-  %i_addr = getelementptr inbounds %"__TestStruct__long___rt_string::String_int.0", ptr %res, i32 0, i32 2, !dbg !39
+  %i_addr = getelementptr inbounds %"__TestStruct__long___rt_string::String_int", ptr %res, i32 0, i32 2, !dbg !39
   %7 = load i32, ptr %i_addr, align 4, !dbg !39
   %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %7), !dbg !39
   %9 = load i32, ptr %result, align 4, !dbg !39
