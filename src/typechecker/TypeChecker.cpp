@@ -1513,6 +1513,9 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
 
     // Retrieve field entry
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
+    if (!fieldEntry)
+      throw SemanticError(node, INVALID_MEMBER_ACCESS,
+                          "The type " + data.thisType.getName() + " does not have a member with the name '" + identifier + "'");
     if (!fieldEntry->getType().isBaseType(TY_STRUCT))
       throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot call a method on '" + identifier + "', since it is no struct");
     fieldEntry->used = true;

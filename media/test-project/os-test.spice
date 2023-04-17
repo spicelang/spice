@@ -1,30 +1,58 @@
+import "std/runtime/iterator_rt";
+
 f<int> main() {
-    String s = String("Hello ");
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append("World!");
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append('?');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.append('!');
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.clear();
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s.reserve(100l);
-    printf("Content: %s\n", s.getRaw());
-    printf("Length: %d\n", s.getLength());
-    printf("Capacity: %d\n\n", s.getCapacity());
-    s = String("");
-    printf("Empty: %d\n", s.isEmpty());
-    s.append('a');
-    printf("Empty: %d", s.isEmpty());
+    // Create test array to iterate over
+    int[5] a = { 123, 4321, 9876, 321, -99 };
+
+    // Test base functionality
+    dyn it = iterate(a, len(a));
+    assert it.isValid();
+    assert it.get() == 123;
+    assert it.get() == 123;
+    it.next();
+    assert it.get() == 4321;
+    assert it.isValid();
+    it.next();
+    dyn pair = it.getIdx();
+    assert pair.getFirst() == 2;
+    assert pair.getSecond() == 9876;
+    it.next();
+
+    // Test overloaded operators
+    it -= 3;
+    assert it.get() == 123;
+    assert it.isValid();
+    it++;
+    assert it.get() == 4321;
+    it--;
+    assert it.get() == 123;
+    it += 4;
+    assert it.get() == -99;
+    it.next();
+    assert !it.isValid();
+
+    // Test foreach value
+    foreach int item : iterate(a, len(a)) {
+        item++;
+    }
+    assert a[0] == 123;
+    assert a[1] == 4321;
+    assert a[2] == 9876;
+
+    // Test foreach ref
+    foreach int& item : iterate(a, len(a)) {
+        item++;
+    }
+    assert a[0] == 124;
+    assert a[1] == 4322;
+    assert a[2] == 9877;
+
+    foreach long idx, int& item : iterate(a, len(a)) {
+        item += idx;
+    }
+    assert a[0] == 124;
+    assert a[1] == 4323;
+    assert a[2] == 9879;
+
+    printf("All assertions passed!");
 }

@@ -1,0 +1,8 @@
+type TestStruct struct {
+    long thisIsNotAStruct
+}
+
+f<int> main() {
+    TestStruct ts;
+    ts.thisIsNotAStruct.testFunc();
+}
