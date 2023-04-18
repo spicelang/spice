@@ -550,18 +550,20 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
 template <size_t N>
 SymbolType OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const char *const fctName,
                                                             const std::array<SymbolType, N> &op, size_t opIdx) {
-  const NameRegistryEntry *registryEntry = typeChecker->sourceFile->getNameRegistryEntry(fctName);
-  if (!registryEntry)
-    return SymbolType(TY_INVALID);
-  Scope *calleeParentScope = registryEntry->targetScope;
-
-  // Get callee
-  const SymbolType thisType(TY_DYN);
-  std::vector<SymbolType> paramTypes(N);
-  paramTypes[0] = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[0]);
-  if constexpr (N == 2)
-    paramTypes[1] = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[1]);
-  Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, thisType, paramTypes, false, node);
+  Scope *calleeParentScope = nullptr;
+  Function *callee = nullptr;
+  for (auto &sourceFile : typeChecker->resourceManager.sourceFiles) {
+    calleeParentScope = sourceFile.second->globalScope.get();
+    // Search for callee in this scope
+    const SymbolType thisType(TY_DYN);
+    std::vector<SymbolType> paramTypes(N);
+    paramTypes[0] = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[0]);
+    if constexpr (N == 2)
+      paramTypes[1] = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[1]);
+    callee = FunctionManager::matchFunction(calleeParentScope, fctName, thisType, paramTypes, false, node);
+    if (callee)
+      break;
+  }
 
   // Return invalid type if the callee was not found
   if (!callee)
