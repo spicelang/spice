@@ -58,20 +58,20 @@ public inline p ArrayIterator.next() {
  *
  * @param it ArrayIterator
  */
-public inline p operator++<I>(ArrayIterator<I>& it) {
+/*public inline p operator++<I>(ArrayIterator<I>& it) {
     assert it.cursor < it.size- 1;
     it.cursor++;
-}
+}*/
 
 /**
  * Move the cursor back by one
  *
  * @param it ArrayIterator
  */
-public inline p operator--<I>(ArrayIterator<I>& it) {
+/*public inline p operator--<I>(ArrayIterator<I>& it) {
     assert it.cursor > 0;
     it.cursor--;
-}
+}*/
 
 /**
  * Advances the cursor by the given offset
@@ -79,11 +79,11 @@ public inline p operator--<I>(ArrayIterator<I>& it) {
  * @param it ArrayIterator
  * @param offset Offset
  */
-public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
+/*public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
     assert it.cursor + offset < it.size;
     assert it.cursor + offset >= 0;
     it.cursor += offset;
-}
+}*/
 
 /**
  * Move the cursor back by the given offset
@@ -91,8 +91,8 @@ public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
  * @param it ArrayIterator
  * @param offset Offset
  */
-public inline p operator-=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
+/*public inline p operator-=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
     assert it.cursor - offset < it.size;
     assert it.cursor - offset >= 0;
     it.cursor -= offset;
-}
+}*/

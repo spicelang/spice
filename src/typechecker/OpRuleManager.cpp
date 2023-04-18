@@ -559,7 +559,7 @@ SymbolType OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   const SymbolType thisType(TY_DYN);
   std::vector<SymbolType> paramTypes(N);
   paramTypes[0] = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[0]);
-  if (N == 2)
+  if constexpr (N == 2)
     paramTypes[1] = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[1]);
   Function *callee = FunctionManager::matchFunction(calleeParentScope, fctName, thisType, paramTypes, false, node);
 
