@@ -104,7 +104,8 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Add to external name registry
   // if a function has overloads, they both refer to the same entry in the registry. So we only register the name once
-  if (!sourceFile->getNameRegistryEntry(node->fctName->fqName))
+  const bool isOperatorFct = node->fctName->overloadedOperator != FctNameNode::OverloadedOperator::OP_NONE;
+  if (!sourceFile->getNameRegistryEntry(node->fctName->fqName) && !isOperatorFct)
     sourceFile->addNameRegistryEntry(node->fctName->fqName, /*entry=*/nullptr, currentScope, /*keepNewOnCollision=*/true);
 
   // Leave the struct scope
@@ -159,7 +160,8 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Add to external name registry
   // if a procedure has overloads, they both refer to the same entry in the registry. So we only register the name once
-  if (!sourceFile->getNameRegistryEntry(node->procName->fqName))
+  const bool isOperatorFct = node->procName->overloadedOperator != FctNameNode::OverloadedOperator::OP_NONE;
+  if (!sourceFile->getNameRegistryEntry(node->procName->fqName) && !isOperatorFct)
     sourceFile->addNameRegistryEntry(node->procName->fqName, /*entry=*/nullptr, currentScope, /*keepNewOnCollision=*/true);
 
   // Leave the struct scope
