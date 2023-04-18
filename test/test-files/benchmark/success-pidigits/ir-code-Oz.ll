@@ -19,9 +19,9 @@ for.body.L19:                                     ; preds = %0, %for.tail.L19
   %t.029 = phi i64 [ 1, %0 ], [ %t.1, %for.tail.L19 ]
   %r.028 = phi i64 [ 0, %0 ], [ %r.1, %for.tail.L19 ]
   %1 = shl i64 %q.033, 2
-  %2 = sub i64 %1, %t.029
-  %3 = add i64 %2, %r.028
-  %4 = mul i64 %t.029, %m.031
+  %2 = sub i64 %r.028, %t.029
+  %3 = add i64 %2, %1
+  %4 = mul i64 %m.031, %t.029
   %5 = icmp slt i64 %3, %4
   br i1 %5, label %if.then.L20, label %if.else.L20
 
@@ -40,7 +40,7 @@ if.exit.L22:                                      ; preds = %if.then.L22, %if.th
   %10 = sub i64 %r.028, %4
   %11 = mul i64 %10, 10
   %12 = mul i64 %q.033, 3
-  %13 = add i64 %r.028, %12
+  %13 = add i64 %12, %r.028
   %14 = mul i64 %13, 10
   %15 = sdiv i64 %14, %t.029
   %.neg = mul i64 %m.031, -10
@@ -48,16 +48,16 @@ if.exit.L22:                                      ; preds = %if.then.L22, %if.th
   br label %for.tail.L19
 
 if.else.L20:                                      ; preds = %for.body.L19
-  %17 = mul i64 %k.030, %q.033
+  %17 = mul i64 %q.033, %k.030
   %18 = shl i64 %q.033, 1
-  %19 = add i64 %r.028, %18
+  %19 = add i64 %18, %r.028
   %20 = mul i64 %19, %x.032
-  %21 = mul i64 %t.029, %x.032
+  %21 = mul i64 %x.032, %t.029
   %22 = add i64 %k.030, 1
   %23 = mul i64 %k.030, 7
   %24 = add i64 %23, 2
-  %25 = mul i64 %24, %q.033
-  %26 = mul i64 %r.028, %x.032
+  %25 = mul i64 %q.033, %24
+  %26 = mul i64 %x.032, %r.028
   %27 = add i64 %25, %26
   %28 = sdiv i64 %27, %21
   %29 = add i64 %x.032, 2

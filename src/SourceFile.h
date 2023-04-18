@@ -28,14 +28,26 @@ class EntryNode;
 class ASTNode;
 class Timer;
 
-enum CompileStageIOType {
-  IO_CODE = 0,
-  IO_TOKENS = 1,
-  IO_CST = 2,
-  IO_AST = 3,
-  IO_IR = 4,
-  IO_OBJECT_FILE = 5,
+enum CompileStageType : uint8_t {
+  NONE,
+  LEXER,
+  PARSER,
+  CST_VISUALIZER,
+  AST_BUILDER,
+  AST_OPTIMIZER,
+  AST_VISUALIZER,
+  IMPORT_COLLECTOR,
+  SYMBOL_TABLE_BUILDER,
+  TYPE_CHECKER_PRE,
+  TYPE_CHECKER_POST,
+  BORROW_CHECKER,
+  ESCAPE_ANALYZER,
+  IR_GENERATOR,
+  IR_OPTIMIZER,
+  OBJECT_EMITTER
 };
+
+enum CompileStageIOType { IO_CODE, IO_TOKENS, IO_CST, IO_AST, IO_IR, IO_OBJECT_FILE };
 
 struct SourceFileAntlrCtx {
   // Create error handlers for lexer and parser
@@ -107,8 +119,8 @@ public:
   void runTypeChecker();
 
 private:
-  void runTypeCheckerFirst();
-  void runTypeCheckerSecond();
+  void runTypeCheckerPre();
+  void runTypeCheckerPost();
 
 public:
   void runBorrowChecker();
@@ -125,17 +137,13 @@ public:
   void runBackEnd();
 
   // Public methods
-  [[nodiscard]] std::shared_ptr<SourceFile> createSourceFile(const std::string &dependencyName, const std::string &path,
-                                                             bool isStdFile);
-  void addDependency(const std::shared_ptr<SourceFile> &sourceFile, const ASTNode *declNode, const std::string &name,
-                     const std::string &path);
+  void addDependency(SourceFile *sourceFile, const ASTNode *declNode, const std::string &dependencyName, const std::string &path);
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
-  void collectAndPrintWarnings();
-  void collectAllSourceFiles(std::vector<SourceFile *> &sourceFiles);
   void requestRuntimeModule(RuntimeModule runtimeModule);
-  void addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true,
+  void addNameRegistryEntry(const std::string &symbolName, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true,
                             SymbolTableEntry *importEntry = nullptr, const std::string &predecessorName = "");
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
+  void collectAndPrintWarnings();
 
   // Public fields
   std::string name;
@@ -145,6 +153,7 @@ public:
   std::string objectFilePath;
   bool stdFile = false;
   bool mainFile = true;
+  CompileStageType previousStage = NONE;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;
   SourceFile *parent;
@@ -153,7 +162,8 @@ public:
   std::unique_ptr<EntryNode> ast;
   std::unique_ptr<Scope> globalScope;
   std::unique_ptr<llvm::Module> llvmModule;
-  std::unordered_map<std::string, std::pair<std::shared_ptr<SourceFile>, const ASTNode *>> dependencies;
+  std::unordered_map<std::string, std::pair<SourceFile *, const ASTNode *>> dependencies;
+  std::vector<const SourceFile *> dependants;
   std::unordered_map<std::string, NameRegistryEntry> exportedNameRegistry;
 
 private:
@@ -161,13 +171,15 @@ private:
   GlobalResourceManager &resourceManager;
   BS::synced_stream &tout;
   uint8_t importedRuntimeModules = 0;
+  unsigned short typeCheckerRuns = 0;
 
   // Private methods
+  bool haveAllDependantsBeenTypeChecked() const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
-  void printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out, uint64_t &stageRuntime,
-                          bool fromThread = false) const;
+  void printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out, uint64_t stageRuntime,
+                          bool fromThread = false, unsigned short stageRuns = 0) const;
 };
 
 } // namespace spice::compiler

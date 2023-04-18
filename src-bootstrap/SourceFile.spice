@@ -122,11 +122,11 @@ public p SourceFile.runTypeChecker() {
 
 }
 
-p SourceFile.runTypeCheckerFirst() {
+p SourceFile.runTypeCheckerPre() {
 
 }
 
-p SourceFile.runTypeCheckerSecond() {
+p SourceFile.runTypeCheckerPost() {
 
 }
 

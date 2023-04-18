@@ -31,17 +31,21 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
                        bool stdFile)
     : resourceManager(resourceManager), tout(resourceManager.tout), name(std::move(name)), filePath(filePath), stdFile(stdFile),
       parent(parent) {
-  this->objectFilePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
+  objectFilePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
+
+  if (mainFile)
+    resourceManager.totalTimer.start();
 
   // Deduce fileName and fileDir
   fileName = std::filesystem::path(filePath).filename().string();
   fileDir = std::filesystem::path(filePath).parent_path().string();
-
-  if (mainFile)
-    resourceManager.totalTimer.start();
 }
 
 void SourceFile::runLexer() {
+  // Check if this stage has already been done
+  if (previousStage >= LEXER)
+    return;
+
   Timer timer(&compilerOutput.times.lexer);
   timer.start();
 
@@ -51,8 +55,8 @@ void SourceFile::runLexer() {
     throw CompilerError(SOURCE_FILE_NOT_FOUND, "Source file at path '" + filePath + "' does not exist.");
 
   // Create error handlers for lexer and parser
-  antlrCtx.lexerErrorHandler = std::make_unique<AntlrThrowingErrorListener>(LEXER);
-  antlrCtx.parserErrorHandler = std::make_unique<AntlrThrowingErrorListener>(PARSER);
+  antlrCtx.lexerErrorHandler = std::make_unique<AntlrThrowingErrorListener>(MODE_LEXER);
+  antlrCtx.parserErrorHandler = std::make_unique<AntlrThrowingErrorListener>(MODE_PARSER);
 
   // Tokenize input
   antlrCtx.inputStream = std::make_unique<antlr4::ANTLRInputStream>(fileInputStream);
@@ -70,13 +74,14 @@ void SourceFile::runLexer() {
   if (!resourceManager.cliOptions.ignoreCache)
     restoredFromCache = resourceManager.cacheManager.lookupSourceFile(this);
 
+  previousStage = LEXER;
   timer.stop();
   printStatusMessage("Lexer", IO_CODE, IO_TOKENS, compilerOutput.times.lexer);
 }
 
 void SourceFile::runParser() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= PARSER)
     return;
 
   Timer timer(&compilerOutput.times.parser);
@@ -88,6 +93,7 @@ void SourceFile::runParser() {
   antlrCtx.parser->addErrorListener(antlrCtx.parserErrorHandler.get());
   antlrCtx.parser->removeParseListeners();
 
+  previousStage = PARSER;
   timer.stop();
   printStatusMessage("Parser", IO_TOKENS, IO_CST, compilerOutput.times.parser);
 }
@@ -95,6 +101,9 @@ void SourceFile::runParser() {
 void SourceFile::runCSTVisualizer() {
   // Only execute if enabled
   if (restoredFromCache || (!resourceManager.cliOptions.dumpCST && !resourceManager.cliOptions.testMode))
+    return;
+  // Check if this stage has already been done
+  if (previousStage >= CST_VISUALIZER)
     return;
 
   Timer timer(&compilerOutput.times.cstVisualizer);
@@ -114,13 +123,14 @@ void SourceFile::runCSTVisualizer() {
       visualizerOutput("CST", compilerOutput.cstString);
   }
 
+  previousStage = CST_VISUALIZER;
   timer.stop();
   printStatusMessage("CST Visualizer", IO_CST, IO_CST, compilerOutput.times.cstVisualizer);
 }
 
 void SourceFile::runASTBuilder() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= AST_BUILDER)
     return;
 
   Timer timer(&compilerOutput.times.astBuilder);
@@ -137,13 +147,14 @@ void SourceFile::runASTBuilder() {
   // Create global scope
   globalScope = std::make_unique<Scope>(nullptr, this, SCOPE_GLOBAL, &ast->codeLoc);
 
+  previousStage = AST_BUILDER;
   timer.stop();
   printStatusMessage("AST Builder", IO_CST, IO_AST, compilerOutput.times.astBuilder);
 }
 
 void SourceFile::runASTOptimizer() {
-  // Only execute if enabled
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= AST_OPTIMIZER)
     return;
 
   Timer timer(&compilerOutput.times.astOptimizer);
@@ -152,6 +163,7 @@ void SourceFile::runASTOptimizer() {
   ASTOptimizer astOptimizer(resourceManager, this);
   astOptimizer.visit(static_cast<EntryNode *>(ast.get()));
 
+  previousStage = AST_OPTIMIZER;
   timer.stop();
   printStatusMessage("AST Optimizer", IO_AST, IO_AST, compilerOutput.times.astOptimizer);
 }
@@ -159,6 +171,9 @@ void SourceFile::runASTOptimizer() {
 void SourceFile::runASTVisualizer() {
   // Only execute if enabled
   if (restoredFromCache || (!resourceManager.cliOptions.dumpAST && !resourceManager.cliOptions.testMode))
+    return;
+  // Check if this stage has already been done
+  if (previousStage >= AST_VISUALIZER)
     return;
 
   Timer timer(&compilerOutput.times.astVisualizer);
@@ -177,13 +192,14 @@ void SourceFile::runASTVisualizer() {
       visualizerOutput("AST", compilerOutput.astString);
   }
 
+  previousStage = AST_VISUALIZER;
   timer.stop();
   printStatusMessage("AST Visualizer", IO_AST, IO_AST, compilerOutput.times.astVisualizer);
 }
 
 void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= IMPORT_COLLECTOR)
     return;
 
   Timer timer(&compilerOutput.times.importCollector);
@@ -193,6 +209,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
   ImportCollector importCollector(resourceManager, this);
   importCollector.visit(static_cast<EntryNode *>(ast.get()));
 
+  previousStage = IMPORT_COLLECTOR;
   timer.stop();
 
   // Run first part of pipeline for the imported source file
@@ -203,8 +220,8 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runSymbolTableBuilder() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= SYMBOL_TABLE_BUILDER)
     return;
 
   Timer timer(&compilerOutput.times.symbolTableBuilder);
@@ -218,6 +235,7 @@ void SourceFile::runSymbolTableBuilder() {
   SymbolTableBuilder symbolTableBuilder(resourceManager, this);
   symbolTableBuilder.visit(static_cast<EntryNode *>(ast.get()));
 
+  previousStage = SYMBOL_TABLE_BUILDER;
   timer.stop();
   printStatusMessage("Symbol Table Builder", IO_AST, IO_AST, compilerOutput.times.symbolTableBuilder);
 }
@@ -225,19 +243,19 @@ void SourceFile::runSymbolTableBuilder() {
 void SourceFile::runTypeChecker() { // NOLINT(misc-no-recursion)
   // We need two runs here due to generics.
   // The first run to determine all concrete substantiations of potentially generic elements
-  runTypeCheckerFirst(); // Visit dependency tree from bottom to top
+  runTypeCheckerPre(); // Visit dependency tree from bottom to top
   // The second run to ensure, also generic scopes are type-checked properly
-  runTypeCheckerSecond(); // Visit dependency tree from top to bottom
+  runTypeCheckerPost(); // Visit dependency tree from top to bottom
 }
 
-void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
+void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= TYPE_CHECKER_PRE)
     return;
 
   // Type-check all dependencies first
   for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->runTypeCheckerFirst();
+    sourceFile.first->runTypeCheckerPre();
 
   Timer timer(&compilerOutput.times.typeCheckerPre);
   timer.start();
@@ -246,13 +264,14 @@ void SourceFile::runTypeCheckerFirst() { // NOLINT(misc-no-recursion)
   TypeChecker typeChecker(resourceManager, this, TC_MODE_PREPARE);
   typeChecker.visit(static_cast<EntryNode *>(ast.get()));
 
+  previousStage = TYPE_CHECKER_PRE;
   timer.stop();
   printStatusMessage("Type Checker Pre", IO_AST, IO_AST, compilerOutput.times.typeCheckerPre);
 }
 
-void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
+void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
+  // Skip if restored from cache, this stage has already been done or not all dependants finished type checking
+  if (restoredFromCache || previousStage >= TYPE_CHECKER_POST || !haveAllDependantsBeenTypeChecked())
     return;
 
   Timer timer(&compilerOutput.times.typeCheckerPost);
@@ -260,21 +279,20 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
 
   // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
   TypeChecker typeChecker(resourceManager, this, TC_MODE_CHECK);
-  unsigned short runNumber = 0;
   do {
-    runNumber++;
+    typeCheckerRuns++;
 
-    // Type-check the current file first, if requested multiple times
+    // Type-check the current file first. Multiple times, if requested
     timer.resume();
     typeChecker.visit(static_cast<EntryNode *>(ast.get()));
     timer.pause();
 
     // Then type-check all dependencies
     for (const auto &[importName, sourceFile] : dependencies)
-      sourceFile.first->runTypeCheckerSecond();
+      sourceFile.first->runTypeCheckerPost();
 
     // GCOV_EXCL_START
-    if (runNumber >= 25)
+    if (typeCheckerRuns >= 25)
       throw CompilerError(TYPE_CHECKER_RUNS_EXCEEDED, "Number of type checker runs for one source file exceeded. Please report "
                                                       "this as a bug on GitHub.");
     // GCOV_EXCL_STOP
@@ -283,8 +301,9 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
   // Check if all dyn variables were type-inferred successfully
   globalScope->checkSuccessfulTypeInference();
 
+  previousStage = TYPE_CHECKER_POST;
   timer.stop();
-  printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost);
+  printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost, false, typeCheckerRuns);
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = globalScope->getSymbolTableJSON().dump(/*indent=*/2);
@@ -297,8 +316,12 @@ void SourceFile::runTypeCheckerSecond() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= BORROW_CHECKER)
+    return;
+
+  // Check if this stage has already been done
+  if (previousStage >= BORROW_CHECKER)
     return;
 
   // Borrow-check all dependencies first
@@ -312,13 +335,14 @@ void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
   BorrowChecker borrowChecker(resourceManager, this);
   borrowChecker.visit(static_cast<EntryNode *>(ast.get()));
 
+  previousStage = BORROW_CHECKER;
   timer.stop();
   printStatusMessage("Borrow Checker", IO_AST, IO_AST, compilerOutput.times.borrowChecker);
 }
 
 void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= ESCAPE_ANALYZER)
     return;
 
   // Escape-analyze all dependencies first
@@ -332,13 +356,14 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
   EscapeAnalyzer escapeAnalyzer(resourceManager, this);
   escapeAnalyzer.visit(static_cast<EntryNode *>(ast.get()));
 
+  previousStage = ESCAPE_ANALYZER;
   timer.stop();
   printStatusMessage("Escape Analyzer", IO_AST, IO_AST, compilerOutput.times.escapeAnalyzer);
 }
 
 void SourceFile::runIRGenerator() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= IR_GENERATOR)
     return;
 
   Timer timer(&compilerOutput.times.irGenerator);
@@ -358,13 +383,14 @@ void SourceFile::runIRGenerator() {
   if (resourceManager.cliOptions.dumpIR)                                  // GCOV_EXCL_LINE
     tout.println("\nUnoptimized IR code:\n" + irGenerator.getIRString()); // GCOV_EXCL_LINE
 
+  previousStage = IR_GENERATOR;
   timer.stop();
   printStatusMessage("IR Generator", IO_AST, IO_IR, compilerOutput.times.irGenerator, true);
 }
 
 void SourceFile::runIROptimizer() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= IR_OPTIMIZER)
     return;
 
   // Skip this stage if optimization is disabled
@@ -385,13 +411,14 @@ void SourceFile::runIROptimizer() {
   if (resourceManager.cliOptions.dumpIR)                                         // GCOV_EXCL_LINE
     tout.println("\nOptimized IR code:\n" + irOptimizer.getOptimizedIRString()); // GCOV_EXCL_LINE
 
+  previousStage = IR_OPTIMIZER;
   timer.stop();
   printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irOptimizer, true);
 }
 
 void SourceFile::runObjectEmitter() {
-  // Skip if restored from cache
-  if (restoredFromCache)
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= OBJECT_EMITTER)
     return;
 
   Timer timer(&compilerOutput.times.objectEmitter);
@@ -413,6 +440,7 @@ void SourceFile::runObjectEmitter() {
   // Add object file to linker objects
   resourceManager.linker.addObjectFilePath(objectFilePath);
 
+  previousStage = OBJECT_EMITTER;
   timer.stop();
   printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, compilerOutput.times.objectEmitter, true);
 }
@@ -463,8 +491,8 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
 }
 
 void SourceFile::runMiddleEnd() {
-  runTypeCheckerFirst();
-  runTypeCheckerSecond();
+  runTypeCheckerPre();
+  runTypeCheckerPost();
   runBorrowChecker();
   runEscapeAnalyzer();
 }
@@ -492,13 +520,8 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   }
 }
 
-std::shared_ptr<SourceFile> SourceFile::createSourceFile(const std::string &dependencyName, const std::string &path,
-                                                         bool isStdFile) {
-  return std::make_shared<SourceFile>(resourceManager, this, dependencyName, path, isStdFile);
-}
-
-void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, const ASTNode *declNode,
-                               const std::string &dependencyName, const std::string &path) {
+void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, const std::string &dependencyName,
+                               const std::string &path) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(path))
     throw SemanticError(declNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + path + "'");
@@ -506,6 +529,9 @@ void SourceFile::addDependency(const std::shared_ptr<SourceFile> &sourceFile, co
   // Add the dependency
   sourceFile->mainFile = false;
   dependencies.insert({dependencyName, {sourceFile, declNode}});
+
+  // Add the dependant
+  sourceFile->dependants.push_back(this);
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { // NOLINT(misc-no-recursion)
@@ -516,28 +542,6 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { //
   return parent != nullptr && parent->isAlreadyImported(filePathSearch);
 }
 
-void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
-  // Print warnings for all dependencies
-  for (const auto &dependency : dependencies) {
-    if (!dependency.second.first->stdFile)
-      dependency.second.first->collectAndPrintWarnings();
-  }
-  // Collect warnings for this file
-  globalScope->collectWarnings(compilerOutput.warnings);
-  // Print warnings for this file
-  for (const CompilerWarning &warning : compilerOutput.warnings)
-    warning.print();
-}
-
-void SourceFile::collectAllSourceFiles(std::vector<SourceFile *> &sourceFiles) { // NOLINT(misc-no-recursion)
-  // Add this source file. Don't add the main source file
-  if (!mainFile)
-    sourceFiles.push_back(this);
-  // Add all dependencies
-  for (const auto &dependency : dependencies)
-    dependency.second.first->collectAllSourceFiles(sourceFiles);
-}
-
 void SourceFile::requestRuntimeModule(RuntimeModule runtimeModule) {
   // Check if the module was already imported
   if (importedRuntimeModules & runtimeModule)
@@ -546,13 +550,13 @@ void SourceFile::requestRuntimeModule(RuntimeModule runtimeModule) {
   resourceManager.runtimeModuleManager.requestModule(this, runtimeModule);
 }
 
-void SourceFile::addNameRegistryEntry(const std::string &name, SymbolTableEntry *entry, Scope *scope,
+void SourceFile::addNameRegistryEntry(const std::string &symbolName, SymbolTableEntry *entry, Scope *scope,
                                       bool keepNewOnCollision /*=true*/, SymbolTableEntry *importEntry /*=nullptr*/,
                                       const std::string &predecessorName /*=""*/) {
-  if (keepNewOnCollision || !exportedNameRegistry.contains(name)) // Overwrite potential existing entry
-    exportedNameRegistry[name] = {name, entry, scope, importEntry, predecessorName};
+  if (keepNewOnCollision || !exportedNameRegistry.contains(symbolName)) // Overwrite potential existing entry
+    exportedNameRegistry[symbolName] = {symbolName, entry, scope, importEntry, predecessorName};
   else // Name collision => we must remove the existing entry
-    exportedNameRegistry.erase(name);
+    exportedNameRegistry.erase(symbolName);
 }
 
 const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName) const {
@@ -569,6 +573,24 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName
   } while (!symbolName.empty());
 
   return registryEntry;
+}
+
+void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
+  // Print warnings for all dependencies
+  for (const auto &dependency : dependencies) {
+    if (!dependency.second.first->stdFile)
+      dependency.second.first->collectAndPrintWarnings();
+  }
+  // Collect warnings for this file
+  globalScope->collectWarnings(compilerOutput.warnings);
+  // Print warnings for this file
+  for (const CompilerWarning &warning : compilerOutput.warnings)
+    warning.print();
+}
+
+bool SourceFile::haveAllDependantsBeenTypeChecked() const {
+  return std::all_of(dependants.begin(), dependants.end(),
+                     [=](const SourceFile *dependant) { return dependant->typeCheckerRuns >= 1; });
 }
 
 /**
@@ -625,14 +647,17 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
 }
 
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,
-                                    uint64_t &stageRuntime, bool fromThread /*=false*/) const {
+                                    uint64_t stageRuntime, bool fromThread /*=false*/, unsigned short stageRuns /*=0*/) const {
   if (resourceManager.cliOptions.printDebugOutput) {
     const char *const compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
     // Build output string
     std::stringstream outputStr;
     outputStr << "[" << stage << "] for " << fileName << ": ";
     outputStr << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
-    outputStr << " (" << std::to_string(stageRuntime) << " ms)\n";
+    outputStr << " (" << std::to_string(stageRuntime) << " ms";
+    if (stageRuns > 0)
+      outputStr << "; " << std::to_string(stageRuns) << " runs";
+    outputStr << ")\n";
     // Print
     if (fromThread) {
       tout.print(outputStr.str());

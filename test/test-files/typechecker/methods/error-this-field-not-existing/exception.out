@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/methods/error-this-field-not-existing/source.spice:9:5:
+Member access is only allowed on structs and Strings: The type TestStruct does not have a member with the name 'nonExisting'
+
+9  ts.f3.f3.nonExisting.testFunc();
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

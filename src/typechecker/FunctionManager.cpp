@@ -182,7 +182,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       const SymbolType &thisType = candidate.thisType;
       if (!thisType.is(TY_DYN)) {
         // Update struct scope of 'this' type to the substantiated struct scope
-        std::vector<SymbolType> concreteTemplateTypes = {};
+        std::vector<SymbolType> concreteTemplateTypes;
         if (!thisType.hasAnyGenericParts())
           concreteTemplateTypes = thisType.getTemplateTypes();
         const std::string structSignature = Struct::getSignature(thisType.getSubType(), concreteTemplateTypes);

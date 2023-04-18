@@ -2,6 +2,7 @@ import "std/iterator/iterable";
 
 // Generic type definitions
 type I dyn;
+type Numeric int|long|short;
 
 /**
  * A ArrayIterator in Spice can be used to iterate over an arbitrary array
@@ -30,7 +31,9 @@ public inline f<I&> ArrayIterator.get() {
 }
 
 public inline f<Pair<unsigned long, I&>> ArrayIterator.getIdx() {
-    return Pair<unsigned long, I&>(this.cursor, this.array[this.cursor]);
+    unsafe {
+        return Pair<unsigned long, I&>(this.cursor, this.array[this.cursor]);
+    }
 }
 
 /**
@@ -56,7 +59,7 @@ public inline p ArrayIterator.next() {
  * @param it ArrayIterator
  */
 /*public inline p operator++<I>(ArrayIterator<I>& it) {
-    assert it.cursor < it.vector.getSize() - 1;
+    assert it.cursor < it.size- 1;
     it.cursor++;
 }*/
 
@@ -68,4 +71,28 @@ public inline p ArrayIterator.next() {
 /*public inline p operator--<I>(ArrayIterator<I>& it) {
     assert it.cursor > 0;
     it.cursor--;
+}*/
+
+/**
+ * Advances the cursor by the given offset
+ *
+ * @param it ArrayIterator
+ * @param offset Offset
+ */
+/*public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
+    assert it.cursor + offset < it.size;
+    assert it.cursor + offset >= 0;
+    it.cursor += offset;
+}*/
+
+/**
+ * Move the cursor back by the given offset
+ *
+ * @param it ArrayIterator
+ * @param offset Offset
+ */
+/*public inline p operator-=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
+    assert it.cursor - offset < it.size;
+    assert it.cursor - offset >= 0;
+    it.cursor -= offset;
 }*/

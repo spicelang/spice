@@ -1,0 +1,10 @@
+type TestStruct struct {
+    long f1
+    int f2
+    TestStruct* f3
+}
+
+f<int> main() {
+    TestStruct ts;
+    ts.f3.f3.nonExisting.testFunc();
+}

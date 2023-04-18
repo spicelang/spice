@@ -1232,7 +1232,7 @@ std::any TypeChecker::visitValue(ValueNode *node) {
     return ExprResult{node->setEvaluatedSymbolType(nilType, manIdx)};
   }
 
-  throw CompilerError(UNHANDLED_BRANCH, "Value fall-through");
+  throw CompilerError(UNHANDLED_BRANCH, "Value fall-through"); // GCOV_EXCL_LINE
 }
 
 std::any TypeChecker::visitConstant(ConstantNode *node) {
@@ -1262,8 +1262,8 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   case ConstantNode::TYPE_BOOL:
     superType = TY_BOOL;
     break;
-  default:
-    throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through");
+  default:                                                          // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
   }
 
   // Create symbol type
@@ -1513,6 +1513,9 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
 
     // Retrieve field entry
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
+    if (!fieldEntry)
+      throw SemanticError(node, INVALID_MEMBER_ACCESS,
+                          "The type " + data.thisType.getName() + " does not have a member with the name '" + identifier + "'");
     if (!fieldEntry->getType().isBaseType(TY_STRUCT))
       throw SemanticError(node, INVALID_MEMBER_ACCESS, "Cannot call a method on '" + identifier + "', since it is no struct");
     fieldEntry->used = true;
@@ -1740,7 +1743,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       type = type.toArray(node, typeModifier.hardcodedSize);
       break;
     }
-    default:
+    default:                                                               // GCOV_EXCL_LINE
       throw CompilerError(UNHANDLED_BRANCH, "Modifier type fall-through"); // GCOV_EXCL_LINE
     }
     tmQueue.pop();

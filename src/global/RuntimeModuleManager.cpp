@@ -41,14 +41,14 @@ bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, RuntimeModule
   if (filePath == parentSourceFile->filePath)
     return false;
 
-  const auto moduleSourceFile = parentSourceFile->createSourceFile(importName, filePath, true);
+  const auto moduleSourceFile = resourceManager.createSourceFile(parentSourceFile, importName, filePath, true);
   parentSourceFile->addDependency(moduleSourceFile, parentSourceFile->ast.get(), importName, filePath);
 
   // Run frontend and type checker for runtime module source file
   const auto runtimeFile = parentSourceFile->dependencies.at(importName).first;
   runtimeFile->runFrontEnd();
-  runtimeFile->runTypeChecker();
-  modules.emplace(requestedModule, runtimeFile.get());
+  runtimeFile->runTypeCheckerPre();
+  modules.emplace(requestedModule, runtimeFile);
 
   return true;
 }
