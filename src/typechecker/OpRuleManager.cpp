@@ -552,9 +552,13 @@ SymbolType OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
                                                             const std::array<SymbolType, N> &op, size_t opIdx) {
   Scope *calleeParentScope = nullptr;
   Function *callee = nullptr;
-  for (auto &sourceFile : typeChecker->resourceManager.sourceFiles) {
-    calleeParentScope = sourceFile.second->globalScope.get();
-    // Search for callee in this scope
+  for (auto &[_, sourceFile] : typeChecker->resourceManager.sourceFiles) {
+    // Check if there is a registered operator function
+    if (!sourceFile->getNameRegistryEntry(fctName))
+      continue;
+
+    // Match callees in the global scope of this source file
+    calleeParentScope = sourceFile->globalScope.get();
     const SymbolType thisType(TY_DYN);
     std::vector<SymbolType> paramTypes(N);
     paramTypes[0] = typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[0]);

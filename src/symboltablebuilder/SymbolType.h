@@ -58,7 +58,6 @@ class SymbolType {
 public:
   // Unions
   union TypeChainElementData {
-    // Union fields
     size_t arraySize = 0; // TY_ARRAY
     Scope *bodyScope;     // TY_STRUCT, TY_INTERFACE, TY_ENUM
 
@@ -177,7 +176,7 @@ public:
   [[nodiscard]] bool hasAnyGenericParts() const;
   void setTemplateTypes(const std::vector<SymbolType> &templateTypes);
   void setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes);
-  [[nodiscard]] inline const std::vector<SymbolType> &getTemplateTypes() const { return typeChain.back().templateTypes; }
+  [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const;
   [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
   [[nodiscard]] size_t getArraySize() const;

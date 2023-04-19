@@ -1885,7 +1885,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 }
 
 SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const {
-  // Skip all types, exception structs, interfaces and enums
+  // Skip all types, except structs
   if (!symbolType.getBaseType().is(TY_STRUCT))
     return symbolType;
 
@@ -1912,7 +1912,7 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
 }
 
 SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const {
-  // Skip all types, exception structs, interfaces and enums
+  // Skip all types, except structs
   if (!symbolType.getBaseType().is(TY_STRUCT))
     return symbolType;
 
