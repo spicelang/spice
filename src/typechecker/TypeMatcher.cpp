@@ -2,6 +2,8 @@
 
 #include "TypeMatcher.h"
 
+#include <symboltablebuilder/Scope.h>
+
 namespace spice::compiler {
 
 #pragma clang diagnostic push
@@ -58,6 +60,12 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
       return true; // The type was successfully matched, by enriching the type mapping
     }
   } else { // The candidate type itself is non-generic, but one or several template types are
+    // Check if supertype and subtype are equal
+    if (requestedType.getSuperType() != candidateType.getSuperType() ||
+        requestedType.getOriginalSubType() != candidateType.getOriginalSubType() ||
+        requestedType.getBodyScope()->parent != candidateType.getBodyScope()->parent)
+      return false;
+
     const std::vector<SymbolType> &requestedTypeTemplateTypes = requestedType.getTemplateTypes();
     const std::vector<SymbolType> &candidateTypeTemplateTypes = candidateType.getTemplateTypes();
 

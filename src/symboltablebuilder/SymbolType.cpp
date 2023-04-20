@@ -280,6 +280,13 @@ void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTyp
   typeChain.front().templateTypes = templateTypes;
 }
 
+/**
+ * Retrieve template types of the current type
+ *
+ * @return Vector of template types
+ */
+const std::vector<SymbolType> &SymbolType::getTemplateTypes() const { return typeChain.back().templateTypes; }
+
 bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const {
   const SymbolType baseType = getBaseType();
   // Check if the symbol type itself is generic
