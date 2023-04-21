@@ -154,9 +154,9 @@ public f<long> Vector.getSize() {
  *
  * @return Current capacity of the vector
  */
- public f<long> Vector.getCapacity() {
-     return this.capacity;
- }
+public f<long> Vector.getCapacity() {
+    return this.capacity;
+}
 
 /**
  * Frees allocated memory that is not used by the queue
