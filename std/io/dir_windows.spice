@@ -1,5 +1,3 @@
-//import "std/os/os" as os;
-
 // File permission modes
 public const int MODE_ALL_RWX   = 0o0000777;
 public const int MODE_ALL_RW    = 0o0000666;

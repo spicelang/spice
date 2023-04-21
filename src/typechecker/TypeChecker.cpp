@@ -146,7 +146,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Change to foreach body scope
   changeToScope(node->bodyScope, SCOPE_FOREACH_BODY);
 
-  // Check type of the array
+  // Check iterator type
   SymbolType iteratorType = std::any_cast<ExprResult>(visit(node->iteratorAssign())).type;
   if (!iteratorType.isIterator(node))
     throw SemanticError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE,

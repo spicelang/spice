@@ -1,4 +1,4 @@
-import "socket_linux" as sock;
+import "socket_linux";
 
 const string SERVER_IDENT = "Spice HTTP Server/0.0.0";
 const unsigned int CONNECTIONS_LIMIT = 50;
@@ -14,7 +14,7 @@ public const unsigned short HTTPS_PORT_DEFAULT = 443s;
  * Struct, representing a simple HTTP server
  */
 public type HttpServer struct {
-    sock::Socket socket // Underlying TCP socket
+    Socket socket       // Underlying TCP socket
     unsigned short port // Exposed port
     bool initialized    // true if the server was initialized
 }
@@ -35,7 +35,7 @@ public f<bool> HttpServer.start() {
     if !this.initialized { return false; }
 
     // Setup TCP socket
-    this.socket = sock.openServerSocket(this.port, CONNECTIONS_LIMIT);
+    this.socket = openServerSocket(this.port, CONNECTIONS_LIMIT);
 
 }
 

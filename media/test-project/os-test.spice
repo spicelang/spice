@@ -4,11 +4,9 @@ f<int> main() {
     // Create test array to iterate over
     int[5] a = { 123, 4321, 9876, 321, -99 };
 
-    // Test base functionality
-    dyn it = iterate(a, len(a));
-
-    // Test overloaded operators
-    it += 3;
+    foreach int& aItem : iterate(a, len(a)) {
+        printf("%d\n", aItem);
+    }
 
     printf("All assertions passed!");
 }

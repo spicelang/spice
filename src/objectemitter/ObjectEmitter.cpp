@@ -13,13 +13,13 @@ namespace spice::compiler {
 void ObjectEmitter::emit() const {
   const std::string &objectFile = sourceFile->objectFilePath;
 
-  // Lock the mutex
-  resourceManager.objectEmitLock.lock();
-
   // GCOV_EXCL_START
   if (cliOptions.printDebugOutput && cliOptions.dumpAssembly)
     resourceManager.tout.println("\nEmitting object file for triplet '" + cliOptions.targetTriple + "' to path: " + objectFile);
   // GCOV_EXCL_STOP
+
+  // Lock the mutex
+  resourceManager.objectEmitLock.lock();
 
   // Open file output stream
   std::error_code errorCode;
@@ -43,10 +43,11 @@ void ObjectEmitter::emit() const {
 }
 
 std::string ObjectEmitter::getASMString() const {
-  const std::string assemblyPath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + "assembly.asm";
+  const std::string asmFile = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + "assembly.asm";
   std::error_code errorCode;
-  llvm::raw_fd_ostream ostream(assemblyPath, errorCode);
-  assert(!ostream.has_error());
+  llvm::raw_fd_ostream ostream(asmFile, errorCode, llvm::sys::fs::OF_None);
+  if (errorCode)                                                                        // GCOV_EXCL_LINE
+    throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + asmFile + "' could not be opened"); // GCOV_EXCL_LINE
 
   llvm::legacy::PassManager passManager;
   // GCOV_EXCL_START
@@ -60,7 +61,7 @@ std::string ObjectEmitter::getASMString() const {
   ostream.flush();
 
   // Read contents of temp file to return it
-  std::ifstream inputStream(assemblyPath);
+  std::ifstream inputStream(asmFile);
   assert(inputStream.good());
   std::stringstream buffer;
   buffer << inputStream.rdbuf();

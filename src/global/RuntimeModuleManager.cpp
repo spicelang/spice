@@ -57,8 +57,10 @@ ModuleNamePair RuntimeModuleManager::resolveNamePair(spice::compiler::RuntimeMod
   switch (runtimeModule) {
   case STRING_RT:
     return {STRING_RT_IMPORT_NAME, "string_rt"};
-  case THREAD_RT:
-    return {THREAD_RT_IMPORT_NAME, "thread_rt"};
+  case MEMORY_RT:
+    return {MEMORY_RT_IMPORT_NAME, "memory_rt"};
+  case ITERATOR_RT:
+    return {ITERATOR_RT_IMPORT_NAME, "iterator_rt"};
   default:
     throw CompilerError(INTERNAL_ERROR, "Requested unknown runtime module");
   }
