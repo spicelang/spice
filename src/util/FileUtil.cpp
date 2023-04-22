@@ -129,7 +129,7 @@ std::string FileUtil::getStdDir() {
 #ifdef OS_WINDOWS
     CommonUtil::replaceAll(stdPath, "/", "\\");
 #endif
-    if (stdPath.rfind(FileUtil::DIR_SEPARATOR) != stdPath.size() - 1)
+    if (!stdPath.ends_with(FileUtil::DIR_SEPARATOR))
       stdPath += FileUtil::DIR_SEPARATOR;
     return stdPath;
   }

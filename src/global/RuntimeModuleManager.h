@@ -13,11 +13,13 @@ class SourceFile;
 class Scope;
 
 const char *const STRING_RT_IMPORT_NAME = "__rt_string";
-const char *const THREAD_RT_IMPORT_NAME = "__rt_thread";
+const char *const MEMORY_RT_IMPORT_NAME = "__rt_memory";
+const char *const ITERATOR_RT_IMPORT_NAME = "__rt_iterator";
 
 enum RuntimeModule : uint8_t {
   STRING_RT = 1 << 0,
-  THREAD_RT = 1 << 1,
+  MEMORY_RT = 1 << 1,
+  ITERATOR_RT = 1 << 2,
 };
 
 struct ModuleNamePair {

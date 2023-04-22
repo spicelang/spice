@@ -122,7 +122,7 @@ public f<long> File.getSize() {
  *
  * @return Content in form of a string
  */
-public f<string> readFile(string path) {
+public f<String> readFile(string path) {
     // Open the file in read mode
     File file = openFile(path, MODE_READ);
     // Read from the file char by char

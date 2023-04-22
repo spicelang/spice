@@ -1,6 +1,6 @@
 // Imports
-import "const" as cst;
-import "../type/double" as doubleTy;
+import "std/math/const" as cst;
+import "std/type/double";
 
 // Generic type defs
 type Numeric double|int|short|long;
@@ -37,7 +37,7 @@ public inline f<Numeric> abs<Numeric>(Numeric input) {
  * @return Rounding result
  */
 public inline f<WholeNumber> floor<WholeNumber>(double input) {
-    int truncatedInt = doubleTy.toInt(input);
+    int truncatedInt = toInt(input);
     return (WholeNumber) truncatedInt;
 }
 
@@ -48,7 +48,7 @@ public inline f<WholeNumber> floor<WholeNumber>(double input) {
  * @return Rounding result
  */
 public inline f<WholeNumber> ceil<WholeNumber>(double input) {
-    int truncatedInt = doubleTy.toInt(input);
+    int truncatedInt = toInt(input);
     if truncatedInt != input {
         truncatedInt++;
     }

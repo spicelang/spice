@@ -1,5 +1,5 @@
-ext<char*> getenv(char*);
-ext<int> putenv(char*);
+ext<string> getenv(string);
+ext<int> putenv(string);
 
 /**
  * Returns the content of an environment variable as string.
@@ -7,7 +7,7 @@ ext<int> putenv(char*);
  * @return Env variable content
  */
 public f<string> getEnv(string name) {
-    return (string) getenv((char*) name);
+    return getenv(name);
 }
 
 /**
@@ -16,7 +16,8 @@ public f<string> getEnv(string name) {
  * @return Result code: 0 = successful, -1 = failed
  */
 public f<int> setEnv(string name, string value) {
-    // ToDo: Uncomment when string concationations are supported
-    //return putenv((char*) name + "=" + value);
-    return 0;
+    String str = String(name);
+    str += "=";
+    str += value;
+    return putenv(str.getRaw());
 }

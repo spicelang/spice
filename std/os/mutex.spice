@@ -1,0 +1,26 @@
+import "std/time/delay";
+import "std/os/cpu";
+
+/**
+ * Mutex for reserving a resource for exclusive access. This is useful for improving thread-safety
+ */
+public type Mutex struct {
+	bool occupied
+}
+
+/**
+ * Acquire the mutex
+ */
+public p Mutex.acquire() {
+	while this.occupied {
+		yield();
+	}
+	this.occupied = true;
+}
+
+/**
+ * Release the mutex
+ */
+public p Mutex.release() {
+	this.occupied = false;
+}
