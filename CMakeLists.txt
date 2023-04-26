@@ -16,6 +16,8 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake)
 add_definitions(-DANTLR4CPP_STATIC)
 include(ExternalAntlr4Cpp)
 set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/antlr-4.12.0-complete.jar)
+find_package(ANTLR REQUIRED)
+message(STATUS "Spice: Found ANTLR ${ANTLR_VERSION}")
 
 # Find Google Test
 add_subdirectory(lib/googletest)
@@ -23,8 +25,8 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
 # Find LLVM
 find_package(LLVM REQUIRED CONFIG)
-message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-message(STATUS "Using LLVMConfig.cmake from ${LLVM_DIR}")
+message(STATUS "Spice: Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Spice: Using LLVMConfig.cmake from ${LLVM_DIR}")
 include_directories(${LLVM_INCLUDE_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})

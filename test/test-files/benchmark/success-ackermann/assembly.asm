@@ -65,4 +65,11 @@ main:
 	callq	printf
 	xorl	%eax, %eax
 	addq	$32, %rsp
-	po
+	popq	%rbp
+	retq
+	.seh_endproc
+
+	.section	.rdata,"dr"
+.Lprintf.str.0:
+	.asciz	"Ackermann of base m=%d and n=%d: %d"
+

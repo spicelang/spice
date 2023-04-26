@@ -1,9 +1,10 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "ObjectEmitter.h"
-#include "util/FileUtil.h"
 
 #include <exception/IRError.h>
+#include <util/FileUtil.h>
+#include <util/RawStringOStream.h>
 
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Support/FileSystem.h>
@@ -42,13 +43,8 @@ void ObjectEmitter::emit() const {
   resourceManager.objectEmitLock.unlock();
 }
 
-std::string ObjectEmitter::getASMString() const {
-  const std::string asmFile = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + "assembly.asm";
-  std::error_code errorCode;
-  llvm::raw_fd_ostream ostream(asmFile, errorCode, llvm::sys::fs::OF_None);
-  if (errorCode)                                                                        // GCOV_EXCL_LINE
-    throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + asmFile + "' could not be opened"); // GCOV_EXCL_LINE
-
+void ObjectEmitter::getASMString(std::string &output) const {
+  RawStringOStream ostream(output);
   llvm::legacy::PassManager passManager;
   // GCOV_EXCL_START
   if (resourceManager.targetMachine->addPassesToEmitFile(passManager, ostream, nullptr, llvm::CGFT_AssemblyFile,
@@ -59,14 +55,6 @@ std::string ObjectEmitter::getASMString() const {
   // Emit object file
   passManager.run(module);
   ostream.flush();
-
-  // Read contents of temp file to return it
-  std::ifstream inputStream(asmFile);
-  assert(inputStream.good());
-  std::stringstream buffer;
-  buffer << inputStream.rdbuf();
-
-  return buffer.str();
 }
 
 void ObjectEmitter::dumpAsm() const {
