@@ -1,0 +1,11 @@
+Alignment of double: 8
+Alignment of int: 4
+Alignment of short: 2
+Alignment of long: 8
+Alignment of byte: 1
+Alignment of char: 1
+Alignment of string: 8
+Alignment of bool: 1
+Alignment of int[]: 4
+Alignment of int*: 8
+Alignment of struct instance: 8

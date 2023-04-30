@@ -1,0 +1,4 @@
+f<int> main() {
+    double doubleValue = 4.5;
+    printf("Alignment: %d", alignof(type doubleValue));
+}

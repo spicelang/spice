@@ -604,6 +604,16 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
 }
 
+std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
+  if (node->isType) { // Align of type
+    visit(node->dataType());
+  } else { // Align of value
+    visit(node->assignExpr());
+  }
+
+  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
+}
+
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
   SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   argType = argType.removeReferenceWrapper();
@@ -1132,6 +1142,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     return visit(node->printfCall());
   if (node->sizeofCall())
     return visit(node->sizeofCall());
+  if (node->alignofCall())
+    return visit(node->alignofCall());
   if (node->lenCall())
     return visit(node->lenCall());
   if (node->tidCall())

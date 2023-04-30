@@ -69,6 +69,7 @@ public:
   std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override { return buildRule(ctx); }
   std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override { return buildRule(ctx); }
   std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override { return buildRule(ctx); }
+  std::any visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) override { return buildRule(ctx); }
   std::any visitLenCall(SpiceParser::LenCallContext *ctx) override { return buildRule(ctx); }
   std::any visitTidCall(SpiceParser::TidCallContext *ctx) override { return buildRule(ctx); }
   std::any visitJoinCall(SpiceParser::JoinCallContext *ctx) override { return buildRule(ctx); }

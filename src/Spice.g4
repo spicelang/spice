@@ -50,9 +50,10 @@ continueStmt: CONTINUE INT_LIT?;
 assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Builtin functions
-builtinCall: printfCall | sizeOfCall | lenCall | tidCall | joinCall;
+builtinCall: printfCall | sizeOfCall | alignOfCall | lenCall | tidCall | joinCall;
 printfCall: PRINTF LPAREN STRING_LIT (COMMA assignExpr)* RPAREN;
 sizeOfCall: SIZEOF LPAREN (assignExpr | TYPE dataType) RPAREN;
+alignOfCall: ALIGNOF LPAREN (assignExpr | TYPE dataType) RPAREN;
 lenCall: LEN LPAREN assignExpr RPAREN;
 tidCall: TID LPAREN RPAREN;
 joinCall: JOIN LPAREN assignExpr (COMMA assignExpr)* RPAREN;
@@ -134,6 +135,7 @@ NIL: 'nil';
 MAIN: 'main';
 PRINTF: 'printf';
 SIZEOF: 'sizeof';
+ALIGNOF: 'alignof';
 LEN: 'len';
 TID: 'tid';
 JOIN: 'join';

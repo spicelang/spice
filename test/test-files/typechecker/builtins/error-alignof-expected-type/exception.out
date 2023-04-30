@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/builtins/error-alignof-expected-type/source.spice:3:42:
+Unknown datatype: Unknown datatype 'doubleValue'
+
+3  : %d", alignof(type doubleValue));
+                       ^^^^^^^^^^^

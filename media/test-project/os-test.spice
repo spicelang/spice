@@ -1,5 +1,4 @@
-ext f<byte*> pthread_self();
-
 f<int> main() {
-
+    long alignment = alignof(type Test);
+    printf("Alignment: %d", alignment);
 }

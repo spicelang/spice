@@ -99,6 +99,8 @@ std::any ParallelizableASTVisitor::visitPrintfCall(const PrintfCallNode *node) {
 
 std::any ParallelizableASTVisitor::visitSizeofCall(const SizeofCallNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitAlignofCall(const AlignofCallNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitLenCall(const LenCallNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitTidCall(const TidCallNode *node) { return visitChildren(node); }

@@ -49,6 +49,7 @@ class BreakStmtNode;
 class ContinueStmtNode;
 class PrintfCallNode;
 class SizeofCallNode;
+class AlignofCallNode;
 class LenCallNode;
 class TidCallNode;
 class JoinCallNode;
@@ -125,6 +126,7 @@ public:
   virtual std::any visitAssertStmt(const AssertStmtNode *node);
   virtual std::any visitPrintfCall(const PrintfCallNode *node);
   virtual std::any visitSizeofCall(const SizeofCallNode *node);
+  virtual std::any visitAlignofCall(const AlignofCallNode *node);
   virtual std::any visitLenCall(const LenCallNode *node);
   virtual std::any visitTidCall(const TidCallNode *node);
   virtual std::any visitJoinCall(const JoinCallNode *node);

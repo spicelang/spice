@@ -88,6 +88,8 @@ std::any ASTVisitor::visitPrintfCall(PrintfCallNode *node) { return visitChildre
 
 std::any ASTVisitor::visitSizeofCall(SizeofCallNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitAlignofCall(AlignofCallNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitLenCall(LenCallNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitTidCall(TidCallNode *node) { return visitChildren(node); }
