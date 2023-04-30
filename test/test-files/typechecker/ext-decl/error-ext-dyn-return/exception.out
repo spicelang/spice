@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/ext-decl/error-ext-dyn-return/source.spice:1:7:
+Unexpected dyn type: dyn is not allowed as return type for external functions
+
+1  ext f<dyn> exteralFunction();
+         ^^^

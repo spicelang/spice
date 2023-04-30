@@ -1,0 +1,5 @@
+ext f<dyn> exteralFunction();
+
+f<int> main() {
+    extFunction(1, 3);
+}

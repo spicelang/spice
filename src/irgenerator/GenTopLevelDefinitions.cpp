@@ -545,7 +545,7 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
 
 std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   // Get return type
-  const Function *spiceFunc = node->externalFunction;
+  const Function *spiceFunc = node->extFunction;
   assert(spiceFunc != nullptr);
   llvm::Type *returnType = builder.getVoidTy();
   if (!spiceFunc->returnType.is(TY_DYN))

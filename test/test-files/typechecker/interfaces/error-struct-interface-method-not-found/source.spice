@@ -10,7 +10,7 @@ type AstNode struct : Visitable {}
 
 type AstEntryNode struct : Visitable {
     AstNode astNode
-    SymbolTable* fctScope
+    SymbolTable* extFunctionScope
     bool takesArgs
 }
 

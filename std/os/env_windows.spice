@@ -1,5 +1,5 @@
-ext<string> getenv(string);
-ext<int> putenv(string);
+ext f<string> getenv(string);
+ext f<int> putenv(string);
 
 /**
  * Returns the content of an environment variable as string.

@@ -1,6 +1,6 @@
 // Link external functions
-ext<int> getpid();
-ext<int> system(string);
+ext f<int> getpid();
+ext f<int> system(string);
 
 /**
  * Retrieve the process id of the current process.

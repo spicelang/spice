@@ -1,4 +1,4 @@
-ext<int> usleep(int);
+ext f<int> usleep(int);
 
 /**
  * Suspends the execution for the given number of milliseconds

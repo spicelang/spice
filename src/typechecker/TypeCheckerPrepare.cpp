@@ -539,7 +539,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Add function to current scope
-  node->externalFunction = FunctionManager::insertFunction(currentScope, spiceFunc, nullptr);
+  node->extFunction = FunctionManager::insertFunction(currentScope, spiceFunc, &node->extFunctionManifestations);
 
   // Set type of external function
   node->entry->updateType(SymbolType(TY_FUNCTION), false);

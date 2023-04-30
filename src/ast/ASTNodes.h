@@ -163,7 +163,7 @@ public:
   }
 
   [[nodiscard]] virtual std::vector<Function *> *getFctManifestations() {
-    assert(false && "Must be called on a FctDefNode or a ProcDefNode");
+    assert(false && "Must be called on a FctDefNode, ProcDefNode or ExtDeclNode");
     return nullptr;
   }
 
@@ -504,14 +504,17 @@ public:
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] TypeLstNode *argTypeLst() const { return getChild<TypeLstNode>(); }
 
+  // Other methods
+  std::vector<Function *> *getFctManifestations() override { return &extFunctionManifestations; }
+
   // Public members
   std::string extFunctionName;
   bool hasArgs = false;
   bool isVarArg = false;
   bool isDll = false;
-  Scope *fctScope = nullptr;
   SymbolTableEntry *entry = nullptr;
-  Function *externalFunction = nullptr;
+  Function *extFunction = nullptr;
+  std::vector<Function *> extFunctionManifestations;
 };
 
 // ========================================================= ThreadDefNode =======================================================

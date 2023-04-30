@@ -14,7 +14,7 @@ enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: TYPE IDENTIFIER ALIAS dataType SEMICOLON;
 globalVarDef: dataType IDENTIFIER (ASSIGN constant)? SEMICOLON;
-extDecl: EXT (LESS dataType GREATER)? IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
+extDecl: EXT (F LESS dataType GREATER | P) IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
 
 // Control structures
 threadDef: THREAD LBRACE stmtLst RBRACE;

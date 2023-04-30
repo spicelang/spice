@@ -1,4 +1,4 @@
-ext<int> rand();
+ext f<int> rand();
 
 /**
  * Generates a random integer between min and max
