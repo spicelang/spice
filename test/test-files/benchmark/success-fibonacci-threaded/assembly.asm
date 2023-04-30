@@ -177,4 +177,11 @@ main:
 
 	.section	.rdata,"dr"
 .Lprintf.str.0:
-	.asciz	"Thread returned with result: %d\
+	.asciz	"Thread returned with result: %d\n"
+
+.Lprintf.str.2:
+	.asciz	"Program finished"
+
+.Lstr:
+	.asciz	"Started all threads. Waiting for results ..."
+

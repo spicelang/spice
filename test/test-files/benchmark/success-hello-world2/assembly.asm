@@ -32,4 +32,23 @@ main:
 	callq	putchar
 	movl	$111, %ecx
 	callq	putchar
-	movl	$32, 
+	movl	$32, %ecx
+	callq	putchar
+	movl	$87, %ecx
+	callq	putchar
+	movl	$111, %ecx
+	callq	putchar
+	movl	$114, %ecx
+	callq	putchar
+	movl	$108, %ecx
+	callq	putchar
+	movl	$100, %ecx
+	callq	putchar
+	movl	$32, %ecx
+	callq	putchar
+	xorl	%eax, %eax
+	addq	$32, %rsp
+	popq	%rbp
+	retq
+	.seh_endproc
+

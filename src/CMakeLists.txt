@@ -1,5 +1,4 @@
-# Find ANTLR
-find_package(ANTLR REQUIRED)
+# Set ANTLR grammar
 antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/Spice.g4 VISITOR)
 
 set(SOURCES
@@ -146,13 +145,15 @@ set(SOURCES
         util/CompilerWarning.h
         util/Timer.h
         #util/Memory.h
+        util/RawStringOStream.cpp
+        util/RawStringOStream.h
 )
 
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 # Include Antlr components
-include_directories(${ANTLR_Spice_OUTPUT_DIR})
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
+include_directories(${ANTLR_Spice_OUTPUT_DIR})
 
 target_link_libraries(spice antlr4_static ${LLVM_LIBS})
 add_library(spicelib STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})

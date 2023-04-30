@@ -65,3 +65,9 @@ main:
 	addq	$32, %rsp
 	popq	%rbp
 	retq
+	.seh_endproc
+
+	.section	.rdata,"dr"
+.Lprintf.str.0:
+	.asciz	"Result: %d"
+

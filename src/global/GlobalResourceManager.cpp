@@ -16,13 +16,10 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
   // Initialize the required LLVM targets
   if (cliOptions.isNativeTarget) {
     llvm::InitializeNativeTarget();
-    llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTargetAsmPrinter();
   } else { // GCOV_EXCL_START
     llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
     llvm::InitializeAllAsmPrinters();
   } // GCOV_EXCL_STOP
 

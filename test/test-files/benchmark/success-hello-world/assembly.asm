@@ -32,4 +32,5 @@ main:
 
 	.section	.rdata,"dr"
 .Lprintf.str.0:
-	.asciz	"Hello World
+	.asciz	"Hello World!"
+

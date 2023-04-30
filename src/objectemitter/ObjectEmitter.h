@@ -16,7 +16,7 @@ public:
 
   // Public methods
   void emit() const;
-  [[nodiscard]] std::string getASMString() const;
+  void getASMString(std::string &output) const;
   void dumpAsm() const;
 
 private:

@@ -1,5 +1,4 @@
-# Find ANTLR
-find_package(ANTLR REQUIRED)
+# Set ANTLR grammar
 antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/../src/Spice.g4 VISITOR)
 
 set(SOURCES

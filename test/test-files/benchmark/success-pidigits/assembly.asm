@@ -94,3 +94,40 @@ main:
 	addq	%r13, %r8
 	imulq	%r11, %r8
 	imulq	%r11, %r12
+	movq	%rdx, %r9
+	addq	$1, %r9
+	imulq	$7, %rdx, %rax
+	addq	$2, %rax
+	imulq	%rax, %rsi
+	movq	%r11, %rax
+	imulq	%r13, %rax
+	addq	%rax, %rsi
+	movq	%rsi, %rax
+	cqto
+	idivq	%r12
+	movq	%rax, %r15
+	addq	$2, %r11
+	movq	%r8, %r13
+	movq	%r9, %rdx
+	movq	%rcx, %rsi
+.LBB0_6:
+	addl	$1, %ebx
+	cmpl	$20, %ebx
+	jne	.LBB0_1
+	xorl	%eax, %eax
+	addq	$56, %rsp
+	popq	%rbx
+	popq	%rdi
+	popq	%rsi
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	popq	%rbp
+	retq
+	.seh_endproc
+
+	.section	.rdata,"dr"
+.Lprintf.str.0:
+	.asciz	"%d"
+

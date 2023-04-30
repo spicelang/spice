@@ -112,4 +112,33 @@
 
 	.def	main;
 	.scl	2;
-	.type	
+	.type	32;
+	.endef
+	.globl	main
+	.p2align	4, 0x90
+main:
+.seh_proc main
+	pushq	%rbp
+	.seh_pushreg %rbp
+	subq	$32, %rsp
+	.seh_stackalloc 32
+	leaq	32(%rsp), %rbp
+	.seh_setframe %rbp, 32
+	.seh_endprologue
+	callq	__main
+	movl	$10, %ecx
+	callq	.L_f__void__int__faculty__int
+	leaq	.Lprintf.str.0(%rip), %rcx
+	movl	$10, %edx
+	movl	%eax, %r8d
+	callq	printf
+	xorl	%eax, %eax
+	addq	$32, %rsp
+	popq	%rbp
+	retq
+	.seh_endproc
+
+	.section	.rdata,"dr"
+.Lprintf.str.0:
+	.asciz	"Faculty of %d is: %d"
+
