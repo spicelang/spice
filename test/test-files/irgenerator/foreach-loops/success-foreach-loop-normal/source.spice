@@ -1,6 +1,8 @@
+import "std/runtime/iterator_rt";
+
 f<int> main() {
     int[7] intArray = { 1, 5, 4, 0, 12, 12345, 9 };
-    foreach const int item : intArray {
-        printf("Item at index %d: %d\n", idx, item);
+    foreach const int item : iterate(intArray, len(intArray)) {
+        printf("Item: %d\n", item);
     }
 }
