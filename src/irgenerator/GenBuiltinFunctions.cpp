@@ -64,6 +64,21 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
   return ExprResult{.value = sizeValue};
 }
 
+std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
+  llvm::Type *type;
+  if (node->isType) { // Align of type
+    type = any_cast<llvm::Type *>(visit(node->dataType()));
+  } else { // Align of value
+    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
+  }
+  // Calculate size at compile-time
+  const llvm::Align align = module->getDataLayout().getABITypeAlign(type);
+
+  // Return align value
+  llvm::Value *sizeValue = builder.getInt64(align.value());
+  return ExprResult{.value = sizeValue};
+}
+
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
   const SymbolType assignExprSymbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);

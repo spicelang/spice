@@ -1063,6 +1063,8 @@ std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
       currentNode = atomicExprNode->createChild<PrintfCallNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::SizeOfCallContext *>(subTree); rule != nullptr) // SizeofCall
       currentNode = atomicExprNode->createChild<SizeofCallNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::AlignOfCallContext *>(subTree); rule != nullptr) // AlignofCall
+      currentNode = atomicExprNode->createChild<AlignofCallNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::LenCallContext *>(subTree); rule != nullptr) // LenCall
       currentNode = atomicExprNode->createChild<LenCallNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::TidCallContext *>(subTree); rule != nullptr) // TidCall
@@ -1126,6 +1128,31 @@ std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
     if (currentNode != sizeofCallNode) {
       visit(rule);
       currentNode = sizeofCallNode;
+    }
+  }
+  return nullptr;
+}
+
+std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
+  auto alignofCallNode = static_cast<AlignofCallNode *>(currentNode);
+  alignofCallNode->reserveChildren(ctx->children.size());
+  saveErrorMessage(alignofCallNode, ctx);
+
+  // Check if type or value
+  alignofCallNode->isType = ctx->TYPE();
+
+  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+    ParserRuleContext *rule;
+    if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
+      currentNode = alignofCallNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
+      currentNode = alignofCallNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
+    else
+      assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    if (currentNode != alignofCallNode) {
+      visit(rule);
+      currentNode = alignofCallNode;
     }
   }
   return nullptr;

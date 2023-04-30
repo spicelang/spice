@@ -809,6 +809,10 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   if (node->sizeofCall())
     return visit(node->sizeofCall());
 
+  // Is call to alignof builtin
+  if (node->alignofCall())
+    return visit(node->alignofCall());
+
   // Is call to len builtin
   if (node->lenCall())
     return visit(node->lenCall());

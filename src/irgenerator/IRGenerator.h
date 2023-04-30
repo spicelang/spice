@@ -65,6 +65,7 @@ public:
   // Builtin functions
   std::any visitPrintfCall(const PrintfCallNode *node) override;
   std::any visitSizeofCall(const SizeofCallNode *node) override;
+  std::any visitAlignofCall(const AlignofCallNode *node) override;
   std::any visitLenCall(const LenCallNode *node) override;
   std::any visitTidCall(const TidCallNode *node) override;
   std::any visitJoinCall(const JoinCallNode *node) override;

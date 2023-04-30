@@ -1110,6 +1110,25 @@ public:
   bool isType = false;
 };
 
+// ======================================================== AlignofCallNode ======================================================
+
+class AlignofCallNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAlignofCall(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAlignofCall(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+
+  // Public members
+  bool isType = false;
+};
+
 // ========================================================= LenCallNode =========================================================
 
 class LenCallNode : public ASTNode {
@@ -1498,6 +1517,7 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
   [[nodiscard]] PrintfCallNode *printfCall() const { return getChild<PrintfCallNode>(); }
   [[nodiscard]] SizeofCallNode *sizeofCall() const { return getChild<SizeofCallNode>(); }
+  [[nodiscard]] AlignofCallNode *alignofCall() const { return getChild<AlignofCallNode>(); }
   [[nodiscard]] LenCallNode *lenCall() const { return getChild<LenCallNode>(); }
   [[nodiscard]] TidCallNode *tidCall() const { return getChild<TidCallNode>(); }
   [[nodiscard]] JoinCallNode *joinCall() const { return getChild<JoinCallNode>(); }
