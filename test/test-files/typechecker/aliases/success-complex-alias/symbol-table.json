@@ -90,19 +90,10 @@
       "name": "struct:TestStruct<long>",
       "symbols": [
         {
-          "codeLoc": "L12C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "printLength:L12",
-          "orderIndex": 3,
-          "state": "destructed",
-          "type": "procedure"
-        },
-        {
           "codeLoc": "L8C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L8",
+          "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "destructed",
           "type": "procedure"
@@ -111,7 +102,16 @@
           "codeLoc": "L12C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "printLength:L12",
+          "name": "printLength:L12C1",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "printLength:L12C1",
           "orderIndex": 3,
           "state": "destructed",
           "type": "procedure"
@@ -120,7 +120,7 @@
           "codeLoc": "L8C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L8",
+          "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "destructed",
           "type": "procedure"
@@ -239,7 +239,7 @@
           "codeLoc": "L12C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "printLength:L12",
+          "name": "printLength:L12C1",
           "orderIndex": 3,
           "state": "destructed",
           "type": "procedure"
@@ -248,7 +248,7 @@
           "codeLoc": "L8C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L8",
+          "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "destructed",
           "type": "procedure"

@@ -116,7 +116,7 @@
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "fib:L1",
+      "name": "fib:L1C1",
       "orderIndex": 0,
       "state": "destructed",
       "type": "function"

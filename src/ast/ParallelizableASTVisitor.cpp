@@ -155,6 +155,8 @@ std::any ParallelizableASTVisitor::visitBaseDataType(const BaseDataTypeNode *nod
 
 std::any ParallelizableASTVisitor::visitCustomDataType(const CustomDataTypeNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitFunctionDataType(const FunctionDataTypeNode *node) { return visitChildren(node); }
+
 // GCOV_EXCL_STOP
 
 } // namespace spice::compiler

@@ -106,9 +106,10 @@ public:
     std::string subType;
     TypeChainElementData data = {.arraySize = 0};
     std::vector<SymbolType> templateTypes;
+    std::vector<SymbolType> paramTypes; // First type is the return type
 
     // Json serializer/deserializer
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, data, templateTypes)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, data, templateTypes, paramTypes)
   };
 
   // Typedefs
@@ -187,6 +188,10 @@ public:
   [[nodiscard]] bool isHeap() const;
   void setBodyScope(Scope *bodyScope);
   [[nodiscard]] Scope *getBodyScope() const;
+  void setFunctionReturnType(const SymbolType &returnType);
+  [[nodiscard]] const SymbolType &getFunctionReturnType() const;
+  void setFunctionParamTypes(const std::vector<SymbolType> &paramTypes);
+  [[nodiscard]] std::vector<SymbolType> getFunctionParamTypes() const;
   [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);

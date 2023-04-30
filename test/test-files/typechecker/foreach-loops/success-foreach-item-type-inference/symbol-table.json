@@ -200,17 +200,8 @@
           "codeLoc": "L10C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L10",
+          "name": "ctor:L10C1",
           "orderIndex": 2,
-          "state": "destructed",
-          "type": "procedure"
-        },
-        {
-          "codeLoc": "L26C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "next:L26",
-          "orderIndex": 6,
           "state": "destructed",
           "type": "procedure"
         },
@@ -218,7 +209,7 @@
           "codeLoc": "L22C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "isValid:L22",
+          "name": "isValid:L22C1",
           "orderIndex": 5,
           "state": "destructed",
           "type": "function"
@@ -227,17 +218,8 @@
           "codeLoc": "L18C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "getIdx:L18",
+          "name": "getIdx:L18C1",
           "orderIndex": 4,
-          "state": "destructed",
-          "type": "function"
-        },
-        {
-          "codeLoc": "L14C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "get:L14",
-          "orderIndex": 3,
           "state": "destructed",
           "type": "function"
         },
@@ -245,7 +227,7 @@
           "codeLoc": "L22C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "isValid:L22",
+          "name": "isValid:L22C1",
           "orderIndex": 5,
           "state": "destructed",
           "type": "function"
@@ -254,8 +236,17 @@
           "codeLoc": "L10C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L10",
+          "name": "ctor:L10C1",
           "orderIndex": 2,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L26C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "next:L26C1",
+          "orderIndex": 6,
           "state": "destructed",
           "type": "procedure"
         },
@@ -272,7 +263,7 @@
           "codeLoc": "L26C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "next:L26",
+          "name": "next:L26C1",
           "orderIndex": 6,
           "state": "destructed",
           "type": "procedure"
@@ -281,7 +272,16 @@
           "codeLoc": "L14C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "get:L14",
+          "name": "get:L14C1",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "function"
+        },
+        {
+          "codeLoc": "L14C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "get:L14C1",
           "orderIndex": 3,
           "state": "destructed",
           "type": "function"
@@ -453,19 +453,10 @@
       "name": "struct:MockIterator",
       "symbols": [
         {
-          "codeLoc": "L26C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "next:L26",
-          "orderIndex": 6,
-          "state": "destructed",
-          "type": "procedure"
-        },
-        {
           "codeLoc": "L22C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "isValid:L22",
+          "name": "isValid:L22C1",
           "orderIndex": 5,
           "state": "destructed",
           "type": "function"
@@ -474,17 +465,8 @@
           "codeLoc": "L18C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "getIdx:L18",
+          "name": "getIdx:L18C1",
           "orderIndex": 4,
-          "state": "destructed",
-          "type": "function"
-        },
-        {
-          "codeLoc": "L14C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "get:L14",
-          "orderIndex": 3,
           "state": "destructed",
           "type": "function"
         },
@@ -492,8 +474,17 @@
           "codeLoc": "L10C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L10",
+          "name": "ctor:L10C1",
           "orderIndex": 2,
+          "state": "destructed",
+          "type": "procedure"
+        },
+        {
+          "codeLoc": "L26C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "next:L26C1",
+          "orderIndex": 6,
           "state": "destructed",
           "type": "procedure"
         },
@@ -505,6 +496,15 @@
           "orderIndex": 1,
           "state": "destructed",
           "type": "unsigned long"
+        },
+        {
+          "codeLoc": "L14C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "get:L14C1",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "function"
         },
         {
           "codeLoc": "L6C5",

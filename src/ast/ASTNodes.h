@@ -293,7 +293,7 @@ public:
   [[nodiscard]] std::string getSymbolTableEntryName() const {
     const FctNameNode *functionName = getChild<FctNameNode>();
     assert(functionName != nullptr);
-    return functionName->name + ":" + codeLoc.toPrettyLine();
+    return functionName->name + ":" + codeLoc.toPrettyLineAndColumn();
   }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &fctManifestations; }
@@ -332,7 +332,7 @@ public:
   [[nodiscard]] std::string getSymbolTableEntryName() const {
     const FctNameNode *functionName = getChild<FctNameNode>();
     assert(functionName != nullptr);
-    return functionName->name + ":" + codeLoc.toPrettyLine();
+    return functionName->name + ":" + codeLoc.toPrettyLineAndColumn();
   }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &procManifestations; }
@@ -1716,7 +1716,8 @@ public:
     TYPE_STRING,
     TYPE_BOOL,
     TYPE_DYN,
-    TY_CUSTOM
+    TY_CUSTOM,
+    TY_FUNCTION
   };
 
   // Constructors
@@ -1754,9 +1755,29 @@ public:
   std::string fqTypeName;
   std::vector<std::string> typeNameFragments;
   std::vector<SymbolTableEntry *> customTypes;
-  bool isParamType = false;
-  bool isFieldType = false;
-  bool isReturnType = false;
+};
+
+// =================================================== FunctionDataTypeNode ======================================================
+
+class FunctionDataTypeNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFunctionDataType(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFunctionDataType(this); }
+
+  // Public get methods
+  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
+
+  // Util methods
+  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount, nullptr); }
+
+  // Public members
+  std::vector<SymbolTableEntry *> customTypes;
+  bool isFunction = false; // Function or procedure
 };
 
 } // namespace spice::compiler

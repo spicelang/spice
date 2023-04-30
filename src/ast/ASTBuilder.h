@@ -102,6 +102,7 @@ public:
   std::any visitDataType(SpiceParser::DataTypeContext *ctx) override;
   std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override;
+  std::any visitFunctionDataType(SpiceParser::FunctionDataTypeContext *ctx) override;
   std::any visitAssignOp(SpiceParser::AssignOpContext *ctx) override;
   std::any visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) override;
   std::any visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) override;

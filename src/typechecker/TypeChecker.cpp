@@ -1896,6 +1896,32 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   throw SemanticError(node, EXPECTED_TYPE, errorMessage);
 }
 
+std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
+  // Visit return type
+  SymbolType returnType(TY_DYN);
+  if (node->isFunction) {
+    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+    if (returnType.is(TY_DYN))
+      throw SemanticError(node->returnType(), UNEXPECTED_DYN_TYPE, "Function types cannot have return type dyn");
+  }
+
+  // Visit param types
+  std::vector<SymbolType> paramTypes;
+  if (const TypeLstNode *paramTypeListNode = node->paramTypeLst(); paramTypeListNode != nullptr) {
+    for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes()) {
+      auto paramType = std::any_cast<SymbolType>(visit(paramTypeNode));
+      paramTypes.push_back(paramType);
+    }
+  }
+
+  // Build function type
+  SymbolType functionType(node->isFunction ? TY_FUNCTION : TY_PROCEDURE);
+  functionType.setFunctionReturnType(returnType);
+  functionType.setFunctionParamTypes(paramTypes);
+
+  return node->setEvaluatedSymbolType(functionType, manIdx);
+}
+
 SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const {
   // Skip all types, except structs
   if (!symbolType.getBaseType().is(TY_STRUCT))

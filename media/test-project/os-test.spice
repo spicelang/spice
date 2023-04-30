@@ -1,4 +1,9 @@
+f<int> test(string input) {
+    return 12;
+}
+
 f<int> main() {
-    long alignment = alignof(type Test);
-    printf("Alignment: %d", alignment);
+    const f<int>(string) testFct = test;
+    int i = testFct();
+    printf("Result: %d", i);
 }

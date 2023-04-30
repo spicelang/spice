@@ -113,6 +113,7 @@ public:
   std::any visitDataType(DataTypeNode *node) override;
   std::any visitBaseDataType(BaseDataTypeNode *node) override;
   std::any visitCustomDataType(CustomDataTypeNode *node) override;
+  std::any visitFunctionDataType(FunctionDataTypeNode *node) override;
 
   // Public members
   bool reVisitRequested = false;

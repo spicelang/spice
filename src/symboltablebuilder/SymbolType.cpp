@@ -403,6 +403,58 @@ Scope *SymbolType::getBodyScope() const {
 }
 
 /**
+ * Set the return type of a function type
+ *
+ * @param returnType Function return type
+ */
+void SymbolType::setFunctionReturnType(const SymbolType &returnType) {
+  assert(is(TY_FUNCTION));
+  std::vector<SymbolType> &paramTypes = typeChain.back().paramTypes;
+  if (paramTypes.empty())
+    paramTypes.push_back(returnType);
+  else
+    paramTypes.at(0) = returnType;
+}
+
+/**
+ * Get the return type of a function type
+ *
+ * @return Function return type
+ */
+const SymbolType &SymbolType::getFunctionReturnType() const {
+  assert(is(TY_FUNCTION));
+  assert(!typeChain.back().paramTypes.empty());
+  return typeChain.back().paramTypes.front();
+}
+
+/**
+ * Set the param types of a function or procedure type
+ *
+ * @param paramTypes Function param types
+ */
+void SymbolType::setFunctionParamTypes(const std::vector<SymbolType> &newParamTypes) {
+  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  std::vector<SymbolType> &paramTypes = typeChain.back().paramTypes;
+  // Resize param types if required
+  if (paramTypes.size() < newParamTypes.size() + 1)
+    paramTypes.resize(newParamTypes.size() + 1);
+  // Set the function param types
+  for (size_t i = 0; i < newParamTypes.size(); i++)
+    paramTypes.at(i + 1) = newParamTypes.at(i);
+}
+
+/**
+ * Get the param types of a function or procedure type
+ *
+ * @return Function param types
+ */
+std::vector<SymbolType> SymbolType::getFunctionParamTypes() const {
+  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  assert(!typeChain.back().paramTypes.empty());
+  return {typeChain.back().paramTypes.begin() + 1, typeChain.back().paramTypes.end()};
+}
+
+/**
  * Get the struct instance for a struct type
  *
  * @param node Accessing AST node

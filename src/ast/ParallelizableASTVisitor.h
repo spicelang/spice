@@ -77,6 +77,7 @@ class StructInstantiationNode;
 class DataTypeNode;
 class BaseDataTypeNode;
 class CustomDataTypeNode;
+class FunctionDataTypeNode;
 
 class ParallelizableASTVisitor {
 public:
@@ -154,6 +155,7 @@ public:
   virtual std::any visitDataType(const DataTypeNode *node);
   virtual std::any visitBaseDataType(const BaseDataTypeNode *node);
   virtual std::any visitCustomDataType(const CustomDataTypeNode *node);
+  virtual std::any visitFunctionDataType(const FunctionDataTypeNode *node);
 };
 
 } // namespace spice::compiler
