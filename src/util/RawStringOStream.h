@@ -11,15 +11,6 @@ public:
   // Public constructors
   explicit RawStringOStream(std::string &output);
 
-  // Public destructor
-  // virtual ~RawStringOStream() override;
-
-  // Public methods
-  /*raw_ostream &changeColor(enum Colors Color, bool Bold, bool BG) override { return *this; }
-  raw_ostream &resetColor() override { return *this; }
-  raw_ostream &reverseColor() override { return *this; }
-  [[nodiscard]] size_t preferred_buffer_size() const override;*/
-
 private:
   // Private members
   std::string &output;
