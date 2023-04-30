@@ -22,11 +22,11 @@ type SystemInfo struct {
 }
 
 // External functions
-ext GetSystemInfo(SystemInfo*);
+ext p GetSystemInfo(SystemInfo*);
 
 /**
  * Returns the number of CPU cores of the host system.
- * 
+ *
  * return Number of cores
  */
 public f<int> getCPUCoreCount() {
@@ -44,7 +44,7 @@ public f<int> getCPUCoreCount() {
  * - "arm64"
  * - "ia64"
  * - "intel"
- * 
+ *
  * return Architecture name
  */
 public f<string> getArchName() {

@@ -18,7 +18,7 @@ type AstNode interface {
 }
 
 type MainFctDefNode struct : AstNode {
-    SymbolTable* fctScope
+    SymbolTable* extFunctionScope
     bool takesArgs
 }
 

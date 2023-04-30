@@ -1,0 +1,34 @@
+// Link external functions
+ext f<int> pthread_create(byte* /*thread*/, byte* /*attr*/, p() /*start_routine*/, byte* /*arg*/);
+ext f<int> pthread_join(byte* /*thread*/, byte** /*retval*/);
+ext f<byte*> pthread_self();
+ext p pthread_exit(byte* /*retval*/);
+
+public type Thread struct {
+    byte* threadId
+}
+
+public p Thread.ctor(p() fctPtr) {
+    pthread_create(this.threadId, nil<byte*>, fctPtr, nil<byte*>);
+}
+
+/**
+ * Wait synchronous until the thread has terminated
+ */
+public p Thread.join() {
+    pthread_join(this.threadId);
+}
+
+/**
+ * Retrieve the ID of the current thread
+ */
+public f<byte*> getThreadId() {
+    return pthread_self();
+}
+
+/**
+ * Forcefully kill the current thread
+ */
+public p terminateThread() {
+    return pthread_exit(nil<byte*>);
+}

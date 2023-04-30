@@ -63,14 +63,14 @@ type DirEntry struct {
 }
 
 // Link external functions
-ext<int> mkdir(string, int);
-ext<int> rmdir(string);
-ext<int> rename(string, string);
-ext<int> access(string, int);
-ext<int> stat(string, FileStat*);
-ext<byte*> FindFirstFileA(string, DirEntry*) dll;
-ext<bool> FindNextFileA(byte*, DirEntry*) dll;
-ext<bool> FindClose(byte*) dll;
+ext f<int> mkdir(string, int);
+ext f<int> rmdir(string);
+ext f<int> rename(string, string);
+ext f<int> access(string, int);
+ext f<int> stat(string, FileStat*);
+ext f<byte*> FindFirstFileA(string, DirEntry*) dll;
+ext f<bool> FindNextFileA(byte*, DirEntry*) dll;
+ext f<bool> FindClose(byte*) dll;
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.

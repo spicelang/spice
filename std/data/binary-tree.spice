@@ -1,6 +1,6 @@
 // Link external functions
-ext<byte*> malloc(long);
-ext free(byte*);
+ext f<byte*> malloc(long);
+ext p free(byte*);
 
 // Add generic type definitions
 type T dyn;

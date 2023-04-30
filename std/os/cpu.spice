@@ -1,4 +1,4 @@
-ext<int> sched_yield();
+ext f<int> sched_yield();
 
 /**
  * Causes the calling thread to relinquish the CPU.

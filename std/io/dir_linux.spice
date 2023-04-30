@@ -61,14 +61,14 @@ type DirStream struct {
 }
 
 // Link external functions
-ext<int> mkdir(string, int);
-ext<int> rmdir(string);
-ext<int> rename(string, string);
-ext<int> access(string, int);
-ext<int> stat(string, FileStat*);
-ext<DirStream*> opendir(string);
-ext<int> closedir(DirStream*);
-ext<DirEntry*> readdir(DirStream*);
+ext f<int> mkdir(string, int);
+ext f<int> rmdir(string);
+ext f<int> rename(string, string);
+ext f<int> access(string, int);
+ext f<int> stat(string, FileStat*);
+ext f<DirStream*> opendir(string);
+ext f<int> closedir(DirStream*);
+ext f<DirEntry*> readdir(DirStream*);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.

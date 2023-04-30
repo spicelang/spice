@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/functions/error-ext-dyn-arg/source.spice:1:26:
+[Error|Semantic] ./test-files/typechecker/ext-decl/error-ext-dyn-arg/source.spice:1:28:
 Unexpected dyn type: Dyn data type is not allowed as arg type for external functions
 
 1  nt> exteralFunction(dyn, int);

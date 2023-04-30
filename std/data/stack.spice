@@ -3,10 +3,10 @@ const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
 
 // Link external functions
-ext<byte*> malloc(long);
-ext<byte*> realloc(byte*, int);
-ext free(byte*);
-ext<byte*> memcpy(byte*, byte*, int);
+ext f<byte*> malloc(long);
+ext f<byte*> realloc(byte*, int);
+ext p free(byte*);
+ext f<byte*> memcpy(byte*, byte*, int);
 
 // Add generic type definition
 type T dyn;

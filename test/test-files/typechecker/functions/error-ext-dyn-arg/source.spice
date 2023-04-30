@@ -1,5 +1,0 @@
-ext<int> exteralFunction(dyn, int);
-
-f<int> main() {
-    externalFunction(1, 3);
-}
