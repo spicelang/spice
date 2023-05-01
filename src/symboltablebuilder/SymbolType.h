@@ -93,6 +93,14 @@ public:
         const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
         return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
       }
+      case TY_FUNCTION:
+      case TY_PROCEDURE:
+        if (lhs.paramTypes.size() != rhs.paramTypes.size())
+          return false;
+        for (size_t i = 0; i < lhs.paramTypes.size(); i++)
+          if (lhs.paramTypes.at(i) != rhs.paramTypes.at(i))
+            return false;
+        return true;
       case TY_GENERIC:
         return lhs.subType == rhs.subType;
       default:

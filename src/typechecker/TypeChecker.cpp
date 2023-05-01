@@ -1791,6 +1791,8 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
     return node->setEvaluatedSymbolType(SymbolType(TY_BOOL), manIdx);
   case BaseDataTypeNode::TY_CUSTOM:
     return node->setEvaluatedSymbolType(std::any_cast<SymbolType>(visit(node->customDataType())), manIdx);
+  case BaseDataTypeNode::TY_FUNCTION:
+    return node->setEvaluatedSymbolType(std::any_cast<SymbolType>(visit(node->functionDataType())), manIdx);
   default:
     return node->setEvaluatedSymbolType(SymbolType(TY_DYN), manIdx);
   }
@@ -1923,7 +1925,8 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
 
   // Build function type
   SymbolType functionType(node->isFunction ? TY_FUNCTION : TY_PROCEDURE);
-  functionType.setFunctionReturnType(returnType);
+  if (node->isFunction)
+    functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
 
   return node->setEvaluatedSymbolType(functionType, manIdx);

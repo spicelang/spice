@@ -1729,6 +1729,7 @@ public:
 
   // Public get methods
   [[nodiscard]] CustomDataTypeNode *customDataType() const { return getChild<CustomDataTypeNode>(); }
+  [[nodiscard]] FunctionDataTypeNode *functionDataType() const { return getChild<FunctionDataTypeNode>(); }
 
   // Public members
   Type type = TYPE_NONE;
