@@ -1160,19 +1160,18 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (!accessScope)
     accessScope = currentScope;
 
-  // Retrieve var entry
-  SymbolTableEntry *varEntry;
-  if (node->identifierFragments.size() > 1) {
+  // Check if a local or global variable can be found by searching for the name
+  SymbolTableEntry *varEntry = nullptr;
+  if (node->identifierFragments.size() == 1)
+    varEntry = accessScope->lookup(node->identifierFragments.back());
+
+  // If no local or global was found, search in the name registry
+  if (!varEntry) {
     const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqIdentifier);
     if (!registryEntry)
       throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found");
     varEntry = registryEntry->targetEntry;
     accessScope = registryEntry->targetScope;
-  } else {
-    // Load symbol table entry
-    varEntry = accessScope->lookup(node->identifierFragments.back());
-    if (!varEntry)
-      throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found");
   }
   assert(varEntry != nullptr);
   assert(accessScope != nullptr);
@@ -1183,8 +1182,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (varType.is(TY_INVALID))
     throw SemanticError(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.");
 
-  // The base type should be a primitive or struct
-  if (!varType.getBaseType().isPrimitive() && !varType.getBaseType().isOneOf({TY_STRUCT, TY_DYN}))
+  // The base type should be a primitive, struct, function or procedure
+  if (!varType.getBaseType().isPrimitive() && !varType.getBaseType().isOneOf({TY_STRUCT, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
     throw SemanticError(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here");
 
   // Check if is an imported variable

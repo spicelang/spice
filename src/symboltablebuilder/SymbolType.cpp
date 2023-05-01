@@ -529,8 +529,7 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
  * @param withSize Include size in string
  * @return Type chain element name
  */
-std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, // NOLINT(misc-no-recursion)
-                                                bool mangledName) {
+std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName) const {
   switch (chainElement.superType) {
   case TY_PTR:
     return mangledName ? "ptr" : "*";
@@ -581,10 +580,25 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "alias(" + chainElement.subType + ")";
   case TY_DYN:
     return "dyn";
-  case TY_FUNCTION:
-    return "function";
-  case TY_PROCEDURE:
-    return "procedure";
+  case TY_FUNCTION: {
+    std::stringstream paramTypesString;
+    for (const SymbolType &paramType : getFunctionParamTypes()) {
+      if (paramTypesString.rdbuf()->in_avail() > 0)
+        paramTypesString << ",";
+      paramTypesString << paramType.getName(true);
+    }
+    const std::string returnTypeString = getFunctionReturnType().getName(true);
+    return "f<" + returnTypeString + ">(" + paramTypesString.str() + ")";
+  }
+  case TY_PROCEDURE: {
+    std::stringstream paramTypesString;
+    for (const SymbolType &paramType : getFunctionParamTypes()) {
+      if (paramTypesString.rdbuf()->in_avail() > 0)
+        paramTypesString << ",";
+      paramTypesString << paramType.getName(true);
+    }
+    return "p(" + paramTypesString.str() + ")";
+  }
   case TY_IMPORT:
     return "import";
   case TY_INVALID:    // GCOV_EXCL_LINE

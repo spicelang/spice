@@ -204,7 +204,7 @@ public:
 
 private:
   // Private methods
-  [[nodiscard]] static std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName);
+  [[nodiscard]] std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName) const;
 
 public:
   // Json serializer/deserializer

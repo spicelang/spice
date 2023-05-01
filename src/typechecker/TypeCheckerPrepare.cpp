@@ -100,13 +100,15 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Visit parameters
   std::vector<std::string> paramNames;
-  ParamList paramTypes;
+  std::vector<SymbolType> paramTypes;
+  ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList) {
       paramNames.push_back(param.name);
-      paramTypes.push_back({param.type, param.isOptional});
+      paramTypes.push_back(param.type);
+      paramList.push_back({param.type, param.isOptional});
       // Check if the type is present in the template for generic types
       if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
@@ -121,6 +123,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Prepare type of function
   SymbolType functionType(TY_FUNCTION);
   functionType.specifiers = node->functionSpecifiers;
+  functionType.setFunctionReturnType(returnType);
+  functionType.setFunctionParamTypes(paramTypes);
 
   // Update type of function entry
   SymbolTableEntry *functionEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
@@ -128,7 +132,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   functionEntry->updateType(functionType, false);
 
   // Build function object
-  const Function spiceFunc(node->fctName->name, functionEntry, thisType, returnType, paramTypes, usedGenericTypes, node,
+  const Function spiceFunc(node->fctName->name, functionEntry, thisType, returnType, paramList, usedGenericTypes, node,
                            /*external=*/false);
   FunctionManager::insertFunction(currentScope, spiceFunc, &node->fctManifestations);
 
@@ -203,13 +207,15 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Visit parameters
   std::vector<std::string> paramNames;
-  ParamList paramTypes;
+  std::vector<SymbolType> paramTypes;
+  ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList) {
       paramNames.push_back(param.name);
-      paramTypes.push_back({param.type, param.isOptional});
+      paramTypes.push_back(param.type);
+      paramList.push_back({param.type, param.isOptional});
       // Check if the type is present in the template for generic types
       if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
@@ -224,6 +230,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Prepare type of procedure
   SymbolType procedureType(TY_PROCEDURE);
   procedureType.specifiers = node->procedureSpecifiers;
+  procedureType.setFunctionParamTypes(paramTypes);
 
   // Update type of procedure entry
   SymbolTableEntry *procedureEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
@@ -231,7 +238,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   procedureEntry->updateType(procedureType, false);
 
   // Build procedure object
-  const Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramTypes, usedGenericTypes, node,
+  const Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramList, usedGenericTypes, node,
                            /*external=*/false);
   FunctionManager::insertFunction(currentScope, spiceProc, &node->procManifestations);
 

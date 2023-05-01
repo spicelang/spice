@@ -3,7 +3,7 @@ f<int> test(string input) {
 }
 
 f<int> main() {
-    const f<int>(string) testFct = test;
+    dyn testFct = test;
     int i = testFct();
     printf("Result: %d", i);
 }
