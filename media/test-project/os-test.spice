@@ -1,6 +1,6 @@
 ext f<byte*> malloc(int);
 
-f<int> test(string input) {
+f<int> test(string input = "test") {
     return 12;
 }
 

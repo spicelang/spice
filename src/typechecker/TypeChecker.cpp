@@ -1180,6 +1180,11 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
       throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found");
     varEntry = registryEntry->targetEntry;
     accessScope = registryEntry->targetScope;
+
+    // Check if overloaded function was referenced
+    if (varEntry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->declNode->getFctManifestations()->size() > 1)
+      throw SemanticError(node, REFERENCED_OVERLOADED_FCT,
+                          "Overloaded functions or functions with optional parameters cannot be referenced");
   }
   assert(varEntry != nullptr);
   assert(accessScope != nullptr);
