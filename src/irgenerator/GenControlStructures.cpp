@@ -28,7 +28,7 @@ std::any IRGenerator::visitThreadDef(const ThreadDefNode *node) {
   for (const auto &[name, capture] : currentScope->symbolTable.captures) {
     argStructFieldNames.push_back(name);
     const SymbolType &captureSTy = capture.capturedEntry->getType();
-    argStructFieldTypes.push_back(captureSTy.toLLVMType(context, currentScope)->getPointerTo());
+    argStructFieldTypes.push_back(builder.getPtrTy());
     argStructFieldPointers.push_back(capture.capturedEntry->getAddress());
   }
 

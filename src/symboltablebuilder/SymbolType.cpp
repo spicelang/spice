@@ -180,10 +180,8 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
   if (is(TY_ENUM))
     return llvm::Type::getInt32Ty(context);
 
-  if (isPtr() || isRef() || (isArray() && getArraySize() == 0)) {
-    llvm::PointerType *pointerType = getContainedTy().toLLVMType(context, accessScope)->getPointerTo();
-    return static_cast<llvm::Type *>(pointerType);
-  }
+  if (isPtr() || isRef() || (isArray() && getArraySize() == 0) || isOneOf({TY_FUNCTION, TY_PROCEDURE}))
+    return static_cast<llvm::Type *>(llvm::PointerType::get(context, 0));
 
   if (isArray()) {
     llvm::Type *containedType = getContainedTy().toLLVMType(context, accessScope);

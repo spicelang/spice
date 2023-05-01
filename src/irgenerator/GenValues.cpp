@@ -187,7 +187,7 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
     // Get arg types
     std::vector<llvm::Type *> argTypes;
     if (data.isMethodCall || data.isConstructorCall)
-      argTypes.push_back(spiceFunc->thisType.toLLVMType(context, accessScope)->getPointerTo());
+      argTypes.push_back(builder.getPtrTy());
     for (const SymbolType &paramType : spiceFunc->getParamTypes())
       argTypes.push_back(paramType.toLLVMType(context, accessScope));
 

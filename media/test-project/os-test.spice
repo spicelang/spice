@@ -6,6 +6,6 @@ f<int> test(string input) {
 
 f<int> main() {
     dyn testFct = test;
-    int i = testFct();
-    printf("Result: %d", i);
+    //int i = testFct();
+    //printf("Result: %d", i);
 }
