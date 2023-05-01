@@ -58,7 +58,7 @@
       "name": "main(int, string[])",
       "orderIndex": 1,
       "state": "destructed",
-      "type": "function"
+      "type": "f<int>()"
     },
     {
       "codeLoc": "L1C1",
@@ -67,7 +67,7 @@
       "name": "fibo:L1C1",
       "orderIndex": 0,
       "state": "destructed",
-      "type": "function"
+      "type": "f<int>(int)"
     }
   ]
 }

@@ -11,11 +11,8 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   // Mark unreachable statements
   node->returnsOnAllControlPaths(nullptr);
 
-  // Update main function symbol type
-  SymbolTableEntry *functionEntry = rootScope->lookupStrict(node->getSignature());
-  assert(functionEntry != nullptr);
-  functionEntry->updateType(SymbolType(TY_FUNCTION), false);
-  functionEntry->used = true;
+  // Retrieve return type
+  SymbolType returnType(TY_INT);
 
   // Change to function body scope
   currentScope = node->fctScope;
@@ -23,12 +20,27 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   // Set type of 'result' variable to int
   SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
-  resultEntry->updateType(SymbolType(TY_INT), false);
+  resultEntry->updateType(returnType, false);
   resultEntry->used = true;
 
-  // Visit param list
-  if (node->takesArgs)
-    visit(node->paramLst());
+  // Retrieve param types
+  std::vector<SymbolType> paramTypes;
+  if (node->takesArgs) {
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    for (const NamedParam &param : namedParamList)
+      paramTypes.push_back(param.type);
+  }
+
+  // Prepare type of function
+  SymbolType functionType(TY_FUNCTION);
+  functionType.setFunctionReturnType(returnType);
+  functionType.setFunctionParamTypes(paramTypes);
+
+  // Update main function symbol type
+  SymbolTableEntry *functionEntry = rootScope->lookupStrict(node->getSignature());
+  assert(functionEntry != nullptr);
+  functionEntry->updateType(functionType, false);
+  functionEntry->used = true;
 
   // Leave main function body scope
   currentScope = rootScope;
@@ -516,9 +528,10 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
 
 std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   // Collect argument types
-  ParamList argTypes;
+  std::vector<SymbolType> argTypes;
+  ParamList argList;
   if (node->hasArgs) {
-    argTypes.reserve(node->argTypeLst()->dataTypes().size());
+    argList.reserve(node->argTypeLst()->dataTypes().size());
     for (DataTypeNode *arg : node->argTypeLst()->dataTypes()) {
       // Visit argument
       auto argType = std::any_cast<SymbolType>(visit(arg));
@@ -526,30 +539,33 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
       if (argType.is(TY_DYN))
         throw SemanticError(arg, UNEXPECTED_DYN_TYPE, "Dyn data type is not allowed as arg type for external functions");
       // Save argument
-      argTypes.push_back({argType, false});
+      argTypes.push_back(argType);
+      argList.push_back({argType, false});
     }
   }
 
-  SymbolType dynType(TY_DYN);
-  Function spiceFunc;
-  if (node->returnType()) { // External function
-    // Visit return type
-    auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+  // Retrieve return type
+  SymbolType returnType(TY_DYN);
+  const bool isFunction = node->returnType();
+  if (isFunction) { // External function
+    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
     // Check if return type is dyn
     if (returnType.is(TY_DYN))
       throw SemanticError(node->returnType(), UNEXPECTED_DYN_TYPE, "dyn is not allowed as return type for external functions");
-    spiceFunc = Function(node->extFunctionName, node->entry, /*thisType=*/dynType, returnType, argTypes, /*templateTypes=*/{},
-                         node, /*external=*/true);
-  } else { // External procedure
-    spiceFunc = Function(node->extFunctionName, node->entry, /*thisType=*/dynType, /*returnType=*/dynType, argTypes,
-                         /*templateTypes=*/{}, node, /*=external*/ true);
   }
 
   // Add function to current scope
+  Function spiceFunc = Function(node->extFunctionName, node->entry, SymbolType(TY_DYN), returnType, argList, {}, node, true);
   node->extFunction = FunctionManager::insertFunction(currentScope, spiceFunc, &node->extFunctionManifestations);
 
+  // Prepare ext function type
+  SymbolType extFunctionType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
+  if (isFunction)
+    extFunctionType.setFunctionReturnType(returnType);
+  extFunctionType.setFunctionParamTypes(argTypes);
+
   // Set type of external function
-  node->entry->updateType(SymbolType(TY_FUNCTION), false);
+  node->entry->updateType(extFunctionType, false);
 
   return nullptr;
 }

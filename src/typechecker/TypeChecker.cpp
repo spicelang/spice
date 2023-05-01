@@ -375,9 +375,10 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Visit params
-  ParamList paramTypes;
+  std::vector<SymbolType> paramTypes;
+  ParamList paramList;
   if (node->hasParams) {
-    paramTypes.reserve(node->paramTypeLst()->dataTypes().size());
+    paramList.reserve(node->paramTypeLst()->dataTypes().size());
     for (DataTypeNode *param : node->paramTypeLst()->dataTypes()) {
       auto paramType = std::any_cast<SymbolType>(visit(param));
 
@@ -386,19 +387,26 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
         throw SemanticError(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the function");
 
-      paramTypes.push_back({paramType, false});
+      paramTypes.push_back(paramType);
+      paramList.push_back({paramType, false});
     }
   }
 
   // Build signature object
-  Function signature(node->methodName, nullptr, SymbolType(TY_DYN), returnType, paramTypes, usedGenericTypes, node, false);
+  Function signature(node->methodName, nullptr, SymbolType(TY_DYN), returnType, paramList, usedGenericTypes, node, false);
 
   // Add signature to current scope
   Function *manifestation = FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
   manifestation->used = true;
 
-  // Set entry to signature type
+  // Prepare signature type
   SymbolType signatureType(node->signatureType == SignatureNode::TYPE_FUNCTION ? TY_FUNCTION : TY_PROCEDURE);
+  signatureType.specifiers = node->signatureSpecifiers;
+  if (node->signatureType == SignatureNode::TYPE_FUNCTION)
+    signatureType.setFunctionReturnType(returnType);
+  signatureType.setFunctionParamTypes(paramTypes);
+
+  // Set entry to signature type
   assert(node->entry != nullptr);
   node->entry->updateType(signatureType, false);
   node->entry->used = true;

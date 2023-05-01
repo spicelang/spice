@@ -203,7 +203,7 @@
           "name": "ctor:L10C1",
           "orderIndex": 2,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p()"
         },
         {
           "codeLoc": "L22C1",
@@ -212,7 +212,7 @@
           "name": "isValid:L22C1",
           "orderIndex": 5,
           "state": "destructed",
-          "type": "function"
+          "type": "f<bool>()"
         },
         {
           "codeLoc": "L18C1",
@@ -221,7 +221,7 @@
           "name": "getIdx:L18C1",
           "orderIndex": 4,
           "state": "destructed",
-          "type": "function"
+          "type": "f<std/iterator/iterable::Pair<unsigned long,generic(T)&>>()"
         },
         {
           "codeLoc": "L22C1",
@@ -230,7 +230,7 @@
           "name": "isValid:L22C1",
           "orderIndex": 5,
           "state": "destructed",
-          "type": "function"
+          "type": "f<bool>()"
         },
         {
           "codeLoc": "L10C1",
@@ -239,7 +239,7 @@
           "name": "ctor:L10C1",
           "orderIndex": 2,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p()"
         },
         {
           "codeLoc": "L26C1",
@@ -248,7 +248,7 @@
           "name": "next:L26C1",
           "orderIndex": 6,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p()"
         },
         {
           "codeLoc": "L7C5",
@@ -266,7 +266,7 @@
           "name": "next:L26C1",
           "orderIndex": 6,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p()"
         },
         {
           "codeLoc": "L14C1",
@@ -275,7 +275,7 @@
           "name": "get:L14C1",
           "orderIndex": 3,
           "state": "destructed",
-          "type": "function"
+          "type": "f<generic(T)&>()"
         },
         {
           "codeLoc": "L14C1",
@@ -284,7 +284,7 @@
           "name": "get:L14C1",
           "orderIndex": 3,
           "state": "destructed",
-          "type": "function"
+          "type": "f<generic(T)&>()"
         },
         {
           "codeLoc": "L6C5",
@@ -459,7 +459,7 @@
           "name": "isValid:L22C1",
           "orderIndex": 5,
           "state": "destructed",
-          "type": "function"
+          "type": "f<bool>()"
         },
         {
           "codeLoc": "L18C1",
@@ -468,7 +468,7 @@
           "name": "getIdx:L18C1",
           "orderIndex": 4,
           "state": "destructed",
-          "type": "function"
+          "type": "f<std/iterator/iterable::Pair<unsigned long,generic(T)&>>()"
         },
         {
           "codeLoc": "L10C1",
@@ -477,7 +477,7 @@
           "name": "ctor:L10C1",
           "orderIndex": 2,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p()"
         },
         {
           "codeLoc": "L26C1",
@@ -486,7 +486,7 @@
           "name": "next:L26C1",
           "orderIndex": 6,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p()"
         },
         {
           "codeLoc": "L7C5",
@@ -504,7 +504,7 @@
           "name": "get:L14C1",
           "orderIndex": 3,
           "state": "destructed",
-          "type": "function"
+          "type": "f<generic(T)&>()"
         },
         {
           "codeLoc": "L6C5",
@@ -535,7 +535,7 @@
       "name": "main(int, string[])",
       "orderIndex": 2,
       "state": "destructed",
-      "type": "function"
+      "type": "f<int>()"
     },
     {
       "codeLoc": "L5C1",

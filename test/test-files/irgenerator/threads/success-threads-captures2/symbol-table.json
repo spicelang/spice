@@ -78,7 +78,7 @@
       "name": "main(int, string[])",
       "orderIndex": 1,
       "state": "destructed",
-      "type": "function"
+      "type": "f<int>()"
     },
     {
       "codeLoc": "L1C1",
@@ -87,7 +87,7 @@
       "name": "usleep",
       "orderIndex": 0,
       "state": "destructed",
-      "type": "function"
+      "type": "p(int)"
     }
   ]
 }

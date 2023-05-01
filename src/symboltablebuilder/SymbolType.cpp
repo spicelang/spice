@@ -450,8 +450,9 @@ void SymbolType::setFunctionParamTypes(const std::vector<SymbolType> &newParamTy
  */
 std::vector<SymbolType> SymbolType::getFunctionParamTypes() const {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  assert(!typeChain.back().paramTypes.empty());
-  return {typeChain.back().paramTypes.begin() + 1, typeChain.back().paramTypes.end()};
+  if (!typeChain.back().paramTypes.empty())
+    return {typeChain.back().paramTypes.begin() + 1, typeChain.back().paramTypes.end()};
+  return {};
 }
 
 /**
