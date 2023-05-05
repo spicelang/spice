@@ -1,19 +1,14 @@
-import "std/iterator/number-iterator";
-
-f<int> main() {
-    foreach double i, int item : range(1s, 12s) {
-        printf("Item at index %f: %d", i, item);
-    }
-}
-
-/*ext f<byte*> malloc(int);
+ext f<byte*> malloc(int);
 
 f<int> test(string input) {
     return 12;
 }
 
+p invoke(f<int>(string) fctPtr) {
+    fctPtr("string");
+}
+
 f<int> main() {
     f<int>(string) testFct = test;
-    int i = testFct("test");
-    printf("Result: %d", i);
-}*/
+    invoke(testFct);
+}

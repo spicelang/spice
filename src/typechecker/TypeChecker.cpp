@@ -1187,7 +1187,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   node->accessScopes.at(manIdx) = accessScope;
   SymbolType varType = varEntry->getType();
 
-  if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+  if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->global) {
     // Check if overloaded function was referenced
     const std::vector<Function *> *manifestations = varEntry->declNode->getFctManifestations();
     if (manifestations->size() > 1)
