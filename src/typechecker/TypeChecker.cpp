@@ -1074,6 +1074,46 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     lhsType = lhsType.getContainedTy();
     break;
   }
+  case PostfixUnaryExprNode::OP_FUNCTION_CALL: {
+    PostfixUnaryExprNode::FunctionCallData &data = node->fctCallData.at(manIdx);
+
+    assert(lhsEntry != nullptr);
+    const std::string &functionName = lhsEntry->name;
+    data.calleeParentScope = lhsEntry->scope->parent;
+
+    // Retrieve arg types
+    data.argTypes.clear();
+    if (node->fctCallHasArgs) {
+      const std::vector<AssignExprNode *> &args = node->argLst()->args();
+      data.argTypes.reserve(args.size());
+      for (AssignExprNode *arg : args) {
+        // Visit argument
+        const SymbolType argType = any_cast<ExprResult>(visit(arg)).type;
+        assert(!argType.hasAnyGenericParts());
+        data.argTypes.push_back(mapImportedScopeTypeToLocalType(data.calleeParentScope, argType));
+      }
+    }
+
+    // Retrieve call type, based on the left hand side
+    const bool inGlobalScope = accessScope->type == SCOPE_GLOBAL;
+    if (lhsType.isBaseType(TY_STRUCT)) {
+      data.callType = inGlobalScope ? PostfixUnaryExprNode::TYPE_CTOR : PostfixUnaryExprNode::TYPE_METHOD;
+    } else if (lhsType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+      data.callType = inGlobalScope ? PostfixUnaryExprNode::TYPE_ORDINARY : PostfixUnaryExprNode::TYPE_FCT_PTR;
+    }
+    assert(data.callType != PostfixUnaryExprNode::TYPE_NONE);
+
+    // Template types are only allowed for ctor calls
+    if (data.callType != PostfixUnaryExprNode::TYPE_CTOR && node->fctCallHasTemplateTypes)
+      throw SemanticError(node->templateTypeLst(), INVALID_TEMPLATE_TYPES,
+                          "Template types are only allowed for constructor calls");
+
+    // Retrieve 'this' type
+    if (data.isCtorCall() || data.isMethodCall())
+      data.thisType = mapImportedScopeTypeToLocalType(lhsEntry->scope, lhsEntry->getType());
+
+    break;
+  }
   case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
     const std::string &fieldName = node->identifier;
 
@@ -1243,10 +1283,6 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 }
 
 std::any TypeChecker::visitValue(ValueNode *node) {
-  // Function call
-  if (node->functionCall())
-    return visit(node->functionCall());
-
   // Array initialization
   if (node->arrayInitialization())
     return visit(node->arrayInitialization());

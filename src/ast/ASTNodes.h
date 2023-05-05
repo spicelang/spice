@@ -1481,7 +1481,26 @@ public:
 class PostfixUnaryExprNode : public ASTNode {
 public:
   // Enums
-  enum PostfixUnaryOp { OP_NONE, OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS };
+  enum PostfixUnaryOp { OP_NONE, OP_SUBSCRIPT, OP_FUNCTION_CALL, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS };
+  enum FunctionCallType : uint8_t { TYPE_NONE, TYPE_ORDINARY, TYPE_METHOD, TYPE_CTOR, TYPE_FCT_PTR };
+
+  // Structs
+  struct FunctionCallData {
+    // Members
+    FunctionCallType callType = TYPE_NONE;
+    bool isImported = false;
+    bool isDownCall = false;
+    SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
+    std::vector<SymbolType> argTypes;
+    Function *callee = nullptr;
+    Scope *calleeParentScope = nullptr;
+
+    // Methods
+    [[nodiscard]] bool isOrdinaryCall() const { return callType == TYPE_ORDINARY; }
+    [[nodiscard]] bool isMethodCall() const { return callType == TYPE_METHOD; }
+    [[nodiscard]] bool isCtorCall() const { return callType == TYPE_CTOR; }
+    [[nodiscard]] bool isFctPtrCall() const { return callType == TYPE_FCT_PTR; }
+  };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1494,9 +1513,18 @@ public:
   [[nodiscard]] AtomicExprNode *atomicExpr() const { return getChild<AtomicExprNode>(); }
   [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
+  [[nodiscard]] ArgLstNode *argLst() const { return getChild<ArgLstNode>(); }
+
+  // Util methods
+  void customItemsInitialization(size_t manifestationCount) override { fctCallData.resize(manifestationCount); }
+  [[nodiscard]] bool hasReturnValueReceiver() const;
 
   // Public members
   PostfixUnaryOp op = OP_NONE;
+  std::vector<FunctionCallData> fctCallData; // Only contains items when operator is function call
+  bool fctCallHasArgs = false;
+  bool fctCallHasTemplateTypes = false;
   std::string identifier; // Only set when operator is member access
 };
 
@@ -1583,53 +1611,6 @@ public:
   // Public members
   PrimitiveValueType type = TYPE_NONE;
   bool isSigned = true;
-};
-
-// ==================================================== FunctionCallNode =========================================================
-
-class FunctionCallNode : public ASTNode {
-public:
-  enum FunctionCallType : uint8_t { TYPE_ORDINARY, TYPE_METHOD, TYPE_CTOR, TYPE_FCT_PTR };
-
-  // Structs
-  struct FunctionCallData {
-    // Members
-    FunctionCallType callType = TYPE_ORDINARY;
-    bool isImported = false;
-    bool isDownCall = false;
-    SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
-    std::vector<SymbolType> argTypes;
-    Function *callee = nullptr;
-    Scope *calleeParentScope = nullptr;
-
-    // Methods
-    [[nodiscard]] bool isOrdinaryCall() const { return callType == TYPE_ORDINARY; }
-    [[nodiscard]] bool isMethodCall() const { return callType == TYPE_METHOD; }
-    [[nodiscard]] bool isCtorCall() const { return callType == TYPE_CTOR; }
-    [[nodiscard]] bool isFctPtrCall() const { return callType == TYPE_FCT_PTR; }
-  };
-
-  // Constructors
-  using ASTNode::ASTNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFunctionCall(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFunctionCall(this); }
-
-  // Public get methods
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-  [[nodiscard]] ArgLstNode *argLst() const { return getChild<ArgLstNode>(); }
-
-  // Util methods
-  void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
-  [[nodiscard]] bool hasReturnValueReceiver() const;
-
-  // Public members
-  std::string fqFunctionName;
-  std::vector<std::string> functionNameFragments;
-  bool hasArgs = false;
-  bool hasTemplateTypes = false;
-  std::vector<FunctionCallData> data;
 };
 
 // ================================================= ArrayInitializationNode =====================================================

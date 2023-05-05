@@ -695,6 +695,10 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     lhs.entry = nullptr;
     break;
   }
+  case PostfixUnaryExprNode::OP_FUNCTION_CALL: {
+
+    break;
+  }
   case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
     // Get the address of the struct instance
     resolveAddress(lhs);

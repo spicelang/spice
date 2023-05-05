@@ -131,7 +131,9 @@ const CompileTimeValue &LogicalOrExprNode::getCompileTimeValue() const {
  *
  * @return Has return value receiver or not
  */
-bool FunctionCallNode::hasReturnValueReceiver() const {
+bool PostfixUnaryExprNode::hasReturnValueReceiver() const {
+  assert(op == OP_FUNCTION_CALL);
+
   ASTNode *node = parent;
   while (!node->isAssignExpr()) {
     if (node->children.size() > 1)
