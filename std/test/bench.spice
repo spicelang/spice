@@ -2,7 +2,7 @@
 type T dyn;
 
 /**
- * This functions can be used to supress compiler optimization for benchmarking,
+ * This functions can be used to suppress compiler optimization for benchmarking,
  * because the compiler has no information about this function, because it is
  * located in an imported module.
  */
