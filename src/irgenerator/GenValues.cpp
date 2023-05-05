@@ -157,8 +157,8 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
     const std::vector<AssignExprNode *> args = node->argLst()->args();
     for (size_t i = 0; i < args.size(); i++) {
       AssignExprNode *argNode = args.at(i);
-      SymbolType expectedSTy =
-          data.isFctPtrCall() ? firstFragEntry->getType().getFunctionParamTypes().at(i) : spiceFunc->paramList.at(i).type;
+      SymbolType expectedSTy = data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes().at(i)
+                                                   : spiceFunc->paramList.at(i).type;
       const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
       // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
@@ -180,9 +180,10 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
   }
 
   // Retrieve return and param types
-  const SymbolType returnSType = data.isFctPtrCall() ? firstFragEntry->getType().getFunctionReturnType() : spiceFunc->returnType;
+  const SymbolType returnSType =
+      data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionReturnType() : spiceFunc->returnType;
   const std::vector<SymbolType> paramSTypes =
-      data.isFctPtrCall() ? firstFragEntry->getType().getFunctionParamTypes() : spiceFunc->getParamTypes();
+      data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes() : spiceFunc->getParamTypes();
 
   // Function is not defined in the current module -> declare it
   // This can happen when:
@@ -212,8 +213,10 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
     // Get entry to load the function pointer
     SymbolTableEntry *firstFragEntry = currentScope->lookup(node->functionNameFragments.front());
     assert(firstFragEntry != nullptr);
+    SymbolType firstFragType = firstFragEntry->getType();
     llvm::Value *fctPtr = firstFragEntry->getAddress();
     assert(fctPtr != nullptr);
+    autoDeReferencePtr(fctPtr, firstFragType, currentScope);
     llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr);
 
     // Generate function call

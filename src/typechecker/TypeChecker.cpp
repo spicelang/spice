@@ -1326,9 +1326,10 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   if (firstFragEntry) {
     firstFragEntry->used = true;
     // Decide of which type the function call is
-    if (firstFragEntry->getType().isBaseType(TY_STRUCT) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
+    const SymbolType &baseType = firstFragEntry->getType().getBaseType();
+    if (baseType.is(TY_STRUCT) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
       data.callType = FunctionCallNode::TYPE_METHOD;
-    } else if (firstFragEntry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
+    } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
       data.callType = FunctionCallNode::TYPE_FCT_PTR;
     }
   }
@@ -1343,7 +1344,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     assert(data.calleeParentScope != nullptr);
   } else if (data.isFctPtrCall()) {
     // This is a function pointer call
-    const SymbolType &functionType = firstFragEntry->getType();
+    const SymbolType &functionType = firstFragEntry->getType().getBaseType();
     assert(functionType.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
     visitFctPtrCall(node, functionType);
   } else {
@@ -1397,7 +1398,7 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   // Retrieve return type
   SymbolType returnType(TY_DYN);
   if (data.isFctPtrCall()) {
-    returnType = firstFragEntry->getType().getFunctionReturnType();
+    returnType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
   } else if (data.isCtorCall()) {
     // Add anonymous symbol to keep track of de-allocation
     currentScope->symbolTable.insertAnonymous(data.thisType, node);

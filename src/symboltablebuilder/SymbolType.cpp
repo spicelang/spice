@@ -581,17 +581,19 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "dyn";
   case TY_FUNCTION: {
     std::stringstream paramTypesString;
-    for (const SymbolType &paramType : getFunctionParamTypes()) {
+    const SymbolType &baseType = getBaseType();
+    for (const SymbolType &paramType : baseType.getFunctionParamTypes()) {
       if (paramTypesString.rdbuf()->in_avail() > 0)
         paramTypesString << ",";
       paramTypesString << paramType.getName(true);
     }
-    const std::string returnTypeString = getFunctionReturnType().getName(true);
+    const std::string returnTypeString = baseType.getFunctionReturnType().getName(true);
     return "f<" + returnTypeString + ">(" + paramTypesString.str() + ")";
   }
   case TY_PROCEDURE: {
     std::stringstream paramTypesString;
-    for (const SymbolType &paramType : getFunctionParamTypes()) {
+    const SymbolType &baseType = getBaseType();
+    for (const SymbolType &paramType : baseType.getFunctionParamTypes()) {
       if (paramTypesString.rdbuf()->in_avail() > 0)
         paramTypesString << ",";
       paramTypesString << paramType.getName(true);
