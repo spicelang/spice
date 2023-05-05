@@ -1589,16 +1589,24 @@ public:
 
 class FunctionCallNode : public ASTNode {
 public:
+  enum FunctionCallType : uint8_t { TYPE_ORDINARY, TYPE_METHOD, TYPE_CTOR, TYPE_FCT_PTR };
+
   // Structs
   struct FunctionCallData {
-    bool isConstructorCall = false;
-    bool isMethodCall = false;
+    // Members
+    FunctionCallType callType = TYPE_ORDINARY;
     bool isImported = false;
     bool isDownCall = false;
     SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
     std::vector<SymbolType> argTypes;
     Function *callee = nullptr;
     Scope *calleeParentScope = nullptr;
+
+    // Methods
+    [[nodiscard]] bool isOrdinaryCall() const { return callType == TYPE_ORDINARY; }
+    [[nodiscard]] bool isMethodCall() const { return callType == TYPE_METHOD; }
+    [[nodiscard]] bool isCtorCall() const { return callType == TYPE_CTOR; }
+    [[nodiscard]] bool isFctPtrCall() const { return callType == TYPE_FCT_PTR; }
   };
 
   // Constructors

@@ -1,11 +1,19 @@
-ext f<byte*> malloc(int);
+import "std/iterator/number-iterator";
 
-f<int> test(string input = "test") {
+f<int> main() {
+    foreach double i, int item : range(1s, 12s) {
+        printf("Item at index %f: %d", i, item);
+    }
+}
+
+/*ext f<byte*> malloc(int);
+
+f<int> test(string input) {
     return 12;
 }
 
 f<int> main() {
     f<int>(string) testFct = test;
-    //int i = testFct();
-    //printf("Result: %d", i);
-}
+    int i = testFct("test");
+    printf("Result: %d", i);
+}*/

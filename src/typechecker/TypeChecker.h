@@ -131,8 +131,9 @@ private:
   size_t manIdx = 0;
 
   // Private methods
-  std::tuple<Scope *, SymbolType, std::string> visitOrdinaryFctCall(FunctionCallNode *node);
-  std::pair<Scope *, SymbolType> visitMethodCall(FunctionCallNode *node, Scope *structScope) const;
+  std::string visitOrdinaryFctCall(FunctionCallNode *node);
+  void visitFctPtrCall(FunctionCallNode *node, const SymbolType &functionType) const;
+  void visitMethodCall(FunctionCallNode *node, Scope *structScope) const;
   [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;
   [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
   void changeToScope(Scope *scope, ScopeType scopeType);

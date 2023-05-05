@@ -66,7 +66,7 @@ const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declNode->codeL
  */
 llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
   assert(type.is(TY_STRUCT));
-  return llvmType;
+  return llvmStructType;
 }
 
 /**
@@ -76,7 +76,7 @@ llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
  */
 void SymbolTableEntry::setStructLLVMType(llvm::StructType *newStructType) {
   assert(type.is(TY_STRUCT));
-  llvmType = newStructType;
+  llvmStructType = newStructType;
 }
 
 /**

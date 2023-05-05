@@ -8,8 +8,8 @@ public type Thread struct {
     byte* threadId
 }
 
-public p Thread.ctor(p() fctPtr) {
-    pthread_create(this.threadId, nil<byte*>, fctPtr, nil<byte*>);
+public p Thread.ctor(p() threadRoutine) {
+    pthread_create(this.threadId, nil<byte*>, threadRoutine, nil<byte*>);
 }
 
 /**

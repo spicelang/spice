@@ -1,0 +1,25 @@
+// Generic types
+type T dyn;
+
+/**
+ * This functions can be used to supress compiler optimization for benchmarking,
+ * because the compiler has no information about this function, because it is
+ * located in an imported module.
+ */
+
+/**
+ * Returns the input value as output
+ *
+ * @param input Input value
+ * @return Output value
+ */
+public f<T> produce(const T& input) {
+    return input;
+}
+
+/**
+ * Consumes the input value
+ *
+ * @param input Input value
+ */
+public p consume(const T& _input) {}

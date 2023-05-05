@@ -1180,17 +1180,24 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
       throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found");
     varEntry = registryEntry->targetEntry;
     accessScope = registryEntry->targetScope;
-
-    // Check if overloaded function was referenced
-    if (varEntry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->declNode->getFctManifestations()->size() > 1)
-      throw SemanticError(node, REFERENCED_OVERLOADED_FCT,
-                          "Overloaded functions or functions with optional parameters cannot be referenced");
   }
   assert(varEntry != nullptr);
   assert(accessScope != nullptr);
   node->entries.at(manIdx) = varEntry;
   node->accessScopes.at(manIdx) = accessScope;
   SymbolType varType = varEntry->getType();
+
+  if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    // Check if overloaded function was referenced
+    const std::vector<Function *> *manifestations = varEntry->declNode->getFctManifestations();
+    if (manifestations->size() > 1)
+      throw SemanticError(node, REFERENCED_OVERLOADED_FCT,
+                          "Overloaded functions or functions with optional parameters cannot be referenced");
+    // Set referenced function to used
+    Function *referencedFunction = manifestations->front();
+    referencedFunction->used = true;
+    referencedFunction->entry->used = true;
+  }
 
   if (varType.is(TY_INVALID))
     throw SemanticError(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.");
@@ -1300,11 +1307,12 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
 std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
 
-  // Visit args
+  // Retrieve arg types
   data.argTypes.clear();
   if (node->hasArgs) {
-    data.argTypes.reserve(node->argLst()->args().size());
-    for (AssignExprNode *arg : node->argLst()->args()) {
+    const std::vector<AssignExprNode *> &args = node->argLst()->args();
+    data.argTypes.reserve(args.size());
+    for (AssignExprNode *arg : args) {
       // Visit argument
       const SymbolType argType = any_cast<ExprResult>(visit(arg)).type;
       assert(!argType.hasAnyGenericParts());
@@ -1313,95 +1321,99 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     }
   }
 
-  // Check if this is a ctor call to the String type
-  const bool isStringRt = rootScope->lookupStrict(STROBJ_NAME) != nullptr;
-  if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !isStringRt)
-    sourceFile->requestRuntimeModule(STRING_RT);
-
   // Retrieve entry of the first fragment
-  SymbolTableEntry *firstFragmentEntry = currentScope->lookup(node->functionNameFragments.front());
-  if (firstFragmentEntry) {
-    firstFragmentEntry->used = true;
-    data.isMethodCall = firstFragmentEntry->getType().isBaseType(TY_STRUCT) && firstFragmentEntry->scope->symbolTable.parent;
+  SymbolTableEntry *firstFragEntry = currentScope->lookup(node->functionNameFragments.front());
+  if (firstFragEntry) {
+    firstFragEntry->used = true;
+    // Decide of which type the function call is
+    if (firstFragEntry->getType().isBaseType(TY_STRUCT) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
+      data.callType = FunctionCallNode::TYPE_METHOD;
+    } else if (firstFragEntry->getType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
+      data.callType = FunctionCallNode::TYPE_FCT_PTR;
+    }
   }
 
   // Check if this is a method call or a normal function call
-  SymbolType returnType(TY_DYN);
-  SymbolType thisType(TY_DYN);
-  if (data.isMethodCall) {
+  if (data.isMethodCall()) {
     // This is a method call
-    data.thisType = firstFragmentEntry->getType();
+    data.thisType = firstFragEntry->getType();
     Scope *structBodyScope = data.thisType.getBaseType().getBodyScope();
     assert(structBodyScope != nullptr);
-    auto [scope, type] = visitMethodCall(node, structBodyScope);
-    data.calleeParentScope = scope;
-    thisType = type;
+    visitMethodCall(node, structBodyScope);
+    assert(data.calleeParentScope != nullptr);
+  } else if (data.isFctPtrCall()) {
+    // This is a function pointer call
+    const SymbolType &functionType = firstFragEntry->getType();
+    assert(functionType.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+    visitFctPtrCall(node, functionType);
   } else {
     // This is an ordinary function call
-    auto [scope, type, knownStructName] = visitOrdinaryFctCall(node);
-    data.calleeParentScope = scope;
-    thisType = type;
+    assert(data.isOrdinaryCall());
+    const std::string knownStructName = visitOrdinaryFctCall(node);
+    assert(data.calleeParentScope != nullptr);
 
     // Only ordinary function calls can be constructors
-    if (data.isConstructorCall) {
+    if (data.isCtorCall()) {
       // Set a name to the thisType that is known to the current source file
-      thisType = thisType.replaceBaseSubType(knownStructName);
-      assert(thisType.is(TY_STRUCT));
+      data.thisType = data.thisType.replaceBaseSubType(knownStructName);
+      assert(data.thisType.is(TY_STRUCT));
     }
   }
-  assert(data.calleeParentScope != nullptr);
 
-  // Check if we were able to find a function
-  if (!data.callee) {
-    // Build error message
-    const std::string functionName = data.isConstructorCall ? CTOR_FUNCTION_NAME : node->functionNameFragments.back();
-    ParamList errArgTypes;
-    for (const SymbolType &argType : data.argTypes)
-      errArgTypes.push_back({argType, false});
-    const std::string signature = Function::getSignature(functionName, thisType, returnType, errArgTypes, {});
-    // Throw error
-    throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + signature + "' could not be found");
+  if (!data.isFctPtrCall()) {
+    // Check if we were able to find a function
+    if (!data.callee) {
+      // Build error message
+      const std::string functionName = data.isCtorCall() ? CTOR_FUNCTION_NAME : node->functionNameFragments.back();
+      ParamList errArgTypes;
+      for (const SymbolType &argType : data.argTypes)
+        errArgTypes.push_back({argType, false});
+      const std::string signature = Function::getSignature(functionName, data.thisType, SymbolType(TY_DYN), errArgTypes, {});
+      // Throw error
+      throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + signature + "' could not be found");
+    }
+
+    // Check if we need to request a re-visit, because the function body was not type-checked yet
+    if (!data.callee->alreadyTypeChecked && !data.callee->external)
+      reVisitRequested = true;
+
+    // Get function entry from function object
+    SymbolTableEntry *functionEntry = data.callee->entry;
+
+    // Check if the called function has sufficient visibility
+    data.isImported = data.calleeParentScope->isImportedBy(rootScope);
+    if (data.isImported && !functionEntry->getType().isPublic())
+      throw SemanticError(node, INSUFFICIENT_VISIBILITY,
+                          "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility");
+
+    // Check if down-call, fct ptr calls can't be down-calls
+    if (!data.isImported) {
+      const CodeLoc &callLoc = node->codeLoc;
+      const CodeLoc &defLoc = functionEntry->getDeclCodeLoc();
+      data.isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
+    }
   }
-
-  // Check if we need to request a re-visit, because the function body was not type-checked yet
-  if (!data.callee->alreadyTypeChecked && !data.callee->external)
-    reVisitRequested = true;
 
   // Retrieve return type
-  if (data.isConstructorCall) {
+  SymbolType returnType(TY_DYN);
+  if (data.isFctPtrCall()) {
+    returnType = firstFragEntry->getType().getFunctionReturnType();
+  } else if (data.isCtorCall()) {
     // Add anonymous symbol to keep track of de-allocation
-    currentScope->symbolTable.insertAnonymous(thisType, node);
+    currentScope->symbolTable.insertAnonymous(data.thisType, node);
     // Set return type to 'this' type
-    returnType = thisType;
+    returnType = data.thisType;
+  } else if (data.callee->isProcedure() || data.callee->isMethodProcedure() || data.callee->returnType.is(TY_DYN)) {
+    // Procedures always have the return type 'bool'
+    returnType = SymbolType(TY_BOOL);
   } else {
-    // Set return type to return type of function
     returnType = data.callee->returnType;
   }
-
-  // Get function entry from function object
-  SymbolTableEntry *functionEntry = data.callee->entry;
-
-  // Check if the called function has sufficient visibility
-  data.isImported = data.calleeParentScope->isImportedBy(rootScope);
-  if (data.isImported && !functionEntry->getType().isPublic())
-    throw SemanticError(node, INSUFFICIENT_VISIBILITY,
-                        "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility");
-
-  // Check if down-call
-  if (!data.isImported) {
-    const CodeLoc &callLoc = node->codeLoc;
-    const CodeLoc &defLoc = functionEntry->getDeclCodeLoc();
-    data.isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
-  }
-
-  // Procedures always have the return type 'bool'
-  if (data.callee->isProcedure() || (data.callee->isMethodProcedure() && !data.isConstructorCall) || returnType.is(TY_DYN))
-    returnType = SymbolType(TY_BOOL);
 
   // Remove public specifier to not have public local variables
   returnType.specifiers.setPublic(false);
 
-  // Initialize return type
+  // Initialize return type if required
   if (returnType.isBaseType(TY_STRUCT)) {
     SymbolType returnBaseType = returnType.getBaseType();
     const std::string structName = returnBaseType.getOriginalSubType();
@@ -1414,14 +1426,21 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   }
 
   // Check if the return value gets used
-  if ((data.callee->isFunction() || data.callee->isMethodFunction()) && !node->hasReturnValueReceiver())
+  const bool isFct = data.isFctPtrCall() ? firstFragEntry->getType().is(TY_FUNCTION)
+                                         : (data.callee->isFunction() || data.callee->isMethodFunction());
+  if (isFct && !node->hasReturnValueReceiver())
     warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
 
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx)};
 }
 
-std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(FunctionCallNode *node) {
+std::string TypeChecker::visitOrdinaryFctCall(FunctionCallNode *node) {
   FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
+
+  // Check if this is a ctor call to the String type
+  const bool isStringRt = rootScope->lookupStrict(STROBJ_NAME) != nullptr;
+  if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !isStringRt)
+    sourceFile->requestRuntimeModule(STRING_RT);
 
   // Get struct name. Retrieve it from alias if required
   std::string fqFunctionName = node->fqFunctionName;
@@ -1454,12 +1473,13 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
   SymbolTableEntry *functionEntry = functionRegistryEntry->targetEntry;
 
   // Check if the target symbol is a struct -> this must be a constructor call
-  data.isConstructorCall = functionEntry != nullptr && functionEntry->getType().is(TY_STRUCT);
+  if (functionEntry != nullptr && functionEntry->getType().is(TY_STRUCT))
+    data.callType = FunctionCallNode::TYPE_CTOR;
 
   // Get concrete template types
   if (node->hasTemplateTypes) {
     // Only constructors may have template types
-    if (!data.isConstructorCall)
+    if (!data.isCtorCall())
       throw SemanticError(node->templateTypeLst(), INVALID_TEMPLATE_TYPES,
                           "Template types are only allowed for constructor calls");
 
@@ -1478,7 +1498,7 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
   // For constructor calls, do some preparation
   std::string knownStructName;
   std::string functionName = node->functionNameFragments.back();
-  if (data.isConstructorCall) {
+  if (data.isCtorCall()) {
     const NameRegistryEntry *structRegistryEntry = functionRegistryEntry;
     const SymbolTableEntry *structEntry = functionEntry;
     const std::string structName = structRegistryEntry->targetEntry->name;
@@ -1513,18 +1533,35 @@ std::tuple<Scope *, SymbolType, std::string> TypeChecker::visitOrdinaryFctCall(F
     data.thisType.setTemplateTypes(concreteTemplateTypes);
 
   // Map local types to imported types
-  Scope *functionParentScope = functionRegistryEntry->targetScope;
+  data.calleeParentScope = functionRegistryEntry->targetScope;
   std::vector<SymbolType> localArgTypes = data.argTypes;
   for (SymbolType &localArgType : localArgTypes)
-    localArgType = mapLocalTypeToImportedScopeType(functionParentScope, localArgType);
+    localArgType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localArgType);
 
   // Retrieve function object
-  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, data.thisType, localArgTypes, false, node);
+  data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, data.thisType, localArgTypes, false, node);
 
-  return std::make_tuple(functionParentScope, data.thisType, knownStructName);
+  return knownStructName;
 }
 
-std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *node, Scope *structScope) const {
+void TypeChecker::visitFctPtrCall(FunctionCallNode *node, const SymbolType &functionType) const {
+  FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
+
+  // Check if the given argument types match the type
+  const std::vector<SymbolType> &actualArgTypes = data.argTypes;
+  const std::vector<SymbolType> expectedArgTypes = functionType.getFunctionParamTypes();
+  if (actualArgTypes.size() != expectedArgTypes.size())
+    throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match");
+  for (size_t i = 0; i < actualArgTypes.size(); i++) {
+    const SymbolType &actualType = actualArgTypes.at(i);
+    const SymbolType &expectedType = expectedArgTypes.at(i);
+    if (!expectedType.matches(actualType, true, true, true))
+      throw SemanticError(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
+                          "Expected " + expectedType.getName() + " but got " + actualType.getName());
+  }
+}
+
+void TypeChecker::visitMethodCall(FunctionCallNode *node, Scope *structScope) const {
   FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
 
   // Methods cannot have template types
@@ -1551,21 +1588,19 @@ std::pair<Scope *, SymbolType> TypeChecker::visitMethodCall(FunctionCallNode *no
   }
 
   // Map local types to imported types
-  Scope *functionParentScope = structScope;
+  data.calleeParentScope = structScope;
   // Arg types
   std::vector<SymbolType> localArgTypes = data.argTypes;
   for (SymbolType &localArgType : localArgTypes)
-    localArgType = mapLocalTypeToImportedScopeType(functionParentScope, localArgType);
+    localArgType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localArgType);
   // 'this' type
   SymbolType localThisType = data.thisType;
   TypeChecker::autoDeReference(localThisType);
-  localThisType = mapLocalTypeToImportedScopeType(functionParentScope, localThisType);
+  localThisType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localThisType);
 
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
-  data.callee = FunctionManager::matchFunction(functionParentScope, functionName, localThisType, localArgTypes, false, node);
-
-  return std::make_pair(functionParentScope, data.thisType);
+  data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, localThisType, localArgTypes, false, node);
 }
 
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
