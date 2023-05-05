@@ -853,6 +853,10 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   llvm::Value *address = varEntry->getAddress();
   assert(address != nullptr);
 
+  // If this is a function/procedure reference, return it as value
+  if (varEntry->global && varSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}))
+    return ExprResult{.value = address, .entry = varEntry};
+
   // Load the address of the referenced variable
   if (varSymbolType.isRef())
     return ExprResult{.refPtr = address, .entry = varEntry};

@@ -1,0 +1,7 @@
+f<int> test(bool a, string b) {
+    return 0;
+}
+
+f<int> main() {
+    f<int>(bool, double) fct = test;
+}

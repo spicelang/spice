@@ -171,7 +171,7 @@
       "name": "main(int, string[])",
       "orderIndex": 0,
       "state": "destructed",
-      "type": "function"
+      "type": "f<int>()"
     }
   ]
 }

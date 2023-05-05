@@ -1818,6 +1818,9 @@ std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
     if (rule = dynamic_cast<SpiceParser::CustomDataTypeContext *>(subTree); rule != nullptr) { // CustomDataType
       baseDataTypeNode->type = BaseDataTypeNode::TY_CUSTOM;
       currentNode = baseDataTypeNode->createChild<CustomDataTypeNode>(CodeLoc(rule->start, filePath));
+    } else if (rule = dynamic_cast<SpiceParser::FunctionDataTypeContext *>(subTree); rule != nullptr) { // FunctionDataType
+      baseDataTypeNode->type = BaseDataTypeNode::TY_FUNCTION;
+      currentNode = baseDataTypeNode->createChild<FunctionDataTypeNode>(CodeLoc(rule->start, filePath));
     } else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::TYPE_DOUBLE)
       baseDataTypeNode->type = BaseDataTypeNode::TYPE_DOUBLE;
     else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::TYPE_INT)
@@ -1868,6 +1871,29 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
     if (currentNode != customDataTypeNode) {
       visit(rule);
       currentNode = customDataTypeNode;
+    }
+  }
+  return nullptr;
+}
+
+std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext *ctx) {
+  auto functionDataTypeNode = static_cast<FunctionDataTypeNode *>(currentNode);
+  functionDataTypeNode->reserveChildren(ctx->children.size());
+  saveErrorMessage(functionDataTypeNode, ctx);
+
+  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+    ParserRuleContext *rule;
+    if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) { // DataType
+      currentNode = functionDataTypeNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
+      functionDataTypeNode->isFunction = true;
+    } else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) // TypeLst
+      currentNode = functionDataTypeNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
+    else
+      assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
+
+    if (currentNode != functionDataTypeNode) {
+      visit(rule);
+      currentNode = functionDataTypeNode;
     }
   }
   return nullptr;

@@ -90,40 +90,40 @@
       "name": "struct:TestStruct<long>",
       "symbols": [
         {
-          "codeLoc": "L12C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "printLength:L12",
-          "orderIndex": 3,
-          "state": "destructed",
-          "type": "procedure"
-        },
-        {
           "codeLoc": "L8C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L8",
+          "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p(const unsigned long)"
         },
         {
           "codeLoc": "L12C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "printLength:L12",
+          "name": "printLength:L12C1",
           "orderIndex": 3,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p()"
+        },
+        {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "printLength:L12C1",
+          "orderIndex": 3,
+          "state": "destructed",
+          "type": "p()"
         },
         {
           "codeLoc": "L8C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L8",
+          "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p(const unsigned long)"
         },
         {
           "codeLoc": "L5C5",
@@ -239,19 +239,19 @@
           "codeLoc": "L12C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "printLength:L12",
+          "name": "printLength:L12C1",
           "orderIndex": 3,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p()"
         },
         {
           "codeLoc": "L8C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L8",
+          "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "destructed",
-          "type": "procedure"
+          "type": "p(const unsigned long)"
         },
         {
           "codeLoc": "L5C5",
@@ -300,7 +300,7 @@
       "name": "main(int, string[])",
       "orderIndex": 3,
       "state": "destructed",
-      "type": "function"
+      "type": "f<int>()"
     },
     {
       "codeLoc": "L16C1",

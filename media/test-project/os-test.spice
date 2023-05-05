@@ -1,4 +1,14 @@
+ext f<byte*> malloc(int);
+
+f<int> test(string input) {
+    return 12;
+}
+
+p invoke(f<int>(string) fctPtr) {
+    fctPtr("string");
+}
+
 f<int> main() {
-    long alignment = alignof(type Test);
-    printf("Alignment: %d", alignment);
+    f<int>(string) testFct = test;
+    invoke(testFct);
 }

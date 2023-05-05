@@ -1,0 +1,5 @@
+p overloadedFct(double optionalParam = 2.3234) {}
+
+f<int> main() {
+    p(double) fct = overloadedFct;
+}

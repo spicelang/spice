@@ -77,6 +77,7 @@ class StructInstantiationNode;
 class DataTypeNode;
 class BaseDataTypeNode;
 class CustomDataTypeNode;
+class FunctionDataTypeNode;
 
 class AbstractASTVisitor {
 public:
@@ -154,6 +155,7 @@ public:
   virtual std::any visitDataType(DataTypeNode *node) = 0;
   virtual std::any visitBaseDataType(BaseDataTypeNode *node) = 0;
   virtual std::any visitCustomDataType(CustomDataTypeNode *node) = 0;
+  virtual std::any visitFunctionDataType(FunctionDataTypeNode *node) = 0;
 };
 
 } // namespace spice::compiler

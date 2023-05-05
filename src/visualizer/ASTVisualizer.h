@@ -93,6 +93,7 @@ public:
   std::any visitDataType(DataTypeNode *ctx) override { return buildNode(ctx); }
   std::any visitBaseDataType(BaseDataTypeNode *ctx) override { return buildNode(ctx); }
   std::any visitCustomDataType(CustomDataTypeNode *ctx) override { return buildNode(ctx); }
+  std::any visitFunctionDataType(FunctionDataTypeNode *ctx) override { return buildNode(ctx); }
 
 private:
   // Members

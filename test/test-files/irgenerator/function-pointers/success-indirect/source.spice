@@ -1,0 +1,13 @@
+f<int> test(string input) {
+    return 12;
+}
+
+f<int> invoke(f<int>(string) fctPtr) {
+    return fctPtr("string");
+}
+
+f<int> main() {
+    f<int>(string) testFct = test;
+    int i = invoke(testFct);
+    printf("%d", i);
+}

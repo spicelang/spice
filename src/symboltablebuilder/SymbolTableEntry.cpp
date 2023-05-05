@@ -66,7 +66,7 @@ const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declNode->codeL
  */
 llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
   assert(type.is(TY_STRUCT));
-  return llvmType;
+  return llvmStructType;
 }
 
 /**
@@ -76,7 +76,7 @@ llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
  */
 void SymbolTableEntry::setStructLLVMType(llvm::StructType *newStructType) {
   assert(type.is(TY_STRUCT));
-  llvmType = newStructType;
+  llvmStructType = newStructType;
 }
 
 /**
@@ -94,7 +94,7 @@ llvm::Value *SymbolTableEntry::getAddress() const { return memAddress.empty() ? 
 void SymbolTableEntry::updateAddress(llvm::Value *address) {
   assert(address != nullptr);
   // Ensure that structs fields get no addresses assigned, as the addresses are meant for the struct instances
-  assert(scope->type != SCOPE_STRUCT && scope->type != SCOPE_INTERFACE);
+  assert((scope->type != SCOPE_STRUCT && scope->type != SCOPE_INTERFACE) || type.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   if (memAddress.empty())
     memAddress.push(address);
   else

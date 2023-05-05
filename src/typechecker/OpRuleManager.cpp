@@ -32,8 +32,8 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
   // Allow ref type to type of the same contained type straight away
   if (rhs.isRef() && lhs.matches(rhs.getContainedTy(), false, !lhs.isRef(), true))
     return lhs;
-  // Allow struct of the same type straight away
-  if (lhs.isOneOf({TY_ARRAY, TY_STRUCT}) && lhs.matches(rhs, false, true, true))
+  // Allow arrays, structs, functions, procedures of the same type straight away
+  if (lhs.isOneOf({TY_ARRAY, TY_STRUCT, TY_FUNCTION, TY_PROCEDURE}) && lhs.matches(rhs, false, true, true))
     return rhs;
   // Allow array to pointer
   if (lhs.isPtr() && rhs.isArray() && lhs.getContainedTy().matches(rhs.getContainedTy(), false, false, true))

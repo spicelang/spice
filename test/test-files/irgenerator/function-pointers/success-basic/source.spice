@@ -1,0 +1,9 @@
+f<int> test() {
+    return 12;
+}
+
+f<int> main() {
+    f<int>() testFct = test;
+    int i = testFct();
+    printf("%d", i);
+}

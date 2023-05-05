@@ -128,25 +128,25 @@
       "name": "main(int, string[])",
       "orderIndex": 2,
       "state": "destructed",
-      "type": "function"
+      "type": "f<int>()"
     },
     {
       "codeLoc": "L7C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "calledFunction:L7",
+      "name": "calledFunction:L7C1",
       "orderIndex": 1,
       "state": "destructed",
-      "type": "function"
+      "type": "f<double>(string)"
     },
     {
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "calledFunction:L1",
+      "name": "calledFunction:L1C1",
       "orderIndex": 0,
       "state": "destructed",
-      "type": "function"
+      "type": "f<double>(int,bool)"
     }
   ]
 }

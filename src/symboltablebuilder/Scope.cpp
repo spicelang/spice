@@ -192,8 +192,14 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
       if (!entry.getType().getTemplateTypes().empty())
         continue;
 
-      warningType = UNUSED_FUNCTION;
-      warningMessage = "The function '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+      if (type == SCOPE_GLOBAL) {
+        warningType = UNUSED_FUNCTION;
+        warningMessage = "The function '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+      } else {
+        warningType = UNUSED_VARIABLE;
+        warningMessage = "The variable '" + entry.name + "' is unused";
+      }
+
       break;
     }
     case TY_PROCEDURE: {
@@ -201,8 +207,14 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
       if (!entry.getType().getTemplateTypes().empty())
         continue;
 
-      warningType = UNUSED_PROCEDURE;
-      warningMessage = "The procedure '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+      if (type == SCOPE_GLOBAL) {
+        warningType = UNUSED_PROCEDURE;
+        warningMessage = "The procedure '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+      } else {
+        warningType = UNUSED_VARIABLE;
+        warningMessage = "The variable '" + entry.name + "' is unused";
+      }
+
       break;
     }
     case TY_STRUCT: {

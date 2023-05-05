@@ -151,7 +151,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     if (manifestation->isMethod()) {
       const SymbolType &thisType = manifestation->thisType;
       paramNames.emplace_back(THIS_VARIABLE_NAME);
-      paramTypes.push_back(thisType.toLLVMType(context, currentScope)->getPointerTo());
+      paramTypes.push_back(builder.getPtrTy());
       // Change to struct scope
       const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
@@ -203,6 +203,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
     module->getOrInsertFunction(mangledName, funcType);
     llvm::Function *func = module->getFunction(mangledName);
+    node->entry->updateAddress(func);
 
     // Set attributes to function
     func->setDSOLocal(true);
@@ -368,6 +369,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     llvm::FunctionType *procType = llvm::FunctionType::get(returnType, paramTypes, false);
     module->getOrInsertFunction(mangledName, procType);
     llvm::Function *proc = module->getFunction(mangledName);
+    node->entry->updateAddress(proc);
 
     // Set attributes to procedure
     proc->setDSOLocal(true);

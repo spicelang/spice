@@ -3,50 +3,70 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-@intArray = global [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9]
-@0 = private unnamed_addr constant [23 x i8] c"Item for index %d, %d\0A\00", align 1
+%__int__ArrayIterator__intptr_long_long = type { ptr, i64, i64 }
+%__long_intref__Pair__long_intref = type { i64, ptr }
 
-define i32 @main() {
-entry.l1:
+@anon.array.0 = private unnamed_addr constant [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9]
+@printf.str.0 = private unnamed_addr constant [23 x i8] c"Item for index %d, %d\0A\00", align 1
+
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
+  %1 = alloca [7 x i32], align 4
   %intArray = alloca [7 x i32], align 4
-  %index = alloca i32, align 4
+  %2 = alloca %__int__ArrayIterator__intptr_long_long, align 8
+  %index = alloca i64, align 8
   %item = alloca i32, align 4
+  %pair_addr = alloca %__long_intref__Pair__long_intref, align 8
   store i32 0, ptr %result, align 4
-  %0 = load [7 x i32], ptr @intArray, align 4
-  store [7 x i32] %0, ptr %intArray, align 4
-  store i32 0, ptr %index, align 4
-  store i32 0, ptr %item, align 4
-  %1 = load [7 x i32], ptr %intArray, align 4
-  %2 = load i32, ptr %index, align 4
-  %3 = getelementptr inbounds [7 x i32], ptr %intArray, i32 0, i32 %2
-  %4 = load i32, ptr %3, align 4
-  store i32 %4, ptr %item, align 4
-  br label %foreach.loop.l3
+  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.array.0, i64 28, i1 false)
+  store [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9], ptr %intArray, align 4
+  %3 = getelementptr inbounds [7 x i32], ptr %intArray, i32 0, i32 0
+  %4 = call %__int__ArrayIterator__intptr_long_long @"_f__void__std/iterator/array-iterator::ArrayIterator<int>__iterate__intarray_long"(ptr %3, i64 7)
+  store %__int__ArrayIterator__intptr_long_long %4, ptr %2, align 8
+  store i64 0, ptr %index, align 8
+  br label %foreach.head.L5
 
-foreach.loop.l3:                                  ; preds = %foreach.cond.l3, %entry.l1
-  %5 = load i32, ptr %index, align 4
-  %6 = load i32, ptr %item, align 4
-  %7 = call i32 (ptr, ...) @printf(ptr @0, i32 %5, i32 %6)
-  br label %foreach.inc.l3
+foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
+  %5 = call i1 @_mf__ArrayIterator_int__bool__isValid(ptr %2)
+  br i1 %5, label %foreach.body.L5, label %foreach.exit.L5
 
-foreach.inc.l3:                                   ; preds = %foreach.loop.l3
-  %idx = load i32, ptr %index, align 4
-  %idx.inc = add i32 %idx, 1
-  store i32 %idx.inc, ptr %index, align 4
-  %8 = getelementptr inbounds [7 x i32], ptr %intArray, i32 0, i32 %idx.inc
-  %9 = load i32, ptr %8, align 4
-  store i32 %9, ptr %item, align 4
-  br label %foreach.cond.l3
+foreach.body.L5:                                  ; preds = %foreach.head.L5
+  %pair = call %__long_intref__Pair__long_intref @"_mf__ArrayIterator_int__std/iterator/iterable::Pair<unsigned long,int&>__getIdx"(ptr %2)
+  store %__long_intref__Pair__long_intref %pair, ptr %pair_addr, align 8
+  %idx_addr = getelementptr inbounds %__long_intref__Pair__long_intref, ptr %pair_addr, i32 0, i32 0
+  %6 = load i64, ptr %idx_addr, align 8
+  store i64 %6, ptr %index, align 8
+  %item_addr = getelementptr inbounds %__long_intref__Pair__long_intref, ptr %pair_addr, i32 0, i32 1
+  %7 = load ptr, ptr %item_addr, align 8
+  %8 = load i32, ptr %7, align 4
+  store i32 %8, ptr %item, align 4
+  %9 = load i64, ptr %index, align 8
+  %10 = load i32, ptr %item, align 4
+  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %9, i32 %10)
+  br label %foreach.tail.L5
 
-foreach.cond.l3:                                  ; preds = %foreach.inc.l3
-  %10 = load i32, ptr %index, align 4
-  %11 = icmp ult i32 %10, 7
-  br i1 %11, label %foreach.loop.l3, label %foreach.end.l3
+foreach.tail.L5:                                  ; preds = %foreach.body.L5
+  call void @_mp__ArrayIterator_int__void__next(ptr %2)
+  br label %foreach.head.L5
 
-foreach.end.l3:                                   ; preds = %foreach.cond.l3
+foreach.exit.L5:                                  ; preds = %foreach.head.L5
   %12 = load i32, ptr %result, align 4
   ret i32 %12
 }
 
-declare i32 @printf(ptr, ...)
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
+
+declare %__int__ArrayIterator__intptr_long_long @"_f__void__std/iterator/array-iterator::ArrayIterator<int>__iterate__intarray_long"(ptr, i64)
+
+declare i1 @_mf__ArrayIterator_int__bool__isValid(ptr)
+
+declare %__long_intref__Pair__long_intref @"_mf__ArrayIterator_int__std/iterator/iterable::Pair<unsigned long,int&>__getIdx"(ptr)
+
+declare i32 @printf(ptr noundef, ...)
+
+declare void @_mp__ArrayIterator_int__void__next(ptr)
+
+attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

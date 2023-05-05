@@ -76,16 +76,16 @@
       "name": "main(int, string[])",
       "orderIndex": 1,
       "state": "destructed",
-      "type": "function"
+      "type": "f<int>()"
     },
     {
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "faculty:L1",
+      "name": "faculty:L1C1",
       "orderIndex": 0,
       "state": "destructed",
-      "type": "function"
+      "type": "f<int>(int)"
     }
   ]
 }

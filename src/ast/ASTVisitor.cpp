@@ -144,4 +144,6 @@ std::any ASTVisitor::visitBaseDataType(BaseDataTypeNode *node) { return visitChi
 
 std::any ASTVisitor::visitCustomDataType(CustomDataTypeNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitFunctionDataType(FunctionDataTypeNode *node) { return visitChildren(node); }
+
 } // namespace spice::compiler

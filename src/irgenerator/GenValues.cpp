@@ -93,26 +93,30 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
 
   Function *spiceFunc = data.callee;
   Scope *accessScope = data.calleeParentScope;
-  const std::string &mangledName = data.callee->external ? node->fqFunctionName : spiceFunc->getMangledName();
+  std::string mangledName;
+  if (!data.isFctPtrCall())
+    mangledName = spiceFunc->external ? node->fqFunctionName : spiceFunc->getMangledName();
   std::vector<llvm::Value *> argValues;
+
+  // Get entry of the first fragment
+  SymbolTableEntry *firstFragEntry = currentScope->lookup(node->functionNameFragments.front());
 
   // Get this type
   llvm::Value *thisPtr = nullptr;
-  if (data.isMethodCall) {
-    assert(!data.isConstructorCall);
+  if (data.isMethodCall()) {
+    assert(!data.isCtorCall());
 
     // Retrieve entry of the first fragment
-    SymbolTableEntry *firstFragmentEntry = currentScope->lookup(node->functionNameFragments.front());
-    assert(firstFragmentEntry != nullptr && firstFragmentEntry->getType().isBaseType(TY_STRUCT));
-    Scope *structScope = firstFragmentEntry->getType().getBaseType().getBodyScope();
+    assert(firstFragEntry != nullptr && firstFragEntry->getType().isBaseType(TY_STRUCT));
+    Scope *structScope = firstFragEntry->getType().getBaseType().getBodyScope();
 
     // Get address of the referenced variable / struct instance
-    thisPtr = firstFragmentEntry->getAddress();
+    thisPtr = firstFragEntry->getAddress();
 
     // Auto de-reference 'this' pointer
-    SymbolType firstFragmentType = firstFragmentEntry->getType();
+    SymbolType firstFragmentType = firstFragEntry->getType();
     autoDeReferencePtr(thisPtr, firstFragmentType, structScope->parent);
-    llvm::Type *structTy = firstFragmentEntry->getType().getBaseType().toLLVMType(context, structScope->parent);
+    llvm::Type *structTy = firstFragEntry->getType().getBaseType().toLLVMType(context, structScope->parent);
 
     // Traverse through structs - the first fragment is already looked up and the last one is the function name
     for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
@@ -137,8 +141,8 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
     argValues.push_back(thisPtr);
   }
 
-  if (data.isConstructorCall) {
-    assert(!data.isMethodCall);
+  if (data.isCtorCall()) {
+    assert(!data.isMethodCall());
 
     llvm::Type *thisType = spiceFunc->thisType.toLLVMType(context, spiceFunc->thisType.getBodyScope());
     thisPtr = insertAlloca(thisType);
@@ -149,11 +153,12 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
 
   // Get arg values
   if (node->hasArgs) {
-    argValues.reserve(spiceFunc->paramList.size());
+    argValues.reserve(node->argLst()->args().size());
     const std::vector<AssignExprNode *> args = node->argLst()->args();
-    for (size_t i = 0; i < spiceFunc->paramList.size(); i++) {
+    for (size_t i = 0; i < args.size(); i++) {
       AssignExprNode *argNode = args.at(i);
-      const SymbolType &expectedSTy = spiceFunc->paramList.at(i).type;
+      SymbolType expectedSTy = data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes().at(i)
+                                                   : spiceFunc->paramList.at(i).type;
       const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
       // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
@@ -174,40 +179,64 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
     }
   }
 
+  // Retrieve return and param types
+  const SymbolType returnSType =
+      data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionReturnType() : spiceFunc->returnType;
+  const std::vector<SymbolType> paramSTypes =
+      data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes() : spiceFunc->getParamTypes();
+
   // Function is not defined in the current module -> declare it
   // This can happen when:
   // 1) If this is an imported source file
   // 2) This is a down-call to a function, which is defined later in the same file
-  if (data.isImported || data.isDownCall) {
+  llvm::FunctionType *fctType = nullptr;
+  if (data.isFctPtrCall() || data.isImported || data.isDownCall) {
     // Get returnType
     llvm::Type *returnType = builder.getVoidTy();
-    if (!spiceFunc->returnType.is(TY_DYN))
-      returnType = spiceFunc->returnType.toLLVMType(context, accessScope);
+    if (!returnSType.is(TY_DYN))
+      returnType = returnSType.toLLVMType(context, accessScope);
 
     // Get arg types
     std::vector<llvm::Type *> argTypes;
-    if (data.isMethodCall || data.isConstructorCall)
-      argTypes.push_back(spiceFunc->thisType.toLLVMType(context, accessScope)->getPointerTo());
-    for (const SymbolType &paramType : spiceFunc->getParamTypes())
+    if (data.isMethodCall() || data.isCtorCall())
+      argTypes.push_back(builder.getPtrTy());
+    for (const SymbolType &paramType : paramSTypes)
       argTypes.push_back(paramType.toLLVMType(context, accessScope));
 
-    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
-    module->getOrInsertFunction(mangledName, fctType);
+    fctType = llvm::FunctionType::get(returnType, argTypes, false);
+    if (data.isImported || data.isDownCall)
+      module->getOrInsertFunction(mangledName, fctType);
   }
 
-  // Get callee function
-  llvm::Function *callee = module->getFunction(mangledName);
-  assert(callee != nullptr);
+  llvm::Value *result;
+  if (data.isFctPtrCall()) {
+    // Get entry to load the function pointer
+    SymbolTableEntry *firstFragEntry = currentScope->lookup(node->functionNameFragments.front());
+    assert(firstFragEntry != nullptr);
+    SymbolType firstFragType = firstFragEntry->getType();
+    llvm::Value *fctPtr = firstFragEntry->getAddress();
+    assert(fctPtr != nullptr);
+    autoDeReferencePtr(fctPtr, firstFragType, currentScope);
+    llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr);
 
-  // Generate function call
-  llvm::Value *result = builder.CreateCall(callee, argValues);
+    // Generate function call
+    assert(fctType != nullptr);
+    result = builder.CreateCall({fctType, fct}, argValues);
+  } else {
+    // Get callee function
+    llvm::Function *callee = module->getFunction(mangledName);
+    assert(callee != nullptr);
+
+    // Generate function call
+    result = builder.CreateCall(callee, argValues);
+  }
 
   // In case this is a constructor call, return the thisPtr as pointer
-  if (data.isConstructorCall)
+  if (data.isCtorCall())
     return ExprResult{.ptr = thisPtr};
 
   // In case this is a callee, returning a reference, return the address
-  if (data.callee->returnType.isRef())
+  if (returnSType.isRef())
     return ExprResult{.ptr = result};
 
   // Otherwise return the value

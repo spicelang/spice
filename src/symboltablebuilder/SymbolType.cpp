@@ -180,10 +180,8 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
   if (is(TY_ENUM))
     return llvm::Type::getInt32Ty(context);
 
-  if (isPtr() || isRef() || (isArray() && getArraySize() == 0)) {
-    llvm::PointerType *pointerType = getContainedTy().toLLVMType(context, accessScope)->getPointerTo();
-    return static_cast<llvm::Type *>(pointerType);
-  }
+  if (isPtr() || isRef() || (isArray() && getArraySize() == 0) || isOneOf({TY_FUNCTION, TY_PROCEDURE}))
+    return static_cast<llvm::Type *>(llvm::PointerType::get(context, 0));
 
   if (isArray()) {
     llvm::Type *containedType = getContainedTy().toLLVMType(context, accessScope);
@@ -403,6 +401,59 @@ Scope *SymbolType::getBodyScope() const {
 }
 
 /**
+ * Set the return type of a function type
+ *
+ * @param returnType Function return type
+ */
+void SymbolType::setFunctionReturnType(const SymbolType &returnType) {
+  assert(is(TY_FUNCTION));
+  std::vector<SymbolType> &paramTypes = typeChain.back().paramTypes;
+  if (paramTypes.empty())
+    paramTypes.push_back(returnType);
+  else
+    paramTypes.at(0) = returnType;
+}
+
+/**
+ * Get the return type of a function type
+ *
+ * @return Function return type
+ */
+const SymbolType &SymbolType::getFunctionReturnType() const {
+  assert(is(TY_FUNCTION));
+  assert(!typeChain.back().paramTypes.empty());
+  return typeChain.back().paramTypes.front();
+}
+
+/**
+ * Set the param types of a function or procedure type
+ *
+ * @param paramTypes Function param types
+ */
+void SymbolType::setFunctionParamTypes(const std::vector<SymbolType> &newParamTypes) {
+  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  std::vector<SymbolType> &paramTypes = typeChain.back().paramTypes;
+  // Resize param types if required
+  if (paramTypes.size() < newParamTypes.size() + 1)
+    paramTypes.resize(newParamTypes.size() + 1);
+  // Set the function param types
+  for (size_t i = 0; i < newParamTypes.size(); i++)
+    paramTypes.at(i + 1) = newParamTypes.at(i);
+}
+
+/**
+ * Get the param types of a function or procedure type
+ *
+ * @return Function param types
+ */
+std::vector<SymbolType> SymbolType::getFunctionParamTypes() const {
+  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  if (!typeChain.back().paramTypes.empty())
+    return {typeChain.back().paramTypes.begin() + 1, typeChain.back().paramTypes.end()};
+  return {};
+}
+
+/**
  * Get the struct instance for a struct type
  *
  * @param node Accessing AST node
@@ -477,8 +528,7 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
  * @param withSize Include size in string
  * @return Type chain element name
  */
-std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, // NOLINT(misc-no-recursion)
-                                                bool mangledName) {
+std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName) const {
   switch (chainElement.superType) {
   case TY_PTR:
     return mangledName ? "ptr" : "*";
@@ -529,10 +579,27 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "alias(" + chainElement.subType + ")";
   case TY_DYN:
     return "dyn";
-  case TY_FUNCTION:
-    return "function";
-  case TY_PROCEDURE:
-    return "procedure";
+  case TY_FUNCTION: {
+    std::stringstream paramTypesString;
+    const SymbolType &baseType = getBaseType();
+    for (const SymbolType &paramType : baseType.getFunctionParamTypes()) {
+      if (paramTypesString.rdbuf()->in_avail() > 0)
+        paramTypesString << ",";
+      paramTypesString << paramType.getName(true);
+    }
+    const std::string returnTypeString = baseType.getFunctionReturnType().getName(true);
+    return "f<" + returnTypeString + ">(" + paramTypesString.str() + ")";
+  }
+  case TY_PROCEDURE: {
+    std::stringstream paramTypesString;
+    const SymbolType &baseType = getBaseType();
+    for (const SymbolType &paramType : baseType.getFunctionParamTypes()) {
+      if (paramTypesString.rdbuf()->in_avail() > 0)
+        paramTypesString << ",";
+      paramTypesString << paramType.getName(true);
+    }
+    return "p(" + paramTypesString.str() + ")";
+  }
   case TY_IMPORT:
     return "import";
   case TY_INVALID:    // GCOV_EXCL_LINE

@@ -293,7 +293,7 @@ public:
   [[nodiscard]] std::string getSymbolTableEntryName() const {
     const FctNameNode *functionName = getChild<FctNameNode>();
     assert(functionName != nullptr);
-    return functionName->name + ":" + codeLoc.toPrettyLine();
+    return functionName->name + ":" + codeLoc.toPrettyLineAndColumn();
   }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &fctManifestations; }
@@ -332,7 +332,7 @@ public:
   [[nodiscard]] std::string getSymbolTableEntryName() const {
     const FctNameNode *functionName = getChild<FctNameNode>();
     assert(functionName != nullptr);
-    return functionName->name + ":" + codeLoc.toPrettyLine();
+    return functionName->name + ":" + codeLoc.toPrettyLineAndColumn();
   }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &procManifestations; }
@@ -1589,16 +1589,24 @@ public:
 
 class FunctionCallNode : public ASTNode {
 public:
+  enum FunctionCallType : uint8_t { TYPE_ORDINARY, TYPE_METHOD, TYPE_CTOR, TYPE_FCT_PTR };
+
   // Structs
   struct FunctionCallData {
-    bool isConstructorCall = false;
-    bool isMethodCall = false;
+    // Members
+    FunctionCallType callType = TYPE_ORDINARY;
     bool isImported = false;
     bool isDownCall = false;
     SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
     std::vector<SymbolType> argTypes;
     Function *callee = nullptr;
     Scope *calleeParentScope = nullptr;
+
+    // Methods
+    [[nodiscard]] bool isOrdinaryCall() const { return callType == TYPE_ORDINARY; }
+    [[nodiscard]] bool isMethodCall() const { return callType == TYPE_METHOD; }
+    [[nodiscard]] bool isCtorCall() const { return callType == TYPE_CTOR; }
+    [[nodiscard]] bool isFctPtrCall() const { return callType == TYPE_FCT_PTR; }
   };
 
   // Constructors
@@ -1716,7 +1724,8 @@ public:
     TYPE_STRING,
     TYPE_BOOL,
     TYPE_DYN,
-    TY_CUSTOM
+    TY_CUSTOM,
+    TY_FUNCTION
   };
 
   // Constructors
@@ -1728,6 +1737,7 @@ public:
 
   // Public get methods
   [[nodiscard]] CustomDataTypeNode *customDataType() const { return getChild<CustomDataTypeNode>(); }
+  [[nodiscard]] FunctionDataTypeNode *functionDataType() const { return getChild<FunctionDataTypeNode>(); }
 
   // Public members
   Type type = TYPE_NONE;
@@ -1754,9 +1764,29 @@ public:
   std::string fqTypeName;
   std::vector<std::string> typeNameFragments;
   std::vector<SymbolTableEntry *> customTypes;
-  bool isParamType = false;
-  bool isFieldType = false;
-  bool isReturnType = false;
+};
+
+// =================================================== FunctionDataTypeNode ======================================================
+
+class FunctionDataTypeNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFunctionDataType(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFunctionDataType(this); }
+
+  // Public get methods
+  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
+
+  // Util methods
+  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount, nullptr); }
+
+  // Public members
+  std::vector<SymbolTableEntry *> customTypes;
+  bool isFunction = false; // Function or procedure
 };
 
 } // namespace spice::compiler

@@ -93,6 +93,14 @@ public:
         const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
         return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
       }
+      case TY_FUNCTION:
+      case TY_PROCEDURE:
+        if (lhs.paramTypes.size() != rhs.paramTypes.size())
+          return false;
+        for (size_t i = 0; i < lhs.paramTypes.size(); i++)
+          if (lhs.paramTypes.at(i) != rhs.paramTypes.at(i))
+            return false;
+        return true;
       case TY_GENERIC:
         return lhs.subType == rhs.subType;
       default:
@@ -106,9 +114,10 @@ public:
     std::string subType;
     TypeChainElementData data = {.arraySize = 0};
     std::vector<SymbolType> templateTypes;
+    std::vector<SymbolType> paramTypes; // First type is the return type
 
     // Json serializer/deserializer
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, data, templateTypes)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, data, templateTypes, paramTypes)
   };
 
   // Typedefs
@@ -187,6 +196,10 @@ public:
   [[nodiscard]] bool isHeap() const;
   void setBodyScope(Scope *bodyScope);
   [[nodiscard]] Scope *getBodyScope() const;
+  void setFunctionReturnType(const SymbolType &returnType);
+  [[nodiscard]] const SymbolType &getFunctionReturnType() const;
+  void setFunctionParamTypes(const std::vector<SymbolType> &paramTypes);
+  [[nodiscard]] std::vector<SymbolType> getFunctionParamTypes() const;
   [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
@@ -199,7 +212,7 @@ public:
 
 private:
   // Private methods
-  [[nodiscard]] static std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName);
+  [[nodiscard]] std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName) const;
 
 public:
   // Json serializer/deserializer
