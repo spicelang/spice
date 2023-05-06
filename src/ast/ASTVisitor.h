@@ -72,7 +72,6 @@ public:
   std::any visitAtomicExpr(AtomicExprNode *node) override;
   std::any visitValue(ValueNode *node) override;
   std::any visitConstant(ConstantNode *node) override;
-  std::any visitFunctionCall(FunctionCallNode *node) override;
   std::any visitArrayInitialization(ArrayInitializationNode *node) override;
   std::any visitStructInstantiation(StructInstantiationNode *node) override;
   std::any visitDataType(DataTypeNode *node) override;

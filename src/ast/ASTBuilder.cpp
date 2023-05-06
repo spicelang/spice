@@ -1548,15 +1548,23 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
       currentNode = postfixUnaryExprNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::PostfixUnaryExprContext *>(subTree); rule != nullptr) // PostfixUnaryExpr
       currentNode = postfixUnaryExprNode->createChild<PostfixUnaryExprNode>(CodeLoc(rule->start, filePath));
-    else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::LBRACKET)
+    else if (rule = dynamic_cast<SpiceParser::ArgLstContext *>(subTree); rule != nullptr) { // ArgLst
+      currentNode = postfixUnaryExprNode->createChild<ArgLstNode>(CodeLoc(rule->start, filePath));
+      postfixUnaryExprNode->fctCallHasArgs = true;
+    } else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
+      currentNode = postfixUnaryExprNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
+      postfixUnaryExprNode->fctCallHasTemplateTypes = true;
+    } else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::LBRACKET)
       postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_SUBSCRIPT;
-    else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::DOT) {
+    else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::DOT)
       postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MEMBER_ACCESS;
-    } else if (auto t = dynamic_cast<TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER)
-      postfixUnaryExprNode->identifier = getIdentifier(t);
-    else if (auto t3 = dynamic_cast<TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::PLUS_PLUS)
+    else if (auto t3 = dynamic_cast<TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::LPAREN)
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_FUNCTION_CALL;
+    else if (auto t4 = dynamic_cast<TerminalNode *>(subTree); t4->getSymbol()->getType() == SpiceParser::IDENTIFIER)
+      postfixUnaryExprNode->identifier = getIdentifier(t4);
+    else if (auto t5 = dynamic_cast<TerminalNode *>(subTree); t5->getSymbol()->getType() == SpiceParser::PLUS_PLUS)
       postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_PLUS_PLUS;
-    else if (auto t4 = dynamic_cast<TerminalNode *>(subTree); t4->getSymbol()->getType() == SpiceParser::MINUS_MINUS)
+    else if (auto t6 = dynamic_cast<TerminalNode *>(subTree); t6->getSymbol()->getType() == SpiceParser::MINUS_MINUS)
       postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MINUS_MINUS;
     else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1607,9 +1615,7 @@ std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::FunctionCallContext *>(subTree); rule != nullptr) // FunctionCall
-      currentNode = valueNode->createChild<FunctionCallNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::ArrayInitializationContext *>(subTree); rule != nullptr) // ArrayInitialization
+    if (rule = dynamic_cast<SpiceParser::ArrayInitializationContext *>(subTree); rule != nullptr) // ArrayInitialization
       currentNode = valueNode->createChild<ArrayInitializationNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::StructInstantiationContext *>(subTree); rule != nullptr) // StructInstantiation
       currentNode = valueNode->createChild<StructInstantiationNode>(CodeLoc(rule->start, filePath));
@@ -1676,37 +1682,6 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
     if (currentNode != constantNode) {
       visit(rule);
       currentNode = constantNode;
-    }
-  }
-  return nullptr;
-}
-
-std::any ASTBuilder::visitFunctionCall(SpiceParser::FunctionCallContext *ctx) {
-  auto fctCallNode = static_cast<FunctionCallNode *>(currentNode);
-  fctCallNode->reserveChildren(ctx->children.size());
-  saveErrorMessage(fctCallNode, ctx);
-
-  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::ArgLstContext *>(subTree); rule != nullptr) { // ArgLst
-      currentNode = fctCallNode->createChild<ArgLstNode>(CodeLoc(rule->start, filePath));
-      fctCallNode->hasArgs = true;
-    } else if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) { // TypeLst
-      currentNode = fctCallNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
-      fctCallNode->hasTemplateTypes = true;
-    } else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      fctCallNode->functionNameFragments.push_back(t1->toString());
-      fctCallNode->fqFunctionName += fctCallNode->functionNameFragments.back();
-    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::DOT)
-      fctCallNode->fqFunctionName += MEMBER_ACCESS_TOKEN;
-    else if (auto t3 = dynamic_cast<TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS)
-      fctCallNode->fqFunctionName += SCOPE_ACCESS_TOKEN;
-    else
-      assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
-
-    if (currentNode != fctCallNode) {
-      visit(rule);
-      currentNode = fctCallNode;
     }
   }
   return nullptr;

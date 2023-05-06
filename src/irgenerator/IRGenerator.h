@@ -89,7 +89,7 @@ public:
   // Values and types
   std::any visitValue(const ValueNode *node) override;
   std::any visitConstant(const ConstantNode *node) override;
-  std::any visitFunctionCall(const FunctionCallNode *node) override;
+  // std::any visitFunctionCall(const FunctionCallNode *node) override;
   std::any visitArrayInitialization(const ArrayInitializationNode *node) override;
   std::any visitStructInstantiation(const StructInstantiationNode *node) override;
   std::any visitDataType(const DataTypeNode *node) override;

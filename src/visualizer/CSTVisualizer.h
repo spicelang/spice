@@ -90,7 +90,6 @@ public:
   std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override { return buildRule(ctx); }
   std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override { return buildRule(ctx); }
   std::any visitValue(SpiceParser::ValueContext *ctx) override { return buildRule(ctx); }
-  std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override { return buildRule(ctx); }
   std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override { return buildRule(ctx); }
   std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override { return buildRule(ctx); }
   std::any visitConstant(SpiceParser::ConstantContext *ctx) override { return buildRule(ctx); }

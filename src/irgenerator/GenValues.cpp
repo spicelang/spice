@@ -9,10 +9,6 @@ namespace spice::compiler {
 std::any IRGenerator::visitValue(const ValueNode *node) {
   diGenerator.setSourceLocation(node);
 
-  // Function call
-  if (node->functionCall())
-    return visit(node->functionCall());
-
   // Array initialization
   if (node->arrayInitialization())
     return visit(node->arrayInitialization());
@@ -86,7 +82,7 @@ std::any IRGenerator::visitConstant(const ConstantNode *node) {
   throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
 }
 
-std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
+/*std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
   diGenerator.setSourceLocation(node);
 
   const FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
@@ -241,7 +237,7 @@ std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
 
   // Otherwise return the value
   return ExprResult{.value = result};
-}
+}*/
 
 std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *node) {
   // Return immediately if the initialization is empty

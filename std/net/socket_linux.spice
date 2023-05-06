@@ -27,17 +27,17 @@ public const short ERROR_LISTEN = -3s;
 public const short ERROR_ACCEPT = -4s;
 public const short ERROR_CONNECT = -5s;
 
-ext<int> socket(int, int, int);
-ext<int> bind(int, SockAddrIn*, int);
-ext<int> listen(int, int);
-ext<int> accept(int, SockAddrIn*, int);
-ext<long> read(int, byte*, long);
-ext<long> write(int, byte*, long);
-ext<int> close(int);
-ext<int> htonl(int);     // Fairly simple to re-implement in Spice
-ext<short> htons(short); // Fairly simple to re-implement in Spice
-ext<int> inet_addr(string);
-ext<int> connect(int, SockAddrIn*, int);
+ext f<int> socket(int, int, int);
+ext f<int> bind(int, SockAddrIn*, int);
+ext f<int> listen(int, int);
+ext f<int> accept(int, SockAddrIn*, int);
+ext f<long> read(int, byte*, long);
+ext f<long> write(int, byte*, long);
+ext f<int> close(int);
+ext f<int> htonl(int);     // Fairly simple to re-implement in Spice
+ext f<short> htons(short); // Fairly simple to re-implement in Spice
+ext f<int> inet_addr(string);
+ext f<int> connect(int, SockAddrIn*, int);
 
 public p Socket.dtor() {
     this.close();

@@ -32,7 +32,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   }
 
   // Prepare type of function
-  SymbolType functionType(TY_FUNCTION);
+  SymbolType functionType(TY_FUNCTION, MAIN_FUNCTION_NAME);
   functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
 
@@ -133,7 +133,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   assert(currentScope->type == SCOPE_GLOBAL || currentScope->type == SCOPE_STRUCT);
 
   // Prepare type of function
-  SymbolType functionType(TY_FUNCTION);
+  SymbolType functionType(TY_FUNCTION, node->fctName->name);
   functionType.specifiers = node->functionSpecifiers;
   functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
@@ -240,7 +240,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   assert(currentScope->type == SCOPE_GLOBAL || currentScope->type == SCOPE_STRUCT);
 
   // Prepare type of procedure
-  SymbolType procedureType(TY_PROCEDURE);
+  SymbolType procedureType(TY_PROCEDURE, node->procName->name);
   procedureType.specifiers = node->procedureSpecifiers;
   procedureType.setFunctionParamTypes(paramTypes);
 

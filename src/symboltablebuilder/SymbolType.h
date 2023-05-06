@@ -170,12 +170,11 @@ public:
     return typeChain.back().superType;
   }
   [[nodiscard]] inline const std::string &getSubType() const {
-    assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
+    assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC, TY_FUNCTION, TY_PROCEDURE}));
     return typeChain.back().subType;
   }
   [[nodiscard]] inline std::string getOriginalSubType() const {
-    assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
-    return CommonUtil::getLastFragment(typeChain.back().subType, SCOPE_ACCESS_TOKEN);
+    return CommonUtil::getLastFragment(getSubType(), SCOPE_ACCESS_TOKEN);
   }
   [[nodiscard]] inline SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
   [[nodiscard]] SymbolType getBaseType() const {

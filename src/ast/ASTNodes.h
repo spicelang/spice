@@ -1575,7 +1575,6 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitValue(this); }
 
   // Public get methods
-  [[nodiscard]] FunctionCallNode *functionCall() const { return getChild<FunctionCallNode>(); }
   [[nodiscard]] ArrayInitializationNode *arrayInitialization() const { return getChild<ArrayInitializationNode>(); }
   [[nodiscard]] StructInstantiationNode *structInstantiation() const { return getChild<StructInstantiationNode>(); }
   [[nodiscard]] DataTypeNode *nilType() const { return getChild<DataTypeNode>(); }

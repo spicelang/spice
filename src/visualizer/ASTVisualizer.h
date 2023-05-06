@@ -87,7 +87,6 @@ public:
   std::any visitAtomicExpr(AtomicExprNode *ctx) override { return buildNode(ctx); }
   std::any visitValue(ValueNode *ctx) override { return buildNode(ctx); }
   std::any visitConstant(ConstantNode *ctx) override { return buildNode(ctx); }
-  std::any visitFunctionCall(FunctionCallNode *ctx) override { return buildNode(ctx); }
   std::any visitArrayInitialization(ArrayInitializationNode *ctx) override { return buildNode(ctx); }
   std::any visitStructInstantiation(StructInstantiationNode *ctx) override { return buildNode(ctx); }
   std::any visitDataType(DataTypeNode *ctx) override { return buildNode(ctx); }
@@ -259,8 +258,6 @@ private:
       return "Value";
     if (std::is_same<ConstantNode, T>())
       return "Constant";
-    if (std::is_same<FunctionCallNode, T>())
-      return "FunctionCall";
     if (std::is_same<ArrayInitializationNode, T>())
       return "ArrayInitialization";
     if (std::is_same<StructInstantiationNode, T>())

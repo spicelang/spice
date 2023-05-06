@@ -1078,8 +1078,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     PostfixUnaryExprNode::FunctionCallData &data = node->fctCallData.at(manIdx);
 
     assert(lhsEntry != nullptr);
-    const std::string &functionName = lhsEntry->name;
-    data.calleeParentScope = lhsEntry->scope->parent;
+    std::string functionName = lhsEntry->getType().getSubType();
+    data.calleeParentScope = lhsEntry->scope;
 
     // Retrieve arg types
     data.argTypes.clear();
@@ -1108,10 +1108,82 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       throw SemanticError(node->templateTypeLst(), INVALID_TEMPLATE_TYPES,
                           "Template types are only allowed for constructor calls");
 
+    // Check if this is a ctor call to the String type
+    const bool isStringRt = rootScope->lookupStrict(STROBJ_NAME) != nullptr;
+    if (data.isCtorCall() && functionName == STROBJ_NAME && !isStringRt)
+      sourceFile->requestRuntimeModule(STRING_RT);
+
     // Retrieve 'this' type
     if (data.isCtorCall() || data.isMethodCall())
       data.thisType = mapImportedScopeTypeToLocalType(lhsEntry->scope, lhsEntry->getType());
 
+    std::vector<SymbolType> concreteTemplateTypes;
+    if (data.isCtorCall()) {
+      functionName = CTOR_FUNCTION_NAME;
+
+      // Retrieve concrete template types if required
+      for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
+        auto templateType = std::any_cast<SymbolType>(visit(templateTypeNode));
+        assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
+        if (templateType.hasAnyGenericParts())
+          throw SemanticError(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here");
+        concreteTemplateTypes.push_back(templateType);
+      }
+
+      // Retrieve struct
+      Struct *thisStruct = StructManager::matchStruct(lhsEntry->scope, functionName, concreteTemplateTypes, node);
+      const std::string structSignature = Struct::getSignature(functionName, concreteTemplateTypes);
+      if (!thisStruct)
+        throw SemanticError(node, UNKNOWN_DATATYPE,
+                            "Could not find struct candidate for struct '" + structSignature + "'. Do the template types match?");
+
+      // Check struct visibility
+      if (thisStruct->structScope->isImportedBy(currentScope) && !thisStruct->entry->getType().specifiers.isPublic())
+        throw SemanticError(node, INSUFFICIENT_VISIBILITY, "Struct '" + structSignature + "' has insufficient visibility");
+
+      // Set callee parent scope to scope of parent struct
+      data.calleeParentScope = thisStruct->structScope;
+    }
+
+    // Get callee
+    if (data.isOrdinaryCall() || data.isMethodCall() || data.isCtorCall()) {
+      data.callee =
+          FunctionManager::matchFunction(data.calleeParentScope, functionName, data.thisType, data.argTypes, false, node);
+
+      // Build signature for error messages
+      ParamList paramLst;
+      for (const SymbolType &argType : data.argTypes)
+        paramLst.push_back({argType, false});
+      const std::string functionSignature =
+          Function::getSignature(functionName, data.thisType, SymbolType(TY_DYN), paramLst, concreteTemplateTypes, false);
+
+      // Check if function was found
+      if (!data.callee)
+        throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION,
+                            "Function/procedure '" + functionSignature + "' could not be found");
+
+      // Check function visibility
+      if (data.calleeParentScope->isImportedBy(currentScope) && !data.callee->entry->getType().specifiers.isPublic())
+        throw SemanticError(node, INSUFFICIENT_VISIBILITY, "Function '" + functionSignature + "' has insufficient visibility");
+    }
+
+    // Retrieve return type
+    SymbolType returnType(TY_DYN);
+    if (data.isFctPtrCall()) {
+      returnType = lhsEntry->getType().getBaseType().getFunctionReturnType();
+    } else if (data.isCtorCall()) {
+      // Add anonymous symbol to keep track of de-allocation
+      currentScope->symbolTable.insertAnonymous(data.thisType, node);
+      // Set return type to 'this' type
+      returnType = data.thisType;
+    } else if (data.callee->isProcedure() || data.callee->isMethodProcedure() || data.callee->returnType.is(TY_DYN)) {
+      // Procedures always have the return type 'bool'
+      returnType = SymbolType(TY_BOOL);
+    } else {
+      returnType = data.callee->returnType;
+    }
+    lhsType = returnType;
+    lhsEntry = nullptr;
     break;
   }
   case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
@@ -1340,7 +1412,7 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(symbolType, manIdx)};
 }
 
-std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
+/*std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
 
   // Retrieve arg types
@@ -1638,7 +1710,7 @@ void TypeChecker::visitMethodCall(FunctionCallNode *node, Scope *structScope) co
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
   data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, localThisType, localArgTypes, false, node);
-}
+}*/
 
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   SymbolType actualItemType(TY_DYN);

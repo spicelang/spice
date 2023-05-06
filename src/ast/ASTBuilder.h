@@ -95,7 +95,6 @@ public:
   std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override;
   std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
   std::any visitValue(SpiceParser::ValueContext *ctx) override;
-  std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override;
   std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override;
   std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override;
   std::any visitConstant(SpiceParser::ConstantContext *ctx) override;

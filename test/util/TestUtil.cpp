@@ -214,7 +214,7 @@ void TestUtil::eraseIRModuleHeader(std::string &irCode) {
  * @param irCode IR code to modify
  * @param needle Substring to search for
  */
-void TestUtil::eraseLinesBySubstring(std::string &irCode, const char *const needle) {
+void TestUtil::eraseLinesBySubstring(std::string &irCode, const char *needle) {
   std::string::size_type pos = 0;
   while ((pos = irCode.find(needle, pos)) != std::string::npos) {
     // Find the start of the line that contains the substring

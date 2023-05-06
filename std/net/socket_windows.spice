@@ -41,14 +41,14 @@ public const short ERROR_LISTEN = -3s;
 public const short ERROR_ACCEPT = -4s;
 public const short ERROR_CONNECT = -5s;
 
-ext<int> WSAStartup(short, WSAData*);
-ext<long> socket(int, int, int);
-ext<int> bind(long, SockAddrIn*, int);
-ext<int> listen(long, int);
-ext<long> accept(long, SockAddrIn*, int);
-ext<int> close(long);
-ext<int> htonl(int);     // Fairly simple to re-implement in Spice
-ext<short> htons(short); // Fairly simple to re-implement in Spice
+ext f<int> WSAStartup(short, WSAData*);
+ext f<long> socket(int, int, int);
+ext f<int> bind(long, SockAddrIn*, int);
+ext f<int> listen(long, int);
+ext f<long> accept(long, SockAddrIn*, int);
+ext f<int> close(long);
+ext f<int> htonl(int);     // Fairly simple to re-implement in Spice
+ext f<short> htons(short); // Fairly simple to re-implement in Spice
 
 public p Socket.dtor() {
     this.close();

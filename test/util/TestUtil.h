@@ -75,7 +75,7 @@ public:
   static std::string getDefaultExecutableName();
   static bool isDisabled(const TestCase &testCase, bool isGHActions);
   static void eraseIRModuleHeader(std::string &irCode);
-  static void eraseLinesBySubstring(std::string &irCode, const char *const needle);
+  static void eraseLinesBySubstring(std::string &irCode, const char *needle);
 };
 
 // GCOV_EXCL_STOP

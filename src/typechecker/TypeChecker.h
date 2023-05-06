@@ -107,7 +107,7 @@ public:
   std::any visitAtomicExpr(AtomicExprNode *node) override;
   std::any visitValue(ValueNode *node) override;
   std::any visitConstant(ConstantNode *node) override;
-  std::any visitFunctionCall(FunctionCallNode *node) override;
+  // std::any visitFunctionCall(FunctionCallNode *node) override;
   std::any visitArrayInitialization(ArrayInitializationNode *node) override;
   std::any visitStructInstantiation(StructInstantiationNode *node) override;
   std::any visitDataType(DataTypeNode *node) override;
@@ -131,9 +131,9 @@ private:
   size_t manIdx = 0;
 
   // Private methods
-  std::string visitOrdinaryFctCall(FunctionCallNode *node);
+  /*std::string visitOrdinaryFctCall(FunctionCallNode *node);
   void visitFctPtrCall(FunctionCallNode *node, const SymbolType &functionType) const;
-  void visitMethodCall(FunctionCallNode *node, Scope *structScope) const;
+  void visitMethodCall(FunctionCallNode *node, Scope *structScope) const;*/
   [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;
   [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
   void changeToScope(Scope *scope, ScopeType scopeType);

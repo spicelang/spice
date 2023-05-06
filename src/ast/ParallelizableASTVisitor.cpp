@@ -143,8 +143,6 @@ std::any ParallelizableASTVisitor::visitValue(const ValueNode *node) { return vi
 
 std::any ParallelizableASTVisitor::visitConstant(const ConstantNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitFunctionCall(const FunctionCallNode *node) { return visitChildren(node); }
-
 std::any ParallelizableASTVisitor::visitArrayInitialization(const ArrayInitializationNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitStructInstantiation(const StructInstantiationNode *node) { return visitChildren(node); }

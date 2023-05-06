@@ -132,8 +132,6 @@ std::any ASTVisitor::visitValue(ValueNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitConstant(ConstantNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitFunctionCall(FunctionCallNode *node) { return visitChildren(node); }
-
 std::any ASTVisitor::visitArrayInitialization(ArrayInitializationNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitStructInstantiation(StructInstantiationNode *node) { return visitChildren(node); }
