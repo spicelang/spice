@@ -1493,6 +1493,7 @@ public:
     SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
     std::vector<SymbolType> argTypes;
     Function *callee = nullptr;
+    SymbolTableEntry *calleeEntry = nullptr;
     Scope *calleeParentScope = nullptr;
 
     // Methods

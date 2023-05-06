@@ -696,6 +696,105 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     break;
   }
   case PostfixUnaryExprNode::OP_FUNCTION_CALL: {
+    const PostfixUnaryExprNode::FunctionCallData &data = node->fctCallData.at(manIdx);
+
+    Function *spiceFunc = data.callee;
+    Scope *accessScope = data.calleeParentScope;
+    std::string mangledName;
+    if (!data.isFctPtrCall())
+      mangledName = spiceFunc->external ? data.calleeEntry->getType().getSubType() : spiceFunc->getMangledName();
+
+    // Get this type
+    llvm::Value *thisPtr = nullptr;
+    std::vector<llvm::Value *> argValues;
+    if (data.isMethodCall()) {
+      thisPtr = resolveAddress(lhs, false);
+      argValues.push_back(thisPtr);
+    }
+
+    // Get arg values
+    if (node->fctCallHasArgs) {
+      argValues.reserve(node->argLst()->args().size());
+      const std::vector<AssignExprNode *> args = node->argLst()->args();
+      for (size_t i = 0; i < args.size(); i++) {
+        AssignExprNode *argNode = args.at(i);
+        const SymbolType expectedSTy = lhsSTy.getBaseType().getFunctionParamTypes().at(i);
+        const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
+
+        // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
+        if (expectedSTy.matches(actualSTy, false, true, true)) { // Matches the param type
+          // Resolve address if actual type is reference, otherwise value
+          llvm::Value *argValue = actualSTy.isRef() ? resolveAddress(argNode) : resolveValue(argNode);
+          argValues.push_back(argValue);
+        } else if (expectedSTy.isRef() &&
+                   expectedSTy.getContainedTy().matches(actualSTy, false, true, true)) { // Matches with ref
+          llvm::Value *argAddress = resolveAddress(argNode);
+          argValues.push_back(argAddress);
+        } else if (actualSTy.isRef() && expectedSTy.matches(actualSTy.getContainedTy(), false, true, true)) { // Matches with ref
+          llvm::Value *argAddress = resolveValue(argNode);
+          argValues.push_back(argAddress);
+        } else { // Need implicit cast
+          llvm::Value *argAddress = resolveAddress(argNode);
+          argValues.push_back(doImplicitCast(argAddress, expectedSTy, actualSTy));
+        }
+      }
+    }
+
+    // Retrieve return and param types
+    const SymbolType returnSType = lhsSTy.getBaseType().getFunctionReturnType();
+    const std::vector<SymbolType> paramSTypes = lhsSTy.getBaseType().getFunctionParamTypes();
+
+    // Function is not defined in the current module -> declare it
+    // This can happen when:
+    // 1) If this is an imported source file
+    // 2) This is a down-call to a function, which is defined later in the same file
+    llvm::FunctionType *fctType = nullptr;
+    if (data.isFctPtrCall() || data.isImported || data.isDownCall) {
+      // Get returnType
+      llvm::Type *returnType = builder.getVoidTy();
+      if (!returnSType.is(TY_DYN))
+        returnType = returnSType.toLLVMType(context, accessScope);
+
+      // Get arg types
+      std::vector<llvm::Type *> argTypes;
+      if (data.isMethodCall() || data.isCtorCall())
+        argTypes.push_back(builder.getPtrTy());
+      for (const SymbolType &paramType : paramSTypes)
+        argTypes.push_back(paramType.toLLVMType(context, accessScope));
+
+      fctType = llvm::FunctionType::get(returnType, argTypes, false);
+      if (data.isImported || data.isDownCall)
+        module->getOrInsertFunction(mangledName, fctType);
+    }
+
+    llvm::Value *result;
+    if (data.isFctPtrCall()) {
+      // Get entry to load the function pointer
+      assert(data.calleeEntry != nullptr);
+      SymbolType firstFragType = data.calleeEntry->getType();
+      llvm::Value *fctPtr = data.calleeEntry->getAddress();
+      assert(fctPtr != nullptr);
+      autoDeReferencePtr(fctPtr, firstFragType, currentScope);
+      llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr);
+
+      // Generate function call
+      assert(fctType != nullptr);
+      result = builder.CreateCall({fctType, fct}, argValues);
+    } else {
+      // Get callee function
+      llvm::Function *callee = module->getFunction(mangledName);
+      assert(callee != nullptr);
+
+      // Generate function call
+      result = builder.CreateCall(callee, argValues);
+    }
+
+    if (data.isCtorCall()) // In case this is a constructor call, return the thisPtr as pointer
+      lhs = {.ptr = thisPtr};
+    else if (returnSType.isRef()) // In case this is a callee, returning a reference, return the address
+      lhs = {.ptr = result};
+    else // Otherwise return the value
+      lhs = {.value = result};
 
     break;
   }
@@ -723,16 +822,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     memberAddress->setName(fieldName + "_addr");
 
     // Set as ptr or refPtr, depending on the type
-    if (fieldSymbolType.isRef()) {
-      lhs.ptr = nullptr;
-      lhs.refPtr = memberAddress;
-    } else {
-      lhs.ptr = memberAddress;
-      lhs.refPtr = nullptr;
-    }
-
-    // Reset the value
-    lhs.value = nullptr;
+    lhs = fieldSymbolType.isRef() ? ExprResult{.refPtr = memberAddress} : ExprResult{.ptr = memberAddress};
     break;
   }
   case PostfixUnaryExprNode::OP_PLUS_PLUS: {

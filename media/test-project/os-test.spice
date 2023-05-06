@@ -6,13 +6,24 @@ p invoke(f<int>(string) fctPtr) {
     fctPtr("string");
 }*/
 
+type TestStruct struct {
+
+}
+
+f<int> TestStruct.test(const string& input) {
+    printf("%s", input);
+    return 1;
+}
+
 f<int> test() {
     printf("Hi");
     return 12;
 }
 
 f<int> main() {
-    int t = test();
+    TestStruct ts;
+    int t = ts.test("Test");
+    t = test();
     //f<int>(string) testFct = test;
     //invoke(testFct);
 }
