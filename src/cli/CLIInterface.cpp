@@ -108,7 +108,7 @@ void CLIInterface::validate() const {
  */
 void CLIInterface::enrich() {
   // Propagate target information
-  llvm::Triple defaultTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+  llvm::Triple defaultTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
   if (cliOptions.targetTriple.empty() && cliOptions.targetArch.empty()) { // We have nothing -> obtain the host triplet
     cliOptions.targetTriple = defaultTriple.getTriple();
     cliOptions.targetArch = defaultTriple.getArchName();
@@ -116,11 +116,11 @@ void CLIInterface::enrich() {
     cliOptions.targetOs = defaultTriple.getOSName();
     cliOptions.isNativeTarget = true;
   } else if (cliOptions.targetTriple.empty()) { // We have arch, vendor and os -> obtain triplet
-    llvm::Triple triple = llvm::Triple(cliOptions.targetArch, cliOptions.targetVendor, cliOptions.targetOs);
+    llvm::Triple triple(cliOptions.targetArch, cliOptions.targetVendor, cliOptions.targetOs);
     cliOptions.targetTriple = triple.getTriple();
     cliOptions.isNativeTarget = triple == defaultTriple;
   } else { // Obtain arch, vendor and os by the triplet
-    llvm::Triple triple = llvm::Triple(cliOptions.targetTriple);
+    llvm::Triple triple(llvm::Triple::normalize(cliOptions.targetTriple));
     cliOptions.targetArch = triple.getArchName();
     cliOptions.targetVendor = triple.getVendorName();
     cliOptions.targetOs = triple.getOSName();
