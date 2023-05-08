@@ -1096,11 +1096,13 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     }
 
     // Retrieve call type, based on the left hand side
-    const bool inGlobalScope = accessScope->type == SCOPE_GLOBAL;
-    if (lhsType.isBaseType(TY_STRUCT)) {
-      data.callType = inGlobalScope ? PostfixUnaryExprNode::TYPE_CTOR : PostfixUnaryExprNode::TYPE_METHOD;
+    if (lhsType.is(TY_STRUCT)) {
+      data.callType = PostfixUnaryExprNode::TYPE_CTOR;
+    } else if (accessScope->type == SCOPE_STRUCT) {
+      data.callType = PostfixUnaryExprNode::TYPE_METHOD;
     } else if (lhsType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-      data.callType = inGlobalScope ? PostfixUnaryExprNode::TYPE_ORDINARY : PostfixUnaryExprNode::TYPE_FCT_PTR;
+      const bool isGlobalScope = accessScope->type == SCOPE_GLOBAL;
+      data.callType = isGlobalScope ? PostfixUnaryExprNode::TYPE_ORDINARY : PostfixUnaryExprNode::TYPE_FCT_PTR;
     }
     assert(data.callType != PostfixUnaryExprNode::TYPE_NONE);
 

@@ -100,7 +100,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   currentScope = node->fctScope->parent;
 
   // Insert symbol for function into the symbol table
-  node->entry = currentScope->insert(node->getSymbolTableEntryName(), node);
+  node->entry = currentScope->insert(node->fctName->name, node);
 
   // Add to external name registry
   // if a function has overloads, they both refer to the same entry in the registry. So we only register the name once
@@ -155,7 +155,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   currentScope = node->procScope->parent;
 
   // Insert symbol for procedure into the symbol table
-  node->entry = currentScope->insert(node->getSymbolTableEntryName(), node);
+  node->entry = currentScope->insert(node->procName->name, node);
 
   // Add to external name registry
   // if a procedure has overloads, they both refer to the same entry in the registry. So we only register the name once

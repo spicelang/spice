@@ -38,8 +38,10 @@ public:
   SymbolTableEntry *insert(const std::string &name, ASTNode *declNode);
   SymbolTableEntry *insertAnonymous(const SymbolType &type, ASTNode *declNode);
   void copySymbol(const std::string &originalName, const std::string &newName);
-  SymbolTableEntry *lookup(const std::string &symbolName);
-  SymbolTableEntry *lookupStrict(const std::string &symbolName);
+  SymbolTableEntry *lookup(const std::string &name);
+  std::vector<SymbolTableEntry *> lookupMultiple(const std::string &name);
+  SymbolTableEntry *lookupStrict(const std::string &name);
+  std::vector<SymbolTableEntry *> lookupMultipleStrict(const std::string &name);
   SymbolTableEntry *lookupByIndex(unsigned int orderIndex);
   SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc);
   Capture *lookupCapture(const std::string &symbolName);
@@ -50,7 +52,7 @@ public:
   // Public members
   SymbolTable *parent;
   Scope *scope;
-  std::unordered_map<std::string, SymbolTableEntry> symbols;
+  std::unordered_multimap<std::string, SymbolTableEntry> symbols;
   std::unordered_map<std::string, Capture> captures;
   bool capturingRequired = false;
 };

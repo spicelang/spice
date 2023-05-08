@@ -139,7 +139,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   functionType.setFunctionParamTypes(paramTypes);
 
   // Update type of function entry
-  SymbolTableEntry *functionEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
+  std::vector<SymbolTableEntry *> functionEntries = currentScope->symbolTable.lookupMultipleStrict(node->fctName->name);
+  auto functionEntry = *std::ranges::find_if(functionEntries, [=](SymbolTableEntry *entry) { return entry->declNode == node; });
   assert(functionEntry != nullptr);
   functionEntry->updateType(functionType, false);
 
@@ -245,7 +246,8 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   procedureType.setFunctionParamTypes(paramTypes);
 
   // Update type of procedure entry
-  SymbolTableEntry *procedureEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
+  std::vector<SymbolTableEntry *> procedureEntries = currentScope->symbolTable.lookupMultipleStrict(node->procName->name);
+  auto procedureEntry = *std::ranges::find_if(procedureEntries, [=](SymbolTableEntry *entry) { return entry->declNode == node; });
   assert(procedureEntry != nullptr);
   procedureEntry->updateType(procedureType, false);
 

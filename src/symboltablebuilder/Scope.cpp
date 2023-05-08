@@ -101,7 +101,8 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
       continue;
     // For dtor calls, only anonymous structs are relevant
     if (entry.getType().is(TY_STRUCT) && !entry.isDead() && entry.name.starts_with("anon."))
-      varsGoingOutOfScope.push_back(&symbolTable.symbols.at(name));
+      for (SymbolTableEntry *entry : symbolTable.lookupMultipleStrict(name))
+        varsGoingOutOfScope.push_back(entry);
   }
 
   // Collect all variables in the child scopes
@@ -109,7 +110,7 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
     const ScopeType scopeType = child->type;
     // Exclude enum, global, struct and thread body (is a LLVM function) scopes
     if (scopeType != SCOPE_ENUM && scopeType != SCOPE_GLOBAL && scopeType != SCOPE_STRUCT && scopeType != SCOPE_THREAD_BODY) {
-      std::vector childVars = child->getVarsGoingOutOfScope();
+      const std::vector childVars = child->getVarsGoingOutOfScope();
       varsGoingOutOfScope.insert(varsGoingOutOfScope.end(), childVars.begin(), childVars.end());
     }
   }

@@ -20,8 +20,8 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
   bool isGlobal = parent == nullptr;
   size_t orderIndex = symbols.size();
   // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
-  symbols.insert({name, SymbolTableEntry(name, SymbolType(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
-  return &symbols.at(name);
+  auto it = symbols.insert({name, SymbolTableEntry(name, SymbolType(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
+  return &it->second;
 }
 
 /**
@@ -81,8 +81,19 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-
     if (capturingRequired && !captures.contains(name) && !entry->getType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
       captures.insert({name, Capture(entry)});
   }
-
   return entry;
+}
+
+std::vector<SymbolTableEntry *> SymbolTable::lookupMultiple(const std::string &name) { // NOLINT(misc-no-recursion)
+  std::vector<SymbolTableEntry *> entries = lookupMultipleStrict(name);
+  if (entries.empty()) { // Symbol was not found in the current scope
+    // We reached the root scope, the symbol does not exist at all
+    if (parent == nullptr)
+      return {};
+    // If there is a parent scope, continue the search there
+    entries = parent->lookupMultiple(name);
+  }
+  return entries;
 }
 
 /**
@@ -92,16 +103,35 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-
  * @return Desired symbol / nullptr if the symbol was not found
  */
 SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
-  if (name.empty())
-    return nullptr;
+  assert(!name.empty());
   // Check if a symbol with this name exists in this scope
-  if (symbols.contains(name))
-    return &symbols.at(name);
+  if (symbols.contains(name)) {
+    assert(symbols.count(name) == 1);
+    return &symbols.find(name)->second;
+  }
   // Check if a capture with this name exists in this scope
   if (captures.contains(name))
     return captures.at(name).capturedEntry;
   // Otherwise, return a nullptr
   return nullptr;
+}
+
+std::vector<SymbolTableEntry *> SymbolTable::lookupMultipleStrict(const std::string &name) {
+  assert(!name.empty());
+  // Check if a symbol with this name exists in this scope
+  if (symbols.contains(name)) {
+    std::vector<SymbolTableEntry *> entries;
+    entries.reserve(symbols.count(name));
+    auto range = symbols.equal_range(name);
+    for (auto it = range.first; it != range.second; ++it)
+      entries.push_back(&it->second);
+    return entries;
+  }
+  // Check if a capture with this name exists in this scope
+  if (captures.contains(name))
+    return {captures.at(name).capturedEntry};
+  // Otherwise, return an empty vector
+  return {};
 }
 
 /**
