@@ -11,35 +11,34 @@
 	.type	32;
 	.endef
 	.section	.rdata,"dr"
-	.p2align	5, 0x0
+	.p2align	4, 0x0
 .LCPI0_0:
 	.long	0
 	.long	4294967295
 	.long	4294967294
 	.long	4294967293
-	.long	4294967292
-	.long	4294967291
-	.long	4294967290
-	.long	4294967289
 .LCPI0_1:
 	.long	1
+	.long	1
+	.long	1
+	.long	1
 .LCPI0_2:
-	.long	4294967288
+	.long	4294967292
+	.long	4294967292
+	.long	4294967292
+	.long	4294967292
 .LCPI0_3:
-	.long	4294967280
-.LCPI0_4:
-	.long	4294967272
-.LCPI0_5:
-	.long	4294967264
+	.long	4294967288
+	.long	4294967288
+	.long	4294967288
+	.long	4294967288
 	.text
 	.p2align	4, 0x90
 .L_f__void__int__faculty__int:
-	subq	$72, %rsp
+	subq	$40, %rsp
+	movdqa	%xmm7, 16(%rsp)
+	movdqa	%xmm6, (%rsp)
 	movl	$1, %eax
-	vmovdqa	%xmm9, 48(%rsp)
-	vmovdqa	%xmm8, 32(%rsp)
-	vmovdqa	%xmm7, 16(%rsp)
-	vmovdqa	%xmm6, (%rsp)
 	cmpl	$2, %ecx
 	jl	.LBB0_6
 	xorl	%eax, %eax
@@ -47,47 +46,55 @@
 	subl	$2, %edx
 	cmovbl	%eax, %edx
 	movl	$1, %eax
-	cmpl	$31, %edx
+	cmpl	$7, %edx
 	jb	.LBB0_5
-	vmovd	%ecx, %xmm0
-	vpbroadcastd	.LCPI0_1(%rip), %ymm1
-	vpbroadcastd	.LCPI0_2(%rip), %ymm2
-	vpbroadcastd	.LCPI0_3(%rip), %ymm3
-	vpbroadcastd	.LCPI0_4(%rip), %ymm4
-	vpbroadcastd	.LCPI0_5(%rip), %ymm5
 	incl	%edx
-	vpbroadcastd	%xmm0, %ymm0
-	vpaddd	.LCPI0_0(%rip), %ymm0, %ymm0
 	movl	%edx, %r8d
-	andl	$-32, %r8d
-	movl	%r8d, %eax
+	andl	$-8, %r8d
+	movd	%ecx, %xmm0
 	subl	%r8d, %ecx
+	pshufd	$0, %xmm0, %xmm0
+	paddd	.LCPI0_0(%rip), %xmm0
+	movl	%r8d, %eax
 	negl	%eax
-	vmovdqa	%ymm1, %ymm6
-	vmovdqa	%ymm1, %ymm7
-	vmovdqa	%ymm1, %ymm8
+	movdqa	.LCPI0_1(%rip), %xmm1
+	movdqa	.LCPI0_2(%rip), %xmm3
+	movdqa	.LCPI0_3(%rip), %xmm4
+	movdqa	%xmm1, %xmm2
 	.p2align	4, 0x90
 .LBB0_3:
-	vpaddd	%ymm2, %ymm0, %ymm9
-	vpmulld	%ymm1, %ymm0, %ymm1
-	addl	$32, %eax
-	vpmulld	%ymm6, %ymm9, %ymm6
-	vpaddd	%ymm3, %ymm0, %ymm9
-	vpmulld	%ymm7, %ymm9, %ymm7
-	vpaddd	%ymm4, %ymm0, %ymm9
-	vpaddd	%ymm5, %ymm0, %ymm0
-	vpmulld	%ymm8, %ymm9, %ymm8
+	movdqa	%xmm0, %xmm5
+	paddd	%xmm3, %xmm5
+	movdqa	%xmm0, %xmm6
+	pmuludq	%xmm1, %xmm6
+	pshufd	$245, %xmm1, %xmm1
+	pshufd	$232, %xmm6, %xmm6
+	pshufd	$245, %xmm0, %xmm7
+	pmuludq	%xmm1, %xmm7
+	pshufd	$232, %xmm7, %xmm7
+	movdqa	%xmm6, %xmm1
+	punpckldq	%xmm7, %xmm1
+	pshufd	$245, %xmm5, %xmm6
+	pmuludq	%xmm2, %xmm5
+	pshufd	$245, %xmm2, %xmm2
+	pshufd	$232, %xmm5, %xmm5
+	pmuludq	%xmm6, %xmm2
+	pshufd	$232, %xmm2, %xmm6
+	movdqa	%xmm5, %xmm2
+	punpckldq	%xmm6, %xmm2
+	paddd	%xmm4, %xmm0
+	addl	$8, %eax
 	jne	.LBB0_3
-	vpmulld	%ymm1, %ymm6, %ymm0
-	vpmulld	%ymm0, %ymm7, %ymm0
-	vpmulld	%ymm0, %ymm8, %ymm0
-	vextracti128	$1, %ymm0, %xmm1
-	vpmulld	%xmm1, %xmm0, %xmm0
-	vpshufd	$238, %xmm0, %xmm1
-	vpmulld	%xmm1, %xmm0, %xmm0
-	vpshufd	$85, %xmm0, %xmm1
-	vpmulld	%xmm1, %xmm0, %xmm0
-	vmovd	%xmm0, %eax
+	pshufd	$245, %xmm1, %xmm0
+	pshufd	$245, %xmm2, %xmm3
+	pmuludq	%xmm0, %xmm3
+	pmuludq	%xmm1, %xmm2
+	pshufd	$238, %xmm2, %xmm0
+	pmuludq	%xmm2, %xmm0
+	pshufd	$170, %xmm3, %xmm1
+	pmuludq	%xmm3, %xmm1
+	pmuludq	%xmm0, %xmm1
+	movd	%xmm1, %eax
 	cmpl	%r8d, %edx
 	je	.LBB0_6
 	.p2align	4, 0x90
@@ -98,12 +105,9 @@
 	movl	%edx, %ecx
 	jae	.LBB0_5
 .LBB0_6:
-	vmovaps	(%rsp), %xmm6
-	vmovaps	16(%rsp), %xmm7
-	vmovaps	32(%rsp), %xmm8
-	vmovaps	48(%rsp), %xmm9
-	addq	$72, %rsp
-	vzeroupper
+	movaps	(%rsp), %xmm6
+	movaps	16(%rsp), %xmm7
+	addq	$40, %rsp
 	retq
 
 	.def	main;

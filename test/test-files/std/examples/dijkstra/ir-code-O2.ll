@@ -54,26 +54,26 @@ for.body.L31:
   store i32 0, ptr %dist, align 4
   br label %for.body.L39
 
-for.body.L39:                                     ; preds = %for.tail.L42.8.1, %for.body.L31
-  %2 = phi i32 [ %1, %for.body.L31 ], [ %137, %for.tail.L42.8.1 ]
-  %3 = phi i1 [ false, %for.body.L31 ], [ %132, %for.tail.L42.8.1 ]
-  %4 = phi i32 [ %1, %for.body.L31 ], [ %131, %for.tail.L42.8.1 ]
-  %5 = phi i1 [ false, %for.body.L31 ], [ %126, %for.tail.L42.8.1 ]
-  %6 = phi i32 [ %1, %for.body.L31 ], [ %125, %for.tail.L42.8.1 ]
-  %7 = phi i1 [ false, %for.body.L31 ], [ %120, %for.tail.L42.8.1 ]
-  %8 = phi i32 [ %1, %for.body.L31 ], [ %119, %for.tail.L42.8.1 ]
-  %9 = phi i1 [ false, %for.body.L31 ], [ %114, %for.tail.L42.8.1 ]
-  %10 = phi i32 [ %1, %for.body.L31 ], [ %113, %for.tail.L42.8.1 ]
-  %11 = phi i1 [ false, %for.body.L31 ], [ %108, %for.tail.L42.8.1 ]
-  %12 = phi i32 [ %1, %for.body.L31 ], [ %107, %for.tail.L42.8.1 ]
-  %13 = phi i1 [ false, %for.body.L31 ], [ %102, %for.tail.L42.8.1 ]
-  %14 = phi i32 [ %1, %for.body.L31 ], [ %101, %for.tail.L42.8.1 ]
-  %15 = phi i1 [ false, %for.body.L31 ], [ %96, %for.tail.L42.8.1 ]
-  %16 = phi i32 [ %1, %for.body.L31 ], [ %95, %for.tail.L42.8.1 ]
-  %17 = phi i1 [ false, %for.body.L31 ], [ %90, %for.tail.L42.8.1 ]
-  %18 = phi i32 [ 0, %for.body.L31 ], [ %89, %for.tail.L42.8.1 ]
-  %19 = phi i1 [ false, %for.body.L31 ], [ %84, %for.tail.L42.8.1 ]
-  %count.036 = phi i32 [ 0, %for.body.L31 ], [ %138, %for.tail.L42.8.1 ]
+for.body.L39:                                     ; preds = %for.body.L31, %for.tail.L42.8
+  %2 = phi i32 [ %1, %for.body.L31 ], [ %78, %for.tail.L42.8 ]
+  %3 = phi i1 [ false, %for.body.L31 ], [ %73, %for.tail.L42.8 ]
+  %4 = phi i32 [ %1, %for.body.L31 ], [ %72, %for.tail.L42.8 ]
+  %5 = phi i1 [ false, %for.body.L31 ], [ %67, %for.tail.L42.8 ]
+  %6 = phi i32 [ %1, %for.body.L31 ], [ %66, %for.tail.L42.8 ]
+  %7 = phi i1 [ false, %for.body.L31 ], [ %61, %for.tail.L42.8 ]
+  %8 = phi i32 [ %1, %for.body.L31 ], [ %60, %for.tail.L42.8 ]
+  %9 = phi i1 [ false, %for.body.L31 ], [ %55, %for.tail.L42.8 ]
+  %10 = phi i32 [ %1, %for.body.L31 ], [ %54, %for.tail.L42.8 ]
+  %11 = phi i1 [ false, %for.body.L31 ], [ %49, %for.tail.L42.8 ]
+  %12 = phi i32 [ %1, %for.body.L31 ], [ %48, %for.tail.L42.8 ]
+  %13 = phi i1 [ false, %for.body.L31 ], [ %43, %for.tail.L42.8 ]
+  %14 = phi i32 [ %1, %for.body.L31 ], [ %42, %for.tail.L42.8 ]
+  %15 = phi i1 [ false, %for.body.L31 ], [ %37, %for.tail.L42.8 ]
+  %16 = phi i32 [ %1, %for.body.L31 ], [ %36, %for.tail.L42.8 ]
+  %17 = phi i1 [ false, %for.body.L31 ], [ %31, %for.tail.L42.8 ]
+  %18 = phi i32 [ 0, %for.body.L31 ], [ %30, %for.tail.L42.8 ]
+  %19 = phi i1 [ false, %for.body.L31 ], [ %25, %for.tail.L42.8 ]
+  %count.036 = phi i32 [ 0, %for.body.L31 ], [ %79, %for.tail.L42.8 ]
   %spec.select7.i = tail call i32 @llvm.smin.i32(i32 %18, i32 %1)
   %min.1.i = select i1 %19, i32 %1, i32 %spec.select7.i
   br i1 %17, label %for.tail.L9.1.i, label %land.1.L10C12.1.i
@@ -358,305 +358,21 @@ land.3.L43C17.8:                                  ; preds = %land.2.L43C17.8
 
 for.tail.L42.8:                                   ; preds = %land.3.L43C17.8, %land.2.L43C17.8, %land.1.L43C17.8, %for.tail.L42.7
   %78 = phi i32 [ %spec.store.select.8, %land.3.L43C17.8 ], [ %2, %land.2.L43C17.8 ], [ %2, %land.1.L43C17.8 ], [ %2, %for.tail.L42.7 ]
-  %spec.select7.i.1 = tail call i32 @llvm.smin.i32(i32 %30, i32 %1)
-  %min.1.i.1 = select i1 %25, i32 %1, i32 %spec.select7.i.1
-  br i1 %31, label %for.tail.L9.1.i.1, label %land.1.L10C12.1.i.1
+  %79 = add nuw nsw i32 %count.036, 1
+  %exitcond.not = icmp eq i32 %79, 8
+  br i1 %exitcond.not, label %for.exit.L39, label %for.body.L39
 
-land.1.L10C12.1.i.1:                              ; preds = %for.tail.L42.8
-  %.not.1.i.1 = icmp sle i32 %36, %min.1.i.1
-  %spec.select.1.i.1 = zext i1 %.not.1.i.1 to i32
-  %spec.select7.1.i.1 = tail call i32 @llvm.smin.i32(i32 %36, i32 %min.1.i.1)
-  br label %for.tail.L9.1.i.1
-
-for.tail.L9.1.i.1:                                ; preds = %land.1.L10C12.1.i.1, %for.tail.L42.8
-  %minIndex.1.1.i.1 = phi i32 [ 0, %for.tail.L42.8 ], [ %spec.select.1.i.1, %land.1.L10C12.1.i.1 ]
-  %min.1.1.i.1 = phi i32 [ %min.1.i.1, %for.tail.L42.8 ], [ %spec.select7.1.i.1, %land.1.L10C12.1.i.1 ]
-  br i1 %37, label %for.tail.L9.2.i.1, label %land.1.L10C12.2.i.1
-
-land.1.L10C12.2.i.1:                              ; preds = %for.tail.L9.1.i.1
-  %.not.2.i.1 = icmp sgt i32 %42, %min.1.1.i.1
-  %spec.select.2.i.1 = select i1 %.not.2.i.1, i32 %minIndex.1.1.i.1, i32 2
-  %spec.select7.2.i.1 = tail call i32 @llvm.smin.i32(i32 %42, i32 %min.1.1.i.1)
-  br label %for.tail.L9.2.i.1
-
-for.tail.L9.2.i.1:                                ; preds = %land.1.L10C12.2.i.1, %for.tail.L9.1.i.1
-  %minIndex.1.2.i.1 = phi i32 [ %minIndex.1.1.i.1, %for.tail.L9.1.i.1 ], [ %spec.select.2.i.1, %land.1.L10C12.2.i.1 ]
-  %min.1.2.i.1 = phi i32 [ %min.1.1.i.1, %for.tail.L9.1.i.1 ], [ %spec.select7.2.i.1, %land.1.L10C12.2.i.1 ]
-  br i1 %43, label %for.tail.L9.3.i.1, label %land.1.L10C12.3.i.1
-
-land.1.L10C12.3.i.1:                              ; preds = %for.tail.L9.2.i.1
-  %.not.3.i.1 = icmp sgt i32 %48, %min.1.2.i.1
-  %spec.select.3.i.1 = select i1 %.not.3.i.1, i32 %minIndex.1.2.i.1, i32 3
-  %spec.select7.3.i.1 = tail call i32 @llvm.smin.i32(i32 %48, i32 %min.1.2.i.1)
-  br label %for.tail.L9.3.i.1
-
-for.tail.L9.3.i.1:                                ; preds = %land.1.L10C12.3.i.1, %for.tail.L9.2.i.1
-  %minIndex.1.3.i.1 = phi i32 [ %minIndex.1.2.i.1, %for.tail.L9.2.i.1 ], [ %spec.select.3.i.1, %land.1.L10C12.3.i.1 ]
-  %min.1.3.i.1 = phi i32 [ %min.1.2.i.1, %for.tail.L9.2.i.1 ], [ %spec.select7.3.i.1, %land.1.L10C12.3.i.1 ]
-  br i1 %49, label %for.tail.L9.4.i.1, label %land.1.L10C12.4.i.1
-
-land.1.L10C12.4.i.1:                              ; preds = %for.tail.L9.3.i.1
-  %.not.4.i.1 = icmp sgt i32 %54, %min.1.3.i.1
-  %spec.select.4.i.1 = select i1 %.not.4.i.1, i32 %minIndex.1.3.i.1, i32 4
-  %spec.select7.4.i.1 = tail call i32 @llvm.smin.i32(i32 %54, i32 %min.1.3.i.1)
-  br label %for.tail.L9.4.i.1
-
-for.tail.L9.4.i.1:                                ; preds = %land.1.L10C12.4.i.1, %for.tail.L9.3.i.1
-  %minIndex.1.4.i.1 = phi i32 [ %minIndex.1.3.i.1, %for.tail.L9.3.i.1 ], [ %spec.select.4.i.1, %land.1.L10C12.4.i.1 ]
-  %min.1.4.i.1 = phi i32 [ %min.1.3.i.1, %for.tail.L9.3.i.1 ], [ %spec.select7.4.i.1, %land.1.L10C12.4.i.1 ]
-  br i1 %55, label %for.tail.L9.5.i.1, label %land.1.L10C12.5.i.1
-
-land.1.L10C12.5.i.1:                              ; preds = %for.tail.L9.4.i.1
-  %.not.5.i.1 = icmp sgt i32 %60, %min.1.4.i.1
-  %spec.select.5.i.1 = select i1 %.not.5.i.1, i32 %minIndex.1.4.i.1, i32 5
-  %spec.select7.5.i.1 = tail call i32 @llvm.smin.i32(i32 %60, i32 %min.1.4.i.1)
-  br label %for.tail.L9.5.i.1
-
-for.tail.L9.5.i.1:                                ; preds = %land.1.L10C12.5.i.1, %for.tail.L9.4.i.1
-  %minIndex.1.5.i.1 = phi i32 [ %minIndex.1.4.i.1, %for.tail.L9.4.i.1 ], [ %spec.select.5.i.1, %land.1.L10C12.5.i.1 ]
-  %min.1.5.i.1 = phi i32 [ %min.1.4.i.1, %for.tail.L9.4.i.1 ], [ %spec.select7.5.i.1, %land.1.L10C12.5.i.1 ]
-  br i1 %61, label %for.tail.L9.6.i.1, label %land.1.L10C12.6.i.1
-
-land.1.L10C12.6.i.1:                              ; preds = %for.tail.L9.5.i.1
-  %.not.6.i.1 = icmp sgt i32 %66, %min.1.5.i.1
-  %spec.select.6.i.1 = select i1 %.not.6.i.1, i32 %minIndex.1.5.i.1, i32 6
-  %spec.select7.6.i.1 = tail call i32 @llvm.smin.i32(i32 %66, i32 %min.1.5.i.1)
-  br label %for.tail.L9.6.i.1
-
-for.tail.L9.6.i.1:                                ; preds = %land.1.L10C12.6.i.1, %for.tail.L9.5.i.1
-  %minIndex.1.6.i.1 = phi i32 [ %minIndex.1.5.i.1, %for.tail.L9.5.i.1 ], [ %spec.select.6.i.1, %land.1.L10C12.6.i.1 ]
-  %min.1.6.i.1 = phi i32 [ %min.1.5.i.1, %for.tail.L9.5.i.1 ], [ %spec.select7.6.i.1, %land.1.L10C12.6.i.1 ]
-  br i1 %67, label %for.tail.L9.7.i.1, label %land.1.L10C12.7.i.1
-
-land.1.L10C12.7.i.1:                              ; preds = %for.tail.L9.6.i.1
-  %.not.7.i.1 = icmp sgt i32 %72, %min.1.6.i.1
-  %spec.select.7.i.1 = select i1 %.not.7.i.1, i32 %minIndex.1.6.i.1, i32 7
-  %spec.select7.7.i.1 = tail call i32 @llvm.smin.i32(i32 %72, i32 %min.1.6.i.1)
-  br label %for.tail.L9.7.i.1
-
-for.tail.L9.7.i.1:                                ; preds = %land.1.L10C12.7.i.1, %for.tail.L9.6.i.1
-  %minIndex.1.7.i.1 = phi i32 [ %minIndex.1.6.i.1, %for.tail.L9.6.i.1 ], [ %spec.select.7.i.1, %land.1.L10C12.7.i.1 ]
-  %min.1.7.i.1 = phi i32 [ %min.1.6.i.1, %for.tail.L9.6.i.1 ], [ %spec.select7.7.i.1, %land.1.L10C12.7.i.1 ]
-  %.not.8.i.1 = icmp sgt i32 %78, %min.1.7.i.1
-  %79 = select i1 %73, i1 true, i1 %.not.8.i.1
-  %80 = zext i32 %minIndex.1.7.i.1 to i64
-  %81 = select i1 %79, i64 %80, i64 8
-  %82 = getelementptr inbounds [9 x i1], ptr %sptSet, i64 0, i64 %81
-  store i1 true, ptr %82, align 1
-  %83 = getelementptr inbounds [9 x i32], ptr %dist, i64 0, i64 %81
-  %84 = load i1, ptr %sptSet, align 1
-  br i1 %84, label %for.tail.L42.123, label %land.1.L43C17.118
-
-land.1.L43C17.118:                                ; preds = %for.tail.L9.7.i.1
-  %85 = getelementptr inbounds [9 x i32], ptr %0, i64 %81, i64 0
-  %86 = load i32, ptr %85, align 4
-  %.not.117 = icmp eq i32 %86, 0
-  br i1 %.not.117, label %for.tail.L42.123, label %land.2.L43C17.120
-
-land.2.L43C17.120:                                ; preds = %land.1.L43C17.118
-  %87 = load i32, ptr %83, align 4
-  %.not33.119 = icmp eq i32 %87, %1
-  br i1 %.not33.119, label %for.tail.L42.123, label %land.3.L43C17.122
-
-land.3.L43C17.122:                                ; preds = %land.2.L43C17.120
-  %88 = add i32 %87, %86
-  %spec.store.select.121 = tail call i32 @llvm.smin.i32(i32 %88, i32 %30)
-  store i32 %spec.store.select.121, ptr %dist, align 4
-  br label %for.tail.L42.123
-
-for.tail.L42.123:                                 ; preds = %land.3.L43C17.122, %land.2.L43C17.120, %land.1.L43C17.118, %for.tail.L9.7.i.1
-  %89 = phi i32 [ %spec.store.select.121, %land.3.L43C17.122 ], [ %30, %for.tail.L9.7.i.1 ], [ %30, %land.1.L43C17.118 ], [ %30, %land.2.L43C17.120 ]
-  %90 = load i1, ptr %.fca.1.gep, align 1
-  br i1 %90, label %for.tail.L42.1.1, label %land.1.L43C17.1.1
-
-land.1.L43C17.1.1:                                ; preds = %for.tail.L42.123
-  %91 = getelementptr inbounds [9 x i32], ptr %0, i64 %81, i64 1
-  %92 = load i32, ptr %91, align 4
-  %.not.1.1 = icmp eq i32 %92, 0
-  br i1 %.not.1.1, label %for.tail.L42.1.1, label %land.2.L43C17.1.1
-
-land.2.L43C17.1.1:                                ; preds = %land.1.L43C17.1.1
-  %93 = load i32, ptr %83, align 4
-  %.not33.1.1 = icmp eq i32 %93, %1
-  br i1 %.not33.1.1, label %for.tail.L42.1.1, label %land.3.L43C17.1.1
-
-land.3.L43C17.1.1:                                ; preds = %land.2.L43C17.1.1
-  %94 = add i32 %93, %92
-  %spec.store.select.1.1 = tail call i32 @llvm.smin.i32(i32 %94, i32 %36)
-  store i32 %spec.store.select.1.1, ptr %.fca.1.gep19, align 4
-  br label %for.tail.L42.1.1
-
-for.tail.L42.1.1:                                 ; preds = %land.3.L43C17.1.1, %land.2.L43C17.1.1, %land.1.L43C17.1.1, %for.tail.L42.123
-  %95 = phi i32 [ %spec.store.select.1.1, %land.3.L43C17.1.1 ], [ %36, %land.2.L43C17.1.1 ], [ %36, %land.1.L43C17.1.1 ], [ %36, %for.tail.L42.123 ]
-  %96 = load i1, ptr %.fca.2.gep, align 1
-  br i1 %96, label %for.tail.L42.2.1, label %land.1.L43C17.2.1
-
-land.1.L43C17.2.1:                                ; preds = %for.tail.L42.1.1
-  %97 = getelementptr inbounds [9 x i32], ptr %0, i64 %81, i64 2
-  %98 = load i32, ptr %97, align 4
-  %.not.2.1 = icmp eq i32 %98, 0
-  br i1 %.not.2.1, label %for.tail.L42.2.1, label %land.2.L43C17.2.1
-
-land.2.L43C17.2.1:                                ; preds = %land.1.L43C17.2.1
-  %99 = load i32, ptr %83, align 4
-  %.not33.2.1 = icmp eq i32 %99, %1
-  br i1 %.not33.2.1, label %for.tail.L42.2.1, label %land.3.L43C17.2.1
-
-land.3.L43C17.2.1:                                ; preds = %land.2.L43C17.2.1
-  %100 = add i32 %99, %98
-  %spec.store.select.2.1 = tail call i32 @llvm.smin.i32(i32 %100, i32 %42)
-  store i32 %spec.store.select.2.1, ptr %.fca.2.gep20, align 4
-  br label %for.tail.L42.2.1
-
-for.tail.L42.2.1:                                 ; preds = %land.3.L43C17.2.1, %land.2.L43C17.2.1, %land.1.L43C17.2.1, %for.tail.L42.1.1
-  %101 = phi i32 [ %spec.store.select.2.1, %land.3.L43C17.2.1 ], [ %42, %land.2.L43C17.2.1 ], [ %42, %land.1.L43C17.2.1 ], [ %42, %for.tail.L42.1.1 ]
-  %102 = load i1, ptr %.fca.3.gep, align 1
-  br i1 %102, label %for.tail.L42.3.1, label %land.1.L43C17.3.1
-
-land.1.L43C17.3.1:                                ; preds = %for.tail.L42.2.1
-  %103 = getelementptr inbounds [9 x i32], ptr %0, i64 %81, i64 3
-  %104 = load i32, ptr %103, align 4
-  %.not.3.1 = icmp eq i32 %104, 0
-  br i1 %.not.3.1, label %for.tail.L42.3.1, label %land.2.L43C17.3.1
-
-land.2.L43C17.3.1:                                ; preds = %land.1.L43C17.3.1
-  %105 = load i32, ptr %83, align 4
-  %.not33.3.1 = icmp eq i32 %105, %1
-  br i1 %.not33.3.1, label %for.tail.L42.3.1, label %land.3.L43C17.3.1
-
-land.3.L43C17.3.1:                                ; preds = %land.2.L43C17.3.1
-  %106 = add i32 %105, %104
-  %spec.store.select.3.1 = tail call i32 @llvm.smin.i32(i32 %106, i32 %48)
-  store i32 %spec.store.select.3.1, ptr %.fca.3.gep21, align 4
-  br label %for.tail.L42.3.1
-
-for.tail.L42.3.1:                                 ; preds = %land.3.L43C17.3.1, %land.2.L43C17.3.1, %land.1.L43C17.3.1, %for.tail.L42.2.1
-  %107 = phi i32 [ %spec.store.select.3.1, %land.3.L43C17.3.1 ], [ %48, %land.2.L43C17.3.1 ], [ %48, %land.1.L43C17.3.1 ], [ %48, %for.tail.L42.2.1 ]
-  %108 = load i1, ptr %.fca.4.gep, align 1
-  br i1 %108, label %for.tail.L42.4.1, label %land.1.L43C17.4.1
-
-land.1.L43C17.4.1:                                ; preds = %for.tail.L42.3.1
-  %109 = getelementptr inbounds [9 x i32], ptr %0, i64 %81, i64 4
-  %110 = load i32, ptr %109, align 4
-  %.not.4.1 = icmp eq i32 %110, 0
-  br i1 %.not.4.1, label %for.tail.L42.4.1, label %land.2.L43C17.4.1
-
-land.2.L43C17.4.1:                                ; preds = %land.1.L43C17.4.1
-  %111 = load i32, ptr %83, align 4
-  %.not33.4.1 = icmp eq i32 %111, %1
-  br i1 %.not33.4.1, label %for.tail.L42.4.1, label %land.3.L43C17.4.1
-
-land.3.L43C17.4.1:                                ; preds = %land.2.L43C17.4.1
-  %112 = add i32 %111, %110
-  %spec.store.select.4.1 = tail call i32 @llvm.smin.i32(i32 %112, i32 %54)
-  store i32 %spec.store.select.4.1, ptr %.fca.4.gep22, align 4
-  br label %for.tail.L42.4.1
-
-for.tail.L42.4.1:                                 ; preds = %land.3.L43C17.4.1, %land.2.L43C17.4.1, %land.1.L43C17.4.1, %for.tail.L42.3.1
-  %113 = phi i32 [ %spec.store.select.4.1, %land.3.L43C17.4.1 ], [ %54, %land.2.L43C17.4.1 ], [ %54, %land.1.L43C17.4.1 ], [ %54, %for.tail.L42.3.1 ]
-  %114 = load i1, ptr %.fca.5.gep, align 1
-  br i1 %114, label %for.tail.L42.5.1, label %land.1.L43C17.5.1
-
-land.1.L43C17.5.1:                                ; preds = %for.tail.L42.4.1
-  %115 = getelementptr inbounds [9 x i32], ptr %0, i64 %81, i64 5
-  %116 = load i32, ptr %115, align 4
-  %.not.5.1 = icmp eq i32 %116, 0
-  br i1 %.not.5.1, label %for.tail.L42.5.1, label %land.2.L43C17.5.1
-
-land.2.L43C17.5.1:                                ; preds = %land.1.L43C17.5.1
-  %117 = load i32, ptr %83, align 4
-  %.not33.5.1 = icmp eq i32 %117, %1
-  br i1 %.not33.5.1, label %for.tail.L42.5.1, label %land.3.L43C17.5.1
-
-land.3.L43C17.5.1:                                ; preds = %land.2.L43C17.5.1
-  %118 = add i32 %117, %116
-  %spec.store.select.5.1 = tail call i32 @llvm.smin.i32(i32 %118, i32 %60)
-  store i32 %spec.store.select.5.1, ptr %.fca.5.gep23, align 4
-  br label %for.tail.L42.5.1
-
-for.tail.L42.5.1:                                 ; preds = %land.3.L43C17.5.1, %land.2.L43C17.5.1, %land.1.L43C17.5.1, %for.tail.L42.4.1
-  %119 = phi i32 [ %spec.store.select.5.1, %land.3.L43C17.5.1 ], [ %60, %land.2.L43C17.5.1 ], [ %60, %land.1.L43C17.5.1 ], [ %60, %for.tail.L42.4.1 ]
-  %120 = load i1, ptr %.fca.6.gep, align 1
-  br i1 %120, label %for.tail.L42.6.1, label %land.1.L43C17.6.1
-
-land.1.L43C17.6.1:                                ; preds = %for.tail.L42.5.1
-  %121 = getelementptr inbounds [9 x i32], ptr %0, i64 %81, i64 6
-  %122 = load i32, ptr %121, align 4
-  %.not.6.1 = icmp eq i32 %122, 0
-  br i1 %.not.6.1, label %for.tail.L42.6.1, label %land.2.L43C17.6.1
-
-land.2.L43C17.6.1:                                ; preds = %land.1.L43C17.6.1
-  %123 = load i32, ptr %83, align 4
-  %.not33.6.1 = icmp eq i32 %123, %1
-  br i1 %.not33.6.1, label %for.tail.L42.6.1, label %land.3.L43C17.6.1
-
-land.3.L43C17.6.1:                                ; preds = %land.2.L43C17.6.1
-  %124 = add i32 %123, %122
-  %spec.store.select.6.1 = tail call i32 @llvm.smin.i32(i32 %124, i32 %66)
-  store i32 %spec.store.select.6.1, ptr %.fca.6.gep24, align 4
-  br label %for.tail.L42.6.1
-
-for.tail.L42.6.1:                                 ; preds = %land.3.L43C17.6.1, %land.2.L43C17.6.1, %land.1.L43C17.6.1, %for.tail.L42.5.1
-  %125 = phi i32 [ %spec.store.select.6.1, %land.3.L43C17.6.1 ], [ %66, %land.2.L43C17.6.1 ], [ %66, %land.1.L43C17.6.1 ], [ %66, %for.tail.L42.5.1 ]
-  %126 = load i1, ptr %.fca.7.gep, align 1
-  br i1 %126, label %for.tail.L42.7.1, label %land.1.L43C17.7.1
-
-land.1.L43C17.7.1:                                ; preds = %for.tail.L42.6.1
-  %127 = getelementptr inbounds [9 x i32], ptr %0, i64 %81, i64 7
-  %128 = load i32, ptr %127, align 4
-  %.not.7.1 = icmp eq i32 %128, 0
-  br i1 %.not.7.1, label %for.tail.L42.7.1, label %land.2.L43C17.7.1
-
-land.2.L43C17.7.1:                                ; preds = %land.1.L43C17.7.1
-  %129 = load i32, ptr %83, align 4
-  %.not33.7.1 = icmp eq i32 %129, %1
-  br i1 %.not33.7.1, label %for.tail.L42.7.1, label %land.3.L43C17.7.1
-
-land.3.L43C17.7.1:                                ; preds = %land.2.L43C17.7.1
-  %130 = add i32 %129, %128
-  %spec.store.select.7.1 = tail call i32 @llvm.smin.i32(i32 %130, i32 %72)
-  store i32 %spec.store.select.7.1, ptr %.fca.7.gep25, align 4
-  br label %for.tail.L42.7.1
-
-for.tail.L42.7.1:                                 ; preds = %land.3.L43C17.7.1, %land.2.L43C17.7.1, %land.1.L43C17.7.1, %for.tail.L42.6.1
-  %131 = phi i32 [ %spec.store.select.7.1, %land.3.L43C17.7.1 ], [ %72, %land.2.L43C17.7.1 ], [ %72, %land.1.L43C17.7.1 ], [ %72, %for.tail.L42.6.1 ]
-  %132 = load i1, ptr %.fca.8.gep, align 1
-  br i1 %132, label %for.tail.L42.8.1, label %land.1.L43C17.8.1
-
-land.1.L43C17.8.1:                                ; preds = %for.tail.L42.7.1
-  %133 = getelementptr inbounds [9 x i32], ptr %0, i64 %81, i64 8
-  %134 = load i32, ptr %133, align 4
-  %.not.8.1 = icmp eq i32 %134, 0
-  br i1 %.not.8.1, label %for.tail.L42.8.1, label %land.2.L43C17.8.1
-
-land.2.L43C17.8.1:                                ; preds = %land.1.L43C17.8.1
-  %135 = load i32, ptr %83, align 4
-  %.not33.8.1 = icmp eq i32 %135, %1
-  br i1 %.not33.8.1, label %for.tail.L42.8.1, label %land.3.L43C17.8.1
-
-land.3.L43C17.8.1:                                ; preds = %land.2.L43C17.8.1
-  %136 = add i32 %135, %134
-  %spec.store.select.8.1 = tail call i32 @llvm.smin.i32(i32 %136, i32 %78)
-  store i32 %spec.store.select.8.1, ptr %.fca.8.gep26, align 4
-  br label %for.tail.L42.8.1
-
-for.tail.L42.8.1:                                 ; preds = %land.3.L43C17.8.1, %land.2.L43C17.8.1, %land.1.L43C17.8.1, %for.tail.L42.7.1
-  %137 = phi i32 [ %spec.store.select.8.1, %land.3.L43C17.8.1 ], [ %78, %land.2.L43C17.8.1 ], [ %78, %land.1.L43C17.8.1 ], [ %78, %for.tail.L42.7.1 ]
-  %138 = add nuw nsw i32 %count.036, 2
-  %exitcond.not.1 = icmp eq i32 %138, 8
-  br i1 %exitcond.not.1, label %for.exit.L39, label %for.body.L39
-
-for.exit.L39:                                     ; preds = %for.tail.L42.8.1
+for.exit.L39:                                     ; preds = %for.tail.L42.8
   %puts.i = tail call i32 @puts(ptr nonnull dereferenceable(1) @str)
-  %139 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 0, i32 %89)
-  %140 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 1, i32 %95)
-  %141 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 2, i32 %101)
-  %142 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 3, i32 %107)
-  %143 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 4, i32 %113)
-  %144 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 5, i32 %119)
-  %145 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 6, i32 %125)
-  %146 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 7, i32 %131)
-  %147 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 8, i32 %137)
+  %80 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 0, i32 %30)
+  %81 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 1, i32 %36)
+  %82 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 2, i32 %42)
+  %83 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 3, i32 %48)
+  %84 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 4, i32 %54)
+  %85 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 5, i32 %60)
+  %86 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 6, i32 %66)
+  %87 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 7, i32 %72)
+  %88 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i32 8, i32 %78)
   ret void
 }
 

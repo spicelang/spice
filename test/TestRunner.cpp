@@ -39,6 +39,7 @@ void execTestCase(const TestCase &testCase) {
                            /* targetOs= */ std::string(targetTriple.getOSName()),
                            /* execute= */ false, // If we set this to 'true', the compiler will not emit object files
                            /* isNativeTarget= */ true,
+                           /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
                            /* cacheDir= */ "./cache",
                            /* outputDir= */ ".",
                            /* outputPath= */ ".",

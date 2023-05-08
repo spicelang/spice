@@ -34,7 +34,7 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
   llvm::TargetOptions opt;
   std::string cpuName = "generic";
   std::stringstream featureString;
-  if (cliOptions.isNativeTarget) {
+  if (cliOptions.isNativeTarget && cliOptions.useCPUFeatures) {
     // Retrieve native CPU name and the supported CPU features
     cpuName = llvm::sys::getHostCPUName();
     llvm::StringMap<bool> hostFeatures;
