@@ -25,11 +25,11 @@
 .LBB0_2:
 	movl	%edi, %ecx
 	callq	.L_f__void__int__fib__int
+	leal	-2(%rdi), %ecx
 	addl	%eax, %esi
-	leal	-2(%rdi), %eax
 	incl	%edi
 	cmpl	$5, %edi
-	movl	%eax, %edi
+	movl	%ecx, %edi
 	jae	.LBB0_2
 	incl	%esi
 .LBB0_4:
