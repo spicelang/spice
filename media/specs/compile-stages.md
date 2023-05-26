@@ -3,7 +3,34 @@
 In order to achieve "separation of concerns" the plan is, to re-organize the compiler structure. We want to separate
 such things like semantic analysis and type checker.
 
-## Compile stages
+## Overview
+
+```mermaid
+graph TD;
+    Lexer-->
+    Parser-->
+    CSTVisualizer-->
+    ASTBuilder-->
+    ASTOptimizer-->
+    ASTVisualizer-->
+    ImportCollector-->
+    SymbolTableBuilder-->
+    TypeChecker-->
+    BorrowChecker-->
+    EscapeAnalyzer-->
+    IRGenerator-->
+    DefaultIROptimizer-->
+    ObjectEmitter-->
+    Linker;
+    
+    IRGenerator-->
+    PreLinkOptimizer-->
+    BitcodeLinker-->
+    PostLinkOptimizer-->
+    ObjectEmitter;
+```
+
+## Compile stages in detail
 
 1.  **Lexer** <br>
     Input/Output: Text input -> Tokens <br>

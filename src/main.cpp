@@ -23,7 +23,7 @@ bool compileProject(CliOptions &cliOptions) {
     GlobalResourceManager resourceManager(cliOptions);
 
     // Create source file instance for main source file
-    SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, "root", cliOptions.mainSourceFile, false);
+    SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
 
     // Run compile pipeline for main source file. All dependent source files are triggered by their parents
     mainSourceFile->runFrontEnd();

@@ -12,7 +12,7 @@ class Scope;
 class CompilerPass {
 public:
   // Constructors
-  CompilerPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
+  explicit CompilerPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile = nullptr);
 
 protected:
   // Protected members

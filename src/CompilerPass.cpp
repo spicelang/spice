@@ -8,6 +8,6 @@ namespace spice::compiler {
 
 CompilerPass::CompilerPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : resourceManager(resourceManager), cliOptions(resourceManager.cliOptions), sourceFile(sourceFile),
-      rootScope(sourceFile->globalScope.get()) {}
+      rootScope(sourceFile != nullptr ? sourceFile->globalScope.get() : nullptr) {}
 
 } // namespace spice::compiler

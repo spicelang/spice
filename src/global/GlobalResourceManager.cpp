@@ -46,7 +46,12 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
     }
   }
 
+  // Create target machine
   targetMachine = target->createTargetMachine(cliOptions.targetTriple, cpuName, featureString.str(), opt, llvm::Reloc::PIC_);
+
+  // Create lto module
+  if (cliOptions.useLTO)
+    ltoModule = std::make_unique<llvm::Module>(LTO_FILE_NAME, context);
 }
 
 GlobalResourceManager::~GlobalResourceManager() {
