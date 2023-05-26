@@ -523,7 +523,8 @@ void SourceFile::runObjectEmitter() {
   objectEmitter.emit();
 
   // Save assembly string in the compiler output
-  objectEmitter.getASMString(compilerOutput.asmString);
+  if (resourceManager.cliOptions.isNativeTarget)
+    objectEmitter.getASMString(compilerOutput.asmString);
 
   // Dump assembly code
   if (resourceManager.cliOptions.dumpAssembly) { // GCOV_EXCL_START
