@@ -9,8 +9,6 @@
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/Host.h>
 
-#include "util/TestUtil.h"
-
 #include <SourceFile.h>
 #include <cli/CLIInterface.h>
 #include <exception/CompilerError.h>
@@ -22,6 +20,8 @@
 #include <symboltablebuilder/SymbolTable.h>
 #include <util/FileUtil.h>
 
+#include "util/TestUtil.h"
+
 using namespace spice::compiler;
 
 void execTestCase(const TestCase &testCase) {
@@ -31,7 +31,7 @@ void execTestCase(const TestCase &testCase) {
 
   // Create fake cli options
   std::string sourceFilePath = testCase.testPath + spice::compiler::FileUtil::DIR_SEPARATOR + REF_NAME_SOURCE;
-  llvm::Triple targetTriple = llvm::Triple(llvm::sys::getDefaultTargetTriple());
+  llvm::Triple targetTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
   CliOptions cliOptions = {/* mainSourceFile= */ sourceFilePath,
                            /* targetTriple= */ targetTriple.getTriple(),
                            /* targetArch= */ std::string(targetTriple.getArchName()),
@@ -39,6 +39,7 @@ void execTestCase(const TestCase &testCase) {
                            /* targetOs= */ std::string(targetTriple.getOSName()),
                            /* execute= */ false, // If we set this to 'true', the compiler will not emit object files
                            /* isNativeTarget= */ true,
+                           /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
                            /* cacheDir= */ "./cache",
                            /* outputDir= */ ".",
                            /* outputPath= */ ".",
@@ -52,6 +53,8 @@ void execTestCase(const TestCase &testCase) {
                            /* dumpSymbolTables= */ false,
                            /* disableAstOpt= */ false,
                            /* optLevel= */ 0,
+                           /* useLTO= */ false,
+                           /* noEntryFct= */ false,
                            /* generateDebugInfo= */ false,
                            /* disableVerifier= */ false,
                            /* testMode= */ true};
@@ -61,7 +64,7 @@ void execTestCase(const TestCase &testCase) {
 
   try {
     // Create source file instance for main source file
-    SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, "root", cliOptions.mainSourceFile, false);
+    SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
 
     // Run Lexer and Parser
     mainSourceFile->runLexer();
@@ -126,7 +129,14 @@ void execTestCase(const TestCase &testCase) {
           testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_OPT_IR[i - 1],
           [&]() {
             cliOptions.optLevel = i;
-            mainSourceFile->runIROptimizer();
+
+            if (cliOptions.useLTO) {
+              mainSourceFile->runPreLinkIROptimizer();
+              mainSourceFile->runBitcodeLinker();
+              mainSourceFile->runPostLinkIROptimizer();
+            } else {
+              mainSourceFile->runDefaultIROptimizer();
+            }
             return mainSourceFile->compilerOutput.irOptString;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {
@@ -135,6 +145,10 @@ void execTestCase(const TestCase &testCase) {
             TestUtil::eraseIRModuleHeader(actualOutput);
           });
     }
+
+    // Link the bitcode if not happened yet
+    if (cliOptions.useLTO && cliOptions.optLevel == 0)
+      mainSourceFile->runBitcodeLinker();
 
     // Check assembly code
     bool objectFilesEmitted = false;

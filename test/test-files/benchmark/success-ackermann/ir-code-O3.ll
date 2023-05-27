@@ -35,8 +35,8 @@ if.exit.L3:                                       ; preds = %if.exit.L2
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #1 {
-  %1 = tail call fastcc i32 @_f__void__int__ack__int_int(i32 3, i32 12) #3
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 3, i32 12, i32 %1)
+  %1 = tail call fastcc i32 @_f__void__int__ack__int_int(i32 3, i32 10) #3
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 3, i32 10, i32 %1)
   ret i32 0
 }
 

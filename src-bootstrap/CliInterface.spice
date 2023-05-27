@@ -12,24 +12,24 @@ public type CliOptions struct {
     public String targetArch
     public String targetVendor
     public String targetOs
-    public bool execute
-    public bool isNativeTarget
+    public bool execute = false
+    public bool isNativeTarget = true
     public String cacheDir
     public String outputDir      // Where the object files go. Should always be a temp directory
     public String outputPath     // Where the output binary goes.
-    public unsigned short compileJobCount // O for auto
-    public bool ignoreCache
-    public bool printDebugOutput
-    public bool dumpCST
-    public bool dumpAST
-    public bool dumpIR
-    public bool dumpAssembly
-    public bool dumpSymbolTables
-    public bool disableAstOpt
-    public short optLevel // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
-    public bool generateDebugInfo
-    public bool disableVerifier
-    public bool testMode
+    public unsigned short compileJobCount = 0 // O for auto
+    public bool ignoreCache = false
+    public bool printDebugOutput = false
+    public bool dumpCST = false
+    public bool dumpAST = false
+    public bool dumpIR = false
+    public bool dumpAssembly = false
+    public bool dumpSymbolTables = false
+    public bool disableAstOpt = false
+    public short optLevel = 2s // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
+    public bool generateDebugInfo = false
+    public bool disableVerifier = false
+    public bool testMode = false
 }
 
 /**
@@ -38,41 +38,9 @@ public type CliOptions struct {
 public type CliInterface struct {
     CliParser cliParser
     public CliOptions cliOptions
-    public bool shouldCompile
-    public bool shouldInstall
-    public bool shouldExecute
-}
-
-public p CliInterface.ctor() {
-    // Initialize cli object
-    this.cliOptions = CliOptions{
-        /* mainSourceFile */ String(""),
-        /* targetTriple */ String(""),
-        /* targetArch */ String(""),
-        /* targetVendor */ String(""),
-        /* targetOs */ String(""),
-        /* execute */ false,
-        /* isNativeTarget */ false,
-        /* cacheDir */ String(""),
-        /* outputDir */ String(""),
-        /* outputPath */ String(""),
-        /* compileJobCount */ 0s,
-        /* ignoreCache */ false,
-        /* printDebugOutput */ false,
-        /* dumpCST */ false,
-        /* dumpAST */ false,
-        /* dumpIR */ false,
-        /* dumpAssembly */ false,
-        /* dumpSymbolTables */ false,
-        /* disableAstOpt */ false,
-        /* optLevel */ 2s,
-        /* generateDebugInfo */ false,
-        /* disableVerifier */ false,
-        /* testMode */ false
-    };
-    this.shouldCompile = false;
-    this.shouldInstall = false;
-    this.shouldExecute = false;
+    public bool shouldCompile = false
+    public bool shouldInstall = false
+    public bool shouldExecute = false
 }
 
 public p CliInterface.createInterface() {
@@ -130,7 +98,30 @@ public p CliInterface.enrich() {
  */
 p CliInterface.addBuildSubcommand() {
     // Create sub-command itself
-    // ToDo: Extend
+    CliSubcommand& subCmd = this.cliParser.createSubcommand("build", "Builds your Spice program and emits an executable");
+    subCmd.addAlias("b");
+
+    addCompileSubcommandOptions(subCmd);
+
+    // --target-triple
+    Option& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple, "Target triple for the emitted executable (for cross-compiling)");
+    targetOption.addAlias("--target-triple");
+    targetOption.addAlias("-t");
+    // --target-arch
+    Option& targetArchOption = subCmd.addOption("--target-arch", this.cliOptions.targetArch, "Target arch for emitted executable (for cross-compiling)");
+    // --target-vendor
+    Option& targetVendorOption = subCmd.addOption("--target-vendor", this.cliOptions.targetVendor, "Target vendor for emitted executable (for cross-compiling)");
+    // --target-os
+    Option& targetOsOption = subCmd.addOption("--target-os", this.cliOptions.targetOs, "Target OS for emitted executable (for cross-compiling)");
+
+    // --output
+    Option& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
+    outputOption.addAlias("-o");
+    // --debug-info
+    Option& debugInfoOption = subCmd.addOption("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
+    debugInfoOption.addAlias("-g");
+    // --disable-verifier
+    Option& disableVerifierOption = subCmd.addOption("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
 
 /**
@@ -138,7 +129,19 @@ p CliInterface.addBuildSubcommand() {
  */
 p CliInterface.addRunSubcommand() {
     // Create sub-command itself
-    // ToDo: Extend
+    CliSubcommand& subCmd = this.cliParser.createSubcommand("run", "Builds your Spice program and runs it immediately");
+    subCmd.addAlias("r");
+
+    addCompileSubcommandOptions(subCmd);
+
+    // --output
+    Option& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
+    outputOption.addAlias("-o");
+    // --debug-info
+    Option& debugInfoOption = subCmd.addOption("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
+    debugInfoOption.addAlias("-g");
+    // --disable-verifier
+    Option& disableVerifierOption = subCmd.addOption("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
 
 /**
@@ -146,7 +149,10 @@ p CliInterface.addRunSubcommand() {
  */
 p CliInterface.addInstallSubcommand() {
     // Create sub-command itself
-    // ToDo: Extend
+    CliSubcommand& subCmd = this.cliParser.createSubcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
+    subCmd.addAlias("i");
+
+    addCompileSubcommandOptions(subCmd);
 }
 
 /**
@@ -154,7 +160,52 @@ p CliInterface.addInstallSubcommand() {
  */
 p CliInterface.addUninstallSubcommand() {
     // Create sub-command itself
-    // ToDo: Extend
+    CliSubcommand& subCmd = this.cliParser.createSubcommand("uninstall", "Builds your Spice program and runs it immediately");
+    subCmd.addAlias("u");
+
+    addCompileSubcommandOptions(subCmd);
+}
+
+p CliInterface.addCompileSubcommandOptions(CliSubcommand& subCmd) {
+    // --debug-output
+    CliFlag& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
+    debugOutputFlag.addAlias("-d");
+    // --dump-cst
+    CliFlag& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dumpCST, "Dump CST as serialized string and SVG image");
+    dumpCstFlag.addAlias("-cst");
+    // --dump-ast
+    CliFlag& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
+    dumpAstFlag.addAlias("-ast");
+    // --dump-symtab
+    CliFlag& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+    dumpSymtabFlag.addAlias("-symtab");
+    // --dump-ir
+    CliFlag& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dumpIR, "Dump LLVM-IR");
+    dumpIrFlag.addAlias("-ir");
+    // --dump-assembly
+    CliFlag& dumpAsmFlag = subCmd.addFlag("--dump-assembly", this.cliOptions.dumpAssembly, "Dump Assembly code");
+    dumpAsmFlag.addAlias("-asm");
+    dumpAsmFlag.addAlias("-s");
+
+    // --jobs
+    CliFlag& jobsFlag = subCmd.addFlag("--jobs", this.cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
+    jobsFlag.addAlias("-j");
+    // --ignore-cache
+    subCmd.addFlag("--ignore-cache", this.cliOptions.ignoreCache, "Force re-compilation of all source files");
+    // --disable-ast-opt
+    subCmd.addFlag("--disable-ast-opt", this.cliOptions.disableAstOpt, "Disable first order optimizations on the AST");
+
+    // Opt levels
+    subCmd.addFlag("-O0", [&]() { this.cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
+    subCmd.addFlag("-O1", [&]() { this.cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
+    subCmd.addFlag("-O2", [&]() { this.cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
+    subCmd.addFlag("-O3", [&]() { this.cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
+    subCmd.addFlag("-Os", [&]() { this.cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
+    subCmd.addFlag("-Oz", [&]() { this.cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
+
+    CliOption& fileOption = subCmd.addOption("<main-source-file>", cliOptions.mainSourceFile, "MainSourceFile");
+    fileOption.setRequired();
+    fileOption.check(CliOption::EXISTING_FILE);
 }
 
 /**
@@ -166,17 +217,4 @@ p CliInterface.addUninstallSubcommand() {
  */
 public f<int> CliInterface.parse(int argc, string[] argv) {
     return this.cliParser.parse(argc, argv);
-}
-
-/**
- * Executes the built executable
- */
-p CliInterface.runBinary() {
-    // Print status message
-    if this.cliOptions.printDebugOutput {
-        println("Running executable ...\n");
-    }
-
-    // Run executable
-    execCmd(this.cliOptions.outputPath.getRaw());
 }

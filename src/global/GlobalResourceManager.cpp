@@ -8,6 +8,7 @@
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetOptions.h>
+#include <llvm/TargetParser/Host.h>
 
 namespace spice::compiler {
 
@@ -31,8 +32,26 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
 
   // Create target machine for LLVM
   llvm::TargetOptions opt;
-  std::optional rm = std::optional<llvm::Reloc::Model>();
-  targetMachine = target->createTargetMachine(cliOptions.targetTriple, "generic", "", opt, rm);
+  std::string cpuName = "generic";
+  std::stringstream featureString;
+  if (cliOptions.isNativeTarget && cliOptions.useCPUFeatures) {
+    // Retrieve native CPU name and the supported CPU features
+    cpuName = llvm::sys::getHostCPUName();
+    llvm::StringMap<bool> hostFeatures;
+    llvm::sys::getHostCPUFeatures(hostFeatures);
+    for (const auto &feature : hostFeatures) {
+      if (featureString.rdbuf()->in_avail() > 0)
+        featureString << ",";
+      featureString << (feature.second ? "+" : "-") << feature.first().str();
+    }
+  }
+
+  // Create target machine
+  targetMachine = target->createTargetMachine(cliOptions.targetTriple, cpuName, featureString.str(), opt, llvm::Reloc::PIC_);
+
+  // Create lto module
+  if (cliOptions.useLTO)
+    ltoModule = std::make_unique<llvm::Module>(LTO_FILE_NAME, context);
 }
 
 GlobalResourceManager::~GlobalResourceManager() {

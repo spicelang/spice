@@ -13,6 +13,10 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   if (!sourceFile->mainFile)
     return nullptr;
 
+  // Do not generate main function if it is explicitly specified
+  if (resourceManager.cliOptions.noEntryFct)
+    return nullptr;
+
   // Change scope to function scope
   currentScope = node->fctScope;
   assert(currentScope != nullptr);

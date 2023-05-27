@@ -49,7 +49,7 @@ define dso_local i32 @main() #0 {
   %baseN = alloca i32, align 4
   store i32 0, ptr %result, align 4
   store i32 3, ptr %baseM, align 4
-  store i32 12, ptr %baseN, align 4
+  store i32 10, ptr %baseN, align 4
   %1 = load i32, ptr %baseM, align 4
   %2 = load i32, ptr %baseN, align 4
   %3 = load i32, ptr %baseM, align 4
