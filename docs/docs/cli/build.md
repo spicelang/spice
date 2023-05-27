@@ -31,7 +31,9 @@ You can apply following options to the `build` command:
 | `-t`         | `--target`           | Target triple for the emitted executable (for cross-compiling). <br> Format: `<arch><sub>-<vendor>-<sys>-<abi>` |
 | `-o`         | `--output`           | Set path for executable output.                                                                                 |
 | `-O<n>`      | -                    | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz`                            |
+| `-lto`       | -                    | Enable link-time-optimization                                                                                   |
 | `-g`         | `--debug-info`       | Generate debug info to debug the executable in GDB, etc.                                                        |
+| -            | `--no-entry`         | Do not require or generate main function (useful for web assembly target)                                       |
 | -            | `--disable-verifier` | Disable LLVM module and function verification (only recommended for debugging the compiler)                     |
 | -            | `--ignore-cache`     | Compile always and ignore the compile cache                                                                     |
 | -            | `--disable-ast-opt`  | Disable AST optimization (recommended for debugging the compiler)                                               |

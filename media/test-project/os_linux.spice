@@ -1,3 +1,0 @@
-f<string> getOsName() {
-    return "linux";
-}

@@ -8,15 +8,19 @@
 
 namespace spice::compiler {
 
+const char *const TARGET_UNKNOWN = "unknown";
+const char *const TARGET_WASM32 = "wasm32";
+const char *const TARGET_WASM64 = "wasm64";
+
 /**
  * Representation of the various cli options
  */
 struct CliOptions {
   std::string mainSourceFile; // e.g. main.spice
   std::string targetTriple;   // In format: <arch><sub>-<vendor>-<sys>-<abi>
-  std::string targetArch;
-  std::string targetVendor;
-  std::string targetOs;
+  std::string targetArch = TARGET_UNKNOWN;
+  std::string targetVendor = TARGET_UNKNOWN;
+  std::string targetOs = TARGET_UNKNOWN;
   bool execute = false;
   bool isNativeTarget = true;
   bool useCPUFeatures = true;
@@ -34,6 +38,7 @@ struct CliOptions {
   bool disableAstOpt = false;
   short optLevel = 2; // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
   bool useLTO = false;
+  bool noEntryFct = false;
   bool generateDebugInfo = false;
   bool disableVerifier = false;
   bool testMode = false;

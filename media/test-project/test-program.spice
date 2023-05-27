@@ -1,5 +1,0 @@
-import "std/os/os" as os;
-
-f<int> main() {
-    printf("Os: %s", os.getOSName());
-}

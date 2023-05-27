@@ -11,9 +11,19 @@
 
 namespace spice::compiler {
 
-const char *const LINKER_EXECUTABLE_NAME = "gcc";
+const char *const LINKER_EXECUTABLE_NAME = "clang";
 
 void ExternalLinkerInterface::prepare() {
+  // Set target to linker
+  addLinkerFlag("--target=" + cliOptions.targetTriple);
+
+  // Web Assembly
+  if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
+    addLinkerFlag("-nostdlib");
+    addLinkerFlag("-Wl,--no-entry");
+    addLinkerFlag("-Wl,--export-all");
+  }
+
   // Add required linker flags
   if (threadFactory.isUsingThreads())
     addLinkerFlag("-pthread");

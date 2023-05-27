@@ -53,9 +53,13 @@ void CLIInterface::createInterface() {
       cliOptions.outputPath = ".";
     if (cliOptions.outputPath == "." || cliOptions.outputPath == "..") {
       cliOptions.outputPath = FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
+      if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
+        cliOptions.outputPath += ".wasm";
+      } else {
 #if OS_WINDOWS
-      cliOptions.outputPath += ".exe";
+        cliOptions.outputPath += ".exe";
 #endif
+      }
     }
 
     // Add relative prefix to filename
@@ -90,12 +94,6 @@ void CLIInterface::createInterface() {
  * @throws InvalidCliOptionsException if there were an invalid combination of cli options provided
  */
 void CLIInterface::validate() const {
-  // Check if all three of --target-arch, --target-vendor and --target-os are provided or none of them
-  if (!((cliOptions.targetArch.empty() && cliOptions.targetVendor.empty() && cliOptions.targetOs.empty()) ||
-        (!cliOptions.targetArch.empty() && !cliOptions.targetVendor.empty() && !cliOptions.targetOs.empty()))) {
-    throw CliError(INCOMPLETE_TARGET_TRIPLE, "You need to provide all three of --target-arch, --target-vendor and --target-os");
-  }
-
   // Error out when opt level > 0 and debug info enabled
   if (cliOptions.optLevel > 0 && cliOptions.generateDebugInfo)
     throw CliError(
@@ -109,16 +107,18 @@ void CLIInterface::validate() const {
 void CLIInterface::enrich() {
   // Propagate target information
   llvm::Triple defaultTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
-  if (cliOptions.targetTriple.empty() && cliOptions.targetArch.empty()) { // We have nothing -> obtain the host triplet
-    cliOptions.targetTriple = defaultTriple.getTriple();
-    cliOptions.targetArch = defaultTriple.getArchName();
-    cliOptions.targetVendor = defaultTriple.getVendorName();
-    cliOptions.targetOs = defaultTriple.getOSName();
-    cliOptions.isNativeTarget = true;
-  } else if (cliOptions.targetTriple.empty()) { // We have arch, vendor and os -> obtain triplet
-    llvm::Triple triple(cliOptions.targetArch, cliOptions.targetVendor, cliOptions.targetOs);
-    cliOptions.targetTriple = triple.getTriple();
-    cliOptions.isNativeTarget = triple == defaultTriple;
+  if (cliOptions.targetTriple.empty()) {
+    if (cliOptions.targetArch == TARGET_UNKNOWN) { // We have nothing -> obtain native triplet
+      cliOptions.targetTriple = defaultTriple.getTriple();
+      cliOptions.targetArch = defaultTriple.getArchName();
+      cliOptions.targetVendor = defaultTriple.getVendorName();
+      cliOptions.targetOs = defaultTriple.getOSName();
+      cliOptions.isNativeTarget = true;
+    } else { // We have arch, vendor and os -> obtain triplet
+      llvm::Triple triple(cliOptions.targetArch, cliOptions.targetVendor, cliOptions.targetOs);
+      cliOptions.targetTriple = triple.getTriple();
+      cliOptions.isNativeTarget = triple == defaultTriple;
+    }
   } else { // Obtain arch, vendor and os by the triplet
     llvm::Triple triple(llvm::Triple::normalize(cliOptions.targetTriple));
     cliOptions.targetArch = triple.getArchName();
@@ -161,6 +161,8 @@ void CLIInterface::addBuildSubcommand() {
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
   // --disable-verifier
   subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
+  // --no-entry
+  subCmd->add_flag<bool>("--no-entry", cliOptions.noEntryFct, "Do not generate main function");
 }
 
 /**
