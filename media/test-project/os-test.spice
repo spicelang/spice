@@ -1,18 +1,3 @@
-import "os-test2";
-
 f<int> main() {
-    printf("Result: %d", fibo(30));
-}
 
-/*f<int> test(string input) {
-    return 12;
 }
-
-p invoke(f<int>(string) fctPtr) {
-    fctPtr("string");
-}
-
-f<int> main() {
-    f<int>(string) testFct = test;
-    invoke(testFct);
-}*/
