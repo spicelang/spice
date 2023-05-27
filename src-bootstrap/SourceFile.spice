@@ -142,7 +142,7 @@ public p SourceFile.runIRGenerator() {
 
 }
 
-public p SourceFile.runIROptimizer() {
+public p SourceFile.runDefaultIROptimizer() {
 
 }
 

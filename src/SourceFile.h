@@ -126,7 +126,10 @@ public:
   void runBorrowChecker();
   void runEscapeAnalyzer();
   void runIRGenerator();
-  void runIROptimizer();
+  void runDefaultIROptimizer();
+  void runPreLinkIROptimizer();
+  void runBitcodeLinker();
+  void runPostLinkIROptimizer();
   void runObjectEmitter();
   void concludeCompilation();
   int execute();

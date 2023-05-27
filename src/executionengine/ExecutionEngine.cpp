@@ -8,7 +8,8 @@ namespace spice::compiler {
 
 ExecutionEngine::ExecutionEngine(GlobalResourceManager &resourceManager, SourceFile *mainSourceFile)
     : CompilerPass(resourceManager, mainSourceFile) {
-  llvm::EngineBuilder engineBuilder(std::move(sourceFile->llvmModule));
+  const bool useLto = resourceManager.cliOptions.useLTO;
+  llvm::EngineBuilder engineBuilder(std::move(useLto ? resourceManager.ltoModule : sourceFile->llvmModule));
   executionEngine = engineBuilder.create();
   assert(executionEngine != nullptr);
 

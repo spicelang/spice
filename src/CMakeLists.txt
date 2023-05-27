@@ -103,6 +103,8 @@ set(SOURCES
         objectemitter/ObjectEmitter.cpp
         objectemitter/ObjectEmitter.h
         # Linker
+        linker/BitcodeLinker.cpp
+        linker/BitcodeLinker.h
         linker/ExternalLinkerInterface.cpp
         linker/ExternalLinkerInterface.h
         # Execution Engine
