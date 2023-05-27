@@ -11,7 +11,7 @@ import "global/GlobalResourceManager";
  * @param options Command line options
  */
 f<int> compileProject(const CliOptions& options) {
-// Instantiate GlobalResourceManager
+    // Instantiate GlobalResourceManager
     dyn resourceManager = GlobalResourceManager(cliOptions);
 
     // Create source file instance for main source file

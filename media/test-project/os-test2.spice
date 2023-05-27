@@ -1,15 +1,4 @@
-public type NestedSocket struct {
-    public string testString
-    long testLong
-}
-
-public type Socket struct {
-    public int sock // Actual socket
-    short errorCode
-    public NestedSocket nested
-}
-
-public f<Socket> openServerSocket(unsigned short port) {
-    dyn nested = NestedSocket { "Test", 2345l };
-    return Socket{ 2, 0s, nested };
+public f<int> fibo(int n) {
+    if n <= 1 { return n; }
+    return fibo(n - 1) + fibo(n - 2);
 }
