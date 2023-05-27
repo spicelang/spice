@@ -263,6 +263,8 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
       "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
   subCmd->add_flag_callback(
       "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
+  subCmd->add_flag_callback(
+      "-lto", [&]() { cliOptions.useLTO = true; }, "Enable link time optimization (LTO)");
 
   // Source file
   subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")

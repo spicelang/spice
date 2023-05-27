@@ -13,6 +13,7 @@
 #include <importcollector/ImportCollector.h>
 #include <irgenerator/IRGenerator.h>
 #include <iroptimizer/IROptimizer.h>
+#include <linker/BitcodeLinker.h>
 #include <objectemitter/ObjectEmitter.h>
 #include <symboltablebuilder/SymbolTable.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
@@ -388,7 +389,9 @@ void SourceFile::runIRGenerator() {
   printStatusMessage("IR Generator", IO_AST, IO_IR, compilerOutput.times.irGenerator, true);
 }
 
-void SourceFile::runIROptimizer() {
+void SourceFile::runDefaultIROptimizer() {
+  assert(!resourceManager.cliOptions.useLTO);
+
   // Skip if restored from cache or this stage has already been done
   if (restoredFromCache || previousStage >= IR_OPTIMIZER)
     return;
@@ -397,12 +400,13 @@ void SourceFile::runIROptimizer() {
   if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
     return;
 
-  Timer timer(&compilerOutput.times.irGenerator);
+  Timer timer(&compilerOutput.times.irOptimizer);
   timer.start();
 
   // Optimize this source file
   IROptimizer irOptimizer(resourceManager, this);
-  irOptimizer.optimize();
+  irOptimizer.prepare();
+  irOptimizer.optimizeDefault();
 
   // Save the optimized ir string in the compiler output
   compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
@@ -416,9 +420,99 @@ void SourceFile::runIROptimizer() {
   printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irOptimizer, true);
 }
 
+void SourceFile::runPreLinkIROptimizer() {
+  assert(resourceManager.cliOptions.useLTO);
+
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= IR_OPTIMIZER)
+    return;
+
+  // Skip this stage if optimization is disabled
+  if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
+    return;
+
+  Timer timer(&compilerOutput.times.irOptimizer);
+  timer.start();
+
+  // Optimize this source file
+  IROptimizer irOptimizer(resourceManager, this);
+  irOptimizer.prepare();
+  irOptimizer.optimizePreLink();
+
+  // Save the optimized ir string in the compiler output
+  compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
+
+  // Dump optimized IR code
+  if (resourceManager.cliOptions.dumpIR)                                         // GCOV_EXCL_LINE
+    tout.println("\nOptimized IR code:\n" + irOptimizer.getOptimizedIRString()); // GCOV_EXCL_LINE
+
+  timer.pause();
+}
+
+void SourceFile::runBitcodeLinker() {
+  assert(resourceManager.cliOptions.useLTO);
+
+  // Skip if this is not the main source file
+  if (!mainFile)
+    return;
+
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= IR_OPTIMIZER)
+    return;
+
+  Timer timer(&compilerOutput.times.irOptimizer);
+  timer.resume();
+
+  // Link all source files together
+  BitcodeLinker linker(resourceManager);
+  linker.link();
+
+  timer.pause();
+}
+
+void SourceFile::runPostLinkIROptimizer() {
+  assert(resourceManager.cliOptions.useLTO);
+
+  // Skip if this is not the main source file
+  if (!mainFile)
+    return;
+
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= IR_OPTIMIZER)
+    return;
+
+  // Skip this stage if optimization is disabled
+  if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
+    return;
+
+  Timer timer(&compilerOutput.times.irOptimizer);
+  timer.resume();
+
+  // Optimize LTO module
+  IROptimizer irOptimizer(resourceManager, this);
+  irOptimizer.prepare();
+  irOptimizer.optimizePostLink(*resourceManager.ltoModule);
+
+  // Save the optimized ir string in the compiler output
+  llvm::Module *module = resourceManager.ltoModule.get();
+  compilerOutput.irOptString = irOptimizer.getOptimizedIRString(module);
+
+  // Dump optimized IR code
+  if (resourceManager.cliOptions.dumpIR)                                                           // GCOV_EXCL_LINE
+    tout.println("\nOptimized IR code (post-link):\n" + irOptimizer.getOptimizedIRString(module)); // GCOV_EXCL_LINE
+
+  previousStage = IR_OPTIMIZER;
+  timer.stop();
+  printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irOptimizer, true);
+}
+
 void SourceFile::runObjectEmitter() {
   // Skip if restored from cache or this stage has already been done
   if (restoredFromCache || previousStage >= OBJECT_EMITTER)
+    return;
+
+  // Skip if LTO is enabled and this is not the main source file
+  if (resourceManager.cliOptions.useLTO && !mainFile)
     return;
 
   Timer timer(&compilerOutput.times.objectEmitter);
@@ -429,7 +523,8 @@ void SourceFile::runObjectEmitter() {
   objectEmitter.emit();
 
   // Save assembly string in the compiler output
-  objectEmitter.getASMString(compilerOutput.asmString);
+  if (resourceManager.cliOptions.isNativeTarget)
+    objectEmitter.getASMString(compilerOutput.asmString);
 
   // Dump assembly code
   if (resourceManager.cliOptions.dumpAssembly) { // GCOV_EXCL_START
@@ -505,7 +600,14 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   // Submit source file compilation to the task queue
   resourceManager.threadPool.push_task([&]() {
     runIRGenerator();
-    runIROptimizer();
+    if (resourceManager.cliOptions.useLTO) {
+      runPreLinkIROptimizer();
+      runBitcodeLinker();
+      runPostLinkIROptimizer();
+    } else {
+      runDefaultIROptimizer();
+    }
+    // Emit object files only when not jitting and in case of LTO only the main source file
     if (!resourceManager.cliOptions.execute)
       runObjectEmitter();
     concludeCompilation();

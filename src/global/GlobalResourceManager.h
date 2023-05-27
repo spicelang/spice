@@ -21,6 +21,10 @@ namespace spice::compiler {
 struct CliOptions;
 class SourceFile;
 
+// Constants
+const char *const MAIN_FILE_NAME = "root";
+const char *const LTO_FILE_NAME = "lto-module";
+
 /**
  * The GlobalResourceManager is instantiated at startup of the compiler and serves as distribution point for globally used assets.
  * This component owns all SourceFile instances and is therefore the resource root of the compiler.
@@ -45,6 +49,7 @@ public:
   RuntimeModuleManager runtimeModuleManager;
   llvm::LLVMContext context;
   llvm::IRBuilder<> builder = llvm::IRBuilder<>(context);
+  std::unique_ptr<llvm::Module> ltoModule;
   llvm::TargetMachine *targetMachine;
   Timer totalTimer;
   BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
