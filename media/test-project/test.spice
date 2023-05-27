@@ -1,0 +1,11 @@
+f<int> ack(int m, int n) {
+    if m == 0 { return n + 1; }
+    if n == 0 { return ack(m - 1, 1); }
+    return ack(m - 1, ack(m, n - 1));
+}
+
+f<int> main() {
+    int baseM = 3;
+    int baseN = 5;
+    printf("Ackermann of base m=%d and n=%d: %d", baseM, baseN, ack(baseM, baseN));
+}

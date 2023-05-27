@@ -54,6 +54,7 @@ void execTestCase(const TestCase &testCase) {
                            /* disableAstOpt= */ false,
                            /* optLevel= */ 0,
                            /* useLTO= */ false,
+                           /* noEntryFct= */ false,
                            /* generateDebugInfo= */ false,
                            /* disableVerifier= */ false,
                            /* testMode= */ true};
