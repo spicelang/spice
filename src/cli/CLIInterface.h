@@ -22,7 +22,7 @@ struct CliOptions {
   std::string targetVendor = TARGET_UNKNOWN;
   std::string targetOs = TARGET_UNKNOWN;
   bool execute = false;
-  bool isNativeTarget = false;
+  bool isNativeTarget = true;
   bool useCPUFeatures = true;
   std::string cacheDir;               // Where the cache files go. Should always be a temp directory
   std::string outputDir;              // Where the object files go. Should always be a temp directory
