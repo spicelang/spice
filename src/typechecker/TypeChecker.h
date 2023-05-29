@@ -64,7 +64,6 @@ public:
   std::any visitGlobalVarDefPrepare(GlobalVarDefNode *node);
   std::any visitExtDecl(ExtDeclNode *node) override;
   std::any visitExtDeclPrepare(ExtDeclNode *node);
-  std::any visitThreadDef(ThreadDefNode *node) override;
   std::any visitUnsafeBlockDef(UnsafeBlockDefNode *node) override;
   std::any visitForLoop(ForLoopNode *node) override;
   std::any visitForeachLoop(ForeachLoopNode *node) override;
@@ -87,8 +86,6 @@ public:
   std::any visitSizeofCall(SizeofCallNode *node) override;
   std::any visitAlignofCall(AlignofCallNode *node) override;
   std::any visitLenCall(LenCallNode *node) override;
-  std::any visitTidCall(TidCallNode *node) override;
-  std::any visitJoinCall(JoinCallNode *node) override;
   std::any visitAssignExpr(AssignExprNode *node) override;
   std::any visitTernaryExpr(TernaryExprNode *node) override;
   std::any visitLogicalOrExpr(LogicalOrExprNode *node) override;

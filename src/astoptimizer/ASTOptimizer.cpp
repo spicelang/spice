@@ -6,21 +6,6 @@
 
 namespace spice::compiler {
 
-std::any ASTOptimizer::visitThreadDef(ThreadDefNode *node) {
-  // Optimize all children first
-  visitChildren(node);
-
-  const bool isBodyEmpty = node->body()->children.empty();
-
-  // The body is empty -> remove the whole node
-  if (isBodyEmpty) {
-    node->removeFromParent();
-    return true;
-  }
-
-  return false;
-}
-
 std::any ASTOptimizer::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Optimize all children first
   visitChildren(node);

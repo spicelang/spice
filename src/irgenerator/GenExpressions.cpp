@@ -13,10 +13,6 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
   if (node->ternaryExpr())
     return visit(node->ternaryExpr());
 
-  // Visit thread definition
-  if (node->threadDef())
-    return visit(node->threadDef());
-
   // Assign or compound assign operation
   if (node->hasOperator) {
     const PrefixUnaryExprNode *lhsNode = node->lhs();
@@ -816,14 +812,6 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   // Is call to len builtin
   if (node->lenCall())
     return visit(node->lenCall());
-
-  // Is call to tid builtin
-  if (node->tidCall())
-    return visit(node->tidCall());
-
-  // Is call to join builtin
-  if (node->joinCall())
-    return visit(node->joinCall());
 
   // Identifier (local or global variable access)
   assert(!node->identifierFragments.empty());

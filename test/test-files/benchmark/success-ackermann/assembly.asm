@@ -56,11 +56,11 @@ main:
 	.seh_endprologue
 	callq	__main
 	movl	$3, %ecx
-	movl	$12, %edx
+	movl	$10, %edx
 	callq	.L_f__void__int__ack__int_int
 	leaq	.Lprintf.str.0(%rip), %rcx
 	movl	$3, %edx
-	movl	$12, %r8d
+	movl	$10, %r8d
 	movl	%eax, %r9d
 	callq	printf
 	xorl	%eax, %eax

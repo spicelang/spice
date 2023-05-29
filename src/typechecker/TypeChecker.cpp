@@ -90,20 +90,6 @@ std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
   return nullptr;
 }
 
-std::any TypeChecker::visitThreadDef(ThreadDefNode *node) {
-  // Change to thread body scope
-  changeToScope(node->bodyScope, SCOPE_THREAD_BODY);
-
-  // Visit body
-  visit(node->body());
-
-  // Leave thread body scope
-  currentScope = node->bodyScope->parent;
-
-  // ThreadDef returns a tid as byte*
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_BYTE).toPointer(node), manIdx)};
-}
-
 std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Change to unsafe block body scope
   changeToScope(node->bodyScope, SCOPE_UNSAFE_BODY);
@@ -633,28 +619,6 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
 }
 
-std::any TypeChecker::visitTidCall(TidCallNode *node) {
-  // Nothing to check here. Tid builtin has no arguments
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
-}
-
-std::any TypeChecker::visitJoinCall(JoinCallNode *node) {
-  const SymbolType bytePtr = SymbolType(TY_BYTE).toPointer(node);
-
-  for (AssignExprNode *assignExpr : node->assignExpressions()) {
-    // Visit assign expression
-    SymbolType assignExprType = std::any_cast<ExprResult>(visit(assignExpr)).type;
-    assignExprType = assignExprType.removeReferenceWrapper();
-    // Check if type is byte* or byte*[]
-    if (assignExprType == bytePtr && assignExprType.isArrayOf(bytePtr))
-      throw SemanticError(assignExpr, JOIN_ARG_MUST_BE_TID,
-                          "The join builtin expects a thread id (byte*) or an array of thread ids (byte*[])");
-  }
-
-  // Return the number of threads that were joined
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_INT), manIdx)};
-}
-
 std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   // Check if ternary
   if (node->ternaryExpr()) {
@@ -662,10 +626,6 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     node->setEvaluatedSymbolType(result.type, manIdx);
     return result;
   }
-
-  // Check if thread def
-  if (node->threadDef())
-    return visit(node->threadDef());
 
   // Check if assignment
   if (node->hasOperator) {
@@ -1154,10 +1114,6 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     return visit(node->alignofCall());
   if (node->lenCall())
     return visit(node->lenCall());
-  if (node->tidCall())
-    return visit(node->tidCall());
-  if (node->joinCall())
-    return visit(node->joinCall());
 
   // Check for assign expression within parentheses
   if (node->assignExpr())

@@ -2,7 +2,6 @@
 ext f<int> pthread_create(byte* /*thread*/, byte* /*attr*/, p() /*start_routine*/, byte* /*arg*/);
 ext f<int> pthread_join(byte* /*thread*/, byte** /*retval*/);
 ext f<byte*> pthread_self();
-ext p pthread_exit(byte* /*retval*/);
 
 public type Thread struct {
     byte* threadId
@@ -10,13 +9,21 @@ public type Thread struct {
 
 public p Thread.ctor(p() threadRoutine) {
     pthread_create(this.threadId, nil<byte*>, threadRoutine, nil<byte*>);
+    //this.threadId = pthread_self();
 }
 
 /**
  * Wait synchronous until the thread has terminated
  */
 public p Thread.join() {
-    pthread_join(this.threadId);
+    pthread_join(this.threadId, nil<byte**>);
+}
+
+/**
+ * Retrieve the ID of the current thread
+ */
+public f<byte*> Thread.getId() {
+    return this.threadId;
 }
 
 /**
@@ -24,11 +31,4 @@ public p Thread.join() {
  */
 public f<byte*> getThreadId() {
     return pthread_self();
-}
-
-/**
- * Forcefully kill the current thread
- */
-public p terminateThread() {
-    return pthread_exit(nil<byte*>);
 }

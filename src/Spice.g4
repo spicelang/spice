@@ -17,7 +17,6 @@ globalVarDef: dataType IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: EXT (F LESS dataType GREATER | P) IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
 
 // Control structures
-threadDef: THREAD LBRACE stmtLst RBRACE;
 unsafeBlockDef: UNSAFE LBRACE stmtLst RBRACE;
 forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
 forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
@@ -30,7 +29,7 @@ elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 anonymousBlockStmt: LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | doWhileLoop | ifStmt | assertStmt | threadDef | unsafeBlockDef | anonymousBlockStmt)*;
+stmtLst: (stmt | forLoop | foreachLoop | whileLoop | doWhileLoop | ifStmt | assertStmt | unsafeBlockDef | anonymousBlockStmt)*;
 typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;
@@ -50,16 +49,14 @@ continueStmt: CONTINUE INT_LIT?;
 assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Builtin functions
-builtinCall: printfCall | sizeOfCall | alignOfCall | lenCall | tidCall | joinCall;
+builtinCall: printfCall | sizeOfCall | alignOfCall | lenCall;
 printfCall: PRINTF LPAREN STRING_LIT (COMMA assignExpr)* RPAREN;
 sizeOfCall: SIZEOF LPAREN (assignExpr | TYPE dataType) RPAREN;
 alignOfCall: ALIGNOF LPAREN (assignExpr | TYPE dataType) RPAREN;
 lenCall: LEN LPAREN assignExpr RPAREN;
-tidCall: TID LPAREN RPAREN;
-joinCall: JOIN LPAREN assignExpr (COMMA assignExpr)* RPAREN;
 
 // Expression loop
-assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr | threadDef;
+assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr;
 ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr? COLON logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
@@ -130,7 +127,6 @@ TYPE: 'type';
 ENUM: 'enum';
 OPERATOR: 'operator';
 ALIAS: 'alias';
-THREAD: 'thread';
 UNSAFE: 'unsafe';
 NIL: 'nil';
 MAIN: 'main';
@@ -138,8 +134,6 @@ PRINTF: 'printf';
 SIZEOF: 'sizeof';
 ALIGNOF: 'alignof';
 LEN: 'len';
-TID: 'tid';
-JOIN: 'join';
 EXT: 'ext';
 DLL: 'dll';
 TRUE: 'true';

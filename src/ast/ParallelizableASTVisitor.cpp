@@ -41,8 +41,6 @@ std::any ParallelizableASTVisitor::visitGlobalVarDef(const GlobalVarDefNode *nod
 
 std::any ParallelizableASTVisitor::visitExtDecl(const ExtDeclNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitThreadDef(const ThreadDefNode *node) { return visitChildren(node); }
-
 std::any ParallelizableASTVisitor::visitUnsafeBlockDef(const UnsafeBlockDefNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitForLoop(const ForLoopNode *node) { return visitChildren(node); }
@@ -102,10 +100,6 @@ std::any ParallelizableASTVisitor::visitSizeofCall(const SizeofCallNode *node) {
 std::any ParallelizableASTVisitor::visitAlignofCall(const AlignofCallNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitLenCall(const LenCallNode *node) { return visitChildren(node); }
-
-std::any ParallelizableASTVisitor::visitTidCall(const TidCallNode *node) { return visitChildren(node); }
-
-std::any ParallelizableASTVisitor::visitJoinCall(const JoinCallNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitAssignExpr(const AssignExprNode *node) { return visitChildren(node); }
 

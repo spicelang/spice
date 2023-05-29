@@ -36,7 +36,6 @@ public:
   std::any visitAliasDef(AliasDefNode *ctx) override { return buildNode(ctx); }
   std::any visitGlobalVarDef(GlobalVarDefNode *ctx) override { return buildNode(ctx); }
   std::any visitExtDecl(ExtDeclNode *ctx) override { return buildNode(ctx); }
-  std::any visitThreadDef(ThreadDefNode *ctx) override { return buildNode(ctx); }
   std::any visitUnsafeBlockDef(UnsafeBlockDefNode *ctx) override { return buildNode(ctx); }
   std::any visitForLoop(ForLoopNode *ctx) override { return buildNode(ctx); }
   std::any visitForeachLoop(ForeachLoopNode *ctx) override { return buildNode(ctx); }
@@ -67,8 +66,6 @@ public:
   std::any visitSizeofCall(SizeofCallNode *ctx) override { return buildNode(ctx); }
   std::any visitAlignofCall(AlignofCallNode *ctx) override { return buildNode(ctx); }
   std::any visitLenCall(LenCallNode *ctx) override { return buildNode(ctx); }
-  std::any visitTidCall(TidCallNode *ctx) override { return buildNode(ctx); }
-  std::any visitJoinCall(JoinCallNode *ctx) override { return buildNode(ctx); }
   std::any visitAssignExpr(AssignExprNode *ctx) override { return buildNode(ctx); }
   std::any visitTernaryExpr(TernaryExprNode *ctx) override { return buildNode(ctx); }
   std::any visitLogicalOrExpr(LogicalOrExprNode *ctx) override { return buildNode(ctx); }
@@ -159,8 +156,6 @@ private:
       return "GlobalVarDef";
     if (std::is_same<ExtDeclNode, T>())
       return "ExtDecl";
-    if (std::is_same<ThreadDefNode, T>())
-      return "ThreadDef";
     if (std::is_same<UnsafeBlockDefNode, T>())
       return "UnsafeBlockDef";
     if (std::is_same<ForLoopNode, T>())
@@ -219,10 +214,6 @@ private:
       return "SizeofCall";
     if (std::is_same<LenCallNode, T>())
       return "LenCall";
-    if (std::is_same<TidCallNode, T>())
-      return "TidCall";
-    if (std::is_same<JoinCallNode, T>())
-      return "JoinCall";
     if (std::is_same<AssignExprNode, T>())
       return "AssignExpr";
     if (std::is_same<TernaryExprNode, T>())

@@ -22,7 +22,6 @@ public:
   ASTOptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile) : CompilerPass(resourceManager, sourceFile) {}
 
   // Public methods
-  std::any visitThreadDef(ThreadDefNode *node) override;
   std::any visitUnsafeBlockDef(UnsafeBlockDefNode *node) override;
   std::any visitForLoop(ForLoopNode *node) override;
   std::any visitForeachLoop(ForeachLoopNode *node) override;

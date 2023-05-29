@@ -44,7 +44,6 @@ public:
   std::any visitGlobalVarDef(const GlobalVarDefNode *node) override;
   std::any visitExtDecl(const ExtDeclNode *node) override;
   // Control structures
-  std::any visitThreadDef(const ThreadDefNode *node) override;
   std::any visitUnsafeBlockDef(const UnsafeBlockDefNode *node) override;
   std::any visitForLoop(const ForLoopNode *node) override;
   std::any visitForeachLoop(const ForeachLoopNode *node) override;
@@ -67,8 +66,6 @@ public:
   std::any visitSizeofCall(const SizeofCallNode *node) override;
   std::any visitAlignofCall(const AlignofCallNode *node) override;
   std::any visitLenCall(const LenCallNode *node) override;
-  std::any visitTidCall(const TidCallNode *node) override;
-  std::any visitJoinCall(const JoinCallNode *node) override;
   // Expressions
   std::any visitAssignExpr(const AssignExprNode *node) override;
   std::any visitTernaryExpr(const TernaryExprNode *node) override;
