@@ -27,6 +27,7 @@ private:
   struct ExprResult {
     SymbolType type;
     SymbolTableEntry *entry = nullptr;
+    SymbolType thisType;
   };
 
 public:

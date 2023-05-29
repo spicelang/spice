@@ -100,8 +100,8 @@ struct NameRegistryEntry {
 class SourceFile {
 public:
   // Constructors
-  explicit SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::string &filePath,
-                      bool stdFile);
+  SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::string &filePath,
+             bool stdFile);
   SourceFile(const SourceFile &) = delete;
 
   // Friend classes
@@ -148,7 +148,7 @@ public:
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
   void collectAndPrintWarnings();
 
-  // Public fields
+  // Public members
   std::string name;
   std::string fileName;
   std::string filePath;

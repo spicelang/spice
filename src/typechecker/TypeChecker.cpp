@@ -418,7 +418,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   SymbolType localVarType;
   if (node->hasAssignment) {
     // Visit the right side
-    auto [rhsTy, rhsEntry] = std::any_cast<ExprResult>(visit(node->assignExpr()));
+    auto [rhsTy, rhsEntry, _] = std::any_cast<ExprResult>(visit(node->assignExpr()));
 
     // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
     if (rhsEntry != nullptr && rhsEntry->anonymous)
@@ -670,9 +670,9 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   // Check if assignment
   if (node->hasOperator) {
     // Visit the right side first
-    auto [rhsType, _] = std::any_cast<ExprResult>(visit(node->rhs()));
+    auto [rhsType, _1, _2] = std::any_cast<ExprResult>(visit(node->rhs()));
     // Then visit the left side
-    auto [lhsType, lhsVar] = std::any_cast<ExprResult>(visit(node->lhs()));
+    auto [lhsType, lhsVar, _3] = std::any_cast<ExprResult>(visit(node->lhs()));
 
     // Take a look at the operator
     if (node->op == AssignExprNode::OP_ASSIGN) {
@@ -986,7 +986,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
   // Visit the right side
   PrefixUnaryExprNode *rhsNode = node->prefixUnary();
-  auto [operandType, operandEntry] = std::any_cast<ExprResult>(visit(rhsNode));
+  auto [operandType, operandEntry, _] = std::any_cast<ExprResult>(visit(rhsNode));
 
   // Determine action, based on the given operator
   switch (node->op) {
@@ -1035,7 +1035,10 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
   // Visit left side
   PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
-  auto [lhsType, lhsEntry] = std::any_cast<ExprResult>(visit(lhsNode));
+  auto [lhsType, lhsEntry, thisType] = std::any_cast<ExprResult>(visit(lhsNode));
+
+  // Save the lhs type to preserve it for the caller
+  const SymbolType newThisType = lhsType;
 
   switch (node->op) {
   case PostfixUnaryExprNode::OP_SUBSCRIPT: {
@@ -1077,9 +1080,16 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   case PostfixUnaryExprNode::OP_FUNCTION_CALL: {
     PostfixUnaryExprNode::FunctionCallData &data = node->fctCallData.at(manIdx);
 
+    Scope *fctAccessScope = accessScope;
+    assert(fctAccessScope != nullptr);
+
     assert(lhsEntry != nullptr);
     data.calleeEntry = lhsEntry;
-    std::string functionName = data.calleeEntry->getType().getSubType();
+    SymbolType calleeType = data.calleeEntry->getType();
+    if (!calleeType.isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_STRUCT}))
+      throw SemanticError(node, REFERENCED_UNDEFINED_FUNCTION,
+                          "Can only call functions or procedures, found " + calleeType.getName());
+    std::string functionName = calleeType.getSubType();
     data.calleeParentScope = data.calleeEntry->scope;
 
     // Retrieve arg types
@@ -1098,10 +1108,10 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     // Retrieve call type, based on the left hand side
     if (lhsType.is(TY_STRUCT)) {
       data.callType = PostfixUnaryExprNode::TYPE_CTOR;
-    } else if (accessScope->type == SCOPE_STRUCT) {
+    } else if (fctAccessScope->type == SCOPE_STRUCT) {
       data.callType = PostfixUnaryExprNode::TYPE_METHOD;
     } else if (lhsType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-      const bool isGlobalScope = accessScope->type == SCOPE_GLOBAL;
+      const bool isGlobalScope = fctAccessScope->type == SCOPE_GLOBAL;
       data.callType = isGlobalScope ? PostfixUnaryExprNode::TYPE_ORDINARY : PostfixUnaryExprNode::TYPE_FCT_PTR;
     }
     assert(data.callType != PostfixUnaryExprNode::TYPE_NONE);
@@ -1118,24 +1128,27 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // Retrieve 'this' type
     if (data.isCtorCall() || data.isMethodCall())
-      data.thisType = mapImportedScopeTypeToLocalType(data.calleeEntry->scope, data.calleeEntry->getType());
+      data.thisType = mapImportedScopeTypeToLocalType(data.calleeEntry->scope, data.isCtorCall() ? lhsType : thisType);
 
     std::vector<SymbolType> concreteTemplateTypes;
     if (data.isCtorCall()) {
+      const std::string structName = functionName;
       functionName = CTOR_FUNCTION_NAME;
 
       // Retrieve concrete template types if required
-      for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
-        auto templateType = std::any_cast<SymbolType>(visit(templateTypeNode));
-        assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
-        if (templateType.hasAnyGenericParts())
-          throw SemanticError(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here");
-        concreteTemplateTypes.push_back(templateType);
+      if (node->templateTypeLst()) {
+        for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
+          auto templateType = std::any_cast<SymbolType>(visit(templateTypeNode));
+          assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
+          if (templateType.hasAnyGenericParts())
+            throw SemanticError(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here");
+          concreteTemplateTypes.push_back(templateType);
+        }
       }
 
       // Retrieve struct
-      Struct *thisStruct = StructManager::matchStruct(data.calleeEntry->scope, functionName, concreteTemplateTypes, node);
-      const std::string structSignature = Struct::getSignature(functionName, concreteTemplateTypes);
+      Struct *thisStruct = StructManager::matchStruct(data.calleeEntry->scope, structName, concreteTemplateTypes, node);
+      const std::string structSignature = Struct::getSignature(structName, concreteTemplateTypes);
       if (!thisStruct)
         throw SemanticError(node, UNKNOWN_DATATYPE,
                             "Could not find struct candidate for struct '" + structSignature + "'. Do the template types match?");
@@ -1146,12 +1159,16 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
       // Set callee parent scope to scope of parent struct
       data.calleeParentScope = thisStruct->structScope;
+
+      // Set the concrete template types
+      data.thisType.setTemplateTypes(thisStruct->getTemplateTypes());
     }
 
     // Get callee
     if (data.isOrdinaryCall() || data.isMethodCall() || data.isCtorCall()) {
+      const SymbolType importedThisType = mapLocalTypeToImportedScopeType(data.calleeParentScope, data.thisType);
       data.callee =
-          FunctionManager::matchFunction(data.calleeParentScope, functionName, data.thisType, data.argTypes, false, node);
+          FunctionManager::matchFunction(data.calleeParentScope, functionName, importedThisType, data.argTypes, false, node);
 
       // Build signature for error messages
       ParamList paramLst;
@@ -1173,7 +1190,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     // Retrieve return type
     SymbolType returnType(TY_DYN);
     if (data.isFctPtrCall()) {
-      returnType = data.calleeEntry->getType().getBaseType().getFunctionReturnType();
+      returnType = calleeType.getBaseType().getFunctionReturnType();
     } else if (data.isCtorCall()) {
       // Add anonymous symbol to keep track of de-allocation
       currentScope->symbolTable.insertAnonymous(data.thisType, node);
@@ -1249,7 +1266,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "Variable '" + varName + "' was referenced before declared");
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(lhsType, manIdx), lhsEntry};
+  return ExprResult{node->setEvaluatedSymbolType(lhsType, manIdx), lhsEntry, newThisType};
 }
 
 std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
@@ -1285,19 +1302,22 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     accessScope = currentScope;
 
   // Check if a local or global variable can be found by searching for the name
-  SymbolTableEntry *varEntry = nullptr;
+  std::vector<SymbolTableEntry *> varEntries;
   if (node->identifierFragments.size() == 1)
-    varEntry = accessScope->lookup(node->identifierFragments.back());
+    varEntries = accessScope->symbolTable.lookupMultiple(node->identifierFragments.back());
 
   // If no local or global was found, search in the name registry
-  if (!varEntry) {
+  if (varEntries.empty()) {
     const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqIdentifier);
     if (!registryEntry)
       throw SemanticError(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found");
-    varEntry = registryEntry->targetEntry;
+    varEntries.push_back(registryEntry->targetEntry);
     accessScope = registryEntry->targetScope;
   }
-  assert(varEntry != nullptr);
+
+  // Get first entry
+  SymbolTableEntry *varEntry = varEntries.front();
+
   assert(accessScope != nullptr);
   node->entries.at(manIdx) = varEntry;
   node->accessScopes.at(manIdx) = accessScope;
@@ -1306,13 +1326,14 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->global) {
     // Check if overloaded function was referenced
     const std::vector<Function *> *manifestations = varEntry->declNode->getFctManifestations();
-    if (manifestations->size() > 1)
-      throw SemanticError(node, REFERENCED_OVERLOADED_FCT,
-                          "Overloaded functions or functions with optional parameters cannot be referenced");
+    if (manifestations->size() >= 2)
+      return ExprResult{node->setEvaluatedSymbolType(varEntry->getType(), manIdx), varEntry};
     // Set referenced function to used
     Function *referencedFunction = manifestations->front();
     referencedFunction->used = true;
     referencedFunction->entry->used = true;
+    // Use root scope as access scope
+    accessScope = rootScope;
   }
 
   if (varType.is(TY_INVALID))
@@ -1322,7 +1343,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (!varType.getBaseType().isPrimitive() && !varType.getBaseType().isOneOf({TY_STRUCT, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
     throw SemanticError(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here");
 
-  // Check if is an imported variable
+  // Check if is an imported symbol
   if (accessScope->isImportedBy(currentScope)) {
     // Check if the entry is public
     if (!varEntry->getType().isPublic())

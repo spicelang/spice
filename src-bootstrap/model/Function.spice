@@ -19,7 +19,7 @@ type NamedParamList alias Vector<NamedParam>;
 
 public type Function struct {
     String name
-    SymbolType thisType
+    SymbolType currentThisType
     SymbolType returnType
     ParamLits paramList
     Vector<GenericType> templateTypes
