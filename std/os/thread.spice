@@ -1,19 +1,27 @@
+//[[linker-flags: '-pthread']]
+
+// Type definitions
+type pthread_t alias long;
+type pthread_attr_t struct {
+    unsigned byte detached
+    char *ss_sp
+    unsigned long ss_size
+}
+
 // Link external functions
-ext f<int> pthread_create(byte* /*thread*/, byte* /*attr*/, p() /*start_routine*/, byte* /*arg*/);
-ext f<int> pthread_join(byte* /*thread*/, byte** /*retval*/);
-ext f<byte*> pthread_self();
+ext f<int> pthread_create(pthread_t* /*thread*/, pthread_attr_t* /*attr*/, p() /*start_routine*/, byte* /*arg*/);
+ext f<int> pthread_join(pthread_t /*thread*/, byte** /*retval*/);
+ext f<pthread_t> pthread_self();
 
-type EmptyParams struct {}
-
+/**
+ * Lightweight thread, that uses posix threads (pthread) under the hood.
+ */
 public type Thread struct {
-    byte* threadId
+    pthread_t threadId
 }
 
 public p Thread.ctor(p() threadRoutine) {
-    unsafe {
-        pthread_create(this.threadId, nil<byte*>, threadRoutine, (byte*) &EmptyParams{});
-    }
-    //this.threadId = pthread_self();
+    pthread_create(&this.threadId, nil<pthread_attr_t*>, threadRoutine, nil<byte*>);
 }
 
 /**
@@ -26,13 +34,13 @@ public p Thread.join() {
 /**
  * Retrieve the ID of the current thread
  */
-public f<byte*> Thread.getId() {
+public f<pthread_t> Thread.getId() {
     return this.threadId;
 }
 
 /**
  * Retrieve the ID of the current thread
  */
-public f<byte*> getThreadId() {
+public f<pthread_t> getThreadId() {
     return pthread_self();
 }

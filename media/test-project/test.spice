@@ -1,23 +1,15 @@
-//import "std/os/thread";
+import "std/os/thread";
 
-ext f<int> pthread_create(byte* /*thread*/, byte* /*attr*/, p() /*start_routine*/, byte* /*arg*/);
-
-type EmptyParams struct {}
+ext p usleep(int);
 
 p threadRoutine() {
-    //printf("Hello from thread: %p\n", getThreadId());
-    printf("Test");
+    printf("Test\n");
+    printf("Hello from thread: %d\n", getThreadId());
 }
 
 f<int> main() {
-    byte tid;
-    EmptyParams emptyParams;
-    unsafe {
-        pthread_create(&tid, nil<byte*>, threadRoutine, (byte*) &emptyParams);
-    }
-
-    //Thread t1 = Thread();
-    //Thread t2 = Thread(threadRoutine);
-    //t1.join();
-    //t2.join();
+    Thread t1 = Thread(threadRoutine);
+    Thread t2 = Thread(threadRoutine);
+    t1.join();
+    t2.join();
 }
