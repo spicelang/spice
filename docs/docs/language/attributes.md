@@ -15,7 +15,7 @@ Spice offers the option to annotate single function or whole modules via attribu
 
 ### Available attributes
 
-- `core.linker.flag: string`
+- `core.linker.flag: string`: Append linker flag
 
 ## Function attributes
 
@@ -28,5 +28,5 @@ f<int> test(long input) {
 
 ### Available attributes
 
-- `core.compiler.mangleName: bool`
-- `core.linker.dll: bool`
+- `core.compiler.mangleName: bool`: Disable name mangling for the annotated function
+- `core.linker.dll: bool`: Enable linkage as dll (only relevant for Windows)

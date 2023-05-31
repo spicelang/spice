@@ -3,27 +3,11 @@
   "children": [
     {
       "captures": [],
-      "children": [
-        {
-          "captures": [],
-          "children": [],
-          "name": "if:L2C5",
-          "symbols": []
-        }
-      ],
-      "name": "int fib(int)",
+      "children": [],
+      "name": "calcFib30()",
       "symbols": [
         {
-          "codeLoc": "L1C12",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "n",
-          "orderIndex": 1,
-          "state": "destructed",
-          "type": "int"
-        },
-        {
-          "codeLoc": "L1C1",
+          "codeLoc": "L9C5",
           "isGlobal": false,
           "isVolatile": false,
           "name": "result",
@@ -38,34 +22,83 @@
       "children": [
         {
           "captures": [],
-          "children": [
-            {
-              "captures": [],
-              "children": [],
-              "name": "thread:L10C22",
-              "symbols": [
-                {
-                  "codeLoc": "L11C13",
-                  "isGlobal": false,
-                  "isVolatile": false,
-                  "name": "result",
-                  "orderIndex": 0,
-                  "state": "destructed",
-                  "type": "int"
-                }
-              ]
-            }
-          ],
-          "name": "for:L9C5",
+          "children": [],
+          "name": "if:L4C5",
+          "symbols": []
+        }
+      ],
+      "name": "int fib(int)",
+      "symbols": [
+        {
+          "codeLoc": "L3C12",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "n",
+          "orderIndex": 1,
+          "state": "destructed",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L3C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "destructed",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [],
+          "children": [],
+          "name": "for:L20C5",
           "symbols": [
             {
-              "codeLoc": "L9C9",
+              "codeLoc": "L21C9",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "thread",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "std/os/thread::Thread&"
+            },
+            {
+              "codeLoc": "L20C9",
               "isGlobal": false,
               "isVolatile": false,
               "name": "i",
               "orderIndex": 0,
               "state": "destructed",
-              "type": "int"
+              "type": "unsigned int"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "for:L16C5",
+          "symbols": [
+            {
+              "codeLoc": "L17C22",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "anon.L17C22",
+              "orderIndex": 1,
+              "state": "destructed",
+              "type": "public std/os/thread::Thread"
+            },
+            {
+              "codeLoc": "L16C9",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "i",
+              "orderIndex": 0,
+              "state": "destructed",
+              "type": "unsigned int"
             }
           ]
         }
@@ -73,16 +106,16 @@
       "name": "fct:main",
       "symbols": [
         {
-          "codeLoc": "L8C5",
+          "codeLoc": "L15C5",
           "isGlobal": false,
           "isVolatile": false,
           "name": "threads",
           "orderIndex": 2,
           "state": "destructed",
-          "type": "byte*[8]"
+          "type": "std/os/thread::Thread[8]"
         },
         {
-          "codeLoc": "L7C5",
+          "codeLoc": "L14C5",
           "isGlobal": false,
           "isVolatile": false,
           "name": "threadCount",
@@ -91,7 +124,7 @@
           "type": "int"
         },
         {
-          "codeLoc": "L6C1",
+          "codeLoc": "L13C1",
           "isGlobal": false,
           "isVolatile": false,
           "name": "result",
@@ -104,22 +137,40 @@
   ],
   "symbols": [
     {
-      "codeLoc": "L6C1",
+      "codeLoc": "L13C1",
       "isGlobal": true,
       "isVolatile": false,
       "name": "main(int, string[])",
-      "orderIndex": 1,
+      "orderIndex": 3,
       "state": "destructed",
       "type": "f<int>()"
+    },
+    {
+      "codeLoc": "L8C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "calcFib30:L8C1",
+      "orderIndex": 2,
+      "state": "destructed",
+      "type": "p()"
+    },
+    {
+      "codeLoc": "L3C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "fib:L3C1",
+      "orderIndex": 1,
+      "state": "destructed",
+      "type": "f<int>(int)"
     },
     {
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "fib:L1C1",
+      "name": "std/os/thread",
       "orderIndex": 0,
       "state": "destructed",
-      "type": "f<int>(int)"
+      "type": "import"
     }
   ]
 }

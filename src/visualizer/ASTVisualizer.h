@@ -204,10 +204,10 @@ private:
       return "SpecifierLst";
     if (std::is_same<SpecifierNode, T>())
       return "Specifier";
-    if (std::is_same<FctAttrNode, T>())
-      return "FctAttr";
     if (std::is_same<ModAttrNode, T>())
       return "ModAttr";
+    if (std::is_same<FctAttrNode, T>())
+      return "FctAttr";
     if (std::is_same<AttrLstNode, T>())
       return "AttrLst";
     if (std::is_same<AttrNode, T>())
@@ -274,6 +274,8 @@ private:
       return "BaseDataType";
     if (std::is_same<CustomDataTypeNode, T>())
       return "CustomDataType";
+    if (std::is_same<FunctionDataTypeNode, T>())
+      return "FunctionDataType";
     throw CompilerError(UNHANDLED_BRANCH, "Unknown node in AST visualizer"); // GCOV_EXCL_LINE
   }
 
