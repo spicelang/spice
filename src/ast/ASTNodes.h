@@ -517,28 +517,6 @@ public:
   std::vector<Function *> extFunctionManifestations;
 };
 
-// ========================================================= ThreadDefNode =======================================================
-
-class ThreadDefNode : public ASTNode {
-public:
-  // Constructors
-  using ASTNode::ASTNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitThreadDef(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitThreadDef(this); }
-
-  // Public get methods
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
-  // Other methods
-  [[nodiscard]] std::string getScopeId() const { return "thread:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
-
-  // Public members
-  Scope *bodyScope = nullptr;
-};
-
 // ====================================================== UnsafeBlockDefNode =====================================================
 
 class UnsafeBlockDefNode : public ASTNode {
@@ -1144,33 +1122,6 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 };
 
-// ========================================================= TidCallNode =========================================================
-
-class TidCallNode : public ASTNode {
-public:
-  // Constructors
-  using ASTNode::ASTNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTidCall(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitTidCall(this); }
-};
-
-// ======================================================== JoinCallNode =========================================================
-
-class JoinCallNode : public ASTNode {
-public:
-  // Constructors
-  using ASTNode::ASTNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitJoinCall(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitJoinCall(this); }
-
-  // Public get methods
-  [[nodiscard]] std::vector<AssignExprNode *> assignExpressions() const { return getChildren<AssignExprNode>(); }
-};
-
 // ======================================================= AssignExprNode ========================================================
 
 class AssignExprNode : public ASTNode {
@@ -1202,7 +1153,6 @@ public:
   [[nodiscard]] AssignExprNode *rhs() const { return getChild<AssignExprNode>(); }
   [[nodiscard]] PrefixUnaryExprNode *lhs() const { return getChild<PrefixUnaryExprNode>(); }
   [[nodiscard]] TernaryExprNode *ternaryExpr() const { return getChild<TernaryExprNode>(); }
-  [[nodiscard]] ThreadDefNode *threadDef() const { return getChild<ThreadDefNode>(); }
 
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
@@ -1519,8 +1469,6 @@ public:
   [[nodiscard]] SizeofCallNode *sizeofCall() const { return getChild<SizeofCallNode>(); }
   [[nodiscard]] AlignofCallNode *alignofCall() const { return getChild<AlignofCallNode>(); }
   [[nodiscard]] LenCallNode *lenCall() const { return getChild<LenCallNode>(); }
-  [[nodiscard]] TidCallNode *tidCall() const { return getChild<TidCallNode>(); }
-  [[nodiscard]] JoinCallNode *joinCall() const { return getChild<JoinCallNode>(); }
 
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override {

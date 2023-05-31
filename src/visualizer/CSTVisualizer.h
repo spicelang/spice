@@ -37,7 +37,6 @@ public:
   std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override { return buildRule(ctx); }
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override { return buildRule(ctx); }
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override { return buildRule(ctx); }
-  std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override { return buildRule(ctx); }
   std::any visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) override { return buildRule(ctx); }
   std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override { return buildRule(ctx); }
   std::any visitForHead(SpiceParser::ForHeadContext *ctx) override { return buildRule(ctx); }
@@ -71,8 +70,6 @@ public:
   std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override { return buildRule(ctx); }
   std::any visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) override { return buildRule(ctx); }
   std::any visitLenCall(SpiceParser::LenCallContext *ctx) override { return buildRule(ctx); }
-  std::any visitTidCall(SpiceParser::TidCallContext *ctx) override { return buildRule(ctx); }
-  std::any visitJoinCall(SpiceParser::JoinCallContext *ctx) override { return buildRule(ctx); }
   std::any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override { return buildRule(ctx); }
   std::any visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) override { return buildRule(ctx); }
   std::any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override { return buildRule(ctx); }

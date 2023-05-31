@@ -1,34 +1,46 @@
-// Link external functions
-ext f<int> pthread_create(byte* /*thread*/, byte* /*attr*/, p() /*start_routine*/, byte* /*arg*/);
-ext f<int> pthread_join(byte* /*thread*/, byte** /*retval*/);
-ext f<byte*> pthread_self();
-ext p pthread_exit(byte* /*retval*/);
+//[[linker-flags: '-pthread']]
 
+// Type definitions
+type pthread_t alias long;
+type pthread_attr_t struct {
+    unsigned byte detached
+    char *ss_sp
+    unsigned long ss_size
+}
+
+// Link external functions
+ext f<int> pthread_create(pthread_t* /*thread*/, pthread_attr_t* /*attr*/, p() /*start_routine*/, byte* /*arg*/);
+ext f<int> pthread_join(pthread_t /*thread*/, byte** /*retval*/);
+ext f<pthread_t> pthread_self();
+
+/**
+ * Lightweight thread, that uses posix threads (pthread) under the hood.
+ */
 public type Thread struct {
-    byte* threadId
+    pthread_t threadId
 }
 
 public p Thread.ctor(p() threadRoutine) {
-    pthread_create(this.threadId, nil<byte*>, threadRoutine, nil<byte*>);
+    pthread_create(&this.threadId, nil<pthread_attr_t*>, threadRoutine, nil<byte*>);
 }
 
 /**
  * Wait synchronous until the thread has terminated
  */
 public p Thread.join() {
-    pthread_join(this.threadId);
+    pthread_join(this.threadId, nil<byte**>);
 }
 
 /**
  * Retrieve the ID of the current thread
  */
-public f<byte*> getThreadId() {
-    return pthread_self();
+public f<pthread_t> Thread.getId() {
+    return this.threadId;
 }
 
 /**
- * Forcefully kill the current thread
+ * Retrieve the ID of the current thread
  */
-public p terminateThread() {
-    return pthread_exit(nil<byte*>);
+public f<pthread_t> getThreadId() {
+    return pthread_self();
 }

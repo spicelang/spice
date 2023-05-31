@@ -52,8 +52,6 @@ bool ElseStmtNode::returnsOnAllControlPaths(bool *overrideUnreachable) const { /
                   : body()->returnsOnAllControlPaths(overrideUnreachable);
 }
 
-bool ThreadDefNode::returnsOnAllControlPaths(bool *overrideUnreachable) const { return false; }
-
 bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
   // An empty statement list does not return at all
   if (children.empty())

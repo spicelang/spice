@@ -387,26 +387,6 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   return nullptr;
 }
 
-std::any ASTBuilder::visitThreadDef(SpiceParser::ThreadDefContext *ctx) {
-  auto threadDefNode = static_cast<ThreadDefNode *>(currentNode);
-  threadDefNode->reserveChildren(ctx->children.size());
-  saveErrorMessage(threadDefNode, ctx);
-
-  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::StmtLstContext *>(subTree); rule != nullptr) // StmtLst
-      currentNode = threadDefNode->createChild<StmtLstNode>(CodeLoc(rule->start, filePath));
-    else
-      assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
-
-    if (currentNode != threadDefNode) {
-      visit(rule);
-      currentNode = threadDefNode;
-    }
-  }
-  return nullptr;
-}
-
 std::any ASTBuilder::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
   auto unsafeBlockDefNode = static_cast<UnsafeBlockDefNode *>(currentNode);
   unsafeBlockDefNode->reserveChildren(ctx->children.size());
@@ -652,8 +632,6 @@ std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
       currentNode = stmtLstNode->createChild<IfStmtNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::AssertStmtContext *>(subTree); rule != nullptr) // AssertStmt
       currentNode = stmtLstNode->createChild<AssertStmtNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::ThreadDefContext *>(subTree); rule != nullptr) // ThreadDef
-      currentNode = stmtLstNode->createChild<ThreadDefNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::UnsafeBlockDefContext *>(subTree); rule != nullptr) // UnsafeBlockDef
       currentNode = stmtLstNode->createChild<UnsafeBlockDefNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::AnonymousBlockStmtContext *>(subTree); rule != nullptr) // AnonymousBlockStmt
@@ -1067,10 +1045,6 @@ std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
       currentNode = atomicExprNode->createChild<AlignofCallNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::LenCallContext *>(subTree); rule != nullptr) // LenCall
       currentNode = atomicExprNode->createChild<LenCallNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::TidCallContext *>(subTree); rule != nullptr) // TidCall
-      currentNode = atomicExprNode->createChild<TidCallNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::JoinCallContext *>(subTree); rule != nullptr) // JoinCall
-      currentNode = atomicExprNode->createChild<JoinCallNode>(CodeLoc(rule->start, filePath));
     else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1178,33 +1152,6 @@ std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
   return nullptr;
 }
 
-std::any ASTBuilder::visitTidCall(SpiceParser::TidCallContext *ctx) {
-  auto tidCallNode = static_cast<TidCallNode *>(currentNode);
-  tidCallNode->reserveChildren(ctx->children.size());
-  saveErrorMessage(tidCallNode, ctx);
-  return nullptr;
-}
-
-std::any ASTBuilder::visitJoinCall(SpiceParser::JoinCallContext *ctx) {
-  auto joinCallNode = static_cast<JoinCallNode *>(currentNode);
-  joinCallNode->reserveChildren(ctx->children.size());
-  saveErrorMessage(joinCallNode, ctx);
-
-  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    ParserRuleContext *rule;
-    if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
-      currentNode = joinCallNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
-    else
-      assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
-
-    if (currentNode != joinCallNode) {
-      visit(rule);
-      currentNode = joinCallNode;
-    }
-  }
-  return nullptr;
-}
-
 std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   auto assignExprNode = static_cast<AssignExprNode *>(currentNode);
   assignExprNode->reserveChildren(ctx->children.size());
@@ -1220,8 +1167,6 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
       currentNode = assignExprNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::TernaryExprContext *>(subTree); rule != nullptr) // TernaryExpr
       currentNode = assignExprNode->createChild<TernaryExprNode>(CodeLoc(rule->start, filePath));
-    else if (rule = dynamic_cast<SpiceParser::ThreadDefContext *>(subTree); rule != nullptr) // ThreadDef
-      currentNode = assignExprNode->createChild<ThreadDefNode>(CodeLoc(rule->start, filePath));
     else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
 

@@ -42,7 +42,6 @@ public:
   std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override;
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override;
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
-  std::any visitThreadDef(SpiceParser::ThreadDefContext *ctx) override;
   std::any visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) override;
   std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
   std::any visitForHead(SpiceParser::ForHeadContext *ctx) override;
@@ -76,8 +75,6 @@ public:
   std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override;
   std::any visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) override;
   std::any visitLenCall(SpiceParser::LenCallContext *ctx) override;
-  std::any visitTidCall(SpiceParser::TidCallContext *ctx) override;
-  std::any visitJoinCall(SpiceParser::JoinCallContext *ctx) override;
   std::any visitAssignExpr(SpiceParser::AssignExprContext *ctx) override;
   std::any visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) override;
   std::any visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) override;

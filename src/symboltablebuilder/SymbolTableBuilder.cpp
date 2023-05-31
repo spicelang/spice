@@ -325,20 +325,6 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   return nullptr;
 }
 
-std::any SymbolTableBuilder::visitThreadDef(ThreadDefNode *node) {
-  // Create scope for the thread body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_THREAD_BODY, &node->body()->codeLoc);
-  currentScope->symbolTable.capturingRequired = true; // Requires capturing because the LLVM IR will end up in a separate function
-
-  // Visit body
-  visit(node->body());
-
-  // Leave thread body scope
-  currentScope = node->bodyScope->parent;
-
-  return nullptr;
-}
-
 std::any SymbolTableBuilder::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Create scope for the unsafe block body
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_UNSAFE_BODY, &node->body()->codeLoc);

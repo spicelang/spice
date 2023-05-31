@@ -6,6 +6,6 @@ f<int> ack(int m, int n) {
 
 f<int> main() {
     int baseM = 3;
-    int baseN = 12;
+    int baseN = 10;
     printf("Ackermann of base m=%d and n=%d: %d", baseM, baseN, ack(baseM, baseN));
 }

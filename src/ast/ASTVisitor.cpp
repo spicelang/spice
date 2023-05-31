@@ -30,8 +30,6 @@ std::any ASTVisitor::visitGlobalVarDef(GlobalVarDefNode *node) { return visitChi
 
 std::any ASTVisitor::visitExtDecl(ExtDeclNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitThreadDef(ThreadDefNode *node) { return visitChildren(node); }
-
 std::any ASTVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitForLoop(ForLoopNode *node) { return visitChildren(node); }
@@ -91,10 +89,6 @@ std::any ASTVisitor::visitSizeofCall(SizeofCallNode *node) { return visitChildre
 std::any ASTVisitor::visitAlignofCall(AlignofCallNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitLenCall(LenCallNode *node) { return visitChildren(node); }
-
-std::any ASTVisitor::visitTidCall(TidCallNode *node) { return visitChildren(node); }
-
-std::any ASTVisitor::visitJoinCall(JoinCallNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitAssignExpr(AssignExprNode *node) { return visitChildren(node); }
 

@@ -23,9 +23,6 @@ public:
   [[nodiscard]] llvm::Function *getPrintfFct() const;
   [[nodiscard]] llvm::Function *getExitFct() const;
   [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
-  [[nodiscard]] llvm::Function *getPthreadCreate() const;
-  [[nodiscard]] llvm::Function *getPthreadSelf() const;
-  [[nodiscard]] llvm::Function *getPthreadJoin() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
   [[nodiscard]] llvm::Function *getIteratorGetFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorGetIdxFct(const Function *spiceFunc, Scope *accessScope) const;

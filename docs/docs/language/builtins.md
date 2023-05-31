@@ -100,36 +100,3 @@ len({1, 2, 3, 4}); // 4
 string[5] stringArray = {"string1", "string2", "string3"};
 len(stringArray); // 5
 ```
-
-## The `tid` builtin
-Tid returns the thread id of the current thread.
-
-### Signature
-`int tid()`
-
-### Usage example
-```spice
-int threadId = tid();
-```
-
-## The `join` builtin
-Join waits for the termination of the one or more given threads.
-It returns the number of joined threads as an `int`.
-
-### Signature
-`int join(byte* ...threadIds)`
-
-### Usage example
-```spice
-byte* t1 = thread {
-    usleep(300 * 1000);
-    printf("Thread 1 finished\n");
-};
-
-byte* t2 = thread {
-    usleep(100 * 1000);
-    printf("Thread 2 finished\n");
-};
-
-int threadsJoined = join(t1, t2);
-```
