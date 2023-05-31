@@ -205,6 +205,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEntry(this); }
 
   // Public get methods
+  [[nodiscard]] std::vector<ModAttrNode *> modAttrs() const { return getChildren<ModAttrNode>(); }
   [[nodiscard]] std::vector<ImportStmtNode *> importStmts() const { return getChildren<ImportStmtNode>(); }
 };
 
@@ -220,6 +221,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitMainFctDef(this); }
 
   // Public get methods
+  [[nodiscard]] FctAttrNode *fctAttrs() const { return getChild<FctAttrNode>(); }
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
@@ -282,6 +284,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctDef(this); }
 
   // Public get methods
+  [[nodiscard]] FctAttrNode *fctAttrs() const { return getChild<FctAttrNode>(); }
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
@@ -322,6 +325,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitProcDef(this); }
 
   // Public get methods
+  [[nodiscard]] FctAttrNode *fctAttrs() const { return getChild<FctAttrNode>(); }
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
@@ -501,6 +505,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitExtDecl(this); }
 
   // Public get methods
+  [[nodiscard]] FctAttrNode *fctAttrs() const { return getChild<FctAttrNode>(); }
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] TypeLstNode *argTypeLst() const { return getChild<TypeLstNode>(); }
 
@@ -511,7 +516,6 @@ public:
   std::string extFunctionName;
   bool hasArgs = false;
   bool isVarArg = false;
-  bool isDll = false;
   SymbolTableEntry *entry = nullptr;
   Function *extFunction = nullptr;
   std::vector<Function *> extFunctionManifestations;
@@ -960,6 +964,81 @@ public:
 
   // Public members
   SpecifierType type = TY_NONE;
+};
+
+// ========================================================== ModAttrNode ========================================================
+
+class ModAttrNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitModAttr(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitModAttr(this); }
+
+  // Public get methods
+  [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
+};
+
+// ========================================================== FctAttrNode ========================================================
+
+class FctAttrNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctAttr(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctAttr(this); }
+
+  // Public get methods
+  [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
+};
+
+// ========================================================== AttrLstNode ========================================================
+
+class AttrLstNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAttrLst(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAttrLst(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<AttrNode *> attributes() const { return getChildren<AttrNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::vector<AttrNode *> getAttrsByName(const char *key) const;
+  [[nodiscard]] AttrNode *getAttrByName(const char *key) const;
+};
+
+// ============================================================ AttrNode =========================================================
+
+class AttrNode : public ASTNode {
+public:
+  // Enums
+  static constexpr const char *const ATTR_CORE_LINKER_FLAG = "core.linker.flag";
+  static constexpr const char *const ATTR_CORE_LINKER_DLL = "core.linker.dll";
+  static constexpr const char *const ATTR_CORE_COMPILER_MANGLE_NAME = "core.compiler.mangleName";
+
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAttr(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAttr(this); }
+
+  // Public get methods
+  [[nodiscard]] ConstantNode *value() const { return getChild<ConstantNode>(); }
+
+  // Other methods
+  [[nodiscard]] const CompileTimeValue &getValue() const;
+
+  // Public members
+  std::string key;
 };
 
 // ======================================================== ImportStmtNode =======================================================
@@ -1495,7 +1574,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitValue(this); }
 
   // Public get methods
-  [[nodiscard]] FunctionCallNode *functionCall() const { return getChild<FunctionCallNode>(); }
+  [[nodiscard]] FctCallNode *fctCall() const { return getChild<FctCallNode>(); }
   [[nodiscard]] ArrayInitializationNode *arrayInitialization() const { return getChild<ArrayInitializationNode>(); }
   [[nodiscard]] StructInstantiationNode *structInstantiation() const { return getChild<StructInstantiationNode>(); }
   [[nodiscard]] DataTypeNode *nilType() const { return getChild<DataTypeNode>(); }
@@ -1533,16 +1612,16 @@ public:
   bool isSigned = true;
 };
 
-// ==================================================== FunctionCallNode =========================================================
+// ====================================================== FctCallNode ============================================================
 
-class FunctionCallNode : public ASTNode {
+class FctCallNode : public ASTNode {
 public:
-  enum FunctionCallType : uint8_t { TYPE_ORDINARY, TYPE_METHOD, TYPE_CTOR, TYPE_FCT_PTR };
+  enum FctCallType : uint8_t { TYPE_ORDINARY, TYPE_METHOD, TYPE_CTOR, TYPE_FCT_PTR };
 
   // Structs
-  struct FunctionCallData {
+  struct FctCallData {
     // Members
-    FunctionCallType callType = TYPE_ORDINARY;
+    FctCallType callType = TYPE_ORDINARY;
     bool isImported = false;
     bool isDownCall = false;
     SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
@@ -1561,8 +1640,8 @@ public:
   using ASTNode::ASTNode;
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFunctionCall(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFunctionCall(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctCall(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctCall(this); }
 
   // Public get methods
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
@@ -1577,7 +1656,7 @@ public:
   std::vector<std::string> functionNameFragments;
   bool hasArgs = false;
   bool hasTemplateTypes = false;
-  std::vector<FunctionCallData> data;
+  std::vector<FctCallData> data;
 };
 
 // ================================================= ArrayInitializationNode =====================================================

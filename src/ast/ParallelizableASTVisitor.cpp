@@ -83,6 +83,14 @@ std::any ParallelizableASTVisitor::visitSpecifierLst(const SpecifierLstNode *nod
 
 std::any ParallelizableASTVisitor::visitSpecifier(const SpecifierNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitModAttr(const ModAttrNode *node) { return visitChildren(node); }
+
+std::any ParallelizableASTVisitor::visitFctAttr(const FctAttrNode *node) { return visitChildren(node); }
+
+std::any ParallelizableASTVisitor::visitAttrLst(const AttrLstNode *node) { return visitChildren(node); }
+
+std::any ParallelizableASTVisitor::visitAttr(const AttrNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitImportStmt(const ImportStmtNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitReturnStmt(const ReturnStmtNode *node) { return visitChildren(node); }
@@ -137,7 +145,7 @@ std::any ParallelizableASTVisitor::visitValue(const ValueNode *node) { return vi
 
 std::any ParallelizableASTVisitor::visitConstant(const ConstantNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitFunctionCall(const FunctionCallNode *node) { return visitChildren(node); }
+std::any ParallelizableASTVisitor::visitFctCall(const FctCallNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitArrayInitialization(const ArrayInitializationNode *node) { return visitChildren(node); }
 

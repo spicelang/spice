@@ -65,6 +65,10 @@ public:
   std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
   std::any visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) override;
   std::any visitSpecifier(SpiceParser::SpecifierContext *ctx) override;
+  std::any visitFctAttr(SpiceParser::FctAttrContext *ctx) override;
+  std::any visitModAttr(SpiceParser::ModAttrContext *ctx) override;
+  std::any visitAttrLst(SpiceParser::AttrLstContext *ctx) override;
+  std::any visitAttr(SpiceParser::AttrContext *ctx) override;
   std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
@@ -92,7 +96,7 @@ public:
   std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override;
   std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override;
   std::any visitValue(SpiceParser::ValueContext *ctx) override;
-  std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override;
+  std::any visitFctCall(SpiceParser::FctCallContext *ctx) override;
   std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override;
   std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override;
   std::any visitConstant(SpiceParser::ConstantContext *ctx) override;

@@ -58,7 +58,7 @@ graph TD;
 
 7.  **Import Collector** <br>
     Input/Output: AST -> AST <br>
-    Note: Checks, which other source file are imported by the current one. Registers external symbols as described
+    Note: Checks, which other source file are imported by the current one. Registers external symbols. Process module attributes. 
     [here](./better-imports.md).
 
 8.  **Symbol Table Builder** <br>

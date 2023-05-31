@@ -42,6 +42,10 @@ public:
   std::any visitDeclStmt(DeclStmtNode *node) override;
   std::any visitSpecifierLst(SpecifierLstNode *node) override;
   std::any visitSpecifier(SpecifierNode *node) override;
+  std::any visitModAttr(ModAttrNode *node) override;
+  std::any visitFctAttr(FctAttrNode *node) override;
+  std::any visitAttrLst(AttrLstNode *node) override;
+  std::any visitAttr(AttrNode *node) override;
   std::any visitImportStmt(ImportStmtNode *node) override;
   std::any visitReturnStmt(ReturnStmtNode *node) override;
   std::any visitBreakStmt(BreakStmtNode *node) override;
@@ -69,7 +73,7 @@ public:
   std::any visitAtomicExpr(AtomicExprNode *node) override;
   std::any visitValue(ValueNode *node) override;
   std::any visitConstant(ConstantNode *node) override;
-  std::any visitFunctionCall(FunctionCallNode *node) override;
+  std::any visitFctCall(FctCallNode *node) override;
   std::any visitArrayInitialization(ArrayInitializationNode *node) override;
   std::any visitStructInstantiation(StructInstantiationNode *node) override;
   std::any visitDataType(DataTypeNode *node) override;

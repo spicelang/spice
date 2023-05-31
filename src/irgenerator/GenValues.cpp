@@ -10,8 +10,8 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Function call
-  if (node->functionCall())
-    return visit(node->functionCall());
+  if (node->fctCall())
+    return visit(node->fctCall());
 
   // Array initialization
   if (node->arrayInitialization())
@@ -86,10 +86,10 @@ std::any IRGenerator::visitConstant(const ConstantNode *node) {
   throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
 }
 
-std::any IRGenerator::visitFunctionCall(const FunctionCallNode *node) {
+std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   diGenerator.setSourceLocation(node);
 
-  const FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
+  const FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   Function *spiceFunc = data.callee;
   Scope *accessScope = data.calleeParentScope;

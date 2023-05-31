@@ -12,7 +12,7 @@ type TimeZone struct {
 }
 
 // Link external functions
-ext<int> gettimeofday(TimeVal*, TimeZone*);
+ext f<int> gettimeofday(TimeVal*, TimeZone*);
 
 /**
  * Retrieve seconds since epoch

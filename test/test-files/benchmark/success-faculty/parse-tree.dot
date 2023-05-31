@@ -210,14 +210,14 @@ digraph {
  L5C21_postfixUnaryExpr -> L5C21_atomicExpr;
  L5C21_value [color="lightgreen",label="value"];
  L5C21_atomicExpr -> L5C21_value;
- L5C21_functionCall [color="lightgreen",label="functionCall"];
- L5C21_value -> L5C21_functionCall;
+ L5C21_fctCall [color="lightgreen",label="fctCall"];
+ L5C21_value -> L5C21_fctCall;
  L5C21 [color="lightblue",label="IDENTIFIER: faculty"];
- L5C21_functionCall -> L5C21
+ L5C21_fctCall -> L5C21
  L5C28 [color="lightblue",label="LPAREN: ("];
- L5C21_functionCall -> L5C28
+ L5C21_fctCall -> L5C28
  L5C29_argLst [color="lightgreen",label="argLst"];
- L5C21_functionCall -> L5C29_argLst;
+ L5C21_fctCall -> L5C29_argLst;
  L5C29_assignExpr [color="lightgreen",label="assignExpr"];
  L5C29_argLst -> L5C29_assignExpr;
  L5C29_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -269,7 +269,7 @@ digraph {
  L5C37 [color="lightblue",label="INT_LIT: 1"];
  L5C37_constant -> L5C37
  L5C38 [color="lightblue",label="RPAREN: )"];
- L5C21_functionCall -> L5C38
+ L5C21_fctCall -> L5C38
  L5C39 [color="lightblue",label="SEMICOLON: ;"];
  L5C4_stmt -> L5C39
  L6C0 [color="lightblue",label="RBRACE: }"];
@@ -394,14 +394,14 @@ digraph {
  L10C18_postfixUnaryExpr -> L10C18_atomicExpr;
  L10C18_value [color="lightgreen",label="value"];
  L10C18_atomicExpr -> L10C18_value;
- L10C18_functionCall [color="lightgreen",label="functionCall"];
- L10C18_value -> L10C18_functionCall;
+ L10C18_fctCall [color="lightgreen",label="fctCall"];
+ L10C18_value -> L10C18_fctCall;
  L10C18 [color="lightblue",label="IDENTIFIER: faculty"];
- L10C18_functionCall -> L10C18
+ L10C18_fctCall -> L10C18
  L10C25 [color="lightblue",label="LPAREN: ("];
- L10C18_functionCall -> L10C25
+ L10C18_fctCall -> L10C25
  L10C26_argLst [color="lightgreen",label="argLst"];
- L10C18_functionCall -> L10C26_argLst;
+ L10C18_fctCall -> L10C26_argLst;
  L10C26_assignExpr [color="lightgreen",label="assignExpr"];
  L10C26_argLst -> L10C26_assignExpr;
  L10C26_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -437,7 +437,7 @@ digraph {
  L10C26 [color="lightblue",label="IDENTIFIER: input"];
  L10C26_atomicExpr -> L10C26
  L10C31 [color="lightblue",label="RPAREN: )"];
- L10C18_functionCall -> L10C31
+ L10C18_fctCall -> L10C31
  L10C32 [color="lightblue",label="SEMICOLON: ;"];
  L10C4_stmt -> L10C32
  L11C4_stmt [color="lightgreen",label="stmt"];

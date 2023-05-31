@@ -3,10 +3,10 @@
 grammar Spice;
 
 // Top level definitions and declarations
-entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importStmt | extDecl)*;
-mainFunctionDef: F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-functionDef: specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-procedureDef: specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importStmt | extDecl | modAttr)*;
+mainFunctionDef: fctAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+functionDef: fctAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+procedureDef: fctAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 fctName: (IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
 structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
 interfaceDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature+ RBRACE;
@@ -14,7 +14,7 @@ enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: TYPE IDENTIFIER ALIAS dataType SEMICOLON;
 globalVarDef: dataType IDENTIFIER (ASSIGN constant)? SEMICOLON;
-extDecl: EXT (F LESS dataType GREATER | P) IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN DLL? SEMICOLON;
+extDecl: fctAttr? EXT (F LESS dataType GREATER | P) IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN SEMICOLON;
 
 // Control structures
 unsafeBlockDef: UNSAFE LBRACE stmtLst RBRACE;
@@ -42,6 +42,10 @@ stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: dataType IDENTIFIER (ASSIGN assignExpr)?;
 specifierLst: specifier+;
 specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC | HEAP;
+modAttr: MOD_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
+fctAttr: FCT_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
+attrLst: attr (COMMA attr)*;
+attr: IDENTIFIER (DOT IDENTIFIER)* ASSIGN constant;
 importStmt: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;
 returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INT_LIT?;
@@ -74,9 +78,9 @@ postfixUnaryExpr: atomicExpr | postfixUnaryExpr LBRACKET assignExpr RBRACKET | p
 atomicExpr: constant | value | IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values
-value: functionCall | arrayInitialization | structInstantiation | NIL LESS dataType GREATER;
+value: fctCall | arrayInitialization | structInstantiation | NIL LESS dataType GREATER;
 constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
-functionCall: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (DOT IDENTIFIER)* (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
+fctCall: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (DOT IDENTIFIER)* (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACE argLst? RBRACE;
 structInstantiation: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
 
@@ -135,7 +139,6 @@ SIZEOF: 'sizeof';
 ALIGNOF: 'alignof';
 LEN: 'len';
 EXT: 'ext';
-DLL: 'dll';
 TRUE: 'true';
 FALSE: 'false';
 
@@ -184,6 +187,8 @@ COMMA: ',';
 DOT: '.';
 SCOPE_ACCESS: '::';
 ELLIPSIS: '...';
+FCT_ATTR_PREAMBLE: '#';
+MOD_ATTR_PREAMBLE: '#!';
 
 // Regex tokens
 DOUBLE_LIT: [-]?[0-9]*[.][0-9]+([eE][+-]?[0-9]+)?;

@@ -71,6 +71,17 @@ bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
   return returns;
 }
 
+std::vector<AttrNode *> AttrLstNode::getAttrsByName(const char *key) const {
+  const std::vector<AttrNode *> attrs = attributes();
+  std::vector<AttrNode *> newAttrs;
+  std::copy_if(attrs.begin(), attrs.end(), std::back_inserter(newAttrs), [=](const AttrNode *attr) { return attr->key == key; });
+  return newAttrs;
+}
+
+AttrNode *AttrLstNode::getAttrByName(const char *key) const { return getAttrsByName(key).back(); }
+
+const CompileTimeValue &AttrNode::getValue() const { return value()->compileTimeValue; }
+
 bool AssertStmtNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   const bool returns = hasCompileTimeValue() && !compileTimeValue.boolValue;
   *overrideUnreachable |= returns;
@@ -129,7 +140,7 @@ const CompileTimeValue &LogicalOrExprNode::getCompileTimeValue() const {
  *
  * @return Has return value receiver or not
  */
-bool FunctionCallNode::hasReturnValueReceiver() const {
+bool FctCallNode::hasReturnValueReceiver() const {
   ASTNode *node = parent;
   while (!node->isAssignExpr()) {
     if (node->children.size() > 1)

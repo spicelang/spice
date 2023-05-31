@@ -568,8 +568,11 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   module->getOrInsertFunction(spiceFunc->name, functionType);
 
   // If the function should be imported as dll, add the dll attribute
-  if (node->isDll)
-    module->getFunction(spiceFunc->name)->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
+  if (node->fctAttrs()) {
+    const bool linkAsDll = node->fctAttrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_LINKER_DLL)->getValue().boolValue;
+    if (linkAsDll)
+      module->getFunction(spiceFunc->name)->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
+  }
 
   return nullptr;
 }

@@ -404,10 +404,10 @@ digraph {
  L13C15_PostfixUnaryExpr -> L13C15_AtomicExpr;
  L13C15_Value [color="lightgreen",label="Value"];
  L13C15_AtomicExpr -> L13C15_Value;
- L13C15_FunctionCall [color="lightgreen",label="FunctionCall"];
- L13C15_Value -> L13C15_FunctionCall;
+ L13C15_FctCall [color="lightgreen",label="FctCall"];
+ L13C15_Value -> L13C15_FctCall;
  L13C30_ArgLst [color="lightgreen",label="ArgLst"];
- L13C15_FunctionCall -> L13C30_ArgLst;
+ L13C15_FctCall -> L13C30_ArgLst;
  L13C30_AssignExpr [color="lightgreen",label="AssignExpr"];
  L13C30_ArgLst -> L13C30_AssignExpr;
  L13C30_TernaryExpr [color="lightgreen",label="TernaryExpr"];
@@ -588,10 +588,10 @@ digraph {
  L15C11_PostfixUnaryExpr -> L15C11_AtomicExpr;
  L15C11_Value [color="lightgreen",label="Value"];
  L15C11_AtomicExpr -> L15C11_Value;
- L15C11_FunctionCall [color="lightgreen",label="FunctionCall"];
- L15C11_Value -> L15C11_FunctionCall;
+ L15C11_FctCall [color="lightgreen",label="FctCall"];
+ L15C11_Value -> L15C11_FctCall;
  L15C26_ArgLst [color="lightgreen",label="ArgLst"];
- L15C11_FunctionCall -> L15C26_ArgLst;
+ L15C11_FctCall -> L15C26_ArgLst;
  L15C26_AssignExpr [color="lightgreen",label="AssignExpr"];
  L15C26_ArgLst -> L15C26_AssignExpr;
  L15C26_TernaryExpr [color="lightgreen",label="TernaryExpr"];

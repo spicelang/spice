@@ -1,7 +1,5 @@
 import "std/os/thread";
 
-ext p usleep(int);
-
 p threadRoutine() {
     printf("Test\n");
     printf("Hello from thread: %d\n", getThreadId());
