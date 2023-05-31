@@ -7,7 +7,7 @@ title: Install on Linux
     To install Spice on Debian, execute the following commands in your terminal:
     ```sh
     sudo apt-get install ca-certificates
-    curl -fsSL https://server.chillibits.com/files/repo/gpg | sudo apt-key add -
+    curl -fsSL https://server.chillibits.com/files/repo/gpg | sudo tee /etc/apt/trusted.gpg.d/chillibits.asc
 	sudo add-apt-repository "deb https://repo.chillibits.com/$(lsb_release -is | awk '{print tolower($0)}')-$(lsb_release -cs) $(lsb_release -cs) main"
 	sudo apt-get install spice
     ```

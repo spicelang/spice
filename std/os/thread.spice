@@ -3,12 +3,16 @@ ext f<int> pthread_create(byte* /*thread*/, byte* /*attr*/, p() /*start_routine*
 ext f<int> pthread_join(byte* /*thread*/, byte** /*retval*/);
 ext f<byte*> pthread_self();
 
+type EmptyParams struct {}
+
 public type Thread struct {
     byte* threadId
 }
 
 public p Thread.ctor(p() threadRoutine) {
-    pthread_create(this.threadId, nil<byte*>, threadRoutine, nil<byte*>);
+    unsafe {
+        pthread_create(this.threadId, nil<byte*>, threadRoutine, (byte*) &EmptyParams{});
+    }
     //this.threadId = pthread_self();
 }
 
