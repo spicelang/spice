@@ -333,8 +333,9 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     assert(currentScope != nullptr);
 
     // Get 'this' entry
+    SymbolTableEntry *thisEntry = nullptr;
     if (manifestation->isMethod()) {
-      SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
+      thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
       assert(thisEntry != nullptr);
       paramSymbols.push_back(thisEntry);
     }
@@ -422,6 +423,15 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       const std::vector<DeclStmtNode *> params = node->paramLst()->params();
       for (; argIdx < params.size(); argIdx++)
         visit(params.at(argIdx));
+    }
+
+    // If this is a constructor, store the default field values
+    if (node->isCtor) {
+      assert(node->isMethod && thisEntry != nullptr);
+      assert(thisEntry->getType().isPtrOf(TY_STRUCT));
+      const SymbolType structType = thisEntry->getType().getContainedTy();
+      llvm::Constant *defaultStruct = getDefaultValueForSymbolType(structType);
+      builder.CreateStore(defaultStruct, proc->getArg(0));
     }
 
     // Visit procedure body

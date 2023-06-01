@@ -1,0 +1,14 @@
+type Test struct {
+    int i = 12
+    string s
+}
+
+p Test.ctor() {
+    this.i = 14;
+}
+
+f<int> main() {
+    Test t = Test();
+    printf("Int: %d\n", t.i);
+    printf("String: %s\n", t.s);
+}

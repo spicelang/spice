@@ -346,6 +346,7 @@ public:
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
+  bool isCtor = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers procedureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
   Scope *structScope = nullptr;

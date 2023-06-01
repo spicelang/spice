@@ -1,0 +1,10 @@
+type Test struct {
+    int i = 12
+    string s = "test"
+}
+
+f<int> main() {
+    Test t;
+    printf("Int: %d\n", t.i);
+    printf("String: %s\n", t.s);
+}

@@ -29,7 +29,7 @@ ExecutionEngine::ExecutionEngine(GlobalResourceManager &resourceManager, SourceF
  * @return exit code of the program
  */
 int ExecutionEngine::executeMainFct() {
-  std::vector<std::string> argv;
+  std::vector<std::string> argv = {"root"};
   const char *const *envp = {};
 
   llvm::Function *mainFct = executionEngine->FindFunctionNamed("main");
