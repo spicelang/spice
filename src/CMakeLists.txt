@@ -15,8 +15,6 @@ set(SOURCES
         global/CacheManager.h
         global/RuntimeModuleManager.cpp
         global/RuntimeModuleManager.h
-        global/ThreadFactory.cpp
-        global/ThreadFactory.h
         # CLI
         cli/CLIInterface.cpp
         cli/CLIInterface.h

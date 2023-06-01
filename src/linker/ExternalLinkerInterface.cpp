@@ -6,7 +6,6 @@
 
 #include <exception/CompilerError.h>
 #include <exception/LinkerError.h>
-#include <global/ThreadFactory.h>
 #include <util/FileUtil.h>
 
 namespace spice::compiler {
@@ -23,10 +22,6 @@ void ExternalLinkerInterface::prepare() {
     addLinkerFlag("-Wl,--no-entry");
     addLinkerFlag("-Wl,--export-all");
   }
-
-  // Add required linker flags
-  if (threadFactory.isUsingThreads())
-    addLinkerFlag("-pthread");
 }
 
 /**
