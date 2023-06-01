@@ -74,16 +74,16 @@ std::string IROptimizer::getOptimizedIRString(llvm::Module *module) const {
 }
 
 llvm::OptimizationLevel IROptimizer::getLLVMOptLevelFromSpiceOptLevel() const {
-  switch (cliOptions.optLevel) { // Get LLVM opt level from Spice opt level
-  case 1:
+  switch (cliOptions.optLevel) {
+  case O1:
     return llvm::OptimizationLevel::O1;
-  case 2:
+  case O2:
     return llvm::OptimizationLevel::O2;
-  case 3:
+  case O3:
     return llvm::OptimizationLevel::O3;
-  case 4:
+  case Os:
     return llvm::OptimizationLevel::Os;
-  case 5:
+  case Oz:
     return llvm::OptimizationLevel::Oz;
   default:
     return llvm::OptimizationLevel::O0;

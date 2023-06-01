@@ -31,7 +31,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std
   const std::filesystem::path absolutePath = std::filesystem::absolute(sourceFileDir + FileUtil::DIR_SEPARATOR + sourceFileName);
   llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir);
   compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C11, cuDiFile, producerString,
-                                             irGenerator->cliOptions.optLevel > 0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
+                                             irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
                                              false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
   // Create another DIFile as scope for subprograms
