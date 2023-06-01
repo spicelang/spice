@@ -6,6 +6,8 @@ target triple = "x86_64-w64-windows-gnu"
 %__Vector__bool_string = type { i1, ptr }
 
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"Test string\00", align 1
+@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
+@1 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
 @anon.string.1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
 @printf.str.0 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
 @anon.string.2 = private unnamed_addr constant [16 x i8] c"Another message\00", align 1
@@ -17,6 +19,7 @@ define private void @_mp__Vector__void__ctor(ptr noundef nonnull %0) {
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   store ptr @anon.string.0, ptr %msg, align 8
+  store %__Vector__bool_string { i1 false, ptr @0 }, ptr %0, align 8
   %2 = load ptr, ptr %this, align 8
   %field1_addr = getelementptr inbounds %__Vector__bool_string, ptr %2, i32 0, i32 0
   store i1 false, ptr %field1_addr, align 1
@@ -32,6 +35,7 @@ define private void @_mp__Vector__void__ctor__string(ptr noundef nonnull %0, ptr
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   store ptr %1, ptr %msg, align 8
+  store %__Vector__bool_string { i1 false, ptr @1 }, ptr %0, align 8
   %3 = load ptr, ptr %this, align 8
   %field1_addr = getelementptr inbounds %__Vector__bool_string, ptr %3, i32 0, i32 0
   store i1 false, ptr %field1_addr, align 1

@@ -14,6 +14,7 @@ define private void @_mp__Counter__void__ctor__long(ptr noundef nonnull %0, i64 
   %initialValue = alloca i64, align 8
   store ptr %0, ptr %this, align 8
   store i64 %1, ptr %initialValue, align 8
+  store %__Counter__long zeroinitializer, ptr %0, align 8
   %3 = load ptr, ptr %this, align 8
   %value_addr = getelementptr inbounds %__Counter__long, ptr %3, i32 0, i32 0
   %4 = load i64, ptr %initialValue, align 8

@@ -15,8 +15,7 @@ class ThreadFactory;
 class ExternalLinkerInterface {
 public:
   // Constructors
-  explicit ExternalLinkerInterface(const ThreadFactory &threadFactory, const CliOptions &cliOptions)
-      : threadFactory(threadFactory), cliOptions(cliOptions), outputPath(cliOptions.outputPath){};
+  explicit ExternalLinkerInterface(const CliOptions &cliOptions) : cliOptions(cliOptions), outputPath(cliOptions.outputPath){};
 
   // Public methods
   void prepare();
@@ -29,7 +28,6 @@ public:
 
 private:
   // Members
-  const ThreadFactory &threadFactory;
   const CliOptions &cliOptions;
   std::vector<std::string> objectFilePaths;
   std::vector<std::string> linkerFlags = {"-fuse-ld=lld", "-flto"};

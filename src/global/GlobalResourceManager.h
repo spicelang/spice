@@ -4,7 +4,6 @@
 
 #include <global/CacheManager.h>
 #include <global/RuntimeModuleManager.h>
-#include <global/ThreadFactory.h>
 #include <linker/ExternalLinkerInterface.h>
 #include <util/Timer.h>
 
@@ -43,7 +42,6 @@ public:
   // Public members
   std::unordered_map<std::string, SourceFile *> sourceFiles;
   const CliOptions &cliOptions;
-  ThreadFactory threadFactory;
   ExternalLinkerInterface linker;
   CacheManager cacheManager;
   RuntimeModuleManager runtimeModuleManager;

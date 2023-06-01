@@ -397,7 +397,7 @@ void SourceFile::runDefaultIROptimizer() {
     return;
 
   // Skip this stage if optimization is disabled
-  if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
+  if (resourceManager.cliOptions.optLevel < O1 || resourceManager.cliOptions.optLevel > Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);
@@ -428,7 +428,7 @@ void SourceFile::runPreLinkIROptimizer() {
     return;
 
   // Skip this stage if optimization is disabled
-  if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
+  if (resourceManager.cliOptions.optLevel < O1 || resourceManager.cliOptions.optLevel > Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);
@@ -482,7 +482,7 @@ void SourceFile::runPostLinkIROptimizer() {
     return;
 
   // Skip this stage if optimization is disabled
-  if (resourceManager.cliOptions.optLevel < 1 || resourceManager.cliOptions.optLevel > 5)
+  if (resourceManager.cliOptions.optLevel < O1 || resourceManager.cliOptions.optLevel > Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);

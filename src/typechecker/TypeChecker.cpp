@@ -338,6 +338,18 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
   return namedParams;
 }
 
+std::any TypeChecker::visitField(FieldNode *node) {
+  const auto fieldType = std::any_cast<SymbolType>(visit(node->dataType()));
+
+  if (node->defaultValue()) {
+    const auto defaultValueType = std::any_cast<ExprResult>(visit(node->defaultValue())).type;
+    if (defaultValueType != fieldType)
+      throw SemanticError(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type");
+  }
+
+  return fieldType;
+}
+
 std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Visit return type
   SymbolType returnType(TY_DYN);

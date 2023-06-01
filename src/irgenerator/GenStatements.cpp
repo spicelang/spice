@@ -129,7 +129,7 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Only generate assertions with -O0
-  if (cliOptions.optLevel != 0)
+  if (cliOptions.optLevel != O0)
     return nullptr;
 
   // Create blocks

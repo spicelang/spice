@@ -95,7 +95,7 @@ void CLIInterface::createInterface() {
  */
 void CLIInterface::validate() const {
   // Error out when opt level > 0 and debug info enabled
-  if (cliOptions.optLevel > 0 && cliOptions.generateDebugInfo)
+  if (cliOptions.optLevel > O0 && cliOptions.generateDebugInfo)
     throw CliError(
         OPT_DEBUG_INFO_INCOMPATIBILITY,
         "Optimization does not work reliably when emitting debug info. The cli argument -g only works in combination with -O0.");
@@ -254,17 +254,17 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
 
   // Opt levels
   subCmd->add_flag_callback(
-      "-O0", [&]() { cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
+      "-O0", [&]() { cliOptions.optLevel = O0; }, "Disable optimization for the output executable.");
   subCmd->add_flag_callback(
-      "-O1", [&]() { cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
+      "-O1", [&]() { cliOptions.optLevel = O1; }, "Optimization level 1. Only basic optimization is executed.");
   subCmd->add_flag_callback(
-      "-O2", [&]() { cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
+      "-O2", [&]() { cliOptions.optLevel = O2; }, "Optimization level 2. More advanced optimization is applied.");
   subCmd->add_flag_callback(
-      "-O3", [&]() { cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
+      "-O3", [&]() { cliOptions.optLevel = O3; }, "Optimization level 3. Aggressive optimization for best performance.");
   subCmd->add_flag_callback(
-      "-Os", [&]() { cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
+      "-Os", [&]() { cliOptions.optLevel = Os; }, "Optimization level s. Size optimization for output executable.");
   subCmd->add_flag_callback(
-      "-Oz", [&]() { cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
+      "-Oz", [&]() { cliOptions.optLevel = Oz; }, "Optimization level z. Aggressive optimization for best size.");
   subCmd->add_flag_callback(
       "-lto", [&]() { cliOptions.useLTO = true; }, "Enable link time optimization (LTO)");
 

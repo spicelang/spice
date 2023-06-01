@@ -346,6 +346,7 @@ public:
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
+  bool isCtor = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers procedureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
   Scope *structScope = nullptr;
@@ -849,6 +850,7 @@ public:
 
   // Public get methods
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] ConstantNode *defaultValue() const { return getChild<ConstantNode>(); }
 
   // Public members
   std::string fieldName;

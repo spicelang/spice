@@ -52,7 +52,7 @@ void execTestCase(const TestCase &testCase) {
                            /* dumpAssembly= */ false,
                            /* dumpSymbolTables= */ false,
                            /* disableAstOpt= */ false,
-                           /* optLevel= */ 0,
+                           /* optLevel= */ O0,
                            /* useLTO= */ false,
                            /* noEntryFct= */ false,
                            /* generateDebugInfo= */ false,
@@ -124,11 +124,11 @@ void execTestCase(const TestCase &testCase) {
         });
 
     // Check optimized IR code
-    for (short i = 1; i <= 5; i++) {
+    for (uint8_t i = 1; i <= 5; i++) {
       TestUtil::checkRefMatch(
           testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_OPT_IR[i - 1],
           [&]() {
-            cliOptions.optLevel = i;
+            cliOptions.optLevel = static_cast<OptLevel>(i);
 
             if (cliOptions.useLTO) {
               mainSourceFile->runPreLinkIROptimizer();
@@ -147,7 +147,7 @@ void execTestCase(const TestCase &testCase) {
     }
 
     // Link the bitcode if not happened yet
-    if (cliOptions.useLTO && cliOptions.optLevel == 0)
+    if (cliOptions.useLTO && cliOptions.optLevel == O0)
       mainSourceFile->runBitcodeLinker();
 
     // Check assembly code

@@ -12,6 +12,15 @@ const char *const TARGET_UNKNOWN = "unknown";
 const char *const TARGET_WASM32 = "wasm32";
 const char *const TARGET_WASM64 = "wasm64";
 
+enum OptLevel : uint8_t {
+  O0 = 0, // No optimization
+  O1 = 1, // Only basic optimizations
+  O2 = 2, // Default optimization level
+  O3 = 3, // Aggressively optimize for performance
+  Os = 4, // Optimize for code size
+  Oz = 5, // Aggressively optimize for code size
+};
+
 /**
  * Representation of the various cli options
  */
@@ -36,7 +45,7 @@ struct CliOptions {
   bool dumpAssembly = false;
   bool dumpSymbolTables = false;
   bool disableAstOpt = false;
-  short optLevel = 2; // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
+  OptLevel optLevel = O2;
   bool useLTO = false;
   bool noEntryFct = false;
   bool generateDebugInfo = false;

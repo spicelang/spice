@@ -1,5 +1,5 @@
 type Test struct {
-    int i = 12
+    int i
     string s = "test"
 }
 

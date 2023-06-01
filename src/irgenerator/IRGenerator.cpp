@@ -154,8 +154,8 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
   if (symbolType.is(TY_BOOL))
     return builder.getFalse();
 
-  // Pointer
-  if (symbolType.is(TY_PTR))
+  // Pointer or reference
+  if (symbolType.isOneOf({TY_PTR, TY_REF}))
     return llvm::Constant::getNullValue(builder.getPtrTy());
 
   // Array
@@ -191,8 +191,16 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
       SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupByIndex(i);
       assert(fieldEntry != nullptr);
 
+      // Retrieve field node
+      const auto fieldNode = dynamic_cast<FieldNode *>(fieldEntry->declNode);
+      assert(fieldNode != nullptr);
+
       // Retrieve default field value
-      llvm::Constant *defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getType());
+      llvm::Constant *defaultFieldValue;
+      if (fieldNode->defaultValue())
+        defaultFieldValue = std::any_cast<llvm::Constant *>(visit(fieldNode->defaultValue()));
+      else
+        defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getType());
 
       fieldConstants.push_back(defaultFieldValue);
     }

@@ -166,6 +166,9 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   if (node->isMethod)
     currentScope = node->structScope->parent;
 
+  // Check if this is a constructor
+  node->isCtor = node->procName->nameFragments.back() == CTOR_FUNCTION_NAME;
+
   return nullptr;
 }
 
