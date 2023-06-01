@@ -791,6 +791,8 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
     ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::DataTypeContext *>(subTree); rule != nullptr) // DataType
       currentNode = fieldNode->createChild<DataTypeNode>(CodeLoc(rule->start, filePath));
+    else if (rule = dynamic_cast<SpiceParser::ConstantContext *>(subTree); rule != nullptr) // Constant
+      currentNode = fieldNode->createChild<ConstantNode>(CodeLoc(rule->start, filePath));
     else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
 

@@ -1,0 +1,5 @@
+type Test struct {
+    int i = 5.67
+}
+
+f<int> main() {}

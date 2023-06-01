@@ -849,6 +849,7 @@ public:
 
   // Public get methods
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] ConstantNode *defaultValue() const { return getChild<ConstantNode>(); }
 
   // Public members
   std::string fieldName;

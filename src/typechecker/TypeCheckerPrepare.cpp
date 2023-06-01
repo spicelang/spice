@@ -319,7 +319,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   fieldTypes.reserve(node->fields().size());
   for (FieldNode *field : node->fields()) {
     // Visit field type
-    auto fieldType = std::any_cast<SymbolType>(visit(field->dataType()));
+    auto fieldType = std::any_cast<SymbolType>(visit(field));
 
     // Check for struct with infinite size.
     // This can happen if the struct A has a field with type A

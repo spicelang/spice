@@ -1,13 +1,10 @@
-import "std/os/thread";
-
-p threadRoutine() {
-    printf("Test\n");
-    printf("Hello from thread: %d\n", getThreadId());
+type Test struct {
+    int i = 12
+    string s = "test"
 }
 
 f<int> main() {
-    Thread t1 = Thread(threadRoutine);
-    Thread t2 = Thread(threadRoutine);
-    t1.join();
-    t2.join();
+    Test t;
+    printf("Int: %d\n", t.i);
+    printf("String: %s\n", t.s);
 }
