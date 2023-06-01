@@ -61,6 +61,10 @@ public:
   std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) override { return buildRule(ctx); }
   std::any visitSpecifier(SpiceParser::SpecifierContext *ctx) override { return buildRule(ctx); }
+  std::any visitModAttr(SpiceParser::ModAttrContext *ctx) override { return buildRule(ctx); }
+  std::any visitFctAttr(SpiceParser::FctAttrContext *ctx) override { return buildRule(ctx); }
+  std::any visitAttrLst(SpiceParser::AttrLstContext *ctx) override { return buildRule(ctx); }
+  std::any visitAttr(SpiceParser::AttrContext *ctx) override { return buildRule(ctx); }
   std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override { return buildRule(ctx); }
@@ -87,7 +91,7 @@ public:
   std::any visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) override { return buildRule(ctx); }
   std::any visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) override { return buildRule(ctx); }
   std::any visitValue(SpiceParser::ValueContext *ctx) override { return buildRule(ctx); }
-  std::any visitFunctionCall(SpiceParser::FunctionCallContext *ctx) override { return buildRule(ctx); }
+  std::any visitFctCall(SpiceParser::FctCallContext *ctx) override { return buildRule(ctx); }
   std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override { return buildRule(ctx); }
   std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override { return buildRule(ctx); }
   std::any visitConstant(SpiceParser::ConstantContext *ctx) override { return buildRule(ctx); }

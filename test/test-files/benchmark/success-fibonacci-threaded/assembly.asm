@@ -39,6 +39,21 @@
 	popq	%rsi
 	retq
 
+	.def	.L_p__void__void__calcFib30;
+	.scl	3;
+	.type	32;
+	.endef
+	.p2align	4, 0x90
+.L_p__void__void__calcFib30:
+	subq	$40, %rsp
+	movl	$30, %ecx
+	callq	.L_f__void__int__fib__int
+	leaq	.Lprintf.str.0(%rip), %rcx
+	movl	%eax, %edx
+	callq	printf
+	addq	$40, %rsp
+	retq
+
 	.def	main;
 	.scl	2;
 	.type	32;
@@ -63,91 +78,88 @@ main:
 	.seh_pushreg %rdi
 	pushq	%rbx
 	.seh_pushreg %rbx
-	subq	$120, %rsp
-	.seh_stackalloc 120
-	leaq	112(%rsp), %rbp
-	.seh_setframe %rbp, 112
+	subq	$104, %rsp
+	.seh_stackalloc 104
+	leaq	96(%rsp), %rbp
+	.seh_setframe %rbp, 96
 	.seh_endprologue
 	callq	__main
-	leaq	-72(%rbp), %rcx
-	leaq	.L_thread0(%rip), %r8
-	movq	%rbp, %r9
-	xorl	%edx, %edx
-	callq	pthread_create
-	movq	-72(%rbp), %rax
+	leaq	-64(%rbp), %r13
+	addq	$8, %r13
+	leaq	-64(%rbp), %r12
+	addq	$16, %r12
+	leaq	-64(%rbp), %r15
+	addq	$24, %r15
+	leaq	-64(%rbp), %r14
+	addq	$32, %r14
+	leaq	-64(%rbp), %rbx
+	addq	$40, %rbx
+	leaq	-64(%rbp), %rdi
+	addq	$48, %rdi
+	leaq	-64(%rbp), %rsi
+	addq	$56, %rsi
+	movq	%rbp, %rcx
+	leaq	.L_p__void__void__calcFib30(%rip), %rdx
+	callq	"_mp__Thread__void__ctor__p()"
+	movq	(%rbp), %rax
+	movq	%rax, -64(%rbp)
+	movq	%rbp, %rcx
+	leaq	.L_p__void__void__calcFib30(%rip), %rdx
+	callq	"_mp__Thread__void__ctor__p()"
+	movq	(%rbp), %rax
+	movq	%rax, -56(%rbp)
+	movq	%rbp, %rcx
+	leaq	.L_p__void__void__calcFib30(%rip), %rdx
+	callq	"_mp__Thread__void__ctor__p()"
+	movq	(%rbp), %rax
+	movq	%rax, -48(%rbp)
+	movq	%rbp, %rcx
+	leaq	.L_p__void__void__calcFib30(%rip), %rdx
+	callq	"_mp__Thread__void__ctor__p()"
+	movq	(%rbp), %rax
+	movq	%rax, -40(%rbp)
+	movq	%rbp, %rcx
+	leaq	.L_p__void__void__calcFib30(%rip), %rdx
+	callq	"_mp__Thread__void__ctor__p()"
+	movq	(%rbp), %rax
+	movq	%rax, -32(%rbp)
+	movq	%rbp, %rcx
+	leaq	.L_p__void__void__calcFib30(%rip), %rdx
+	callq	"_mp__Thread__void__ctor__p()"
+	movq	(%rbp), %rax
+	movq	%rax, -24(%rbp)
+	movq	%rbp, %rcx
+	leaq	.L_p__void__void__calcFib30(%rip), %rdx
+	callq	"_mp__Thread__void__ctor__p()"
+	movq	(%rbp), %rax
+	movq	%rax, -16(%rbp)
+	movq	%rbp, %rcx
+	leaq	.L_p__void__void__calcFib30(%rip), %rdx
+	callq	"_mp__Thread__void__ctor__p()"
+	movq	(%rbp), %rax
 	movq	%rax, -8(%rbp)
-	leaq	-64(%rbp), %rcx
-	leaq	.L_thread0(%rip), %r8
-	movq	%rbp, %r9
-	xorl	%edx, %edx
-	callq	pthread_create
-	movq	-64(%rbp), %rdi
-	leaq	-56(%rbp), %rcx
-	leaq	.L_thread0(%rip), %r8
-	movq	%rbp, %r9
-	xorl	%edx, %edx
-	callq	pthread_create
-	movq	-56(%rbp), %rbx
-	leaq	-48(%rbp), %rcx
-	leaq	.L_thread0(%rip), %r8
-	movq	%rbp, %r9
-	xorl	%edx, %edx
-	callq	pthread_create
-	movq	-48(%rbp), %r14
-	leaq	-40(%rbp), %rcx
-	leaq	.L_thread0(%rip), %r8
-	movq	%rbp, %r9
-	xorl	%edx, %edx
-	callq	pthread_create
-	movq	-40(%rbp), %r15
-	leaq	-32(%rbp), %rcx
-	leaq	.L_thread0(%rip), %r8
-	movq	%rbp, %r9
-	xorl	%edx, %edx
-	callq	pthread_create
-	movq	-32(%rbp), %r12
-	leaq	-24(%rbp), %rcx
-	leaq	.L_thread0(%rip), %r8
-	movq	%rbp, %r9
-	xorl	%edx, %edx
-	callq	pthread_create
-	movq	-24(%rbp), %r13
-	leaq	-16(%rbp), %rcx
-	leaq	.L_thread0(%rip), %r8
-	movq	%rbp, %r9
-	xorl	%edx, %edx
-	callq	pthread_create
-	movq	-16(%rbp), %rsi
 	leaq	.Lstr(%rip), %rcx
 	callq	puts
-	movq	-8(%rbp), %rcx
-	xorl	%edx, %edx
-	callq	pthread_join
-	movq	%rdi, %rcx
-	xorl	%edx, %edx
-	callq	pthread_join
-	movq	%rbx, %rcx
-	xorl	%edx, %edx
-	callq	pthread_join
-	movq	%r14, %rcx
-	xorl	%edx, %edx
-	callq	pthread_join
-	movq	%r15, %rcx
-	xorl	%edx, %edx
-	callq	pthread_join
-	movq	%r12, %rcx
-	xorl	%edx, %edx
-	callq	pthread_join
+	leaq	-64(%rbp), %rcx
+	callq	_mp__Thread__void__join
 	movq	%r13, %rcx
-	xorl	%edx, %edx
-	callq	pthread_join
+	callq	_mp__Thread__void__join
+	movq	%r12, %rcx
+	callq	_mp__Thread__void__join
+	movq	%r15, %rcx
+	callq	_mp__Thread__void__join
+	movq	%r14, %rcx
+	callq	_mp__Thread__void__join
+	movq	%rbx, %rcx
+	callq	_mp__Thread__void__join
+	movq	%rdi, %rcx
+	callq	_mp__Thread__void__join
 	movq	%rsi, %rcx
-	xorl	%edx, %edx
-	callq	pthread_join
+	callq	_mp__Thread__void__join
 	leaq	.Lprintf.str.2(%rip), %rcx
 	callq	printf
 	xorl	%eax, %eax
-	addq	$120, %rsp
+	addq	$104, %rsp
 	popq	%rbx
 	popq	%rdi
 	popq	%rsi
@@ -158,22 +170,6 @@ main:
 	popq	%rbp
 	retq
 	.seh_endproc
-
-	.def	.L_thread0;
-	.scl	3;
-	.type	32;
-	.endef
-	.p2align	4, 0x90
-.L_thread0:
-	subq	$40, %rsp
-	movl	$30, %ecx
-	callq	.L_f__void__int__fib__int
-	leaq	.Lprintf.str.0(%rip), %rcx
-	movl	%eax, %edx
-	callq	printf
-	xorl	%eax, %eax
-	addq	$40, %rsp
-	retq
 
 	.section	.rdata,"dr"
 .Lprintf.str.0:

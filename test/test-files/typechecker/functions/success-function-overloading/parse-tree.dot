@@ -540,14 +540,14 @@ digraph {
  L13C14_postfixUnaryExpr -> L13C14_atomicExpr;
  L13C14_value [color="lightgreen",label="value"];
  L13C14_atomicExpr -> L13C14_value;
- L13C14_functionCall [color="lightgreen",label="functionCall"];
- L13C14_value -> L13C14_functionCall;
+ L13C14_fctCall [color="lightgreen",label="fctCall"];
+ L13C14_value -> L13C14_fctCall;
  L13C14 [color="lightblue",label="IDENTIFIER: calledFunction"];
- L13C14_functionCall -> L13C14
+ L13C14_fctCall -> L13C14
  L13C28 [color="lightblue",label="LPAREN: ("];
- L13C14_functionCall -> L13C28
+ L13C14_fctCall -> L13C28
  L13C29_argLst [color="lightgreen",label="argLst"];
- L13C14_functionCall -> L13C29_argLst;
+ L13C14_fctCall -> L13C29_argLst;
  L13C29_assignExpr [color="lightgreen",label="assignExpr"];
  L13C29_argLst -> L13C29_assignExpr;
  L13C29_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -623,7 +623,7 @@ digraph {
  L13C32 [color="lightblue",label="FALSE: false"];
  L13C32_constant -> L13C32
  L13C37 [color="lightblue",label="RPAREN: )"];
- L13C14_functionCall -> L13C37
+ L13C14_fctCall -> L13C37
  L13C38 [color="lightblue",label="SEMICOLON: ;"];
  L13C4_stmt -> L13C38
  L14C4_stmt [color="lightgreen",label="stmt"];
@@ -760,14 +760,14 @@ digraph {
  L15C10_postfixUnaryExpr -> L15C10_atomicExpr;
  L15C10_value [color="lightgreen",label="value"];
  L15C10_atomicExpr -> L15C10_value;
- L15C10_functionCall [color="lightgreen",label="functionCall"];
- L15C10_value -> L15C10_functionCall;
+ L15C10_fctCall [color="lightgreen",label="fctCall"];
+ L15C10_value -> L15C10_fctCall;
  L15C10 [color="lightblue",label="IDENTIFIER: calledFunction"];
- L15C10_functionCall -> L15C10
+ L15C10_fctCall -> L15C10
  L15C24 [color="lightblue",label="LPAREN: ("];
- L15C10_functionCall -> L15C24
+ L15C10_fctCall -> L15C24
  L15C25_argLst [color="lightgreen",label="argLst"];
- L15C10_functionCall -> L15C25_argLst;
+ L15C10_fctCall -> L15C25_argLst;
  L15C25_assignExpr [color="lightgreen",label="assignExpr"];
  L15C25_argLst -> L15C25_assignExpr;
  L15C25_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -805,7 +805,7 @@ digraph {
  L15C25 [color="lightblue",label="STRING_LIT: \"test\""];
  L15C25_constant -> L15C25
  L15C31 [color="lightblue",label="RPAREN: )"];
- L15C10_functionCall -> L15C31
+ L15C10_fctCall -> L15C31
  L15C32 [color="lightblue",label="SEMICOLON: ;"];
  L15C4_stmt -> L15C32
  L16C0 [color="lightblue",label="RBRACE: }"];

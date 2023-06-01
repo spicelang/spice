@@ -162,10 +162,10 @@ digraph {
  L5C22_PostfixUnaryExpr -> L5C22_AtomicExpr;
  L5C22_Value [color="lightgreen",label="Value"];
  L5C22_AtomicExpr -> L5C22_Value;
- L5C22_FunctionCall [color="lightgreen",label="FunctionCall"];
- L5C22_Value -> L5C22_FunctionCall;
+ L5C22_FctCall [color="lightgreen",label="FctCall"];
+ L5C22_Value -> L5C22_FctCall;
  L5C30_ArgLst [color="lightgreen",label="ArgLst"];
- L5C22_FunctionCall -> L5C30_ArgLst;
+ L5C22_FctCall -> L5C30_ArgLst;
  L5C30_AssignExpr [color="lightgreen",label="AssignExpr"];
  L5C30_ArgLst -> L5C30_AssignExpr;
  L5C30_TernaryExpr [color="lightgreen",label="TernaryExpr"];
@@ -298,10 +298,10 @@ digraph {
  L10C19_PostfixUnaryExpr -> L10C19_AtomicExpr;
  L10C19_Value [color="lightgreen",label="Value"];
  L10C19_AtomicExpr -> L10C19_Value;
- L10C19_FunctionCall [color="lightgreen",label="FunctionCall"];
- L10C19_Value -> L10C19_FunctionCall;
+ L10C19_FctCall [color="lightgreen",label="FctCall"];
+ L10C19_Value -> L10C19_FctCall;
  L10C27_ArgLst [color="lightgreen",label="ArgLst"];
- L10C19_FunctionCall -> L10C27_ArgLst;
+ L10C19_FctCall -> L10C27_ArgLst;
  L10C27_AssignExpr [color="lightgreen",label="AssignExpr"];
  L10C27_ArgLst -> L10C27_AssignExpr;
  L10C27_TernaryExpr [color="lightgreen",label="TernaryExpr"];

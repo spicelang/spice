@@ -68,9 +68,12 @@ ext f<int> rmdir(string);
 ext f<int> rename(string, string);
 ext f<int> access(string, int);
 ext f<int> stat(string, FileStat*);
-ext f<byte*> FindFirstFileA(string, DirEntry*) dll;
-ext f<bool> FindNextFileA(byte*, DirEntry*) dll;
-ext f<bool> FindClose(byte*) dll;
+#[core.linker.dll = true]
+ext f<byte*> FindFirstFileA(string, DirEntry*);
+#[core.linker.dll = true]
+ext f<bool> FindNextFileA(byte*, DirEntry*);
+#[core.linker.dll = true]
+ext f<bool> FindClose(byte*);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.

@@ -14,8 +14,8 @@ const uint32 LEAF_BINS_INDEX_MASK = 0x7;
 const uint32 NUM_LEAF_BINS = 256; // NUM_TOP_BINS * BINS_PER_LEAF
 
 // External functions
-ext<byte*> malloc(long);
-ext free(byte*);
+ext f<byte*> malloc(long);
+ext p free(byte*);
 
 type Allocation struct {
     uint32 offset

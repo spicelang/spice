@@ -1200,8 +1200,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
 std::any TypeChecker::visitValue(ValueNode *node) {
   // Function call
-  if (node->functionCall())
-    return visit(node->functionCall());
+  if (node->fctCall())
+    return visit(node->fctCall());
 
   // Array initialization
   if (node->arrayInitialization())
@@ -1260,8 +1260,8 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(symbolType, manIdx)};
 }
 
-std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
-  FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
+std::any TypeChecker::visitFctCall(FctCallNode *node) {
+  FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Retrieve arg types
   data.argTypes.clear();
@@ -1284,9 +1284,9 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
     // Decide of which type the function call is
     const SymbolType &baseType = firstFragEntry->getType().getBaseType();
     if (baseType.is(TY_STRUCT) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
-      data.callType = FunctionCallNode::TYPE_METHOD;
+      data.callType = FctCallNode::TYPE_METHOD;
     } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
-      data.callType = FunctionCallNode::TYPE_FCT_PTR;
+      data.callType = FctCallNode::TYPE_FCT_PTR;
     }
   }
 
@@ -1391,8 +1391,8 @@ std::any TypeChecker::visitFunctionCall(FunctionCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx)};
 }
 
-std::string TypeChecker::visitOrdinaryFctCall(FunctionCallNode *node) {
-  FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
+std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
+  FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if this is a ctor call to the String type
   const bool isStringRt = rootScope->lookupStrict(STROBJ_NAME) != nullptr;
@@ -1431,7 +1431,7 @@ std::string TypeChecker::visitOrdinaryFctCall(FunctionCallNode *node) {
 
   // Check if the target symbol is a struct -> this must be a constructor call
   if (functionEntry != nullptr && functionEntry->getType().is(TY_STRUCT))
-    data.callType = FunctionCallNode::TYPE_CTOR;
+    data.callType = FctCallNode::TYPE_CTOR;
 
   // Get concrete template types
   if (node->hasTemplateTypes) {
@@ -1501,8 +1501,8 @@ std::string TypeChecker::visitOrdinaryFctCall(FunctionCallNode *node) {
   return knownStructName;
 }
 
-void TypeChecker::visitFctPtrCall(FunctionCallNode *node, const SymbolType &functionType) const {
-  FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
+void TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionType) const {
+  FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if the given argument types match the type
   const std::vector<SymbolType> &actualArgTypes = data.argTypes;
@@ -1518,8 +1518,8 @@ void TypeChecker::visitFctPtrCall(FunctionCallNode *node, const SymbolType &func
   }
 }
 
-void TypeChecker::visitMethodCall(FunctionCallNode *node, Scope *structScope) const {
-  FunctionCallNode::FunctionCallData &data = node->data.at(manIdx);
+void TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
+  FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Methods cannot have template types
   if (node->hasTemplateTypes)

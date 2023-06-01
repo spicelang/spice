@@ -29,15 +29,15 @@ public type File struct {
 }
 
 // Link external functions
-ext<int> open(string, int...);
-ext<FilePtr*> fopen(string, string);
-ext<int> fclose(FilePtr*);
-ext<int> fgetc(FilePtr*);
-ext<int> fputc(int, FilePtr*);
-ext<int> fputs(string, FilePtr*);
-ext<int> access(string, int);
-ext<int> fseek(FilePtr*, long, int);
-ext<long> ftell(FilePtr*);
+ext f<int> open(string, int...);
+ext f<FilePtr*> fopen(string, string);
+ext f<int> fclose(FilePtr*);
+ext f<int> fgetc(FilePtr*);
+ext f<int> fputc(int, FilePtr*);
+ext f<int> fputs(string, FilePtr*);
+ext f<int> access(string, int);
+ext f<int> fseek(FilePtr*, long, int);
+ext f<long> ftell(FilePtr*);
 
 /**
  * Creates an empty file on disk similar to the 'touch' command on Linux.

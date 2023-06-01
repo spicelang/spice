@@ -1,12 +1,12 @@
 ---
-title: Declaration modifiers
+title: Declaration specifiers
 ---
 
-## The `public` modifier
+## The `public` specifier
 
 All structures in Spice, that are accessible from outside the module (like functions, procedures, structs, etc.), have private
 visibility per default. That means that they can't be accessed from outside the module from a source file, that imported the file,
-where the structures live. If you need to access e.g. a struct from outside the module, you need to attach the modifier `public`
+where the structures live. If you need to access e.g. a struct from outside the module, you need to attach the specifier `public`
 to it.
 
 ### Applicable for
@@ -43,9 +43,9 @@ f<int> main() {
 By having private visibility per default, Spice encourages the programmer to adhere to the information hiding principle and expose
 only the things, that need to be exposed to other modules.
 
-## The `inline` modifier
+## The `inline` specifier
 
-The `inline` modifier can be used for functions and procedures to mark them as inlineable for the compiler explicitly. By marking
+The `inline` specifier can be used for functions and procedures to mark them as inlineable for the compiler explicitly. By marking
 a function or procedure as inlineable, the compiler is forced to always inline it.
 
 !!! note
@@ -77,9 +77,9 @@ f<int> main() {
 }
 ```
 
-## The `const` modifier
+## The `const` specifier
 
-This modifier can be used to make variables immutable after the first assignment.
+This specifier can be used to make variables immutable after the first assignment.
 
 ### Applicable for
 
@@ -98,7 +98,7 @@ f<int> main() {
 }
 ```
 
-## The `signed` modifier
+## The `signed` specifier
 
 Marks a numeric variable to use signed numbers explicitly.
 
@@ -116,7 +116,7 @@ f<int> main() {
 }
 ```
 
-## The `unsigned` modifier
+## The `unsigned` specifier
 
 Marks a numeric variable to use unsigned numbers explicitly.
 

@@ -58,6 +58,10 @@ public:
   std::any visitDeclStmt(DeclStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitSpecifierLst(SpecifierLstNode *ctx) override { return buildNode(ctx); }
   std::any visitSpecifier(SpecifierNode *ctx) override { return buildNode(ctx); }
+  std::any visitModAttr(ModAttrNode *ctx) override { return buildNode(ctx); }
+  std::any visitFctAttr(FctAttrNode *ctx) override { return buildNode(ctx); }
+  std::any visitAttrLst(AttrLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitAttr(AttrNode *ctx) override { return buildNode(ctx); }
   std::any visitImportStmt(ImportStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitReturnStmt(ReturnStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitBreakStmt(BreakStmtNode *ctx) override { return buildNode(ctx); }
@@ -84,7 +88,7 @@ public:
   std::any visitAtomicExpr(AtomicExprNode *ctx) override { return buildNode(ctx); }
   std::any visitValue(ValueNode *ctx) override { return buildNode(ctx); }
   std::any visitConstant(ConstantNode *ctx) override { return buildNode(ctx); }
-  std::any visitFunctionCall(FunctionCallNode *ctx) override { return buildNode(ctx); }
+  std::any visitFctCall(FctCallNode *ctx) override { return buildNode(ctx); }
   std::any visitArrayInitialization(ArrayInitializationNode *ctx) override { return buildNode(ctx); }
   std::any visitStructInstantiation(StructInstantiationNode *ctx) override { return buildNode(ctx); }
   std::any visitDataType(DataTypeNode *ctx) override { return buildNode(ctx); }
@@ -200,6 +204,14 @@ private:
       return "SpecifierLst";
     if (std::is_same<SpecifierNode, T>())
       return "Specifier";
+    if (std::is_same<ModAttrNode, T>())
+      return "ModAttr";
+    if (std::is_same<FctAttrNode, T>())
+      return "FctAttr";
+    if (std::is_same<AttrLstNode, T>())
+      return "AttrLst";
+    if (std::is_same<AttrNode, T>())
+      return "Attr";
     if (std::is_same<ImportStmtNode, T>())
       return "ImportStmt";
     if (std::is_same<ReturnStmtNode, T>())
@@ -250,8 +262,8 @@ private:
       return "Value";
     if (std::is_same<ConstantNode, T>())
       return "Constant";
-    if (std::is_same<FunctionCallNode, T>())
-      return "FunctionCall";
+    if (std::is_same<FctCallNode, T>())
+      return "FctCall";
     if (std::is_same<ArrayInitializationNode, T>())
       return "ArrayInitialization";
     if (std::is_same<StructInstantiationNode, T>())
@@ -262,6 +274,8 @@ private:
       return "BaseDataType";
     if (std::is_same<CustomDataTypeNode, T>())
       return "CustomDataType";
+    if (std::is_same<FunctionDataTypeNode, T>())
+      return "FunctionDataType";
     throw CompilerError(UNHANDLED_BRANCH, "Unknown node in AST visualizer"); // GCOV_EXCL_LINE
   }
 

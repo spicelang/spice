@@ -186,14 +186,14 @@ digraph {
  L3C11_postfixUnaryExpr -> L3C11_atomicExpr;
  L3C11_value [color="lightgreen",label="value"];
  L3C11_atomicExpr -> L3C11_value;
- L3C11_functionCall [color="lightgreen",label="functionCall"];
- L3C11_value -> L3C11_functionCall;
+ L3C11_fctCall [color="lightgreen",label="fctCall"];
+ L3C11_value -> L3C11_fctCall;
  L3C11 [color="lightblue",label="IDENTIFIER: fibo"];
- L3C11_functionCall -> L3C11
+ L3C11_fctCall -> L3C11
  L3C15 [color="lightblue",label="LPAREN: ("];
- L3C11_functionCall -> L3C15
+ L3C11_fctCall -> L3C15
  L3C16_argLst [color="lightgreen",label="argLst"];
- L3C11_functionCall -> L3C16_argLst;
+ L3C11_fctCall -> L3C16_argLst;
  L3C16_assignExpr [color="lightgreen",label="assignExpr"];
  L3C16_argLst -> L3C16_assignExpr;
  L3C16_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -245,7 +245,7 @@ digraph {
  L3C20 [color="lightblue",label="INT_LIT: 1"];
  L3C20_constant -> L3C20
  L3C21 [color="lightblue",label="RPAREN: )"];
- L3C11_functionCall -> L3C21
+ L3C11_fctCall -> L3C21
  L3C23 [color="lightblue",label="PLUS: +"];
  L3C11_additiveExpr -> L3C23
  L3C25_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
@@ -260,14 +260,14 @@ digraph {
  L3C25_postfixUnaryExpr -> L3C25_atomicExpr;
  L3C25_value [color="lightgreen",label="value"];
  L3C25_atomicExpr -> L3C25_value;
- L3C25_functionCall [color="lightgreen",label="functionCall"];
- L3C25_value -> L3C25_functionCall;
+ L3C25_fctCall [color="lightgreen",label="fctCall"];
+ L3C25_value -> L3C25_fctCall;
  L3C25 [color="lightblue",label="IDENTIFIER: fibo"];
- L3C25_functionCall -> L3C25
+ L3C25_fctCall -> L3C25
  L3C29 [color="lightblue",label="LPAREN: ("];
- L3C25_functionCall -> L3C29
+ L3C25_fctCall -> L3C29
  L3C30_argLst [color="lightgreen",label="argLst"];
- L3C25_functionCall -> L3C30_argLst;
+ L3C25_fctCall -> L3C30_argLst;
  L3C30_assignExpr [color="lightgreen",label="assignExpr"];
  L3C30_argLst -> L3C30_assignExpr;
  L3C30_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -319,7 +319,7 @@ digraph {
  L3C34 [color="lightblue",label="INT_LIT: 2"];
  L3C34_constant -> L3C34
  L3C35 [color="lightblue",label="RPAREN: )"];
- L3C25_functionCall -> L3C35
+ L3C25_fctCall -> L3C35
  L3C36 [color="lightblue",label="SEMICOLON: ;"];
  L3C4_stmt -> L3C36
  L4C0 [color="lightblue",label="RBRACE: }"];
@@ -424,14 +424,14 @@ digraph {
  L7C25_postfixUnaryExpr -> L7C25_atomicExpr;
  L7C25_value [color="lightgreen",label="value"];
  L7C25_atomicExpr -> L7C25_value;
- L7C25_functionCall [color="lightgreen",label="functionCall"];
- L7C25_value -> L7C25_functionCall;
+ L7C25_fctCall [color="lightgreen",label="fctCall"];
+ L7C25_value -> L7C25_fctCall;
  L7C25 [color="lightblue",label="IDENTIFIER: fibo"];
- L7C25_functionCall -> L7C25
+ L7C25_fctCall -> L7C25
  L7C29 [color="lightblue",label="LPAREN: ("];
- L7C25_functionCall -> L7C29
+ L7C25_fctCall -> L7C29
  L7C30_argLst [color="lightgreen",label="argLst"];
- L7C25_functionCall -> L7C30_argLst;
+ L7C25_fctCall -> L7C30_argLst;
  L7C30_assignExpr [color="lightgreen",label="assignExpr"];
  L7C30_argLst -> L7C30_assignExpr;
  L7C30_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -469,7 +469,7 @@ digraph {
  L7C30 [color="lightblue",label="INT_LIT: 30"];
  L7C30_constant -> L7C30
  L7C32 [color="lightblue",label="RPAREN: )"];
- L7C25_functionCall -> L7C32
+ L7C25_fctCall -> L7C32
  L7C33 [color="lightblue",label="RPAREN: )"];
  L7C4_printfCall -> L7C33
  L7C34 [color="lightblue",label="SEMICOLON: ;"];

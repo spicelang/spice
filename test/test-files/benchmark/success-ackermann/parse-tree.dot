@@ -280,14 +280,14 @@ digraph {
  L3C23_postfixUnaryExpr -> L3C23_atomicExpr;
  L3C23_value [color="lightgreen",label="value"];
  L3C23_atomicExpr -> L3C23_value;
- L3C23_functionCall [color="lightgreen",label="functionCall"];
- L3C23_value -> L3C23_functionCall;
+ L3C23_fctCall [color="lightgreen",label="fctCall"];
+ L3C23_value -> L3C23_fctCall;
  L3C23 [color="lightblue",label="IDENTIFIER: ack"];
- L3C23_functionCall -> L3C23
+ L3C23_fctCall -> L3C23
  L3C26 [color="lightblue",label="LPAREN: ("];
- L3C23_functionCall -> L3C26
+ L3C23_fctCall -> L3C26
  L3C27_argLst [color="lightgreen",label="argLst"];
- L3C23_functionCall -> L3C27_argLst;
+ L3C23_fctCall -> L3C27_argLst;
  L3C27_assignExpr [color="lightgreen",label="assignExpr"];
  L3C27_argLst -> L3C27_assignExpr;
  L3C27_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -377,7 +377,7 @@ digraph {
  L3C34 [color="lightblue",label="INT_LIT: 1"];
  L3C34_constant -> L3C34
  L3C35 [color="lightblue",label="RPAREN: )"];
- L3C23_functionCall -> L3C35
+ L3C23_fctCall -> L3C35
  L3C36 [color="lightblue",label="SEMICOLON: ;"];
  L3C16_stmt -> L3C36
  L3C38 [color="lightblue",label="RBRACE: }"];
@@ -422,14 +422,14 @@ digraph {
  L4C11_postfixUnaryExpr -> L4C11_atomicExpr;
  L4C11_value [color="lightgreen",label="value"];
  L4C11_atomicExpr -> L4C11_value;
- L4C11_functionCall [color="lightgreen",label="functionCall"];
- L4C11_value -> L4C11_functionCall;
+ L4C11_fctCall [color="lightgreen",label="fctCall"];
+ L4C11_value -> L4C11_fctCall;
  L4C11 [color="lightblue",label="IDENTIFIER: ack"];
- L4C11_functionCall -> L4C11
+ L4C11_fctCall -> L4C11
  L4C14 [color="lightblue",label="LPAREN: ("];
- L4C11_functionCall -> L4C14
+ L4C11_fctCall -> L4C14
  L4C15_argLst [color="lightgreen",label="argLst"];
- L4C11_functionCall -> L4C15_argLst;
+ L4C11_fctCall -> L4C15_argLst;
  L4C15_assignExpr [color="lightgreen",label="assignExpr"];
  L4C15_argLst -> L4C15_assignExpr;
  L4C15_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -516,14 +516,14 @@ digraph {
  L4C22_postfixUnaryExpr -> L4C22_atomicExpr;
  L4C22_value [color="lightgreen",label="value"];
  L4C22_atomicExpr -> L4C22_value;
- L4C22_functionCall [color="lightgreen",label="functionCall"];
- L4C22_value -> L4C22_functionCall;
+ L4C22_fctCall [color="lightgreen",label="fctCall"];
+ L4C22_value -> L4C22_fctCall;
  L4C22 [color="lightblue",label="IDENTIFIER: ack"];
- L4C22_functionCall -> L4C22
+ L4C22_fctCall -> L4C22
  L4C25 [color="lightblue",label="LPAREN: ("];
- L4C22_functionCall -> L4C25
+ L4C22_fctCall -> L4C25
  L4C26_argLst [color="lightgreen",label="argLst"];
- L4C22_functionCall -> L4C26_argLst;
+ L4C22_fctCall -> L4C26_argLst;
  L4C26_assignExpr [color="lightgreen",label="assignExpr"];
  L4C26_argLst -> L4C26_assignExpr;
  L4C26_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -611,9 +611,9 @@ digraph {
  L4C33 [color="lightblue",label="INT_LIT: 1"];
  L4C33_constant -> L4C33
  L4C34 [color="lightblue",label="RPAREN: )"];
- L4C22_functionCall -> L4C34
+ L4C22_fctCall -> L4C34
  L4C35 [color="lightblue",label="RPAREN: )"];
- L4C11_functionCall -> L4C35
+ L4C11_fctCall -> L4C35
  L4C36 [color="lightblue",label="SEMICOLON: ;"];
  L4C4_stmt -> L4C36
  L5C0 [color="lightblue",label="RBRACE: }"];
@@ -894,14 +894,14 @@ digraph {
  L10C64_postfixUnaryExpr -> L10C64_atomicExpr;
  L10C64_value [color="lightgreen",label="value"];
  L10C64_atomicExpr -> L10C64_value;
- L10C64_functionCall [color="lightgreen",label="functionCall"];
- L10C64_value -> L10C64_functionCall;
+ L10C64_fctCall [color="lightgreen",label="fctCall"];
+ L10C64_value -> L10C64_fctCall;
  L10C64 [color="lightblue",label="IDENTIFIER: ack"];
- L10C64_functionCall -> L10C64
+ L10C64_fctCall -> L10C64
  L10C67 [color="lightblue",label="LPAREN: ("];
- L10C64_functionCall -> L10C67
+ L10C64_fctCall -> L10C67
  L10C68_argLst [color="lightgreen",label="argLst"];
- L10C64_functionCall -> L10C68_argLst;
+ L10C64_fctCall -> L10C68_argLst;
  L10C68_assignExpr [color="lightgreen",label="assignExpr"];
  L10C68_argLst -> L10C68_assignExpr;
  L10C68_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -973,7 +973,7 @@ digraph {
  L10C75 [color="lightblue",label="IDENTIFIER: baseN"];
  L10C75_atomicExpr -> L10C75
  L10C80 [color="lightblue",label="RPAREN: )"];
- L10C64_functionCall -> L10C80
+ L10C64_fctCall -> L10C80
  L10C81 [color="lightblue",label="RPAREN: )"];
  L10C4_printfCall -> L10C81
  L10C82 [color="lightblue",label="SEMICOLON: ;"];

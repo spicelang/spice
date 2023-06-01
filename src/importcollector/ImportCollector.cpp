@@ -11,6 +11,10 @@
 namespace spice::compiler {
 
 std::any ImportCollector::visitEntry(EntryNode *node) {
+  // Visit all module attributes
+  for (ModAttrNode *attr : node->modAttrs())
+    visit(attr);
+
   // Visit all import statements
   for (ImportStmtNode *importStmt : node->importStmts())
     visit(importStmt);
@@ -67,6 +71,18 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
   const auto importedSourceFile = resourceManager.createSourceFile(sourceFile, node->importName, importPath, isStd);
   // Register it as a dependency to the current source file
   sourceFile->addDependency(importedSourceFile, node, node->importName, importPath);
+
+  return nullptr;
+}
+
+std::any ImportCollector::visitModAttr(ModAttrNode *node) {
+  const AttrLstNode *attrs = node->attrLst();
+
+  // core.linker.flag
+  for (const AttrNode *attr : attrs->getAttrsByName(AttrNode::ATTR_CORE_LINKER_FLAG)) {
+    const std::string &value = attr->getValue().stringValue;
+    resourceManager.linker.addLinkerFlag(value);
+  }
 
   return nullptr;
 }

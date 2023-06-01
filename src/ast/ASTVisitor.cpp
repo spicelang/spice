@@ -72,6 +72,14 @@ std::any ASTVisitor::visitSpecifierLst(SpecifierLstNode *node) { return visitChi
 
 std::any ASTVisitor::visitSpecifier(SpecifierNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitModAttr(ModAttrNode *node) { return visitChildren(node); }
+
+std::any ASTVisitor::visitFctAttr(FctAttrNode *node) { return visitChildren(node); }
+
+std::any ASTVisitor::visitAttrLst(AttrLstNode *node) { return visitChildren(node); }
+
+std::any ASTVisitor::visitAttr(AttrNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitImportStmt(ImportStmtNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitReturnStmt(ReturnStmtNode *node) { return visitChildren(node); }
@@ -126,7 +134,7 @@ std::any ASTVisitor::visitValue(ValueNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitConstant(ConstantNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitFunctionCall(FunctionCallNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitFctCall(FctCallNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitArrayInitialization(ArrayInitializationNode *node) { return visitChildren(node); }
 
