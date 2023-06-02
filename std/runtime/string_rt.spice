@@ -9,7 +9,8 @@ ext p free(byte*);
 ext p memcpy(char*, char*, long);
 
 /**
- * String wrapper for enriching raw strings with information and make them mutable
+ * Heap-allocated builtin String type to enable dynamic modification in contrast
+ * to the primitive string type.
  */
 public type String struct {
     char* contents         // Pointer to the first char
@@ -457,27 +458,27 @@ public f<unsigned long> String.replaceAll(string needle, string replacement) {
  * @param length Length of substring
  * @return Substring
  */
-public f<String> String.substring<IntLongShort>(unsigned IntLongShort startIdx, long length = -1l) {
+public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startIdx, long length = -1l) {
     // Return empty string if the length is 0 or the startIndex is out of bounds
-    if length == 0l || startIndex >= this.length {
+    if length == 0l || startIdx >= this.length {
         return String("");
     }
 
-    // Get everything after startIndex when length is -1
+    // Get everything after startIndex if length is -1
     if length == -1l {
-        length = this.length - startIndex;
+        length = this.length - startIdx;
     }
 
     // Do not exceed original string length
     if startIdx + length > this.length {
-        length = this.length - startIndex;
+        length = this.length - startIdx;
     }
 
     // Get substring
     String substring = String("");
     substring.reserve(length);
-    unsigned long endIndex = startIdx + length;
-    for unsigned long charIndex = startIdx; charIndex < endIndex; charIndex++ {
+    const unsigned long endIdx = startIdx + length;
+    for unsigned long charIndex = (unsigned long) startIdx; charIndex < endIdx; charIndex++ {
         unsafe {
             substring.contents[charIndex - startIdx] = this.contents[charIndex];
         }

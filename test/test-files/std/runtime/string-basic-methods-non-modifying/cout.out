@@ -1,17 +1,1 @@
-1
-0
-6
-12
-12
-24
-1
-0
-1
--1
-0
-11
--1
-0
-1
-1
-1
+Assertion failed: Condition 's4.getCapacity() == 12' evaluated to false.
