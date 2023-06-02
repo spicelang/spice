@@ -410,9 +410,11 @@ public f<bool> String.replace(
         // Move the suffix to the left or right
         const char* stringAddr = this.contents;
         const char* startAddr = stringAddr + startIdx;
-        const char* oldSuffixAddr = startAddr + needleLength;
-        const char* newSuffixAddr = startAddr + replacementLength;
-        memcpy(newSuffixAddr, oldSuffixAddr, suffixLength + 1); // +1 because of null terminator
+        if needleLength != replacementLength {
+            const char* oldSuffixAddr = startAddr + needleLength;
+            const char* newSuffixAddr = startAddr + replacementLength;
+            memcpy(newSuffixAddr, oldSuffixAddr, suffixLength + 1); // +1 because of null terminator
+        }
 
         // Replace needle with replacement
         memcpy(startAddr, (char*) replacement, replacementLength);
