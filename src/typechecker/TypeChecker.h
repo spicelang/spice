@@ -137,6 +137,7 @@ private:
   void changeToScope(Scope *scope, ScopeType scopeType);
   static void autoDeReference(SymbolType &symbolType);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
+  [[nodiscard]] bool isStringRT() const;
 };
 
 } // namespace spice::compiler
