@@ -111,7 +111,7 @@ SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
  * @param orderIndex Order index of the desired symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
-SymbolTableEntry *SymbolTable::lookupByIndex(unsigned int orderIndex) {
+SymbolTableEntry *SymbolTable::lookupStrictByIndex(unsigned int orderIndex) {
   for (auto &[key, val] : symbols) {
     if (val.orderIndex == orderIndex)
       return &val;

@@ -17,9 +17,13 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std
   llvm::LLVMContext &context = irGenerator->context;
   const std::string producerString = "spice version " + std::string(SPICE_VERSION);
 
+  module->addModuleFlag(llvm::Module::Max, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
   module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
-  module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
-  module->addModuleFlag(llvm::Module::Error, "PIC Level", llvm::PICLevel::BigPIC);
+  module->addModuleFlag(llvm::Module::Error, "wchar_size", 4);
+  module->addModuleFlag(llvm::Module::Min, "PIC Level", llvm::PICLevel::BigPIC);
+  module->addModuleFlag(llvm::Module::Max, "PIE Level", llvm::PIELevel::Default);
+  module->addModuleFlag(llvm::Module::Max, "uwtable", 2);
+  module->addModuleFlag(llvm::Module::Max, "frame-pointer", 2);
 
   llvm::NamedMDNode *identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
   identifierMetadata->addOperand(llvm::MDNode::get(context, llvm::MDString::get(context, producerString)));
@@ -37,6 +41,8 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std
   // Create another DIFile as scope for subprograms
   diFile = diBuilder->createFile(sourceFileName, sourceFileDir);
 
+  pointerWidth = irGenerator->module->getDataLayout().getPointerSizeInBits();
+
   // Initialize primitive debug types
   doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
   intTy = diBuilder->createBasicType("int", 32, llvm::dwarf::DW_ATE_signed);
@@ -47,7 +53,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std
   uLongTy = diBuilder->createBasicType("unsigned long", 64, llvm::dwarf::DW_ATE_unsigned);
   byteTy = diBuilder->createBasicType("byte", 8, llvm::dwarf::DW_ATE_unsigned);
   charTy = diBuilder->createBasicType("char", 8, llvm::dwarf::DW_ATE_unsigned_char);
-  stringTy = diBuilder->createBasicType("string", 8, llvm::dwarf::DW_ATE_ASCII);
+  stringTy = diBuilder->createPointerType(charTy, pointerWidth);
   boolTy = diBuilder->createBasicType("bool", 1, llvm::dwarf::DW_ATE_boolean);
 }
 
@@ -163,7 +169,6 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
   // Pointer or reference type
   if (symbolType.isPtr() || symbolType.isRef()) {
     llvm::DIType *pointeeTy = getDITypeForSymbolType(node, symbolType.getContainedTy());
-    const unsigned int pointerWidth = irGenerator->module->getDataLayout().getPointerSizeInBits();
     return diBuilder->createPointerType(pointeeTy, pointerWidth);
   }
 
@@ -176,23 +181,32 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
   }
 
   // Primitive types
+  llvm::DIType *baseDiType;
   switch (symbolType.getSuperType()) {
   case TY_DOUBLE:
-    return doubleTy;
+    baseDiType = doubleTy;
+    break;
   case TY_INT:
-    return symbolType.isSigned() ? intTy : uIntTy;
+    baseDiType = symbolType.isSigned() ? intTy : uIntTy;
+    break;
   case TY_SHORT:
-    return symbolType.isSigned() ? shortTy : uShortTy;
+    baseDiType = symbolType.isSigned() ? shortTy : uShortTy;
+    break;
   case TY_LONG:
-    return symbolType.isSigned() ? longTy : uLongTy;
+    baseDiType = symbolType.isSigned() ? longTy : uLongTy;
+    break;
   case TY_BYTE:
-    return byteTy;
+    baseDiType = byteTy;
+    break;
   case TY_CHAR:
-    return charTy;
+    baseDiType = charTy;
+    break;
   case TY_STRING:
-    return stringTy;
+    baseDiType = stringTy;
+    break;
   case TY_BOOL:
-    return boolTy;
+    baseDiType = boolTy;
+    break;
   case TY_STRUCT: {
     Struct *spiceStruct = symbolType.getStruct(node);
     assert(spiceStruct != nullptr);
@@ -204,19 +218,43 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     const uint64_t sizeInBits = structType->getScalarSizeInBits();
     const uint32_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value();
 
-    // Collect DI types for fields
-    std::vector<llvm::Metadata *> fieldTypes;
-    for (const SymbolType &fieldType : spiceStruct->fieldTypes)
-      fieldTypes.push_back(getDITypeForSymbolType(node, fieldType));
-
     // Create struct type
-    llvm::MDTuple *elementTuple = llvm::MDTuple::get(irGenerator->context, fieldTypes);
-    return diBuilder->createStructType(diFile, spiceStruct->name, diFile, lineNo, sizeInBits, alignInBits,
-                                       llvm::DINode::FlagTypePassByValue, nullptr, elementTuple);
+    const std::string mangledName = spiceStruct->getMangledName();
+    llvm::DICompositeType *structDiType = diBuilder->createStructType(
+        diFile, spiceStruct->name, diFile, lineNo, sizeInBits, alignInBits,
+        llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
+
+    // Collect DI types for fields
+    size_t offsetInBits = 0;
+    std::vector<llvm::Metadata *> fieldTypes;
+    for (size_t i = 0; i < spiceStruct->fieldTypes.size(); i++) {
+      // Get field entry
+      SymbolTableEntry *fieldEntry = spiceStruct->structScope->symbolTable.lookupStrictByIndex(i);
+      assert(fieldEntry != nullptr);
+      const SymbolType fieldType = fieldEntry->getType();
+      const size_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
+
+      llvm::DIType *fieldDiType = getDITypeForSymbolType(node, fieldType);
+      llvm::DIDerivedType *fieldDiDerivedType =
+          diBuilder->createMemberType(structDiType, fieldEntry->name, diFile, fieldLineNo, fieldDiType->getSizeInBits(),
+                                      fieldDiType->getAlignInBits(), offsetInBits, llvm::DINode::FlagZero, fieldDiType);
+
+      fieldTypes.push_back(fieldDiDerivedType);
+      offsetInBits += fieldDiType->getSizeInBits();
+    }
+
+    structDiType->replaceElements(llvm::MDTuple::get(irGenerator->context, fieldTypes));
+    baseDiType = structDiType;
+    break;
   }
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Debug Info Type fallthrough"); // GCOV_EXCL_LINE
   }
+
+  if (symbolType.isConst())
+    baseDiType = diBuilder->createQualifiedType(llvm::dwarf::DW_TAG_const_type, baseDiType);
+
+  return baseDiType;
 }
 #pragma clang diagnostic pop
 

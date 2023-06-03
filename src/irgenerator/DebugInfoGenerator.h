@@ -41,6 +41,7 @@ private:
   llvm::DICompileUnit *compileUnit = nullptr;
   llvm::DIFile *diFile = nullptr;
   std::stack<llvm::DIScope *> lexicalBlocks;
+  unsigned int pointerWidth = 0;
   // Debug types
   llvm::DIType *doubleTy = nullptr;
   llvm::DIType *intTy = nullptr;
