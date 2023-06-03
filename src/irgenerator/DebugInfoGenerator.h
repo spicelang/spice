@@ -26,6 +26,8 @@ public:
   void initialize(const std::string &sourceFileName, const std::string &sourceFileDir);
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
   void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
+  void generateGlobalStringDebugInfo(llvm::GlobalVariable *global, const std::string &name, size_t length,
+                                     const CodeLoc &codeLoc);
   void generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, const size_t argNumber = SIZE_MAX,
                                  bool moveToPrev = false);
   void setSourceLocation(const ASTNode *node);

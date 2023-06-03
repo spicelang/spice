@@ -72,8 +72,7 @@ std::any IRGenerator::visitConstant(const ConstantNode *node) {
 
   // Value is a string constant
   if (node->type == ConstantNode::TYPE_STRING) {
-    const std::string globalName = getUnusedGlobalName(ANON_GLOBAL_STRING_NAME);
-    llvm::Constant *constString = builder.CreateGlobalStringPtr(compileTimeValue.stringValue, globalName, 0, module);
+    llvm::Constant *constString = createGlobalStringConst(ANON_GLOBAL_STRING_NAME, compileTimeValue.stringValue, node->codeLoc);
     return constString;
   }
 
@@ -277,7 +276,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
 
     // Create global array
     llvm::Constant *constantArray = llvm::ConstantArray::get(arrayType, constants);
-    llvm::Value *arrayAddr = createGlobalConstant(ANON_GLOBAL_ARRAY_NAME, constantArray);
+    llvm::Value *arrayAddr = createGlobalConst(ANON_GLOBAL_ARRAY_NAME, constantArray);
 
     return ExprResult{.constant = constantArray, .ptr = arrayAddr};
   } else { // We have non-immediate values as items, so we need to take normal arrays as fallback
@@ -344,7 +343,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
     // Create global struct
     llvm::Constant *constantStruct = llvm::ConstantStruct::get(structType, constants);
-    llvm::Value *constantAddr = createGlobalConstant(ANON_GLOBAL_STRUCT_NAME, constantStruct);
+    llvm::Value *constantAddr = createGlobalConst(ANON_GLOBAL_STRUCT_NAME, constantStruct);
 
     return ExprResult{.constant = constantStruct, .ptr = constantAddr};
   } else { // We have at least one non-immediate value, so we need to take normal struct instantiation as fallback

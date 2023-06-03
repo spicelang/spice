@@ -60,23 +60,6 @@ public p CliInterface.createInterface() {
 }
 
 /**
- * Validates if all necessary cli options were provided.
- *
- * @throws InvalidCliOptionsException if there were an invalid combination of cli options provided
- */
-public p CliInterface.validate() {
-    if ((this.cliOptions.targetArch.isEmpty() && this.cliOptions.targetVendor.isEmpty() && this.cliOptions.targetOs.isEmpty()) ||
-        (!this.cliOptions.targetArch.isEmpty() && !this.cliOptions.targetVendor.isEmpty() && !this.cliOptions.targetOs.isEmpty())) {
-        // ToDo: throw cli error
-    }
-
-    // Error out when opt level > 0 and debug info enabled
-    if (this.cliOptions.optLevel > 0 && this.cliOptions.generateDebugInfo) {
-        // ToDo: throw cli error
-    }
-}
-
-/**
  * Initialize the cli options based on the input of the user
  */
 public p CliInterface.enrich() {

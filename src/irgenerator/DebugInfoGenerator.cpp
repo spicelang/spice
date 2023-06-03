@@ -99,6 +99,15 @@ void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global
   global->addDebugInfo(diBuilder->createGlobalVariableExpression(compileUnit, name, name, diFile, lineNo, type, isLocal));
 }
 
+void DebugInfoGenerator::generateGlobalStringDebugInfo(llvm::GlobalVariable *global, const std::string &name, size_t length,
+                                                       const CodeLoc &codeLoc) {
+  const size_t lineNo = codeLoc.line;
+  const size_t sizeInBits = (length + 1) * 8; // +1 because of null-terminator
+
+  llvm::DIStringType *stringType = diBuilder->createStringType(name, sizeInBits);
+  global->addDebugInfo(diBuilder->createGlobalVariableExpression(compileUnit, name, name, diFile, lineNo, stringType, true));
+}
+
 void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, const size_t argNumber,
                                                    bool moveToPrev) {
   if (!irGenerator->cliOptions.generateDebugInfo)

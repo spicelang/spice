@@ -395,17 +395,30 @@ void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, 
   }
 }
 
-llvm::Value *IRGenerator::createGlobalConstant(const std::string &baseName, llvm::Constant *constant) {
+llvm::GlobalVariable *IRGenerator::createGlobalConst(const std::string &baseName, llvm::Constant *constant) {
   // Get unused name
   const std::string globalName = getUnusedGlobalName(baseName);
   // Create global
-  llvm::Value *globalAddr = module->getOrInsertGlobal(globalName, constant->getType());
+  module->getOrInsertGlobal(globalName, constant->getType());
   llvm::GlobalVariable *global = module->getNamedGlobal(globalName);
   // Set initializer to the given constant
   global->setInitializer(constant);
   global->setConstant(true);
   global->setLinkage(llvm::GlobalValue::PrivateLinkage);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+  return global;
+}
+
+llvm::Constant *IRGenerator::createGlobalStringConst(const std::string &baseName, const std::string &value,
+                                                     const CodeLoc &codeLoc) {
+  // Get unused name
+  const std::string globalName = getUnusedGlobalName(baseName);
+  // Create global
+  llvm::Constant *globalAddr = builder.CreateGlobalStringPtr(value, globalName, 0, module);
+  llvm::GlobalVariable *global = module->getNamedGlobal(globalName);
+  // Create debug info
+  if (cliOptions.generateDebugInfo)
+    diGenerator.generateGlobalStringDebugInfo(global, globalName, value.length(), codeLoc);
   return globalAddr;
 }
 
