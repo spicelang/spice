@@ -126,11 +126,11 @@ std::any IRGenerator::visitContinueStmt(const ContinueStmtNode *node) {
 }
 
 std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
-  diGenerator.setSourceLocation(node);
-
-  // Only generate assertions with -O0
-  if (cliOptions.optLevel != O0)
+  // Only generate assertions with -O0 or in test mode
+  if (cliOptions.optLevel != O0 && !cliOptions.testMode)
     return nullptr;
+
+  diGenerator.setSourceLocation(node);
 
   // Create blocks
   const std::string &codeLine = node->codeLoc.toPrettyLine();

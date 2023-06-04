@@ -1177,7 +1177,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Check if is an imported variable
   if (accessScope->isImportedBy(currentScope)) {
     // Check if the entry is public
-    if (!varEntry->getType().isPublic())
+    if (varEntry->scope->type != SCOPE_ENUM && !varEntry->getType().isPublic())
       throw SemanticError(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility");
   }
 
