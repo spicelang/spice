@@ -4,6 +4,25 @@ import "std/data/pair";
 import "CliInterface";
 import "ast/AstNodes";
 
+type CompileStageType enum {
+    NONE,
+    LEXER,
+    PARSER,
+    CST_VISUALIZER,
+    AST_BUILDER,
+    AST_OPTIMIZER,
+    AST_VISUALIZER,
+    IMPORT_COLLECTOR,
+    SYMBOL_TABLE_BUILDER,
+    TYPE_CHECKER_PRE,
+    TYPE_CHECKER_POST,
+    BORROW_CHECKER,
+    ESCAPE_ANALYZER,
+    IR_GENERATOR,
+    IR_OPTIMIZER,
+    OBJECT_EMITTER
+}
+
 type CompileStageIOType enum {
     IO_CODE,
     IO_TOKENS,
@@ -46,6 +65,14 @@ type CompilerOutput struct {
     TimerOutput times
 }
 
+type NameRegistryEntry struct {
+    String name
+    SymbolTableEntry* targetEntry
+    Scope* targetScope
+    SymbolTableEntry* importEntry
+    String predecessorName
+}
+
 /**
  * Represents a single source file
  */
@@ -66,13 +93,15 @@ public type SourceFile struct {
     //public llvm::Module llvmModule
     public Map<String, Pair<SourceFile, const ASTNode*>> dependencies
     public Map<String, NameRegistryEntry> exportedNameRegistry
+
     GlobalResourceManager& resourceManager
     unsigned short importedRuntimeModules = 0
+    unsigned short typeCheckerRuns = 0
 }
 
-public p SourceFile.ctor(CliOptions* cliOptions, SourceFile* parent, string name, string filePath, bool stdFile) {
+public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* parent, string name, string filePath, bool stdFile) {
     // Copy data
-    this.cliOptions = cliOptions;
+    this.resourceManager = resourceManager;
     this.parent = parent;
     this.name = name;
     this.filePath = filePath;

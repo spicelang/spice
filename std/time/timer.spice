@@ -1,0 +1,69 @@
+import "time";
+
+public type TimerMode enum {
+    MICROS,
+    MILLIS,
+    SECONDS,
+    MINUTES
+}
+
+/**
+ * High resolution timer
+ */
+public type Timer struct {
+    unsigned long timeStart // Microseconds
+    unsigned long timeStop  // Microseconds
+    TimerMode mode
+    unsigned long* timerOutput
+}
+
+public p Timer.ctor(TimerMode mode = TimerMode::MILLIS, unsigned long* timerOutput = nil<unsigned long*>) {
+    this.mode = mode;
+    this.timerOutput = timerOutput;
+}
+
+public p Timer.start() {
+    this.resume();
+    if this.timerOutput != nil<unsigned long*> {
+        *this.timerOutput = 0l;
+    }
+}
+
+public p Timer.stop() {
+    this.pause();
+}
+
+public p Timer.pause() {
+    this.timeStop = getCurrentMicros();
+    if this.timerOutput != nil<unsigned long*> {
+        *this.timerOutput += this.getDuration();
+    }
+}
+
+public p Timer.resume() {
+    this.timeStart = getCurrentMicros();
+}
+
+public f<unsigned long> Timer.getDurationInMicros() {
+    return this.timeStop - this.timeStart;
+}
+
+public f<unsigned long> Timer.getDurationInMillis() {
+    return this.getDurationInMicros() / 1000l;
+}
+
+public f<unsigned double> Timer.getDurationInSeconds() {
+    return this.getDurationInMicros() / 1000000.0;
+}
+
+public f<unsigned double> Timer.getDurationInMinutes() {
+    return this.getDurationInMicros() / 60000000.0;
+}
+
+public f<unsigned long> Timer.getDuration() {
+    if this.mode == TimerMode::MICROS { return this.getDurationInMicros(); }
+    if this.mode == TimerMode::MILLIS { return this.getDurationInMillis(); }
+    if this.mode == TimerMode::SECONDS { return (unsigned long) this.getDurationInSeconds(); }
+    if this.mode == TimerMode::MINUTES { return (unsigned long) this.getDurationInMinutes(); }
+    return 0l;
+}
