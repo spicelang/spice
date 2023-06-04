@@ -1,6 +1,6 @@
 f<int> main() {
     String s = String("Hello ");
-    assert s.getRaw() == "Hello";
+    assert s.getRaw() == "Hello ";
     assert s.getLength() == 6;
     assert s.getCapacity() == 12;
     s.append("World!");
@@ -31,12 +31,12 @@ f<int> main() {
     assert !s.replace("foo", "demo");
     assert s.replace("test", "demo");
     assert s.getRaw() == "This is a demo. And because this is a test, it is a test.";
-    assert s.replace("test", "demonstration", 30l);
+    assert s.replace("test", "demonstration", 45l);
     assert s.getRaw() == "This is a demo. And because this is a test, it is a demonstration.";
     assert s.replace("test", "d");
     assert s.getRaw() == "This is a demo. And because this is a d, it is a demonstration.";
-    assert s.replaceAll("is", "was") == 3;
-    assert s.getRaw() == "This was a demo. And because this was a demo, it was a demo.";
+    assert s.replaceAll(" is ", " was ") == 3;
+    assert s.getRaw() == "This was a demo. And because this was a d, it was a demonstration.";
 
     printf("All assertions passed!");
 }

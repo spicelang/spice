@@ -10,7 +10,6 @@ f<int> main() {
     assert s3.getLength() == 6;
     assert s4.getLength() == 12;
     assert s3.getCapacity() == 12;
-    assert s4.getCapacity() == 12;
     assert s4.getCapacity() == 24;
     assert s2.isFull();
     assert !s4.isFull();
@@ -26,13 +25,13 @@ f<int> main() {
     String sub = s4.getSubstring(0, 5l);
     assert sub.getRaw() == "Hello";
     sub = s4.getSubstring(4l, 2l);
-    assert sub.getRaw() == "";
+    assert sub.getRaw() == "o ";
     sub = s4.getSubstring(6);
-    assert sub.getRaw() == "";
+    assert sub.getRaw() == "World!";
     sub = s4.getSubstring(2, 0l);
     assert sub.getRaw() == "";
     sub =  s4.getSubstring(2l, 12l);
-    assert sub.getRaw() == "";
+    assert sub.getRaw() == "llo World!";
 
     printf("All assertions passed!");
 }

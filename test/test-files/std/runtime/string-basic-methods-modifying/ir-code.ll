@@ -6,8 +6,8 @@ target triple = "x86_64-w64-windows-gnu"
 %__String__charptr_long_long = type { ptr, i64, i64 }
 
 @anon.string.0 = private unnamed_addr constant [7 x i8] c"Hello \00", align 1
-@anon.string.1 = private unnamed_addr constant [6 x i8] c"Hello\00", align 1
-@anon.string.2 = private unnamed_addr constant [72 x i8] c"Assertion failed: Condition 's.getRaw() == \22Hello\22' evaluated to false.\00", align 1
+@anon.string.1 = private unnamed_addr constant [7 x i8] c"Hello \00", align 1
+@anon.string.2 = private unnamed_addr constant [73 x i8] c"Assertion failed: Condition 's.getRaw() == \22Hello \22' evaluated to false.\00", align 1
 @anon.string.3 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition 's.getLength() == 6' evaluated to false.\00", align 1
 @anon.string.4 = private unnamed_addr constant [72 x i8] c"Assertion failed: Condition 's.getCapacity() == 12' evaluated to false.\00", align 1
 @anon.string.5 = private unnamed_addr constant [7 x i8] c"World!\00", align 1
@@ -45,7 +45,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.37 = private unnamed_addr constant [124 x i8] c"Assertion failed: Condition 's.getRaw() == \22This is a demo. And because this is a test, it is a test.\22' evaluated to false.\00", align 1
 @anon.string.38 = private unnamed_addr constant [5 x i8] c"test\00", align 1
 @anon.string.39 = private unnamed_addr constant [14 x i8] c"demonstration\00", align 1
-@anon.string.40 = private unnamed_addr constant [90 x i8] c"Assertion failed: Condition 's.replace(\22test\22, \22demonstration\22, 30l)' evaluated to false.\00", align 1
+@anon.string.40 = private unnamed_addr constant [90 x i8] c"Assertion failed: Condition 's.replace(\22test\22, \22demonstration\22, 45l)' evaluated to false.\00", align 1
 @anon.string.41 = private unnamed_addr constant [67 x i8] c"This is a demo. And because this is a test, it is a demonstration.\00", align 1
 @anon.string.42 = private unnamed_addr constant [133 x i8] c"Assertion failed: Condition 's.getRaw() == \22This is a demo. And because this is a test, it is a demonstration.\22' evaluated to false.\00", align 1
 @anon.string.43 = private unnamed_addr constant [5 x i8] c"test\00", align 1
@@ -53,11 +53,11 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.45 = private unnamed_addr constant [73 x i8] c"Assertion failed: Condition 's.replace(\22test\22, \22d\22)' evaluated to false.\00", align 1
 @anon.string.46 = private unnamed_addr constant [64 x i8] c"This is a demo. And because this is a d, it is a demonstration.\00", align 1
 @anon.string.47 = private unnamed_addr constant [130 x i8] c"Assertion failed: Condition 's.getRaw() == \22This is a demo. And because this is a d, it is a demonstration.\22' evaluated to false.\00", align 1
-@anon.string.48 = private unnamed_addr constant [3 x i8] c"is\00", align 1
-@anon.string.49 = private unnamed_addr constant [4 x i8] c"was\00", align 1
-@anon.string.50 = private unnamed_addr constant [81 x i8] c"Assertion failed: Condition 's.replaceAll(\22is\22, \22was\22) == 3' evaluated to false.\00", align 1
-@anon.string.51 = private unnamed_addr constant [61 x i8] c"This was a demo. And because this was a demo, it was a demo.\00", align 1
-@anon.string.52 = private unnamed_addr constant [127 x i8] c"Assertion failed: Condition 's.getRaw() == \22This was a demo. And because this was a demo, it was a demo.\22' evaluated to false.\00", align 1
+@anon.string.48 = private unnamed_addr constant [5 x i8] c" is \00", align 1
+@anon.string.49 = private unnamed_addr constant [6 x i8] c" was \00", align 1
+@anon.string.50 = private unnamed_addr constant [85 x i8] c"Assertion failed: Condition 's.replaceAll(\22 is \22, \22 was \22) == 3' evaluated to false.\00", align 1
+@anon.string.51 = private unnamed_addr constant [67 x i8] c"This was a demo. And because this was a d, it was a demonstration.\00", align 1
+@anon.string.52 = private unnamed_addr constant [133 x i8] c"Assertion failed: Condition 's.getRaw() == \22This was a demo. And because this was a d, it was a demonstration.\22' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -310,7 +310,7 @@ assert.then.L33:                                  ; preds = %assert.exit.L32
   unreachable
 
 assert.exit.L33:                                  ; preds = %assert.exit.L32
-  %72 = call i1 @_mf__String__bool__replace__string_string_long(ptr %s, ptr @anon.string.38, ptr @anon.string.39, i64 30)
+  %72 = call i1 @_mf__String__bool__replace__string_string_long(ptr %s, ptr @anon.string.38, ptr @anon.string.39, i64 45)
   br i1 %72, label %assert.exit.L34, label %assert.then.L34, !prof !0
 
 assert.then.L34:                                  ; preds = %assert.exit.L33
