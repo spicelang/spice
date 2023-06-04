@@ -215,17 +215,17 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     const size_t lineNo = spiceStruct->getDeclCodeLoc().line;
     llvm::Type *structType = spiceStruct->entry->getType().toLLVMType(irGenerator->context, irGenerator->currentScope);
     assert(structType != nullptr);
-    const uint64_t sizeInBits = structType->getScalarSizeInBits();
+    const llvm::StructLayout *structLayout =
+        irGenerator->module->getDataLayout().getStructLayout(static_cast<llvm::StructType *>(structType));
     const uint32_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value();
 
     // Create struct type
     const std::string mangledName = spiceStruct->getMangledName();
     llvm::DICompositeType *structDiType = diBuilder->createStructType(
-        diFile, spiceStruct->name, diFile, lineNo, sizeInBits, alignInBits,
+        diFile, spiceStruct->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
         llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
 
     // Collect DI types for fields
-    size_t offsetInBits = 0;
     std::vector<llvm::Metadata *> fieldTypes;
     for (size_t i = 0; i < spiceStruct->fieldTypes.size(); i++) {
       // Get field entry
@@ -233,6 +233,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
       assert(fieldEntry != nullptr);
       const SymbolType fieldType = fieldEntry->getType();
       const size_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
+      const size_t offsetInBits = structLayout->getElementOffsetInBits(i);
 
       llvm::DIType *fieldDiType = getDITypeForSymbolType(node, fieldType);
       llvm::DIDerivedType *fieldDiDerivedType =
@@ -240,7 +241,6 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
                                       fieldDiType->getAlignInBits(), offsetInBits, llvm::DINode::FlagZero, fieldDiType);
 
       fieldTypes.push_back(fieldDiDerivedType);
-      offsetInBits += fieldDiType->getSizeInBits();
     }
 
     structDiType->replaceElements(llvm::MDTuple::get(irGenerator->context, fieldTypes));
