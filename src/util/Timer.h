@@ -14,9 +14,9 @@ public:
 
   // Public methods
   void start() {
-    timeStart = std::chrono::high_resolution_clock::now();
     if (timerOutput)
       *timerOutput = 0;
+    resume();
   }
   void stop() { pause(); }
   void resume() { timeStart = std::chrono::high_resolution_clock::now(); }

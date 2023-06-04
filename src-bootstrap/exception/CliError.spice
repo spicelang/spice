@@ -22,7 +22,7 @@ public type CliError struct {
  * @param message Error message suffix
  */
 public p CliError.ctor(const CliErrorType errorType, const string message) {
-    this.errorMessage = "[Error|CLI] " + this.getMessagePrefix(errorType) + ": " + message;;
+    this.errorMessage = "[Error|CLI] " + this.getMessagePrefix(errorType) + ": " + message;
 }
 
 /**

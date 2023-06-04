@@ -179,12 +179,12 @@ p CliInterface.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--disable-ast-opt", this.cliOptions.disableAstOpt, "Disable first order optimizations on the AST");
 
     // Opt levels
-    subCmd.addFlag("-O0", [&]() { this.cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
-    subCmd.addFlag("-O1", [&]() { this.cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
-    subCmd.addFlag("-O2", [&]() { this.cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
-    subCmd.addFlag("-O3", [&]() { this.cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
-    subCmd.addFlag("-Os", [&]() { this.cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
-    subCmd.addFlag("-Oz", [&]() { this.cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
+    //subCmd.addFlag("-O0", [&]() { this.cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
+    //subCmd.addFlag("-O1", [&]() { this.cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
+    //subCmd.addFlag("-O2", [&]() { this.cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
+    //subCmd.addFlag("-O3", [&]() { this.cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
+    //subCmd.addFlag("-Os", [&]() { this.cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
+    //subCmd.addFlag("-Oz", [&]() { this.cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
 
     CliOption& fileOption = subCmd.addOption("<main-source-file>", cliOptions.mainSourceFile, "MainSourceFile");
     fileOption.setRequired();

@@ -293,7 +293,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
       sourceFile.first->runTypeCheckerPost();
 
     // GCOV_EXCL_START
-    if (typeCheckerRuns >= 25)
+    if (typeCheckerRuns >= 10)
       throw CompilerError(TYPE_CHECKER_RUNS_EXCEEDED, "Number of type checker runs for one source file exceeded. Please report "
                                                       "this as a bug on GitHub.");
     // GCOV_EXCL_STOP

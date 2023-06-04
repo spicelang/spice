@@ -23,10 +23,10 @@ f<int> compileProject(const CliOptions& options) {
     mainSourceFile.runBackEnd();
 
     // Link the target executable (link object files to executable)
-    /*if !cliOptions.execute {
+    if !cliOptions.execute {
         resourceManager.linker.prepare();
         resourceManager.linker.link();
-    }*/
+    }
 
     // Print compiler warnings
     mainSourceFile.collectAndPrintWarnings();
