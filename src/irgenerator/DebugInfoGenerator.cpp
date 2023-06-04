@@ -44,6 +44,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std
   pointerWidth = irGenerator->module->getDataLayout().getPointerSizeInBits();
 
   // Initialize primitive debug types
+  const unsigned int pointerWidth = irGenerator->module->getDataLayout().getPointerSizeInBits();
   doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
   intTy = diBuilder->createBasicType("int", 32, llvm::dwarf::DW_ATE_signed);
   uIntTy = diBuilder->createBasicType("unsigned int", 32, llvm::dwarf::DW_ATE_unsigned);

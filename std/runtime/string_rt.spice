@@ -9,7 +9,8 @@ ext p free(byte*);
 ext p memcpy(char*, char*, long);
 
 /**
- * String wrapper for enriching raw strings with information and make them mutable
+ * Heap-allocated builtin String type to enable dynamic modification in contrast
+ * to the primitive string type.
  */
 public type String struct {
     char* contents         // Pointer to the first char
@@ -88,7 +89,7 @@ public p String.dtor() {
  * @param appendix String to be appended
  */
 public p String.append(const string appendix) {
-    unsigned long appendixLength = getRawLength(appendix);
+    const unsigned long appendixLength = getRawLength(appendix);
     // Check if we need to re-allocate memory
     while this.capacity < this.length + appendixLength {
         this.resize(this.capacity * RESIZE_FACTOR);
@@ -165,7 +166,7 @@ public f<String> operator*<IntLongShort>(const String& str, const IntLongShort n
 
     // Copy the input string
     result = String(str);
-    unsigned long newLength = n * str.length;
+    const unsigned long newLength = n * str.length;
     result.reserve(newLength);
 
     // Save the value
@@ -310,7 +311,7 @@ public f<unsigned long> String.find(string needle, unsigned long startIndex = 0l
     // Return -1 if the startIndex is out of bounds
     if startIndex >= this.length { return (unsigned long) -1l; }
 
-    unsigned long needleLength = getRawLength(needle);
+    const unsigned long needleLength = getRawLength(needle);
     // Return false if the needle is longer than the haystack
     if this.length < needleLength { return (unsigned long) -1l; }
 
@@ -380,22 +381,51 @@ public p String.reverse() {
  * @param needle Substring to replace
  * @param replacement Replacement for the substring
  */
-/*public p String.replace<IntLong>(
+public f<bool> String.replace(
     string needle,
     string replacement,
-    unsigned IntLong startIndex = 0l
+    unsigned long startIdx = 0l
 ) {
-    // Find occurrence
-    unsigned long startIdx = this.find(needle, startIndex);
-    // Return if not found
-    if startIdx == -1l { return; }
-
-    // Replace
-    unsigned long needleLength = getRawLength(needle);
-    for unsigned long idx = 0; idx < needleLength; idx++ {
-        // ToDo: Extend
+    // Abort, if needle or replacement are nullptrs
+    if (char*) needle == nil<char*> || (char*) replacement == nil<char*> {
+        return false;
     }
-}*/
+
+    // Find occurrence
+    startIdx = this.find(needle, startIdx);
+    // Return if not found
+    if startIdx == -1l { return false; }
+
+    // Calculate metrics
+    const unsigned long needleLength = getRawLength(needle);
+    const unsigned long replacementLength = getRawLength(replacement);
+    const unsigned long suffixLength = this.length - startIdx - needleLength;
+    const unsigned long finalLength = this.length - needleLength + replacementLength;
+
+    // Resize the string if required
+    while this.capacity < finalLength {
+        this.resize(this.capacity * RESIZE_FACTOR);
+    }
+
+    unsafe {
+        // Move the suffix to the left or right
+        const char* stringAddr = this.contents;
+        const char* startAddr = stringAddr + startIdx;
+        if needleLength != replacementLength {
+            const char* oldSuffixAddr = startAddr + needleLength;
+            const char* newSuffixAddr = startAddr + replacementLength;
+            memcpy(newSuffixAddr, oldSuffixAddr, suffixLength + 1); // +1 because of null terminator
+        }
+
+        // Replace needle with replacement
+        memcpy(startAddr, (char*) replacement, replacementLength);
+    }
+
+    // Update length
+    this.length = finalLength;
+
+    return true;
+}
 
 /**
  * Replace all occurrences of substring with the replacement string
@@ -403,15 +433,22 @@ public p String.reverse() {
  * @param needle Substring to replace
  * @param replacement Replacement for the substring
  */
-/*public p String.replaceAll(string needle, string replacement) {
-    unsigned long needleLength = getRawLength(needle);
-    // Return false if the needle is longer than the haystack
-    if this.length < needleLength { return -1l; }
+public f<unsigned long> String.replaceAll(string needle, string replacement) {
+    unsigned long startIdx = 0l;
+    unsigned long foundOccurrences = 0l;
+    const unsigned long needleLength = getRawLength(needle);
+    const unsigned long replacementLength = getRawLength(replacement);
 
-    for unsigned long startIdx = 0; startIdx <= this.length - needle; startIdx++ {
-        // ToDo: Extend
+    while startIdx <= this.length - needleLength {
+        if !this.replace(needle, replacement, startIdx) {
+            break;
+        }
+        startIdx += replacementLength;
+        foundOccurrences++;
     }
-}*/
+
+    return foundOccurrences;
+}
 
 /**
  * Returns the substring of the current string, starting at position `startIndex` with
@@ -421,29 +458,29 @@ public p String.reverse() {
  * @param length Length of substring
  * @return Substring
  */
-public f<String> String.substring<IntLongShort>(unsigned IntLongShort startIndex, long length = -1l) {
+public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startIdx, long length = -1l) {
     // Return empty string if the length is 0 or the startIndex is out of bounds
-    if length == 0l || startIndex >= this.length {
+    if length == 0l || startIdx >= this.length {
         return String("");
     }
 
-    // Get everything after startIndex when length is -1
+    // Get everything after startIndex if length is -1
     if length == -1l {
-        length = this.length - startIndex;
+        length = this.length - startIdx;
     }
 
     // Do not exceed original string length
-    if startIndex + length > this.length {
-        length = this.length - startIndex;
+    if startIdx + length > this.length {
+        length = this.length - startIdx;
     }
 
     // Get substring
     String substring = String("");
     substring.reserve(length);
-    unsigned long endIndex = startIndex + length;
-    for unsigned long charIndex = startIndex; charIndex < endIndex; charIndex++ {
+    const unsigned long endIdx = startIdx + length;
+    for unsigned long charIndex = (unsigned long) startIdx; charIndex < endIdx; charIndex++ {
         unsafe {
-            substring.contents[charIndex - startIndex] = this.contents[charIndex];
+            substring.contents[charIndex - startIdx] = this.contents[charIndex];
         }
     }
 

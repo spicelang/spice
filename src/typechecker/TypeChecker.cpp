@@ -809,7 +809,7 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   SymbolType lhsTy = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
 
   // Check if we need the string runtime to perform a string comparison
-  if (lhsTy.is(TY_STRING) && rhsTy.is(TY_STRING))
+  if (lhsTy.is(TY_STRING) && rhsTy.is(TY_STRING) && !isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
 
   // Check operator
@@ -1407,8 +1407,7 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if this is a ctor call to the String type
-  const bool isStringRt = rootScope->lookupStrict(STROBJ_NAME) != nullptr;
-  if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !isStringRt)
+  if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
 
   // Get struct name. Retrieve it from alias if required
@@ -1815,8 +1814,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   const std::string firstFragment = node->typeNameFragments.front();
 
   // Check if it is a String type
-  const bool isStringRT = rootScope->lookupStrict(STROBJ_NAME) != nullptr;
-  if (!isImported && !isStringRT && firstFragment == STROBJ_NAME)
+  if (!isImported && firstFragment == STROBJ_NAME && !isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
 
   // Check if it is a generic type
@@ -2038,5 +2036,12 @@ std::vector<const Function *> &TypeChecker::getOpFctPointers(ASTNode *node) cons
   assert(node->opFct.size() > manIdx);
   return node->opFct.at(manIdx);
 }
+
+/**
+ * Check if the current source file is the String runtime source file
+ *
+ * @return String runtime or not
+ */
+bool TypeChecker::isStringRT() const { return rootScope->lookupStrict(STROBJ_NAME) != nullptr; }
 
 } // namespace spice::compiler
