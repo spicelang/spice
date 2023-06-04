@@ -117,7 +117,8 @@ private:
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
                                  const std::string &name = "", bool isVolatile = false);
   void autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const;
-  llvm::Value *createGlobalConstant(const std::string &baseName, llvm::Constant *constant);
+  llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant);
+  llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   void materializeConstant(ExprResult &exprResult);
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);

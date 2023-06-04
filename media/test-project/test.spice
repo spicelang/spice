@@ -5,6 +5,7 @@ type Test struct {
 
 f<int> main() {
     Test t;
+    t.i = 13;
     printf("Int: %d\n", t.i);
     printf("String: %s\n", t.s);
 }

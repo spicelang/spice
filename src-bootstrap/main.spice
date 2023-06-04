@@ -55,7 +55,6 @@ f<int> main(int argc, string[] argv) {
     if (!cli.shouldCompile) {
         return 0;
     }
-    cli.validate(); // Check if all required fields are present
     cli.enrich();   // Prepare the cli options
 
     // Kick off the compiling process
