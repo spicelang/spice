@@ -157,7 +157,7 @@ public f<SymbolTableEntry*> SymbolTable.lookupStrict(const string name) {
  * @param orderIndex Order index of the desired symbol
  * @return Desired symbol / nullptr if the symbol was not found
  */
-public f<SymbolTableEntry*> SymbolTable.lookupByIndex(const unsigned int orderIndex) {
+public f<SymbolTableEntry*> SymbolTable.lookupStrictByIndex(const unsigned int orderIndex) {
     // ToDo
     return nil<SymbolTableEntry*>;
 }

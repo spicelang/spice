@@ -12,8 +12,8 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
 
   // Push the template string as first argument
   std::vector<llvm::Value *> printfArgs;
-  const std::string globalStringName = getUnusedGlobalName("printf.str.");
-  printfArgs.push_back(builder.CreateGlobalStringPtr(node->templatedString, globalStringName));
+  llvm::Constant *templateString = createGlobalStringConst("printf.str.", node->templatedString, node->codeLoc);
+  printfArgs.push_back(templateString);
 
   // Collect replacement arguments
   for (AssignExprNode *arg : node->args()) {

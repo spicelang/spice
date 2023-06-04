@@ -64,7 +64,6 @@ public:
   // Public methods
   void createInterface();
   int parse(int argc, char **argv);
-  void validate() const;
   void enrich();
 
   // Public members

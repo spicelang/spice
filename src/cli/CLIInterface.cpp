@@ -89,19 +89,6 @@ void CLIInterface::createInterface() {
 }
 
 /**
- * Validates if all necessary cli options were provided.
- *
- * @throws InvalidCliOptionsException if there were an invalid combination of cli options provided
- */
-void CLIInterface::validate() const {
-  // Error out when opt level > 0 and debug info enabled
-  if (cliOptions.optLevel > O0 && cliOptions.generateDebugInfo)
-    throw CliError(
-        OPT_DEBUG_INFO_INCOMPATIBILITY,
-        "Optimization does not work reliably when emitting debug info. The cli argument -g only works in combination with -O0.");
-}
-
-/**
  * Initialize the cli options based on the input of the user
  */
 void CLIInterface::enrich() {

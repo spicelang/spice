@@ -1672,7 +1672,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
       SymbolType actualType = std::any_cast<ExprResult>(visit(assignExpr)).type;
       // Get expected type
-      const SymbolTableEntry *expectedField = structScope->symbolTable.lookupByIndex(i);
+      const SymbolTableEntry *expectedField = structScope->symbolTable.lookupStrictByIndex(i);
       assert(expectedField != nullptr);
       SymbolType expectedType = expectedField->getType();
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();

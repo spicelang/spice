@@ -74,8 +74,7 @@ int main(int argc, char **argv) {
     if (!cli.shouldCompile)
       return EXIT_SUCCESS;
 
-    cli.validate(); // Check if all required fields are present
-    cli.enrich();   // Prepare the cli options
+    cli.enrich(); // Prepare the cli options
 
     // Kick off the compiling process
     return compileProject(cli.cliOptions);
