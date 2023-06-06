@@ -10,6 +10,14 @@ f<int> main() {
     printf("Abs (double): %f\n", fct::abs(56.123));
     printf("Abs (double): %f\n", fct::abs(-348.12));
 
+    printf("Deg2Rad: %f\n", degToRad(420.0));
+    printf("Deg2Rad: %f\n", degToRad(42.678));
+    printf("Deg2Rad: %f\n", degToRad(321.453));
+
+    printf("Rad2Deg: %f\n", radToDeg(1.0));
+    printf("Rad2Deg: %f\n", radToDeg(0.0));
+    printf("Rad2Deg: %f\n", radToDeg(1.234567));
+
     printf("Sin (double): %f\n", fct::sin(78.345));
     printf("Sin (int): %f\n", fct::sin(23));
     printf("Sin (short): %f\n", fct::sin(-68s));

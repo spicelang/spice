@@ -1,33 +1,24 @@
-import "std/time/timer";
-import "std/time/delay";
-
-f<bool> isInRange(unsigned long duration, unsigned long expectedDuration, unsigned int delta) {
-    printf("Check for %d +/-%d, got %d\n", expectedDuration, delta, duration);
-    return duration >= expectedDuration - delta && duration <= expectedDuration + delta;
-}
+import "std/math/fct";
 
 f<int> main() {
-    // Normal start/stop scenario
-    Timer t = Timer();
-    assert t.getDuration() == 0l;
-    t.start();
-    delay(10);
-    t.stop();
-    assert isInRange(t.getDuration(), 10l, 3); // 10 +/-3 millis
+    printf("Abs (int): %d\n", abs(123));
+    printf("Abs (int): %d\n", abs(-137));
+    printf("Abs (short): %d\n", abs(56s));
+    printf("Abs (short): %d\n", abs(-3s));
+    printf("Abs (long): %d\n", abs(1234567890l));
+    printf("Abs (long): %d\n", abs(-987654321l));
+    printf("Abs (double): %f\n", abs(56.123));
+    printf("Abs (double): %f\n", abs(-348.12));
 
-    // Start/pause/resume/stop with seconds
-    unsigned long duration = 0l;
-    t = Timer(TimerMode::MICROS, &duration);
-    assert t.getDuration() == 0l;
-    assert duration == 0l;
-    t.start();
-    delay(10);
-    t.pause();
-    delay(100);
-    t.resume();
-    delay(10);
-    t.stop();
-    assert isInRange(duration, 20000l, 5000); // 20000 +/-5000 micros
+    printf("Deg2Rad: %f\n", degToRad(420.0));
 
-    printf("All assertions passed");
+    printf("Sin (double): %f\n", sin(78.345));
+    printf("Sin (int): %f\n", sin(23));
+    printf("Sin (short): %f\n", sin(-68s));
+    printf("Sin (long): %f\n", sin(359l));
+
+    printf("Cos (double): %f\n", cos(78.345));
+    printf("Cos (int): %f\n", cos(23));
+    printf("Cos (short): %f\n", cos(-68s));
+    printf("Cos (long): %f\n", cos(359l));
 }

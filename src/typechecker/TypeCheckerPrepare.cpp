@@ -109,6 +109,9 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
   if (returnType.is(TY_DYN))
     throw SemanticError(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed");
+  if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
+    throw SemanticError(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+                        "Generic return type not included in the template type list of the function");
 
   // Visit parameters
   std::vector<std::string> paramNames;
