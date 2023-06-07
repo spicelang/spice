@@ -6,6 +6,12 @@ Abs (long): 1234567890
 Abs (long): 987654321
 Abs (double): 56.123000
 Abs (double): 348.120000
+Deg2Rad: 7.330383
+Deg2Rad: 0.744872
+Deg2Rad: 5.610413
+Rad2Deg: 57.295780
+Rad2Deg: 0.000000
+Rad2Deg: 70.735479
 Sin (double): 0.979382
 Sin (int): 0.390731
 Sin (short): -0.927184

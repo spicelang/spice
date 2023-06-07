@@ -1,5 +1,5 @@
 // Imports
-import "std/math/const" as cst;
+import "std/math/const";
 import "std/type/double";
 
 // Generic type defs
@@ -56,6 +56,26 @@ public inline f<WholeNumber> ceil<WholeNumber>(double input) {
 }
 
 /**
+ * Convert degrees to radians
+ *
+ * @param degrees Input in degrees
+ * @return Input in radians
+ */
+public inline f<double> degToRad(double degrees) {
+    return degrees * (PI / 180.0);
+}
+
+/**
+ * Convert radians to degrees
+ *
+ * @param degrees Input in radians
+ * @return Input in degrees
+ */
+public inline f<double> radToDeg(double radians) {
+    return radians * (180.0 / PI);
+}
+
+/**
  * Calculate the sine of the input, using the taylor series:
  * sin x = x - x^3/3! + x^5/5! - x^7/7! ...
  *
@@ -68,14 +88,14 @@ public f<double> sin<Numeric>(Numeric x) {
     if x > 360 {
         x -= (Numeric) (x / 360) * 360;
     }
-    double xNew = x * (cst::PI / 180.0);
+    double xRad = degToRad(0.0 + x);
     double res = 0.0;
-    double term = 0.0 + xNew;
+    double term = 0.0 + xRad;
     double k = 1.0;
     while (res + term != res) {
         res += term;
         k += 2.0;
-        term *= -xNew * xNew / k / (k - 1);
+        term *= -xRad * xRad / k / (k - 1);
     }
     return negative ? -res : res;
 }
@@ -91,14 +111,14 @@ public f<double> cos<Numeric>(Numeric x) {
     if x > 360 {
         x -= (Numeric) (x / 360) * 360;
     }
-    double xNew = x * (cst::PI / 180.0);
+    double xRad = degToRad(0.0 + x);
     double res = 0.0;
     double term = 1.0;
     double k = 0.0;
     while (res + term != res) {
         res += term;
         k += 2.0;
-        term *= -xNew * xNew / k / (k - 1);
+        term *= -xRad * xRad / k / (k - 1);
     }
     return res;
 }
