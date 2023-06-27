@@ -230,6 +230,13 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     result = builder.CreateCall(callee, argValues);
   }
 
+  // Add anonymous symbol to keep track of deallocation
+  if (returnSType.is(TY_STRUCT)) {
+    SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
+    assert(returnSymbol != nullptr);
+    returnSymbol->updateAddress(result);
+  }
+
   // In case this is a constructor call, return the thisPtr as pointer
   if (data.isCtorCall())
     return ExprResult{.ptr = thisPtr};

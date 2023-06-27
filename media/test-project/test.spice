@@ -1,24 +1,16 @@
-import "std/math/fct";
+type Test struct {
+    int t
+}
+
+p Test.dtor() {
+    printf("Dtor called!");
+}
+
+f<Test> test() {
+    return Test{123};
+}
 
 f<int> main() {
-    printf("Abs (int): %d\n", abs(123));
-    printf("Abs (int): %d\n", abs(-137));
-    printf("Abs (short): %d\n", abs(56s));
-    printf("Abs (short): %d\n", abs(-3s));
-    printf("Abs (long): %d\n", abs(1234567890l));
-    printf("Abs (long): %d\n", abs(-987654321l));
-    printf("Abs (double): %f\n", abs(56.123));
-    printf("Abs (double): %f\n", abs(-348.12));
-
-    printf("Deg2Rad: %f\n", degToRad(420.0));
-
-    printf("Sin (double): %f\n", sin(78.345));
-    printf("Sin (int): %f\n", sin(23));
-    printf("Sin (short): %f\n", sin(-68s));
-    printf("Sin (long): %f\n", sin(359l));
-
-    printf("Cos (double): %f\n", cos(78.345));
-    printf("Cos (int): %f\n", cos(23));
-    printf("Cos (short): %f\n", cos(-68s));
-    printf("Cos (long): %f\n", cos(359l));
+   Test t = test();
+   printf("%d", t.t);
 }

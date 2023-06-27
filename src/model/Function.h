@@ -58,6 +58,7 @@ public:
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
+  [[nodiscard]] bool isDownCall(const ASTNode *callNode) const;
 
   // Public members
   std::string name;

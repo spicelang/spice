@@ -198,4 +198,16 @@ bool Function::isFullySubstantiated() const { return hasSubstantiatedParams() &&
  */
 const CodeLoc &Function::getDeclCodeLoc() const { return declNode->codeLoc; }
 
+/**
+ * Check for a call node if it is a down call. This is always the case, when the function is called from within the same
+ * source file and at a code location above the definition
+ *
+ * @return Down call or not
+ */
+bool Function::isDownCall(const ASTNode *callNode) const {
+  const CodeLoc &callLoc = callNode->codeLoc;
+  const CodeLoc &defLoc = declNode->codeLoc;
+  return defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
+}
+
 } // namespace spice::compiler

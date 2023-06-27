@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <exception/IRError.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 
 #include <llvm/BinaryFormat/Dwarf.h>
 #include <llvm/IR/Verifier.h>
@@ -393,6 +394,53 @@ void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, 
     ptr = builder.CreateLoad(symbolType.toLLVMType(context, accessScope), ptr);
     symbolType = symbolType.getContainedTy();
   }
+}
+
+void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
+  // Get all variables, that are approved for deallocation
+  std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
+  for (SymbolTableEntry *var : vars) {
+    // If this is a struct, generate a dtor call
+    if (var->getType().is(TY_STRUCT))
+      generateDtorCall(var, node);
+  }
+}
+
+void IRGenerator::generateDtorCall(SymbolTableEntry *entry, const StmtLstNode *node) const {
+  const SymbolType &thisType = entry->getType();
+  assert(thisType.is(TY_STRUCT));
+  Scope *matchScope = thisType.getBodyScope();
+  assert(matchScope->type == SCOPE_STRUCT);
+
+  // Search for dtor
+  Function *spiceFunc = FunctionManager::matchFunction(matchScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
+
+  // If we did not find a dtor, abort
+  if (!spiceFunc)
+    return;
+
+  // Retrieve metadata for the function
+  const std::string mangledName = spiceFunc->getMangledName();
+  const bool isImported = spiceFunc->entry->scope->isImportedBy(rootScope);
+  const bool isDownCall = !isImported && spiceFunc->isDownCall(node);
+
+  // Function is not defined in the current module -> declare it
+  // This can happen when:
+  // 1) If this is an imported source file
+  // 2) This is a down-call to a function, which is defined later in the same file
+  llvm::FunctionType *fctType = nullptr;
+  if (isImported || isDownCall) {
+    fctType = llvm::FunctionType::get(builder.getVoidTy(), builder.getPtrTy(), false);
+    module->getOrInsertFunction(mangledName, fctType);
+  }
+
+  // Get callee function
+  llvm::Function *callee = module->getFunction(mangledName);
+  assert(callee != nullptr);
+
+  // Generate function call
+  llvm::Value *structPtr = entry->getAddress();
+  builder.CreateCall(callee, structPtr);
 }
 
 llvm::GlobalVariable *IRGenerator::createGlobalConst(const std::string &baseName, llvm::Constant *constant) {

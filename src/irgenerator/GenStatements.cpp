@@ -8,15 +8,20 @@
 namespace spice::compiler {
 
 std::any IRGenerator::visitStmtLst(const StmtLstNode *node) {
+  // Generate instructions in the scope
   for (const ASTNode *stmt : node->children) {
     if (!stmt)
       continue;
     // Check if we can cancel generating instructions for this code branch
     if (blockAlreadyTerminated || stmt->unreachable)
-      return nullptr;
+      break;
     // Visit child
     visit(stmt);
   }
+
+  // Generate cleanup code of this scope, e.g. dtor calls for struct instances
+  generateScopeCleanup(node);
+
   return nullptr;
 }
 

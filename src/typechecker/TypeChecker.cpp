@@ -1356,11 +1356,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
                           "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility");
 
     // Check if down-call, fct ptr calls can't be down-calls
-    if (!data.isImported) {
-      const CodeLoc &callLoc = node->codeLoc;
-      const CodeLoc &defLoc = functionEntry->getDeclCodeLoc();
-      data.isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
-    }
+    data.isDownCall = !data.isImported && data.callee->isDownCall(node);
   }
 
   // Retrieve return type
@@ -1368,8 +1364,6 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   if (data.isFctPtrCall()) {
     returnType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
   } else if (data.isCtorCall()) {
-    // Add anonymous symbol to keep track of de-allocation
-    currentScope->symbolTable.insertAnonymous(data.thisType, node);
     // Set return type to 'this' type
     returnType = data.thisType;
   } else if (data.callee->isProcedure()) {
@@ -1378,9 +1372,6 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   } else {
     returnType = data.callee->returnType;
   }
-
-  // Remove public specifier to not have public local variables
-  returnType.specifiers.setPublic(false);
 
   // Initialize return type if required
   if (returnType.isBaseType(TY_STRUCT)) {
@@ -1392,7 +1383,14 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     assert(spiceStruct != nullptr);
     returnBaseType.setBodyScope(spiceStruct->structScope);
     returnType = returnType.replaceBaseType(returnBaseType);
+
+    // Add anonymous symbol to keep track of deallocation
+    if (returnType.is(TY_STRUCT))
+      currentScope->symbolTable.insertAnonymous(returnType, node);
   }
+
+  // Remove public specifier to not have public local variables
+  returnType.specifiers.setPublic(false);
 
   // Check if the return value gets used
   const bool isFct = data.isFctPtrCall() ? firstFragEntry->getType().is(TY_FUNCTION) : data.callee->isFunction();
