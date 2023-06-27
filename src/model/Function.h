@@ -48,10 +48,12 @@ public:
                                                 const ParamList &paramList, const std::vector<SymbolType> &concreteTemplateTypes,
                                                 bool withThisType = true);
   [[nodiscard]] inline bool isMethod() const { return !thisType.is(TY_DYN); }
-  [[nodiscard]] inline bool isFunction() const { return !isMethod() && !returnType.is(TY_DYN); }
-  [[nodiscard]] inline bool isProcedure() const { return !isMethod() && returnType.is(TY_DYN); }
-  [[nodiscard]] inline bool isMethodFunction() const { return isMethod() && !returnType.is(TY_DYN); }
-  [[nodiscard]] inline bool isMethodProcedure() const { return isMethod() && returnType.is(TY_DYN); }
+  [[nodiscard]] inline bool isFunction() const { return !returnType.is(TY_DYN); }
+  [[nodiscard]] inline bool isProcedure() const { return returnType.is(TY_DYN); }
+  [[nodiscard]] inline bool isNormalFunction() const { return isFunction() && !isMethod(); }
+  [[nodiscard]] inline bool isNormalProcedure() const { return isProcedure() && !isMethod(); }
+  [[nodiscard]] inline bool isMethodFunction() const { return isFunction() && isMethod(); }
+  [[nodiscard]] inline bool isMethodProcedure() const { return isProcedure() && isMethod(); }
   [[nodiscard]] bool hasSubstantiatedParams() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;

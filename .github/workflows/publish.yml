@@ -64,7 +64,7 @@ jobs:
         run: |
           mkdir ./bin
           cd ./bin
-          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=OFF -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
+          cmake -GNinja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" -DCMAKE_CXX_FLAGS_RELEASE="-O2" ..
           cmake --build . --target spice -j$(nproc)
 
       - name: Process build output
