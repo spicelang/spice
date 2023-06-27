@@ -66,7 +66,7 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
 
   // Collect arguments
   std::vector<llvm::Metadata *> argTypes;
-  if (spiceFunc->isProcedure() || spiceFunc->isMethodProcedure())
+  if (spiceFunc->isProcedure())
     argTypes.push_back(voidTy);
   else
     argTypes.push_back(getDITypeForSymbolType(node, spiceFunc->returnType)); // Add result type

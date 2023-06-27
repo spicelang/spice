@@ -213,7 +213,7 @@ void InterfaceManager::substantiateSignatures(Interface &candidate, TypeMapping 
       continue;
 
     // Substantiate return type
-    if (method->isFunction())
+    if (method->isNormalFunction())
       FunctionManager::substantiateReturnType(*method, typeMapping);
 
     // Substantiate param types

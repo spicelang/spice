@@ -30,7 +30,7 @@ std::string Function::getMangledName() const {
 
   // f, p, mf or mp depending on the function type
   std::string functionTyStr = "f";
-  if (isProcedure()) {
+  if (isNormalProcedure()) {
     functionTyStr = "p";
   } else if (isMethodFunction()) {
     functionTyStr = "mf";

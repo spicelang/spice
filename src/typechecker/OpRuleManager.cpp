@@ -591,7 +591,7 @@ SymbolType OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
                         "Overloaded operator '" + callee->getSignature() + "' has insufficient visibility");
 
   // Procedures always have the return type 'bool'
-  if (callee->isProcedure() || callee->returnType.is(TY_DYN))
+  if (callee->isProcedure())
     return SymbolType(TY_BOOL);
 
   SymbolType localReturnType = typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType);

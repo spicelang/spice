@@ -1615,7 +1615,7 @@ ExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *node,
   llvm::Value *resultValue = builder.CreateCall(callee, argValues);
 
   // If this is a procedure, return true
-  if (opFct->isProcedure() || opFct->isMethodProcedure())
+  if (opFct->isProcedure())
     return {.constant = builder.getTrue()};
 
   // If the return type is reference, return the result value as refPtr

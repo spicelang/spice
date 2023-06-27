@@ -1372,7 +1372,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     currentScope->symbolTable.insertAnonymous(data.thisType, node);
     // Set return type to 'this' type
     returnType = data.thisType;
-  } else if (data.callee->isProcedure() || data.callee->isMethodProcedure() || data.callee->returnType.is(TY_DYN)) {
+  } else if (data.callee->isProcedure()) {
     // Procedures always have the return type 'bool'
     returnType = SymbolType(TY_BOOL);
   } else {
@@ -1395,8 +1395,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Check if the return value gets used
-  const bool isFct = data.isFctPtrCall() ? firstFragEntry->getType().is(TY_FUNCTION)
-                                         : (data.callee->isFunction() || data.callee->isMethodFunction());
+  const bool isFct = data.isFctPtrCall() ? firstFragEntry->getType().is(TY_FUNCTION) : data.callee->isFunction();
   if (isFct && !node->hasReturnValueReceiver())
     warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
 
