@@ -5,9 +5,19 @@ target triple = "x86_64-w64-windows-gnu"
 
 %__Vector__bool_string = type { i1, ptr }
 
+@printf.str.0 = private unnamed_addr constant [19 x i8] c"Destructor called!\00", align 1
 @anon.string.0 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
 @anon.struct.0 = private unnamed_addr constant %__Vector__bool_string { i1 true, ptr @anon.string.0 }
-@printf.str.0 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
+@printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
+
+define private void @_mp__Vector__void__dtor(ptr noundef nonnull %0) {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  ret void
+}
+
+declare i32 @printf(ptr noundef, ...)
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -21,15 +31,14 @@ define dso_local i32 @main() #0 {
   %2 = zext i1 %1 to i32
   %field2_addr = getelementptr inbounds %__Vector__bool_string, ptr %vec, i32 0, i32 1
   %3 = load ptr, ptr %field2_addr, align 8
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2, ptr %3)
+  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %2, ptr %3)
+  call void @_mp__Vector__void__dtor(ptr %vec)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
-
-declare i32 @printf(ptr noundef, ...)
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

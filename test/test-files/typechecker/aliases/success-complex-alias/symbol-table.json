@@ -151,15 +151,6 @@
       "name": "fct:main",
       "symbols": [
         {
-          "codeLoc": "L21C13",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "anon.L21C13",
-          "orderIndex": 3,
-          "state": "destructed",
-          "type": "TestStruct<long>"
-        },
-        {
           "codeLoc": "L21C5",
           "isGlobal": false,
           "isVolatile": false,

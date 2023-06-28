@@ -439,6 +439,7 @@ assert.then.L65:                                  ; preds = %assert.exit.L64
 
 assert.exit.L65:                                  ; preds = %assert.exit.L64
   %127 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !127
+  call void @_mp__Vector_int__void__dtor(ptr %vi), !dbg !127
   %128 = load i32, ptr %result, align 4, !dbg !127
   ret i32 %128, !dbg !127
 }
@@ -479,6 +480,8 @@ declare void @"_p__void__void__op.minusminus.post__VectorIterator<int>ref"(ptr)
 declare void @"_p__void__void__op.plusequal__VectorIterator<int>ref_int"(ptr, i32)
 
 declare ptr @_mf__Vector_int__intref__get__int(ptr, i32)
+
+declare void @_mp__Vector_int__void__dtor(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

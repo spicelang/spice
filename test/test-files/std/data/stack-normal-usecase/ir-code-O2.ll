@@ -38,6 +38,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %14 = call ptr @_mf__Stack_int__intref__pop(ptr nonnull %s1) #3
   %15 = load i32, ptr %14, align 4
   %16 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4, i32 %15)
+  call void @_mp__Stack_int__void__dtor(ptr nonnull %s1) #3
   ret i32 0
 }
 
@@ -53,6 +54,8 @@ declare i64 @_mf__Stack_int__long__getSize(ptr) local_unnamed_addr
 declare i64 @_mf__Stack_int__long__getCapacity(ptr) local_unnamed_addr
 
 declare ptr @_mf__Stack_int__intref__pop(ptr) local_unnamed_addr
+
+declare void @_mp__Stack_int__void__dtor(ptr) local_unnamed_addr
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
 declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #2

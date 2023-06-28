@@ -216,6 +216,28 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %.fca.2.load = load i64, ptr %.fca.2.gep, align 8
   %.fca.2.insert = insertvalue %__String__charptr_long_long %.fca.1.insert, i64 %.fca.2.load, 2
   %97 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.25, %__String__charptr_long_long %.fca.2.insert)
+  call void @_mp__String__void__dtor(ptr nonnull %4) #2
+  call void @_mp__String__void__dtor(ptr nonnull %23) #2
+  call void @_mp__String__void__dtor(ptr nonnull %3) #2
+  call void @_mp__String__void__dtor(ptr nonnull %25) #2
+  call void @_mp__String__void__dtor(ptr nonnull %9) #2
+  call void @_mp__String__void__dtor(ptr nonnull %18) #2
+  call void @_mp__String__void__dtor(ptr nonnull %1) #2
+  call void @_mp__String__void__dtor(ptr nonnull %24) #2
+  call void @_mp__String__void__dtor(ptr nonnull %26) #2
+  call void @_mp__String__void__dtor(ptr nonnull %12) #2
+  call void @_mp__String__void__dtor(ptr nonnull %13) #2
+  call void @_mp__String__void__dtor(ptr nonnull %14) #2
+  call void @_mp__String__void__dtor(ptr nonnull %15) #2
+  call void @_mp__String__void__dtor(ptr nonnull %20) #2
+  call void @_mp__String__void__dtor(ptr nonnull %17) #2
+  call void @_mp__String__void__dtor(ptr nonnull %19) #2
+  call void @_mp__String__void__dtor(ptr nonnull %6) #2
+  call void @_mp__String__void__dtor(ptr nonnull %22) #2
+  call void @_mp__String__void__dtor(ptr nonnull %21) #2
+  call void @_mp__String__void__dtor(ptr nonnull %2) #2
+  call void @_mp__String__void__dtor(ptr nonnull %27) #2
+  call void @_mp__String__void__dtor(ptr nonnull %28) #2
   ret i32 0
 }
 
@@ -247,6 +269,8 @@ declare void @_p__void__void__op.plusequal__Stringref_charref(ptr, ptr) local_un
 declare void @_p__void__void__op.plusequal__Stringref_stringref(ptr, ptr) local_unnamed_addr
 
 declare void @_p__void__void__op.mulequal__Stringref_int(ptr, i32) local_unnamed_addr
+
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

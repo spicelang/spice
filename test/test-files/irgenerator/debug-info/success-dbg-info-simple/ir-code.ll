@@ -31,6 +31,7 @@ define private %"__TestStruct__long___rt_string::String_int" @_f__void__TestStru
   call void @llvm.dbg.declare(metadata ptr %ts, metadata !59, metadata !DIExpression()), !dbg !58
   store i32 %7, ptr %8, align 4, !dbg !58
   %9 = load %"__TestStruct__long___rt_string::String_int", ptr %ts, align 8, !dbg !70
+  call void @_mp__String__void__dtor(ptr %2), !dbg !70
   ret %"__TestStruct__long___rt_string::String_int" %9, !dbg !70
 }
 
@@ -38,6 +39,8 @@ define private %"__TestStruct__long___rt_string::String_int" @_f__void__TestStru
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #0
 
 declare void @_mp__String__void__ctor__string(ptr, ptr)
+
+declare void @_mp__String__void__dtor(ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #1 !dbg !71 {
