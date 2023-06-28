@@ -397,34 +397,29 @@ void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, 
 }
 
 void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
-  // Get all variables, that are approved for deallocation
-  std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
-  for (SymbolTableEntry *var : vars) {
-    // If this is a struct, generate a dtor call
-    if (var->getType().is(TY_STRUCT))
-      generateDtorCall(var, node);
-  }
-}
-
-void IRGenerator::generateDtorCall(SymbolTableEntry *entry, const StmtLstNode *node) const {
-
-
-  // If we did not find a dtor, abort
-  if (!spiceFunc)
+  // Do not clean up if the block is already terminated
+  if (blockAlreadyTerminated)
     return;
 
+  // Call all dtor functions
+  for (auto [entry, dtor] : node->dtorFunctions.at(manIdx))
+    generateDtorCall(entry, dtor, node);
+}
+
+void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor, const StmtLstNode *node) const {
+  assert(dtor != nullptr);
+
   // Retrieve metadata for the function
-  const std::string mangledName = spiceFunc->getMangledName();
-  const bool isImported = spiceFunc->entry->scope->isImportedBy(rootScope);
-  const bool isDownCall = !isImported && spiceFunc->isDownCall(node);
+  const std::string mangledName = dtor->getMangledName();
+  const bool isImported = dtor->entry->scope->isImportedBy(rootScope);
+  const bool isDownCall = !isImported && dtor->isDownCall(node);
 
   // Function is not defined in the current module -> declare it
   // This can happen when:
   // 1) If this is an imported source file
   // 2) This is a down-call to a function, which is defined later in the same file
-  llvm::FunctionType *fctType = nullptr;
   if (isImported || isDownCall) {
-    fctType = llvm::FunctionType::get(builder.getVoidTy(), builder.getPtrTy(), false);
+    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), builder.getPtrTy(), false);
     module->getOrInsertFunction(mangledName, fctType);
   }
 
@@ -434,6 +429,7 @@ void IRGenerator::generateDtorCall(SymbolTableEntry *entry, const StmtLstNode *n
 
   // Generate function call
   llvm::Value *structPtr = entry->getAddress();
+  assert(structPtr != nullptr);
   builder.CreateCall(callee, structPtr);
 }
 

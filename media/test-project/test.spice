@@ -1,4 +1,11 @@
-type Test struct {
+f<int> main() {
+    // Plus
+    printf("Result: %s\n", String("Hello ") + String("World!"));
+    String s1 = String("Hello ");
+    printf("Result: %s\n", s1 + " Hi!");
+}
+
+/*type Test struct {
     int t
 }
 
@@ -13,4 +20,4 @@ f<Test> test() {
 f<int> main() {
    Test t = test();
    printf("%d", t.t);
-}
+}*/

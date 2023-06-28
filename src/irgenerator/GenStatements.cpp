@@ -97,13 +97,18 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
     }
   }
 
+  // Generate scope cleanup code
+  generateScopeCleanup(node->getParentScopeNode());
+
   // Set block to terminated
   blockAlreadyTerminated = true;
 
   // Create return instruction
-  if (returnValue != nullptr) { // Return value
+  if (returnValue != nullptr) {
+    // Return with value
     builder.CreateRet(returnValue);
-  } else { // Return without value
+  } else {
+    // Return without value
     builder.CreateRetVoid();
   }
 

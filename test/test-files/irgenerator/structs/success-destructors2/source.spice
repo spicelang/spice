@@ -1,0 +1,13 @@
+type Vector struct {
+    bool field1
+    string field2
+}
+
+f<int> main() {
+    dyn vec = Vector{ true, "Test" };
+    printf("Fields: %d, %s\n", vec.field1, vec.field2);
+}
+
+p Vector.dtor() {
+    printf("Destructor called!");
+}

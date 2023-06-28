@@ -230,11 +230,11 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     result = builder.CreateCall(callee, argValues);
   }
 
-  // Add anonymous symbol to keep track of deallocation
-  if (returnSType.is(TY_STRUCT)) {
-    SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
-    assert(returnSymbol != nullptr);
-    returnSymbol->updateAddress(result);
+  // Attach address to anonymous symbol to keep track of deallocation
+  if (returnSType.is(TY_STRUCT) || data.isCtorCall()) {
+    SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
+    if (anonymousSymbol != nullptr)
+      anonymousSymbol->updateAddress(data.isCtorCall() ? thisPtr : result);
   }
 
   // In case this is a constructor call, return the thisPtr as pointer
@@ -338,6 +338,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     canBeConstant &= fieldValue.constant != nullptr;
   }
 
+  ExprResult result;
   if (canBeConstant) { // All field values are constants, so we can create a global constant struct instantiation
     // Collect constants
     std::vector<llvm::Constant *> constants;
@@ -352,7 +353,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     llvm::Constant *constantStruct = llvm::ConstantStruct::get(structType, constants);
     llvm::Value *constantAddr = createGlobalConst(ANON_GLOBAL_STRUCT_NAME, constantStruct);
 
-    return ExprResult{.constant = constantStruct, .ptr = constantAddr};
+    result = {.constant = constantStruct, .ptr = constantAddr};
   } else { // We have at least one non-immediate value, so we need to take normal struct instantiation as fallback
     llvm::Value *structAddr = insertAlloca(structType);
 
@@ -368,8 +369,15 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
       builder.CreateStore(itemValue, currentFieldAddress, storeVolatile);
     }
 
-    return ExprResult{.ptr = structAddr};
+    result = {.ptr = structAddr};
   }
+
+  // Attach address to anonymous symbol to keep track of deallocation
+  SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
+  if (returnSymbol != nullptr)
+    returnSymbol->updateAddress(result.ptr);
+
+  return result;
 }
 
 std::any IRGenerator::visitDataType(const DataTypeNode *node) {

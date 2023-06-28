@@ -1379,6 +1379,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Initialize return type if required
+  SymbolTableEntry *anonymousSymbol = nullptr;
   if (returnType.isBaseType(TY_STRUCT)) {
     SymbolType returnBaseType = returnType.getBaseType();
     const std::string structName = returnBaseType.getOriginalSubType();
@@ -1391,7 +1392,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
     // Add anonymous symbol to keep track of deallocation
     if (returnType.is(TY_STRUCT))
-      currentScope->symbolTable.insertAnonymous(returnType, node);
+      anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
   }
 
   // Remove public specifier to not have public local variables
@@ -1402,7 +1403,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   if (isFct && !node->hasReturnValueReceiver())
     warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
 
-  return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }
 
 std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
@@ -2060,7 +2061,7 @@ void TypeChecker::callStructDtor(SymbolTableEntry *entry, StmtLstNode *node) {
 
   // Add the dtor to the stmt list node to call it later in codegen
   if (spiceFunc != nullptr)
-    node->dtorFunctions.push_back(spiceFunc);
+    node->dtorFunctions.at(manIdx).emplace_back(entry, spiceFunc);
 }
 
 /**
