@@ -407,13 +407,7 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
 }
 
 void IRGenerator::generateDtorCall(SymbolTableEntry *entry, const StmtLstNode *node) const {
-  const SymbolType &thisType = entry->getType();
-  assert(thisType.is(TY_STRUCT));
-  Scope *matchScope = thisType.getBodyScope();
-  assert(matchScope->type == SCOPE_STRUCT);
 
-  // Search for dtor
-  Function *spiceFunc = FunctionManager::matchFunction(matchScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
 
   // If we did not find a dtor, abort
   if (!spiceFunc)

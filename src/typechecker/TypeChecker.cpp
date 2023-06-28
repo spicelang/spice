@@ -298,6 +298,7 @@ std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
 }
 
 std::any TypeChecker::visitStmtLst(StmtLstNode *node) {
+  // Visit nodes in this scope
   for (ASTNode *stmt : node->children) {
     if (!stmt)
       continue;
@@ -309,6 +310,10 @@ std::any TypeChecker::visitStmtLst(StmtLstNode *node) {
     // Visit the statement
     visit(stmt);
   }
+
+  // Do cleanup of this scope, e.g. dtor calls for struct instances
+  doScopeCleanup(node);
+
   return nullptr;
 }
 
@@ -2021,6 +2026,41 @@ void TypeChecker::changeToScope(Scope *scope, const ScopeType scopeType) {
 void TypeChecker::autoDeReference(SymbolType &symbolType) {
   while (symbolType.isPtr() || symbolType.isRef())
     symbolType = symbolType.getContainedTy();
+}
+
+/**
+ * Consider calls to destructors for the given scope
+ *
+ * @param node StmtLstNode for the current scope
+ */
+void TypeChecker::doScopeCleanup(StmtLstNode *node) {
+  // Get all variables, that are approved for deallocation
+  std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
+  for (SymbolTableEntry *var : vars) {
+    // If this is a struct, generate a dtor call
+    if (var->getType().is(TY_STRUCT))
+      callStructDtor(var, node);
+  }
+}
+
+/**
+ * Prepare the generation of a call to the dtor of a given struct
+ *
+ * @param entry Symbol entry to use as 'this' pointer for the dtor call
+ * @param node StmtLstNode for the current scope
+ */
+void TypeChecker::callStructDtor(SymbolTableEntry *entry, StmtLstNode *node) {
+  const SymbolType &thisType = entry->getType();
+  assert(thisType.is(TY_STRUCT));
+  Scope *matchScope = thisType.getBodyScope();
+  assert(matchScope->type == SCOPE_STRUCT);
+
+  // Search for dtor
+  Function *spiceFunc = FunctionManager::matchFunction(matchScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
+
+  // Add the dtor to the stmt list node to call it later in codegen
+  if (spiceFunc != nullptr)
+    node->dtorFunctions.push_back(spiceFunc);
 }
 
 /**

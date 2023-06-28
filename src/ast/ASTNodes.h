@@ -730,6 +730,7 @@ public:
 
   // Public members
   size_t complexity = 0;
+  std::vector<Function *> dtorFunctions;
 };
 
 // ========================================================= TypeLstNode =========================================================
