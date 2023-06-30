@@ -35,7 +35,7 @@
               "isVolatile": false,
               "name": "i",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "initialized",
               "type": "int"
             }
           ]
@@ -49,7 +49,7 @@
           "isVolatile": false,
           "name": "m",
           "orderIndex": 9,
-          "state": "destructed",
+          "state": "initialized",
           "type": "long"
         },
         {
@@ -58,7 +58,7 @@
           "isVolatile": false,
           "name": "x",
           "orderIndex": 10,
-          "state": "destructed",
+          "state": "initialized",
           "type": "long"
         },
         {
@@ -67,7 +67,7 @@
           "isVolatile": false,
           "name": "t_new",
           "orderIndex": 6,
-          "state": "destructed",
+          "state": "initialized",
           "type": "long"
         },
         {
@@ -76,7 +76,7 @@
           "isVolatile": false,
           "name": "k",
           "orderIndex": 7,
-          "state": "destructed",
+          "state": "initialized",
           "type": "long"
         },
         {
@@ -85,7 +85,7 @@
           "isVolatile": false,
           "name": "t",
           "orderIndex": 5,
-          "state": "destructed",
+          "state": "initialized",
           "type": "long"
         },
         {
@@ -94,7 +94,7 @@
           "isVolatile": false,
           "name": "r_new",
           "orderIndex": 4,
-          "state": "destructed",
+          "state": "initialized",
           "type": "long"
         },
         {
@@ -103,7 +103,7 @@
           "isVolatile": false,
           "name": "iterations",
           "orderIndex": 11,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -112,7 +112,7 @@
           "isVolatile": false,
           "name": "r",
           "orderIndex": 3,
-          "state": "destructed",
+          "state": "initialized",
           "type": "long"
         },
         {
@@ -121,7 +121,7 @@
           "isVolatile": false,
           "name": "printedDigits",
           "orderIndex": 12,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -130,7 +130,7 @@
           "isVolatile": false,
           "name": "k_new",
           "orderIndex": 8,
-          "state": "destructed",
+          "state": "initialized",
           "type": "long"
         },
         {
@@ -139,7 +139,7 @@
           "isVolatile": false,
           "name": "q_new",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "initialized",
           "type": "long"
         },
         {
@@ -148,7 +148,7 @@
           "isVolatile": false,
           "name": "q",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "long"
         },
         {
@@ -157,7 +157,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -170,7 +170,7 @@
       "isVolatile": false,
       "name": "main(int, string[])",
       "orderIndex": 0,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>()"
     }
   ]

@@ -44,6 +44,8 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %.fca.2.load = load i64, ptr %.fca.2.gep, align 8
   %.fca.2.insert = insertvalue %__String__charptr_long_long %.fca.1.insert, i64 %.fca.2.load, 2
   %4 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, %__String__charptr_long_long %.fca.2.insert)
+  call void @_mp__String__void__dtor(ptr nonnull %s2) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s1) #2
   ret i32 0
 }
 
@@ -55,6 +57,8 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_a
 declare void @_mp__String__void__ctor__Stringref(ptr, ptr) local_unnamed_addr
 
 declare void @_p__void__void__op.plusequal__Stringref_stringref(ptr, ptr) local_unnamed_addr
+
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

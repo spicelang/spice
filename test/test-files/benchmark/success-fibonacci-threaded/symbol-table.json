@@ -12,7 +12,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         }
       ]
@@ -35,7 +35,7 @@
           "isVolatile": false,
           "name": "n",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -44,7 +44,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -63,7 +63,7 @@
               "isVolatile": false,
               "name": "thread",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "initialized",
               "type": "std/os/thread::Thread&"
             },
             {
@@ -72,7 +72,7 @@
               "isVolatile": false,
               "name": "i",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "initialized",
               "type": "unsigned int"
             }
           ]
@@ -83,21 +83,12 @@
           "name": "for:L16C5",
           "symbols": [
             {
-              "codeLoc": "L17C22",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "anon.L17C22",
-              "orderIndex": 1,
-              "state": "destructed",
-              "type": "public std/os/thread::Thread"
-            },
-            {
               "codeLoc": "L16C9",
               "isGlobal": false,
               "isVolatile": false,
               "name": "i",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "initialized",
               "type": "unsigned int"
             }
           ]
@@ -111,7 +102,7 @@
           "isVolatile": false,
           "name": "threads",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "initialized",
           "type": "std/os/thread::Thread[8]"
         },
         {
@@ -120,7 +111,7 @@
           "isVolatile": false,
           "name": "threadCount",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -129,7 +120,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -142,7 +133,7 @@
       "isVolatile": false,
       "name": "main(int, string[])",
       "orderIndex": 3,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>()"
     },
     {
@@ -151,7 +142,7 @@
       "isVolatile": false,
       "name": "calcFib30:L8C1",
       "orderIndex": 2,
-      "state": "destructed",
+      "state": "declared",
       "type": "p()"
     },
     {
@@ -160,7 +151,7 @@
       "isVolatile": false,
       "name": "fib:L3C1",
       "orderIndex": 1,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>(int)"
     },
     {
@@ -169,7 +160,7 @@
       "isVolatile": false,
       "name": "std/os/thread",
       "orderIndex": 0,
-      "state": "destructed",
+      "state": "declared",
       "type": "import"
     }
   ]

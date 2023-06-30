@@ -12,7 +12,7 @@
           "isVolatile": false,
           "name": "testString",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "string"
         },
         {
@@ -21,7 +21,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "double"
         }
       ]
@@ -37,7 +37,7 @@
           "isVolatile": false,
           "name": "optionalArg",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "initialized",
           "type": "bool"
         },
         {
@@ -46,7 +46,7 @@
           "isVolatile": false,
           "name": "mandatoryArg",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -55,7 +55,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "double"
         }
       ]
@@ -71,7 +71,7 @@
           "isVolatile": false,
           "name": "optionalArg",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "initialized",
           "type": "bool"
         },
         {
@@ -80,7 +80,7 @@
           "isVolatile": false,
           "name": "mandatoryArg",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -89,7 +89,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "double"
         }
       ]
@@ -105,7 +105,7 @@
           "isVolatile": false,
           "name": "res",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "double"
         },
         {
@@ -114,7 +114,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -127,7 +127,7 @@
       "isVolatile": false,
       "name": "main(int, string[])",
       "orderIndex": 2,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>()"
     },
     {
@@ -136,7 +136,7 @@
       "isVolatile": false,
       "name": "calledFunction:L7C1",
       "orderIndex": 1,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<double>(string)"
     },
     {
@@ -145,7 +145,7 @@
       "isVolatile": false,
       "name": "calledFunction:L1C1",
       "orderIndex": 0,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<double>(int,bool)"
     }
   ]

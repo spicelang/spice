@@ -19,7 +19,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %3 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %2)
   %4 = call i64 @_mf__String__long__getCapacity(ptr nonnull %testString) #3
   %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.1, i64 %4)
-  call void @_mp__String__void__dtor(ptr nonnull %1) #3
+  call void @_mp__String__void__dtor(ptr nonnull %testString) #3
   ret i32 0
 }
 

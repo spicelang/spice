@@ -350,8 +350,7 @@ assert.then.L39:                                  ; preds = %assert.exit.L38
 
 assert.exit.L39:                                  ; preds = %assert.exit.L38
   %84 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
-  call void @_mp__String__void__dtor(ptr nonnull %1) #3
-  call void @_mp__String__void__dtor(ptr nonnull %2) #3
+  call void @_mp__String__void__dtor(ptr nonnull %s) #3
   ret i32 0
 }
 

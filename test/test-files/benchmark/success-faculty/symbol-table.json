@@ -19,7 +19,7 @@
           "isVolatile": false,
           "name": "input",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -28,7 +28,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -44,7 +44,7 @@
           "isVolatile": false,
           "name": "input",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -53,7 +53,7 @@
           "isVolatile": false,
           "name": "faculty",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -62,7 +62,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -75,7 +75,7 @@
       "isVolatile": false,
       "name": "main(int, string[])",
       "orderIndex": 1,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>()"
     },
     {
@@ -84,7 +84,7 @@
       "isVolatile": false,
       "name": "faculty:L1C1",
       "orderIndex": 0,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>(int)"
     }
   ]

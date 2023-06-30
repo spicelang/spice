@@ -25,7 +25,7 @@
           "isVolatile": false,
           "name": "n",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -34,7 +34,7 @@
           "isVolatile": false,
           "name": "m",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -43,7 +43,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -59,7 +59,7 @@
           "isVolatile": false,
           "name": "baseN",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -68,7 +68,7 @@
           "isVolatile": false,
           "name": "baseM",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -77,7 +77,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -90,7 +90,7 @@
       "isVolatile": false,
       "name": "main(int, string[])",
       "orderIndex": 1,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>()"
     },
     {
@@ -99,7 +99,7 @@
       "isVolatile": false,
       "name": "ack:L1C1",
       "orderIndex": 0,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>(int,int)"
     }
   ]

@@ -15,7 +15,7 @@
               "isVolatile": false,
               "name": "initialLength",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "initialized",
               "type": "const unsigned long"
             },
             {
@@ -24,7 +24,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "TestStruct<long>*"
             }
           ]
@@ -40,7 +40,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "TestStruct<long>*"
             }
           ]
@@ -56,7 +56,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "TestStruct<generic(T)>*"
             }
           ]
@@ -72,7 +72,7 @@
               "isVolatile": false,
               "name": "initialLength",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "initialized",
               "type": "const unsigned long"
             },
             {
@@ -81,7 +81,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "TestStruct<generic(T)>*"
             }
           ]
@@ -95,7 +95,7 @@
           "isVolatile": false,
           "name": "ctor:L8C1",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "declared",
           "type": "p(const unsigned long)"
         },
         {
@@ -104,7 +104,7 @@
           "isVolatile": false,
           "name": "printLength:L12C1",
           "orderIndex": 3,
-          "state": "destructed",
+          "state": "declared",
           "type": "p()"
         },
         {
@@ -113,7 +113,7 @@
           "isVolatile": false,
           "name": "printLength:L12C1",
           "orderIndex": 3,
-          "state": "destructed",
+          "state": "declared",
           "type": "p()"
         },
         {
@@ -122,7 +122,7 @@
           "isVolatile": false,
           "name": "ctor:L8C1",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "declared",
           "type": "p(const unsigned long)"
         },
         {
@@ -131,7 +131,7 @@
           "isVolatile": false,
           "name": "length",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "declared",
           "type": "unsigned long"
         },
         {
@@ -140,7 +140,7 @@
           "isVolatile": false,
           "name": "_f1",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "long"
         }
       ]
@@ -156,7 +156,7 @@
           "isVolatile": false,
           "name": "b",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "initialized",
           "type": "TestStruct<long>"
         },
         {
@@ -165,7 +165,7 @@
           "isVolatile": false,
           "name": "a",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "TestStruct<long>"
         },
         {
@@ -174,7 +174,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -193,7 +193,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "TestStruct<generic(T)>*"
             }
           ]
@@ -209,7 +209,7 @@
               "isVolatile": false,
               "name": "initialLength",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "initialized",
               "type": "const unsigned long"
             },
             {
@@ -218,7 +218,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "TestStruct<generic(T)>*"
             }
           ]
@@ -232,7 +232,7 @@
           "isVolatile": false,
           "name": "printLength:L12C1",
           "orderIndex": 3,
-          "state": "destructed",
+          "state": "declared",
           "type": "p()"
         },
         {
@@ -241,7 +241,7 @@
           "isVolatile": false,
           "name": "ctor:L8C1",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "declared",
           "type": "p(const unsigned long)"
         },
         {
@@ -250,7 +250,7 @@
           "isVolatile": false,
           "name": "length",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "declared",
           "type": "unsigned long"
         },
         {
@@ -259,7 +259,7 @@
           "isVolatile": false,
           "name": "_f1",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "generic(T)"
         }
       ]
@@ -272,7 +272,7 @@
       "isVolatile": false,
       "name": "TestStruct",
       "orderIndex": 0,
-      "state": "destructed",
+      "state": "declared",
       "type": "TestStruct<long>"
     },
     {
@@ -281,7 +281,7 @@
       "isVolatile": false,
       "name": "Alias.container",
       "orderIndex": 2,
-      "state": "destructed",
+      "state": "declared",
       "type": "TestStruct<long>"
     },
     {
@@ -290,7 +290,7 @@
       "isVolatile": false,
       "name": "main(int, string[])",
       "orderIndex": 3,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>()"
     },
     {
@@ -299,7 +299,7 @@
       "isVolatile": false,
       "name": "Alias",
       "orderIndex": 1,
-      "state": "destructed",
+      "state": "declared",
       "type": "alias(TestStruct<long>)"
     },
     {
@@ -308,7 +308,7 @@
       "isVolatile": false,
       "name": "TestStruct",
       "orderIndex": 0,
-      "state": "destructed",
+      "state": "declared",
       "type": "TestStruct<long>"
     }
   ]
