@@ -487,14 +487,20 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
     return nullptr;
 
   // Visit right side
-  auto returnValueResult = std::any_cast<ExprResult>(visit(node->assignExpr()));
-
-  // Mark the given symbol, because we do not need to call the dtor on this
-  if (returnValueResult.entry != nullptr)
-    returnValueResult.entry->omitDtorCall = true;
+  auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
 
   // Check if types match
-  OpRuleManager::getAssignResultType(node->assignExpr(), returnType, returnValueResult.type, 0, false, ERROR_MSG_RETURN);
+  OpRuleManager::getAssignResultType(node->assignExpr(), returnType, rhs.type, 0, false, ERROR_MSG_RETURN);
+
+  // Manager dtor call
+  if (rhs.entry != nullptr) {
+    if (rhs.entry->anonymous)
+      // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
+      currentScope->symbolTable.deleteAnonymous(rhs.entry->name);
+    else
+      // Otherwise omit the destructor call, because the caller destructs the value
+      rhs.entry->omitDtorCall = true;
+  }
 
   return node->setEvaluatedSymbolType(returnType, manIdx);
 }
@@ -1684,14 +1690,19 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     for (size_t i = 0; i < node->fieldLst()->args().size(); i++) {
       // Get actual type
       AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
-      SymbolType actualType = std::any_cast<ExprResult>(visit(assignExpr)).type;
+      auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       // Get expected type
       const SymbolTableEntry *expectedField = structScope->symbolTable.lookupStrictByIndex(i);
       assert(expectedField != nullptr);
       SymbolType expectedType = expectedField->getType();
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
+
       // Check if actual type matches expected type
-      OpRuleManager::getFieldAssignResultType(assignExpr, expectedType, actualType, 0, rhsIsImmediate);
+      OpRuleManager::getFieldAssignResultType(assignExpr, expectedType, fieldResult.type, 0, rhsIsImmediate);
+
+      // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
+      if (fieldResult.entry != nullptr && fieldResult.entry->anonymous)
+        currentScope->symbolTable.deleteAnonymous(fieldResult.entry->name);
     }
   } else {
     for (SymbolType &fieldType : spiceStruct->fieldTypes) {

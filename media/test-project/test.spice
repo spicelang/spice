@@ -1,16 +1,22 @@
-type Test struct {
-    int t
+type TestStruct struct {
+    long lng
+    String str
+    int i
 }
 
-p Test.dtor() {
-    printf("Dtor called!");
+p TestStruct.dtor() {
+    printf("Dtor called\n");
 }
 
-f<Test> test() {
-    return Test{123};
+f<TestStruct> fct(int& ref) {
+    TestStruct ts = TestStruct{ 6l, String("test string"), ref };
+    return ts;
 }
 
 f<int> main() {
-   Test t = test();
-   printf("%d", t.t);
+    int test = 987654;
+    const TestStruct res = fct(test);
+    printf("Long: %d\n", res.lng);
+    printf("String: %s\n", res.str.getRaw());
+    printf("Int: %d\n", res.i);
 }

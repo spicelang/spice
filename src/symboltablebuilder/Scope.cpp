@@ -103,16 +103,6 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
     varsGoingOutOfScope.push_back(&symbolTable.symbols.at(name));
   }
 
-  // Collect all variables in the child scopes
-  for (const auto &[_, child] : children) {
-    const ScopeType scopeType = child->type;
-    // Exclude enum, global, struct and thread body (is a LLVM function) scopes
-    if (scopeType != SCOPE_ENUM && scopeType != SCOPE_GLOBAL && scopeType != SCOPE_STRUCT) {
-      std::vector childVars = child->getVarsGoingOutOfScope();
-      varsGoingOutOfScope.insert(varsGoingOutOfScope.end(), childVars.begin(), childVars.end());
-    }
-  }
-
   return varsGoingOutOfScope;
 }
 
