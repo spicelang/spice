@@ -233,8 +233,14 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   // Attach address to anonymous symbol to keep track of deallocation
   if (returnSType.is(TY_STRUCT) || data.isCtorCall()) {
     SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
-    if (anonymousSymbol != nullptr)
-      anonymousSymbol->updateAddress(data.isCtorCall() ? thisPtr : result);
+    if (anonymousSymbol != nullptr) {
+      if (data.isCtorCall()) {
+        anonymousSymbol->updateAddress(thisPtr);
+      } else {
+        llvm::Value *resultPtr = insertAlloca(result->getType());
+        anonymousSymbol->updateAddress(resultPtr);
+      }
+    }
   }
 
   // In case this is a constructor call, return the thisPtr as pointer
