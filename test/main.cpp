@@ -8,6 +8,7 @@
 
 bool updateRefs = false;
 bool runBenchmarks = false;
+bool enableLeakDetection = false;
 bool skipNonGitHubTests = false;
 
 /**
@@ -22,7 +23,7 @@ int main(int argc, char **argv) {
   // Initialize command line parser
   CLIInterface cli;
   cli.createInterface();
-  cli.addOptions(updateRefs, runBenchmarks, skipNonGitHubTests);
+  cli.addOptions(updateRefs, runBenchmarks, enableLeakDetection, skipNonGitHubTests);
   // Parse command line args
   cli.parse(argc, argv);
   // Run tests

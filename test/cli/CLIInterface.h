@@ -16,7 +16,7 @@ public:
 
   // Public methods
   void createInterface();
-  void addOptions(bool &updateRefs, bool &runBenchmarks, bool &skipNonGitHubTests);
+  void addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &skipNonGitHubTests);
   int parse(int argc, char **argv);
 
 private:

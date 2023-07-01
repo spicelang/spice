@@ -18,11 +18,13 @@ void CLIInterface::createInterface() {
   app.set_version_flag("--version,-v", versionString);
 }
 
-void CLIInterface::addOptions(bool &updateRefs, bool &runBenchmarks, bool &skipNonGitHubTests) {
+void CLIInterface::addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &skipNonGitHubTests) {
   // --update-refs
   app.add_flag<bool>("--update-refs,-u", updateRefs, "Update test reference files");
   // --run-benchmarks
   app.add_flag<bool>("--run-benchmarks,-b", runBenchmarks, "Also run benchmarks and check baseline values");
+  // --leak-detection
+  app.add_flag<bool>("--leak-detection,-l", enableLeakDetection, "Use Valgrind on tests to detect memory leaks");
   // --skip-github-tests
   app.add_flag<bool>("--skip-github-tests,-gh", skipNonGitHubTests, "Skip non-working tests on GitHub Actions");
 }
