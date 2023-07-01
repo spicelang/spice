@@ -194,7 +194,8 @@ void execTestCase(const TestCase &testCase) {
 
       // Execute binary
 #ifdef SPICE_RUN_VALGRIND_TESTING
-      std::string cmd = "valgrind --leak-check=full --error-exitcode=1 " + TestUtil::getDefaultExecutableName();
+      std::string cmd = "valgrind --leak-check=full --error-exitcode=1 ";
+      cmd += TestUtil::getDefaultExecutableName();
 #else
       std::string cmd = TestUtil::getDefaultExecutableName();
 #endif
