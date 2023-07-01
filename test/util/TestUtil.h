@@ -72,7 +72,7 @@ public:
   static std::string getFileContent(const std::string &filePath);
   static std::vector<std::string> getFileContentLinesVector(const std::string &filePath);
   static std::string toCamelCase(std::string input);
-  static std::string getDefaultExecutableName();
+  static constexpr const char *getDefaultExecutableName();
   static bool isDisabled(const TestCase &testCase, bool isGHActions);
   static void eraseIRModuleHeader(std::string &irCode);
   static void eraseLinesBySubstring(std::string &irCode, const char *const needle);

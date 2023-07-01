@@ -18,3 +18,6 @@ target_link_libraries(spicetest PUBLIC spicelib gtest antlr4_static ${LLVM_LIBS}
 
 # Test files
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/test-files ${CMAKE_CURRENT_BINARY_DIR}/test-files SYMBOLIC)
+
+# Add leak check target
+add_custom_target(spicetestleakcheck COMMAND valgrind --leak-check=full --error-exitcode=1 ./spicetest DEPENDS spicetest)

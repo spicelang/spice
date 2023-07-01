@@ -175,12 +175,12 @@ std::string TestUtil::toCamelCase(std::string input) {
  *
  * @return Name of the executable including the file extension
  */
-std::string TestUtil::getDefaultExecutableName() {
-  std::string executableName = "./source";
+constexpr const char *TestUtil::getDefaultExecutableName() {
 #if OS_WINDOWS
-  executableName = ".\\source.exe";
+  return ".\\source.exe";
+#else
+  return "./source";
 #endif
-  return executableName;
 }
 
 /**

@@ -193,7 +193,11 @@ void execTestCase(const TestCase &testCase) {
       resourceManager.linker.link();
 
       // Execute binary
+#ifdef SPICE_RUN_VALGRIND_TESTING
+      std::string cmd = "valgrind --leak-check=full --error-exitcode=1 " + TestUtil::getDefaultExecutableName();
+#else
       std::string cmd = TestUtil::getDefaultExecutableName();
+#endif
       const std::string cliFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + INPUT_NAME_CLI_FLAGS;
       if (FileUtil::fileExists(cliFlagsFile))
         cmd += " " + TestUtil::getFileContentLinesVector(cliFlagsFile)[0];

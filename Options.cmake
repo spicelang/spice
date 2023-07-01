@@ -56,6 +56,15 @@ else()
     message(STATUS "Spice: Address sanitizer disabled.")
 endif()
 
+# Valgrind testing
+option(SPICE_RUN_VALGRIND_TESTING "Run Valgrind testing to detect memory leaks while running tests" OFF)
+if (SPICE_RUN_VALGRIND_TESTING)
+    message(STATUS "Spice: Valgrind testing enabled.")
+    add_definitions(-DSPICE_RUN_VALGRIND_TESTING=true)
+else()
+    message(STATUS "Spice: Valgrind testing disabled.")
+endif()
+
 
 
 # Add additional definitions
