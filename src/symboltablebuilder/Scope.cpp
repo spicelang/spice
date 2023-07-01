@@ -8,23 +8,6 @@
 
 namespace spice::compiler {
 
-Scope::~Scope() {
-  // Reset fields
-  parent = nullptr;
-  codeLoc = nullptr;
-  // Notify all parents, that the scope is de-allocated now
-  for (Scope *p : parents) {
-    if (p)
-      for (auto &child : p->children)
-        if (child.second == this)
-          child.second = nullptr;
-  }
-  // Destroy child scopes
-  for (const auto &scope : children)
-    delete scope.second;
-  children.clear();
-}
-
 /**
  * Create a child scope and return it
  *
@@ -34,9 +17,8 @@ Scope::~Scope() {
  * @return Child scope (heap allocated)
  */
 Scope *Scope::createChildScope(const std::string &scopeName, const ScopeType &scopeType, const CodeLoc *codeLoc) {
-  auto newScope = new Scope(this, sourceFile, scopeType, codeLoc);
-  children.insert({scopeName, newScope});
-  return children.at(scopeName);
+  children.insert({scopeName, std::make_shared<Scope>(this, sourceFile, scopeType, codeLoc)});
+  return children.at(scopeName).get();
 }
 
 /**
@@ -62,15 +44,7 @@ void Scope::renameChildScope(const std::string &oldName, const std::string &newN
 void Scope::copyChildScope(const std::string &oldName, const std::string &newName) {
   assert(children.contains(oldName) && !children.contains(newName));
   // Create copy
-  const Scope *origChildScope = children.at(oldName);
-  auto newChildBlock = new Scope(*origChildScope);
-
-  // Add newChildBlock as parent of all children for tracking de-allocation
-  for (const auto &child : newChildBlock->children)
-    child.second->parents.push_back(newChildBlock);
-
-  // Insert the new child scope as child to the current scope
-  children.insert({newName, newChildBlock});
+  children.insert({newName, std::make_shared<Scope>(*children.at(oldName))});
 }
 
 /**
@@ -81,7 +55,7 @@ void Scope::copyChildScope(const std::string &oldName, const std::string &newNam
  */
 Scope *Scope::getChildScope(const std::string &scopeName) const {
   if (!children.empty() && children.contains(scopeName))
-    return children.at(scopeName);
+    return children.at(scopeName).get();
   return nullptr;
 }
 

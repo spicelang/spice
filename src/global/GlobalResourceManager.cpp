@@ -58,6 +58,9 @@ GlobalResourceManager::~GlobalResourceManager() {
   // Delete all source files
   for (auto &sourceFile : sourceFiles)
     delete sourceFile.second;
+
+  // Delete target machine
+  delete targetMachine;
 }
 
 SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const std::string &dependencyName,
