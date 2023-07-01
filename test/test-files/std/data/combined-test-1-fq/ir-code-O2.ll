@@ -39,6 +39,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %9 = call ptr @_mf__Pair_int_string__stringref__getSecond(ptr nonnull %p1) #2
   %10 = load ptr, ptr %9, align 8
   %11 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %10)
+  call void @"_mp__Vector_pair::Pair<int,string>__void__dtor"(ptr nonnull %pairVector) #2
   ret i32 0
 }
 
@@ -54,6 +55,8 @@ declare ptr @"_mf__Vector_pair::Pair<int,string>__pair::Pair<int,string>ref__get
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 declare ptr @_mf__Pair_int_string__stringref__getSecond(ptr) local_unnamed_addr
+
+declare void @"_mp__Vector_pair::Pair<int,string>__void__dtor"(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

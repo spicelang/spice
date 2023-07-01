@@ -50,10 +50,13 @@ define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !15 {
   %8 = alloca i32, align 4
   %9 = alloca i1, align 1
   %10 = alloca %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", align 8
-  %item = alloca i32, align 4
   %11 = alloca %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", align 8
-  %item1 = alloca ptr, align 8
+  %item = alloca i32, align 4
   %12 = alloca %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", align 8
+  %13 = alloca %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", align 8
+  %item1 = alloca ptr, align 8
+  %14 = alloca %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", align 8
+  %15 = alloca %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", align 8
   %idx = alloca i64, align 8
   %item2 = alloca ptr, align 8
   %pair_addr = alloca %__long_intref__Pair__long_intref, align 8
@@ -71,107 +74,107 @@ define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !15 {
   call void @_mp__Vector_int__void__pushBack__intref(ptr %vi, ptr %4), !dbg !37
   store i32 9876, ptr %5, align 4, !dbg !38
   call void @_mp__Vector_int__void__pushBack__intref(ptr %vi, ptr %5), !dbg !38
-  %13 = call i64 @_mf__Vector_int__long__getSize(ptr %vi), !dbg !39
-  %14 = icmp eq i64 %13, 3, !dbg !40
-  br i1 %14, label %assert.exit.L9, label %assert.then.L9, !dbg !40, !prof !41
+  %16 = call i64 @_mf__Vector_int__long__getSize(ptr %vi), !dbg !39
+  %17 = icmp eq i64 %16, 3, !dbg !40
+  br i1 %17, label %assert.exit.L9, label %assert.then.L9, !dbg !40, !prof !41
 
 assert.then.L9:                                   ; preds = %2
-  %15 = call i32 (ptr, ...) @printf(ptr @anon.string.0), !dbg !40
+  %18 = call i32 (ptr, ...) @printf(ptr @anon.string.0), !dbg !40
   call void @exit(i32 1), !dbg !40
   unreachable, !dbg !40
 
 assert.exit.L9:                                   ; preds = %2
-  %16 = call %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" @"_f__void__std/iterator/vector-iterator::VectorIterator<int>__iterate__std/iterator/vector-iterator::Vector<int>ref"(ptr %vi), !dbg !42
-  store %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" %16, ptr %it, align 8, !dbg !42
+  %19 = call %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" @"_f__void__std/iterator/vector-iterator::VectorIterator<int>__iterate__std/iterator/vector-iterator::Vector<int>ref"(ptr %vi), !dbg !42
+  store %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" %19, ptr %it, align 8, !dbg !42
   call void @llvm.dbg.declare(metadata ptr %it, metadata !43, metadata !DIExpression()), !dbg !42
-  store %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" %16, ptr %it, align 8, !dbg !42
-  %17 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !54
-  br i1 %17, label %assert.exit.L13, label %assert.then.L13, !dbg !54, !prof !41
+  store %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" %19, ptr %it, align 8, !dbg !42
+  %20 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !54
+  br i1 %20, label %assert.exit.L13, label %assert.then.L13, !dbg !54, !prof !41
 
 assert.then.L13:                                  ; preds = %assert.exit.L9
-  %18 = call i32 (ptr, ...) @printf(ptr @anon.string.1), !dbg !54
+  %21 = call i32 (ptr, ...) @printf(ptr @anon.string.1), !dbg !54
   call void @exit(i32 1), !dbg !54
   unreachable, !dbg !54
 
 assert.exit.L13:                                  ; preds = %assert.exit.L9
-  %19 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !55
-  %20 = load i32, ptr %19, align 4, !dbg !56
-  %21 = icmp eq i32 %20, 123, !dbg !56
-  br i1 %21, label %assert.exit.L14, label %assert.then.L14, !dbg !56, !prof !41
+  %22 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !55
+  %23 = load i32, ptr %22, align 4, !dbg !56
+  %24 = icmp eq i32 %23, 123, !dbg !56
+  br i1 %24, label %assert.exit.L14, label %assert.then.L14, !dbg !56, !prof !41
 
 assert.then.L14:                                  ; preds = %assert.exit.L13
-  %22 = call i32 (ptr, ...) @printf(ptr @anon.string.2), !dbg !56
+  %25 = call i32 (ptr, ...) @printf(ptr @anon.string.2), !dbg !56
   call void @exit(i32 1), !dbg !56
   unreachable, !dbg !56
 
 assert.exit.L14:                                  ; preds = %assert.exit.L13
-  %23 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !57
-  %24 = load i32, ptr %23, align 4, !dbg !58
-  %25 = icmp eq i32 %24, 123, !dbg !58
-  br i1 %25, label %assert.exit.L15, label %assert.then.L15, !dbg !58, !prof !41
+  %26 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !57
+  %27 = load i32, ptr %26, align 4, !dbg !58
+  %28 = icmp eq i32 %27, 123, !dbg !58
+  br i1 %28, label %assert.exit.L15, label %assert.then.L15, !dbg !58, !prof !41
 
 assert.then.L15:                                  ; preds = %assert.exit.L14
-  %26 = call i32 (ptr, ...) @printf(ptr @anon.string.3), !dbg !58
+  %29 = call i32 (ptr, ...) @printf(ptr @anon.string.3), !dbg !58
   call void @exit(i32 1), !dbg !58
   unreachable, !dbg !58
 
 assert.exit.L15:                                  ; preds = %assert.exit.L14
   call void @_mp__VectorIterator_int__void__next(ptr %it), !dbg !59
-  %27 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !60
-  %28 = load i32, ptr %27, align 4, !dbg !61
-  %29 = icmp eq i32 %28, 4321, !dbg !61
-  br i1 %29, label %assert.exit.L17, label %assert.then.L17, !dbg !61, !prof !41
+  %30 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !60
+  %31 = load i32, ptr %30, align 4, !dbg !61
+  %32 = icmp eq i32 %31, 4321, !dbg !61
+  br i1 %32, label %assert.exit.L17, label %assert.then.L17, !dbg !61, !prof !41
 
 assert.then.L17:                                  ; preds = %assert.exit.L15
-  %30 = call i32 (ptr, ...) @printf(ptr @anon.string.4), !dbg !61
+  %33 = call i32 (ptr, ...) @printf(ptr @anon.string.4), !dbg !61
   call void @exit(i32 1), !dbg !61
   unreachable, !dbg !61
 
 assert.exit.L17:                                  ; preds = %assert.exit.L15
-  %31 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !62
-  br i1 %31, label %assert.exit.L18, label %assert.then.L18, !dbg !62, !prof !41
+  %34 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !62
+  br i1 %34, label %assert.exit.L18, label %assert.then.L18, !dbg !62, !prof !41
 
 assert.then.L18:                                  ; preds = %assert.exit.L17
-  %32 = call i32 (ptr, ...) @printf(ptr @anon.string.5), !dbg !62
+  %35 = call i32 (ptr, ...) @printf(ptr @anon.string.5), !dbg !62
   call void @exit(i32 1), !dbg !62
   unreachable, !dbg !62
 
 assert.exit.L18:                                  ; preds = %assert.exit.L17
   call void @_mp__VectorIterator_int__void__next(ptr %it), !dbg !63
-  %33 = call %__long_intref__Pair__long_intref @"_mf__VectorIterator_int__std/iterator/iterable::Pair<unsigned long,int&>__getIdx"(ptr %it), !dbg !64
-  store %__long_intref__Pair__long_intref %33, ptr %pair, align 8, !dbg !64
+  %36 = call %__long_intref__Pair__long_intref @"_mf__VectorIterator_int__std/iterator/iterable::Pair<unsigned long,int&>__getIdx"(ptr %it), !dbg !64
+  store %__long_intref__Pair__long_intref %36, ptr %pair, align 8, !dbg !64
   call void @llvm.dbg.declare(metadata ptr %pair, metadata !65, metadata !DIExpression()), !dbg !64
-  store %__long_intref__Pair__long_intref %33, ptr %pair, align 8, !dbg !64
-  %34 = call ptr @_mf__Pair_long_intref__longref__getFirst(ptr %pair), !dbg !70
-  %35 = load i64, ptr %34, align 8, !dbg !71
-  %36 = icmp eq i64 %35, 2, !dbg !71
-  br i1 %36, label %assert.exit.L21, label %assert.then.L21, !dbg !71, !prof !41
+  store %__long_intref__Pair__long_intref %36, ptr %pair, align 8, !dbg !64
+  %37 = call ptr @_mf__Pair_long_intref__longref__getFirst(ptr %pair), !dbg !70
+  %38 = load i64, ptr %37, align 8, !dbg !71
+  %39 = icmp eq i64 %38, 2, !dbg !71
+  br i1 %39, label %assert.exit.L21, label %assert.then.L21, !dbg !71, !prof !41
 
 assert.then.L21:                                  ; preds = %assert.exit.L18
-  %37 = call i32 (ptr, ...) @printf(ptr @anon.string.6), !dbg !71
+  %40 = call i32 (ptr, ...) @printf(ptr @anon.string.6), !dbg !71
   call void @exit(i32 1), !dbg !71
   unreachable, !dbg !71
 
 assert.exit.L21:                                  ; preds = %assert.exit.L18
-  %38 = call ptr @_mf__Pair_long_intref__intref__getSecond(ptr %pair), !dbg !72
-  %39 = load i32, ptr %38, align 4, !dbg !73
-  %40 = icmp eq i32 %39, 9876, !dbg !73
-  br i1 %40, label %assert.exit.L22, label %assert.then.L22, !dbg !73, !prof !41
+  %41 = call ptr @_mf__Pair_long_intref__intref__getSecond(ptr %pair), !dbg !72
+  %42 = load i32, ptr %41, align 4, !dbg !73
+  %43 = icmp eq i32 %42, 9876, !dbg !73
+  br i1 %43, label %assert.exit.L22, label %assert.then.L22, !dbg !73, !prof !41
 
 assert.then.L22:                                  ; preds = %assert.exit.L21
-  %41 = call i32 (ptr, ...) @printf(ptr @anon.string.7), !dbg !73
+  %44 = call i32 (ptr, ...) @printf(ptr @anon.string.7), !dbg !73
   call void @exit(i32 1), !dbg !73
   unreachable, !dbg !73
 
 assert.exit.L22:                                  ; preds = %assert.exit.L21
   call void @_mp__VectorIterator_int__void__next(ptr %it), !dbg !74
-  %42 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !75
-  %43 = xor i1 %42, true, !dbg !75
-  store i1 %43, ptr %6, align 1, !dbg !75
-  br i1 %43, label %assert.exit.L24, label %assert.then.L24, !dbg !75, !prof !41
+  %45 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !75
+  %46 = xor i1 %45, true, !dbg !75
+  store i1 %46, ptr %6, align 1, !dbg !75
+  br i1 %46, label %assert.exit.L24, label %assert.then.L24, !dbg !75, !prof !41
 
 assert.then.L24:                                  ; preds = %assert.exit.L22
-  %44 = call i32 (ptr, ...) @printf(ptr @anon.string.8), !dbg !75
+  %47 = call i32 (ptr, ...) @printf(ptr @anon.string.8), !dbg !75
   call void @exit(i32 1), !dbg !75
   unreachable, !dbg !75
 
@@ -180,267 +183,268 @@ assert.exit.L24:                                  ; preds = %assert.exit.L22
   call void @_mp__Vector_int__void__pushBack__intref(ptr %vi, ptr %7), !dbg !76
   store i32 -99, ptr %8, align 4, !dbg !77
   call void @_mp__Vector_int__void__pushBack__intref(ptr %vi, ptr %8), !dbg !77
-  %45 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !78
-  br i1 %45, label %assert.exit.L29, label %assert.then.L29, !dbg !78, !prof !41
+  %48 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !78
+  br i1 %48, label %assert.exit.L29, label %assert.then.L29, !dbg !78, !prof !41
 
 assert.then.L29:                                  ; preds = %assert.exit.L24
-  %46 = call i32 (ptr, ...) @printf(ptr @anon.string.9), !dbg !78
+  %49 = call i32 (ptr, ...) @printf(ptr @anon.string.9), !dbg !78
   call void @exit(i32 1), !dbg !78
   unreachable, !dbg !78
 
 assert.exit.L29:                                  ; preds = %assert.exit.L24
   call void @"_p__void__void__op.minusequal__VectorIterator<int>ref_int"(ptr %it, i32 3), !dbg !79
-  %47 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !80
-  %48 = load i32, ptr %47, align 4, !dbg !81
-  %49 = icmp eq i32 %48, 123, !dbg !81
-  br i1 %49, label %assert.exit.L33, label %assert.then.L33, !dbg !81, !prof !41
+  %50 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !80
+  %51 = load i32, ptr %50, align 4, !dbg !81
+  %52 = icmp eq i32 %51, 123, !dbg !81
+  br i1 %52, label %assert.exit.L33, label %assert.then.L33, !dbg !81, !prof !41
 
 assert.then.L33:                                  ; preds = %assert.exit.L29
-  %50 = call i32 (ptr, ...) @printf(ptr @anon.string.10), !dbg !81
+  %53 = call i32 (ptr, ...) @printf(ptr @anon.string.10), !dbg !81
   call void @exit(i32 1), !dbg !81
   unreachable, !dbg !81
 
 assert.exit.L33:                                  ; preds = %assert.exit.L29
-  %51 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !82
-  br i1 %51, label %assert.exit.L34, label %assert.then.L34, !dbg !82, !prof !41
+  %54 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !82
+  br i1 %54, label %assert.exit.L34, label %assert.then.L34, !dbg !82, !prof !41
 
 assert.then.L34:                                  ; preds = %assert.exit.L33
-  %52 = call i32 (ptr, ...) @printf(ptr @anon.string.11), !dbg !82
+  %55 = call i32 (ptr, ...) @printf(ptr @anon.string.11), !dbg !82
   call void @exit(i32 1), !dbg !82
   unreachable, !dbg !82
 
 assert.exit.L34:                                  ; preds = %assert.exit.L33
-  %53 = load %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", ptr %it, align 8, !dbg !83
+  %56 = load %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", ptr %it, align 8, !dbg !83
   call void @"_p__void__void__op.plusplus.post__VectorIterator<int>ref"(ptr %it), !dbg !83
-  %54 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !84
-  %55 = load i32, ptr %54, align 4, !dbg !85
-  %56 = icmp eq i32 %55, 4321, !dbg !85
-  br i1 %56, label %assert.exit.L36, label %assert.then.L36, !dbg !85, !prof !41
+  %57 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !84
+  %58 = load i32, ptr %57, align 4, !dbg !85
+  %59 = icmp eq i32 %58, 4321, !dbg !85
+  br i1 %59, label %assert.exit.L36, label %assert.then.L36, !dbg !85, !prof !41
 
 assert.then.L36:                                  ; preds = %assert.exit.L34
-  %57 = call i32 (ptr, ...) @printf(ptr @anon.string.12), !dbg !85
+  %60 = call i32 (ptr, ...) @printf(ptr @anon.string.12), !dbg !85
   call void @exit(i32 1), !dbg !85
   unreachable, !dbg !85
 
 assert.exit.L36:                                  ; preds = %assert.exit.L34
-  %58 = load %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", ptr %it, align 8, !dbg !86
+  %61 = load %"__int__VectorIterator__std/data/vector::Vector<int>ref_long", ptr %it, align 8, !dbg !86
   call void @"_p__void__void__op.minusminus.post__VectorIterator<int>ref"(ptr %it), !dbg !86
-  %59 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !87
-  %60 = load i32, ptr %59, align 4, !dbg !88
-  %61 = icmp eq i32 %60, 123, !dbg !88
-  br i1 %61, label %assert.exit.L38, label %assert.then.L38, !dbg !88, !prof !41
+  %62 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !87
+  %63 = load i32, ptr %62, align 4, !dbg !88
+  %64 = icmp eq i32 %63, 123, !dbg !88
+  br i1 %64, label %assert.exit.L38, label %assert.then.L38, !dbg !88, !prof !41
 
 assert.then.L38:                                  ; preds = %assert.exit.L36
-  %62 = call i32 (ptr, ...) @printf(ptr @anon.string.13), !dbg !88
+  %65 = call i32 (ptr, ...) @printf(ptr @anon.string.13), !dbg !88
   call void @exit(i32 1), !dbg !88
   unreachable, !dbg !88
 
 assert.exit.L38:                                  ; preds = %assert.exit.L36
   call void @"_p__void__void__op.plusequal__VectorIterator<int>ref_int"(ptr %it, i32 4), !dbg !89
-  %63 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !90
-  %64 = load i32, ptr %63, align 4, !dbg !91
-  %65 = icmp eq i32 %64, -99, !dbg !91
-  br i1 %65, label %assert.exit.L40, label %assert.then.L40, !dbg !91, !prof !41
+  %66 = call ptr @_mf__VectorIterator_int__intref__get(ptr %it), !dbg !90
+  %67 = load i32, ptr %66, align 4, !dbg !91
+  %68 = icmp eq i32 %67, -99, !dbg !91
+  br i1 %68, label %assert.exit.L40, label %assert.then.L40, !dbg !91, !prof !41
 
 assert.then.L40:                                  ; preds = %assert.exit.L38
-  %66 = call i32 (ptr, ...) @printf(ptr @anon.string.14), !dbg !91
+  %69 = call i32 (ptr, ...) @printf(ptr @anon.string.14), !dbg !91
   call void @exit(i32 1), !dbg !91
   unreachable, !dbg !91
 
 assert.exit.L40:                                  ; preds = %assert.exit.L38
   call void @_mp__VectorIterator_int__void__next(ptr %it), !dbg !92
-  %67 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !93
-  %68 = xor i1 %67, true, !dbg !93
-  store i1 %68, ptr %9, align 1, !dbg !93
-  br i1 %68, label %assert.exit.L42, label %assert.then.L42, !dbg !93, !prof !41
+  %70 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %it), !dbg !93
+  %71 = xor i1 %70, true, !dbg !93
+  store i1 %71, ptr %9, align 1, !dbg !93
+  br i1 %71, label %assert.exit.L42, label %assert.then.L42, !dbg !93, !prof !41
 
 assert.then.L42:                                  ; preds = %assert.exit.L40
-  %69 = call i32 (ptr, ...) @printf(ptr @anon.string.15), !dbg !93
+  %72 = call i32 (ptr, ...) @printf(ptr @anon.string.15), !dbg !93
   call void @exit(i32 1), !dbg !93
   unreachable, !dbg !93
 
 assert.exit.L42:                                  ; preds = %assert.exit.L40
-  %70 = call %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" @"_f__void__std/iterator/vector-iterator::VectorIterator<int>__iterate__std/iterator/vector-iterator::Vector<int>ref"(ptr %vi), !dbg !94
+  %73 = call %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" @"_f__void__std/iterator/vector-iterator::VectorIterator<int>__iterate__std/iterator/vector-iterator::Vector<int>ref"(ptr %vi), !dbg !94
   call void @llvm.dbg.declare(metadata ptr %item, metadata !95, metadata !DIExpression()), !dbg !96
-  store %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" %70, ptr %10, align 8, !dbg !94
+  store %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" %73, ptr %11, align 8, !dbg !94
   br label %foreach.head.L45, !dbg !96
 
 foreach.head.L45:                                 ; preds = %foreach.tail.L45, %assert.exit.L42
-  %71 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %10), !dbg !96
-  br i1 %71, label %foreach.body.L45, label %foreach.exit.L45, !dbg !96
+  %74 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %11), !dbg !96
+  br i1 %74, label %foreach.body.L45, label %foreach.exit.L45, !dbg !96
 
 foreach.body.L45:                                 ; preds = %foreach.head.L45
-  %72 = call ptr @_mf__VectorIterator_int__intref__get(ptr %10), !dbg !96
-  %73 = load i32, ptr %72, align 4, !dbg !96
-  store i32 %73, ptr %item, align 4, !dbg !96
-  %74 = load i32, ptr %item, align 4, !dbg !97
-  %75 = add i32 %74, 1, !dbg !97
-  store i32 %75, ptr %item, align 4, !dbg !97
+  %75 = call ptr @_mf__VectorIterator_int__intref__get(ptr %11), !dbg !96
+  %76 = load i32, ptr %75, align 4, !dbg !96
+  store i32 %76, ptr %item, align 4, !dbg !96
+  %77 = load i32, ptr %item, align 4, !dbg !97
+  %78 = add i32 %77, 1, !dbg !97
+  store i32 %78, ptr %item, align 4, !dbg !97
   br label %foreach.tail.L45, !dbg !97
 
 foreach.tail.L45:                                 ; preds = %foreach.body.L45
-  call void @_mp__VectorIterator_int__void__next(ptr %10), !dbg !97
+  call void @_mp__VectorIterator_int__void__next(ptr %11), !dbg !97
   br label %foreach.head.L45, !dbg !97
 
 foreach.exit.L45:                                 ; preds = %foreach.head.L45
-  %76 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 0), !dbg !98
-  %77 = load i32, ptr %76, align 4, !dbg !99
-  %78 = icmp eq i32 %77, 123, !dbg !99
-  br i1 %78, label %assert.exit.L48, label %assert.then.L48, !dbg !99, !prof !41
+  %79 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 0), !dbg !98
+  %80 = load i32, ptr %79, align 4, !dbg !99
+  %81 = icmp eq i32 %80, 123, !dbg !99
+  br i1 %81, label %assert.exit.L48, label %assert.then.L48, !dbg !99, !prof !41
 
 assert.then.L48:                                  ; preds = %foreach.exit.L45
-  %79 = call i32 (ptr, ...) @printf(ptr @anon.string.16), !dbg !99
+  %82 = call i32 (ptr, ...) @printf(ptr @anon.string.16), !dbg !99
   call void @exit(i32 1), !dbg !99
   unreachable, !dbg !99
 
 assert.exit.L48:                                  ; preds = %foreach.exit.L45
-  %80 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 1), !dbg !100
-  %81 = load i32, ptr %80, align 4, !dbg !101
-  %82 = icmp eq i32 %81, 4321, !dbg !101
-  br i1 %82, label %assert.exit.L49, label %assert.then.L49, !dbg !101, !prof !41
+  %83 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 1), !dbg !100
+  %84 = load i32, ptr %83, align 4, !dbg !101
+  %85 = icmp eq i32 %84, 4321, !dbg !101
+  br i1 %85, label %assert.exit.L49, label %assert.then.L49, !dbg !101, !prof !41
 
 assert.then.L49:                                  ; preds = %assert.exit.L48
-  %83 = call i32 (ptr, ...) @printf(ptr @anon.string.17), !dbg !101
+  %86 = call i32 (ptr, ...) @printf(ptr @anon.string.17), !dbg !101
   call void @exit(i32 1), !dbg !101
   unreachable, !dbg !101
 
 assert.exit.L49:                                  ; preds = %assert.exit.L48
-  %84 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 2), !dbg !102
-  %85 = load i32, ptr %84, align 4, !dbg !103
-  %86 = icmp eq i32 %85, 9876, !dbg !103
-  br i1 %86, label %assert.exit.L50, label %assert.then.L50, !dbg !103, !prof !41
+  %87 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 2), !dbg !102
+  %88 = load i32, ptr %87, align 4, !dbg !103
+  %89 = icmp eq i32 %88, 9876, !dbg !103
+  br i1 %89, label %assert.exit.L50, label %assert.then.L50, !dbg !103, !prof !41
 
 assert.then.L50:                                  ; preds = %assert.exit.L49
-  %87 = call i32 (ptr, ...) @printf(ptr @anon.string.18), !dbg !103
+  %90 = call i32 (ptr, ...) @printf(ptr @anon.string.18), !dbg !103
   call void @exit(i32 1), !dbg !103
   unreachable, !dbg !103
 
 assert.exit.L50:                                  ; preds = %assert.exit.L49
-  %88 = call %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" @"_f__void__std/iterator/vector-iterator::VectorIterator<int>__iterate__std/iterator/vector-iterator::Vector<int>ref"(ptr %vi), !dbg !104
+  %91 = call %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" @"_f__void__std/iterator/vector-iterator::VectorIterator<int>__iterate__std/iterator/vector-iterator::Vector<int>ref"(ptr %vi), !dbg !104
   call void @llvm.dbg.declare(metadata ptr %item1, metadata !105, metadata !DIExpression()), !dbg !106
-  store %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" %88, ptr %11, align 8, !dbg !104
+  store %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" %91, ptr %13, align 8, !dbg !104
   br label %foreach.head.L53, !dbg !106
 
 foreach.head.L53:                                 ; preds = %foreach.tail.L53, %assert.exit.L50
-  %89 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %11), !dbg !106
-  br i1 %89, label %foreach.body.L53, label %foreach.exit.L53, !dbg !106
+  %92 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %13), !dbg !106
+  br i1 %92, label %foreach.body.L53, label %foreach.exit.L53, !dbg !106
 
 foreach.body.L53:                                 ; preds = %foreach.head.L53
-  %90 = call ptr @_mf__VectorIterator_int__intref__get(ptr %11), !dbg !106
-  store ptr %90, ptr %item1, align 8, !dbg !106
-  %91 = load ptr, ptr %item1, align 8, !dbg !107
-  %92 = load i32, ptr %91, align 4, !dbg !107
-  %93 = add i32 %92, 1, !dbg !107
-  store i32 %93, ptr %91, align 4, !dbg !107
+  %93 = call ptr @_mf__VectorIterator_int__intref__get(ptr %13), !dbg !106
+  store ptr %93, ptr %item1, align 8, !dbg !106
+  %94 = load ptr, ptr %item1, align 8, !dbg !107
+  %95 = load i32, ptr %94, align 4, !dbg !107
+  %96 = add i32 %95, 1, !dbg !107
+  store i32 %96, ptr %94, align 4, !dbg !107
   br label %foreach.tail.L53, !dbg !107
 
 foreach.tail.L53:                                 ; preds = %foreach.body.L53
-  call void @_mp__VectorIterator_int__void__next(ptr %11), !dbg !107
+  call void @_mp__VectorIterator_int__void__next(ptr %13), !dbg !107
   br label %foreach.head.L53, !dbg !107
 
 foreach.exit.L53:                                 ; preds = %foreach.head.L53
-  %94 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 0), !dbg !108
-  %95 = load i32, ptr %94, align 4, !dbg !109
-  %96 = icmp eq i32 %95, 124, !dbg !109
-  br i1 %96, label %assert.exit.L56, label %assert.then.L56, !dbg !109, !prof !41
+  %97 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 0), !dbg !108
+  %98 = load i32, ptr %97, align 4, !dbg !109
+  %99 = icmp eq i32 %98, 124, !dbg !109
+  br i1 %99, label %assert.exit.L56, label %assert.then.L56, !dbg !109, !prof !41
 
 assert.then.L56:                                  ; preds = %foreach.exit.L53
-  %97 = call i32 (ptr, ...) @printf(ptr @anon.string.19), !dbg !109
+  %100 = call i32 (ptr, ...) @printf(ptr @anon.string.19), !dbg !109
   call void @exit(i32 1), !dbg !109
   unreachable, !dbg !109
 
 assert.exit.L56:                                  ; preds = %foreach.exit.L53
-  %98 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 1), !dbg !110
-  %99 = load i32, ptr %98, align 4, !dbg !111
-  %100 = icmp eq i32 %99, 4322, !dbg !111
-  br i1 %100, label %assert.exit.L57, label %assert.then.L57, !dbg !111, !prof !41
+  %101 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 1), !dbg !110
+  %102 = load i32, ptr %101, align 4, !dbg !111
+  %103 = icmp eq i32 %102, 4322, !dbg !111
+  br i1 %103, label %assert.exit.L57, label %assert.then.L57, !dbg !111, !prof !41
 
 assert.then.L57:                                  ; preds = %assert.exit.L56
-  %101 = call i32 (ptr, ...) @printf(ptr @anon.string.20), !dbg !111
+  %104 = call i32 (ptr, ...) @printf(ptr @anon.string.20), !dbg !111
   call void @exit(i32 1), !dbg !111
   unreachable, !dbg !111
 
 assert.exit.L57:                                  ; preds = %assert.exit.L56
-  %102 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 2), !dbg !112
-  %103 = load i32, ptr %102, align 4, !dbg !113
-  %104 = icmp eq i32 %103, 9877, !dbg !113
-  br i1 %104, label %assert.exit.L58, label %assert.then.L58, !dbg !113, !prof !41
+  %105 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 2), !dbg !112
+  %106 = load i32, ptr %105, align 4, !dbg !113
+  %107 = icmp eq i32 %106, 9877, !dbg !113
+  br i1 %107, label %assert.exit.L58, label %assert.then.L58, !dbg !113, !prof !41
 
 assert.then.L58:                                  ; preds = %assert.exit.L57
-  %105 = call i32 (ptr, ...) @printf(ptr @anon.string.21), !dbg !113
+  %108 = call i32 (ptr, ...) @printf(ptr @anon.string.21), !dbg !113
   call void @exit(i32 1), !dbg !113
   unreachable, !dbg !113
 
 assert.exit.L58:                                  ; preds = %assert.exit.L57
-  %106 = call %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" @"_f__void__std/iterator/vector-iterator::VectorIterator<int>__iterate__std/iterator/vector-iterator::Vector<int>ref"(ptr %vi), !dbg !114
-  store %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" %106, ptr %12, align 8, !dbg !114
+  %109 = call %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" @"_f__void__std/iterator/vector-iterator::VectorIterator<int>__iterate__std/iterator/vector-iterator::Vector<int>ref"(ptr %vi), !dbg !114
+  store %"__int__VectorIterator__std/data/vector::Vector<int>ref_long" %109, ptr %15, align 8, !dbg !114
   call void @llvm.dbg.declare(metadata ptr %idx, metadata !115, metadata !DIExpression()), !dbg !117
   call void @llvm.dbg.declare(metadata ptr %item2, metadata !118, metadata !DIExpression()), !dbg !119
   store i64 0, ptr %idx, align 8, !dbg !117
   br label %foreach.head.L60, !dbg !119
 
 foreach.head.L60:                                 ; preds = %foreach.tail.L60, %assert.exit.L58
-  %107 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %12), !dbg !119
-  br i1 %107, label %foreach.body.L60, label %foreach.exit.L60, !dbg !119
+  %110 = call i1 @_mf__VectorIterator_int__bool__isValid(ptr %15), !dbg !119
+  br i1 %110, label %foreach.body.L60, label %foreach.exit.L60, !dbg !119
 
 foreach.body.L60:                                 ; preds = %foreach.head.L60
-  %pair3 = call %__long_intref__Pair__long_intref @"_mf__VectorIterator_int__std/iterator/iterable::Pair<unsigned long,int&>__getIdx"(ptr %12), !dbg !119
+  %pair3 = call %__long_intref__Pair__long_intref @"_mf__VectorIterator_int__std/iterator/iterable::Pair<unsigned long,int&>__getIdx"(ptr %15), !dbg !119
   store %__long_intref__Pair__long_intref %pair3, ptr %pair_addr, align 8, !dbg !119
   %idx_addr = getelementptr inbounds %__long_intref__Pair__long_intref, ptr %pair_addr, i32 0, i32 0, !dbg !119
-  %108 = load i64, ptr %idx_addr, align 8, !dbg !119
-  store i64 %108, ptr %idx, align 8, !dbg !119
+  %111 = load i64, ptr %idx_addr, align 8, !dbg !119
+  store i64 %111, ptr %idx, align 8, !dbg !119
   %item_addr = getelementptr inbounds %__long_intref__Pair__long_intref, ptr %pair_addr, i32 0, i32 1, !dbg !119
-  %109 = load ptr, ptr %item_addr, align 8, !dbg !119
-  store ptr %109, ptr %item2, align 8, !dbg !119
-  %110 = load i64, ptr %idx, align 8, !dbg !120
-  %111 = trunc i64 %110 to i32, !dbg !120
-  %112 = load ptr, ptr %item2, align 8, !dbg !120
-  %113 = load i32, ptr %112, align 4, !dbg !120
-  %114 = add i32 %113, %111, !dbg !120
-  store i32 %114, ptr %112, align 4, !dbg !120
+  %112 = load ptr, ptr %item_addr, align 8, !dbg !119
+  store ptr %112, ptr %item2, align 8, !dbg !119
+  %113 = load i64, ptr %idx, align 8, !dbg !120
+  %114 = trunc i64 %113 to i32, !dbg !120
+  %115 = load ptr, ptr %item2, align 8, !dbg !120
+  %116 = load i32, ptr %115, align 4, !dbg !120
+  %117 = add i32 %116, %114, !dbg !120
+  store i32 %117, ptr %115, align 4, !dbg !120
   br label %foreach.tail.L60, !dbg !120
 
 foreach.tail.L60:                                 ; preds = %foreach.body.L60
-  call void @_mp__VectorIterator_int__void__next(ptr %12), !dbg !120
+  call void @_mp__VectorIterator_int__void__next(ptr %15), !dbg !120
   br label %foreach.head.L60, !dbg !120
 
 foreach.exit.L60:                                 ; preds = %foreach.head.L60
-  %115 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 0), !dbg !121
-  %116 = load i32, ptr %115, align 4, !dbg !122
-  %117 = icmp eq i32 %116, 124, !dbg !122
-  br i1 %117, label %assert.exit.L63, label %assert.then.L63, !dbg !122, !prof !41
+  %118 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 0), !dbg !121
+  %119 = load i32, ptr %118, align 4, !dbg !122
+  %120 = icmp eq i32 %119, 124, !dbg !122
+  br i1 %120, label %assert.exit.L63, label %assert.then.L63, !dbg !122, !prof !41
 
 assert.then.L63:                                  ; preds = %foreach.exit.L60
-  %118 = call i32 (ptr, ...) @printf(ptr @anon.string.22), !dbg !122
+  %121 = call i32 (ptr, ...) @printf(ptr @anon.string.22), !dbg !122
   call void @exit(i32 1), !dbg !122
   unreachable, !dbg !122
 
 assert.exit.L63:                                  ; preds = %foreach.exit.L60
-  %119 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 1), !dbg !123
-  %120 = load i32, ptr %119, align 4, !dbg !124
-  %121 = icmp eq i32 %120, 4323, !dbg !124
-  br i1 %121, label %assert.exit.L64, label %assert.then.L64, !dbg !124, !prof !41
+  %122 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 1), !dbg !123
+  %123 = load i32, ptr %122, align 4, !dbg !124
+  %124 = icmp eq i32 %123, 4323, !dbg !124
+  br i1 %124, label %assert.exit.L64, label %assert.then.L64, !dbg !124, !prof !41
 
 assert.then.L64:                                  ; preds = %assert.exit.L63
-  %122 = call i32 (ptr, ...) @printf(ptr @anon.string.23), !dbg !124
+  %125 = call i32 (ptr, ...) @printf(ptr @anon.string.23), !dbg !124
   call void @exit(i32 1), !dbg !124
   unreachable, !dbg !124
 
 assert.exit.L64:                                  ; preds = %assert.exit.L63
-  %123 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 2), !dbg !125
-  %124 = load i32, ptr %123, align 4, !dbg !126
-  %125 = icmp eq i32 %124, 9879, !dbg !126
-  br i1 %125, label %assert.exit.L65, label %assert.then.L65, !dbg !126, !prof !41
+  %126 = call ptr @_mf__Vector_int__intref__get__int(ptr %vi, i32 2), !dbg !125
+  %127 = load i32, ptr %126, align 4, !dbg !126
+  %128 = icmp eq i32 %127, 9879, !dbg !126
+  br i1 %128, label %assert.exit.L65, label %assert.then.L65, !dbg !126, !prof !41
 
 assert.then.L65:                                  ; preds = %assert.exit.L64
-  %126 = call i32 (ptr, ...) @printf(ptr @anon.string.24), !dbg !126
+  %129 = call i32 (ptr, ...) @printf(ptr @anon.string.24), !dbg !126
   call void @exit(i32 1), !dbg !126
   unreachable, !dbg !126
 
 assert.exit.L65:                                  ; preds = %assert.exit.L64
-  %127 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !127
-  %128 = load i32, ptr %result, align 4, !dbg !127
-  ret i32 %128, !dbg !127
+  %130 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !127
+  call void @_mp__Vector_int__void__dtor(ptr %vi), !dbg !127
+  %131 = load i32, ptr %result, align 4, !dbg !127
+  ret i32 %131, !dbg !127
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
@@ -479,6 +483,8 @@ declare void @"_p__void__void__op.minusminus.post__VectorIterator<int>ref"(ptr)
 declare void @"_p__void__void__op.plusequal__VectorIterator<int>ref_int"(ptr, i32)
 
 declare ptr @_mf__Vector_int__intref__get__int(ptr, i32)
+
+declare void @_mp__Vector_int__void__dtor(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

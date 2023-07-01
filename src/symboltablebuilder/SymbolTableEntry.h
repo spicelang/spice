@@ -41,6 +41,7 @@ public:
   void updateAddress(llvm::Value *address);
   void pushAddress(llvm::Value *address);
   void popAddress();
+  [[nodiscard]] bool isInitialized() const { return lifecycle.isInitialized(); }
   [[nodiscard]] bool isDead() const { return lifecycle.isDead(); }
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
@@ -54,6 +55,7 @@ public:
   bool isVolatile = false;
   bool anonymous = false;
   bool used = false;
+  bool omitDtorCall = false;
 
 private:
   // Members

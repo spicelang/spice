@@ -19,7 +19,7 @@
           "isVolatile": false,
           "name": "n",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "initialized",
           "type": "int"
         },
         {
@@ -28,7 +28,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -44,7 +44,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -57,7 +57,7 @@
       "isVolatile": false,
       "name": "main(int, string[])",
       "orderIndex": 1,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>()"
     },
     {
@@ -66,7 +66,7 @@
       "isVolatile": false,
       "name": "fibo:L1C1",
       "orderIndex": 0,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>(int)"
     }
   ]

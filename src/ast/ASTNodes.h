@@ -727,9 +727,15 @@ public:
 
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  void resizeToNumberOfManifestations(size_t manifestationCount) override {
+    ASTNode::resizeToNumberOfManifestations(manifestationCount);
+    dtorFunctions.resize(manifestationCount, std::vector<std::pair<SymbolTableEntry *, Function *>>());
+  }
 
   // Public members
   size_t complexity = 0;
+  // Outer vector: manifestation index; inner vector: list of dtor functions
+  std::vector<std::vector<std::pair<SymbolTableEntry *, Function *>>> dtorFunctions;
 };
 
 // ========================================================= TypeLstNode =========================================================
@@ -1076,6 +1082,10 @@ public:
 
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override { return true; }
+  [[nodiscard]] StmtLstNode *getParentScopeNode() const {
+    assert(dynamic_cast<StmtLstNode *>(parent->parent) != nullptr);
+    return static_cast<StmtLstNode *>(parent->parent);
+  }
 
   // Public members
   bool hasReturnValue = false;

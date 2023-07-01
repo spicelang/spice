@@ -21,7 +21,10 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
   size_t orderIndex = symbols.size();
   // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
   symbols.insert({name, SymbolTableEntry(name, SymbolType(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
-  return &symbols.at(name);
+  // Set entry to declared
+  SymbolTableEntry *entry = &symbols.at(name);
+  entry->updateState(DECLARED, declNode);
+  return entry;
 }
 
 /**
@@ -38,9 +41,10 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, ASTNode *
     return anonSymbol;
   // Otherwise, create an anonymous entry
   const std::string name = "anon." + declNode->codeLoc.toString();
-  insert(name, declNode);
-  SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc);
+  SymbolTableEntry *anonSymbol = insert(name, declNode);
   anonSymbol->updateType(type, false);
+  anonSymbol->updateState(DECLARED, declNode);
+  anonSymbol->updateState(INITIALIZED, declNode);
   anonSymbol->anonymous = true;
   anonSymbol->used = true;
   return anonSymbol;

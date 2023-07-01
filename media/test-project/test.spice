@@ -1,24 +1,22 @@
-import "std/math/fct";
+type TestStruct struct {
+    long lng
+    String str
+    int i
+}
+
+p TestStruct.dtor() {
+    printf("Dtor called\n");
+}
+
+f<TestStruct> fct(int& ref) {
+    TestStruct ts = TestStruct{ 6l, String("test string"), ref };
+    return ts;
+}
 
 f<int> main() {
-    printf("Abs (int): %d\n", abs(123));
-    printf("Abs (int): %d\n", abs(-137));
-    printf("Abs (short): %d\n", abs(56s));
-    printf("Abs (short): %d\n", abs(-3s));
-    printf("Abs (long): %d\n", abs(1234567890l));
-    printf("Abs (long): %d\n", abs(-987654321l));
-    printf("Abs (double): %f\n", abs(56.123));
-    printf("Abs (double): %f\n", abs(-348.12));
-
-    printf("Deg2Rad: %f\n", degToRad(420.0));
-
-    printf("Sin (double): %f\n", sin(78.345));
-    printf("Sin (int): %f\n", sin(23));
-    printf("Sin (short): %f\n", sin(-68s));
-    printf("Sin (long): %f\n", sin(359l));
-
-    printf("Cos (double): %f\n", cos(78.345));
-    printf("Cos (int): %f\n", cos(23));
-    printf("Cos (short): %f\n", cos(-68s));
-    printf("Cos (long): %f\n", cos(359l));
+    int test = 987654;
+    const TestStruct res = fct(test);
+    printf("Long: %d\n", res.lng);
+    printf("String: %s\n", res.str.getRaw());
+    printf("Int: %d\n", res.i);
 }

@@ -44,6 +44,7 @@ while.body.L12:                                   ; preds = %0, %while.body.L12
   br i1 %14, label %while.exit.L12, label %while.body.L12
 
 while.exit.L12:                                   ; preds = %while.body.L12, %0
+  call void @_mp__Queue_char__void__dtor(ptr nonnull %q1) #2
   ret i32 0
 }
 
@@ -61,6 +62,8 @@ declare i64 @_mf__Queue_char__long__getCapacity(ptr) local_unnamed_addr
 declare i1 @_mf__Queue_char__bool__isEmpty(ptr) local_unnamed_addr
 
 declare ptr @_mf__Queue_char__charref__pop(ptr) local_unnamed_addr
+
+declare void @_mp__Queue_char__void__dtor(ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @putchar(i32 noundef) local_unnamed_addr #1

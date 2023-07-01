@@ -28,6 +28,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %10 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.4, i64 %9)
   %11 = call i64 @_mf__String__long__getCapacity(ptr nonnull %s) #2
   %12 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.5, i64 %11)
+  call void @_mp__String__void__dtor(ptr nonnull %s) #2
   ret i32 0
 }
 
@@ -43,6 +44,8 @@ declare i64 @_mf__String__long__getLength(ptr) local_unnamed_addr
 declare i64 @_mf__String__long__getCapacity(ptr) local_unnamed_addr
 
 declare void @_mp__String__void__append__string(ptr, ptr) local_unnamed_addr
+
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

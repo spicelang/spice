@@ -226,6 +226,34 @@ define dso_local i32 @main() #0 {
   call void @_p__void__void__op.mulequal__Stringref_int(ptr %s6, i32 3)
   %102 = load %__String__charptr_long_long, ptr %s6, align 8
   %103 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.25, %__String__charptr_long_long %102)
+  call void @_mp__String__void__dtor(ptr %4)
+  call void @_mp__String__void__dtor(ptr %23)
+  call void @_mp__String__void__dtor(ptr %3)
+  call void @_mp__String__void__dtor(ptr %25)
+  call void @_mp__String__void__dtor(ptr %s6)
+  call void @_mp__String__void__dtor(ptr %s4)
+  call void @_mp__String__void__dtor(ptr %9)
+  call void @_mp__String__void__dtor(ptr %18)
+  call void @_mp__String__void__dtor(ptr %s5)
+  call void @_mp__String__void__dtor(ptr %1)
+  call void @_mp__String__void__dtor(ptr %24)
+  call void @_mp__String__void__dtor(ptr %26)
+  call void @_mp__String__void__dtor(ptr %s3)
+  call void @_mp__String__void__dtor(ptr %s1)
+  call void @_mp__String__void__dtor(ptr %s2)
+  call void @_mp__String__void__dtor(ptr %12)
+  call void @_mp__String__void__dtor(ptr %13)
+  call void @_mp__String__void__dtor(ptr %14)
+  call void @_mp__String__void__dtor(ptr %15)
+  call void @_mp__String__void__dtor(ptr %20)
+  call void @_mp__String__void__dtor(ptr %17)
+  call void @_mp__String__void__dtor(ptr %19)
+  call void @_mp__String__void__dtor(ptr %6)
+  call void @_mp__String__void__dtor(ptr %22)
+  call void @_mp__String__void__dtor(ptr %21)
+  call void @_mp__String__void__dtor(ptr %2)
+  call void @_mp__String__void__dtor(ptr %27)
+  call void @_mp__String__void__dtor(ptr %28)
   %104 = load i32, ptr %result, align 4
   ret i32 %104
 }
@@ -257,5 +285,7 @@ declare void @_p__void__void__op.plusequal__Stringref_charref(ptr, ptr)
 declare void @_p__void__void__op.plusequal__Stringref_stringref(ptr, ptr)
 
 declare void @_p__void__void__op.mulequal__Stringref_int(ptr, i32)
+
+declare void @_mp__String__void__dtor(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }

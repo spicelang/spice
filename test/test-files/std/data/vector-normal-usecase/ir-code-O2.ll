@@ -41,6 +41,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %12 = call ptr @_mf__Vector_double__doubleref__get__int(ptr nonnull %v1, i32 5) #2
   %13 = load double, ptr %12, align 8
   %14 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2, double %13)
+  call void @_mp__Vector_double__void__dtor(ptr nonnull %v1) #2
   ret i32 0
 }
 
@@ -56,6 +57,8 @@ declare i64 @_mf__Vector_double__long__getSize(ptr) local_unnamed_addr
 declare i64 @_mf__Vector_double__long__getCapacity(ptr) local_unnamed_addr
 
 declare ptr @_mf__Vector_double__doubleref__get__int(ptr, i32) local_unnamed_addr
+
+declare void @_mp__Vector_double__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

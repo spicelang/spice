@@ -304,6 +304,11 @@ assert.then.L34:                                  ; preds = %assert.exit.L32
 
 assert.exit.L34:                                  ; preds = %assert.exit.L32
   %64 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
+  call void @_mp__String__void__dtor(ptr nonnull %sub) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s4) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s3) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s2) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s1) #2
   ret i32 0
 }
 
@@ -337,6 +342,8 @@ declare i1 @_f__void__bool__isRawEqual__string_string(ptr, ptr) local_unnamed_ad
 declare %__String__charptr_long_long @_mf__String__String__getSubstring__long_long(ptr, i64, i64) local_unnamed_addr
 
 declare %__String__charptr_long_long @_mf__String__String__getSubstring__int(ptr, i32) local_unnamed_addr
+
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

@@ -350,6 +350,7 @@ assert.then.L39:                                  ; preds = %assert.exit.L38
 
 assert.exit.L39:                                  ; preds = %assert.exit.L38
   %84 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
+  call void @_mp__String__void__dtor(ptr nonnull %s) #3
   ret i32 0
 }
 
@@ -386,6 +387,8 @@ declare i1 @_mf__String__bool__replace__string_string(ptr, ptr, ptr) local_unnam
 declare i1 @_mf__String__bool__replace__string_string_long(ptr, ptr, ptr, i64) local_unnamed_addr
 
 declare i64 @_mf__String__long__replaceAll__string_string(ptr, ptr, ptr) local_unnamed_addr
+
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

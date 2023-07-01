@@ -40,9 +40,11 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %11 = alloca ptr, align 8
   %12 = alloca %__String__charptr_long_long, align 8
   %13 = alloca %__String__charptr_long_long, align 8
+  %s2 = alloca %__String__charptr_long_long, align 8
   %14 = alloca %__String__charptr_long_long, align 8
   %15 = alloca %__String__charptr_long_long, align 8
   %16 = alloca %__String__charptr_long_long, align 8
+  %s3 = alloca %__String__charptr_long_long, align 8
   %17 = alloca %__String__charptr_long_long, align 8
   %18 = alloca %__String__charptr_long_long, align 8
   %19 = alloca %__String__charptr_long_long, align 8
@@ -114,6 +116,14 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %48 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.25, %__String__charptr_long_long %47)
   call void @_mp__String__void__ctor__string(ptr nonnull %13, ptr nonnull @anon.string.10) #2
   %49 = call %__String__charptr_long_long @_f__void__String__op.mul__Stringref_int(ptr nonnull %13, i32 5) #2
+  %.fca.0.extract43 = extractvalue %__String__charptr_long_long %49, 0
+  %.fca.1.extract45 = extractvalue %__String__charptr_long_long %49, 1
+  %.fca.1.gep46 = getelementptr inbounds %__String__charptr_long_long, ptr %s2, i64 0, i32 1
+  %.fca.2.extract47 = extractvalue %__String__charptr_long_long %49, 2
+  %.fca.2.gep48 = getelementptr inbounds %__String__charptr_long_long, ptr %s2, i64 0, i32 2
+  store ptr %.fca.0.extract43, ptr %s2, align 8
+  store i64 %.fca.1.extract45, ptr %.fca.1.gep46, align 8
+  store i64 %.fca.2.extract47, ptr %.fca.2.gep48, align 8
   %50 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.25, %__String__charptr_long_long %49)
   call void @_mp__String__void__ctor__char(ptr nonnull %14, i8 97) #2
   %51 = call %__String__charptr_long_long @_f__void__String__op.mul__int_Stringref(i32 20, ptr nonnull %14) #2
@@ -129,6 +139,14 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %.fca.2.gep42 = getelementptr inbounds %__String__charptr_long_long, ptr %16, i64 0, i32 2
   store i64 %.fca.2.extract41, ptr %.fca.2.gep42, align 8
   %54 = call %__String__charptr_long_long @_f__void__String__op.mul__Stringref_int(ptr nonnull %16, i32 7) #2
+  %.fca.0.extract = extractvalue %__String__charptr_long_long %54, 0
+  %.fca.1.extract = extractvalue %__String__charptr_long_long %54, 1
+  %.fca.1.gep20 = getelementptr inbounds %__String__charptr_long_long, ptr %s3, i64 0, i32 1
+  %.fca.2.extract = extractvalue %__String__charptr_long_long %54, 2
+  %.fca.2.gep21 = getelementptr inbounds %__String__charptr_long_long, ptr %s3, i64 0, i32 2
+  store ptr %.fca.0.extract, ptr %s3, align 8
+  store i64 %.fca.1.extract, ptr %.fca.1.gep20, align 8
+  store i64 %.fca.2.extract, ptr %.fca.2.gep21, align 8
   %55 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.25, %__String__charptr_long_long %54)
   %56 = call i1 @_f__void__bool__isRawEqual__string_string(ptr nonnull @anon.string.29, ptr nonnull @anon.string.30) #2
   %57 = zext i1 %56 to i32
@@ -216,6 +234,34 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %.fca.2.load = load i64, ptr %.fca.2.gep, align 8
   %.fca.2.insert = insertvalue %__String__charptr_long_long %.fca.1.insert, i64 %.fca.2.load, 2
   %97 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.25, %__String__charptr_long_long %.fca.2.insert)
+  call void @_mp__String__void__dtor(ptr nonnull %4) #2
+  call void @_mp__String__void__dtor(ptr nonnull %23) #2
+  call void @_mp__String__void__dtor(ptr nonnull %3) #2
+  call void @_mp__String__void__dtor(ptr nonnull %25) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s6) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s4) #2
+  call void @_mp__String__void__dtor(ptr nonnull %9) #2
+  call void @_mp__String__void__dtor(ptr nonnull %18) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s5) #2
+  call void @_mp__String__void__dtor(ptr nonnull %1) #2
+  call void @_mp__String__void__dtor(ptr nonnull %24) #2
+  call void @_mp__String__void__dtor(ptr nonnull %26) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s3) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s1) #2
+  call void @_mp__String__void__dtor(ptr nonnull %s2) #2
+  call void @_mp__String__void__dtor(ptr nonnull %12) #2
+  call void @_mp__String__void__dtor(ptr nonnull %13) #2
+  call void @_mp__String__void__dtor(ptr nonnull %14) #2
+  call void @_mp__String__void__dtor(ptr nonnull %15) #2
+  call void @_mp__String__void__dtor(ptr nonnull %20) #2
+  call void @_mp__String__void__dtor(ptr nonnull %17) #2
+  call void @_mp__String__void__dtor(ptr nonnull %19) #2
+  call void @_mp__String__void__dtor(ptr nonnull %6) #2
+  call void @_mp__String__void__dtor(ptr nonnull %22) #2
+  call void @_mp__String__void__dtor(ptr nonnull %21) #2
+  call void @_mp__String__void__dtor(ptr nonnull %2) #2
+  call void @_mp__String__void__dtor(ptr nonnull %27) #2
+  call void @_mp__String__void__dtor(ptr nonnull %28) #2
   ret i32 0
 }
 
@@ -247,6 +293,8 @@ declare void @_p__void__void__op.plusequal__Stringref_charref(ptr, ptr) local_un
 declare void @_p__void__void__op.plusequal__Stringref_stringref(ptr, ptr) local_unnamed_addr
 
 declare void @_p__void__void__op.mulequal__Stringref_int(ptr, i32) local_unnamed_addr
+
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

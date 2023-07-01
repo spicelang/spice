@@ -594,8 +594,7 @@ SymbolType OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   if (callee->isProcedure())
     return SymbolType(TY_BOOL);
 
-  SymbolType localReturnType = typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType);
-  return localReturnType;
+  return typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType);
 }
 
 SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,

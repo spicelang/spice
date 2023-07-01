@@ -136,6 +136,8 @@ private:
   [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
   void changeToScope(Scope *scope, ScopeType scopeType);
   static void autoDeReference(SymbolType &symbolType);
+  void doScopeCleanup(StmtLstNode *node);
+  void callStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   [[nodiscard]] bool isStringRT() const;
 };

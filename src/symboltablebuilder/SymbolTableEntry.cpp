@@ -42,9 +42,6 @@ void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node
   // Check if this is a constant variable and is already initialized
   if (newState != DEAD && oldState != DECLARED && type.isConst() && !force)
     throw SemanticError(node, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
-  // Check if the type is known at time of initialization
-  if (newState == INITIALIZED && type == SymbolType(TY_DYN))                                      // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, "Could not determine type of variable '" + name + "'");   // GCOV_EXCL_LINE
   if (newState == DEAD && oldState == DECLARED)                                                   // GCOV_EXCL_LINE
     throw CompilerError(INTERNAL_ERROR, "Cannot destruct uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
   if (newState == DEAD && oldState == DEAD)                                                       // GCOV_EXCL_LINE

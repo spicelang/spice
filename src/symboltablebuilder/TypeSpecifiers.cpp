@@ -192,13 +192,24 @@ TypeSpecifiers TypeSpecifiers::merge(const TypeSpecifiers &other) const {
  * @return Matching or not
  */
 bool TypeSpecifiers::match(const TypeSpecifiers &otherSpecifiers, bool allowConstify) const {
+  uint8_t thisSpecifierValue = specifierValue;
+  uint8_t otherSpecifierValue = otherSpecifiers.specifierValue;
+
+  // Zero out public specifier to not consider it when matching
+  thisSpecifierValue &= ~(1 << BIT_INDEX_PUBLIC);
+  otherSpecifierValue &= ~(1 << BIT_INDEX_PUBLIC);
+
+  // Zero out inline specifier to not consider it when matching
+  thisSpecifierValue &= ~(1 << BIT_INDEX_INLINE);
+  otherSpecifierValue &= ~(1 << BIT_INDEX_INLINE);
+
   if (allowConstify) {
     const uint8_t clearConstMask = ~(1 << BIT_INDEX_CONST);
-    bool otherSpecifiersMatch = (specifierValue & clearConstMask) == (otherSpecifiers.specifierValue & clearConstMask);
+    bool otherSpecifiersMatch = (thisSpecifierValue & clearConstMask) == (otherSpecifierValue & clearConstMask);
     bool constMatches = getBit(BIT_INDEX_CONST) >= otherSpecifiers.getBit(BIT_INDEX_CONST);
     return constMatches & otherSpecifiersMatch;
   }
-  return specifierValue == otherSpecifiers.specifierValue;
+  return thisSpecifierValue == otherSpecifierValue;
 }
 
 bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) { return lhs.specifierValue == rhs.specifierValue; }

@@ -389,6 +389,7 @@ assert.then.L65:                                  ; preds = %assert.exit.L64
 
 assert.exit.L65:                                  ; preds = %assert.exit.L64
   %114 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
+  call void @_mp__Vector_int__void__dtor(ptr nonnull %vi) #2
   ret i32 0
 }
 
@@ -426,6 +427,8 @@ declare void @"_p__void__void__op.minusminus.post__VectorIterator<int>ref"(ptr) 
 declare void @"_p__void__void__op.plusequal__VectorIterator<int>ref_int"(ptr, i32) local_unnamed_addr
 
 declare ptr @_mf__Vector_int__intref__get__int(ptr, i32) local_unnamed_addr
+
+declare void @_mp__Vector_int__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

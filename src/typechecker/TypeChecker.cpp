@@ -298,6 +298,7 @@ std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
 }
 
 std::any TypeChecker::visitStmtLst(StmtLstNode *node) {
+  // Visit nodes in this scope
   for (ASTNode *stmt : node->children) {
     if (!stmt)
       continue;
@@ -309,6 +310,10 @@ std::any TypeChecker::visitStmtLst(StmtLstNode *node) {
     // Visit the statement
     visit(stmt);
   }
+
+  // Do cleanup of this scope, e.g. dtor calls for struct instances
+  doScopeCleanup(node);
+
   return nullptr;
 }
 
@@ -449,6 +454,9 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   localVarEntry->updateType(localVarType, /*overwriteExistingType=*/true);
   node->entries.at(manIdx) = localVarEntry;
 
+  // Update the state of the variable
+  localVarEntry->updateState(INITIALIZED, node, node->isParam);
+
   return node->setEvaluatedSymbolType(localVarType, manIdx);
 }
 
@@ -479,10 +487,20 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
     return nullptr;
 
   // Visit right side
-  SymbolType returnValueType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
 
   // Check if types match
-  OpRuleManager::getAssignResultType(node->assignExpr(), returnType, returnValueType, 0, false, ERROR_MSG_RETURN);
+  OpRuleManager::getAssignResultType(node->assignExpr(), returnType, rhs.type, 0, false, ERROR_MSG_RETURN);
+
+  // Manager dtor call
+  if (rhs.entry != nullptr) {
+    if (rhs.entry->anonymous)
+      // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
+      currentScope->symbolTable.deleteAnonymous(rhs.entry->name);
+    else
+      // Otherwise omit the destructor call, because the caller destructs the value
+      rhs.entry->omitDtorCall = true;
+  }
 
   return node->setEvaluatedSymbolType(returnType, manIdx);
 }
@@ -642,13 +660,17 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   // Check if assignment
   if (node->hasOperator) {
     // Visit the right side first
-    auto [rhsType, _] = std::any_cast<ExprResult>(visit(node->rhs()));
+    auto [rhsType, rhsEntry] = std::any_cast<ExprResult>(visit(node->rhs()));
     // Then visit the left side
     auto [lhsType, lhsVar] = std::any_cast<ExprResult>(visit(node->lhs()));
 
     // Take a look at the operator
     if (node->op == AssignExprNode::OP_ASSIGN) {
       rhsType = OpRuleManager::getAssignResultType(node, lhsType, rhsType, 0);
+
+      // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
+      if (rhsEntry != nullptr && rhsEntry->anonymous)
+        currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
     } else if (node->op == AssignExprNode::OP_PLUS_EQUAL) {
       rhsType = opRuleManager.getPlusEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_MINUS_EQUAL) {
@@ -1356,11 +1378,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
                           "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility");
 
     // Check if down-call, fct ptr calls can't be down-calls
-    if (!data.isImported) {
-      const CodeLoc &callLoc = node->codeLoc;
-      const CodeLoc &defLoc = functionEntry->getDeclCodeLoc();
-      data.isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
-    }
+    data.isDownCall = !data.isImported && data.callee->isDownCall(node);
   }
 
   // Retrieve return type
@@ -1368,8 +1386,6 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   if (data.isFctPtrCall()) {
     returnType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
   } else if (data.isCtorCall()) {
-    // Add anonymous symbol to keep track of de-allocation
-    currentScope->symbolTable.insertAnonymous(data.thisType, node);
     // Set return type to 'this' type
     returnType = data.thisType;
   } else if (data.callee->isProcedure()) {
@@ -1379,10 +1395,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     returnType = data.callee->returnType;
   }
 
-  // Remove public specifier to not have public local variables
-  returnType.specifiers.setPublic(false);
-
   // Initialize return type if required
+  SymbolTableEntry *anonymousSymbol = nullptr;
   if (returnType.isBaseType(TY_STRUCT)) {
     SymbolType returnBaseType = returnType.getBaseType();
     const std::string structName = returnBaseType.getOriginalSubType();
@@ -1392,14 +1406,21 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     assert(spiceStruct != nullptr);
     returnBaseType.setBodyScope(spiceStruct->structScope);
     returnType = returnType.replaceBaseType(returnBaseType);
+
+    // Add anonymous symbol to keep track of deallocation
+    if (returnType.is(TY_STRUCT))
+      anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
   }
+
+  // Remove public specifier to not have public local variables
+  returnType.specifiers.setPublic(false);
 
   // Check if the return value gets used
   const bool isFct = data.isFctPtrCall() ? firstFragEntry->getType().is(TY_FUNCTION) : data.callee->isFunction();
   if (isFct && !node->hasReturnValueReceiver())
     warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
 
-  return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }
 
 std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
@@ -1669,14 +1690,19 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     for (size_t i = 0; i < node->fieldLst()->args().size(); i++) {
       // Get actual type
       AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
-      SymbolType actualType = std::any_cast<ExprResult>(visit(assignExpr)).type;
+      auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       // Get expected type
       const SymbolTableEntry *expectedField = structScope->symbolTable.lookupStrictByIndex(i);
       assert(expectedField != nullptr);
       SymbolType expectedType = expectedField->getType();
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
+
       // Check if actual type matches expected type
-      OpRuleManager::getFieldAssignResultType(assignExpr, expectedType, actualType, 0, rhsIsImmediate);
+      OpRuleManager::getFieldAssignResultType(assignExpr, expectedType, fieldResult.type, 0, rhsIsImmediate);
+
+      // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
+      if (fieldResult.entry != nullptr && fieldResult.entry->anonymous)
+        currentScope->symbolTable.deleteAnonymous(fieldResult.entry->name);
     }
   } else {
     for (SymbolType &fieldType : spiceStruct->fieldTypes) {
@@ -2023,6 +2049,44 @@ void TypeChecker::changeToScope(Scope *scope, const ScopeType scopeType) {
 void TypeChecker::autoDeReference(SymbolType &symbolType) {
   while (symbolType.isPtr() || symbolType.isRef())
     symbolType = symbolType.getContainedTy();
+}
+
+/**
+ * Consider calls to destructors for the given scope
+ *
+ * @param node StmtLstNode for the current scope
+ */
+void TypeChecker::doScopeCleanup(StmtLstNode *node) {
+  // Get all variables, that are approved for deallocation
+  std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
+  for (SymbolTableEntry *var : vars) {
+    // If this is a struct which is not dead yet, generate a dtor call
+    if (var->getType().is(TY_STRUCT) && var->isInitialized() && !var->omitDtorCall)
+      callStructDtor(var, node);
+  }
+}
+
+/**
+ * Prepare the generation of a call to the dtor of a given struct
+ *
+ * @param entry Symbol entry to use as 'this' pointer for the dtor call
+ * @param node StmtLstNode for the current scope
+ */
+void TypeChecker::callStructDtor(SymbolTableEntry *entry, StmtLstNode *node) {
+  SymbolType thisType = entry->getType();
+  assert(thisType.is(TY_STRUCT));
+  Scope *matchScope = thisType.getBodyScope();
+  assert(matchScope->type == SCOPE_STRUCT);
+
+  // Search for dtor
+  const bool isImported = matchScope->isImportedBy(rootScope);
+  if (isImported)
+    thisType = mapLocalTypeToImportedScopeType(matchScope, thisType);
+  Function *spiceFunc = FunctionManager::matchFunction(matchScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
+
+  // Add the dtor to the stmt list node to call it later in codegen
+  if (spiceFunc != nullptr)
+    node->dtorFunctions.at(manIdx).emplace_back(entry, spiceFunc);
 }
 
 /**

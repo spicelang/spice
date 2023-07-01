@@ -15,7 +15,7 @@
               "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "declared",
               "type": "bool"
             },
             {
@@ -24,7 +24,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<short>*"
             }
           ]
@@ -40,7 +40,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<generic(T)>*"
             }
           ]
@@ -56,7 +56,7 @@
               "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "declared",
               "type": "invalid"
             },
             {
@@ -65,7 +65,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<generic(T)>*"
             }
           ]
@@ -81,7 +81,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<short>*"
             }
           ]
@@ -97,7 +97,7 @@
               "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "declared",
               "type": "short&"
             },
             {
@@ -106,7 +106,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<short>*"
             }
           ]
@@ -122,7 +122,7 @@
               "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "declared",
               "type": "invalid"
             },
             {
@@ -131,7 +131,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<generic(T)>*"
             }
           ]
@@ -147,7 +147,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<short>*"
             }
           ]
@@ -163,7 +163,7 @@
               "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "declared",
               "type": "invalid"
             },
             {
@@ -172,7 +172,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<generic(T)>*"
             }
           ]
@@ -188,7 +188,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<generic(T)>*"
             }
           ]
@@ -202,7 +202,7 @@
           "isVolatile": false,
           "name": "ctor:L10C1",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "declared",
           "type": "p()"
         },
         {
@@ -211,7 +211,7 @@
           "isVolatile": false,
           "name": "isValid:L22C1",
           "orderIndex": 5,
-          "state": "destructed",
+          "state": "declared",
           "type": "f<bool>()"
         },
         {
@@ -220,7 +220,7 @@
           "isVolatile": false,
           "name": "getIdx:L18C1",
           "orderIndex": 4,
-          "state": "destructed",
+          "state": "declared",
           "type": "f<std/iterator/iterable::Pair<unsigned long,generic(T)&>>()"
         },
         {
@@ -229,7 +229,7 @@
           "isVolatile": false,
           "name": "isValid:L22C1",
           "orderIndex": 5,
-          "state": "destructed",
+          "state": "declared",
           "type": "f<bool>()"
         },
         {
@@ -238,7 +238,7 @@
           "isVolatile": false,
           "name": "ctor:L10C1",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "declared",
           "type": "p()"
         },
         {
@@ -247,7 +247,7 @@
           "isVolatile": false,
           "name": "next:L26C1",
           "orderIndex": 6,
-          "state": "destructed",
+          "state": "declared",
           "type": "p()"
         },
         {
@@ -256,7 +256,7 @@
           "isVolatile": false,
           "name": "cursor",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "declared",
           "type": "unsigned long"
         },
         {
@@ -265,7 +265,7 @@
           "isVolatile": false,
           "name": "next:L26C1",
           "orderIndex": 6,
-          "state": "destructed",
+          "state": "declared",
           "type": "p()"
         },
         {
@@ -274,7 +274,7 @@
           "isVolatile": false,
           "name": "get:L14C1",
           "orderIndex": 3,
-          "state": "destructed",
+          "state": "declared",
           "type": "f<generic(T)&>()"
         },
         {
@@ -283,7 +283,7 @@
           "isVolatile": false,
           "name": "get:L14C1",
           "orderIndex": 3,
-          "state": "destructed",
+          "state": "declared",
           "type": "f<generic(T)&>()"
         },
         {
@@ -292,7 +292,7 @@
           "isVolatile": false,
           "name": "item",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "short"
         }
       ]
@@ -311,7 +311,7 @@
               "isVolatile": false,
               "name": "anon.L29C24",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "initialized",
               "type": "MockIterator<short>"
             },
             {
@@ -320,7 +320,7 @@
               "isVolatile": false,
               "name": "item",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "initialized",
               "type": "short&"
             }
           ]
@@ -334,7 +334,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "int"
         }
       ]
@@ -353,7 +353,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<generic(T)>*"
             }
           ]
@@ -369,7 +369,7 @@
               "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "declared",
               "type": "invalid"
             },
             {
@@ -378,7 +378,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<generic(T)>*"
             }
           ]
@@ -394,7 +394,7 @@
               "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "declared",
               "type": "invalid"
             },
             {
@@ -403,7 +403,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<generic(T)>*"
             }
           ]
@@ -419,7 +419,7 @@
               "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
-              "state": "destructed",
+              "state": "declared",
               "type": "invalid"
             },
             {
@@ -428,7 +428,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<generic(T)>*"
             }
           ]
@@ -444,7 +444,7 @@
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
-              "state": "destructed",
+              "state": "declared",
               "type": "MockIterator<generic(T)>*"
             }
           ]
@@ -458,7 +458,7 @@
           "isVolatile": false,
           "name": "isValid:L22C1",
           "orderIndex": 5,
-          "state": "destructed",
+          "state": "declared",
           "type": "f<bool>()"
         },
         {
@@ -467,7 +467,7 @@
           "isVolatile": false,
           "name": "getIdx:L18C1",
           "orderIndex": 4,
-          "state": "destructed",
+          "state": "declared",
           "type": "f<std/iterator/iterable::Pair<unsigned long,generic(T)&>>()"
         },
         {
@@ -476,7 +476,7 @@
           "isVolatile": false,
           "name": "ctor:L10C1",
           "orderIndex": 2,
-          "state": "destructed",
+          "state": "declared",
           "type": "p()"
         },
         {
@@ -485,7 +485,7 @@
           "isVolatile": false,
           "name": "next:L26C1",
           "orderIndex": 6,
-          "state": "destructed",
+          "state": "declared",
           "type": "p()"
         },
         {
@@ -494,7 +494,7 @@
           "isVolatile": false,
           "name": "cursor",
           "orderIndex": 1,
-          "state": "destructed",
+          "state": "declared",
           "type": "unsigned long"
         },
         {
@@ -503,7 +503,7 @@
           "isVolatile": false,
           "name": "get:L14C1",
           "orderIndex": 3,
-          "state": "destructed",
+          "state": "declared",
           "type": "f<generic(T)&>()"
         },
         {
@@ -512,7 +512,7 @@
           "isVolatile": false,
           "name": "item",
           "orderIndex": 0,
-          "state": "destructed",
+          "state": "declared",
           "type": "generic(T)"
         }
       ]
@@ -525,7 +525,7 @@
       "isVolatile": false,
       "name": "MockIterator",
       "orderIndex": 1,
-      "state": "destructed",
+      "state": "declared",
       "type": "MockIterator<short>"
     },
     {
@@ -534,7 +534,7 @@
       "isVolatile": false,
       "name": "main(int, string[])",
       "orderIndex": 2,
-      "state": "destructed",
+      "state": "declared",
       "type": "f<int>()"
     },
     {
@@ -543,7 +543,7 @@
       "isVolatile": false,
       "name": "MockIterator",
       "orderIndex": 1,
-      "state": "destructed",
+      "state": "declared",
       "type": "MockIterator<generic(T)>"
     },
     {
@@ -552,7 +552,7 @@
       "isVolatile": false,
       "name": "std/iterator/iterable",
       "orderIndex": 0,
-      "state": "destructed",
+      "state": "declared",
       "type": "import"
     }
   ]

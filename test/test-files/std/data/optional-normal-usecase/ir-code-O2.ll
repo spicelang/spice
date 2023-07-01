@@ -48,6 +48,8 @@ assert.then.L18:                                  ; preds = %0
   unreachable
 
 assert.exit.L18:                                  ; preds = %0
+  call void @_mp__String__void__dtor(ptr nonnull %2) #2
+  call void @_mp__Stack_double__void__dtor(ptr nonnull %doubleStack) #2
   ret i32 0
 }
 
@@ -77,6 +79,10 @@ declare void @"_mp__Optional___rt_string::String__void__ctor____rt_string::Strin
 declare i1 @"_mf__Optional___rt_string::String__bool__isPresent"(ptr) local_unnamed_addr
 
 declare void @exit(i32) local_unnamed_addr
+
+declare void @_mp__String__void__dtor(ptr) local_unnamed_addr
+
+declare void @_mp__Stack_double__void__dtor(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

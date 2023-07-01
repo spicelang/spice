@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <exception/IRError.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 
 #include <llvm/BinaryFormat/Dwarf.h>
 #include <llvm/IR/Verifier.h>
@@ -393,6 +394,43 @@ void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, 
     ptr = builder.CreateLoad(symbolType.toLLVMType(context, accessScope), ptr);
     symbolType = symbolType.getContainedTy();
   }
+}
+
+void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
+  // Do not clean up if the block is already terminated
+  if (blockAlreadyTerminated)
+    return;
+
+  // Call all dtor functions
+  for (auto [entry, dtor] : node->dtorFunctions.at(manIdx))
+    generateDtorCall(entry, dtor, node);
+}
+
+void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor, const StmtLstNode *node) const {
+  assert(dtor != nullptr);
+
+  // Retrieve metadata for the function
+  const std::string mangledName = dtor->getMangledName();
+  const bool isImported = dtor->entry->scope->isImportedBy(rootScope);
+  const bool isDownCall = !isImported && dtor->isDownCall(node);
+
+  // Function is not defined in the current module -> declare it
+  // This can happen when:
+  // 1) If this is an imported source file
+  // 2) This is a down-call to a function, which is defined later in the same file
+  if (isImported || isDownCall) {
+    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), builder.getPtrTy(), false);
+    module->getOrInsertFunction(mangledName, fctType);
+  }
+
+  // Get callee function
+  llvm::Function *callee = module->getFunction(mangledName);
+  assert(callee != nullptr);
+
+  // Generate function call
+  llvm::Value *structPtr = entry->getAddress();
+  assert(structPtr != nullptr);
+  builder.CreateCall(callee, structPtr);
 }
 
 llvm::GlobalVariable *IRGenerator::createGlobalConst(const std::string &baseName, llvm::Constant *constant) {
