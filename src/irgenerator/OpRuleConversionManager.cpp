@@ -14,8 +14,9 @@ OpRuleConversionManager::OpRuleConversionManager(GlobalResourceManager &resource
     : context(resourceManager.context), builder(resourceManager.builder), irGenerator(irGenerator),
       stdFunctionManager(irGenerator->stdFunctionManager) {}
 
-ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                         LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                         size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -65,8 +66,9 @@ ExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                          size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -116,8 +118,9 @@ ExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, ExprR
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -162,8 +165,9 @@ ExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -208,8 +212,9 @@ ExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -248,8 +253,9 @@ ExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -280,8 +286,9 @@ ExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -312,8 +319,9 @@ ExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -344,8 +352,8 @@ ExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                   SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                       LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -376,8 +384,9 @@ ExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, ExprResu
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -409,8 +418,9 @@ ExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                          size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -426,8 +436,9 @@ ExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, ExprR
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                         LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                         size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -443,8 +454,9 @@ ExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                          size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -460,8 +472,8 @@ ExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, ExprR
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                     LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -579,8 +591,9 @@ ExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, ExprResult
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: =="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                        size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -698,8 +711,8 @@ ExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, ExprRes
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                    LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -761,8 +774,8 @@ ExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, ExprResult 
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                   SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                       LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -824,8 +837,9 @@ ExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, ExprResu
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                         LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                         size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -887,8 +901,9 @@ ExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                        SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                            LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                            size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -950,8 +965,9 @@ ExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, Exp
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >="); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                         LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                         size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -989,8 +1005,9 @@ ExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                      SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                          size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1028,8 +1045,8 @@ ExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, ExprR
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                    LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -1108,8 +1125,8 @@ ExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, ExprResult 
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                     LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -1188,8 +1205,8 @@ ExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, ExprResult
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                               SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                   LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -1256,8 +1273,8 @@ ExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, ExprResult &
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                               SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                   LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -1325,8 +1342,8 @@ ExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, ExprResult &
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, ExprResult &rhs,
-                                               SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                   LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1368,8 +1385,8 @@ ExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, ExprResult &
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                       Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                           Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1386,8 +1403,8 @@ ExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, Expr
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                          Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                              Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1404,8 +1421,8 @@ ExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, E
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                            Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                                Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1422,8 +1439,8 @@ ExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node,
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy, Scope *accessScope,
-                                                     size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                         Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1436,8 +1453,8 @@ ExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, ExprRe
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                            Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                                Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
 
@@ -1452,8 +1469,8 @@ ExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node,
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ~"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                           Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                               Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1475,8 +1492,8 @@ ExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, 
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, ExprResult &lhs, SymbolType lhsSTy,
-                                                             Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                                 Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1498,8 +1515,8 @@ ExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
-ExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, SymbolType lhsSTy, ExprResult &rhs, SymbolType rhsSTy,
-                                                Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, SymbolType lhsSTy, LLVMExprResult &rhs,
+                                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
@@ -1562,8 +1579,8 @@ bool OpRuleConversionManager::callsOverloadedOpFct(const ASTNode *node, size_t o
 }
 
 template <size_t N>
-ExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *node, const std::array<ResolverFct, N * 2> &opV,
-                                                            size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *node, const std::array<ResolverFct, N * 2> &opV,
+                                                                size_t opIdx) {
   const size_t manIdx = irGenerator->manIdx;
   assert(!node->opFct.empty() && node->opFct.size() > manIdx);
   assert(!node->opFct.at(manIdx).empty() && node->opFct.at(manIdx).size() > opIdx);
@@ -1612,18 +1629,30 @@ ExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *node,
   assert(callee != nullptr);
 
   // Generate function call
-  llvm::Value *resultValue = builder.CreateCall(callee, argValues);
+  llvm::Value *result = builder.CreateCall(callee, argValues);
 
   // If this is a procedure, return true
   if (opFct->isProcedure())
     return {.constant = builder.getTrue()};
 
+  // Attach address to anonymous symbol to keep track of deallocation
+  SymbolTableEntry *anonymousSymbol = nullptr;
+  llvm::Value *resultPtr = nullptr;
+  if (opFct->returnType.is(TY_STRUCT)) {
+    anonymousSymbol = irGenerator->currentScope->symbolTable.lookupAnonymous(node->codeLoc, opIdx);
+    if (anonymousSymbol != nullptr) {
+      resultPtr = irGenerator->insertAlloca(result->getType());
+      builder.CreateStore(result, resultPtr);
+      anonymousSymbol->updateAddress(resultPtr);
+    }
+  }
+
   // If the return type is reference, return the result value as refPtr
   if (opFct->returnType.isRef())
-    return {.ptr = resultValue};
+    return {.ptr = result, .refPtr = resultPtr, .entry = anonymousSymbol};
 
   // Otherwise as value
-  return {.value = resultValue};
+  return {.value = result, .ptr = resultPtr, .entry = anonymousSymbol};
 }
 
 llvm::Value *OpRuleConversionManager::generateIToFp(const SymbolType &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const {

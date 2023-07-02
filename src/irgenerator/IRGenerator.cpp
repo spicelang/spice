@@ -60,15 +60,16 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &
 
 llvm::Value *IRGenerator::resolveValue(const ASTNode *node, Scope *accessScope /*=nullptr*/) {
   // Visit the given AST node
-  auto exprResult = any_cast<ExprResult>(visit(node));
+  auto exprResult = any_cast<LLVMExprResult>(visit(node));
   return resolveValue(node, exprResult, accessScope);
 }
 
-llvm::Value *IRGenerator::resolveValue(const ASTNode *node, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
+llvm::Value *IRGenerator::resolveValue(const ASTNode *node, LLVMExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
   return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult, accessScope);
 }
 
-llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, ExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
+llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, LLVMExprResult &exprResult,
+                                       Scope *accessScope /*=nullptr*/) {
   // Check if the value is already present
   if (exprResult.value != nullptr)
     return exprResult.value;
@@ -99,11 +100,11 @@ llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, ExprResult 
 
 llvm::Value *IRGenerator::resolveAddress(const ASTNode *node, bool storeVolatile /*=false*/) {
   // Visit the given AST node
-  auto exprResult = any_cast<ExprResult>(visit(node));
+  auto exprResult = any_cast<LLVMExprResult>(visit(node));
   return resolveAddress(exprResult, storeVolatile);
 }
 
-llvm::Value *IRGenerator::resolveAddress(ExprResult &exprResult, bool storeVolatile /*=false*/) {
+llvm::Value *IRGenerator::resolveAddress(LLVMExprResult &exprResult, bool storeVolatile /*=false*/) {
   // Check if an address is already present
   if (exprResult.ptr != nullptr)
     return exprResult.ptr;
@@ -275,22 +276,23 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
     throw IRError(codeLoc, INVALID_MODULE, output);
 }
 
-ExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {
+LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {
   // Get entry of left side
-  auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
+  auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
   llvm::Value *lhsAddress = lhs.entry != nullptr && lhs.entry->getType().isRef() ? lhs.refPtr : lhs.ptr;
   return doAssignment(lhsAddress, lhs.entry, rhsNode);
 }
 
-ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl) {
+LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode,
+                                         bool isDecl) {
   // Get symbol type of right side
   const SymbolType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
-  auto rhs = std::any_cast<ExprResult>(visit(rhsNode));
+  auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
   return doAssignment(lhsAddress, lhsEntry, rhs, rhsSType, isDecl);
 }
 
-ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, ExprResult &rhs,
-                                     const SymbolType &rhsSType, bool isDecl) {
+LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
+                                         const SymbolType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
   const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT);
@@ -306,7 +308,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
       builder.CreateStore(rhsAddress, refAddress);
       lhsEntry->updateAddress(refAddress);
 
-      return ExprResult{.value = rhsAddress, .ptr = refAddress, .entry = lhsEntry};
+      return LLVMExprResult{.value = rhsAddress, .ptr = refAddress, .entry = lhsEntry};
     }
 
     if (rhsSType.isRef()) { // Reference to reference assignment
@@ -317,7 +319,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
       // Store the rhs* to the lhs**
       builder.CreateStore(referencedAddress, lhsAddress);
 
-      return ExprResult{.value = referencedAddress, .ptr = lhsAddress, .entry = lhsEntry};
+      return LLVMExprResult{.value = referencedAddress, .ptr = lhsAddress, .entry = lhsEntry};
     }
 
     // Load referenced address
@@ -336,7 +338,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
     // Set address of lhs to the copy
     if (lhsEntry && lhsEntry->scope->type != SCOPE_STRUCT && lhsEntry->scope->type != SCOPE_INTERFACE)
       lhsEntry->updateAddress(newAddress);
-    return ExprResult{.ptr = newAddress, .entry = lhsEntry};
+    return LLVMExprResult{.ptr = newAddress, .entry = lhsEntry};
   }
 
   if (isDecl && rhsSType.is(TY_STRUCT)) {
@@ -366,7 +368,7 @@ ExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *
   }
   // Store the value to the address
   builder.CreateStore(rhsValue, lhsAddress);
-  return ExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
+  return LLVMExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
 }
 
 llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
@@ -513,7 +515,7 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, SymbolType dstSTy, Sy
   return src;
 }
 
-void IRGenerator::materializeConstant(ExprResult &exprResult) {
+void IRGenerator::materializeConstant(LLVMExprResult &exprResult) {
   // Skip results, that do not contain a constant or already have a value
   if (exprResult.constant == nullptr || exprResult.value != nullptr)
     return;

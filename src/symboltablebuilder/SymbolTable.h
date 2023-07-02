@@ -36,12 +36,12 @@ public:
 
   // Public methods
   SymbolTableEntry *insert(const std::string &name, ASTNode *declNode);
-  SymbolTableEntry *insertAnonymous(const SymbolType &type, ASTNode *declNode);
+  SymbolTableEntry *insertAnonymous(const SymbolType &type, ASTNode *declNode, size_t numericSuffix = 0);
   void copySymbol(const std::string &originalName, const std::string &newName);
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
   SymbolTableEntry *lookupStrictByIndex(unsigned int orderIndex);
-  SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc);
+  SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc, size_t numericSuffix = 0);
   Capture *lookupCapture(const std::string &symbolName);
   Capture *lookupCaptureStrict(const std::string &symbolName);
   void deleteAnonymous(const std::string &name);

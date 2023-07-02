@@ -16,6 +16,12 @@ namespace spice::compiler {
 class ASTNode;
 class TypeChecker;
 
+// For routing through the symbol type as well as the current variable entry
+struct ExprResult {
+  SymbolType type;
+  SymbolTableEntry *entry = nullptr;
+};
+
 // Helper macro to get the length of an array
 #define ARRAY_LENGTH(array) sizeof(array) / sizeof(*array)
 
@@ -631,11 +637,11 @@ public:
   static SymbolType getGreaterEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getShiftLeftResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getShiftRightResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  SymbolType getPlusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  SymbolType getMinusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  SymbolType getMulResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  SymbolType getDivResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  ExprResult getPlusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  ExprResult getMinusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  ExprResult getMulResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  ExprResult getDivResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static ExprResult getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getPrefixMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
   static SymbolType getPrefixPlusPlusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
   static SymbolType getPrefixMinusMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
@@ -653,7 +659,7 @@ private:
 
   // Private methods
   template <size_t N>
-  SymbolType isOperatorOverloadingFctAvailable(ASTNode *node, const char *const fctName, const std::array<SymbolType, N> &op,
+  ExprResult isOperatorOverloadingFctAvailable(ASTNode *node, const char *fctName, const std::array<SymbolType, N> &op,
                                                size_t opIdx);
   static SymbolType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                            const SymbolType &lhs);

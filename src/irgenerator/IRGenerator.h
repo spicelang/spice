@@ -94,10 +94,10 @@ public:
   // Public methods
   llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
   llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
-  llvm::Value *resolveValue(const ASTNode *node, ExprResult &exprResult, Scope *accessScope = nullptr);
-  llvm::Value *resolveValue(const SymbolType &symbolType, ExprResult &exprResult, Scope *accessScope = nullptr);
+  llvm::Value *resolveValue(const ASTNode *node, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
+  llvm::Value *resolveValue(const SymbolType &symbolType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveAddress(const ASTNode *node, bool storeVolatile = false);
-  llvm::Value *resolveAddress(ExprResult &exprResult, bool storeVolatile = false);
+  llvm::Value *resolveAddress(LLVMExprResult &exprResult, bool storeVolatile = false);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
   [[nodiscard]] std::string getIRString() const;
 
@@ -110,10 +110,10 @@ private:
                       Likeliness likeliness = UNSPECIFIED);
   void verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) const;
   void verifyModule(const CodeLoc &codeLoc) const;
-  ExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
-  ExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl = false);
-  ExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, ExprResult &rhs, const SymbolType &rhsSType,
-                          bool isDecl);
+  LLVMExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
+  LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl = false);
+  LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
+                              const SymbolType &rhsSType, bool isDecl);
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
                                  const std::string &name = "", bool isVolatile = false);
   void generateScopeCleanup(const StmtLstNode *node) const;
@@ -122,7 +122,7 @@ private:
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant);
   llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
-  void materializeConstant(ExprResult &exprResult);
+  void materializeConstant(LLVMExprResult &exprResult);
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
   void changeToScope(Scope *scope, const ScopeType scopeType);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;

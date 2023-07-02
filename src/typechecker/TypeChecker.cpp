@@ -898,7 +898,7 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
     return visit(node->operands().front());
 
   // Visit leftmost operand
-  SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
+  auto currentResult = std::any_cast<ExprResult>(visit(node->operands()[0]));
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
@@ -908,18 +908,19 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
     // Check operator
     const AdditiveExprNode::AdditiveOp &op = node->opQueue.front().first;
     if (op == AdditiveExprNode::OP_PLUS)
-      currentType = opRuleManager.getPlusResultType(node, currentType, operandType, i);
+      currentResult = opRuleManager.getPlusResultType(node, currentResult.type, operandType, i);
     else if (op == AdditiveExprNode::OP_MINUS)
-      currentType = opRuleManager.getMinusResultType(node, currentType, operandType, i);
+      currentResult = opRuleManager.getMinusResultType(node, currentResult.type, operandType, i);
     else
       throw CompilerError(UNHANDLED_BRANCH, "AdditiveExpr fall-through"); // GCOV_EXCL_LINE
 
     // Push the new item and pop the old one on the other side of the queue
-    node->opQueue.emplace(op, currentType);
+    node->opQueue.emplace(op, currentResult.type);
     node->opQueue.pop();
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
+  node->setEvaluatedSymbolType(currentResult.type, manIdx);
+  return currentResult;
 }
 
 std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
@@ -928,7 +929,7 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
     return visit(node->operands().front());
 
   // Visit leftmost operand
-  SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
+  auto currentResult = std::any_cast<ExprResult>(visit(node->operands()[0]));
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
@@ -938,20 +939,21 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
     // Check operator
     const MultiplicativeExprNode::MultiplicativeOp &op = node->opQueue.front().first;
     if (op == MultiplicativeExprNode::OP_MUL)
-      currentType = opRuleManager.getMulResultType(node, currentType, operandType, i);
+      currentResult = opRuleManager.getMulResultType(node, currentResult.type, operandType, i);
     else if (op == MultiplicativeExprNode::OP_DIV)
-      currentType = opRuleManager.getDivResultType(node, currentType, operandType, i);
+      currentResult = opRuleManager.getDivResultType(node, currentResult.type, operandType, i);
     else if (op == MultiplicativeExprNode::OP_REM)
-      currentType = OpRuleManager::getRemResultType(node, currentType, operandType, i);
+      currentResult = OpRuleManager::getRemResultType(node, currentResult.type, operandType, i);
     else
       throw CompilerError(UNHANDLED_BRANCH, "Multiplicative fall-through"); // GCOV_EXCL_LINE
 
     // Push the new item and pop the old one on the other side of the queue
-    node->opQueue.emplace(op, currentType);
+    node->opQueue.emplace(op, currentResult.type);
     node->opQueue.pop();
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(currentType, manIdx)};
+  node->setEvaluatedSymbolType(currentResult.type, manIdx);
+  return currentResult;
 }
 
 std::any TypeChecker::visitCastExpr(CastExprNode *node) {

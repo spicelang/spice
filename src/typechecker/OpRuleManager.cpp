@@ -86,9 +86,9 @@ SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, SymbolTy
 
 SymbolType OpRuleManager::getPlusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS_EQUAL, {lhs, rhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
-    return resultType;
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS_EQUAL, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType.type;
 
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
@@ -108,9 +108,9 @@ SymbolType OpRuleManager::getPlusEqualResultType(ASTNode *node, SymbolType lhs, 
 
 SymbolType OpRuleManager::getMinusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS_EQUAL, {lhs, rhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
-    return resultType;
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS_EQUAL, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType.type;
 
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
@@ -130,9 +130,9 @@ SymbolType OpRuleManager::getMinusEqualResultType(ASTNode *node, SymbolType lhs,
 
 SymbolType OpRuleManager::getMulEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL_EQUAL, {lhs, rhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
-    return resultType;
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL_EQUAL, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType.type;
 
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
@@ -146,9 +146,9 @@ SymbolType OpRuleManager::getMulEqualResultType(ASTNode *node, SymbolType lhs, S
 
 SymbolType OpRuleManager::getDivEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV_EQUAL, {lhs, rhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
-    return resultType;
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV_EQUAL, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType.type;
 
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
@@ -268,9 +268,9 @@ SymbolType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, SymbolTyp
 
 SymbolType OpRuleManager::getEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_EQUAL, {lhs, rhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
-    return resultType;
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_EQUAL, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType.type;
 
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
@@ -290,9 +290,9 @@ SymbolType OpRuleManager::getEqualResultType(ASTNode *node, SymbolType lhs, Symb
 
 SymbolType OpRuleManager::getNotEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_NOT_EQUAL, {lhs, rhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
-    return resultType;
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_NOT_EQUAL, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType.type;
 
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
@@ -358,11 +358,11 @@ SymbolType OpRuleManager::getShiftRightResultType(const ASTNode *node, SymbolTyp
   return validateBinaryOperation(node, SHIFT_RIGHT_OP_RULES, ARRAY_LENGTH(SHIFT_RIGHT_OP_RULES), ">>", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getPlusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+ExprResult OpRuleManager::getPlusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS, {lhs, rhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
-    return resultType;
+  ExprResult result = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_PLUS, {lhs, rhs}, opIdx);
+  if (!result.type.is(TY_INVALID))
+    return result;
 
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
@@ -371,21 +371,21 @@ SymbolType OpRuleManager::getPlusResultType(ASTNode *node, SymbolType lhs, Symbo
   // Allow any* + <int/long/short>
   if (lhs.isPtr() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     ensureUnsafeAllowed(node, "+", lhs, rhs);
-    return lhs;
+    return ExprResult(lhs);
   }
   // Allow <int/long/short> + any*
   if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPtr()) {
     ensureUnsafeAllowed(node, "+", lhs, rhs);
-    return rhs;
+    return ExprResult(rhs);
   }
 
-  return validateBinaryOperation(node, PLUS_OP_RULES, ARRAY_LENGTH(PLUS_OP_RULES), "+", lhs, rhs);
+  return ExprResult(validateBinaryOperation(node, PLUS_OP_RULES, ARRAY_LENGTH(PLUS_OP_RULES), "+", lhs, rhs));
 }
 
-SymbolType OpRuleManager::getMinusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+ExprResult OpRuleManager::getMinusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS, {lhs, rhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MINUS, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
     return resultType;
 
   // Remove reference wrappers
@@ -395,49 +395,49 @@ SymbolType OpRuleManager::getMinusResultType(ASTNode *node, SymbolType lhs, Symb
   // Allow any* - <int/long/short>
   if (lhs.isPtr() && rhs.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
     ensureUnsafeAllowed(node, "-", lhs, rhs);
-    return lhs;
+    return ExprResult(lhs);
   }
   // Allow <int/long/short> - any*
   if (lhs.isOneOf({TY_INT, TY_LONG, TY_SHORT}) && rhs.isPtr()) {
     ensureUnsafeAllowed(node, "-", lhs, rhs);
-    return rhs;
+    return ExprResult(rhs);
   }
 
-  return validateBinaryOperation(node, MINUS_OP_RULES, ARRAY_LENGTH(MINUS_OP_RULES), "-", lhs, rhs);
+  return ExprResult(validateBinaryOperation(node, MINUS_OP_RULES, ARRAY_LENGTH(MINUS_OP_RULES), "-", lhs, rhs));
 }
 
-SymbolType OpRuleManager::getMulResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+ExprResult OpRuleManager::getMulResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL, {lhs, rhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_MUL, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
     return resultType;
 
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, MUL_OP_RULES, ARRAY_LENGTH(MUL_OP_RULES), "*", lhs, rhs);
+  return ExprResult(validateBinaryOperation(node, MUL_OP_RULES, ARRAY_LENGTH(MUL_OP_RULES), "*", lhs, rhs));
 }
 
-SymbolType OpRuleManager::getDivResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+ExprResult OpRuleManager::getDivResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV, {lhs, rhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_DIV, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
     return resultType;
 
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, DIV_OP_RULES, ARRAY_LENGTH(DIV_OP_RULES), "/", lhs, rhs);
+  return ExprResult(validateBinaryOperation(node, DIV_OP_RULES, ARRAY_LENGTH(DIV_OP_RULES), "/", lhs, rhs));
 }
 
-SymbolType OpRuleManager::getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+ExprResult OpRuleManager::getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, REM_OP_RULES, ARRAY_LENGTH(REM_OP_RULES), "%", lhs, rhs);
+  return ExprResult(validateBinaryOperation(node, REM_OP_RULES, ARRAY_LENGTH(REM_OP_RULES), "%", lhs, rhs));
 }
 
 SymbolType OpRuleManager::getPrefixMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
@@ -499,9 +499,9 @@ SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, Sym
 
 SymbolType OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, SymbolType lhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_PLUS_PLUS, {lhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
-    return resultType;
+  ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_PLUS_PLUS, {lhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType.type;
 
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
@@ -514,9 +514,9 @@ SymbolType OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, SymbolType
 
 SymbolType OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, SymbolType lhs, size_t opIdx) {
   // Check is there is an overloaded operator function available
-  SymbolType resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_MINUS_MINUS, {lhs}, opIdx);
-  if (!resultType.is(TY_INVALID))
-    return resultType;
+  ExprResult resultType = isOperatorOverloadingFctAvailable<1>(node, OP_FCT_POSTFIX_MINUS_MINUS, {lhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType.type;
 
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
@@ -548,7 +548,7 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
 }
 
 template <size_t N>
-SymbolType OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const char *const fctName,
+ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const char *const fctName,
                                                             const std::array<SymbolType, N> &op, size_t opIdx) {
   Scope *calleeParentScope = nullptr;
   Function *callee = nullptr;
@@ -571,7 +571,7 @@ SymbolType OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
 
   // Return invalid type if the callee was not found
   if (!callee)
-    return SymbolType(TY_INVALID);
+    return ExprResult(SymbolType(TY_INVALID));
 
   // Save the pointer to the operator function in the AST node
   std::vector<const Function *> &opFctPointers = typeChecker->getOpFctPointers(node);
@@ -592,9 +592,14 @@ SymbolType OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
 
   // Procedures always have the return type 'bool'
   if (callee->isProcedure())
-    return SymbolType(TY_BOOL);
+    return ExprResult(SymbolType(TY_BOOL));
 
-  return typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType);
+  // Add anonymous symbol to keep track of deallocation
+  SymbolTableEntry *anonymousSymbol = nullptr;
+  if (callee->returnType.is(TY_STRUCT))
+    anonymousSymbol = typeChecker->currentScope->symbolTable.insertAnonymous(callee->returnType, node, opIdx);
+
+  return {typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType), anonymousSymbol};
 }
 
 SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,
