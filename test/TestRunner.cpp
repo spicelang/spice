@@ -195,7 +195,7 @@ void execTestCase(const TestCase &testCase) {
       // Execute binary
       std::string cmd;
       if (enableLeakDetection)
-        cmd += "valgrind -q --leak-check=full --error-exitcode=1 ";
+        cmd += "valgrind -q --leak-check=full --num-callers=100 --error-exitcode=1 ";
       cmd += TestUtil::getDefaultExecutableName();
       const std::string cliFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + INPUT_NAME_CLI_FLAGS;
       if (FileUtil::fileExists(cliFlagsFile))

@@ -77,6 +77,15 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
     varsGoingOutOfScope.push_back(&symbolTable.symbols.at(name));
   }
 
+  // If this is the scope of a dtor, also return all fields of the struct
+  if (isDtorScope) {
+    assert(parent != nullptr && parent->type == SCOPE_STRUCT);
+    // Get all fields of the struct
+    for (const auto &[name, entry] : parent->symbolTable.symbols)
+      if (!entry.getType().isOneOf({TY_FUNCTION, TY_PROCEDURE}))
+        varsGoingOutOfScope.push_back(&parent->symbolTable.symbols.at(name));
+  }
+
   return varsGoingOutOfScope;
 }
 

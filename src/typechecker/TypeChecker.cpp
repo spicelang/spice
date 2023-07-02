@@ -2060,9 +2060,14 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) {
   // Get all variables, that are approved for deallocation
   std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
   for (SymbolTableEntry *var : vars) {
-    // If this is a struct which is not dead yet, generate a dtor call
-    if (var->getType().is(TY_STRUCT) && var->isInitialized() && !var->omitDtorCall)
-      callStructDtor(var, node);
+    // Only generate dtor call for structs and if not omitted
+    if (!var->getType().is(TY_STRUCT) || var->omitDtorCall)
+      continue;
+    // Variable must be either initialized or a struct field
+    if (!var->isInitialized() && var->scope->type != SCOPE_STRUCT)
+      continue;
+    // Call dtor
+    callStructDtor(var, node);
   }
 }
 

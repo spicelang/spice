@@ -93,6 +93,7 @@ public:
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable, this);
   const CodeLoc *codeLoc = nullptr;
   bool isGenericScope = false;
+  bool isDtorScope = false;
 
 private:
   // Private members

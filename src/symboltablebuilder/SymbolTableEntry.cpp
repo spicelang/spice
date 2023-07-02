@@ -99,23 +99,11 @@ void SymbolTableEntry::updateAddress(llvm::Value *address) {
 }
 
 /**
- * Pushes an address onto the stack.
- * Called when entering a nested function to ensure that a valid address is given, known to that function
+ * Check if this symbol is a struct field
  *
- * @param address Address of the symbol in memory
+ * @return Struct field or not
  */
-void SymbolTableEntry::pushAddress(llvm::Value *address) {
-  assert(address != nullptr);
-  memAddress.push(address);
-}
-
-/**
- * Pop an address from the stack. Can be called when leaving a nested function
- */
-void SymbolTableEntry::popAddress() {
-  assert(!memAddress.empty());
-  memAddress.pop();
-}
+bool SymbolTableEntry::isField() const { return scope->type == SCOPE_STRUCT && !type.isOneOf({TY_FUNCTION, TY_PROCEDURE}); }
 
 /**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.

@@ -427,9 +427,23 @@ void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor, cons
   llvm::Function *callee = module->getFunction(mangledName);
   assert(callee != nullptr);
 
-  // Generate function call
-  llvm::Value *structPtr = entry->getAddress();
+  // Retrieve address of the struct variable. For fields this is the 'this' variable, otherwise use the normal address
+  llvm::Value *structPtr;
+  if (entry->isField()) {
+    // Take 'this' var as base pointer
+    SymbolTableEntry *thisVar = currentScope->lookupStrict(THIS_VARIABLE_NAME);
+    assert(thisVar != nullptr);
+    llvm::Value *baseAddress = thisVar->getAddress();
+    // Add field offset
+    llvm::Type *fieldType = entry->getType().toLLVMType(context, currentScope);
+    llvm::ArrayRef<llvm::Value *> indices = {builder.getInt32(0), builder.getInt32(entry->orderIndex)};
+    structPtr = builder.CreateInBoundsGEP(fieldType, baseAddress, indices);
+  } else {
+    structPtr = entry->getAddress();
+  }
   assert(structPtr != nullptr);
+
+  // Generate function call
   builder.CreateCall(callee, structPtr);
 }
 

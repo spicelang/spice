@@ -1,42 +1,73 @@
 f<int> main() {
-    String s = String("Hello ");
-    assert s.getRaw() == "Hello ";
-    assert s.getLength() == 6;
-    assert s.getCapacity() == 12;
-    s.append("World!");
-    assert s.getRaw() == "Hello World!";
-    assert s.getLength() == 12;
-    assert s.getCapacity() == 12;
-    s.append('?');
-    assert s.getRaw() == "Hello World!?";
-    assert s.getLength() == 13;
-    assert s.getCapacity() == 24;
-    s.append('!');
-    assert s.getRaw() == "Hello World!?!";
-    assert s.getLength() == 14;
-    assert s.getCapacity() == 24;
-    s.clear();
-    assert s.getRaw() == "";
-    assert s.getLength() == 0;
-    assert s.getCapacity() == 24;
-    s.reserve(100l);
-    assert s.getRaw() == "";
-    assert s.getLength() == 0;
-    assert s.getCapacity() == 100;
-    s = String("");
-    assert s.isEmpty();
-    s.append('a');
-    assert !s.isEmpty();
-    s = String("This is a test. And because this is a test, it is a test.");
-    assert !s.replace("foo", "demo");
-    assert s.replace("test", "demo");
-    assert s.getRaw() == "This is a demo. And because this is a test, it is a test.";
-    assert s.replace("test", "demonstration", 45l);
-    assert s.getRaw() == "This is a demo. And because this is a test, it is a demonstration.";
-    assert s.replace("test", "d");
-    assert s.getRaw() == "This is a demo. And because this is a d, it is a demonstration.";
-    assert s.replaceAll(" is ", " was ") == 3;
-    assert s.getRaw() == "This was a demo. And because this was a d, it was a demonstration.";
+    // Plus
+    printf("Result: %s\n", String("Hello ") + String("World!"));
+    String s1 = String("Hello ") + String("World!");
+    printf("Result: %s\n", s1);
+    printf("Result: %s\n", s1 + " Hi!");
+    printf("Result: %s\n", String("Hi! ") + s1);
+    printf("Result: %s\n", s1 + s1);
+    printf("Result: %s\n", s1 + " " + s1);
+    printf("Result: %s\n", String("Prefix ") + s1 + " Suffix");
 
-    printf("All assertions passed!");
+    // Mul
+    printf("Result: %s\n", 4s * String("Hi"));
+    String s2 = String("Hello ") * 5;
+    printf("Result: %s\n", s2);
+    printf("Result: %s\n", 20 * String('a'));
+    String s3 = 2 * String('c') * 7;
+    printf("Result: %s\n", s3);
+
+    // Equals raw
+    printf("Equal raw: %d\n", "Hello World!" == "Hello Programmers!");
+    printf("Equal raw: %d\n", "Hello" == "Hell2");
+    printf("Equal raw: %d\n", "Hello" == "Hello");
+
+    // Equals
+    printf("Equal: %d\n", String("Hello World!") == String("Hello Programmers!"));
+    printf("Equal: %d\n", String("Hello") == String("Hell2"));
+    printf("Equal: %d\n", String("Hello") == String("Hello"));
+
+    // Not equals raw
+    printf("Non-equal raw: %d\n", "Hello World!" != "Hello Programmers!");
+    printf("Non-equal raw: %d\n", "Hello" != "Hell2");
+    printf("Non-equal raw: %d\n", "Hello" != "Hello");
+
+    // Not equals
+    printf("Non-equal: %d\n", String("Hello World!") != String("Hello Programmers!"));
+    printf("Non-equal: %d\n", String("Hello") != String("Hell2"));
+    printf("Non-equal: %d\n", String("Hello") != String("Hello"));
+
+    // PlusEquals
+    String s4 = String("Hello");
+    s4 += 'l';
+    printf("Result: %s\n", s4);
+    String s5 = String("Hi");
+    s5 += " World!";
+    printf("Result: %s\n", s5);
+
+    // MulEquals
+    String s6 = String("Hi");
+    s6 *= 3;
+    printf("Result: %s\n", s6);
 }
+
+/*type TestStruct struct {
+    long lng
+    String str
+    int i
+}
+
+p TestStruct.dtor() {}
+
+f<TestStruct> fct(int& ref) {
+    TestStruct ts = TestStruct{ 6l, String("test string"), ref };
+    return ts;
+}
+
+f<int> main() {
+    int test = 987654;
+    const TestStruct res = fct(test);
+    printf("Long: %d\n", res.lng);
+    printf("String: %s\n", res.str.getRaw());
+    printf("Int: %d\n", res.i);
+}*/
