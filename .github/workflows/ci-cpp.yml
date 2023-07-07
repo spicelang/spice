@@ -62,7 +62,7 @@ jobs:
           git clone --depth 1 --branch llvmorg-16.0.6 https://github.com/llvm/llvm-project llvm
           mkdir ./llvm/build
           cd ./llvm/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
           cmake --build . -j$(nproc)
 
       - name: Download Libs
@@ -77,7 +77,7 @@ jobs:
           echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
           mkdir ./bin
           cd ./bin
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
           cmake --build . --target spicetest -j$(nproc)
 
       - name: Run Test target
