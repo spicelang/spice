@@ -102,13 +102,12 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std:
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
   assert(newManifestation.hasSubstantiatedParams());
 
-  const std::string mangledFctName = newManifestation.getMangledName();
   const std::string codeLocStr = declNode->codeLoc.toString();
   const std::string signature = newManifestation.getSignature();
 
   // Check if the function exists already
   for (const auto &[_, manifestations] : insertScope->functions)
-    if (manifestations.contains(mangledFctName))
+    if (manifestations.contains(signature))
       throw SemanticError(declNode, FUNCTION_DECLARED_TWICE, "The function/procedure '" + signature + "' is declared twice");
 
   // Retrieve the matching manifestation list of the scope
@@ -116,8 +115,8 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
   FunctionManifestationList &manifestationList = insertScope->functions.at(codeLocStr);
 
   // Add substantiated function
-  manifestationList.emplace(mangledFctName, newManifestation);
-  return &manifestationList.at(mangledFctName);
+  manifestationList.emplace(signature, newManifestation);
+  return &manifestationList.at(signature);
 }
 
 /**
@@ -145,7 +144,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
   for (const auto &[defCodeLocStr, m] : functionRegistry) {
     // Copy the manifestation list to prevent iterating over items, that are created within the loop
     const FunctionManifestationList manifestations = m;
-    for (const auto &[mangledName, presetFunction] : manifestations) {
+    for (const auto &[signature, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
       // Skip generic substantiations to prevent double matching of a function
@@ -196,8 +195,8 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 
       // Check if the function is generic needs to be substantiated
       if (presetFunction.templateTypes.empty()) {
-        assert(matchScope->functions.contains(defCodeLocStr) && matchScope->functions.at(defCodeLocStr).contains(mangledName));
-        matches.push_back(&matchScope->functions.at(defCodeLocStr).at(mangledName));
+        assert(matchScope->functions.contains(defCodeLocStr) && matchScope->functions.at(defCodeLocStr).contains(signature));
+        matches.push_back(&matchScope->functions.at(defCodeLocStr).at(signature));
         matches.back()->used = true;
         continue; // Match was successful -> match the next function
       }
@@ -206,8 +205,8 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       candidate.templateTypes.clear();
 
       // Check if we already have this manifestation and can simply re-use it
-      if (matchScope->functions.at(defCodeLocStr).contains(candidate.getMangledName())) {
-        matches.push_back(&matchScope->functions.at(defCodeLocStr).at(candidate.getMangledName()));
+      if (matchScope->functions.at(defCodeLocStr).contains(candidate.getSignature())) {
+        matches.push_back(&matchScope->functions.at(defCodeLocStr).at(candidate.getSignature()));
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 
@@ -273,8 +272,8 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
  * @return Matched or not
  */
 bool FunctionManager::matchInterfaceMethod(Scope *matchScope, const std::string &requestedName,
-                                                const std::vector<SymbolType> &requestedParamTypes,
-                                                const SymbolType &requestedReturnType, bool strictSpecifierMatching) {
+                                           const std::vector<SymbolType> &requestedParamTypes,
+                                           const SymbolType &requestedReturnType, bool strictSpecifierMatching) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call

@@ -1,4 +1,28 @@
-type TestStruct struct {
+type T int|long;
+
+type TestStruct<T> struct {
+    T _f1
+    unsigned long length
+}
+
+p TestStruct.ctor(const unsigned long initialLength) {
+    this.length = initialLength;
+}
+
+p TestStruct.printLength() {
+    printf("%d\n", this.length);
+}
+
+type Alias alias TestStruct<long>;
+
+f<int> main() {
+    Alias a = Alias{12345l, (unsigned long) 54321l};
+    a.printLength();
+    dyn b = Alias(12l);
+    b.printLength();
+}
+
+/*type TestStruct struct {
     long lng
     String str
     int i
@@ -17,4 +41,4 @@ f<int> main() {
     printf("Long: %d\n", res.lng);
     printf("String: %s\n", res.str.getRaw());
     printf("Int: %d\n", res.i);
-}
+}*/

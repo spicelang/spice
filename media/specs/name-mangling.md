@@ -17,13 +17,13 @@ functions, structs and types uniquely. For this purpose, Spice offers a flexible
 
 ### Mangled name
 
-Here is the scheme, how Spice mangles function/procedure/method names:
+Here is the scheme, how Spice mangles functions/procedures:
 
-`<function-type>_<function-name-length><function-name>[_<this-type>][_<param-types>]`
+`<function-type>[_<this-type>]_<function-name-length><function-name>[_<param-types>]`
 
 **Example:**
 
-Mangled name: `mp_pushBack_i`
+Mangled name: `mp_Vector_pushBack_i`
 
 ### Exception: main function
 
@@ -41,20 +41,42 @@ To see the implementation for function name mangling, have a look here:
 ### Components
 
 - Struct name
-- Field types (separated by `_`, default: empty)
-- Template types (separated by `_`, default: empty)
+- Struct name length (number of characters in struct name)
+- Field types (default: empty)
 
 ### Mangled name
 
-Here is the scheme, how Spice mangles struct names:
+Here is the scheme, how Spice mangles structs:
 
-`_s[__<template-types>]__<struct-name>[__field-types]`
+`s_<struct-name-length><struct-name>[_field-types]`
 
 **Example:**
 
-`_s__int_string__Pair__int_string`
+`s_Pair_is`
 
 ### Implementation
 
 To see the implementation for struct name mangling, have a look here:
 [Struct::getMangledName](../../src/model/Struct.cpp#:~:text=Struct::getMangledName)
+
+## Interface mangling
+
+### Components
+
+- Interface name
+- Interface name length (number of characters in interface name)
+
+### Mangled name
+
+Here is the scheme, how Spice mangles interfaces:
+
+`i_<interface-name-length><interface-name>`
+
+**Example:**
+
+`i_Visitable`
+
+### Implementation
+
+To see the implementation for struct name mangling, have a look here:
+[Interface::getMangledName](../../src/model/Interface.cpp#:~:text=Interface::getMangledName)

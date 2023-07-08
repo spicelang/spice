@@ -12,29 +12,19 @@ namespace spice::compiler {
  * @return Mangled string
  */
 std::string Struct::getMangledName() const {
-  // Build field type string
-  std::stringstream fieldTyStr;
-  for (size_t i = 0; i < fieldTypes.size(); i++) {
-    if (i > 0)
-      fieldTyStr << "_";
-    fieldTyStr << fieldTypes.at(i).getName(false, true);
-  }
+  std::stringstream mangledName;
+  mangledName << "s_";
 
-  // Build template type string
-  std::stringstream templateTyStr;
-  for (size_t i = 0; i < templateTypes.size(); i++) {
-    if (i > 0)
-      templateTyStr << "_";
-    templateTyStr << templateTypes.at(i).getName(false, true);
-  }
+  // Struct name
+  mangledName << name.length() << name;
 
-  // Construct mangled name
-  std::stringstream mangledName("_s");
-  if (!templateTypes.empty())
-    mangledName << "__" << templateTyStr.str();
-  mangledName << "__" << name;
+  // Open field List
   if (!fieldTypes.empty())
-    mangledName << "__" << fieldTyStr.str();
+    mangledName << "_";
+
+  // Field types
+  for (const SymbolType &field : fieldTypes)
+    mangledName << field.getMangledName();
 
   return mangledName.str();
 }

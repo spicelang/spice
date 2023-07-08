@@ -108,6 +108,8 @@ public:
       }
     }
     friend bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs) { return !(lhs == rhs); }
+    [[nodiscard]] std::string getName(bool withSize) const;
+    [[nodiscard]] std::string getMangledName() const;
 
     // Public members
     SymbolSuperType superType = TY_DYN;
@@ -187,7 +189,8 @@ public:
   void setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes);
   [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const;
-  [[nodiscard]] std::string getName(bool withSize = false, bool mangledName = false) const;
+  [[nodiscard]] std::string getName(bool withSize = false) const;
+  [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] size_t getArraySize() const;
   [[nodiscard]] bool isConst() const;
   [[nodiscard]] bool isSigned() const;
@@ -209,10 +212,6 @@ public:
   // Public members
   TypeChain typeChain;
   TypeSpecifiers specifiers;
-
-private:
-  // Private methods
-  [[nodiscard]] std::string getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName) const;
 
 public:
   // Json serializer/deserializer
