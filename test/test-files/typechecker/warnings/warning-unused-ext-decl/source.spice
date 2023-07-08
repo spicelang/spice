@@ -1,3 +1,4 @@
-ext f<byte*> pthread_self();
+#[core.compiler.mangledName = "pthread_self"]
+ext f<byte*> pthreadSelf();
 
 f<int> main() {}

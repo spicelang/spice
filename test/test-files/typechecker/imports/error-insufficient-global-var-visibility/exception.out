@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/imports/error-insufficient-global-var-visibility/source.spice:4:28:
-Insufficient symbol visibility: Cannot access 'globalTestVar' due to its private visibility
+Insufficient symbol visibility: Cannot access 'GLOBAL_TEST_VAR' due to its private visibility
 
-4  ntf("Result: %d/n", src1::globalTestVar);
-                       ^^^^^^^^^^^^^^^^^^^
+4  ntf("Result: %d/n", src1::GLOBAL_TEST_VAR);
+                       ^^^^^^^^^^^^^^^^^^^^^

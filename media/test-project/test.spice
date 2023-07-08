@@ -1,28 +1,10 @@
-import "std/data/vector";
-import "std/text/print";
-import "std/io/file" as io;
-
-f<int> main() {
-  dyn v = Vector<String>();
-  v.pushBack(String("Hello"));
-  v.pushBack(String("World!"));
-  createFile("output.txt");
-  const File file = openFile("output.txt", io::MODE_WRITE);
-
-  for int i = 0; i < v.getSize(); i++ {
-    String str = v.get(i);
-    file.writeString((string) str.getRaw());
-  }
-
-  file.close();
-}
-
-
-/*type TestStruct struct {
+type TestStruct struct {
     long lng
     String str
     int i
 }
+
+p TestStruct.dtor() {}
 
 f<TestStruct> fct(int& ref) {
     TestStruct ts = TestStruct{ 6l, String("test string"), ref };
@@ -35,4 +17,4 @@ f<int> main() {
     printf("Long: %d\n", res.lng);
     printf("String: %s\n", res.str.getRaw());
     printf("Int: %d\n", res.i);
-}*/
+}

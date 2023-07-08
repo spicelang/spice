@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/typechecker/builtins/error-sizeof-expected-type/source.spice:3:36:
-Unknown datatype: Unknown datatype 'doubleValue'
-
-3  e: %d", sizeof(type doubleValue));
-                       ^^^^^^^^^^^

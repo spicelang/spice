@@ -1,1 +1,1 @@
-const int globalTestVar = 123;
+const int GLOBAL_TEST_VAR = 123;

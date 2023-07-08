@@ -1030,7 +1030,8 @@ public:
   // Enums
   static constexpr const char *const ATTR_CORE_LINKER_FLAG = "core.linker.flag";
   static constexpr const char *const ATTR_CORE_LINKER_DLL = "core.linker.dll";
-  static constexpr const char *const ATTR_CORE_COMPILER_MANGLE_NAME = "core.compiler.mangleName";
+  static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
+  static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
 
   // Constructors
   using ASTNode::ASTNode;

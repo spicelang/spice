@@ -7,22 +7,23 @@ functions, structs and types uniquely. For this purpose, Spice offers a flexible
 
 ### Components
 
-- Function name
 - Function type (function: `f`, procedure `p`, method function `mf` or method procedure `mp`)
-- This type (struct type for methods, default `void`)
-- Return type (`void` for procedures)
-- Template types (separated by `_`, default: empty)
-- Param types (separated by `_`, default: empty)
+- Function name length (number of characters in function name)
+- Function name (will be encoded as is)
+- This type (default: empty)
+- Param types (default: empty)
+- Primitive types (double: `d`, int: `i`, short: `s`, long: `l`, byte: `y`, char: `c`, string: `s`, bool: `b`)
+- Struct types (struct name, prefixed with `struct_`)
 
 ### Mangled name
 
 Here is the scheme, how Spice mangles function/procedure/method names:
 
-`_<function-type>__<this-type>__<return-type>[__<template-types>]__<function-name>[__<param-types>]`
+`<function-type>_<function-name-length><function-name>[_<this-type>][_<param-types>]`
 
 **Example:**
 
-Mangled name: `_mp__Vector__void__int__pushBack__int`
+Mangled name: `mp_pushBack_i`
 
 ### Exception: main function
 

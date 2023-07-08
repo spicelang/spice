@@ -1,40 +1,40 @@
-const int row = 10;
-const int col = 10;
-const int generationsToCalculate = 5;
+const int ROW = 10;
+const int COL = 10;
+const int GENERATIONS_TO_CALCULATE = 5;
 
-int randCount = 0;
+int RAND_COUNT = 0;
 
 f<int> genFakeRandInt() {
-    randCount++;
-    return randCount % 2;
+    RAND_COUNT++;
+    return RAND_COUNT % 2;
 }
 
 p rowLineTop() {
     printf("\n");
-    for int i = 0; i < col; i++ { printf("╭─────╮"); }
+    for int i = 0; i < COL; i++ { printf("╭─────╮"); }
     printf("\n");
 }
 
 p rowLineMiddle() {
     printf("\n");
-    for int i = 0; i < col; i++ { printf("├─────┤"); }
+    for int i = 0; i < COL; i++ { printf("├─────┤"); }
     printf("\n");
 }
 
 p rowLineBottom() {
     printf("\n");
-    for int i = 0; i < col; i++ { printf("╰─────╯"); }
+    for int i = 0; i < COL; i++ { printf("╰─────╯"); }
     printf("\n");
 }
 
 p printGeneration(string name, int[10][10] matrix) {
     printf("%s:\n", name);
     rowLineTop();
-    for int i = 0; i < row; i++ {
+    for int i = 0; i < ROW; i++ {
         if i > 0 {
             rowLineMiddle();
         }
-        for int j = 0; j < col; j++ {
+        for int j = 0; j < COL; j++ {
             printf("│  %d  │", matrix[i][j]);
         }
     }
@@ -45,7 +45,7 @@ f<int> countLiveNeighborCell(int[10][10] matrix, int r, int c) {
     int count = 0;
     for int i = r - 1; i <= r + 1; i++ {
         for int j = c - 1; j <= c + 1; j++ {
-            if (i == r && j == c) || (i < 0 || j < 0) || (i >= row || j >= col) {
+            if (i == r && j == c) || (i < 0 || j < 0) || (i >= ROW || j >= COL) {
                 continue;
             }
             if matrix[i][j] == 1 {
@@ -61,17 +61,17 @@ f<int> main() {
     int[10][10] b;
 
     // Generate matrix canvas with random values (live and dead cells)
-    for int i = 0; i < row; i++ {
-        for int j = 0; j < col; j++ {
+    for int i = 0; i < ROW; i++ {
+        for int j = 0; j < COL; j++ {
             a[i][j] = genFakeRandInt();
         }
     }
     printGeneration("Initial state", a);
 
-    for int generation = 1; generation < generationsToCalculate; generation++ {
+    for int generation = 1; generation < GENERATIONS_TO_CALCULATE; generation++ {
         // Calculate next generation
-        for int i = 0; i < row; i++ {
-            for int j = 0; j < col; j++ {
+        for int i = 0; i < ROW; i++ {
+            for int j = 0; j < COL; j++ {
                 int neighbor_live_cell = countLiveNeighborCell(a, i, j);
                 if a[i][j] == 1 && (neighbor_live_cell == 2 || neighbor_live_cell == 3) {
                     b[i][j] = 1;

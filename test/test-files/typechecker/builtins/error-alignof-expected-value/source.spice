@@ -1,5 +1,0 @@
-type T dyn;
-
-f<int> main() {
-    printf("Alignment: %d", alignof(T));
-}

@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-@randCount = private unnamed_addr global i32 0
+@RAND_COUNT = private unnamed_addr global i32 0
 @printf.str.1 = private unnamed_addr constant [22 x i8] c"\E2\95\AD\E2\94\80\E2\94\80\E2\94\80\E2\94\80\E2\94\80\E2\95\AE\00", align 1
 @printf.str.4 = private unnamed_addr constant [22 x i8] c"\E2\94\9C\E2\94\80\E2\94\80\E2\94\80\E2\94\80\E2\94\80\E2\94\A4\00", align 1
 @printf.str.7 = private unnamed_addr constant [22 x i8] c"\E2\95\B0\E2\94\80\E2\94\80\E2\94\80\E2\94\80\E2\94\80\E2\95\AF\00", align 1
@@ -14,9 +14,9 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(readwrite, argmem: none, inaccessiblemem: none)
 define private fastcc i32 @_f__void__int__genFakeRandInt() unnamed_addr #0 {
-  %1 = load i32, ptr @randCount, align 4
+  %1 = load i32, ptr @RAND_COUNT, align 4
   %2 = add i32 %1, 1
-  store i32 %2, ptr @randCount, align 4
+  store i32 %2, ptr @RAND_COUNT, align 4
   %3 = srem i32 %2, 2
   ret i32 %3
 }

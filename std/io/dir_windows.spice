@@ -68,12 +68,12 @@ ext f<int> rmdir(string);
 ext f<int> rename(string, string);
 ext f<int> access(string, int);
 ext f<int> stat(string, FileStat*);
-#[core.linker.dll = true]
-ext f<byte*> FindFirstFileA(string, DirEntry*);
-#[core.linker.dll = true]
-ext f<bool> FindNextFileA(byte*, DirEntry*);
-#[core.linker.dll = true]
-ext f<bool> FindClose(byte*);
+#[core.linker.dll = true, core.compiler.mangledName = "FindFirstFileA"]
+ext f<byte*> findFirstFileA(string, DirEntry*);
+#[core.linker.dll = true, core.compiler.mangledName = "FindNextFileA"]
+ext f<bool> findNextFileA(byte*, DirEntry*);
+#[core.linker.dll = true, core.compiler.mangledName = "FindClose"]
+ext f<bool> findClose(byte*);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.
@@ -158,7 +158,7 @@ public p listDir(string path) {
     bool readMore = true;
 
     // Find first file
-    handle = FindFirstFileA(path, &dirEntry);
+    handle = findFirstFileA(path, &dirEntry);
     if handle == INVALID_HANDLE {
         printf("Dir does not exist\n");
     } else {
@@ -166,11 +166,11 @@ public p listDir(string path) {
         while readMore {
             printf("Filename: %s\n", dirEntry.fileName);
             // Check if there is another file
-            readMore = FindNextFileA(handle, &dirEntry);
+            readMore = findNextFileA(handle, &dirEntry);
         }
     }
     // Close
-    FindClose(handle);
+    findClose(handle);
 }
 
 /**
@@ -182,7 +182,7 @@ public p listDirRecursive(string path) {
     bool readMore = true;
 
     // Find first file
-    handle = FindFirstFileA(path, &dirEntry);
+    handle = findFirstFileA(path, &dirEntry);
     if handle == INVALID_HANDLE {
         printf("Dir does not exist\n");
     } else {
@@ -194,9 +194,9 @@ public p listDirRecursive(string path) {
                 //listDirRecursive(path + "\\" + dirEntry.fileName);
             }
             // Check if there is another file
-            readMore = FindNextFileA(handle, &dirEntry);
+            readMore = findNextFileA(handle, &dirEntry);
         }
     }
     // Close
-    FindClose(handle);
+    findClose(handle);
 }

@@ -174,14 +174,17 @@ std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
   saveErrorMessage(fctNameNode, ctx);
 
   // Extract function name
-  if (!ctx->IDENTIFIER().empty()) {
-    fctNameNode->name = fctNameNode->fqName = getIdentifier(ctx->IDENTIFIER().back());
-    if (ctx->IDENTIFIER().size() > 1) {
-      fctNameNode->structName = getIdentifier(ctx->IDENTIFIER().front());
-      fctNameNode->fqName = fctNameNode->structName + MEMBER_ACCESS_TOKEN + fctNameNode->name;
-      fctNameNode->nameFragments.push_back(fctNameNode->structName);
-    }
-    fctNameNode->nameFragments.push_back(fctNameNode->name);
+  if (ctx->TYPE_IDENTIFIER()) {
+    const std::string typeIdentifier = getIdentifier(ctx->TYPE_IDENTIFIER());
+    fctNameNode->structName = typeIdentifier;
+    fctNameNode->fqName = typeIdentifier + MEMBER_ACCESS_TOKEN;
+    fctNameNode->nameFragments.push_back(typeIdentifier);
+  }
+  if (ctx->IDENTIFIER()) {
+    const std::string fctIdentifier = getIdentifier(ctx->IDENTIFIER());
+    fctNameNode->name = fctIdentifier;
+    fctNameNode->fqName += fctIdentifier;
+    fctNameNode->nameFragments.push_back(fctIdentifier);
   }
 
   // Extract overloaded operator
@@ -200,7 +203,7 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
   saveErrorMessage(structDefNode, ctx);
 
   // Extract struct name
-  structDefNode->structName = getIdentifier(ctx->IDENTIFIER());
+  structDefNode->structName = getIdentifier(ctx->TYPE_IDENTIFIER());
 
   bool seenStructKeyword = false;
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
@@ -240,7 +243,7 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
   saveErrorMessage(interfaceDefNode, ctx);
 
   // Extract interface name
-  interfaceDefNode->interfaceName = getIdentifier(ctx->IDENTIFIER());
+  interfaceDefNode->interfaceName = getIdentifier(ctx->TYPE_IDENTIFIER());
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
@@ -269,7 +272,7 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   saveErrorMessage(enumDefNode, ctx);
 
   // Extract enum name
-  enumDefNode->enumName = getIdentifier(ctx->IDENTIFIER());
+  enumDefNode->enumName = getIdentifier(ctx->TYPE_IDENTIFIER());
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
@@ -297,7 +300,7 @@ std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx
   saveErrorMessage(genericTypeDefNode, ctx);
 
   // Extract type name
-  genericTypeDefNode->typeName = getIdentifier(ctx->IDENTIFIER());
+  genericTypeDefNode->typeName = getIdentifier(ctx->TYPE_IDENTIFIER());
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
@@ -320,7 +323,7 @@ std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
   saveErrorMessage(aliasDefNode, ctx);
 
   // Extract type name
-  aliasDefNode->aliasName = getIdentifier(ctx->IDENTIFIER());
+  aliasDefNode->aliasName = getIdentifier(ctx->TYPE_IDENTIFIER());
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
@@ -345,7 +348,7 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
   saveErrorMessage(globalVarDefNode, ctx);
 
   // Extract function name
-  globalVarDefNode->varName = getIdentifier(ctx->IDENTIFIER());
+  globalVarDefNode->varName = getIdentifier(ctx->TYPE_IDENTIFIER());
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     ParserRuleContext *rule;
@@ -768,7 +771,7 @@ std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
   saveErrorMessage(enumItemNode, ctx);
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::IDENTIFIER)
+    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER)
       enumItemNode->itemName = getIdentifier(t1);
     else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::INT_LIT) {
       enumItemNode->itemValue = parseInt(nullptr, t2);
@@ -1026,7 +1029,7 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
   // Extract key
   for (const antlr4::tree::TerminalNode *keyFragment : ctx->IDENTIFIER()) {
     if (!attrNode->key.empty())
-      attrNode->key += '.';
+      attrNode->key += MEMBER_ACCESS_TOKEN;
     attrNode->key += keyFragment->getSymbol()->getText();
   }
 
@@ -1627,11 +1630,18 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
       visit(rule);
     else if (rule = dynamic_cast<SpiceParser::AssignExprContext *>(subTree); rule != nullptr) // AssignExpr
       currentNode = atomicExprNode->createChild<AssignExprNode>(CodeLoc(rule->start, filePath));
-    else if (auto t = dynamic_cast<TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      atomicExprNode->identifierFragments.push_back(getIdentifier(t));
+    else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const std::string fragment = getIdentifier(t1);
+      atomicExprNode->identifierFragments.push_back(fragment);
       if (!atomicExprNode->fqIdentifier.empty())
         atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-      atomicExprNode->fqIdentifier += atomicExprNode->identifierFragments.back();
+      atomicExprNode->fqIdentifier += fragment;
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = getIdentifier(t2);
+      atomicExprNode->identifierFragments.push_back(fragment);
+      if (!atomicExprNode->fqIdentifier.empty())
+        atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+      atomicExprNode->fqIdentifier += fragment;
     } else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1738,12 +1748,17 @@ std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
       currentNode = fctCallNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
       fctCallNode->hasTemplateTypes = true;
     } else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      fctCallNode->functionNameFragments.push_back(t1->toString());
-      fctCallNode->fqFunctionName += fctCallNode->functionNameFragments.back();
-    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::DOT)
-      fctCallNode->fqFunctionName += MEMBER_ACCESS_TOKEN;
-    else if (auto t3 = dynamic_cast<TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS)
+      const std::string fragment = t1->toString();
+      fctCallNode->functionNameFragments.push_back(fragment);
+      fctCallNode->fqFunctionName += fragment;
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = t2->toString();
+      fctCallNode->functionNameFragments.push_back(fragment);
+      fctCallNode->fqFunctionName += fragment;
+    } else if (auto t3 = dynamic_cast<TerminalNode *>(subTree); t3->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS)
       fctCallNode->fqFunctionName += SCOPE_ACCESS_TOKEN;
+    else if (auto t4 = dynamic_cast<TerminalNode *>(subTree); t4->getSymbol()->getType() == SpiceParser::DOT)
+      fctCallNode->fqFunctionName += MEMBER_ACCESS_TOKEN;
     else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
 
@@ -1786,11 +1801,13 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
       currentNode = structInstantiationNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
     else if (rule = dynamic_cast<SpiceParser::ArgLstContext *>(subTree); rule != nullptr) // ArgLst
       currentNode = structInstantiationNode->createChild<ArgLstNode>(CodeLoc(rule->start, filePath));
-    else if (auto t = dynamic_cast<TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      std::string fragment = t->toString();
+    else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const std::string fragment = t1->toString();
       structInstantiationNode->structNameFragments.push_back(fragment);
-      if (!structInstantiationNode->fqStructName.empty())
-        structInstantiationNode->fqStructName += SCOPE_ACCESS_TOKEN;
+      structInstantiationNode->fqStructName += fragment + SCOPE_ACCESS_TOKEN;
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = t2->toString();
+      structInstantiationNode->structNameFragments.push_back(fragment);
       structInstantiationNode->fqStructName += fragment;
     } else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal
@@ -1821,9 +1838,9 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
     else if (rule = dynamic_cast<SpiceParser::BaseDataTypeContext *>(subTree); rule != nullptr) // BaseDataType
       currentNode = dataTypeNode->createChild<BaseDataTypeNode>(CodeLoc(rule->start, filePath));
     else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::MUL)
-      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_PTR, false, 0});
+      dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_PTR, false, 0);
     else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::BITWISE_AND)
-      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_REF, false, 0});
+      dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_REF, false, 0);
     else if (auto t3 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::LBRACKET) {
       i++; // Consume LBRACKET
       subTree = ctx->children[i];
@@ -1834,10 +1851,10 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
         hasSize = true;
         hardCodedSize = std::stoi(t4->getSymbol()->getText());
         i++; // Consume INTEGER
-      } else if (auto t5 = dynamic_cast<TerminalNode *>(subTree); t5->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      } else if (auto t5 = dynamic_cast<TerminalNode *>(subTree); t5->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
         hasSize = true;
         sizeVarName = getIdentifier(t5);
-        i++; // Consume IDENTIFIER
+        i++; // Consume TYPE_IDENTIFIER
       }
       dataTypeNode->tmQueue.push({DataTypeNode::TYPE_ARRAY, hasSize, hardCodedSize, sizeVarName});
     } else
@@ -1902,11 +1919,13 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
     ParserRuleContext *rule;
     if (rule = dynamic_cast<SpiceParser::TypeLstContext *>(subTree); rule != nullptr) // TypeLst
       currentNode = customDataTypeNode->createChild<TypeLstNode>(CodeLoc(rule->start, filePath));
-    else if (auto t = dynamic_cast<TerminalNode *>(subTree); t->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      std::string fragment = t->toString();
+    else if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const std::string fragment = t1->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
-      if (!customDataTypeNode->fqTypeName.empty())
-        customDataTypeNode->fqTypeName += SCOPE_ACCESS_TOKEN;
+      customDataTypeNode->fqTypeName += fragment + SCOPE_ACCESS_TOKEN;
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = t2->toString();
+      customDataTypeNode->typeNameFragments.push_back(fragment);
       customDataTypeNode->fqTypeName += fragment;
     } else
       assert(dynamic_cast<TerminalNode *>(subTree)); // Fail if we did not get a terminal

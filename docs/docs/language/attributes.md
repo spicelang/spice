@@ -28,5 +28,6 @@ f<int> test(long input) {
 
 ### Available attributes
 
-- `core.compiler.mangleName: bool`: Disable name mangling for the annotated function
+- `core.compiler.mangle: bool`: Disable name mangling for the annotated function
+- `core.compiler.mangledName: string`: Set the mangled name for the annotated function
 - `core.linker.dll: bool`: Enable linkage as dll (only relevant for Windows)

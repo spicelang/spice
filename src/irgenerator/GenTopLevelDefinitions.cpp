@@ -573,15 +573,24 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   for (const SymbolType &paramType : spiceFunc->getParamTypes())
     argTypes.push_back(paramType.toLLVMType(context, currentScope));
 
+  // Get name
+  std::string mangledName = spiceFunc->name;
+  if (node->fctAttrs()) {
+    AttrNode *mangledNameNode = node->fctAttrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLED_NAME);
+    if (mangledNameNode)
+      mangledName = mangledNameNode->getValue().stringValue;
+  }
+
   // Declare function
   llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, node->isVarArg);
-  module->getOrInsertFunction(spiceFunc->name, functionType);
+  module->getOrInsertFunction(mangledName, functionType);
+  llvm::Function *fct = module->getFunction(mangledName);
 
   // If the function should be imported as dll, add the dll attribute
   if (node->fctAttrs()) {
-    const bool linkAsDll = node->fctAttrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_LINKER_DLL)->getValue().boolValue;
-    if (linkAsDll)
-      module->getFunction(spiceFunc->name)->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
+    AttrNode *linkAsDllNode = node->fctAttrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_LINKER_DLL);
+    if (linkAsDllNode && linkAsDllNode->getValue().boolValue)
+      fct->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
   }
 
   return nullptr;

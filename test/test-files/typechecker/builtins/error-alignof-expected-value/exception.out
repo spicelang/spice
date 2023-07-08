@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/typechecker/builtins/error-alignof-expected-value/source.spice:4:37:
-Referenced undefined variable: The variable 'T' could not be found
-
-4  nment: %d", alignof(T));
-                       ^

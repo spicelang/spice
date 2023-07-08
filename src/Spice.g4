@@ -7,13 +7,13 @@ entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef 
 mainFunctionDef: fctAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 functionDef: fctAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: fctAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-fctName: (IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
-structDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
-interfaceDef: specifierLst? TYPE IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature+ RBRACE;
-enumDef: specifierLst? TYPE IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
-genericTypeDef: TYPE IDENTIFIER typeAltsLst SEMICOLON;
-aliasDef: TYPE IDENTIFIER ALIAS dataType SEMICOLON;
-globalVarDef: dataType IDENTIFIER (ASSIGN constant)? SEMICOLON;
+fctName: (TYPE_IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
+structDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
+interfaceDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature+ RBRACE;
+enumDef: specifierLst? TYPE TYPE_IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
+genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
+aliasDef: TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON;
+globalVarDef: dataType TYPE_IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: fctAttr? EXT (F LESS dataType GREATER | P) IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN SEMICOLON;
 
 // Control structures
@@ -35,7 +35,7 @@ typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
 enumItemLst: enumItem (COMMA enumItem)*;
-enumItem: IDENTIFIER (ASSIGN INT_LIT)?;
+enumItem: TYPE_IDENTIFIER (ASSIGN INT_LIT)?;
 field: dataType IDENTIFIER (ASSIGN constant)?;
 signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER (LESS typeLst GREATER)? LPAREN typeLst? RPAREN SEMICOLON;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
@@ -75,19 +75,19 @@ multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: LPAREN dataType RPAREN prefixUnaryExpr | prefixUnaryExpr;
 prefixUnaryExpr: postfixUnaryExpr | prefixUnaryOp prefixUnaryExpr;
 postfixUnaryExpr: atomicExpr | postfixUnaryExpr LBRACKET assignExpr RBRACKET | postfixUnaryExpr DOT IDENTIFIER | postfixUnaryExpr PLUS_PLUS | postfixUnaryExpr MINUS_MINUS;
-atomicExpr: constant | value | IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* | builtinCall | LPAREN assignExpr RPAREN;
+atomicExpr: constant | value | ((IDENTIFIER | TYPE_IDENTIFIER) SCOPE_ACCESS)* (IDENTIFIER | TYPE_IDENTIFIER) | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values
 value: fctCall | arrayInitialization | structInstantiation | NIL LESS dataType GREATER;
 constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
-fctCall: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (DOT IDENTIFIER)* (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
+fctCall: (IDENTIFIER SCOPE_ACCESS)* (IDENTIFIER DOT)* (IDENTIFIER | TYPE_IDENTIFIER) (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACE argLst? RBRACE;
-structInstantiation: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
+structInstantiation: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
 
 // Types
-dataType: specifierLst? baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | IDENTIFIER)? RBRACKET)*;
+dataType: specifierLst? baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | TYPE_IDENTIFIER)? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | customDataType | functionDataType;
-customDataType: IDENTIFIER (SCOPE_ACCESS IDENTIFIER)* (LESS typeLst GREATER)?;
+customDataType: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)?;
 functionDataType: (P | F LESS dataType GREATER) LPAREN typeLst? RPAREN;
 
 // Shorthands
@@ -197,7 +197,8 @@ SHORT_LIT: NUM_LIT 's';
 LONG_LIT: NUM_LIT 'l';
 CHAR_LIT: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\'';
 STRING_LIT: '"' (~["\\\r\n] | '\\' (. | EOF))* '"';
-IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
+IDENTIFIER: [a-z_][a-zA-Z0-9_]*;
+TYPE_IDENTIFIER: [A-Z][a-zA-Z0-9_]*;
 
 fragment NUM_LIT: NUM_LIT_S | NUM_LIT_U;
 fragment NUM_LIT_S: [-](DEC_LIT | BIN_LIT | HEX_LIT | OCT_LIT);

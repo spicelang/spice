@@ -1,12 +1,12 @@
-int test1 = 10;
-string test2 = "test string";
-double test3 = 5.83;
-bool test4 = false;
+int TEST1 = 10;
+string TEST2 = "test string";
+double TEST3 = 5.83;
+bool TEST4 = false;
 
 f<int> main() {
-    test1 = 11;
-    test2 = "test";
-    test3 = 5.84;
-    test4 = true;
-    printf("Variable values: %d, %s, %f, %u", test1, test2, test3, test4);
+    TEST1 = 11;
+    TEST2 = "test";
+    TEST3 = 5.84;
+    TEST4 = true;
+    printf("Variable values: %d, %s, %f, %u", TEST1, TEST2, TEST3, TEST4);
 }
