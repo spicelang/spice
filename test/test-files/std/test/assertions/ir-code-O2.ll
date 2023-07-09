@@ -20,47 +20,47 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %6 = alloca i32, align 4
   %7 = alloca i32, align 4
   %8 = alloca i16, align 2
-  tail call void @_p__void__void__assertTrue__bool(i1 true) #2
-  tail call void @_p__void__void__assertFalse__bool(i1 false) #2
+  tail call void @_Z10assertTrueb(i1 true) #2
+  tail call void @_Z11assertFalseb(i1 false) #2
   store i32 6, ptr %1, align 4
   store i32 6, ptr %2, align 4
-  call void @_p__void__void__assertEqual__intref_intref(ptr nonnull %1, ptr nonnull %2) #2
+  call void @_Z11assertEqualRiRi(ptr nonnull %1, ptr nonnull %2) #2
   store ptr @anon.string.2, ptr %3, align 8
   store ptr @anon.string.2, ptr %4, align 8
-  call void @_p__void__void__assertEqual__stringref_stringref(ptr nonnull %3, ptr nonnull %4) #2
+  call void @_Z11assertEqualRPcRPc(ptr nonnull %3, ptr nonnull %4) #2
   store i32 7, ptr %5, align 4
   store i32 6, ptr %6, align 4
-  call void @_p__void__void__assertNotEqual__intref_intref(ptr nonnull %5, ptr nonnull %6) #2
+  call void @_Z14assertNotEqualRiRi(ptr nonnull %5, ptr nonnull %6) #2
   store i32 0, ptr %7, align 4
-  call void @_p__void__void__assertNil__intref(ptr nonnull %7) #2
+  call void @_Z9assertNilRi(ptr nonnull %7) #2
   store i16 764, ptr %8, align 2
-  call void @_p__void__void__assertNotNil__shortref(ptr nonnull %8) #2
-  call void @_p__void__void__assertEmpty__string(ptr nonnull @anon.string.3) #2
-  call void @_p__void__void__assertNotEmpty__string(ptr nonnull @anon.string.4) #2
-  call void @_p__void__void__assertContains__string_string(ptr nonnull @anon.string.5, ptr nonnull @anon.string.6) #2
+  call void @_Z12assertNotNilRs(ptr nonnull %8) #2
+  call void @_Z11assertEmptyPc(ptr nonnull @anon.string.3) #2
+  call void @_Z14assertNotEmptyPc(ptr nonnull @anon.string.4) #2
+  call void @_Z14assertContainsPcPc(ptr nonnull @anon.string.5, ptr nonnull @anon.string.6) #2
   %9 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
   ret i32 0
 }
 
-declare void @_p__void__void__assertTrue__bool(i1) local_unnamed_addr
+declare void @_Z10assertTrueb(i1) local_unnamed_addr
 
-declare void @_p__void__void__assertFalse__bool(i1) local_unnamed_addr
+declare void @_Z11assertFalseb(i1) local_unnamed_addr
 
-declare void @_p__void__void__assertEqual__intref_intref(ptr, ptr) local_unnamed_addr
+declare void @_Z11assertEqualRiRi(ptr, ptr) local_unnamed_addr
 
-declare void @_p__void__void__assertEqual__stringref_stringref(ptr, ptr) local_unnamed_addr
+declare void @_Z11assertEqualRPcRPc(ptr, ptr) local_unnamed_addr
 
-declare void @_p__void__void__assertNotEqual__intref_intref(ptr, ptr) local_unnamed_addr
+declare void @_Z14assertNotEqualRiRi(ptr, ptr) local_unnamed_addr
 
-declare void @_p__void__void__assertNil__intref(ptr) local_unnamed_addr
+declare void @_Z9assertNilRi(ptr) local_unnamed_addr
 
-declare void @_p__void__void__assertNotNil__shortref(ptr) local_unnamed_addr
+declare void @_Z12assertNotNilRs(ptr) local_unnamed_addr
 
-declare void @_p__void__void__assertEmpty__string(ptr) local_unnamed_addr
+declare void @_Z11assertEmptyPc(ptr) local_unnamed_addr
 
-declare void @_p__void__void__assertNotEmpty__string(ptr) local_unnamed_addr
+declare void @_Z14assertNotEmptyPc(ptr) local_unnamed_addr
 
-declare void @_p__void__void__assertContains__string_string(ptr, ptr) local_unnamed_addr
+declare void @_Z14assertContainsPcPc(ptr, ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1

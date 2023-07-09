@@ -17,7 +17,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %1 = tail call double @_f__void__double__toDouble__bool(i1 true) #2
+  %1 = tail call double @_Z8toDoubleb(i1 true) #2
   %2 = fcmp oeq double %1, 1.000000e+00
   br i1 %2, label %assert.exit.L6, label %assert.then.L6, !prof !0
 
@@ -27,7 +27,7 @@ assert.then.L6:                                   ; preds = %0
   unreachable
 
 assert.exit.L6:                                   ; preds = %0
-  %4 = tail call double @_f__void__double__toDouble__bool(i1 false) #2
+  %4 = tail call double @_Z8toDoubleb(i1 false) #2
   %5 = fcmp oeq double %4, 0.000000e+00
   br i1 %5, label %assert.exit.L8, label %assert.then.L8, !prof !0
 
@@ -37,7 +37,7 @@ assert.then.L8:                                   ; preds = %assert.exit.L6
   unreachable
 
 assert.exit.L8:                                   ; preds = %assert.exit.L6
-  %7 = tail call i32 @_f__void__int__toInt__bool(i1 true) #2
+  %7 = tail call i32 @_Z5toIntb(i1 true) #2
   %8 = icmp eq i32 %7, 1
   br i1 %8, label %assert.exit.L12, label %assert.then.L12, !prof !0
 
@@ -47,7 +47,7 @@ assert.then.L12:                                  ; preds = %assert.exit.L8
   unreachable
 
 assert.exit.L12:                                  ; preds = %assert.exit.L8
-  %10 = tail call i32 @_f__void__int__toInt__bool(i1 false) #2
+  %10 = tail call i32 @_Z5toIntb(i1 false) #2
   %11 = icmp eq i32 %10, 0
   br i1 %11, label %assert.exit.L14, label %assert.then.L14, !prof !0
 
@@ -57,7 +57,7 @@ assert.then.L14:                                  ; preds = %assert.exit.L12
   unreachable
 
 assert.exit.L14:                                  ; preds = %assert.exit.L12
-  %13 = tail call i16 @_f__void__short__toShort__bool(i1 true) #2
+  %13 = tail call i16 @_Z7toShortb(i1 true) #2
   %14 = icmp eq i16 %13, 1
   br i1 %14, label %assert.exit.L18, label %assert.then.L18, !prof !0
 
@@ -67,7 +67,7 @@ assert.then.L18:                                  ; preds = %assert.exit.L14
   unreachable
 
 assert.exit.L18:                                  ; preds = %assert.exit.L14
-  %16 = tail call i16 @_f__void__short__toShort__bool(i1 false) #2
+  %16 = tail call i16 @_Z7toShortb(i1 false) #2
   %17 = icmp eq i16 %16, 0
   br i1 %17, label %assert.exit.L20, label %assert.then.L20, !prof !0
 
@@ -77,7 +77,7 @@ assert.then.L20:                                  ; preds = %assert.exit.L18
   unreachable
 
 assert.exit.L20:                                  ; preds = %assert.exit.L18
-  %19 = tail call i64 @_f__void__long__toLong__bool(i1 true) #2
+  %19 = tail call i64 @_Z6toLongb(i1 true) #2
   %20 = icmp eq i64 %19, 1
   br i1 %20, label %assert.exit.L24, label %assert.then.L24, !prof !0
 
@@ -87,7 +87,7 @@ assert.then.L24:                                  ; preds = %assert.exit.L20
   unreachable
 
 assert.exit.L24:                                  ; preds = %assert.exit.L20
-  %22 = tail call i64 @_f__void__long__toLong__bool(i1 false) #2
+  %22 = tail call i64 @_Z6toLongb(i1 false) #2
   %23 = icmp eq i64 %22, 0
   br i1 %23, label %assert.exit.L26, label %assert.then.L26, !prof !0
 
@@ -97,7 +97,7 @@ assert.then.L26:                                  ; preds = %assert.exit.L24
   unreachable
 
 assert.exit.L26:                                  ; preds = %assert.exit.L24
-  %25 = tail call i8 @_f__void__byte__toByte__bool(i1 true) #2
+  %25 = tail call i8 @_Z6toByteb(i1 true) #2
   %26 = icmp eq i8 %25, 1
   br i1 %26, label %assert.exit.L30, label %assert.then.L30, !prof !0
 
@@ -107,7 +107,7 @@ assert.then.L30:                                  ; preds = %assert.exit.L26
   unreachable
 
 assert.exit.L30:                                  ; preds = %assert.exit.L26
-  %28 = tail call i8 @_f__void__byte__toByte__bool(i1 false) #2
+  %28 = tail call i8 @_Z6toByteb(i1 false) #2
   %29 = icmp eq i8 %28, 0
   br i1 %29, label %assert.exit.L32, label %assert.then.L32, !prof !0
 
@@ -121,20 +121,20 @@ assert.exit.L32:                                  ; preds = %assert.exit.L30
   ret i32 0
 }
 
-declare double @_f__void__double__toDouble__bool(i1) local_unnamed_addr
+declare double @_Z8toDoubleb(i1) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 declare void @exit(i32) local_unnamed_addr
 
-declare i32 @_f__void__int__toInt__bool(i1) local_unnamed_addr
+declare i32 @_Z5toIntb(i1) local_unnamed_addr
 
-declare i16 @_f__void__short__toShort__bool(i1) local_unnamed_addr
+declare i16 @_Z7toShortb(i1) local_unnamed_addr
 
-declare i64 @_f__void__long__toLong__bool(i1) local_unnamed_addr
+declare i64 @_Z6toLongb(i1) local_unnamed_addr
 
-declare i8 @_f__void__byte__toByte__bool(i1) local_unnamed_addr
+declare i8 @_Z6toByteb(i1) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

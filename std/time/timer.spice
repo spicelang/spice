@@ -52,11 +52,11 @@ public f<unsigned long> Timer.getDurationInMillis() {
     return this.getDurationInMicros() / 1000l;
 }
 
-public f<unsigned double> Timer.getDurationInSeconds() {
+public f<double> Timer.getDurationInSeconds() {
     return this.getDurationInMicros() / 1000000.0;
 }
 
-public f<unsigned double> Timer.getDurationInMinutes() {
+public f<double> Timer.getDurationInMinutes() {
     return this.getDurationInMicros() / 60000000.0;
 }
 

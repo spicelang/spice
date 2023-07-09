@@ -19,43 +19,6 @@ std::vector<SymbolType> Function::getParamTypes() const {
 }
 
 /**
- * Mange the function and return the mangled string
- *
- * @return Mangled string
- */
-std::string Function::getMangledName() const {
-  // Return 'main' if name is 'main'
-  if (name == "main")
-    return name;
-
-  std::stringstream mangledName;
-
-  // Function type
-  if (isMethod())
-    mangledName << "m";
-  mangledName << (isFunction() ? "f" : "p");
-
-  // This type
-  if (isMethod())
-    mangledName << "_" << thisType.getMangledName();
-
-  // Function name
-  mangledName << "_" << name.length() << name;
-
-  // Open param List
-  if (!paramList.empty())
-    mangledName << "_";
-
-  // Parameter types
-  for (const Param &param : paramList) {
-    assert(!param.isOptional);
-    mangledName << param.type.getMangledName();
-  }
-
-  return mangledName.str();
-}
-
-/**
  * Get a string representation of the current function.
  *
  * Example:

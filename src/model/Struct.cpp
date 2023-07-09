@@ -7,29 +7,6 @@
 namespace spice::compiler {
 
 /**
- * Mangle the struct and return the mangled string
- *
- * @return Mangled string
- */
-std::string Struct::getMangledName() const {
-  std::stringstream mangledName;
-  mangledName << "s_";
-
-  // Struct name
-  mangledName << name.length() << name;
-
-  // Open field List
-  if (!fieldTypes.empty())
-    mangledName << "_";
-
-  // Field types
-  for (const SymbolType &field : fieldTypes)
-    mangledName << field.getMangledName();
-
-  return mangledName.str();
-}
-
-/**
  * Get a string representation of the current struct
  *
  * @return String representation as struct signature

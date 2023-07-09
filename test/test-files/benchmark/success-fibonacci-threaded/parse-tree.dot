@@ -614,7 +614,7 @@ digraph {
  L15C4_dataType -> L15C4_baseDataType;
  L15C4_customDataType [color="lightgreen",label="customDataType"];
  L15C4_baseDataType -> L15C4_customDataType;
- L15C4 [color="lightblue",label="IDENTIFIER: Thread"];
+ L15C4 [color="lightblue",label="TYPE_IDENTIFIER: Thread"];
  L15C4_customDataType -> L15C4
  L15C10 [color="lightblue",label="LBRACKET: ["];
  L15C4_dataType -> L15C10
@@ -918,7 +918,7 @@ digraph {
  L17C21_atomicExpr -> L17C21_value;
  L17C21_fctCall [color="lightgreen",label="fctCall"];
  L17C21_value -> L17C21_fctCall;
- L17C21 [color="lightblue",label="IDENTIFIER: Thread"];
+ L17C21 [color="lightblue",label="TYPE_IDENTIFIER: Thread"];
  L17C21_fctCall -> L17C21
  L17C27 [color="lightblue",label="LPAREN: ("];
  L17C21_fctCall -> L17C27
@@ -1180,7 +1180,7 @@ digraph {
  L21C8_dataType -> L21C8_baseDataType;
  L21C8_customDataType [color="lightgreen",label="customDataType"];
  L21C8_baseDataType -> L21C8_customDataType;
- L21C8 [color="lightblue",label="IDENTIFIER: Thread"];
+ L21C8 [color="lightblue",label="TYPE_IDENTIFIER: Thread"];
  L21C8_customDataType -> L21C8
  L21C14 [color="lightblue",label="BITWISE_AND: &"];
  L21C8_dataType -> L21C14

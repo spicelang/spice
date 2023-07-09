@@ -151,6 +151,14 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
                            /*external=*/false);
   FunctionManager::insertFunction(currentScope, spiceFunc, &node->fctManifestations);
 
+  // Check function attributes
+  if (node->attrs()) {
+    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLE); attr != nullptr)
+      node->fctManifestations.front()->mangleFunctionName = attr->value()->compileTimeValue.boolValue;
+    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLED_NAME); attr != nullptr)
+      node->fctManifestations.front()->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
+  }
+
   // Rename / duplicate the original child scope to reflect the substantiated versions of the function
   currentScope->renameChildScope(node->getScopeId(), node->fctManifestations.front()->getSignature(false));
   for (size_t i = 1; i < node->fctManifestations.size(); i++)
@@ -256,6 +264,14 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   const Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramList, usedGenericTypes, node,
                            /*external=*/false);
   FunctionManager::insertFunction(currentScope, spiceProc, &node->procManifestations);
+
+  // Check procedure attributes
+  if (node->attrs()) {
+    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLE); attr != nullptr)
+      node->procManifestations.front()->mangleFunctionName = attr->value()->compileTimeValue.boolValue;
+    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLED_NAME); attr != nullptr)
+      node->procManifestations.front()->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
+  }
 
   // Rename / duplicate the original child block to reflect the substantiated versions of the procedure
   currentScope->renameChildScope(node->getScopeId(), node->procManifestations.front()->getSignature(false));
@@ -560,6 +576,15 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   // Add function to current scope
   Function spiceFunc = Function(node->extFunctionName, node->entry, SymbolType(TY_DYN), returnType, argList, {}, node, true);
   node->extFunction = FunctionManager::insertFunction(currentScope, spiceFunc, &node->extFunctionManifestations);
+  node->extFunction->mangleFunctionName = false;
+
+  // Check procedure attributes
+  if (node->attrs()) {
+    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLE); attr != nullptr)
+      node->extFunction->mangleFunctionName = attr->value()->compileTimeValue.boolValue;
+    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLED_NAME); attr != nullptr)
+      node->extFunction->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
+  }
 
   // Prepare ext function type
   SymbolType extFunctionType(isFunction ? TY_FUNCTION : TY_PROCEDURE);

@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
 
-define private i32 @_f__void__int__get() {
+define private i32 @_Z3getv() {
   %result = alloca i32, align 4
   ret i32 12
 }
@@ -18,7 +18,7 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store i1 true, ptr %condition, align 1
   %1 = load i1, ptr %condition, align 1
-  %2 = call i32 @_f__void__int__get()
+  %2 = call i32 @_Z3getv()
   %3 = select i1 %1, i32 %2, i32 24
   store i32 %3, ptr %r, align 4
   %4 = load i32, ptr %r, align 4

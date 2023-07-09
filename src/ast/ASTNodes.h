@@ -284,7 +284,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctDef(this); }
 
   // Public get methods
-  [[nodiscard]] FctAttrNode *fctAttrs() const { return getChild<FctAttrNode>(); }
+  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
@@ -325,7 +325,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitProcDef(this); }
 
   // Public get methods
-  [[nodiscard]] FctAttrNode *fctAttrs() const { return getChild<FctAttrNode>(); }
+  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
@@ -506,7 +506,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitExtDecl(this); }
 
   // Public get methods
-  [[nodiscard]] FctAttrNode *fctAttrs() const { return getChild<FctAttrNode>(); }
+  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] TypeLstNode *argTypeLst() const { return getChild<TypeLstNode>(); }
 

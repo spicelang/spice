@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.1 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1
 @printf.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
-define private double @_f__void__double__genericFunction__int_double(i32 %0, double %1) {
+define private double @_Z15genericFunctionid(i32 %0, double %1) {
   %result = alloca double, align 8
   %arg1 = alloca i32, align 4
   %arg2 = alloca double, align 8
@@ -25,7 +25,7 @@ define private double @_f__void__double__genericFunction__int_double(i32 %0, dou
   ret double %9
 }
 
-define private double @_f__void__double__genericFunction__long_double(i64 %0, double %1) {
+define private double @_Z15genericFunctionld(i64 %0, double %1) {
   %result = alloca double, align 8
   %arg1 = alloca i64, align 8
   %arg2 = alloca double, align 8
@@ -43,7 +43,7 @@ define private double @_f__void__double__genericFunction__long_double(i64 %0, do
   ret double %9
 }
 
-define private i64 @_f__void__long__genericFunction__long_short_long(i64 %0, i16 %1, i64 %2) {
+define private i64 @_Z15genericFunctionlsl(i64 %0, i16 %1, i64 %2) {
   %result = alloca i64, align 8
   %arg1 = alloca i64, align 8
   %arg2 = alloca i16, align 2
@@ -64,11 +64,11 @@ define private i64 @_f__void__long__genericFunction__long_short_long(i64 %0, i16
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call double @_f__void__double__genericFunction__int_double(i32 1, double 2.400000e+00)
+  %1 = call double @_Z15genericFunctionid(i32 1, double 2.400000e+00)
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double %1)
-  %3 = call double @_f__void__double__genericFunction__long_double(i64 12, double 2.000000e+00)
+  %3 = call double @_Z15genericFunctionld(i64 12, double 2.000000e+00)
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, double %3)
-  %5 = call i64 @_f__void__long__genericFunction__long_short_long(i64 12, i16 1, i64 11)
+  %5 = call i64 @_Z15genericFunctionlsl(i64 12, i16 1, i64 11)
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i64 %5)
   %7 = load i32, ptr %result, align 4
   ret i32 %7

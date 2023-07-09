@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.0 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
 @printf.str.0 = private unnamed_addr constant [12 x i8] c"Result: %s\0A\00", align 1
 
-define private ptr @_f__void__string__getTestString__int_double_bool(i32 %0, double %1, i1 %2) {
+define private ptr @_Z13getTestStringidb(i32 %0, double %1, i1 %2) {
   %result = alloca ptr, align 8
   %_arg0 = alloca i32, align 4
   %_arg1 = alloca double, align 8
@@ -23,7 +23,7 @@ define private ptr @_f__void__string__getTestString__int_double_bool(i32 %0, dou
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call ptr @_f__void__string__getTestString__int_double_bool(i32 1, double 3.400000e+00, i1 true)
+  %1 = call ptr @_Z13getTestStringidb(i32 1, double 3.400000e+00, i1 true)
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %1)
   %3 = load i32, ptr %result, align 4
   ret i32 %3

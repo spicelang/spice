@@ -3,6 +3,7 @@
 #include "IRGenerator.h"
 
 #include <ast/ASTNodes.h>
+#include <irgenerator/NameMangling.h>
 
 namespace spice::compiler {
 
@@ -94,7 +95,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   Scope *accessScope = data.calleeParentScope;
   std::string mangledName;
   if (!data.isFctPtrCall())
-    mangledName = spiceFunc->external ? node->fqFunctionName : spiceFunc->getMangledName();
+    mangledName = NameMangling::mangleFunction(*spiceFunc);
   std::vector<llvm::Value *> argValues;
 
   // Get entry of the first fragment
@@ -179,10 +180,16 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   // Retrieve return and param types
-  const SymbolType returnSType =
-      data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionReturnType() : spiceFunc->returnType;
-  const std::vector<SymbolType> paramSTypes =
-      data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes() : spiceFunc->getParamTypes();
+  SymbolType returnSType(TY_DYN);
+  std::vector<SymbolType> paramSTypes;
+  if (data.isFctPtrCall()) {
+    if (firstFragEntry->getType().isBaseType(TY_FUNCTION))
+      returnSType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
+    paramSTypes = firstFragEntry->getType().getBaseType().getFunctionParamTypes();
+  } else {
+    returnSType = spiceFunc->returnType;
+    paramSTypes = spiceFunc->getParamTypes();
+  }
 
   // Function is not defined in the current module -> declare it
   // This can happen when:

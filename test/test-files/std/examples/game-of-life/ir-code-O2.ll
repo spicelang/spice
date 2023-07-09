@@ -13,7 +13,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.1 = private unnamed_addr constant [16 x i8] c"Next generation\00", align 1
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(readwrite, argmem: none, inaccessiblemem: none)
-define private fastcc i32 @_f__void__int__genFakeRandInt() unnamed_addr #0 {
+define private fastcc i32 @_Z14genFakeRandIntv() unnamed_addr #0 {
   %1 = load i32, ptr @RAND_COUNT, align 4
   %2 = add i32 %1, 1
   store i32 %2, ptr @RAND_COUNT, align 4
@@ -25,7 +25,7 @@ define private fastcc i32 @_f__void__int__genFakeRandInt() unnamed_addr #0 {
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 ; Function Attrs: nofree nounwind
-define private fastcc void @_p__void__void__printGeneration__string_intarrayarray(ptr %0, [10 x [10 x i32]] %1) unnamed_addr #1 {
+define private fastcc void @_Z15printGenerationPcA10A10i(ptr %0, [10 x [10 x i32]] %1) unnamed_addr #1 {
 for.body.L33.peel.next:
   %matrix = alloca [10 x [10 x i32]], align 4
   %.fca.0.0.extract = extractvalue [10 x [10 x i32]] %1, 0, 0
@@ -427,7 +427,7 @@ for.exit.L33:                                     ; preds = %if.exit.L34
 }
 
 ; Function Attrs: nofree norecurse nosync nounwind memory(none)
-define private fastcc i32 @_f__void__int__countLiveNeighborCell__intarrayarray_int_int([10 x [10 x i32]] %0, i32 %1, i32 %2) unnamed_addr #2 {
+define private fastcc i32 @_Z21countLiveNeighborCellA10A10iii([10 x [10 x i32]] %0, i32 %1, i32 %2) unnamed_addr #2 {
   %matrix = alloca [10 x [10 x i32]], align 4
   %.fca.0.0.extract = extractvalue [10 x [10 x i32]] %0, 0, 0
   store i32 %.fca.0.0.extract, ptr %matrix, align 4
@@ -999,34 +999,34 @@ define dso_local i32 @main() local_unnamed_addr #3 {
 for.head.L65.preheader:                           ; preds = %0, %for.head.L65.preheader
   %indvars.iv = phi i64 [ 0, %0 ], [ %indvars.iv.next, %for.head.L65.preheader ]
   %1 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 0
-  %2 = tail call fastcc i32 @_f__void__int__genFakeRandInt() #5
+  %2 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
   store i32 %2, ptr %1, align 4
   %3 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 1
-  %4 = tail call fastcc i32 @_f__void__int__genFakeRandInt() #5
+  %4 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
   store i32 %4, ptr %3, align 4
   %5 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 2
-  %6 = tail call fastcc i32 @_f__void__int__genFakeRandInt() #5
+  %6 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
   store i32 %6, ptr %5, align 4
   %7 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 3
-  %8 = tail call fastcc i32 @_f__void__int__genFakeRandInt() #5
+  %8 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
   store i32 %8, ptr %7, align 4
   %9 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 4
-  %10 = tail call fastcc i32 @_f__void__int__genFakeRandInt() #5
+  %10 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
   store i32 %10, ptr %9, align 4
   %11 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 5
-  %12 = tail call fastcc i32 @_f__void__int__genFakeRandInt() #5
+  %12 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
   store i32 %12, ptr %11, align 4
   %13 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 6
-  %14 = tail call fastcc i32 @_f__void__int__genFakeRandInt() #5
+  %14 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
   store i32 %14, ptr %13, align 4
   %15 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 7
-  %16 = tail call fastcc i32 @_f__void__int__genFakeRandInt() #5
+  %16 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
   store i32 %16, ptr %15, align 4
   %17 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 8
-  %18 = tail call fastcc i32 @_f__void__int__genFakeRandInt() #5
+  %18 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
   store i32 %18, ptr %17, align 4
   %19 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 9
-  %20 = tail call fastcc i32 @_f__void__int__genFakeRandInt() #5
+  %20 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
   store i32 %20, ptr %19, align 4
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond.not = icmp eq i64 %indvars.iv.next, 10
@@ -1233,7 +1233,7 @@ for.exit.L64:                                     ; preds = %for.head.L65.prehea
   %.fca.9.8.insert821 = insertvalue [10 x [10 x i32]] %.fca.9.7.insert818, i32 %.fca.9.8.load820, 9, 8
   %.fca.9.9.load823 = load i32, ptr %.fca.9.9.gep524, align 4
   %.fca.9.9.insert824 = insertvalue [10 x [10 x i32]] %.fca.9.8.insert821, i32 %.fca.9.9.load823, 9, 9
-  tail call fastcc void @_p__void__void__printGeneration__string_intarrayarray(ptr nonnull @anon.string.0, [10 x [10 x i32]] %.fca.9.9.insert824) #5
+  tail call fastcc void @_Z15printGenerationPcA10A10i(ptr nonnull @anon.string.0, [10 x [10 x i32]] %.fca.9.9.insert824) #5
   %.fca.0.4.load838.pre = load i32, ptr %.fca.0.4.gep429, align 4
   %.fca.0.5.load841.pre = load i32, ptr %.fca.0.5.gep430, align 4
   %.fca.0.6.load844.pre = load i32, ptr %.fca.0.6.gep431, align 4
@@ -1494,7 +1494,7 @@ for.head.L74.preheader:                           ; preds = %for.head.L73.prehea
 for.body.L74:                                     ; preds = %for.head.L74.preheader, %for.tail.L74
   %indvars.iv1132 = phi i64 [ 0, %for.head.L74.preheader ], [ %indvars.iv.next1133, %for.tail.L74 ]
   %22 = trunc i64 %indvars.iv1132 to i32
-  %23 = tail call fastcc i32 @_f__void__int__countLiveNeighborCell__intarrayarray_int_int([10 x [10 x i32]] %.fca.9.9.insert1124, i32 %21, i32 %22) #5
+  %23 = tail call fastcc i32 @_Z21countLiveNeighborCellA10A10iii([10 x [10 x i32]] %.fca.9.9.insert1124, i32 %21, i32 %22) #5
   %24 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv1136, i64 %indvars.iv1132
   %25 = load i32, ptr %24, align 4
   %26 = icmp eq i32 %25, 1
@@ -1734,7 +1734,7 @@ for.exit.L73:                                     ; preds = %for.tail.L73
   %.fca.9.8.insert = insertvalue [10 x [10 x i32]] %.fca.9.7.insert, i32 %.fca.9.8.load, 9, 8
   %.fca.9.9.load = load i32, ptr %.fca.9.9.gep, align 4
   %.fca.9.9.insert = insertvalue [10 x [10 x i32]] %.fca.9.8.insert, i32 %.fca.9.9.load, 9, 9
-  tail call fastcc void @_p__void__void__printGeneration__string_intarrayarray(ptr nonnull @anon.string.1, [10 x [10 x i32]] %.fca.9.9.insert) #5
+  tail call fastcc void @_Z15printGenerationPcA10A10i(ptr nonnull @anon.string.1, [10 x [10 x i32]] %.fca.9.9.insert) #5
   %.fca.0.0.load126 = load i32, ptr %b, align 4
   %.fca.0.1.load129 = load i32, ptr %.fca.0.1.gep, align 4
   %.fca.0.2.load132 = load i32, ptr %.fca.0.2.gep, align 4

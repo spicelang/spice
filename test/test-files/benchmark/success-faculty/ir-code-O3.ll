@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 1
 
 ; Function Attrs: nofree nosync nounwind memory(none)
-define private fastcc i32 @_f__void__int__faculty__int(i32 %0) unnamed_addr #0 {
+define private fastcc i32 @_Z7facultyi(i32 %0) unnamed_addr #0 {
   %2 = icmp slt i32 %0, 2
   br i1 %2, label %common.ret, label %if.exit.L2.preheader
 
@@ -63,7 +63,7 @@ if.exit.L2:                                       ; preds = %if.exit.L2.preheade
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #1 {
-  %1 = tail call fastcc i32 @_f__void__int__faculty__int(i32 10) #5
+  %1 = tail call fastcc i32 @_Z7facultyi(i32 10) #5
   %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 10, i32 %1)
   ret i32 0
 }

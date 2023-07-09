@@ -6,6 +6,7 @@
 
 #include <ast/ASTNodes.h>
 #include <irgenerator/IRGenerator.h>
+#include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
@@ -1587,7 +1588,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   const Function *opFct = node->opFct.at(manIdx).at(opIdx);
   assert(opFct != nullptr);
 
-  const std::string mangledName = opFct->getMangledName();
+  const std::string mangledName = NameMangling::mangleFunction(*opFct);
   Scope *accessScope = opFct->entry->scope;
   assert(accessScope != nullptr);
 

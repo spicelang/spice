@@ -6,7 +6,7 @@
 	.globl	@feat.00
 .set @feat.00, 0
 	.file	"source.spice"
-	.def	.L_f__void__int__faculty__int;
+	.def	.L_Z7facultyi;
 	.scl	3;
 	.type	32;
 	.endef
@@ -34,7 +34,7 @@
 	.long	4294967288
 	.text
 	.p2align	4, 0x90
-.L_f__void__int__faculty__int:
+.L_Z7facultyi:
 	subq	$40, %rsp
 	movdqa	%xmm7, 16(%rsp)
 	movdqa	%xmm6, (%rsp)
@@ -127,7 +127,7 @@ main:
 	.seh_endprologue
 	callq	__main
 	movl	$10, %ecx
-	callq	.L_f__void__int__faculty__int
+	callq	.L_Z7facultyi
 	leaq	.Lprintf.str.0(%rip), %rcx
 	movl	$10, %edx
 	movl	%eax, %r8d

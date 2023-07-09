@@ -5,21 +5,6 @@
 namespace spice::compiler {
 
 /**
- * Mangle the interface and return the mangled string
- *
- * @return Mangled string
- */
-std::string Interface::getMangledName() const {
-  std::stringstream mangledName;
-  mangledName << "i_";
-
-  // Interface name
-  mangledName << name.length() << name;
-
-  return mangledName.str();
-}
-
-/**
  * Get a string representation of the current interface
  *
  * @return String representation as interface signature

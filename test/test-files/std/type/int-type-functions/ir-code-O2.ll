@@ -16,7 +16,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %1 = tail call double @_f__void__double__toDouble__int(i32 123) #2
+  %1 = tail call double @_Z8toDoublei(i32 123) #2
   %2 = fcmp oeq double %1, 1.230000e+02
   br i1 %2, label %assert.exit.L6, label %assert.then.L6, !prof !0
 
@@ -26,7 +26,7 @@ assert.then.L6:                                   ; preds = %0
   unreachable
 
 assert.exit.L6:                                   ; preds = %0
-  %4 = tail call i16 @_f__void__short__toShort__int(i32 -345) #2
+  %4 = tail call i16 @_Z7toShorti(i32 -345) #2
   %5 = icmp eq i16 %4, -345
   br i1 %5, label %assert.exit.L10, label %assert.then.L10, !prof !0
 
@@ -36,7 +36,7 @@ assert.then.L10:                                  ; preds = %assert.exit.L6
   unreachable
 
 assert.exit.L10:                                  ; preds = %assert.exit.L6
-  %7 = tail call i64 @_f__void__long__toLong__int(i32 459873) #2
+  %7 = tail call i64 @_Z6toLongi(i32 459873) #2
   %8 = icmp eq i64 %7, 459873
   br i1 %8, label %assert.exit.L14, label %assert.then.L14, !prof !0
 
@@ -46,7 +46,7 @@ assert.then.L14:                                  ; preds = %assert.exit.L10
   unreachable
 
 assert.exit.L14:                                  ; preds = %assert.exit.L10
-  %10 = tail call i8 @_f__void__byte__toByte__int(i32 12) #2
+  %10 = tail call i8 @_Z6toBytei(i32 12) #2
   %11 = icmp eq i8 %10, 12
   br i1 %11, label %assert.exit.L18, label %assert.then.L18, !prof !0
 
@@ -56,7 +56,7 @@ assert.then.L18:                                  ; preds = %assert.exit.L14
   unreachable
 
 assert.exit.L18:                                  ; preds = %assert.exit.L14
-  %13 = tail call i8 @_f__void__char__toChar__int(i32 66) #2
+  %13 = tail call i8 @_Z6toChari(i32 66) #2
   %14 = icmp eq i8 %13, 66
   br i1 %14, label %assert.exit.L22, label %assert.then.L22, !prof !0
 
@@ -66,7 +66,7 @@ assert.then.L22:                                  ; preds = %assert.exit.L18
   unreachable
 
 assert.exit.L22:                                  ; preds = %assert.exit.L18
-  %16 = tail call i1 @_f__void__bool__toBool__int(i32 1) #2
+  %16 = tail call i1 @_Z6toBooli(i32 1) #2
   br i1 %16, label %assert.exit.L31, label %assert.then.L31, !prof !0
 
 assert.then.L31:                                  ; preds = %assert.exit.L22
@@ -75,7 +75,7 @@ assert.then.L31:                                  ; preds = %assert.exit.L22
   unreachable
 
 assert.exit.L31:                                  ; preds = %assert.exit.L22
-  %18 = tail call i1 @_f__void__bool__toBool__int(i32 0) #2
+  %18 = tail call i1 @_Z6toBooli(i32 0) #2
   br i1 %18, label %assert.then.L33, label %assert.exit.L33, !prof !1
 
 assert.then.L33:                                  ; preds = %assert.exit.L31
@@ -84,7 +84,7 @@ assert.then.L33:                                  ; preds = %assert.exit.L31
   unreachable
 
 assert.exit.L33:                                  ; preds = %assert.exit.L31
-  %20 = tail call i1 @_f__void__bool__isPowerOfTwo__int(i32 16) #2
+  %20 = tail call i1 @_Z12isPowerOfTwoi(i32 16) #2
   br i1 %20, label %assert.exit.L36, label %assert.then.L36, !prof !0
 
 assert.then.L36:                                  ; preds = %assert.exit.L33
@@ -93,7 +93,7 @@ assert.then.L36:                                  ; preds = %assert.exit.L33
   unreachable
 
 assert.exit.L36:                                  ; preds = %assert.exit.L33
-  %22 = tail call i1 @_f__void__bool__isPowerOfTwo__int(i32 31) #2
+  %22 = tail call i1 @_Z12isPowerOfTwoi(i32 31) #2
   br i1 %22, label %assert.then.L37, label %assert.exit.L37, !prof !1
 
 assert.then.L37:                                  ; preds = %assert.exit.L36
@@ -106,24 +106,24 @@ assert.exit.L37:                                  ; preds = %assert.exit.L36
   ret i32 0
 }
 
-declare double @_f__void__double__toDouble__int(i32) local_unnamed_addr
+declare double @_Z8toDoublei(i32) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 declare void @exit(i32) local_unnamed_addr
 
-declare i16 @_f__void__short__toShort__int(i32) local_unnamed_addr
+declare i16 @_Z7toShorti(i32) local_unnamed_addr
 
-declare i64 @_f__void__long__toLong__int(i32) local_unnamed_addr
+declare i64 @_Z6toLongi(i32) local_unnamed_addr
 
-declare i8 @_f__void__byte__toByte__int(i32) local_unnamed_addr
+declare i8 @_Z6toBytei(i32) local_unnamed_addr
 
-declare i8 @_f__void__char__toChar__int(i32) local_unnamed_addr
+declare i8 @_Z6toChari(i32) local_unnamed_addr
 
-declare i1 @_f__void__bool__toBool__int(i32) local_unnamed_addr
+declare i1 @_Z6toBooli(i32) local_unnamed_addr
 
-declare i1 @_f__void__bool__isPowerOfTwo__int(i32) local_unnamed_addr
+declare i1 @_Z12isPowerOfTwoi(i32) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

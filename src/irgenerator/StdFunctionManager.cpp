@@ -2,8 +2,8 @@
 
 #include "StdFunctionManager.h"
 
+#include <irgenerator/NameMangling.h>
 #include <model/Function.h>
-#include <symboltablebuilder/SymbolType.h>
 
 namespace spice::compiler {
 
@@ -22,27 +22,27 @@ llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
 }
 
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
-  return getFunction("_f__void__bool__isRawEqual__string_string", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
+  return getFunction("_Z10isRawEqualPcPc", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *spiceFunc) const {
-  const std::string functionName = spiceFunc->getMangledName();
+  const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
   return getFunction(functionName.c_str(), builder.getPtrTy(), builder.getPtrTy());
 }
 
 llvm::Function *StdFunctionManager::getIteratorGetIdxFct(const Function *spiceFunc, Scope *accessScope) const {
-  const std::string functionName = spiceFunc->getMangledName();
+  const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
   llvm::Type *pairTy = spiceFunc->returnType.toLLVMType(context, accessScope);
   return getFunction(functionName.c_str(), pairTy, builder.getPtrTy());
 }
 
 llvm::Function *StdFunctionManager::getIteratorIsValidFct(const Function *spiceFunc) const {
-  const std::string functionName = spiceFunc->getMangledName();
+  const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
   return getFunction(functionName.c_str(), builder.getInt1Ty(), builder.getPtrTy());
 }
 
 llvm::Function *StdFunctionManager::getIteratorNextFct(const Function *spiceFunc) const {
-  const std::string functionName = spiceFunc->getMangledName();
+  const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
   return getProcedure(functionName.c_str(), builder.getPtrTy());
 }
 

@@ -13,7 +13,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
 ; Function Attrs: nofree nounwind
-define private fastcc void @_p__void__void__dijkstra__intarrayarray_int(ptr nocapture readonly %0) unnamed_addr #0 {
+define private fastcc void @_Z8dijkstraPA9ii(ptr nocapture readonly %0) unnamed_addr #0 {
 for.body.L31:
   %dist = alloca [9 x i32], align 4
   %sptSet = alloca [9 x i1], align 1
@@ -491,7 +491,7 @@ define dso_local i32 @main() local_unnamed_addr #1 {
   %.fca.8.8.gep = getelementptr inbounds [9 x [9 x i32]], ptr %graph, i64 0, i64 8, i64 8
   store i32 0, ptr %.fca.8.8.gep, align 4
   %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.1)
-  call fastcc void @_p__void__void__dijkstra__intarrayarray_int(ptr nonnull %graph) #4
+  call fastcc void @_Z8dijkstraPA9ii(ptr nonnull %graph) #4
   %puts1 = tail call i32 @puts(ptr nonnull dereferenceable(1) @str.2)
   ret i32 0
 }

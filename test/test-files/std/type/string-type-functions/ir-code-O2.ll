@@ -17,13 +17,13 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %1 = tail call double @_f__void__double__toDouble__string(ptr nonnull @anon.string.0) #2
-  %2 = tail call i32 @_f__void__int__toInt__string(ptr nonnull @anon.string.1) #2
-  %3 = tail call i64 @_f__void__long__toLong__string(ptr nonnull @anon.string.2) #2
-  %4 = tail call i16 @_f__void__short__toShort__string(ptr nonnull @anon.string.3) #2
-  %5 = tail call i8 @_f__void__byte__toByte__string(ptr nonnull @anon.string.4) #2
-  %6 = tail call i8 @_f__void__char__toChar__string(ptr nonnull @anon.string.5) #2
-  %7 = tail call i1 @_f__void__bool__toBool__string(ptr nonnull @anon.string.6) #2
+  %1 = tail call double @_Z8toDoublePc(ptr nonnull @anon.string.0) #2
+  %2 = tail call i32 @_Z5toIntPc(ptr nonnull @anon.string.1) #2
+  %3 = tail call i64 @_Z6toLongPc(ptr nonnull @anon.string.2) #2
+  %4 = tail call i16 @_Z7toShortPc(ptr nonnull @anon.string.3) #2
+  %5 = tail call i8 @_Z6toBytePc(ptr nonnull @anon.string.4) #2
+  %6 = tail call i8 @_Z6toCharPc(ptr nonnull @anon.string.5) #2
+  %7 = tail call i1 @_Z6toBoolPc(ptr nonnull @anon.string.6) #2
   br i1 %7, label %assert.exit.L35, label %assert.then.L35, !prof !0
 
 assert.then.L35:                                  ; preds = %0
@@ -32,7 +32,7 @@ assert.then.L35:                                  ; preds = %0
   unreachable
 
 assert.exit.L35:                                  ; preds = %0
-  %9 = tail call i1 @_f__void__bool__toBool__string(ptr nonnull @anon.string.8) #2
+  %9 = tail call i1 @_Z6toBoolPc(ptr nonnull @anon.string.8) #2
   br i1 %9, label %assert.then.L37, label %assert.exit.L37, !prof !1
 
 assert.then.L37:                                  ; preds = %assert.exit.L35
@@ -45,19 +45,19 @@ assert.exit.L37:                                  ; preds = %assert.exit.L35
   ret i32 0
 }
 
-declare double @_f__void__double__toDouble__string(ptr) local_unnamed_addr
+declare double @_Z8toDoublePc(ptr) local_unnamed_addr
 
-declare i32 @_f__void__int__toInt__string(ptr) local_unnamed_addr
+declare i32 @_Z5toIntPc(ptr) local_unnamed_addr
 
-declare i64 @_f__void__long__toLong__string(ptr) local_unnamed_addr
+declare i64 @_Z6toLongPc(ptr) local_unnamed_addr
 
-declare i16 @_f__void__short__toShort__string(ptr) local_unnamed_addr
+declare i16 @_Z7toShortPc(ptr) local_unnamed_addr
 
-declare i8 @_f__void__byte__toByte__string(ptr) local_unnamed_addr
+declare i8 @_Z6toBytePc(ptr) local_unnamed_addr
 
-declare i8 @_f__void__char__toChar__string(ptr) local_unnamed_addr
+declare i8 @_Z6toCharPc(ptr) local_unnamed_addr
 
-declare i1 @_f__void__bool__toBool__string(ptr) local_unnamed_addr
+declare i1 @_Z6toBoolPc(ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1

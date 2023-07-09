@@ -94,6 +94,8 @@ set(SOURCES
         irgenerator/OpRuleConversionManager.h
         irgenerator/DebugInfoGenerator.cpp
         irgenerator/DebugInfoGenerator.h
+        irgenerator/NameMangling.cpp
+        irgenerator/NameMangling.h
         # IR optimizer
         iroptimizer/IROptimizer.cpp
         iroptimizer/IROptimizer.h

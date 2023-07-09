@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.array.1 = private unnamed_addr constant [4 x i64] [i64 10, i64 12, i64 14, i64 16]
 @printf.str.1 = private unnamed_addr constant [17 x i8] c"Results: %d, %d\0A\00", align 1
 
-define private i32 @_f__void__int__sumNumbers__shortarray_long(ptr %0, i64 %1) {
+define private i32 @_Z10sumNumbersPsl(ptr %0, i64 %1) {
   %result = alloca i32, align 4
   %numberArray = alloca ptr, align 8
   %arrayLength = alloca i64, align 8
@@ -47,7 +47,7 @@ for.exit.L6:                                      ; preds = %for.head.L6
   ret i32 %15
 }
 
-define private i32 @_f__void__int__sumNumbers__longarray_long(ptr %0, i64 %1) {
+define private i32 @_Z10sumNumbersPll(ptr %0, i64 %1) {
   %result = alloca i32, align 4
   %numberArray = alloca ptr, align 8
   %arrayLength = alloca i64, align 8
@@ -86,7 +86,7 @@ for.exit.L6:                                      ; preds = %for.head.L6
   ret i32 %15
 }
 
-define private void @_p__void__void__printData__long_intarray(i64 %0, [2 x i32] %1) {
+define private void @_Z9printDatalA2i(i64 %0, [2 x i32] %1) {
   %arrayLength = alloca i64, align 8
   %list = alloca [2 x i32], align 4
   %i = alloca i64, align 8
@@ -135,12 +135,12 @@ define dso_local i32 @main() #0 {
   call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.array.0, i64 14, i1 false)
   store [7 x i16] [i16 1, i16 2, i16 3, i16 4, i16 5, i16 6, i16 7], ptr %numberList1, align 2
   %4 = getelementptr inbounds [7 x i16], ptr %numberList1, i32 0, i32 0
-  %5 = call i32 @_f__void__int__sumNumbers__shortarray_long(ptr %4, i64 7)
+  %5 = call i32 @_Z10sumNumbersPsl(ptr %4, i64 7)
   store i32 %5, ptr %result1, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr %2, ptr @anon.array.1, i64 32, i1 false)
   store [4 x i64] [i64 10, i64 12, i64 14, i64 16], ptr %numberList2, align 8
   %6 = getelementptr inbounds [4 x i64], ptr %numberList2, i32 0, i32 0
-  %7 = call i32 @_f__void__int__sumNumbers__longarray_long(ptr %6, i64 4)
+  %7 = call i32 @_Z10sumNumbersPll(ptr %6, i64 4)
   store i32 %7, ptr %result2, align 4
   %8 = getelementptr inbounds [2 x i32], ptr %3, i32 0
   %9 = load i32, ptr %result1, align 4
@@ -151,7 +151,7 @@ define dso_local i32 @main() #0 {
   %12 = load [2 x i32], ptr %3, align 4
   store [2 x i32] %12, ptr %resultList, align 4
   %13 = load [2 x i32], ptr %resultList, align 4
-  call void @_p__void__void__printData__long_intarray(i64 2, [2 x i32] %13)
+  call void @_Z9printDatalA2i(i64 2, [2 x i32] %13)
   %14 = load i32, ptr %result1, align 4
   %15 = load i32, ptr %result2, align 4
   %16 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %14, i32 %15)

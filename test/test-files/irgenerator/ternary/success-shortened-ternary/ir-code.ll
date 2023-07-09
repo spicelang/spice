@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.1 = private unnamed_addr constant [12 x i8] c"F2 called.\0A\00", align 1
 @printf.str.2 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
 
-define private i1 @_f__void__bool__f1() {
+define private i1 @_Z2f1v() {
   %result = alloca i1, align 1
   %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i1 false
@@ -15,7 +15,7 @@ define private i1 @_f__void__bool__f1() {
 
 declare i32 @printf(ptr noundef, ...)
 
-define private i1 @_f__void__bool__f2() {
+define private i1 @_Z2f2v() {
   %result = alloca i1, align 1
   %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret i1 true
@@ -25,8 +25,8 @@ define private i1 @_f__void__bool__f2() {
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i1 @_f__void__bool__f1()
-  %2 = call i1 @_f__void__bool__f2()
+  %1 = call i1 @_Z2f1v()
+  %2 = call i1 @_Z2f2v()
   %3 = select i1 %1, i1 %1, i1 %2
   %4 = zext i1 %3 to i32
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %4)

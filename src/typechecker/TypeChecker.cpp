@@ -1389,9 +1389,11 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Retrieve return type
+  const bool isFct = data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().is(TY_FUNCTION) : data.callee->isFunction();
   SymbolType returnType(TY_DYN);
   if (data.isFctPtrCall()) {
-    returnType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
+    if (isFct)
+      returnType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
   } else if (data.isCtorCall()) {
     // Set return type to 'this' type
     returnType = data.thisType;
@@ -1423,7 +1425,6 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   returnType.specifiers.setPublic(false);
 
   // Check if the return value gets used
-  const bool isFct = data.isFctPtrCall() ? firstFragEntry->getType().is(TY_FUNCTION) : data.callee->isFunction();
   if (isFct && !node->hasReturnValueReceiver())
     warnings.emplace_back(node->codeLoc, UNUSED_RETURN_VALUE, "The return value of the function call is unused");
 
@@ -1737,18 +1738,23 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
 
   // Attach the specifiers to the type
   if (node->specifierLst()) {
+    const SymbolType baseType = type.getBaseType();
     for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
-      if (specifier->type == SpecifierNode::TY_CONST)
+      if (specifier->type == SpecifierNode::TY_CONST) {
         type.specifiers.setConst(true);
-      else if (specifier->type == SpecifierNode::TY_SIGNED)
+      } else if (specifier->type == SpecifierNode::TY_SIGNED) {
+        if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
+          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName());
         type.specifiers.setSigned(true);
-      else if (specifier->type == SpecifierNode::TY_UNSIGNED)
+      } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
+        if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
+          throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName());
         type.specifiers.setSigned(false);
-      else if (specifier->type == SpecifierNode::TY_HEAP)
+      } else if (specifier->type == SpecifierNode::TY_HEAP) {
         type.specifiers.setHeap(true);
-      else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType))
+      } else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
         type.specifiers.setPublic(true);
-      else {
+      } else {
         const char *entryName = "local variable";
         if (node->isGlobalType)
           entryName = "global variable";
@@ -1764,7 +1770,6 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
     }
   }
 
-  size_t assignExprCounter = 0;
   std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
   while (!tmQueue.empty()) {
     DataTypeNode::TypeModifier typeModifier = tmQueue.front();

@@ -95,7 +95,7 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std:
                                              ASTNode *declNode) {
   ParamList paramList;
   for (const SymbolType &paramType : paramTypes)
-    paramList.push_back({paramType, true});
+    paramList.push_back({paramType, false});
   return {MAIN_FUNCTION_NAME, entry, SymbolType(TY_DYN), SymbolType(TY_INT), paramList, {}, declNode, false};
 }
 

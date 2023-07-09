@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i1 @_f__void__bool__isTrue()
+  %1 = call i1 @_Z6isTruev()
   %2 = zext i1 %1 to i32
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
   %4 = load i32, ptr %result, align 4
@@ -18,6 +18,6 @@ define dso_local i32 @main() #0 {
 
 declare i32 @printf(ptr noundef, ...)
 
-declare i1 @_f__void__bool__isTrue()
+declare i1 @_Z6isTruev()
 
 attributes #0 = { noinline nounwind optnone uwtable }

@@ -6,12 +6,12 @@
 	.globl	@feat.00
 .set @feat.00, 0
 	.file	"source.spice"
-	.def	.L_f__void__int__fib__int;
+	.def	.L_Z3fibi;
 	.scl	3;
 	.type	32;
 	.endef
 	.p2align	4, 0x90
-.L_f__void__int__fib__int:
+.L_Z3fibi:
 	pushq	%rsi
 	pushq	%rdi
 	subq	$40, %rsp
@@ -24,7 +24,7 @@
 	.p2align	4, 0x90
 .LBB0_2:
 	movl	%edi, %ecx
-	callq	.L_f__void__int__fib__int
+	callq	.L_Z3fibi
 	addl	%eax, %esi
 	leal	-2(%rdi), %eax
 	incl	%edi
@@ -39,15 +39,15 @@
 	popq	%rsi
 	retq
 
-	.def	.L_p__void__void__calcFib30;
+	.def	.L_Z9calcFib30v;
 	.scl	3;
 	.type	32;
 	.endef
 	.p2align	4, 0x90
-.L_p__void__void__calcFib30:
+.L_Z9calcFib30v:
 	subq	$40, %rsp
 	movl	$30, %ecx
-	callq	.L_f__void__int__fib__int
+	callq	.L_Z3fibi
 	leaq	.Lprintf.str.0(%rip), %rcx
 	movl	%eax, %edx
 	callq	printf
@@ -99,63 +99,63 @@ main:
 	leaq	-64(%rbp), %rsi
 	addq	$56, %rsi
 	movq	%rbp, %rcx
-	leaq	.L_p__void__void__calcFib30(%rip), %rdx
-	callq	"_mp__Thread__void__ctor__p()"
+	leaq	.L_Z9calcFib30v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -64(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_p__void__void__calcFib30(%rip), %rdx
-	callq	"_mp__Thread__void__ctor__p()"
+	leaq	.L_Z9calcFib30v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -56(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_p__void__void__calcFib30(%rip), %rdx
-	callq	"_mp__Thread__void__ctor__p()"
+	leaq	.L_Z9calcFib30v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -48(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_p__void__void__calcFib30(%rip), %rdx
-	callq	"_mp__Thread__void__ctor__p()"
+	leaq	.L_Z9calcFib30v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -40(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_p__void__void__calcFib30(%rip), %rdx
-	callq	"_mp__Thread__void__ctor__p()"
+	leaq	.L_Z9calcFib30v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -32(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_p__void__void__calcFib30(%rip), %rdx
-	callq	"_mp__Thread__void__ctor__p()"
+	leaq	.L_Z9calcFib30v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -24(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_p__void__void__calcFib30(%rip), %rdx
-	callq	"_mp__Thread__void__ctor__p()"
+	leaq	.L_Z9calcFib30v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -16(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_p__void__void__calcFib30(%rip), %rdx
-	callq	"_mp__Thread__void__ctor__p()"
+	leaq	.L_Z9calcFib30v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -8(%rbp)
 	leaq	.Lstr(%rip), %rcx
 	callq	puts
 	leaq	-64(%rbp), %rcx
-	callq	_mp__Thread__void__join
+	callq	_ZN6Thread4joinEv
 	movq	%r13, %rcx
-	callq	_mp__Thread__void__join
+	callq	_ZN6Thread4joinEv
 	movq	%r12, %rcx
-	callq	_mp__Thread__void__join
+	callq	_ZN6Thread4joinEv
 	movq	%r15, %rcx
-	callq	_mp__Thread__void__join
+	callq	_ZN6Thread4joinEv
 	movq	%r14, %rcx
-	callq	_mp__Thread__void__join
+	callq	_ZN6Thread4joinEv
 	movq	%rbx, %rcx
-	callq	_mp__Thread__void__join
+	callq	_ZN6Thread4joinEv
 	movq	%rdi, %rcx
-	callq	_mp__Thread__void__join
+	callq	_ZN6Thread4joinEv
 	movq	%rsi, %rcx
-	callq	_mp__Thread__void__join
+	callq	_ZN6Thread4joinEv
 	leaq	.Lprintf.str.2(%rip), %rcx
 	callq	printf
 	xorl	%eax, %eax

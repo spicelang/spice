@@ -6,7 +6,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 1
 
 ; Function Attrs: nofree nosync nounwind memory(none)
-define private fastcc i32 @_f__void__int__ack__int_int(i32 %0, i32 %1) unnamed_addr #0 {
+define private fastcc i32 @_Z3ackii(i32 %0, i32 %1) unnamed_addr #0 {
   %3 = icmp eq i32 %0, 0
   br i1 %3, label %if.then.L2, label %if.exit.L2
 
@@ -29,13 +29,13 @@ tailrecurse.backedge:                             ; preds = %if.exit.L2, %if.exi
 
 if.exit.L3:                                       ; preds = %if.exit.L2
   %7 = add i32 %.tr79, -1
-  %8 = tail call fastcc i32 @_f__void__int__ack__int_int(i32 %.tr8, i32 %7)
+  %8 = tail call fastcc i32 @_Z3ackii(i32 %.tr8, i32 %7)
   br label %tailrecurse.backedge
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #1 {
-  %1 = tail call fastcc i32 @_f__void__int__ack__int_int(i32 3, i32 10) #3
+  %1 = tail call fastcc i32 @_Z3ackii(i32 3, i32 10) #3
   %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 3, i32 10, i32 %1)
   ret i32 0
 }

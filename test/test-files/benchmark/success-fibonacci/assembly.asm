@@ -6,12 +6,12 @@
 	.globl	@feat.00
 .set @feat.00, 0
 	.file	"source.spice"
-	.def	.L_f__void__int__fibo__int;
+	.def	.L_Z4fiboi;
 	.scl	3;
 	.type	32;
 	.endef
 	.p2align	4, 0x90
-.L_f__void__int__fibo__int:
+.L_Z4fiboi:
 	pushq	%rsi
 	pushq	%rdi
 	subq	$40, %rsp
@@ -26,7 +26,7 @@
 	.p2align	4, 0x90
 .LBB0_4:
 	leal	-1(%rdi), %ecx
-	callq	.L_f__void__int__fibo__int
+	callq	.L_Z4fiboi
 	leal	-2(%rdi), %ecx
 	addl	%eax, %esi
 	cmpl	$4, %edi
@@ -57,7 +57,7 @@ main:
 	.seh_endprologue
 	callq	__main
 	movl	$30, %ecx
-	callq	.L_f__void__int__fibo__int
+	callq	.L_Z4fiboi
 	leaq	.Lprintf.str.0(%rip), %rcx
 	movl	%eax, %edx
 	callq	printf

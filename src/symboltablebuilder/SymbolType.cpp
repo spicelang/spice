@@ -4,6 +4,7 @@
 
 #include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
+#include <irgenerator/NameMangling.h>
 #include <irgenerator/StdFunctionManager.h>
 #include <model/GenericType.h>
 #include <model/Struct.h>
@@ -161,7 +162,8 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
     if (structType == nullptr) {
       Struct *spiceStruct = structSymbol->getType().getStruct(structSymbol->declNode);
       assert(spiceStruct != nullptr);
-      structType = llvm::StructType::create(context, spiceStruct->getMangledName());
+      const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
+      structType = llvm::StructType::create(context, mangledName);
       structSymbol->setStructLLVMType(structType);
 
       // Collect concrete field types
@@ -322,21 +324,6 @@ std::string SymbolType::getName(bool withSize) const { // NOLINT(misc-no-recursi
   // Loop through all chain elements
   for (const TypeChainElement &chainElement : typeChain)
     name << chainElement.getName(withSize);
-
-  return name.str();
-}
-
-/**
- * Get the mangled name of the symbol type as a string
- *
- * @return Mangled type name
- */
-std::string SymbolType::getMangledName() const {
-  std::stringstream name;
-
-  // Loop through all chain elements
-  for (const TypeChainElement &chainElement : typeChain)
-    name << chainElement.getMangledName();
 
   return name.str();
 }
@@ -614,68 +601,6 @@ std::string SymbolType::TypeChainElement::getName(bool withSize) const {
     return "invalid"; // GCOV_EXCL_LINE
   default:
     throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element");
-  }
-}
-
-/**
- * Return the mangled name of the type chain element
- *
- * @return Mangled name
- */
-std::string SymbolType::TypeChainElement::getMangledName() const {
-  switch (superType) {
-  case TY_PTR:
-    return "*";
-  case TY_REF:
-    return "&";
-  case TY_ARRAY:
-    return "[]";
-  case TY_DOUBLE:
-    return "d";
-  case TY_INT:
-    return "i";
-  case TY_SHORT:
-    return "h";
-  case TY_LONG:
-    return "l";
-  case TY_BYTE:
-    return "y";
-  case TY_CHAR:
-    return "c";
-  case TY_STRING:
-    return "s";
-  case TY_BOOL:
-    return "b";
-  case TY_STRUCT: {
-    std::string fqName = subType;
-    CommonUtil::replaceAll(fqName, "::", ".");
-    return fqName;
-  }
-  case TY_INTERFACE: {
-    std::string fqName = subType;
-    CommonUtil::replaceAll(fqName, "::", ".");
-    return fqName;
-  }
-  case TY_ENUM:
-    return "e";
-  case TY_FUNCTION: {
-    std::stringstream functionName;
-    functionName << "f_" << paramTypes.front().getMangledName() << "_";
-    for (size_t i = 1; i < paramTypes.size(); i++)
-      functionName << paramTypes.at(i).getMangledName();
-    return functionName.str();
-  }
-  case TY_PROCEDURE: {
-    std::stringstream procedureName;
-    procedureName << "p_";
-    for (const SymbolType &paramType : paramTypes)
-      procedureName << paramType.getMangledName();
-    return procedureName.str();
-  }
-  case TY_GENERIC:
-    return "g_" + subType;
-  default:
-    throw CompilerError(INTERNAL_ERROR, "Type " + getName(false) + " cannot be mangled");
   }
 }
 

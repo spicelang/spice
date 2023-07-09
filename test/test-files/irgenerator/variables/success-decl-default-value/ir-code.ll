@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%__NestedStruct__int_string = type { i32, ptr }
+%struct.NestedStruct = type { i32, ptr }
 
 @printf.str.0 = private unnamed_addr constant [18 x i8] c"Double value: %f\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [15 x i8] c"Int value: %d\0A\00", align 1
@@ -28,7 +28,7 @@ define dso_local i32 @main() #0 {
   %byteVar = alloca i8, align 1
   %charVar = alloca i8, align 1
   %boolVar = alloca i1, align 1
-  %structArrayVar = alloca [4 x %__NestedStruct__int_string], align 8
+  %structArrayVar = alloca [4 x %struct.NestedStruct], align 8
   store i32 0, ptr %result, align 4
   store double 0.000000e+00, ptr %doubleVar, align 8
   %1 = load double, ptr %doubleVar, align 8
@@ -58,9 +58,9 @@ define dso_local i32 @main() #0 {
   %18 = load i1, ptr %boolVar, align 1
   %19 = zext i1 %18 to i32
   %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.7, i32 %19)
-  store [4 x %__NestedStruct__int_string] [%__NestedStruct__int_string { i32 0, ptr @1 }, %__NestedStruct__int_string { i32 0, ptr @1 }, %__NestedStruct__int_string { i32 0, ptr @1 }, %__NestedStruct__int_string { i32 0, ptr @1 }], ptr %structArrayVar, align 8
-  %21 = getelementptr inbounds [4 x %__NestedStruct__int_string], ptr %structArrayVar, i32 0, i32 2
-  %field2_addr = getelementptr inbounds %__NestedStruct__int_string, ptr %21, i32 0, i32 1
+  store [4 x %struct.NestedStruct] [%struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }, %struct.NestedStruct { i32 0, ptr @1 }], ptr %structArrayVar, align 8
+  %21 = getelementptr inbounds [4 x %struct.NestedStruct], ptr %structArrayVar, i32 0, i32 2
+  %field2_addr = getelementptr inbounds %struct.NestedStruct, ptr %21, i32 0, i32 1
   %22 = load ptr, ptr %field2_addr, align 8
   %23 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.8, ptr %22)
   %24 = load i32, ptr %result, align 4

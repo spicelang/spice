@@ -7,7 +7,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.2 = private unnamed_addr constant [23 x i8] c"No solution was found.\00", align 1
 
 ; Function Attrs: nofree nounwind
-define private fastcc void @_p__void__void__print__intarrayarrayptr(ptr nocapture readonly %0) unnamed_addr #0 {
+define private fastcc void @_Z5printPA9A9i(ptr nocapture readonly %0) unnamed_addr #0 {
   br label %for.head.L5.preheader
 
 for.head.L5.preheader:                            ; preds = %1, %for.head.L5.preheader
@@ -52,7 +52,7 @@ for.exit.L4:                                      ; preds = %for.head.L5.prehead
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
 ; Function Attrs: nofree nosync nounwind memory(argmem: readwrite)
-define private fastcc i1 @_f__void__bool__solveSudoku__intarrayarrayptr_int_int(ptr %0, i32 %1, i32 %2) unnamed_addr #1 {
+define private fastcc i1 @_Z11solveSudokuPA9A9iii(ptr %0, i32 %1, i32 %2) unnamed_addr #1 {
 land.exit.L45C8:
   %3 = icmp eq i32 %1, 8
   %4 = icmp eq i32 %2, 9
@@ -258,19 +258,19 @@ for.head.L32.2.1.i:                               ; preds = %for.head.L32.1.1.i
 for.head.L32.234.i:                               ; preds = %for.head.L32.2.1.i
   %107 = load i32, ptr %51, align 4
   %108 = icmp eq i32 %107, %num.033
-  br i1 %108, label %if.exit.L57, label %_f__void__bool__isSafe__intarrayarrayptr_int_int_int.exit
+  br i1 %108, label %if.exit.L57, label %_Z6isSafePA9A9iiii.exit
 
-_f__void__bool__isSafe__intarrayarrayptr_int_int_int.exit: ; preds = %for.head.L32.234.i
+_Z6isSafePA9A9iiii.exit:                          ; preds = %for.head.L32.234.i
   %109 = load i32, ptr %52, align 4
   %.not = icmp eq i32 %109, %num.033
   br i1 %.not, label %if.exit.L57, label %if.then.L57
 
-if.then.L57:                                      ; preds = %_f__void__bool__isSafe__intarrayarrayptr_int_int_int.exit
+if.then.L57:                                      ; preds = %_Z6isSafePA9A9iiii.exit
   store i32 %num.033, ptr %9, align 4
-  %110 = tail call fastcc i1 @_f__void__bool__solveSudoku__intarrayarrayptr_int_int(ptr nonnull %0, i32 %spec.select, i32 %53)
+  %110 = tail call fastcc i1 @_Z11solveSudokuPA9A9iii(ptr nonnull %0, i32 %spec.select, i32 %53)
   br i1 %110, label %common.ret, label %if.exit.L57
 
-if.exit.L57:                                      ; preds = %for.body.L56, %for.head.L14.i, %for.head.L14.1.i, %for.head.L14.2.i, %for.head.L14.3.i, %for.head.L14.4.i, %for.head.L14.5.i, %for.head.L14.6.i, %for.head.L14.7.i, %for.head.L14.8.i, %for.head.L21.i, %for.head.L21.1.i, %for.head.L21.2.i, %for.head.L21.3.i, %for.head.L21.4.i, %for.head.L21.5.i, %for.head.L21.6.i, %for.head.L21.7.i, %for.head.L21.8.i, %for.head.L32.i, %for.head.L32.1.i, %for.head.L32.2.i, %for.head.L32.133.i, %for.head.L32.1.1.i, %for.head.L32.2.1.i, %for.head.L32.234.i, %if.then.L57, %_f__void__bool__isSafe__intarrayarrayptr_int_int_int.exit
+if.exit.L57:                                      ; preds = %for.body.L56, %for.head.L14.i, %for.head.L14.1.i, %for.head.L14.2.i, %for.head.L14.3.i, %for.head.L14.4.i, %for.head.L14.5.i, %for.head.L14.6.i, %for.head.L14.7.i, %for.head.L14.8.i, %for.head.L21.i, %for.head.L21.1.i, %for.head.L21.2.i, %for.head.L21.3.i, %for.head.L21.4.i, %for.head.L21.5.i, %for.head.L21.6.i, %for.head.L21.7.i, %for.head.L21.8.i, %for.head.L32.i, %for.head.L32.1.i, %for.head.L32.2.i, %for.head.L32.133.i, %for.head.L32.1.1.i, %for.head.L32.2.1.i, %for.head.L32.234.i, %if.then.L57, %_Z6isSafePA9A9iiii.exit
   store i32 0, ptr %9, align 4
   %111 = add nuw nsw i32 %num.033, 1
   %exitcond.not = icmp eq i32 %111, 10
@@ -401,11 +401,11 @@ define dso_local i32 @main() local_unnamed_addr #2 {
   store i32 0, ptr %.fca.8.7.gep, align 4
   %.fca.8.8.gep = getelementptr inbounds [9 x [9 x i32]], ptr %grid, i64 0, i64 8, i64 8
   store i32 0, ptr %.fca.8.8.gep, align 4
-  %1 = call fastcc i1 @_f__void__bool__solveSudoku__intarrayarrayptr_int_int(ptr nonnull %grid, i32 0, i32 0) #4
+  %1 = call fastcc i1 @_Z11solveSudokuPA9A9iii(ptr nonnull %grid, i32 0, i32 0) #4
   br i1 %1, label %if.then.L83, label %if.else.L83
 
 if.then.L83:                                      ; preds = %0
-  call fastcc void @_p__void__void__print__intarrayarrayptr(ptr nonnull %grid) #4
+  call fastcc void @_Z5printPA9A9i(ptr nonnull %grid) #4
   br label %if.exit.L83
 
 if.else.L83:                                      ; preds = %0

@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <exception/IRError.h>
+#include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 #include <llvm/BinaryFormat/Dwarf.h>
@@ -412,7 +413,7 @@ void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor, cons
   assert(dtor != nullptr);
 
   // Retrieve metadata for the function
-  const std::string mangledName = dtor->getMangledName();
+  const std::string mangledName = NameMangling::mangleFunction(*dtor);
   const bool isImported = dtor->entry->scope->isImportedBy(rootScope);
   const bool isDownCall = !isImported && dtor->isDownCall(node);
 
