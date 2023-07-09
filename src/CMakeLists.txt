@@ -54,6 +54,7 @@ set(SOURCES
         symboltablebuilder/Capture.h
         symboltablebuilder/SymbolType.cpp
         symboltablebuilder/SymbolType.h
+        symboltablebuilder/TypeChain.cpp
         symboltablebuilder/TypeSpecifiers.cpp
         symboltablebuilder/TypeSpecifiers.h
         # Type checker

@@ -68,46 +68,8 @@ public:
   struct TypeChainElement {
   public:
     // Overloaded operators
-    friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
-      // Check super type
-      if (lhs.superType != rhs.superType)
-        return false;
-      // Check data
-      switch (lhs.superType) {
-      case TY_ARRAY:
-        return lhs.data.arraySize == rhs.data.arraySize;
-      case TY_STRUCT: {
-        assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
-        const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
-        const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
-        return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.templateTypes == rhs.templateTypes;
-      }
-      case TY_INTERFACE: {
-        const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
-        const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
-        return lhsSubTypeSuffix == rhsSubTypeSuffix;
-      }
-      case TY_ENUM: {
-        assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
-        const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
-        const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
-        return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
-      }
-      case TY_FUNCTION:
-      case TY_PROCEDURE:
-        if (lhs.paramTypes.size() != rhs.paramTypes.size())
-          return false;
-        for (size_t i = 0; i < lhs.paramTypes.size(); i++)
-          if (lhs.paramTypes.at(i) != rhs.paramTypes.at(i))
-            return false;
-        return true;
-      case TY_GENERIC:
-        return lhs.subType == rhs.subType;
-      default:
-        return true;
-      }
-    }
-    friend bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs) { return !(lhs == rhs); }
+    friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs);
+    friend bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs);
     [[nodiscard]] std::string getName(bool withSize) const;
 
     // Public members

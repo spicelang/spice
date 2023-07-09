@@ -219,12 +219,10 @@ bool SymbolType::implements(const SymbolType &symbolType, const spice::compiler:
   assert(is(TY_STRUCT) && symbolType.is(TY_INTERFACE));
   Struct *spiceStruct = getStruct(node);
   assert(spiceStruct != nullptr);
-  for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
+  return std::ranges::any_of(spiceStruct->interfaceTypes, [&](const SymbolType &interfaceType) {
     assert(interfaceType.is(TY_INTERFACE));
-    if (symbolType.matches(interfaceType, false, false, true))
-      return true;
-  }
-  return false;
+    return symbolType.matches(interfaceType, false, false, true);
+  });
 }
 
 /**
@@ -519,89 +517,6 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
     return true;
 
   return specifiers.match(otherType.specifiers, allowConstify);
-}
-
-/**
- * Return the type name as string
- *
- * @param withSize Also encode array sizes
- * @return Name as string
- */
-std::string SymbolType::TypeChainElement::getName(bool withSize) const {
-  switch (superType) {
-  case TY_PTR:
-    return "*";
-  case TY_REF:
-    return "&";
-  case TY_ARRAY:
-    return withSize && data.arraySize != ARRAY_SIZE_UNKNOWN ? "[" + std::to_string(data.arraySize) + "]" : "";
-  case TY_DOUBLE:
-    return "double";
-  case TY_INT:
-    return "int";
-  case TY_SHORT:
-    return "short";
-  case TY_LONG:
-    return "long";
-  case TY_BYTE:
-    return "byte";
-  case TY_CHAR:
-    return "char";
-  case TY_STRING:
-    return "string";
-  case TY_BOOL:
-    return "bool";
-  case TY_STRUCT: {
-    std::string templateStr;
-    if (!templateTypes.empty()) {
-      for (const auto &templateType : templateTypes) {
-        if (!templateStr.empty())
-          templateStr += ",";
-        templateStr += templateType.getName();
-      }
-      templateStr = "<" + templateStr + ">";
-    }
-    return subType + templateStr;
-  }
-  case TY_INTERFACE:
-    return "interface(" + subType + ")";
-  case TY_ENUM:
-    return "enum";
-  case TY_GENERIC:
-    return "generic(" + subType + ")";
-  case TY_ALIAS:
-    return "alias(" + subType + ")";
-  case TY_DYN:
-    return "dyn";
-  case TY_FUNCTION: {
-    std::stringstream functionName;
-    functionName << "f<" << paramTypes.front().getName(true) << ">(";
-    for (size_t i = 1; i < paramTypes.size(); i++) {
-      if (i > 1)
-        functionName << ",";
-      functionName << paramTypes.at(i).getName(true);
-    }
-    functionName << ")";
-    return functionName.str();
-  }
-  case TY_PROCEDURE: {
-    std::stringstream procedureName;
-    procedureName << "p(";
-    for (size_t i = 1; i < paramTypes.size(); i++) {
-      if (i > 1)
-        procedureName << ",";
-      procedureName << paramTypes.at(i).getName(true);
-    }
-    procedureName << ")";
-    return procedureName.str();
-  }
-  case TY_IMPORT:
-    return "import";
-  case TY_INVALID:    // GCOV_EXCL_LINE
-    return "invalid"; // GCOV_EXCL_LINE
-  default:
-    throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element");
-  }
 }
 
 } // namespace spice::compiler
