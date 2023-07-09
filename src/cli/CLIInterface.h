@@ -65,6 +65,7 @@ public:
   void createInterface();
   int parse(int argc, char **argv);
   void enrich();
+  void runBinary() const;
 
   // Public members
   CliOptions cliOptions;
