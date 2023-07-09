@@ -1,28 +1,27 @@
 #![core.linker.flag = "-pthread"]
 
 // Type definitions
-type pthread_t alias long;
-type pthread_attr_t struct {
+type Pthread_t alias long;
+type Pthread_attr_t struct {
     unsigned byte detached
     char *ss_sp
     unsigned long ss_size
 }
 
 // Link external functions
-ext f<int> pthread_create(pthread_t* /*thread*/, pthread_attr_t* /*attr*/, p() /*start_routine*/, byte* /*arg*/);
-ext f<int> pthread_join(pthread_t /*thread*/, byte** /*retval*/);
-ext f<pthread_t> pthread_self();
+ext f<int> pthread_create(Pthread_t* /*thread*/, Pthread_attr_t* /*attr*/, p() /*start_routine*/, byte* /*arg*/);
+ext f<int> pthread_join(Pthread_t /*thread*/, byte** /*retval*/);
+ext f<Pthread_t> pthread_self();
 
 /**
  * Lightweight thread, that uses posix threads (pthread) under the hood.
  */
 public type Thread struct {
-    pthread_t threadId
+    Pthread_t threadId
 }
 
-#[core.linker.Flags = "-pthread"]
 public p Thread.ctor(p() threadRoutine) {
-    pthread_create(&this.threadId, nil<pthread_attr_t*>, threadRoutine, nil<byte*>);
+    pthread_create(&this.threadId, nil<Pthread_attr_t*>, threadRoutine, nil<byte*>);
 }
 
 /**
@@ -35,13 +34,13 @@ public p Thread.join() {
 /**
  * Retrieve the ID of the current thread
  */
-public f<pthread_t> Thread.getId() {
+public f<Pthread_t> Thread.getId() {
     return this.threadId;
 }
 
 /**
  * Retrieve the ID of the current thread
  */
-public f<pthread_t> getThreadId() {
+public f<Pthread_t> getThreadId() {
     return pthread_self();
 }

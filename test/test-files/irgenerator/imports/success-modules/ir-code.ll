@@ -10,7 +10,7 @@ define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %integer = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 @_f__void__int__forwardToOtherModule()
+  %1 = call i32 @_Z20forwardToOtherModulev()
   store i32 %1, ptr %integer, align 4
   %2 = load i32, ptr %integer, align 4
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
@@ -18,7 +18,7 @@ define dso_local i32 @main() #0 {
   ret i32 %4
 }
 
-declare i32 @_f__void__int__forwardToOtherModule()
+declare i32 @_Z20forwardToOtherModulev()
 
 declare i32 @printf(ptr noundef, ...)
 

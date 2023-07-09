@@ -52,8 +52,7 @@ class Scope {
 public:
   // Constructors
   Scope(Scope *parent, SourceFile *sourceFile, const ScopeType &scopeType, const CodeLoc *codeLoc)
-      : parent(parent), parents({parent}), sourceFile(sourceFile), type(scopeType), codeLoc(codeLoc) {}
-  ~Scope();
+      : parent(parent), sourceFile(sourceFile), type(scopeType), codeLoc(codeLoc) {}
 
   // Friend classes
   friend class FunctionManager;
@@ -89,15 +88,15 @@ public:
   // Public members
   Scope *parent;
   SourceFile *sourceFile;
-  std::unordered_map<std::string, Scope *> children;
+  std::unordered_map<std::string, std::shared_ptr<Scope>> children;
   const ScopeType type;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable, this);
   const CodeLoc *codeLoc = nullptr;
   bool isGenericScope = false;
+  bool isDtorScope = false;
 
 private:
   // Private members
-  std::vector<Scope *> parents;
   FunctionRegistry functions;
   StructRegistry structs;
   InterfaceRegistry interfaces;

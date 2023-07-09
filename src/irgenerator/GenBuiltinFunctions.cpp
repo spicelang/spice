@@ -46,7 +46,7 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   // Add noundef attribute to template string
   returnValue->addParamAttr(0, llvm::Attribute::NoUndef);
 
-  return ExprResult{.value = returnValue};
+  return LLVMExprResult{.value = returnValue};
 }
 
 std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
@@ -61,7 +61,7 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
 
   // Return size value
   llvm::Value *sizeValue = builder.getInt64(size);
-  return ExprResult{.value = sizeValue};
+  return LLVMExprResult{.value = sizeValue};
 }
 
 std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
@@ -76,7 +76,7 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
 
   // Return align value
   llvm::Value *sizeValue = builder.getInt64(align.value());
-  return ExprResult{.value = sizeValue};
+  return LLVMExprResult{.value = sizeValue};
 }
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {
@@ -86,7 +86,7 @@ std::any IRGenerator::visitLenCall(const LenCallNode *node) {
 
   // Return length value
   llvm::Value *lengthValue = builder.getInt64(assignExprSymbolType.getArraySize());
-  return ExprResult{.value = lengthValue};
+  return LLVMExprResult{.value = lengthValue};
 }
 
 } // namespace spice::compiler

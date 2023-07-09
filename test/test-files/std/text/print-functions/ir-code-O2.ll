@@ -9,21 +9,21 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  tail call void @_p__void__void__println__string(ptr nonnull @anon.string.0) #1
-  tail call void @_p__void__void__lineBreak() #1
-  tail call void @_p__void__void__print__string(ptr nonnull @anon.string.1) #1
-  tail call void @_p__void__void__lineBreak__int(i32 3) #1
-  tail call void @_p__void__void__print__string(ptr nonnull @anon.string.2) #1
+  tail call void @_Z7printlnPc(ptr nonnull @anon.string.0) #1
+  tail call void @_Z9lineBreakv() #1
+  tail call void @_Z5printPc(ptr nonnull @anon.string.1) #1
+  tail call void @_Z9lineBreakj(i32 3) #1
+  tail call void @_Z5printPc(ptr nonnull @anon.string.2) #1
   ret i32 0
 }
 
-declare void @_p__void__void__println__string(ptr) local_unnamed_addr
+declare void @_Z7printlnPc(ptr) local_unnamed_addr
 
-declare void @_p__void__void__lineBreak() local_unnamed_addr
+declare void @_Z9lineBreakv() local_unnamed_addr
 
-declare void @_p__void__void__print__string(ptr) local_unnamed_addr
+declare void @_Z5printPc(ptr) local_unnamed_addr
 
-declare void @_p__void__void__lineBreak__int(i32) local_unnamed_addr
+declare void @_Z9lineBreakj(i32) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nounwind }

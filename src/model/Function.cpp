@@ -19,74 +19,12 @@ std::vector<SymbolType> Function::getParamTypes() const {
 }
 
 /**
- * Mange the function and return the mangled string
- *
- * @return Mangled string
- */
-std::string Function::getMangledName() const {
-  // Return 'main' if name is 'main'
-  if (name == "main")
-    return name;
-
-  // f, p, mf or mp depending on the function type
-  std::string functionTyStr = "f";
-  if (isNormalProcedure()) {
-    functionTyStr = "p";
-  } else if (isMethodFunction()) {
-    functionTyStr = "mf";
-  } else if (isMethodProcedure()) {
-    functionTyStr = "mp";
-  }
-
-  // This type string
-  std::string thisTyStr = "void";
-  if (!thisType.is(TY_DYN)) {
-    thisTyStr = thisType.getBaseType().getOriginalSubType();
-    for (const auto &templateType : thisType.getTemplateTypes())
-      thisTyStr += "_" + templateType.getName(false, true);
-  }
-
-  // Return type string
-  std::string returnTyStr = "void";
-  if (!returnType.is(TY_DYN))
-    returnTyStr = returnType.getName(false, true);
-
-  // Template type string
-  std::stringstream templateTyStr;
-  for (size_t i = 0; i < templateTypes.size(); i++) {
-    if (i != 0)
-      templateTyStr << "_";
-    templateTyStr << templateTypes.at(i).getName(false, true);
-  }
-
-  // Param type string
-  std::stringstream paramTyStr;
-  for (size_t i = 0; i < paramList.size(); i++) {
-    const Param &param = paramList.at(i);
-    if (i > 0)
-      paramTyStr << "_";
-    paramTyStr << param.type.getName(false, true);
-    if (param.isOptional)
-      paramTyStr << "?";
-  }
-
-  // Construct mangled name
-  std::stringstream mangledName;
-  mangledName << "_" << functionTyStr << "__" << thisTyStr << "__" << returnTyStr;
-  if (templateTyStr.rdbuf()->in_avail() > 0)
-    mangledName << "__" << templateTyStr.str();
-  mangledName << "__" << name;
-  if (paramTyStr.rdbuf()->in_avail() > 0)
-    mangledName << "__" << paramTyStr.str();
-  return mangledName.str();
-}
-
-/**
  * Get a string representation of the current function.
  *
  * Example:
  * string Vector<double>.setData<double>(double)
  *
+ * @param withThisType Include 'this' type in signature
  * @return String representation as function signature
  */
 std::string Function::getSignature(bool withThisType /*=true*/) const {

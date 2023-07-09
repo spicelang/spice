@@ -139,6 +139,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   // Create scope for the procedure
   node->procScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
   currentScope->isGenericScope = node->hasTemplateTypes || (node->structScope && node->structScope->isGenericScope);
+  currentScope->isDtorScope = node->isMethod && node->procName->name == DTOR_FUNCTION_NAME;
 
   // Create symbol for 'this' variable
   if (node->isMethod)

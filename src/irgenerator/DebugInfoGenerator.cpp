@@ -4,6 +4,7 @@
 
 #include <ast/ASTNodes.h>
 #include <irgenerator/IRGenerator.h>
+#include <irgenerator/NameMangling.h>
 #include <model/Function.h>
 #include <model/Struct.h>
 #include <util/FileUtil.h>
@@ -79,13 +80,14 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
 
   const size_t lineNo = spiceFunc->getDeclCodeLoc().line;
+  const std::string mangledName = NameMangling::mangleFunction(*spiceFunc);
   llvm::DISubprogram *subprogram;
   if (spiceFunc->isMethod()) {
-    subprogram = diBuilder->createMethod(diFile, spiceFunc->name, spiceFunc->getMangledName(), diFile, lineNo, functionTy, 0, 0,
-                                         nullptr, llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+    subprogram = diBuilder->createMethod(diFile, spiceFunc->name, mangledName, diFile, lineNo, functionTy, 0, 0, nullptr,
+                                         llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
   } else {
-    subprogram = diBuilder->createFunction(diFile, spiceFunc->name, spiceFunc->getMangledName(), diFile, lineNo, functionTy,
-                                           lineNo, llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+    subprogram = diBuilder->createFunction(diFile, spiceFunc->name, mangledName, diFile, lineNo, functionTy, lineNo,
+                                           llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
   }
 
   // Add debug info to LLVM function
@@ -221,7 +223,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     const uint32_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value();
 
     // Create struct type
-    const std::string mangledName = spiceStruct->getMangledName();
+    const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
     llvm::DICompositeType *structDiType = diBuilder->createStructType(
         diFile, spiceStruct->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
         llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);

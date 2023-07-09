@@ -6,12 +6,12 @@
 	.globl	@feat.00
 .set @feat.00, 0
 	.file	"source.spice"
-	.def	.L_f__void__int__ack__int_int;
+	.def	.L_Z3ackii;
 	.scl	3;
 	.type	32;
 	.endef
 	.p2align	4, 0x90
-.L_f__void__int__ack__int_int:
+.L_Z3ackii:
 	pushq	%rsi
 	subq	$32, %rsp
 	movl	%edx, %eax
@@ -30,7 +30,7 @@
 	decl	%eax
 	movl	%esi, %ecx
 	movl	%eax, %edx
-	callq	.L_f__void__int__ack__int_int
+	callq	.L_Z3ackii
 	decl	%esi
 	jne	.LBB0_2
 .LBB0_5:
@@ -57,7 +57,7 @@ main:
 	callq	__main
 	movl	$3, %ecx
 	movl	$10, %edx
-	callq	.L_f__void__int__ack__int_int
+	callq	.L_Z3ackii
 	leaq	.Lprintf.str.0(%rip), %rcx
 	movl	$3, %edx
 	movl	$10, %r8d

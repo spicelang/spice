@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="spice" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="run -d -O0 -ir ../../media/test-project/test.spice" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="spice" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="spice">
+  <configuration default="false" name="spice" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="build -d -O0 -ir ../../media/test-project/test.spice" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="spice" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="spice">
     <envs>
       <env name="RUN_TESTS" value="OFF" />
       <env name="SPICE_STD_DIR" value="$PROJECT_DIR$/std" />

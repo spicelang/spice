@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 @_f__void__int__toInt__bool(i1 true)
+  %1 = call i32 @_Z5toIntb(i1 true)
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1)
   %3 = load i32, ptr %result, align 4
   ret i32 %3
@@ -17,6 +17,6 @@ define dso_local i32 @main() #0 {
 
 declare i32 @printf(ptr noundef, ...)
 
-declare i32 @_f__void__int__toInt__bool(i1)
+declare i32 @_Z5toIntb(i1)
 
 attributes #0 = { noinline nounwind optnone uwtable }

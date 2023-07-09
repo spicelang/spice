@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/variables/error-global-var-dyn/source.spice:2:1:
 Global of type dyn: Global variables must have an explicit data type
 
-2  dyn invalid;
+2  dyn INVALID;
    ^^^

@@ -11,7 +11,7 @@ target triple = "x86_64-w64-windows-gnu"
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
 ; Function Attrs: nofree nounwind
-define private fastcc i1 @_f__void__bool__graphColoring__boolarrayarray_int_int_intarray(i32 %0, ptr nocapture %1) unnamed_addr #0 {
+define private fastcc i1 @_Z13graphColoringA4A4biiPi(i32 %0, ptr nocapture %1) unnamed_addr #0 {
   %3 = icmp eq i32 %0, 4
   br i1 %3, label %if.then.L29, label %for.head.L38.preheader
 
@@ -20,7 +20,7 @@ for.head.L38.preheader:                           ; preds = %2
   %5 = getelementptr inbounds i32, ptr %1, i64 %4
   %6 = add i32 %0, 1
   store i32 1, ptr %5, align 4
-  %7 = tail call fastcc i1 @_f__void__bool__graphColoring__boolarrayarray_int_int_intarray(i32 %6, ptr %1)
+  %7 = tail call fastcc i1 @_Z13graphColoringA4A4biiPi(i32 %6, ptr %1)
   br i1 %7, label %common.ret, label %if.exit.L42
 
 if.then.L29:                                      ; preds = %2
@@ -65,12 +65,12 @@ if.then.L31:                                      ; preds = %land.1.L14C16.232.i
 
 if.exit.L42:                                      ; preds = %for.head.L38.preheader
   store i32 2, ptr %5, align 4
-  %28 = tail call fastcc i1 @_f__void__bool__graphColoring__boolarrayarray_int_int_intarray(i32 %6, ptr nonnull %1)
+  %28 = tail call fastcc i1 @_Z13graphColoringA4A4biiPi(i32 %6, ptr nonnull %1)
   br i1 %28, label %common.ret, label %if.exit.L42.1
 
 if.exit.L42.1:                                    ; preds = %if.exit.L42
   store i32 3, ptr %5, align 4
-  %29 = tail call fastcc i1 @_f__void__bool__graphColoring__boolarrayarray_int_int_intarray(i32 %6, ptr nonnull %1)
+  %29 = tail call fastcc i1 @_Z13graphColoringA4A4biiPi(i32 %6, ptr nonnull %1)
   br i1 %29, label %common.ret, label %if.exit.L42.2
 
 if.exit.L42.2:                                    ; preds = %if.exit.L42.1
@@ -83,7 +83,7 @@ define dso_local i32 @main() local_unnamed_addr #1 {
 for.exit.L71:
   %color = alloca [4 x i32], align 4
   call void @llvm.memset.p0.i64(ptr noundef nonnull align 4 dereferenceable(16) %color, i8 0, i64 16, i1 false)
-  %0 = call fastcc i1 @_f__void__bool__graphColoring__boolarrayarray_int_int_intarray(i32 0, ptr nonnull %color) #3
+  %0 = call fastcc i1 @_Z13graphColoringA4A4biiPi(i32 0, ptr nonnull %color) #3
   br i1 %0, label %if.exit.L75, label %if.then.L75
 
 if.then.L75:                                      ; preds = %for.exit.L71

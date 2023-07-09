@@ -1,6 +1,6 @@
-dyn test = true;
-dyn invalid;
+dyn TEST = true;
+dyn INVALID;
 
 f<int> main() {
-    printf("Bool: %d", test);
+    printf("Bool: %d", TEST);
 }

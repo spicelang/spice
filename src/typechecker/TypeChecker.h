@@ -22,13 +22,6 @@ enum TypeCheckerMode { TC_MODE_PREPARE, TC_MODE_CHECK };
  * - Perform type inference
  */
 class TypeChecker : private CompilerPass, public ASTVisitor {
-private:
-  // For routing through the symbol type as well as the current variable entry
-  struct ExprResult {
-    SymbolType type;
-    SymbolTableEntry *entry = nullptr;
-  };
-
 public:
   // Constructors
   TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile, TypeCheckerMode typeCheckerMode);

@@ -27,7 +27,6 @@ public:
         interfaceScope(interfaceScope), declNode(declNode) {}
 
   // Public methods
-  [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] std::string getSignature() const;
   static std::string getSignature(const std::string &name, const std::vector<SymbolType> &concreteTemplateTypes);
   [[nodiscard]] bool hasSubstantiatedGenerics() const;

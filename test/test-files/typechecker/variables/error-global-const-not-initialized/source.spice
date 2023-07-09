@@ -1,4 +1,4 @@
-const int count;
+const int COUNT;
 
 f<int> main() {
     printf("Test");

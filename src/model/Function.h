@@ -42,7 +42,6 @@ public:
 
   // Public methods
   [[nodiscard]] std::vector<SymbolType> getParamTypes() const;
-  [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] std::string getSignature(bool withThisType = true) const;
   [[nodiscard]] static std::string getSignature(const std::string &name, const SymbolType &thisType, const SymbolType &returnType,
                                                 const ParamList &paramList, const std::vector<SymbolType> &concreteTemplateTypes,
@@ -69,6 +68,8 @@ public:
   std::unordered_map<std::string, SymbolType> typeMapping;
   SymbolTableEntry *entry = nullptr;
   ASTNode *declNode = nullptr;
+  bool mangleFunctionName = true;
+  std::string predefinedMangledName;
   bool genericSubstantiation = false;
   bool alreadyTypeChecked = false;
   bool external = false;

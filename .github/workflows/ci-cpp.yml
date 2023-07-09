@@ -34,6 +34,10 @@ jobs:
       - name: Setup Ninja
         run: sudo apt-get install ninja-build
 
+      - name: Setup Valgrind
+        if: github.event_name == 'pull_request'
+        run: sudo apt-get install valgrind
+
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
@@ -73,15 +77,24 @@ jobs:
           echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
           mkdir ./bin
           cd ./bin
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
           cmake --build . --target spicetest -j$(nproc)
 
       - name: Run Test target
+#        if: github.event_name != 'pull_request'
         env:
           SPICE_STD_DIR: /home/runner/work/spice/spice/std
         run: |
           cd ./bin/test
           ./spicetest --skip-github-tests
+
+#      - name: Run Test target with Valgrind
+#        if: github.event_name == 'pull_request'
+#        env:
+#          SPICE_STD_DIR: /home/runner/work/spice/spice/std
+#        run: |
+#          cd ./bin/test
+#          valgrind -q --leak-check=full ./spicetest --skip-github-tests --leak-detection
 
       - name: Generate coverage report
         run: |

@@ -3,6 +3,7 @@
 #include "IRGenerator.h"
 
 #include <ast/ASTNodes.h>
+#include <irgenerator/NameMangling.h>
 
 namespace spice::compiler {
 
@@ -27,7 +28,7 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
     // Create constant nil value
     llvm::Constant *nilValue = llvm::Constant::getNullValue(nilType);
     // Return it
-    return ExprResult{.constant = nilValue};
+    return LLVMExprResult{.constant = nilValue};
   }
 
   throw CompilerError(UNHANDLED_BRANCH, "Value fall-through"); // GCOV_EXCL_LINE
@@ -94,7 +95,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   Scope *accessScope = data.calleeParentScope;
   std::string mangledName;
   if (!data.isFctPtrCall())
-    mangledName = spiceFunc->external ? node->fqFunctionName : spiceFunc->getMangledName();
+    mangledName = NameMangling::mangleFunction(*spiceFunc);
   std::vector<llvm::Value *> argValues;
 
   // Get entry of the first fragment
@@ -179,10 +180,16 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   // Retrieve return and param types
-  const SymbolType returnSType =
-      data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionReturnType() : spiceFunc->returnType;
-  const std::vector<SymbolType> paramSTypes =
-      data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes() : spiceFunc->getParamTypes();
+  SymbolType returnSType(TY_DYN);
+  std::vector<SymbolType> paramSTypes;
+  if (data.isFctPtrCall()) {
+    if (firstFragEntry->getType().isBaseType(TY_FUNCTION))
+      returnSType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
+    paramSTypes = firstFragEntry->getType().getBaseType().getFunctionParamTypes();
+  } else {
+    returnSType = spiceFunc->returnType;
+    paramSTypes = spiceFunc->getParamTypes();
+  }
 
   // Function is not defined in the current module -> declare it
   // This can happen when:
@@ -231,13 +238,16 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   // Attach address to anonymous symbol to keep track of deallocation
+  SymbolTableEntry *anonymousSymbol = nullptr;
+  llvm::Value *resultPtr = nullptr;
   if (returnSType.is(TY_STRUCT) || data.isCtorCall()) {
-    SymbolTableEntry *anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
+    anonymousSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
     if (anonymousSymbol != nullptr) {
       if (data.isCtorCall()) {
         anonymousSymbol->updateAddress(thisPtr);
       } else {
-        llvm::Value *resultPtr = insertAlloca(result->getType());
+        resultPtr = insertAlloca(result->getType());
+        builder.CreateStore(result, resultPtr);
         anonymousSymbol->updateAddress(resultPtr);
       }
     }
@@ -245,27 +255,27 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // In case this is a constructor call, return the thisPtr as pointer
   if (data.isCtorCall())
-    return ExprResult{.ptr = thisPtr};
+    return LLVMExprResult{.ptr = thisPtr, .refPtr = resultPtr, .entry = anonymousSymbol};
 
   // In case this is a callee, returning a reference, return the address
   if (returnSType.isRef())
-    return ExprResult{.ptr = result};
+    return LLVMExprResult{.ptr = result, .refPtr = resultPtr, .entry = anonymousSymbol};
 
   // Otherwise return the value
-  return ExprResult{.value = result};
+  return LLVMExprResult{.value = result, .ptr = resultPtr, .entry = anonymousSymbol};
 }
 
 std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *node) {
   // Return immediately if the initialization is empty
   if (node->actualSize == 0)
-    return ExprResult{.node = node};
+    return LLVMExprResult{.node = node};
 
   // Visit array items
   bool canBeConstant = true;
-  std::vector<ExprResult> itemResults;
+  std::vector<LLVMExprResult> itemResults;
   itemResults.reserve(node->actualSize);
   for (AssignExprNode *itemNode : node->itemLst()->args()) {
-    auto item = std::any_cast<ExprResult>(visit(itemNode));
+    auto item = std::any_cast<LLVMExprResult>(visit(itemNode));
     canBeConstant &= item.constant != nullptr;
     item.node = itemNode;
     itemResults.push_back(item);
@@ -280,7 +290,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
   if (canBeConstant) { // All items are constants, so we can create a global constant array
     // Collect constants
     std::vector<llvm::Constant *> constants;
-    for (const ExprResult &exprResult : itemResults) {
+    for (const LLVMExprResult &exprResult : itemResults) {
       // Delete potential constant globals, that were already created a layer below
       if (exprResult.constant->getType()->isArrayTy())
         module->getNamedGlobal(exprResult.ptr->getName())->eraseFromParent();
@@ -291,7 +301,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
     llvm::Constant *constantArray = llvm::ConstantArray::get(arrayType, constants);
     llvm::Value *arrayAddr = createGlobalConst(ANON_GLOBAL_ARRAY_NAME, constantArray);
 
-    return ExprResult{.constant = constantArray, .ptr = arrayAddr};
+    return LLVMExprResult{.constant = constantArray, .ptr = arrayAddr};
   } else { // We have non-immediate values as items, so we need to take normal arrays as fallback
     llvm::Value *arrayAddr = insertAlloca(arrayType);
 
@@ -301,7 +311,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
     // Store all array items at their corresponding offsets
     llvm::Value *currentItemAddress = firstItemAddress;
     for (size_t i = 0; i < itemResults.size(); i++) {
-      ExprResult &exprResult = itemResults[i];
+      LLVMExprResult &exprResult = itemResults[i];
       llvm::Value *itemValue = resolveValue(exprResult.node, exprResult);
       // Retrieve current item address
       if (i >= 1)
@@ -311,7 +321,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
       builder.CreateStore(itemValue, currentItemAddress, storeVolatile);
     }
 
-    return ExprResult{.ptr = arrayAddr};
+    return LLVMExprResult{.ptr = arrayAddr};
   }
 }
 
@@ -331,24 +341,24 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
   if (!node->fieldLst()) {
     llvm::Constant *constantStruct = getDefaultValueForSymbolType(spiceStruct->entry->getType());
-    return ExprResult{.constant = constantStruct};
+    return LLVMExprResult{.constant = constantStruct};
   }
 
   // Visit struct field values
-  std::vector<ExprResult> fieldValueResults;
+  std::vector<LLVMExprResult> fieldValueResults;
   fieldValueResults.reserve(spiceStruct->fieldTypes.size());
   for (AssignExprNode *fieldValueNode : node->fieldLst()->args()) {
-    auto fieldValue = std::any_cast<ExprResult>(visit(fieldValueNode));
+    auto fieldValue = std::any_cast<LLVMExprResult>(visit(fieldValueNode));
     fieldValue.node = fieldValueNode;
     fieldValueResults.push_back(fieldValue);
     canBeConstant &= fieldValue.constant != nullptr;
   }
 
-  ExprResult result;
+  LLVMExprResult result;
   if (canBeConstant) { // All field values are constants, so we can create a global constant struct instantiation
     // Collect constants
     std::vector<llvm::Constant *> constants;
-    for (const ExprResult &exprResult : fieldValueResults) {
+    for (const LLVMExprResult &exprResult : fieldValueResults) {
       // Delete potential constant globals, that were already created a layer below
       if (exprResult.constant->getType()->isStructTy())
         module->getNamedGlobal(exprResult.ptr->getName())->eraseFromParent();
@@ -365,7 +375,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
     // Store all field values at their corresponding offsets
     for (size_t i = 0; i < fieldValueResults.size(); i++) {
-      ExprResult &exprResult = fieldValueResults.at(i);
+      LLVMExprResult &exprResult = fieldValueResults.at(i);
       // Get field value
       llvm::Value *itemValue = fieldTypes.at(i).isRef() ? resolveAddress(exprResult) : resolveValue(exprResult.node, exprResult);
       // Get field address

@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
-  %1 = tail call i1 @_f__void__bool__toBool__double(double 1.000000e+00) #2
+  %1 = tail call i1 @_Z6toBoold(double 1.000000e+00) #2
   br i1 %1, label %assert.exit.L26, label %assert.then.L26, !prof !0
 
 assert.then.L26:                                  ; preds = %0
@@ -18,7 +18,7 @@ assert.then.L26:                                  ; preds = %0
   unreachable
 
 assert.exit.L26:                                  ; preds = %0
-  %3 = tail call i1 @_f__void__bool__toBool__double(double 0.000000e+00) #2
+  %3 = tail call i1 @_Z6toBoold(double 0.000000e+00) #2
   br i1 %3, label %assert.then.L28, label %assert.exit.L28, !prof !1
 
 assert.then.L28:                                  ; preds = %assert.exit.L26
@@ -31,7 +31,7 @@ assert.exit.L28:                                  ; preds = %assert.exit.L26
   ret i32 0
 }
 
-declare i1 @_f__void__bool__toBool__double(double) local_unnamed_addr
+declare i1 @_Z6toBoold(double) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1

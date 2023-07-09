@@ -5,29 +5,6 @@
 namespace spice::compiler {
 
 /**
- * Mangle the interface and return the mangled string
- *
- * @return Mangled string
- */
-std::string Interface::getMangledName() const {
-  // Build template type string
-  std::stringstream templateTyStr;
-  for (size_t i = 0; i < templateTypes.size(); i++) {
-    if (i > 0)
-      templateTyStr << "_";
-    templateTyStr << templateTypes.at(i).getName(false, true);
-  }
-
-  // Construct mangled name
-  std::stringstream mangledName("_s");
-  if (!templateTypes.empty())
-    mangledName << "__" << templateTyStr.str();
-  mangledName << "__" << name;
-
-  return mangledName.str();
-}
-
-/**
  * Get a string representation of the current interface
  *
  * @return String representation as interface signature

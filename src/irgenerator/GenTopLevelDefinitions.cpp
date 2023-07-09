@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
@@ -203,7 +204,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
     // Create function or implement declared function
-    const std::string mangledName = manifestation->getMangledName();
+    const std::string mangledName = NameMangling::mangleFunction(*manifestation);
     llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
     module->getOrInsertFunction(mangledName, funcType);
     llvm::Function *func = module->getFunction(mangledName);
@@ -370,7 +371,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
     // Create procedure or implement declared procedure
-    const std::string mangledName = manifestation->getMangledName();
+    const std::string mangledName = NameMangling::mangleFunction(*manifestation);
     llvm::FunctionType *procType = llvm::FunctionType::get(returnType, paramTypes, false);
     module->getOrInsertFunction(mangledName, procType);
     llvm::Function *proc = module->getFunction(mangledName);
@@ -482,7 +483,8 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     assert(currentScope);
 
     // Create struct definition
-    llvm::StructType *structType = llvm::StructType::create(context, spiceStruct->getMangledName());
+    const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
+    llvm::StructType *structType = llvm::StructType::create(context, mangledName);
 
     // Set LLVM type to the struct entry
     assert(spiceStruct->entry != nullptr);
@@ -575,13 +577,15 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
 
   // Declare function
   llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, node->isVarArg);
-  module->getOrInsertFunction(spiceFunc->name, functionType);
+  const std::string mangledName = NameMangling::mangleFunction(*spiceFunc);
+  module->getOrInsertFunction(mangledName, functionType);
+  llvm::Function *fct = module->getFunction(mangledName);
 
   // If the function should be imported as dll, add the dll attribute
-  if (node->fctAttrs()) {
-    const bool linkAsDll = node->fctAttrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_LINKER_DLL)->getValue().boolValue;
-    if (linkAsDll)
-      module->getFunction(spiceFunc->name)->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
+  if (node->attrs()) {
+    AttrNode *linkAsDllNode = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_LINKER_DLL);
+    if (linkAsDllNode && linkAsDllNode->getValue().boolValue)
+      fct->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
   }
 
   return nullptr;

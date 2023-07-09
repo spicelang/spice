@@ -5,12 +5,12 @@ target triple = "x86_64-w64-windows-gnu"
 
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Result: %d\00", align 1
 
-define private i1 @_f__void__bool__condition1() {
+define private i1 @_Z10condition1v() {
   %result = alloca i1, align 1
   ret i1 false
 }
 
-define private i1 @_f__void__bool__condition2() {
+define private i1 @_Z10condition2v() {
   %result = alloca i1, align 1
   ret i1 true
 }
@@ -19,11 +19,11 @@ define private i1 @_f__void__bool__condition2() {
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i1 @_f__void__bool__condition1()
+  %1 = call i1 @_Z10condition1v()
   br i1 %1, label %land.1.L10C26, label %land.exit.L10C26
 
 land.1.L10C26:                                    ; preds = %0
-  %2 = call i1 @_f__void__bool__condition2()
+  %2 = call i1 @_Z10condition2v()
   br label %land.exit.L10C26
 
 land.exit.L10C26:                                 ; preds = %land.1.L10C26, %0

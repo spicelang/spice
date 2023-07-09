@@ -22,13 +22,12 @@ Struct *StructManager::insertStruct(Scope *insertScope, Struct &spiceStruct, std
 }
 
 Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManifestation, const ASTNode *declNode) {
-  const std::string mangledStructName = newManifestation.getMangledName();
   const std::string codeLocStr = declNode->codeLoc.toString();
   const std::string signature = newManifestation.getSignature();
 
   // Make sure that the manifestation does not exist already
   for (const auto &manifestations : insertScope->structs)
-    assert(!manifestations.second.contains(mangledStructName));
+    assert(!manifestations.second.contains(signature));
 
   // Retrieve the matching manifestation list of the scope
   assert(insertScope->structs.contains(codeLocStr));
@@ -36,8 +35,8 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
 
   // Add substantiated struct
   newManifestation.manifestationIndex = manifestationList.size();
-  manifestationList.emplace(mangledStructName, newManifestation);
-  return &manifestationList.at(mangledStructName);
+  manifestationList.emplace(signature, newManifestation);
+  return &manifestationList.at(signature);
 }
 
 /**
@@ -96,8 +95,8 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       }
 
       // Check if we already have this manifestation and can simply re-use it
-      if (manifestations.contains(candidate.getMangledName())) {
-        matches.push_back(&matchScope->structs.at(defCodeLocStr).at(candidate.getMangledName()));
+      if (manifestations.contains(candidate.getSignature())) {
+        matches.push_back(&matchScope->structs.at(defCodeLocStr).at(candidate.getSignature()));
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 

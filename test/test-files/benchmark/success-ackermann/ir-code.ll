@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @printf.str.0 = private unnamed_addr constant [36 x i8] c"Ackermann of base m=%d and n=%d: %d\00", align 1
 
-define private i32 @_f__void__int__ack__int_int(i32 %0, i32 %1) {
+define private i32 @_Z3ackii(i32 %0, i32 %1) {
   %result = alloca i32, align 4
   %m = alloca i32, align 4
   %n = alloca i32, align 4
@@ -28,7 +28,7 @@ if.exit.L2:                                       ; preds = %2
 if.then.L3:                                       ; preds = %if.exit.L2
   %9 = load i32, ptr %m, align 4
   %10 = sub i32 %9, 1
-  %11 = call i32 @_f__void__int__ack__int_int(i32 %10, i32 1)
+  %11 = call i32 @_Z3ackii(i32 %10, i32 1)
   ret i32 %11
 
 if.exit.L3:                                       ; preds = %if.exit.L2
@@ -37,8 +37,8 @@ if.exit.L3:                                       ; preds = %if.exit.L2
   %14 = load i32, ptr %m, align 4
   %15 = load i32, ptr %n, align 4
   %16 = sub i32 %15, 1
-  %17 = call i32 @_f__void__int__ack__int_int(i32 %14, i32 %16)
-  %18 = call i32 @_f__void__int__ack__int_int(i32 %13, i32 %17)
+  %17 = call i32 @_Z3ackii(i32 %14, i32 %16)
+  %18 = call i32 @_Z3ackii(i32 %13, i32 %17)
   ret i32 %18
 }
 
@@ -54,7 +54,7 @@ define dso_local i32 @main() #0 {
   %2 = load i32, ptr %baseN, align 4
   %3 = load i32, ptr %baseM, align 4
   %4 = load i32, ptr %baseN, align 4
-  %5 = call i32 @_f__void__int__ack__int_int(i32 %3, i32 %4)
+  %5 = call i32 @_Z3ackii(i32 %3, i32 %4)
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1, i32 %2, i32 %5)
   %7 = load i32, ptr %result, align 4
   ret i32 %7

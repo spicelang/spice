@@ -1,5 +1,5 @@
 import "source1" as src1;
 
 f<int> main() {
-    printf("Result: %d\n", src1::globalTestVar);
+    printf("Result: %d\n", src1::GLOBAL_TEST_VAR);
 }

@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.2 = private unnamed_addr constant [12 x i8] c"Result: %d\0A\00", align 1
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"param value\00", align 1
 
-define private i32 @_f__void__int__testFunc() {
+define private i32 @_Z8testFuncv() {
   %result = alloca i32, align 4
   %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i32 1
@@ -16,7 +16,7 @@ define private i32 @_f__void__int__testFunc() {
 
 declare i32 @printf(ptr noundef, ...)
 
-define private i32 @_f__void__int__testFunc__string(ptr %0) {
+define private i32 @_Z8testFuncPc(ptr %0) {
   %result = alloca i32, align 4
   %param = alloca ptr, align 8
   store ptr %0, ptr %param, align 8
@@ -30,11 +30,11 @@ define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %res = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  %1 = call i32 @_f__void__int__testFunc()
+  %1 = call i32 @_Z8testFuncv()
   store i32 %1, ptr %res, align 4
   %2 = load i32, ptr %res, align 4
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %2)
-  %4 = call i32 @_f__void__int__testFunc__string(ptr @anon.string.0)
+  %4 = call i32 @_Z8testFuncPc(ptr @anon.string.0)
   store i32 %4, ptr %res, align 4
   %5 = load i32, ptr %result, align 4
   ret i32 %5

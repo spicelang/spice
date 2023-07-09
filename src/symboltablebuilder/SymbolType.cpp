@@ -4,6 +4,7 @@
 
 #include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
+#include <irgenerator/NameMangling.h>
 #include <irgenerator/StdFunctionManager.h>
 #include <model/GenericType.h>
 #include <model/Struct.h>
@@ -161,7 +162,8 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
     if (structType == nullptr) {
       Struct *spiceStruct = structSymbol->getType().getStruct(structSymbol->declNode);
       assert(spiceStruct != nullptr);
-      structType = llvm::StructType::create(context, spiceStruct->getMangledName());
+      const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
+      structType = llvm::StructType::create(context, mangledName);
       structSymbol->setStructLLVMType(structType);
 
       // Collect concrete field types
@@ -301,29 +303,27 @@ bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &gene
  * @param withSize Include the array size for sized types
  * @return Symbol type name
  */
-std::string SymbolType::getName(bool withSize, bool mangledName) const { // NOLINT(misc-no-recursion)
+std::string SymbolType::getName(bool withSize) const { // NOLINT(misc-no-recursion)
   std::stringstream name;
 
   // Append the specifiers
-  if (!mangledName) {
-    const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
-    if (specifiers.isPublic() && !defaultForSuperType.isPublic())
-      name << "public ";
-    if (specifiers.isInline() && !defaultForSuperType.isInline())
-      name << "inline ";
-    if (specifiers.isConst() && !defaultForSuperType.isConst())
-      name << "const ";
-    if (specifiers.isHeap() && !defaultForSuperType.isHeap())
-      name << "heap ";
-    if (specifiers.isSigned() && !defaultForSuperType.isSigned())
-      name << "signed ";
-    if (!specifiers.isSigned() && defaultForSuperType.isSigned())
-      name << "unsigned ";
-  }
+  const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
+  if (specifiers.isPublic() && !defaultForSuperType.isPublic())
+    name << "public ";
+  if (specifiers.isInline() && !defaultForSuperType.isInline())
+    name << "inline ";
+  if (specifiers.isConst() && !defaultForSuperType.isConst())
+    name << "const ";
+  if (specifiers.isHeap() && !defaultForSuperType.isHeap())
+    name << "heap ";
+  if (specifiers.isSigned() && !defaultForSuperType.isSigned())
+    name << "signed ";
+  if (!specifiers.isSigned() && defaultForSuperType.isSigned())
+    name << "unsigned ";
 
-  // Loop through all items
+  // Loop through all chain elements
   for (const TypeChainElement &chainElement : typeChain)
-    name << getNameFromChainElement(chainElement, withSize, mangledName);
+    name << chainElement.getName(withSize);
 
   return name.str();
 }
@@ -522,25 +522,19 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
 }
 
 /**
- * Get the name of a type chain element
+ * Return the type name as string
  *
- * @param chainElement Input chain element
- * @param withSize Include size in string
- * @return Type chain element name
+ * @param withSize Also encode array sizes
+ * @return Name as string
  */
-std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainElement, bool withSize, bool mangledName) const {
-  switch (chainElement.superType) {
+std::string SymbolType::TypeChainElement::getName(bool withSize) const {
+  switch (superType) {
   case TY_PTR:
-    return mangledName ? "ptr" : "*";
+    return "*";
   case TY_REF:
-    return mangledName ? "ref" : "&";
-  case TY_ARRAY: {
-    if (mangledName)
-      return "array";
-    if (!withSize || chainElement.data.arraySize == ARRAY_SIZE_UNKNOWN)
-      return "[]";
-    return "[" + std::to_string(chainElement.data.arraySize) + "]";
-  }
+    return "&";
+  case TY_ARRAY:
+    return withSize && data.arraySize != ARRAY_SIZE_UNKNOWN ? "[" + std::to_string(data.arraySize) + "]" : "";
   case TY_DOUBLE:
     return "double";
   case TY_INT:
@@ -559,53 +553,55 @@ std::string SymbolType::getNameFromChainElement(const TypeChainElement &chainEle
     return "bool";
   case TY_STRUCT: {
     std::string templateStr;
-    if (!chainElement.templateTypes.empty()) {
-      for (const auto &templateType : chainElement.templateTypes) {
+    if (!templateTypes.empty()) {
+      for (const auto &templateType : templateTypes) {
         if (!templateStr.empty())
           templateStr += ",";
         templateStr += templateType.getName();
       }
       templateStr = "<" + templateStr + ">";
     }
-    return chainElement.subType + templateStr;
+    return subType + templateStr;
   }
   case TY_INTERFACE:
-    return "interface(" + chainElement.subType + ")";
+    return "interface(" + subType + ")";
   case TY_ENUM:
     return "enum";
   case TY_GENERIC:
-    return "generic(" + chainElement.subType + ")";
+    return "generic(" + subType + ")";
   case TY_ALIAS:
-    return "alias(" + chainElement.subType + ")";
+    return "alias(" + subType + ")";
   case TY_DYN:
     return "dyn";
   case TY_FUNCTION: {
-    std::stringstream paramTypesString;
-    const SymbolType &baseType = getBaseType();
-    for (const SymbolType &paramType : baseType.getFunctionParamTypes()) {
-      if (paramTypesString.rdbuf()->in_avail() > 0)
-        paramTypesString << ",";
-      paramTypesString << paramType.getName(true);
+    std::stringstream functionName;
+    functionName << "f<" << paramTypes.front().getName(true) << ">(";
+    for (size_t i = 1; i < paramTypes.size(); i++) {
+      if (i > 1)
+        functionName << ",";
+      functionName << paramTypes.at(i).getName(true);
     }
-    const std::string returnTypeString = baseType.getFunctionReturnType().getName(true);
-    return "f<" + returnTypeString + ">(" + paramTypesString.str() + ")";
+    functionName << ")";
+    return functionName.str();
   }
   case TY_PROCEDURE: {
-    std::stringstream paramTypesString;
-    const SymbolType &baseType = getBaseType();
-    for (const SymbolType &paramType : baseType.getFunctionParamTypes()) {
-      if (paramTypesString.rdbuf()->in_avail() > 0)
-        paramTypesString << ",";
-      paramTypesString << paramType.getName(true);
+    std::stringstream procedureName;
+    procedureName << "p(";
+    for (size_t i = 1; i < paramTypes.size(); i++) {
+      if (i > 1)
+        procedureName << ",";
+      procedureName << paramTypes.at(i).getName(true);
     }
-    return "p(" + paramTypesString.str() + ")";
+    procedureName << ")";
+    return procedureName.str();
   }
   case TY_IMPORT:
     return "import";
   case TY_INVALID:    // GCOV_EXCL_LINE
     return "invalid"; // GCOV_EXCL_LINE
+  default:
+    throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element");
   }
-  return "unknown"; // GCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler

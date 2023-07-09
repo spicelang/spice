@@ -171,19 +171,6 @@ std::string TestUtil::toCamelCase(std::string input) {
 }
 
 /**
- * Get default executable name of the compiled binary
- *
- * @return Name of the executable including the file extension
- */
-std::string TestUtil::getDefaultExecutableName() {
-  std::string executableName = "./source";
-#if OS_WINDOWS
-  executableName = ".\\source.exe";
-#endif
-  return executableName;
-}
-
-/**
  * Check if the provided test case is disabled
  *
  * @param testCase Test case to check

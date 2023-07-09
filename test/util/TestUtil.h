@@ -21,6 +21,7 @@ const unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
 const unsigned int IR_FILE_SKIP_LINES = 5; // Skip the first couple of lines, because they contain target dependent information
 extern bool updateRefs;
 extern bool runBenchmarks;
+extern bool enableLeakDetection;
 extern bool skipNonGitHubTests;
 
 const char *const INPUT_NAME_LINKER_FLAGS = "linker-flags.txt";
@@ -72,10 +73,16 @@ public:
   static std::string getFileContent(const std::string &filePath);
   static std::vector<std::string> getFileContentLinesVector(const std::string &filePath);
   static std::string toCamelCase(std::string input);
-  static std::string getDefaultExecutableName();
+  static constexpr const char *getDefaultExecutableName() {
+#if OS_WINDOWS
+    return ".\\source.exe";
+#else
+    return "./source";
+#endif
+  }
   static bool isDisabled(const TestCase &testCase, bool isGHActions);
   static void eraseIRModuleHeader(std::string &irCode);
-  static void eraseLinesBySubstring(std::string &irCode, const char *const needle);
+  static void eraseLinesBySubstring(std::string &irCode, const char *needle);
 };
 
 // GCOV_EXCL_STOP

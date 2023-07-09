@@ -10,7 +10,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.array.0 = private unnamed_addr constant [4 x i32] [i32 1, i32 2, i32 3, i32 4]
 @printf.str.4 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 1
 
-define private void @_p__void__void__testProc__intarrayptrptrptr(ptr %0) {
+define private void @_Z8testProcPPPA4i(ptr %0) {
   %nums = alloca ptr, align 8
   %nums1 = alloca ptr, align 8
   %nums2 = alloca [4 x i32], align 4
@@ -56,7 +56,7 @@ define dso_local i32 @main() #0 {
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %3)
   store ptr %intArray, ptr %intArray1, align 8
   store ptr %intArray1, ptr %intArray2, align 8
-  call void @_p__void__void__testProc__intarrayptrptrptr(ptr %intArray2)
+  call void @_Z8testProcPPPA4i(ptr %intArray2)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
 }

@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 
-define private i32 @_f__void__int__test() {
+define private i32 @_Z4testv() {
   %result = alloca i32, align 4
   ret i32 12
 }
@@ -16,7 +16,7 @@ define dso_local i32 @main() #0 {
   %testFct = alloca ptr, align 8
   %i = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  store ptr @_f__void__int__test, ptr %testFct, align 8
+  store ptr @_Z4testv, ptr %testFct, align 8
   %1 = load ptr, ptr %testFct, align 8
   %2 = call i32 %1()
   store i32 %2, ptr %i, align 4

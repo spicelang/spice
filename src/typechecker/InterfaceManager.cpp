@@ -23,13 +23,12 @@ Interface *InterfaceManager::insertInterface(Scope *insertScope, Interface &spic
 }
 
 Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface &newManifestation, const ASTNode *declNode) {
-  const std::string mangledInterfaceName = newManifestation.getMangledName();
   const std::string codeLocStr = declNode->codeLoc.toString();
   const std::string signature = newManifestation.getSignature();
 
   // Make sure that the manifestation does not exist already
   for (const auto &manifestations : insertScope->interfaces)
-    assert(!manifestations.second.contains(newManifestation.getMangledName()));
+    assert(!manifestations.second.contains(newManifestation.getSignature()));
 
   // Retrieve the matching manifestation list of the scope
   assert(insertScope->interfaces.contains(codeLocStr));
@@ -37,8 +36,8 @@ Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface 
 
   // Add substantiated interface
   newManifestation.manifestationIndex = manifestationList.size();
-  manifestationList.emplace(mangledInterfaceName, newManifestation);
-  return &manifestationList.at(mangledInterfaceName);
+  manifestationList.emplace(signature, newManifestation);
+  return &manifestationList.at(signature);
 }
 
 /**
@@ -97,8 +96,8 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
       }
 
       // Check if we already have this manifestation and can simply re-use it
-      if (manifestations.contains(candidate.getMangledName())) {
-        matches.push_back(&matchScope->interfaces.at(defCodeLocStr).at(candidate.getMangledName()));
+      if (manifestations.contains(candidate.getSignature())) {
+        matches.push_back(&matchScope->interfaces.at(defCodeLocStr).at(candidate.getSignature()));
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 

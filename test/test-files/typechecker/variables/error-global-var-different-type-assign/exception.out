@@ -1,5 +1,5 @@
-[Error|Semantic] ./test-files/typechecker/variables/error-global-var-different-type-assign/source.spice:1:32:
+[Error|Semantic] ./test-files/typechecker/variables/error-global-var-different-type-assign/source.spice:1:33:
 Wrong data type for operator: Expected unsigned short, but got int
 
-1  ort unsignedShort = -10;
+1  rt UNSIGNED_SHORT = -10;
                        ^^^

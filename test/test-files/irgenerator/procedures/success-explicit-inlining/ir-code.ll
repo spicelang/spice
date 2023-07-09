@@ -8,7 +8,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.2 = private unnamed_addr constant [13 x i8] c"After value\0A\00", align 1
 
 ; Function Attrs: alwaysinline
-define private void @_p__void__void__printAValue() #0 {
+define private void @_Z11printAValuev() #0 {
   %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 5)
   ret void
 }
@@ -20,7 +20,7 @@ define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
-  call void @_p__void__void__printAValue()
+  call void @_Z11printAValuev()
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
   %3 = load i32, ptr %result, align 4
   ret i32 %3

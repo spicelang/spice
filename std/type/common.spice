@@ -1,6 +1,2 @@
 // Common type aliases
-type i8 alias byte;
-type i16 alias short;
-type i32 alias int;
-type i64 alias long;
 type Size alias long;

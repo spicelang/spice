@@ -1,1 +1,1 @@
-[Warning] ./test-files/typechecker/warnings/warning-unused-ext-decl/source.spice:1:1: Unused function: The function 'byte* pthread_self()' is unused
+[Warning] ./test-files/typechecker/warnings/warning-unused-ext-decl/source.spice:1:1: Unused function: The function 'byte* pthreadSelf()' is unused

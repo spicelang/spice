@@ -78,7 +78,10 @@ std::vector<AttrNode *> AttrLstNode::getAttrsByName(const char *key) const {
   return newAttrs;
 }
 
-AttrNode *AttrLstNode::getAttrByName(const char *key) const { return getAttrsByName(key).back(); }
+AttrNode *AttrLstNode::getAttrByName(const char *key) const {
+  const std::vector<AttrNode *> attrs = getAttrsByName(key);
+  return attrs.empty() ? nullptr : attrs.back();
+}
 
 const CompileTimeValue &AttrNode::getValue() const { return value()->compileTimeValue; }
 
