@@ -8,7 +8,6 @@
 #include <escapeanalyzer/EscapeAnalyzer.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/CompilerError.h>
-#include <executionengine/ExecutionEngine.h>
 #include <global/GlobalResourceManager.h>
 #include <importcollector/ImportCollector.h>
 #include <irgenerator/IRGenerator.h>
@@ -557,23 +556,6 @@ void SourceFile::concludeCompilation() {
     tout.println("Finished compiling " + fileName);
 }
 
-int SourceFile::execute() {
-  assert(mainFile);
-
-  Timer timer(&compilerOutput.times.executionEngine);
-  timer.start();
-
-  std::cout << "\n";
-
-  // JITCompile / Interpret the compiled program
-  ExecutionEngine executionEngine(resourceManager, this);
-  const int returnCode = executionEngine.executeMainFct();
-
-  timer.stop();
-
-  return returnCode;
-}
-
 void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
   runLexer();
   runParser();
@@ -607,9 +589,7 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
     } else {
       runDefaultIROptimizer();
     }
-    // Emit object files only when not jitting and in case of LTO only the main source file
-    if (!resourceManager.cliOptions.execute)
-      runObjectEmitter();
+    runObjectEmitter();
     concludeCompilation();
   });
 

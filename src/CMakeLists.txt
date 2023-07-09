@@ -107,9 +107,6 @@ set(SOURCES
         linker/BitcodeLinker.h
         linker/ExternalLinkerInterface.cpp
         linker/ExternalLinkerInterface.h
-        # Execution Engine
-        executionengine/ExecutionEngine.cpp
-        executionengine/ExecutionEngine.h
         # Model
         model/Function.cpp
         model/Function.h

@@ -8,6 +8,7 @@
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
+#include <util/FileUtil.h>
 
 using namespace spice::compiler;
 
@@ -31,19 +32,13 @@ bool compileProject(CliOptions &cliOptions) {
     mainSourceFile->runBackEnd();
 
     // Link the target executable (link object files to executable)
-    if (!cliOptions.execute) {
-      resourceManager.linker.prepare();
-      resourceManager.linker.link();
-    }
+    resourceManager.linker.prepare();
+    resourceManager.linker.link();
 
     // Print compiler warnings
     mainSourceFile->collectAndPrintWarnings();
 
-    // Execute if required and return with the return code
-    if (cliOptions.execute)
-      return mainSourceFile->execute();
-
-    return EXIT_SUCCESS;
+    return true;
   } catch (LexerError &e) {
     std::cout << e.what() << "\n";
   } catch (ParserError &e) {
@@ -53,7 +48,7 @@ bool compileProject(CliOptions &cliOptions) {
   } catch (IRError &e) {
     std::cout << e.what() << "\n";
   }
-  return EXIT_FAILURE;
+  return false;
 }
 
 /**
@@ -76,8 +71,15 @@ int main(int argc, char **argv) {
 
     cli.enrich(); // Prepare the cli options
 
-    // Kick off the compiling process
-    return compileProject(cli.cliOptions);
+    // Kick off the compilation process
+    if (!compileProject(cli.cliOptions))
+      return EXIT_FAILURE;
+
+    // Execute
+    if (cli.cliOptions.execute)
+      cli.runBinary();
+
+    return EXIT_SUCCESS;
   } catch (CliError &e) {
     std::cout << e.what() << "\n";
     return EXIT_FAILURE;

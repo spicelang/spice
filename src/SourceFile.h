@@ -75,7 +75,6 @@ struct TimerOutput {
   uint64_t irGenerator = 0;
   uint64_t irOptimizer = 0;
   uint64_t objectEmitter = 0;
-  uint64_t executionEngine = 0;
 };
 
 struct CompilerOutput {
@@ -132,7 +131,6 @@ public:
   void runPostLinkIROptimizer();
   void runObjectEmitter();
   void concludeCompilation();
-  int execute();
 
   // Shortcuts
   void runFrontEnd();
