@@ -55,7 +55,7 @@ assert.then.L9:                                   ; preds = %0
   unreachable
 
 assert.exit.L9:                                   ; preds = %0
-  %12 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.Vector"(ptr nonnull %vi) #2
+  %12 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr nonnull %vi) #2
   %.fca.0.extract20 = extractvalue %struct.VectorIterator %12, 0
   %.fca.1.extract22 = extractvalue %struct.VectorIterator %12, 1
   %.fca.1.gep23 = getelementptr inbounds %struct.VectorIterator, ptr %it, i64 0, i32 1
@@ -165,7 +165,7 @@ assert.then.L29:                                  ; preds = %assert.exit.L24
   unreachable
 
 assert.exit.L29:                                  ; preds = %assert.exit.L24
-  call void @_Z13op.minusequalR14VectorIteratori(ptr nonnull %it, i32 3) #2
+  call void @_Z13op.minusequalR14VectorIteratorIiEi(ptr nonnull %it, i32 3) #2
   %42 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr nonnull %it) #2
   %43 = load i32, ptr %42, align 4
   %44 = icmp eq i32 %43, 123
@@ -186,7 +186,7 @@ assert.then.L34:                                  ; preds = %assert.exit.L33
   unreachable
 
 assert.exit.L34:                                  ; preds = %assert.exit.L33
-  call void @_Z16op.plusplus.postR14VectorIterator(ptr nonnull %it) #2
+  call void @_Z16op.plusplus.postR14VectorIteratorIiE(ptr nonnull %it) #2
   %48 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr nonnull %it) #2
   %49 = load i32, ptr %48, align 4
   %50 = icmp eq i32 %49, 4321
@@ -198,7 +198,7 @@ assert.then.L36:                                  ; preds = %assert.exit.L34
   unreachable
 
 assert.exit.L36:                                  ; preds = %assert.exit.L34
-  call void @_Z18op.minusminus.postR14VectorIterator(ptr nonnull %it) #2
+  call void @_Z18op.minusminus.postR14VectorIteratorIiE(ptr nonnull %it) #2
   %52 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr nonnull %it) #2
   %53 = load i32, ptr %52, align 4
   %54 = icmp eq i32 %53, 123
@@ -210,7 +210,7 @@ assert.then.L38:                                  ; preds = %assert.exit.L36
   unreachable
 
 assert.exit.L38:                                  ; preds = %assert.exit.L36
-  call void @_Z12op.plusequalR14VectorIteratori(ptr nonnull %it, i32 4) #2
+  call void @_Z12op.plusequalR14VectorIteratorIiEi(ptr nonnull %it, i32 4) #2
   %56 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr nonnull %it) #2
   %57 = load i32, ptr %56, align 4
   %58 = icmp eq i32 %57, -99
@@ -232,7 +232,7 @@ assert.then.L42:                                  ; preds = %assert.exit.L40
   unreachable
 
 assert.exit.L42:                                  ; preds = %assert.exit.L40
-  %62 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.Vector"(ptr nonnull %vi) #2
+  %62 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr nonnull %vi) #2
   %.fca.0.extract8 = extractvalue %struct.VectorIterator %62, 0
   store ptr %.fca.0.extract8, ptr %6, align 8
   %.fca.1.extract10 = extractvalue %struct.VectorIterator %62, 1
@@ -281,7 +281,7 @@ assert.then.L50:                                  ; preds = %assert.exit.L49
   unreachable
 
 assert.exit.L50:                                  ; preds = %assert.exit.L49
-  %78 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.Vector"(ptr nonnull %vi) #2
+  %78 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr nonnull %vi) #2
   %.fca.0.extract4 = extractvalue %struct.VectorIterator %78, 0
   store ptr %.fca.0.extract4, ptr %7, align 8
   %.fca.1.extract6 = extractvalue %struct.VectorIterator %78, 1
@@ -333,7 +333,7 @@ assert.then.L58:                                  ; preds = %assert.exit.L57
   unreachable
 
 assert.exit.L58:                                  ; preds = %assert.exit.L57
-  %96 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.Vector"(ptr nonnull %vi) #2
+  %96 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr nonnull %vi) #2
   %.fca.0.extract = extractvalue %struct.VectorIterator %96, 0
   store ptr %.fca.0.extract, ptr %8, align 8
   %.fca.1.extract = extractvalue %struct.VectorIterator %96, 1
@@ -404,7 +404,7 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_a
 
 declare void @exit(i32) local_unnamed_addr
 
-declare %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.Vector"(ptr) local_unnamed_addr
+declare %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr) local_unnamed_addr
 
 declare i1 @_ZN14VectorIteratorIiE7isValidEv(ptr) local_unnamed_addr
 
@@ -418,13 +418,13 @@ declare ptr @_ZN4PairImRiE8getFirstEv(ptr) local_unnamed_addr
 
 declare ptr @_ZN4PairImRiE9getSecondEv(ptr) local_unnamed_addr
 
-declare void @_Z13op.minusequalR14VectorIteratori(ptr, i32) local_unnamed_addr
+declare void @_Z13op.minusequalR14VectorIteratorIiEi(ptr, i32) local_unnamed_addr
 
-declare void @_Z16op.plusplus.postR14VectorIterator(ptr) local_unnamed_addr
+declare void @_Z16op.plusplus.postR14VectorIteratorIiE(ptr) local_unnamed_addr
 
-declare void @_Z18op.minusminus.postR14VectorIterator(ptr) local_unnamed_addr
+declare void @_Z18op.minusminus.postR14VectorIteratorIiE(ptr) local_unnamed_addr
 
-declare void @_Z12op.plusequalR14VectorIteratori(ptr, i32) local_unnamed_addr
+declare void @_Z12op.plusequalR14VectorIteratorIiEi(ptr, i32) local_unnamed_addr
 
 declare ptr @_ZN6VectorIiE3getEj(ptr, i32) local_unnamed_addr
 

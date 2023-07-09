@@ -131,7 +131,7 @@ assert.then.L18:                                  ; preds = %assert.exit.L17
 
 assert.exit.L18:                                  ; preds = %assert.exit.L17
   call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %it) #2
-  call void @_Z13op.minusequalR13ArrayIteratori(ptr nonnull %it, i32 3) #2
+  call void @_Z13op.minusequalR13ArrayIteratorIiEi(ptr nonnull %it, i32 3) #2
   %30 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
   %31 = load i32, ptr %30, align 4
   %32 = icmp eq i32 %31, 123
@@ -152,7 +152,7 @@ assert.then.L24:                                  ; preds = %assert.exit.L23
   unreachable
 
 assert.exit.L24:                                  ; preds = %assert.exit.L23
-  call void @_Z16op.plusplus.postR13ArrayIterator(ptr nonnull %it) #2
+  call void @_Z16op.plusplus.postR13ArrayIteratorIiE(ptr nonnull %it) #2
   %36 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
   %37 = load i32, ptr %36, align 4
   %38 = icmp eq i32 %37, 4321
@@ -164,7 +164,7 @@ assert.then.L26:                                  ; preds = %assert.exit.L24
   unreachable
 
 assert.exit.L26:                                  ; preds = %assert.exit.L24
-  call void @_Z18op.minusminus.postR13ArrayIterator(ptr nonnull %it) #2
+  call void @_Z18op.minusminus.postR13ArrayIteratorIiE(ptr nonnull %it) #2
   %40 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
   %41 = load i32, ptr %40, align 4
   %42 = icmp eq i32 %41, 123
@@ -176,7 +176,7 @@ assert.then.L28:                                  ; preds = %assert.exit.L26
   unreachable
 
 assert.exit.L28:                                  ; preds = %assert.exit.L26
-  call void @_Z12op.plusequalR13ArrayIteratori(ptr nonnull %it, i32 4) #2
+  call void @_Z12op.plusequalR13ArrayIteratorIiEi(ptr nonnull %it, i32 4) #2
   %44 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
   %45 = load i32, ptr %44, align 4
   %46 = icmp eq i32 %45, -99
@@ -377,13 +377,13 @@ declare ptr @_ZN4PairImRiE8getFirstEv(ptr) local_unnamed_addr
 
 declare ptr @_ZN4PairImRiE9getSecondEv(ptr) local_unnamed_addr
 
-declare void @_Z13op.minusequalR13ArrayIteratori(ptr, i32) local_unnamed_addr
+declare void @_Z13op.minusequalR13ArrayIteratorIiEi(ptr, i32) local_unnamed_addr
 
-declare void @_Z16op.plusplus.postR13ArrayIterator(ptr) local_unnamed_addr
+declare void @_Z16op.plusplus.postR13ArrayIteratorIiE(ptr) local_unnamed_addr
 
-declare void @_Z18op.minusminus.postR13ArrayIterator(ptr) local_unnamed_addr
+declare void @_Z18op.minusminus.postR13ArrayIteratorIiE(ptr) local_unnamed_addr
 
-declare void @_Z12op.plusequalR13ArrayIteratori(ptr, i32) local_unnamed_addr
+declare void @_Z12op.plusequalR13ArrayIteratorIiEi(ptr, i32) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

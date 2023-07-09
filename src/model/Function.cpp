@@ -24,6 +24,7 @@ std::vector<SymbolType> Function::getParamTypes() const {
  * Example:
  * string Vector<double>.setData<double>(double)
  *
+ * @param withThisType Include 'this' type in signature
  * @return String representation as function signature
  */
 std::string Function::getSignature(bool withThisType /*=true*/) const {

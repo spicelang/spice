@@ -20,16 +20,16 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %5 = alloca i32, align 4
   %6 = alloca ptr, align 8
   %p1 = alloca %struct.Pair, align 8
-  call void @"_ZN6VectorI18std/data/pair.PairE4ctorEv"(ptr nonnull %pairVector) #2
+  call void @"_ZN6VectorI18std/data/pair.PairIiPcEE4ctorEv"(ptr nonnull %pairVector) #2
   store i32 0, ptr %2, align 4
   store ptr @anon.string.0, ptr %3, align 8
   call void @_ZN4PairIiPcE4ctorERiRPc(ptr nonnull %1, ptr nonnull %2, ptr nonnull %3) #2
-  call void @"_ZN6VectorI18std/data/pair.PairE8pushBackERK18std/data/pair.Pair"(ptr nonnull %pairVector, ptr nonnull %1) #2
+  call void @"_ZN6VectorI18std/data/pair.PairIiPcEE8pushBackERK18std/data/pair.PairIiPcE"(ptr nonnull %pairVector, ptr nonnull %1) #2
   store i32 1, ptr %5, align 4
   store ptr @anon.string.1, ptr %6, align 8
   call void @_ZN4PairIiPcE4ctorERiRPc(ptr nonnull %4, ptr nonnull %5, ptr nonnull %6) #2
-  call void @"_ZN6VectorI18std/data/pair.PairE8pushBackERK18std/data/pair.Pair"(ptr nonnull %pairVector, ptr nonnull %4) #2
-  %7 = call ptr @"_ZN6VectorI18std/data/pair.PairE3getEj"(ptr nonnull %pairVector, i32 1) #2
+  call void @"_ZN6VectorI18std/data/pair.PairIiPcEE8pushBackERK18std/data/pair.PairIiPcE"(ptr nonnull %pairVector, ptr nonnull %4) #2
+  %7 = call ptr @"_ZN6VectorI18std/data/pair.PairIiPcEE3getEj"(ptr nonnull %pairVector, i32 1) #2
   %8 = load %struct.Pair, ptr %7, align 8
   %.fca.0.extract = extractvalue %struct.Pair %8, 0
   store i32 %.fca.0.extract, ptr %p1, align 8
@@ -39,24 +39,24 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %9 = call ptr @_ZN4PairIiPcE9getSecondEv(ptr nonnull %p1) #2
   %10 = load ptr, ptr %9, align 8
   %11 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %10)
-  call void @"_ZN6VectorI18std/data/pair.PairE4dtorEv"(ptr nonnull %pairVector) #2
+  call void @"_ZN6VectorI18std/data/pair.PairIiPcEE4dtorEv"(ptr nonnull %pairVector) #2
   ret i32 0
 }
 
-declare void @"_ZN6VectorI18std/data/pair.PairE4ctorEv"(ptr) local_unnamed_addr
+declare void @"_ZN6VectorI18std/data/pair.PairIiPcEE4ctorEv"(ptr) local_unnamed_addr
 
 declare void @_ZN4PairIiPcE4ctorERiRPc(ptr, ptr, ptr) local_unnamed_addr
 
-declare void @"_ZN6VectorI18std/data/pair.PairE8pushBackERK18std/data/pair.Pair"(ptr, ptr) local_unnamed_addr
+declare void @"_ZN6VectorI18std/data/pair.PairIiPcEE8pushBackERK18std/data/pair.PairIiPcE"(ptr, ptr) local_unnamed_addr
 
-declare ptr @"_ZN6VectorI18std/data/pair.PairE3getEj"(ptr, i32) local_unnamed_addr
+declare ptr @"_ZN6VectorI18std/data/pair.PairIiPcEE3getEj"(ptr, i32) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 declare ptr @_ZN4PairIiPcE9getSecondEv(ptr) local_unnamed_addr
 
-declare void @"_ZN6VectorI18std/data/pair.PairE4dtorEv"(ptr) local_unnamed_addr
+declare void @"_ZN6VectorI18std/data/pair.PairIiPcEE4dtorEv"(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

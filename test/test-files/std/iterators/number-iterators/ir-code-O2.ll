@@ -79,7 +79,7 @@ assert.then.L11:                                  ; preds = %assert.exit.L9
   unreachable
 
 assert.exit.L11:                                  ; preds = %assert.exit.L9
-  call void @_Z12op.plusequalR14NumberIteratori(ptr nonnull %itInt, i32 3) #2
+  call void @_Z12op.plusequalR14NumberIteratorIiEi(ptr nonnull %itInt, i32 3) #2
   %12 = call ptr @_ZN14NumberIteratorIiE3getEv(ptr nonnull %itInt) #2
   %13 = load i32, ptr %12, align 4
   %14 = icmp eq i32 %13, 5
@@ -100,7 +100,7 @@ assert.then.L14:                                  ; preds = %assert.exit.L13
   unreachable
 
 assert.exit.L14:                                  ; preds = %assert.exit.L13
-  call void @_Z13op.minusequalR14NumberIteratori(ptr nonnull %itInt, i32 2) #2
+  call void @_Z13op.minusequalR14NumberIteratorIiEi(ptr nonnull %itInt, i32 2) #2
   %18 = call ptr @_ZN14NumberIteratorIiE3getEv(ptr nonnull %itInt) #2
   %19 = load i32, ptr %18, align 4
   %20 = icmp eq i32 %19, 3
@@ -141,7 +141,7 @@ assert.then.L20:                                  ; preds = %assert.exit.L19
   unreachable
 
 assert.exit.L20:                                  ; preds = %assert.exit.L19
-  call void @_Z16op.plusplus.postR14NumberIterator(ptr nonnull %itInt) #2
+  call void @_Z16op.plusplus.postR14NumberIteratorIiE(ptr nonnull %itInt) #2
   %31 = call ptr @_ZN14NumberIteratorIiE3getEv(ptr nonnull %itInt) #2
   %32 = load i32, ptr %31, align 4
   %33 = icmp eq i32 %32, 5
@@ -153,7 +153,7 @@ assert.then.L22:                                  ; preds = %assert.exit.L20
   unreachable
 
 assert.exit.L22:                                  ; preds = %assert.exit.L20
-  call void @_Z18op.minusminus.postR14NumberIterator(ptr nonnull %itInt) #2
+  call void @_Z18op.minusminus.postR14NumberIteratorIiE(ptr nonnull %itInt) #2
   %35 = call ptr @_ZN14NumberIteratorIiE3getEv(ptr nonnull %itInt) #2
   %36 = load i32, ptr %35, align 4
   %37 = icmp eq i32 %36, 4
@@ -174,7 +174,7 @@ assert.then.L25:                                  ; preds = %assert.exit.L24
   unreachable
 
 assert.exit.L25:                                  ; preds = %assert.exit.L24
-  call void @_Z12op.plusequalR14NumberIteratori(ptr nonnull %itInt, i32 6) #2
+  call void @_Z12op.plusequalR14NumberIteratorIiEi(ptr nonnull %itInt, i32 6) #2
   %41 = call ptr @_ZN14NumberIteratorIiE3getEv(ptr nonnull %itInt) #2
   %42 = load i32, ptr %41, align 4
   %43 = icmp eq i32 %42, 10
@@ -186,7 +186,7 @@ assert.then.L27:                                  ; preds = %assert.exit.L25
   unreachable
 
 assert.exit.L27:                                  ; preds = %assert.exit.L25
-  call void @_Z16op.plusplus.postR14NumberIterator(ptr nonnull %itInt) #2
+  call void @_Z16op.plusplus.postR14NumberIteratorIiE(ptr nonnull %itInt) #2
   %45 = call i1 @_ZN14NumberIteratorIiE7isValidEv(ptr nonnull %itInt) #2
   br i1 %45, label %assert.then.L29, label %assert.exit.L29, !prof !1
 
@@ -237,7 +237,7 @@ assert.then.L36:                                  ; preds = %assert.exit.L34
   unreachable
 
 assert.exit.L36:                                  ; preds = %assert.exit.L34
-  call void @_Z12op.plusequalR14NumberIteratorl(ptr nonnull %itLong, i64 3) #2
+  call void @_Z12op.plusequalR14NumberIteratorIlEl(ptr nonnull %itLong, i64 3) #2
   %58 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr nonnull %itLong) #2
   %59 = load i64, ptr %58, align 8
   %60 = icmp eq i64 %59, 10
@@ -260,7 +260,7 @@ assert.then.L39:                                  ; preds = %assert.exit.L38
   unreachable
 
 assert.exit.L39:                                  ; preds = %assert.exit.L38
-  call void @_Z13op.minusequalR14NumberIteratorl(ptr nonnull %itLong, i64 2) #2
+  call void @_Z13op.minusequalR14NumberIteratorIlEl(ptr nonnull %itLong, i64 2) #2
   %66 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr nonnull %itLong) #2
   %67 = load i64, ptr %66, align 8
   %68 = icmp eq i64 %67, 8
@@ -272,7 +272,7 @@ assert.then.L41:                                  ; preds = %assert.exit.L39
   unreachable
 
 assert.exit.L41:                                  ; preds = %assert.exit.L39
-  call void @_Z12op.plusequalR14NumberIteratorl(ptr nonnull %itLong, i64 8) #2
+  call void @_Z12op.plusequalR14NumberIteratorIlEl(ptr nonnull %itLong, i64 8) #2
   %70 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr nonnull %itLong) #2
   %71 = load i64, ptr %70, align 8
   %72 = icmp eq i64 %71, 16
@@ -313,7 +313,7 @@ assert.then.L47:                                  ; preds = %assert.exit.L46
   unreachable
 
 assert.exit.L47:                                  ; preds = %assert.exit.L46
-  call void @_Z16op.plusplus.postR14NumberIterator(ptr nonnull %itLong) #2
+  call void @_Z16op.plusplus.postR14NumberIteratorIlE(ptr nonnull %itLong) #2
   %83 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr nonnull %itLong) #2
   %84 = load i64, ptr %83, align 8
   %85 = icmp eq i64 %84, 18
@@ -325,7 +325,7 @@ assert.then.L49:                                  ; preds = %assert.exit.L47
   unreachable
 
 assert.exit.L49:                                  ; preds = %assert.exit.L47
-  call void @_Z18op.minusminus.postR14NumberIterator(ptr nonnull %itLong) #2
+  call void @_Z18op.minusminus.postR14NumberIteratorIlE(ptr nonnull %itLong) #2
   %87 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr nonnull %itLong) #2
   %88 = load i64, ptr %87, align 8
   %89 = icmp eq i64 %88, 17
@@ -346,7 +346,7 @@ assert.then.L52:                                  ; preds = %assert.exit.L51
   unreachable
 
 assert.exit.L52:                                  ; preds = %assert.exit.L51
-  call void @_Z12op.plusequalR14NumberIteratorl(ptr nonnull %itLong, i64 28) #2
+  call void @_Z12op.plusequalR14NumberIteratorIlEl(ptr nonnull %itLong, i64 28) #2
   %93 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr nonnull %itLong) #2
   %94 = load i64, ptr %93, align 8
   %95 = icmp eq i64 %94, 45
@@ -358,7 +358,7 @@ assert.then.L54:                                  ; preds = %assert.exit.L52
   unreachable
 
 assert.exit.L54:                                  ; preds = %assert.exit.L52
-  call void @_Z16op.plusplus.postR14NumberIterator(ptr nonnull %itLong) #2
+  call void @_Z16op.plusplus.postR14NumberIteratorIlE(ptr nonnull %itLong) #2
   %97 = call i1 @_ZN14NumberIteratorIlE7isValidEv(ptr nonnull %itLong) #2
   br i1 %97, label %assert.then.L56, label %assert.exit.L56, !prof !1
 
@@ -385,9 +385,9 @@ declare ptr @_ZN14NumberIteratorIiE3getEv(ptr) local_unnamed_addr
 
 declare void @_ZN14NumberIteratorIiE4nextEv(ptr) local_unnamed_addr
 
-declare void @_Z12op.plusequalR14NumberIteratori(ptr, i32) local_unnamed_addr
+declare void @_Z12op.plusequalR14NumberIteratorIiEi(ptr, i32) local_unnamed_addr
 
-declare void @_Z13op.minusequalR14NumberIteratori(ptr, i32) local_unnamed_addr
+declare void @_Z13op.minusequalR14NumberIteratorIiEi(ptr, i32) local_unnamed_addr
 
 declare %struct.Pair @_ZN14NumberIteratorIiE6getIdxEv(ptr) local_unnamed_addr
 
@@ -395,9 +395,9 @@ declare ptr @_ZN4PairImRiE8getFirstEv(ptr) local_unnamed_addr
 
 declare ptr @_ZN4PairImRiE9getSecondEv(ptr) local_unnamed_addr
 
-declare void @_Z16op.plusplus.postR14NumberIterator(ptr) local_unnamed_addr
+declare void @_Z16op.plusplus.postR14NumberIteratorIiE(ptr) local_unnamed_addr
 
-declare void @_Z18op.minusminus.postR14NumberIterator(ptr) local_unnamed_addr
+declare void @_Z18op.minusminus.postR14NumberIteratorIiE(ptr) local_unnamed_addr
 
 declare %struct.NumberIterator.1 @_Z5rangell(i64, i64) local_unnamed_addr
 
@@ -407,15 +407,19 @@ declare ptr @_ZN14NumberIteratorIlE3getEv(ptr) local_unnamed_addr
 
 declare void @_ZN14NumberIteratorIlE4nextEv(ptr) local_unnamed_addr
 
-declare void @_Z12op.plusequalR14NumberIteratorl(ptr, i64) local_unnamed_addr
+declare void @_Z12op.plusequalR14NumberIteratorIlEl(ptr, i64) local_unnamed_addr
 
-declare void @_Z13op.minusequalR14NumberIteratorl(ptr, i64) local_unnamed_addr
+declare void @_Z13op.minusequalR14NumberIteratorIlEl(ptr, i64) local_unnamed_addr
 
 declare %struct.Pair.0 @_ZN14NumberIteratorIlE6getIdxEv(ptr) local_unnamed_addr
 
 declare ptr @_ZN4PairImRlE8getFirstEv(ptr) local_unnamed_addr
 
 declare ptr @_ZN4PairImRlE9getSecondEv(ptr) local_unnamed_addr
+
+declare void @_Z16op.plusplus.postR14NumberIteratorIlE(ptr) local_unnamed_addr
+
+declare void @_Z18op.minusminus.postR14NumberIteratorIlE(ptr) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

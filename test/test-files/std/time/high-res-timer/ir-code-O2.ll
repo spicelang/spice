@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%__Timer__long_long_int_longptr = type { i64, i64, i32, ptr }
+%struct.Timer = type { i64, i64, i32, ptr }
 
 @printf.str.0 = private unnamed_addr constant [28 x i8] c"Check for %d +/-%d, got %d\0A\00", align 1
 @anon.string.1 = private unnamed_addr constant [85 x i8] c"Assertion failed: Condition 'isInRange(t.getDuration(), 10l, 3)' evaluated to false.\00", align 1
@@ -13,7 +13,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.1 = private unnamed_addr constant [22 x i8] c"All assertions passed\00", align 1
 
 ; Function Attrs: nofree nounwind
-define private fastcc i1 @_f__void__bool__isInRange__long_long_int(i64 %0, i64 %1, i32 %2) unnamed_addr #0 {
+define private fastcc i1 @_Z9isInRangemmj(i64 %0, i64 %1, i32 %2) unnamed_addr #0 {
 land.exit.L6C12:
   %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %1, i32 %2, i64 %0)
   %4 = zext i32 %2 to i64
@@ -30,11 +30,11 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_a
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #1 {
-  %t = alloca %__Timer__long_long_int_longptr, align 8
+  %t = alloca %struct.Timer, align 8
   %duration = alloca i64, align 8
-  %1 = alloca %__Timer__long_long_int_longptr, align 8
-  call void @_mp__Timer__void__ctor(ptr nonnull %t) #3
-  %2 = call i64 @_mf__Timer__long__getDuration(ptr nonnull %t) #3
+  %1 = alloca %struct.Timer, align 8
+  call void @_ZN5Timer4ctorEv(ptr nonnull %t) #3
+  %2 = call i64 @_ZN5Timer11getDurationEv(ptr nonnull %t) #3
   %3 = icmp eq i64 %2, 0
   br i1 %3, label %assert.exit.L12, label %assert.then.L12, !prof !0
 
@@ -44,11 +44,11 @@ assert.then.L12:                                  ; preds = %0
   unreachable
 
 assert.exit.L12:                                  ; preds = %0
-  call void @_mp__Timer__void__start(ptr nonnull %t) #3
-  call void @_p__void__void__delay__int(i32 10) #3
-  call void @_mp__Timer__void__stop(ptr nonnull %t) #3
-  %5 = call i64 @_mf__Timer__long__getDuration(ptr nonnull %t) #3
-  %6 = call fastcc i1 @_f__void__bool__isInRange__long_long_int(i64 %5, i64 10, i32 3) #3
+  call void @_ZN5Timer5startEv(ptr nonnull %t) #3
+  call void @_Z5delayi(i32 10) #3
+  call void @_ZN5Timer4stopEv(ptr nonnull %t) #3
+  %5 = call i64 @_ZN5Timer11getDurationEv(ptr nonnull %t) #3
+  %6 = call fastcc i1 @_Z9isInRangemmj(i64 %5, i64 10, i32 3) #3
   br i1 %6, label %assert.exit.L16, label %assert.then.L16, !prof !0
 
 assert.then.L16:                                  ; preds = %assert.exit.L12
@@ -58,9 +58,9 @@ assert.then.L16:                                  ; preds = %assert.exit.L12
 
 assert.exit.L16:                                  ; preds = %assert.exit.L12
   store i64 0, ptr %duration, align 8
-  call void @_mp__Timer__void__ctor__int_longptr(ptr nonnull %1, i32 0, ptr nonnull %duration) #3
+  call void @_ZN5Timer4ctorEiPm(ptr nonnull %1, i32 0, ptr nonnull %duration) #3
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %t, ptr noundef nonnull align 8 dereferenceable(32) %1, i64 32, i1 false)
-  %8 = call i64 @_mf__Timer__long__getDuration(ptr nonnull %t) #3
+  %8 = call i64 @_ZN5Timer11getDurationEv(ptr nonnull %t) #3
   %9 = icmp eq i64 %8, 0
   br i1 %9, label %assert.exit.L21, label %assert.then.L21, !prof !0
 
@@ -80,15 +80,15 @@ assert.then.L22:                                  ; preds = %assert.exit.L21
   unreachable
 
 assert.exit.L22:                                  ; preds = %assert.exit.L21
-  call void @_mp__Timer__void__start(ptr nonnull %t) #3
-  call void @_p__void__void__delay__int(i32 10) #3
-  call void @_mp__Timer__void__pause(ptr nonnull %t) #3
-  call void @_p__void__void__delay__int(i32 100) #3
-  call void @_mp__Timer__void__resume(ptr nonnull %t) #3
-  call void @_p__void__void__delay__int(i32 10) #3
-  call void @_mp__Timer__void__stop(ptr nonnull %t) #3
+  call void @_ZN5Timer5startEv(ptr nonnull %t) #3
+  call void @_Z5delayi(i32 10) #3
+  call void @_ZN5Timer5pauseEv(ptr nonnull %t) #3
+  call void @_Z5delayi(i32 100) #3
+  call void @_ZN5Timer6resumeEv(ptr nonnull %t) #3
+  call void @_Z5delayi(i32 10) #3
+  call void @_ZN5Timer4stopEv(ptr nonnull %t) #3
   %14 = load i64, ptr %duration, align 8
-  %15 = call fastcc i1 @_f__void__bool__isInRange__long_long_int(i64 %14, i64 20000, i32 5000) #3
+  %15 = call fastcc i1 @_Z9isInRangemmj(i64 %14, i64 20000, i32 5000) #3
   br i1 %15, label %assert.exit.L30, label %assert.then.L30, !prof !0
 
 assert.then.L30:                                  ; preds = %assert.exit.L22
@@ -101,26 +101,26 @@ assert.exit.L30:                                  ; preds = %assert.exit.L22
   ret i32 0
 }
 
-declare void @_mp__Timer__void__ctor(ptr) local_unnamed_addr
+declare void @_ZN5Timer4ctorEv(ptr) local_unnamed_addr
 
-declare i64 @_mf__Timer__long__getDuration(ptr) local_unnamed_addr
+declare i64 @_ZN5Timer11getDurationEv(ptr) local_unnamed_addr
 
 declare void @exit(i32) local_unnamed_addr
 
-declare void @_mp__Timer__void__start(ptr) local_unnamed_addr
+declare void @_ZN5Timer5startEv(ptr) local_unnamed_addr
 
-declare void @_p__void__void__delay__int(i32) local_unnamed_addr
+declare void @_Z5delayi(i32) local_unnamed_addr
 
-declare void @_mp__Timer__void__stop(ptr) local_unnamed_addr
+declare void @_ZN5Timer4stopEv(ptr) local_unnamed_addr
 
-declare void @_mp__Timer__void__ctor__int_longptr(ptr, i32, ptr) local_unnamed_addr
+declare void @_ZN5Timer4ctorEiPm(ptr, i32, ptr) local_unnamed_addr
 
 ; Function Attrs: mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
 
-declare void @_mp__Timer__void__pause(ptr) local_unnamed_addr
+declare void @_ZN5Timer5pauseEv(ptr) local_unnamed_addr
 
-declare void @_mp__Timer__void__resume(ptr) local_unnamed_addr
+declare void @_ZN5Timer6resumeEv(ptr) local_unnamed_addr
 
 attributes #0 = { nofree nounwind }
 attributes #1 = { noinline nounwind optnone uwtable }

@@ -22,19 +22,19 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   call void @_ZN5StackIdE4ctorEv(ptr nonnull %doubleStack) #2
   store double 4.566000e+00, ptr %1, align 8
   call void @_ZN5StackIdE4pushERKd(ptr nonnull %doubleStack, ptr nonnull %1) #2
-  call void @"_ZN8OptionalI20std/data/stack.StackE4ctorEv"(ptr nonnull %oi) #2
-  %3 = call i1 @"_ZN8OptionalI20std/data/stack.StackE9isPresentEv"(ptr nonnull %oi) #2
+  call void @"_ZN8OptionalI20std/data/stack.StackIdEE4ctorEv"(ptr nonnull %oi) #2
+  %3 = call i1 @"_ZN8OptionalI20std/data/stack.StackIdEE9isPresentEv"(ptr nonnull %oi) #2
   %4 = zext i1 %3 to i32
   %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %4)
-  call void @"_ZN8OptionalI20std/data/stack.StackE3setERK20std/data/stack.Stack"(ptr nonnull %oi, ptr nonnull %doubleStack) #2
-  %6 = call i1 @"_ZN8OptionalI20std/data/stack.StackE9isPresentEv"(ptr nonnull %oi) #2
+  call void @"_ZN8OptionalI20std/data/stack.StackIdEE3setERK20std/data/stack.StackIdE"(ptr nonnull %oi, ptr nonnull %doubleStack) #2
+  %6 = call i1 @"_ZN8OptionalI20std/data/stack.StackIdEE9isPresentEv"(ptr nonnull %oi) #2
   %7 = zext i1 %6 to i32
   %8 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %7)
-  %9 = call ptr @"_ZN8OptionalI20std/data/stack.StackE3getEv"(ptr nonnull %oi) #2
+  %9 = call ptr @"_ZN8OptionalI20std/data/stack.StackIdEE3getEv"(ptr nonnull %oi) #2
   %10 = call i64 @_ZN5StackIdE7getSizeEv(ptr %9) #2
   %11 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i64 %10)
-  call void @"_ZN8OptionalI20std/data/stack.StackE5clearEv"(ptr nonnull %oi) #2
-  %12 = call i1 @"_ZN8OptionalI20std/data/stack.StackE9isPresentEv"(ptr nonnull %oi) #2
+  call void @"_ZN8OptionalI20std/data/stack.StackIdEE5clearEv"(ptr nonnull %oi) #2
+  %12 = call i1 @"_ZN8OptionalI20std/data/stack.StackIdEE9isPresentEv"(ptr nonnull %oi) #2
   %13 = zext i1 %12 to i32
   %14 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %13)
   call void @_ZN6String4ctorEPc(ptr nonnull %2, ptr nonnull @anon.string.0) #2
@@ -57,20 +57,20 @@ declare void @_ZN5StackIdE4ctorEv(ptr) local_unnamed_addr
 
 declare void @_ZN5StackIdE4pushERKd(ptr, ptr) local_unnamed_addr
 
-declare void @"_ZN8OptionalI20std/data/stack.StackE4ctorEv"(ptr) local_unnamed_addr
+declare void @"_ZN8OptionalI20std/data/stack.StackIdEE4ctorEv"(ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
-declare i1 @"_ZN8OptionalI20std/data/stack.StackE9isPresentEv"(ptr) local_unnamed_addr
+declare i1 @"_ZN8OptionalI20std/data/stack.StackIdEE9isPresentEv"(ptr) local_unnamed_addr
 
-declare void @"_ZN8OptionalI20std/data/stack.StackE3setERK20std/data/stack.Stack"(ptr, ptr) local_unnamed_addr
+declare void @"_ZN8OptionalI20std/data/stack.StackIdEE3setERK20std/data/stack.StackIdE"(ptr, ptr) local_unnamed_addr
 
-declare ptr @"_ZN8OptionalI20std/data/stack.StackE3getEv"(ptr) local_unnamed_addr
+declare ptr @"_ZN8OptionalI20std/data/stack.StackIdEE3getEv"(ptr) local_unnamed_addr
 
 declare i64 @_ZN5StackIdE7getSizeEv(ptr) local_unnamed_addr
 
-declare void @"_ZN8OptionalI20std/data/stack.StackE5clearEv"(ptr) local_unnamed_addr
+declare void @"_ZN8OptionalI20std/data/stack.StackIdEE5clearEv"(ptr) local_unnamed_addr
 
 declare void @_ZN6String4ctorEPc(ptr, ptr) local_unnamed_addr
 

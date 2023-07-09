@@ -81,7 +81,7 @@ assert.then.L9:                                   ; preds = %2
   unreachable, !dbg !40
 
 assert.exit.L9:                                   ; preds = %2
-  %16 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.Vector"(ptr %vi), !dbg !42
+  %16 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr %vi), !dbg !42
   store %struct.VectorIterator %16, ptr %it, align 8, !dbg !42
   call void @llvm.dbg.declare(metadata ptr %it, metadata !43, metadata !DIExpression()), !dbg !42
   store %struct.VectorIterator %16, ptr %it, align 8, !dbg !42
@@ -189,7 +189,7 @@ assert.then.L29:                                  ; preds = %assert.exit.L24
   unreachable, !dbg !78
 
 assert.exit.L29:                                  ; preds = %assert.exit.L24
-  call void @_Z13op.minusequalR14VectorIteratori(ptr %it, i32 3), !dbg !79
+  call void @_Z13op.minusequalR14VectorIteratorIiEi(ptr %it, i32 3), !dbg !79
   %47 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %it), !dbg !80
   %48 = load i32, ptr %47, align 4, !dbg !81
   %49 = icmp eq i32 %48, 123, !dbg !81
@@ -211,7 +211,7 @@ assert.then.L34:                                  ; preds = %assert.exit.L33
 
 assert.exit.L34:                                  ; preds = %assert.exit.L33
   %53 = load %struct.VectorIterator, ptr %it, align 8, !dbg !83
-  call void @_Z16op.plusplus.postR14VectorIterator(ptr %it), !dbg !83
+  call void @_Z16op.plusplus.postR14VectorIteratorIiE(ptr %it), !dbg !83
   %54 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %it), !dbg !84
   %55 = load i32, ptr %54, align 4, !dbg !85
   %56 = icmp eq i32 %55, 4321, !dbg !85
@@ -224,7 +224,7 @@ assert.then.L36:                                  ; preds = %assert.exit.L34
 
 assert.exit.L36:                                  ; preds = %assert.exit.L34
   %58 = load %struct.VectorIterator, ptr %it, align 8, !dbg !86
-  call void @_Z18op.minusminus.postR14VectorIterator(ptr %it), !dbg !86
+  call void @_Z18op.minusminus.postR14VectorIteratorIiE(ptr %it), !dbg !86
   %59 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %it), !dbg !87
   %60 = load i32, ptr %59, align 4, !dbg !88
   %61 = icmp eq i32 %60, 123, !dbg !88
@@ -236,7 +236,7 @@ assert.then.L38:                                  ; preds = %assert.exit.L36
   unreachable, !dbg !88
 
 assert.exit.L38:                                  ; preds = %assert.exit.L36
-  call void @_Z12op.plusequalR14VectorIteratori(ptr %it, i32 4), !dbg !89
+  call void @_Z12op.plusequalR14VectorIteratorIiEi(ptr %it, i32 4), !dbg !89
   %63 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %it), !dbg !90
   %64 = load i32, ptr %63, align 4, !dbg !91
   %65 = icmp eq i32 %64, -99, !dbg !91
@@ -260,7 +260,7 @@ assert.then.L42:                                  ; preds = %assert.exit.L40
   unreachable, !dbg !93
 
 assert.exit.L42:                                  ; preds = %assert.exit.L40
-  %70 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.Vector"(ptr %vi), !dbg !94
+  %70 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr %vi), !dbg !94
   call void @llvm.dbg.declare(metadata ptr %item, metadata !95, metadata !DIExpression()), !dbg !96
   store %struct.VectorIterator %70, ptr %10, align 8, !dbg !94
   br label %foreach.head.L45, !dbg !96
@@ -316,7 +316,7 @@ assert.then.L50:                                  ; preds = %assert.exit.L49
   unreachable, !dbg !103
 
 assert.exit.L50:                                  ; preds = %assert.exit.L49
-  %88 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.Vector"(ptr %vi), !dbg !104
+  %88 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr %vi), !dbg !104
   call void @llvm.dbg.declare(metadata ptr %item1, metadata !105, metadata !DIExpression()), !dbg !106
   store %struct.VectorIterator %88, ptr %11, align 8, !dbg !104
   br label %foreach.head.L53, !dbg !106
@@ -372,7 +372,7 @@ assert.then.L58:                                  ; preds = %assert.exit.L57
   unreachable, !dbg !113
 
 assert.exit.L58:                                  ; preds = %assert.exit.L57
-  %106 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.Vector"(ptr %vi), !dbg !114
+  %106 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr %vi), !dbg !114
   store %struct.VectorIterator %106, ptr %12, align 8, !dbg !114
   call void @llvm.dbg.declare(metadata ptr %idx, metadata !115, metadata !DIExpression()), !dbg !117
   call void @llvm.dbg.declare(metadata ptr %item2, metadata !118, metadata !DIExpression()), !dbg !119
@@ -457,7 +457,7 @@ declare i32 @printf(ptr noundef, ...)
 
 declare void @exit(i32)
 
-declare %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.Vector"(ptr)
+declare %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr)
 
 declare i1 @_ZN14VectorIteratorIiE7isValidEv(ptr)
 
@@ -471,13 +471,13 @@ declare ptr @_ZN4PairImRiE8getFirstEv(ptr)
 
 declare ptr @_ZN4PairImRiE9getSecondEv(ptr)
 
-declare void @_Z13op.minusequalR14VectorIteratori(ptr, i32)
+declare void @_Z13op.minusequalR14VectorIteratorIiEi(ptr, i32)
 
-declare void @_Z16op.plusplus.postR14VectorIterator(ptr)
+declare void @_Z16op.plusplus.postR14VectorIteratorIiE(ptr)
 
-declare void @_Z18op.minusminus.postR14VectorIterator(ptr)
+declare void @_Z18op.minusminus.postR14VectorIteratorIiE(ptr)
 
-declare void @_Z12op.plusequalR14VectorIteratori(ptr, i32)
+declare void @_Z12op.plusequalR14VectorIteratorIiEi(ptr, i32)
 
 declare ptr @_ZN6VectorIiE3getEj(ptr, i32)
 

@@ -24,7 +24,6 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   if (!spiceFunc.mangleFunctionName)
     return spiceFunc.name;
 
-  // Mangle the function name
   bool needsEndMarker = false;
   std::stringstream mangledName;
   mangledName << "_Z";
@@ -34,15 +33,6 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
     mangledName << "N";
     mangleType(mangledName, spiceFunc.thisType);
     needsEndMarker = true;
-
-    // This type template types
-    const std::vector<SymbolType> &thisTemplateTypes = spiceFunc.thisType.getTemplateTypes();
-    if (!thisTemplateTypes.empty()) {
-      mangledName << "I";
-      for (const SymbolType &templateType : thisTemplateTypes)
-        mangleType(mangledName, templateType);
-      mangledName << "E";
-    }
   }
 
   // Function name
@@ -51,14 +41,22 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   // Template types
   if (!spiceFunc.templateTypes.empty()) {
     mangledName << "I";
-    for (const GenericType &genericTemplateType : spiceFunc.templateTypes)
-      mangleType(mangledName, genericTemplateType);
-    needsEndMarker = true;
-  }
-
-  // Append end marker if required
-  if (needsEndMarker)
+    // Template types themselves
+    for (const GenericType &genericTemplateType : spiceFunc.templateTypes) {
+      assert(spiceFunc.typeMapping.contains(genericTemplateType.getSubType()));
+      const SymbolType &actualType = spiceFunc.typeMapping.at(genericTemplateType.getSubType());
+      mangleType(mangledName, actualType);
+    }
     mangledName << "E";
+
+    // Return type
+    if (spiceFunc.isFunction())
+      mangleType(mangledName, spiceFunc.returnType);
+    else
+      mangledName << "v";
+  } else if (needsEndMarker) {
+    mangledName << "E";
+  }
 
   // Parameter types
   for (const Param &param : spiceFunc.paramList) {
@@ -103,7 +101,7 @@ std::string NameMangling::mangleType(const SymbolType &type) {
  */
 void NameMangling::mangleType(std::stringstream &out, const SymbolType &type) {
   // Unwrap type chain
-  assert(type.typeChain.size() >= 1);
+  assert(!type.typeChain.empty());
   for (size_t i = type.typeChain.size() - 1; i >= 1; i--)
     mangleTypeChainElement(out, type.typeChain.at(i), false);
 
@@ -171,9 +169,9 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     CommonUtil::replaceAll(fqName, "::", ".");
     out << fqName.length() << fqName; // <length><name>
     if (!chainElement.templateTypes.empty()) {
-      out << "IT_";
-      for (size_t i = 1; i < chainElement.templateTypes.size(); i++)
-        out << "T" << i << "_";
+      out << "I";
+      for (const SymbolType &templateType : chainElement.templateTypes)
+        mangleType(out, templateType);
       out << "E";
     }
     break;
