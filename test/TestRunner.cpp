@@ -53,9 +53,9 @@ void execTestCase(const TestCase &testCase) {
                            /* dumpSymbolTables= */ false,
                            /* disableAstOpt= */ false,
                            /* optLevel= */ O0,
-                           /* useLTO= */ false,
+                           /* useLTO= */ FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_LTO),
                            /* noEntryFct= */ false,
-                           /* generateDebugInfo= */ false,
+                           /* debugInfo= */ FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_DEBUG_INFO),
                            /* disableVerifier= */ false,
                            /* testMode= */ true};
 
@@ -106,7 +106,6 @@ void execTestCase(const TestCase &testCase) {
       dependency.second.first->runBackEnd();
 
     // Execute IR generator in normal or debug mode
-    cliOptions.generateDebugInfo = FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_DEBUG_INFO);
     mainSourceFile->runIRGenerator();
 
     // Check unoptimized IR code

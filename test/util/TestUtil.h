@@ -42,6 +42,7 @@ const char *const REF_NAME_EXIT_CODE = "exit-code.out";
 const char *const CTL_SKIP_DISABLED = "disabled";
 const char *const CTL_SKIP_GH = "skip-gh-actions";
 const char *const CTL_DEBUG_INFO = "with-debug-info";
+const char *const CTL_LTO = "with-lto";
 
 struct TestCase {
   const std::string testSuite;

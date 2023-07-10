@@ -1,0 +1,3 @@
+public f<int> functionInModuleB(int x, int y) {
+  return x + y;
+}
