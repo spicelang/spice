@@ -1,0 +1,4 @@
+f<int> main() {
+    const int i = 123;
+    i = 1234;
+}

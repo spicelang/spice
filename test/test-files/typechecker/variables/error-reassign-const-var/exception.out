@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/variables/error-reassign-const-var/source.spice:3:5:
+Cannot re-assign constant variable: Trying to assign value to a constant
+
+3  i = 1234;
+     ^
