@@ -11,6 +11,6 @@ std::string ASTVisualizer::getSpaces() const {
   for (int i = 0; i < currentTabs; i++)
     spaces += " ";
   return spaces;
-}
+} // GCOVR_EXCL_LINE (false positive)
 
 } // namespace spice::compiler

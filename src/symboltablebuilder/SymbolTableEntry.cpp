@@ -40,8 +40,8 @@ void SymbolTableEntry::updateType(const SymbolType &newType, bool overwriteExist
 void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node, bool force) {
   const LifecycleState oldState = lifecycle.getCurrentState();
   // Check if this is a constant variable and is already initialized
-  if (newState != DEAD && oldState != DECLARED && type.isConst() && !force)
-    throw SemanticError(node, REASSIGN_CONST_VARIABLE, "Not re-assignable variable '" + name + "'");
+  if (newState != DEAD && oldState != DECLARED && type.isConst() && !force)                       // GCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Not re-assignable variable '" + name + "'");             // GCOV_EXCL_LINE
   if (newState == DEAD && oldState == DECLARED)                                                   // GCOV_EXCL_LINE
     throw CompilerError(INTERNAL_ERROR, "Cannot destruct uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
   if (newState == DEAD && oldState == DEAD)                                                       // GCOV_EXCL_LINE
