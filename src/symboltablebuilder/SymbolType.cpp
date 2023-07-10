@@ -21,9 +21,9 @@ namespace spice::compiler {
  */
 SymbolType SymbolType::toPointer(const ASTNode *node) const {
   // Do not allow pointers of dyn
-  if (typeChain.back().superType == TY_DYN)
+  if (is(TY_DYN))
     throw SemanticError(node, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
-  if (typeChain.back().superType == TY_REF)
+  if (is(TY_REF))
     throw SemanticError(node, REF_POINTERS_ARE_NOT_ALLOWED, "Pointers to references are not allowed. Use pointer instead");
 
   TypeChain newTypeChain = typeChain;
@@ -39,10 +39,10 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
  */
 SymbolType SymbolType::toReference(const ASTNode *node) const {
   // Do not allow references of dyn
-  if (typeChain.back().superType == TY_DYN)
+  if (is(TY_DYN))
     throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
   // Do not allow references of references
-  if (typeChain.back().superType == TY_REF)
+  if (is(TY_REF))
     return *this;
 
   TypeChain newTypeChain = typeChain;
@@ -191,7 +191,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
     return static_cast<llvm::Type *>(arrayType);
   }
 
-  throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true));
+  throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true)); // GCOVR_EXCL_LINE
 }
 
 /**
@@ -219,12 +219,10 @@ bool SymbolType::implements(const SymbolType &symbolType, const spice::compiler:
   assert(is(TY_STRUCT) && symbolType.is(TY_INTERFACE));
   Struct *spiceStruct = getStruct(node);
   assert(spiceStruct != nullptr);
-  for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
+  return std::ranges::any_of(spiceStruct->interfaceTypes, [&](const SymbolType &interfaceType) {
     assert(interfaceType.is(TY_INTERFACE));
-    if (symbolType.matches(interfaceType, false, false, true))
-      return true;
-  }
-  return false;
+    return symbolType.matches(interfaceType, false, false, true);
+  });
 }
 
 /**
@@ -326,78 +324,6 @@ std::string SymbolType::getName(bool withSize) const { // NOLINT(misc-no-recursi
     name << chainElement.getName(withSize);
 
   return name.str();
-}
-
-/**
- * Get the size of the current type
- *
- * Special cases:
- * - 0: Array size was not defined
- *
- * @return Size
- */
-size_t SymbolType::getArraySize() const {
-  assert(getSuperType() == TY_ARRAY);
-  return typeChain.back().data.arraySize;
-}
-
-/**
- * Check if the current type is const.
- * Only base types can be const. Pointer and references are always non-const
- */
-bool SymbolType::isConst() const { return typeChain.size() == 1 && specifiers.isConst(); }
-
-/**
- * Check if the current type is signed
- */
-bool SymbolType::isSigned() const {
-  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
-  return specifiers.isSigned();
-}
-
-/**
- * Check if the current type is inline
- */
-bool SymbolType::isInline() const {
-  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  return specifiers.isInline();
-}
-
-/**
- * Check if the current type is public
- */
-bool SymbolType::isPublic() const {
-  assert(isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
-  return specifiers.isPublic();
-}
-
-/**
- * Check if the current type is heap
- */
-bool SymbolType::isHeap() const {
-  assert(isPrimitive() /* Local variables */ || is(TY_STRUCT));
-  return specifiers.isHeap();
-}
-
-/**
- * Set the body scope of the current type
- * Available for structs and interfaces
- *
- * @param bodyScope Body scope
- */
-void SymbolType::setBodyScope(Scope *bodyScope) {
-  assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
-  typeChain.back().data.bodyScope = bodyScope;
-}
-
-/**
- * Return the body scope of the current type
- *
- * @return Body scope
- */
-Scope *SymbolType::getBodyScope() const {
-  assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
-  return typeChain.back().data.bodyScope;
 }
 
 /**
@@ -519,89 +445,6 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
     return true;
 
   return specifiers.match(otherType.specifiers, allowConstify);
-}
-
-/**
- * Return the type name as string
- *
- * @param withSize Also encode array sizes
- * @return Name as string
- */
-std::string SymbolType::TypeChainElement::getName(bool withSize) const {
-  switch (superType) {
-  case TY_PTR:
-    return "*";
-  case TY_REF:
-    return "&";
-  case TY_ARRAY:
-    return withSize && data.arraySize != ARRAY_SIZE_UNKNOWN ? "[" + std::to_string(data.arraySize) + "]" : "";
-  case TY_DOUBLE:
-    return "double";
-  case TY_INT:
-    return "int";
-  case TY_SHORT:
-    return "short";
-  case TY_LONG:
-    return "long";
-  case TY_BYTE:
-    return "byte";
-  case TY_CHAR:
-    return "char";
-  case TY_STRING:
-    return "string";
-  case TY_BOOL:
-    return "bool";
-  case TY_STRUCT: {
-    std::string templateStr;
-    if (!templateTypes.empty()) {
-      for (const auto &templateType : templateTypes) {
-        if (!templateStr.empty())
-          templateStr += ",";
-        templateStr += templateType.getName();
-      }
-      templateStr = "<" + templateStr + ">";
-    }
-    return subType + templateStr;
-  }
-  case TY_INTERFACE:
-    return "interface(" + subType + ")";
-  case TY_ENUM:
-    return "enum";
-  case TY_GENERIC:
-    return "generic(" + subType + ")";
-  case TY_ALIAS:
-    return "alias(" + subType + ")";
-  case TY_DYN:
-    return "dyn";
-  case TY_FUNCTION: {
-    std::stringstream functionName;
-    functionName << "f<" << paramTypes.front().getName(true) << ">(";
-    for (size_t i = 1; i < paramTypes.size(); i++) {
-      if (i > 1)
-        functionName << ",";
-      functionName << paramTypes.at(i).getName(true);
-    }
-    functionName << ")";
-    return functionName.str();
-  }
-  case TY_PROCEDURE: {
-    std::stringstream procedureName;
-    procedureName << "p(";
-    for (size_t i = 1; i < paramTypes.size(); i++) {
-      if (i > 1)
-        procedureName << ",";
-      procedureName << paramTypes.at(i).getName(true);
-    }
-    procedureName << ")";
-    return procedureName.str();
-  }
-  case TY_IMPORT:
-    return "import";
-  case TY_INVALID:    // GCOV_EXCL_LINE
-    return "invalid"; // GCOV_EXCL_LINE
-  default:
-    throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element");
-  }
 }
 
 } // namespace spice::compiler

@@ -63,7 +63,8 @@ int main(int argc, char **argv) {
   CLIInterface cli;
   cli.createInterface();
   try {
-    cli.parse(argc, argv);
+    if (const int exitCode = cli.parse(argc, argv); exitCode != EXIT_SUCCESS)
+      return exitCode;
 
     // Cancel here if we do not have to compile
     if (!cli.shouldCompile)

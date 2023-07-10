@@ -43,6 +43,7 @@ option(SPICE_RUN_COVERAGE "Generate coverage reports for Spice source files" OFF
 if (SPICE_RUN_COVERAGE)
     message(STATUS "Spice: Coverage reports enabled.")
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 --coverage -fprofile-arcs -ftest-coverage")
+    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -g -O0 --coverage -fprofile-arcs -ftest-coverage")
 else()
     message(STATUS "Spice: Coverage reports disabled.")
 endif()

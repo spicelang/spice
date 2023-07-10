@@ -22,7 +22,10 @@ llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
 }
 
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
-  return getFunction("_Z10isRawEqualPcPc", builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
+  const ParamList paramLst = {{SymbolType(TY_STRING), false}, {SymbolType(TY_STRING), false}};
+  const Function function("isRawEqual", nullptr, SymbolType(TY_DYN), SymbolType(TY_BOOL), paramLst, {}, nullptr, false);
+  const std::string mangledName = NameMangling::mangleFunction(function);
+  return getFunction(mangledName.c_str(), builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *spiceFunc) const {
