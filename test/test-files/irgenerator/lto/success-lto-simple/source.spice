@@ -1,0 +1,6 @@
+import "source1";
+
+f<int> main() {
+  assert(functionInModuleB(1, 2) == 3);
+  printf("All assertions passed!");
+}
