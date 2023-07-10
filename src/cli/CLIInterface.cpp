@@ -52,7 +52,8 @@ void CLIInterface::createInterface() {
     if (cliOptions.outputPath.empty())
       cliOptions.outputPath = ".";
     if (cliOptions.outputPath == "." || cliOptions.outputPath == "..") {
-      cliOptions.outputPath = FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
+      cliOptions.outputPath += FileUtil::DIR_SEPARATOR;
+      cliOptions.outputPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
       if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
         cliOptions.outputPath += ".wasm";
       } else {
@@ -285,10 +286,10 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
 int CLIInterface::parse(int argc, char **argv) {
   try {
     app.parse(argc, argv);
+    return EXIT_SUCCESS;
   } catch (const CLI::ParseError &parseError) {
     return app.exit(parseError);
   }
-  return 0;
 }
 
 } // namespace spice::compiler

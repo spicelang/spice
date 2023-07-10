@@ -151,14 +151,35 @@ public:
   [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const;
   [[nodiscard]] std::string getName(bool withSize = false) const;
-  [[nodiscard]] size_t getArraySize() const;
-  [[nodiscard]] bool isConst() const;
-  [[nodiscard]] bool isSigned() const;
-  [[nodiscard]] bool isInline() const;
-  [[nodiscard]] bool isPublic() const;
-  [[nodiscard]] bool isHeap() const;
-  void setBodyScope(Scope *bodyScope);
-  [[nodiscard]] Scope *getBodyScope() const;
+  [[nodiscard]] inline size_t getArraySize() const {
+    assert(getSuperType() == TY_ARRAY);
+    return typeChain.back().data.arraySize;
+  }
+  [[nodiscard]] inline bool isConst() const { return typeChain.size() == 1 && specifiers.isConst(); }
+  [[nodiscard]] inline bool isSigned() const {
+    assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
+    return specifiers.isSigned();
+  }
+  [[nodiscard]] inline bool isInline() const {
+    assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+    return specifiers.isInline();
+  }
+  [[nodiscard]] inline bool isPublic() const {
+    assert(isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
+    return specifiers.isPublic();
+  }
+  [[nodiscard]] inline bool isHeap() const {
+    assert(isPrimitive() /* Local variables */ || is(TY_STRUCT));
+    return specifiers.isHeap();
+  }
+  inline void setBodyScope(Scope *bodyScope) {
+    assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
+    typeChain.back().data.bodyScope = bodyScope;
+  }
+  [[nodiscard]] inline Scope *getBodyScope() const {
+    assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
+    return typeChain.back().data.bodyScope;
+  }
   void setFunctionReturnType(const SymbolType &returnType);
   [[nodiscard]] const SymbolType &getFunctionReturnType() const;
   void setFunctionParamTypes(const std::vector<SymbolType> &paramTypes);
