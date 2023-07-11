@@ -971,9 +971,15 @@ LLVMExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, LL
                                                          size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, opIdx))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -1011,9 +1017,15 @@ LLVMExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, L
                                                           size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, opIdx))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, opIdx);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):

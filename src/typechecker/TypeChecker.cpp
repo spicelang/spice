@@ -882,15 +882,16 @@ std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
   SymbolType lhsTy = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
 
   // Check operator
-  SymbolType resultType;
+  ExprResult currentResult;
   if (node->op == ShiftExprNode::OP_SHIFT_LEFT) // Operator was shl
-    resultType = OpRuleManager::getShiftLeftResultType(node, lhsTy, rhsTy, 0);
+    currentResult = opRuleManager.getShiftLeftResultType(node, lhsTy, rhsTy, 0);
   else if (node->op == ShiftExprNode::OP_SHIFT_RIGHT) // Operator was shr
-    resultType = OpRuleManager::getShiftRightResultType(node, lhsTy, rhsTy, 0);
+    currentResult = opRuleManager.getShiftRightResultType(node, lhsTy, rhsTy, 0);
   else
     throw CompilerError(UNHANDLED_BRANCH, "ShiftExpr fall-through"); // GCOV_EXCL_LINE
 
-  return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx)};
+  node->setEvaluatedSymbolType(currentResult.type, manIdx);
+  return currentResult;
 }
 
 std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {

@@ -342,20 +342,30 @@ SymbolType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, SymbolT
   return validateBinaryOperation(node, GREATER_EQUAL_OP_RULES, ARRAY_LENGTH(GREATER_EQUAL_OP_RULES), ">=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getShiftLeftResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+  // Check is there is an overloaded operator function available
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SHL, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType;
+
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, SHIFT_LEFT_OP_RULES, ARRAY_LENGTH(SHIFT_LEFT_OP_RULES), "<<", lhs, rhs);
+  return ExprResult(validateBinaryOperation(node, SHIFT_LEFT_OP_RULES, ARRAY_LENGTH(SHIFT_LEFT_OP_RULES), "<<", lhs, rhs));
 }
 
-SymbolType OpRuleManager::getShiftRightResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+  // Check is there is an overloaded operator function available
+  ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_SHR, {lhs, rhs}, opIdx);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType;
+
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, SHIFT_RIGHT_OP_RULES, ARRAY_LENGTH(SHIFT_RIGHT_OP_RULES), ">>", lhs, rhs);
+  return ExprResult(validateBinaryOperation(node, SHIFT_RIGHT_OP_RULES, ARRAY_LENGTH(SHIFT_RIGHT_OP_RULES), ">>", lhs, rhs));
 }
 
 ExprResult OpRuleManager::getPlusResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {

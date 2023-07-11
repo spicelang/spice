@@ -2053,17 +2053,23 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
   } else if (ctx->NOT_EQUAL()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_NOT_EQUAL;
     fctNameNode->name = OP_FCT_NOT_EQUAL;
+  } else if (ctx->LESS().size() == 2) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_SHL;
+    fctNameNode->name = OP_FCT_SHL;
+  } else if (ctx->GREATER().size() == 2) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_SHR;
+    fctNameNode->name = OP_FCT_SHR;
   } else if (ctx->PLUS_EQUAL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_NOT_EQUAL;
+    fctNameNode->overloadedOperator = FctNameNode::OP_PLUS_EQUAL;
     fctNameNode->name = OP_FCT_PLUS_EQUAL;
   } else if (ctx->MINUS_EQUAL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_NOT_EQUAL;
+    fctNameNode->overloadedOperator = FctNameNode::OP_MINUS_EQUAL;
     fctNameNode->name = OP_FCT_MINUS_EQUAL;
   } else if (ctx->MUL_EQUAL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_NOT_EQUAL;
+    fctNameNode->overloadedOperator = FctNameNode::OP_MUL_EQUAL;
     fctNameNode->name = OP_FCT_MUL_EQUAL;
   } else if (ctx->DIV_EQUAL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_NOT_EQUAL;
+    fctNameNode->overloadedOperator = FctNameNode::OP_DIV_EQUAL;
     fctNameNode->name = OP_FCT_DIV_EQUAL;
   } else if (ctx->PLUS_PLUS()) {
     fctNameNode->overloadedOperator = FctNameNode::OP_PLUS_PLUS;

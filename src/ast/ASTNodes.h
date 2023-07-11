@@ -252,6 +252,8 @@ public:
     OP_DIV,
     OP_EQUAL,
     OP_NOT_EQUAL,
+    OP_SHL,
+    OP_SHR,
     OP_PLUS_EQUAL,
     OP_MINUS_EQUAL,
     OP_MUL_EQUAL,
