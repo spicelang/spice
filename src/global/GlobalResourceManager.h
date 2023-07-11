@@ -13,6 +13,7 @@
 #include <llvm/Target/TargetMachine.h>
 
 #include "../../lib/thread-pool/thread-pool.hpp"
+#include "util/CodeLoc.h"
 
 namespace spice::compiler {
 
@@ -31,6 +32,12 @@ const char *const LTO_FILE_NAME = "lto-module";
  */
 class GlobalResourceManager {
 public:
+  // Structs
+  struct SoftError {
+    const CodeLoc codeLoc;
+    const std::string message;
+  };
+
   // Constructors
   explicit GlobalResourceManager(const CliOptions &cliOptions);
   GlobalResourceManager(const GlobalResourceManager &) = delete;
@@ -53,6 +60,7 @@ public:
   BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
   BS::synced_stream tout;
   std::mutex objectEmitLock;
+  std::vector<SoftError> softErrors;
 };
 
 } // namespace spice::compiler

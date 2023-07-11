@@ -2125,4 +2125,15 @@ std::vector<const Function *> &TypeChecker::getOpFctPointers(ASTNode *node) cons
  */
 bool TypeChecker::isStringRT() const { return rootScope->lookupStrict(STROBJ_NAME) != nullptr; }
 
+/**
+ * Collect soft error to print later then terminating
+ *
+ * @param node Issuer AST node
+ * @param type Error type
+ * @param message Error message
+ */
+void TypeChecker::softError(const ASTNode *node, SemanticErrorType type, const std::string &message) const {
+  resourceManager.softErrors.emplace_back(node->codeLoc, );
+}
+
 } // namespace spice::compiler

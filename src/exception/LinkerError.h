@@ -2,11 +2,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace spice::compiler {
 
-enum LinkerErrorType {
+enum LinkerErrorType : uint8_t {
   LINKER_NOT_FOUND,
   LINKER_ERROR,
 };
@@ -21,12 +22,10 @@ public:
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;
-
-private:
-  // Members
-  std::string errorMessage;
-
   [[nodiscard]] static std::string getMessagePrefix(LinkerErrorType errorType);
+
+  // Public members
+  std::string errorMessage;
 };
 
 } // namespace spice::compiler

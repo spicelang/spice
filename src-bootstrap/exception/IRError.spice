@@ -4,7 +4,7 @@ import "../util/CodeLoc" as cl;
 public type IRErrorType enum {
     TARGET_NOT_AVAILABLE,
     CANT_OPEN_OUTPUT_FILE,
-    WRONG_TYPE,
+    WRONG_OUTPUT_TYPE,
     BRANCH_NOT_FOUND,
     REFERENCED_UNDEFINED_FUNCTION_IR,
     PRINTF_NULL_TYPE,
@@ -45,7 +45,7 @@ public p IRError.ctor(const IRErrorType errorType, const string message) {
 f<string> IRError.getMessagePrefix(const IRErrorType errorType) {
     if errorType == LinkerErrorType.TARGET_NOT_AVAILABLE { return "Selected target not available"; }
     if errorType == LinkerErrorType.CANT_OPEN_OUTPUT_FILE { return "Could not open output file"; }
-    if errorType == LinkerErrorType.WRONG_TYPE { return "Wrong type of output file"; }
+    if errorType == LinkerErrorType.WRONG_OUTPUT_TYPE { return "Wrong type of output file"; }
     if errorType == LinkerErrorType.BRANCH_NOT_FOUND { return "Branch not found"; }
     if errorType == LinkerErrorType.REFERENCED_UNDEFINED_FUNCTION_IR { return "Referenced undefined function"; }
     if errorType == LinkerErrorType.PRINTF_NULL_TYPE { return "Printf has null type"; }

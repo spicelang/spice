@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <exception>
 #include <string>
 #include <utility>
@@ -11,7 +12,7 @@ namespace spice::compiler {
 // Forward declarations
 struct CodeLoc;
 
-enum LexerErrorType { TOKENIZING_FAILED };
+enum LexerErrorType : uint8_t { TOKENIZING_FAILED };
 
 /**
  * Custom exception for errors, occurring while lexing
@@ -23,13 +24,10 @@ public:
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;
-
-private:
-  // Members
-  std::string errorMessage;
-
-  // Private methods
   [[nodiscard]] static std::string getMessagePrefix(LexerErrorType errorType);
+
+  // Public members
+  std::string errorMessage;
 };
 
 } // namespace spice::compiler

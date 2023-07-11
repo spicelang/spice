@@ -124,8 +124,6 @@ set(SOURCES
         exception/CliError.h
         exception/SemanticError.cpp
         exception/SemanticError.h
-        exception/IRError.cpp
-        exception/IRError.h
         exception/LinkerError.cpp
         exception/LinkerError.h
         exception/LexerError.cpp
@@ -149,7 +147,7 @@ set(SOURCES
         util/RawStringOStream.h
 )
 
-add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS} exception/ErrorManager.cpp exception/ErrorManager.h)
 
 # Include Antlr components
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)

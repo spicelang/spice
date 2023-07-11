@@ -9,7 +9,21 @@
 
 namespace spice::compiler {
 
-enum CompilerErrorType { INTERNAL_ERROR, IO_ERROR, UNHANDLED_BRANCH, SOURCE_FILE_NOT_FOUND, TYPE_CHECKER_RUNS_EXCEEDED };
+enum CompilerErrorType : uint8_t {
+  SOURCE_FILE_NOT_FOUND,
+  CANT_OPEN_OUTPUT_FILE,
+  WRONG_OUTPUT_TYPE,
+  INTERNAL_ERROR,
+  IO_ERROR,
+  UNHANDLED_BRANCH,
+  TYPE_CHECKER_RUNS_EXCEEDED,
+  TARGET_NOT_AVAILABLE,
+  BRANCH_NOT_FOUND,
+  REFERENCED_UNDEFINED_FUNCTION_IR,
+  PRINTF_NULL_TYPE,
+  INVALID_FUNCTION,
+  INVALID_MODULE
+};
 
 /**
  * Custom exception for errors, occurring in the general context of the compiler
@@ -21,13 +35,10 @@ public:
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;
-
-private:
-  // Members
-  std::string errorMessage;
-
-  // Private methods
   [[nodiscard]] static std::string getMessagePrefix(CompilerErrorType errorType);
+
+  // Public members
+  std::string errorMessage;
 };
 
 } // namespace spice::compiler
