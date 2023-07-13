@@ -305,6 +305,14 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   timer.stop();
   printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost, false, typeCheckerRuns);
 
+  // Check if there are any soft errors and if so, print them
+  if (!resourceManager.errorManager.softErrors.empty()) {
+    std::cout << "\nThe following errors occurred:\n\n";
+    for (const ErrorManager::SoftError &error : resourceManager.errorManager.softErrors)
+      std::cout << error.message << "\n\n";
+    throw CompilerError(UNRESOLVED_SOFT_ERRORS, "There are unresolved errors. Please fix them and recompile.");
+  }
+
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = globalScope->getSymbolTableJSON().dump(/*indent=*/2);
 
@@ -738,7 +746,7 @@ void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType 
     outputStr << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
     outputStr << " (" << std::to_string(stageRuntime) << " ms";
     if (stageRuns > 0)
-      outputStr << "; " << std::to_string(stageRuns) << " runs";
+      outputStr << "; " << std::to_string(stageRuns) << " run(s)";
     outputStr << ")\n";
     // Print
     if (fromThread) {

@@ -2,10 +2,17 @@
 
 #include "CompilerError.h"
 
+#include <util/CodeLoc.h>
+
 namespace spice::compiler {
 
 CompilerError::CompilerError(const CompilerErrorType &type, const std::string &message) {
   errorMessage = "[Error|Compiler]:\n";
+  errorMessage += getMessagePrefix(type) + ": " + message;
+}
+
+CompilerError::CompilerError(const CodeLoc &codeLoc, const spice::compiler::CompilerErrorType &type, const std::string &message) {
+  errorMessage = "[Error|Compiler] " + codeLoc.toPrettyString() + ":\n";
   errorMessage += getMessagePrefix(type) + ": " + message;
 }
 
@@ -24,6 +31,8 @@ const char *CompilerError::what() const noexcept { return errorMessage.c_str(); 
  */
 std::string CompilerError::getMessagePrefix(CompilerErrorType type) {
   switch (type) {
+  case UNRESOLVED_SOFT_ERRORS:
+    return "Unresolved soft errors";
   case SOURCE_FILE_NOT_FOUND:
     return "Source file not found";
   case CANT_OPEN_OUTPUT_FILE:

@@ -1,14 +1,10 @@
-type TestStruct struct {
-    int value
-}
-
-f<int> operator<<(TestStruct& ts, int i) {
-    return ts.value << i;
-}
-
 f<int> main() {
-    TestStruct ts = TestStruct{ 123 };
-    ts << 123;
+    for unsigned int i = 0; i; i++ {
+        printf("%d\n", i);
+    }
+    for unsigned int i = 0; i; i++ {
+        printf("%d\n", i);
+    }
 }
 
 /*import "std/os/thread";

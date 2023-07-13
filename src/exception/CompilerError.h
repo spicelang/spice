@@ -9,7 +9,11 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+struct CodeLoc;
+
 enum CompilerErrorType : uint8_t {
+  UNRESOLVED_SOFT_ERRORS,
   SOURCE_FILE_NOT_FOUND,
   CANT_OPEN_OUTPUT_FILE,
   WRONG_OUTPUT_TYPE,
@@ -32,6 +36,7 @@ class CompilerError : public std::exception {
 public:
   // Constructors
   CompilerError(const CompilerErrorType &type, const std::string &message);
+  CompilerError(const CodeLoc &codeLoc, const CompilerErrorType &type, const std::string &message);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

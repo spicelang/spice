@@ -35,8 +35,7 @@ public:
   void addSoftError(const ASTNode *astNode, ParserErrorType errorType, const std::string &message);
   void addSoftError(const ASTNode *astNode, LinkerErrorType errorType, const std::string &message);
 
-private:
-  // Private members
+  // Public members
   std::vector<SoftError> softErrors;
 };
 

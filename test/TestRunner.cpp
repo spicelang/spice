@@ -12,7 +12,6 @@
 #include <SourceFile.h>
 #include <cli/CLIInterface.h>
 #include <exception/CompilerError.h>
-#include <exception/IRError.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
@@ -217,8 +216,6 @@ void execTestCase(const TestCase &testCase) {
   } catch (ParserError &error) {
     TestUtil::handleError(testCase, error);
   } catch (SemanticError &error) {
-    TestUtil::handleError(testCase, error);
-  } catch (IRError &error) {
     TestUtil::handleError(testCase, error);
   } catch (CompilerError &error) {
     TestUtil::handleError(testCase, error);

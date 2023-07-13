@@ -118,6 +118,8 @@ set(SOURCES
         model/GenericType.cpp
         model/GenericType.h
         # Exception handling
+        exception/ErrorManager.cpp
+        exception/ErrorManager.h
         exception/CompilerError.cpp
         exception/CompilerError.h
         exception/CliError.cpp
@@ -147,7 +149,7 @@ set(SOURCES
         util/RawStringOStream.h
 )
 
-add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS} exception/ErrorManager.cpp exception/ErrorManager.h)
+add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 # Include Antlr components
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)

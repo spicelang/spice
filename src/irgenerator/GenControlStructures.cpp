@@ -3,7 +3,6 @@
 #include "IRGenerator.h"
 
 #include <ast/ASTNodes.h>
-#include <exception/IRError.h>
 
 #include <llvm/IR/Verifier.h>
 

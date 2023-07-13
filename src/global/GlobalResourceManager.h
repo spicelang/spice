@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include <exception/ErrorManager.h>
 #include <global/CacheManager.h>
 #include <global/RuntimeModuleManager.h>
 #include <linker/ExternalLinkerInterface.h>
+#include <util/CodeLoc.h>
 #include <util/Timer.h>
 
 #include <llvm/IR/IRBuilder.h>
@@ -13,7 +15,6 @@
 #include <llvm/Target/TargetMachine.h>
 
 #include "../../lib/thread-pool/thread-pool.hpp"
-#include "util/CodeLoc.h"
 
 namespace spice::compiler {
 
@@ -60,7 +61,7 @@ public:
   BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
   BS::synced_stream tout;
   std::mutex objectEmitLock;
-  std::vector<SoftError> softErrors;
+  ErrorManager errorManager;
 };
 
 } // namespace spice::compiler

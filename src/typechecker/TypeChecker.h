@@ -133,7 +133,7 @@ private:
   void callStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   [[nodiscard]] bool isStringRT() const;
-  void softError(const ASTNode *node, SemanticErrorType type, const std::string &message) const;
+  void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
 };
 
 } // namespace spice::compiler
