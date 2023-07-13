@@ -298,20 +298,21 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
     // GCOV_EXCL_STOP
   } while (typeChecker.reVisitRequested);
 
+  // Check if there are any soft errors and if so, print them
+  if (!resourceManager.errorManager.softErrors.empty()) {
+    std::stringstream errorStream;
+    errorStream << "There are unresolved errors. Please fix them and recompile.";
+    for (const ErrorManager::SoftError &error : resourceManager.errorManager.softErrors)
+      errorStream << "\n\n" << error.message;
+    throw CompilerError(UNRESOLVED_SOFT_ERRORS, errorStream.str());
+  }
+
   // Check if all dyn variables were type-inferred successfully
   globalScope->checkSuccessfulTypeInference();
 
   previousStage = TYPE_CHECKER_POST;
   timer.stop();
   printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost, false, typeCheckerRuns);
-
-  // Check if there are any soft errors and if so, print them
-  if (!resourceManager.errorManager.softErrors.empty()) {
-    std::cout << "\nThe following errors occurred:\n\n";
-    for (const ErrorManager::SoftError &error : resourceManager.errorManager.softErrors)
-      std::cout << error.message << "\n\n";
-    throw CompilerError(UNRESOLVED_SOFT_ERRORS, "There are unresolved errors. Please fix them and recompile.");
-  }
 
   // Save the JSON version in the compiler output
   compilerOutput.symbolTableString = globalScope->getSymbolTableJSON().dump(/*indent=*/2);

@@ -8,6 +8,7 @@
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 #include <typechecker/FunctionManager.h>
+#include <typechecker/MacroDefs.h>
 #include <typechecker/OpRuleManager.h>
 #include <typechecker/StructManager.h>
 #include <util/CompilerWarning.h>
@@ -123,8 +124,8 @@ private:
 
   // Private methods
   std::string visitOrdinaryFctCall(FctCallNode *node);
-  void visitFctPtrCall(FctCallNode *node, const SymbolType &functionType) const;
-  void visitMethodCall(FctCallNode *node, Scope *structScope) const;
+  bool visitFctPtrCall(FctCallNode *node, const SymbolType &functionType) const;
+  bool visitMethodCall(FctCallNode *node, Scope *structScope) const;
   [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;
   [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
   void changeToScope(Scope *scope, ScopeType scopeType);

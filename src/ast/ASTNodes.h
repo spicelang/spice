@@ -308,6 +308,7 @@ public:
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
+  bool isGeneric = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers functionSpecifiers = TypeSpecifiers::of(TY_FUNCTION);
   Scope *structScope = nullptr;
@@ -348,6 +349,7 @@ public:
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
+  bool isGeneric = false;
   bool isCtor = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers procedureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);

@@ -65,6 +65,7 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     resultVarEntry->used = true;
 
     // Visit parameters
+    // This happens once in the type checker prepare stage. This second time is only required if we have a generic function
     if (node->hasParams)
       visit(node->paramLst());
 
@@ -117,6 +118,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     typeMapping = manifestation->typeMapping;
 
     // Visit parameters
+    // This happens once in the type checker prepare stage. This second time is only required if we have a generic procedure
     if (node->hasParams)
       visit(node->paramLst());
 

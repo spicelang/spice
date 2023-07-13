@@ -7,18 +7,6 @@
 
 namespace spice::compiler {
 
-#define SOFT_ERROR_ANY(node, type, message)                                                                                      \
-  {                                                                                                                              \
-    resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    return {};                                                                                                                   \
-  }
-
-#define SOFT_ERROR_VOID(node, type, message)                                                                                     \
-  {                                                                                                                              \
-    resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    return;                                                                                                                      \
-  }
-
 TypeChecker::TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile, TypeCheckerMode typeCheckerMode)
     : CompilerPass(resourceManager, sourceFile), typeCheckerMode(typeCheckerMode), rootScope(sourceFile->globalScope.get()),
       warnings(sourceFile->compilerOutput.warnings) {}
@@ -124,9 +112,10 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
 
   // Visit condition
   SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condAssign())).type;
+  HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ANY(node->condAssign(), CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condAssign(), CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
 
   // Visit incrementer
   visit(node->incAssign());
@@ -146,6 +135,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
 
   // Check iterator type
   SymbolType iteratorType = std::any_cast<ExprResult>(visit(node->iteratorAssign())).type;
+  HANDLE_UNRESOLVED_TYPE_PTR(iteratorType)
   if (!iteratorType.isIterator(node)) {
     softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE,
               "Can only apply foreach loop on an iterator type. You provided " + iteratorType.getName());
@@ -153,17 +143,18 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   }
   const std::vector<SymbolType> &iteratorTemplateTypes = iteratorType.getTemplateTypes();
   if (iteratorTemplateTypes.empty())
-    SOFT_ERROR_ANY(node->iteratorAssign(), INVALID_ITERATOR,
-                   "Iterator has no generic arguments so that the item type could not be inferred")
+    SOFT_ERROR_ER(node->iteratorAssign(), INVALID_ITERATOR,
+                  "Iterator has no generic arguments so that the item type could not be inferred")
 
   const bool hasIdx = node->idxVarDecl();
   if (hasIdx) {
     // Visit index declaration or assignment
     auto indexType = std::any_cast<SymbolType>(visit(node->idxVarDecl()));
+    HANDLE_UNRESOLVED_TYPE_PTR(indexType)
     // Check if index type is int
     if (!indexType.is(TY_LONG))
-      SOFT_ERROR_ANY(node->idxVarDecl(), FOREACH_IDX_NOT_LONG,
-                     "Index in foreach loop must be of type long. You provided " + indexType.getName())
+      SOFT_ERROR_ER(node->idxVarDecl(), FOREACH_IDX_NOT_LONG,
+                    "Index in foreach loop must be of type long. You provided " + indexType.getName())
   }
 
   // Retrieve .get(), .getIdx(), .isValid() and .next() functions
@@ -185,6 +176,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
 
   // Check type of the item
   auto itemType = std::any_cast<SymbolType>(visit(node->itemVarDecl()));
+  HANDLE_UNRESOLVED_TYPE_PTR(itemType)
   if (itemType.is(TY_DYN)) { // Perform type inference
     // Update evaluated symbol type of the declaration data type
     node->itemVarDecl()->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
@@ -215,9 +207,10 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
 
   // Visit condition
   SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ANY(node->condition(), CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool")
 
   // Visit body
   visit(node->body());
@@ -237,9 +230,10 @@ std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
 
   // Visit condition
   SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ANY(node->condition(), CONDITION_MUST_BE_BOOL, "Do-While loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "Do-While loop condition must be of type bool")
 
   // Leave while body scope
   currentScope = node->bodyScope->parent;
@@ -254,9 +248,10 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   // Visit condition
   AssignExprNode *condition = node->condition();
   SymbolType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ANY(node->condition(), CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
+    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
 
   // Warning for bool assignment
   if (condition->hasOperator && condition->op == AssignExprNode::OP_ASSIGN)
@@ -338,16 +333,21 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
   for (DeclStmtNode *param : node->params()) {
     // Visit param
     const auto paramType = std::any_cast<SymbolType>(visit(param));
+    if (paramType.is(TY_UNRESOLVED))
+      continue;
 
     // Check if the type could be inferred. Dyn without a default value is forbidden
-    if (paramType.is(TY_DYN))
-      SOFT_ERROR_ANY(node, FCT_PARAM_IS_TYPE_DYN, "Type of parameter '" + param->varName + "' is invalid")
+    if (paramType.is(TY_DYN)) {
+      softError(node, FCT_PARAM_IS_TYPE_DYN, "Type of parameter '" + param->varName + "' is invalid");
+      continue;
+    }
 
     // Ensure that no optional param comes after a mandatory param
     if (param->hasAssignment) {
       metOptional = true;
     } else if (metOptional) {
-      SOFT_ERROR_ANY(param, INVALID_PARAM_ORDER, "Mandatory parameters must go before any optional parameters")
+      softError(param, INVALID_PARAM_ORDER, "Mandatory parameters must go before any optional parameters");
+      continue;
     }
 
     // Add parameter to named param list
@@ -359,11 +359,13 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
 
 std::any TypeChecker::visitField(FieldNode *node) {
   const auto fieldType = std::any_cast<SymbolType>(visit(node->dataType()));
+  HANDLE_UNRESOLVED_TYPE_ST(fieldType)
 
   if (node->defaultValue()) {
     const auto defaultValueType = std::any_cast<ExprResult>(visit(node->defaultValue())).type;
+    HANDLE_UNRESOLVED_TYPE_ST(fieldType)
     if (defaultValueType != fieldType)
-      SOFT_ERROR_ANY(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
+      SOFT_ERROR_ST(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
   }
 
   return fieldType;
@@ -374,6 +376,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   SymbolType returnType(TY_DYN);
   if (node->signatureType == SignatureNode::TYPE_FUNCTION)
     returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+  HANDLE_UNRESOLVED_TYPE_PTR(returnType)
 
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
@@ -381,9 +384,10 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      HANDLE_UNRESOLVED_TYPE_PTR(templateType)
       // Check if it is a generic type
       if (!templateType.is(TY_GENERIC))
-        SOFT_ERROR_ANY(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types")
+        SOFT_ERROR_ER(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types")
       // Convert generic symbol type to generic type
       GenericType *genericType = rootScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
@@ -398,11 +402,12 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
     paramList.reserve(node->paramTypeLst()->dataTypes().size());
     for (DataTypeNode *param : node->paramTypeLst()->dataTypes()) {
       auto paramType = std::any_cast<SymbolType>(visit(param));
+      HANDLE_UNRESOLVED_TYPE_PTR(paramType)
 
       // Check if the type is present in the template for generic types
       if (!paramType.isCoveredByGenericTypeList(usedGenericTypes))
-        SOFT_ERROR_ANY(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
-                       "Generic param type not included in the template type list of the function")
+        SOFT_ERROR_ER(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+                      "Generic param type not included in the template type list of the function")
 
       paramTypes.push_back(paramType);
       paramList.push_back({paramType, false});
@@ -449,23 +454,23 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       rhsTy = localVarType;
 
     // Check if type has to be inferred or both types are fixed
-    localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0, true);
-
-    // Push symbolType to the declaration data type
-    node->dataType()->setEvaluatedSymbolType(localVarType, manIdx);
+    if (localVarType.is(TY_UNRESOLVED) || rhsTy.is(TY_UNRESOLVED))
+      localVarType = SymbolType(TY_UNRESOLVED);
+    else
+      localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0, true);
   } else {
     // Visit data type
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
 
     // References with no initialization are illegal
     if (localVarType.isRef() && !node->isParam && !node->isForEachItem)
-      SOFT_ERROR_ANY(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly")
+      SOFT_ERROR_ER(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly")
   }
 
   // Update the type of the variable
   SymbolTableEntry *localVarEntry = currentScope->lookupStrict(node->varName);
   assert(localVarEntry != nullptr);
-  localVarEntry->updateType(localVarType, /*overwriteExistingType=*/true);
+  localVarEntry->updateType(localVarType, true);
   node->entries.at(manIdx) = localVarEntry;
 
   // Update the state of the variable
@@ -489,7 +494,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   // Check if procedure with return value
   if (!isFunction) {
     if (node->hasReturnValue)
-      SOFT_ERROR_ANY(node->assignExpr(), RETURN_WITH_VALUE_IN_PROCEDURE, "Return with value in procedure is not allowed")
+      SOFT_ERROR_ER(node->assignExpr(), RETURN_WITH_VALUE_IN_PROCEDURE, "Return with value in procedure is not allowed")
     return nullptr;
   }
 
@@ -502,6 +507,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
 
   // Visit right side
   auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
+  HANDLE_UNRESOLVED_TYPE_ST(rhs.type)
 
   // Check if types match
   OpRuleManager::getAssignResultType(node->assignExpr(), returnType, rhs.type, 0, false, ERROR_MSG_RETURN);
@@ -522,12 +528,12 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
 std::any TypeChecker::visitBreakStmt(BreakStmtNode *node) {
   // Check if the stated number is valid
   if (node->breakTimes < 1)
-    SOFT_ERROR_ANY(node, INVALID_BREAK_NUMBER, "Break count must be >= 1, you provided " + std::to_string(node->breakTimes))
+    SOFT_ERROR_ER(node, INVALID_BREAK_NUMBER, "Break count must be >= 1, you provided " + std::to_string(node->breakTimes))
 
   // Check if we can break this often
   const size_t maxBreaks = currentScope->getLoopNestingDepth();
   if (node->breakTimes > maxBreaks)
-    SOFT_ERROR_ANY(node, INVALID_BREAK_NUMBER, "We can only break " + std::to_string(maxBreaks) + " time(s) here")
+    SOFT_ERROR_ER(node, INVALID_BREAK_NUMBER, "We can only break " + std::to_string(maxBreaks) + " time(s) here")
 
   return nullptr;
 }
@@ -535,13 +541,13 @@ std::any TypeChecker::visitBreakStmt(BreakStmtNode *node) {
 std::any TypeChecker::visitContinueStmt(ContinueStmtNode *node) {
   // Check if the stated number is valid
   if (node->continueTimes < 1)
-    SOFT_ERROR_ANY(node, INVALID_CONTINUE_NUMBER,
-                   "Continue count must be >= 1, you provided " + std::to_string(node->continueTimes))
+    SOFT_ERROR_ER(node, INVALID_CONTINUE_NUMBER,
+                  "Continue count must be >= 1, you provided " + std::to_string(node->continueTimes))
 
   // Check if we can continue this often
   const size_t maxBreaks = currentScope->getLoopNestingDepth();
   if (node->continueTimes > maxBreaks)
-    SOFT_ERROR_ANY(node, INVALID_CONTINUE_NUMBER, "We can only continue " + std::to_string(maxBreaks) + " time(s) here")
+    SOFT_ERROR_ER(node, INVALID_CONTINUE_NUMBER, "We can only continue " + std::to_string(maxBreaks) + " time(s) here")
 
   return nullptr;
 }
@@ -549,10 +555,11 @@ std::any TypeChecker::visitContinueStmt(ContinueStmtNode *node) {
 std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   // Visit condition
   SymbolType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ANY(node->assignExpr(), ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool")
+    SOFT_ERROR_ER(node->assignExpr(), ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool")
 
   return nullptr;
 }
@@ -564,18 +571,19 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   while (index != std::string::npos && index != node->templatedString.size() - 1) {
     // Check if there is another assignExpr
     if (node->args().size() <= placeholderCount)
-      SOFT_ERROR_ANY(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains more placeholders than arguments")
+      SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains more placeholders than arguments")
 
     // Get next assignment
     AssignExprNode *assignment = node->args().at(placeholderCount);
     // Visit assignment
     SymbolType argType = std::any_cast<ExprResult>(visit(assignment)).type;
+    HANDLE_UNRESOLVED_TYPE_ER(argType)
     argType = argType.removeReferenceWrapper();
 
     switch (node->templatedString.at(index + 1)) {
     case 'c': {
       if (!argType.is(TY_CHAR))
-        SOFT_ERROR_ANY(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects char, but got " + argType.getName())
+        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects char, but got " + argType.getName())
       placeholderCount++;
       break;
     }
@@ -587,8 +595,8 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     case 'x':
     case 'X': {
       if (!argType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_BOOL}))
-        SOFT_ERROR_ANY(assignment, PRINTF_TYPE_ERROR,
-                       "The placeholder string expects int, short, long, byte or bool, but got " + argType.getName())
+        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
+                      "The placeholder string expects int, short, long, byte or bool, but got " + argType.getName())
       placeholderCount++;
       break;
     }
@@ -601,7 +609,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     case 'g':
     case 'G': {
       if (!argType.is(TY_DOUBLE))
-        SOFT_ERROR_ANY(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects double, but got " + argType.getName())
+        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects double, but got " + argType.getName())
       placeholderCount++;
       break;
     }
@@ -609,15 +617,15 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
       const std::string strobjTypeName = STRING_RT_IMPORT_NAME + std::string(SCOPE_ACCESS_TOKEN) + STROBJ_NAME;
       const bool isString = argType.is(TY_STRING) || argType.is(TY_STRUCT, strobjTypeName);
       if (!isString && !argType.isPtrOf(TY_CHAR) && !argType.isArrayOf(TY_CHAR))
-        SOFT_ERROR_ANY(assignment, PRINTF_TYPE_ERROR,
-                       "The placeholder string expects string, String, char* or char[], but got " + argType.getName())
+        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
+                      "The placeholder string expects string, String, char* or char[], but got " + argType.getName())
       placeholderCount++;
       break;
     }
     case 'p': {
       if (!argType.isPtr() && !argType.isArray() && !argType.is(TY_STRING))
-        SOFT_ERROR_ANY(assignment, PRINTF_TYPE_ERROR,
-                       "The placeholder string expects pointer, array or string, but got " + argType.getName())
+        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
+                      "The placeholder string expects pointer, array or string, but got " + argType.getName())
       placeholderCount++;
       break;
     }
@@ -627,7 +635,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
 
   // Check if the number of placeholders matches the number of args
   if (placeholderCount < node->args().size())
-    SOFT_ERROR_ANY(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains less placeholders than arguments")
+    SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains less placeholders than arguments")
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_BOOL), manIdx)};
 }
@@ -654,11 +662,12 @@ std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
   SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  HANDLE_UNRESOLVED_TYPE_ER(argType)
   argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.isArray())
-    SOFT_ERROR_ANY(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays")
+    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays")
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
 }
@@ -675,8 +684,10 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   if (node->hasOperator) {
     // Visit the right side first
     auto [rhsType, rhsEntry] = std::any_cast<ExprResult>(visit(node->rhs()));
+    HANDLE_UNRESOLVED_TYPE_ER(rhsType)
     // Then visit the left side
     auto [lhsType, lhsVar] = std::any_cast<ExprResult>(visit(node->lhs()));
+    HANDLE_UNRESOLVED_TYPE_ER(lhsType)
 
     // Take a look at the operator
     if (node->op == AssignExprNode::OP_ASSIGN) {
@@ -731,6 +742,7 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   // Visit condition
   LogicalOrExprNode *condition = node->operands()[0];
   SymbolType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
   SymbolType trueType;
   SymbolType falseType;
@@ -739,18 +751,20 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     falseType = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
   } else {
     trueType = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
+    HANDLE_UNRESOLVED_TYPE_ER(trueType)
     falseType = std::any_cast<ExprResult>(visit(node->operands()[2])).type;
   }
+  HANDLE_UNRESOLVED_TYPE_ER(falseType)
 
   // Check if the condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ANY(condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool")
+    SOFT_ERROR_ER(condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool")
 
   // Check if trueType and falseType are matching
   if (!trueType.matches(falseType, false, true, false))
-    SOFT_ERROR_ANY(node, OPERATOR_WRONG_DATA_TYPE,
-                   "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
-                       falseType.getName(true))
+    SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE,
+                  "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
+                      falseType.getName(true))
 
   return ExprResult{node->setEvaluatedSymbolType(trueType, manIdx)};
 }
@@ -762,9 +776,12 @@ std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
 
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(currentType)
+
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands().size(); i++) {
     SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
+    HANDLE_UNRESOLVED_TYPE_ER(rhsTy)
     currentType = OpRuleManager::getLogicalOrResultType(node, currentType, rhsTy, i - 1);
   }
 
@@ -778,9 +795,11 @@ std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
 
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(currentType)
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands().size(); i++) {
     SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
+    HANDLE_UNRESOLVED_TYPE_ER(rhsTy)
     currentType = OpRuleManager::getLogicalAndResultType(node, currentType, rhsTy, i - 1);
   }
 
@@ -794,9 +813,11 @@ std::any TypeChecker::visitBitwiseOrExpr(BitwiseOrExprNode *node) {
 
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(currentType)
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands().size(); i++) {
     SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
+    HANDLE_UNRESOLVED_TYPE_ER(rhsTy)
     currentType = OpRuleManager::getBitwiseOrResultType(node, currentType, rhsTy, i - 1);
   }
 
@@ -810,9 +831,11 @@ std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
 
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(currentType)
   // Loop through all remaining operands
   for (size_t i = 2; i < node->operands().size(); i++) {
     SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
+    HANDLE_UNRESOLVED_TYPE_ER(rhsTy)
     currentType = OpRuleManager::getBitwiseXorResultType(node, currentType, rhsTy, i - 1);
   }
 
@@ -826,9 +849,11 @@ std::any TypeChecker::visitBitwiseAndExpr(BitwiseAndExprNode *node) {
 
   // Visit leftmost operand
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(currentType)
   // Loop through all remaining operands
   for (size_t i = 1; i < node->operands().size(); i++) {
     SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
+    HANDLE_UNRESOLVED_TYPE_ER(rhsTy)
     currentType = OpRuleManager::getBitwiseAndResultType(node, currentType, rhsTy, i - 2);
   }
 
@@ -842,7 +867,9 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
 
   // Visit right side first, then left side
   SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(rhsTy)
   SymbolType lhsTy = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(lhsTy)
 
   // Check if we need the string runtime to perform a string comparison
   if (lhsTy.is(TY_STRING) && rhsTy.is(TY_STRING) && !isStringRT())
@@ -868,7 +895,9 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
 
   // Visit right side first, then left side
   SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(rhsTy)
   SymbolType lhsTy = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(lhsTy)
 
   // Check operator
   SymbolType resultType;
@@ -893,7 +922,9 @@ std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
 
   // Visit right side first, then left
   SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(rhsTy)
   SymbolType lhsTy = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
+  HANDLE_UNRESOLVED_TYPE_ER(lhsTy)
 
   // Check operator
   ExprResult currentResult;
@@ -915,11 +946,14 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
 
   // Visit leftmost operand
   auto currentResult = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  HANDLE_UNRESOLVED_TYPE_ER(currentResult.type)
+
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
     MultiplicativeExprNode *operand = node->operands()[i + 1];
     SymbolType operandType = std::any_cast<ExprResult>(visit(operand)).type;
+    HANDLE_UNRESOLVED_TYPE_ER(operandType)
 
     // Check operator
     const AdditiveExprNode::AdditiveOp &op = node->opQueue.front().first;
@@ -946,11 +980,13 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
 
   // Visit leftmost operand
   auto currentResult = std::any_cast<ExprResult>(visit(node->operands()[0]));
+  HANDLE_UNRESOLVED_TYPE_ER(currentResult.type)
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
     CastExprNode *operand = node->operands()[i + 1];
     SymbolType operandType = std::any_cast<ExprResult>(visit(operand)).type;
+    HANDLE_UNRESOLVED_TYPE_ER(operandType)
 
     // Check operator
     const MultiplicativeExprNode::MultiplicativeOp &op = node->opQueue.front().first;
@@ -979,9 +1015,10 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
 
   // Visit source type
   SymbolType srcType = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr())).type;
+  HANDLE_UNRESOLVED_TYPE_ER(srcType)
   // Visit destination type
   auto dstType = std::any_cast<SymbolType>(visit(node->dataType()));
-
+  HANDLE_UNRESOLVED_TYPE_ER(dstType)
   // Get result type
   SymbolType resultType = opRuleManager.getCastResultType(node, dstType, srcType, 0);
 
@@ -999,7 +1036,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   // Visit the right side
   PrefixUnaryExprNode *rhsNode = node->prefixUnary();
   auto [operandType, operandEntry] = std::any_cast<ExprResult>(visit(rhsNode));
-
+  HANDLE_UNRESOLVED_TYPE_ER(operandType)
   // Determine action, based on the given operator
   switch (node->op) {
   case PrefixUnaryExprNode::OP_MINUS:
@@ -1048,24 +1085,26 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   // Visit left side
   PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
   auto [lhsType, lhsEntry] = std::any_cast<ExprResult>(visit(lhsNode));
+  HANDLE_UNRESOLVED_TYPE_ER(lhsType)
 
   switch (node->op) {
   case PostfixUnaryExprNode::OP_SUBSCRIPT: {
     // Check if we can apply the subscript operator on the lhs type
     if (!lhsType.isOneOf({TY_ARRAY, TY_STRING, TY_PTR}))
-      SOFT_ERROR_ANY(node, OPERATOR_WRONG_DATA_TYPE,
-                     "Can only apply subscript operator on array type, got " + lhsType.getName(true))
+      SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE,
+                    "Can only apply subscript operator on array type, got " + lhsType.getName(true))
 
     // Visit index assignment
     AssignExprNode *indexAssignExpr = node->assignExpr();
     SymbolType indexType = std::any_cast<ExprResult>(visit(indexAssignExpr)).type;
+    HANDLE_UNRESOLVED_TYPE_ER(indexType)
     // Check if the index is of the right type
     if (!indexType.isOneOf({TY_INT, TY_LONG}))
-      SOFT_ERROR_ANY(node, ARRAY_INDEX_NOT_INT_OR_LONG, "Array index must be of type int or long")
+      SOFT_ERROR_ER(node, ARRAY_INDEX_NOT_INT_OR_LONG, "Array index must be of type int or long")
 
     // Check if we have an unsafe operation
     if (lhsType.is(TY_PTR) && !currentScope->doesAllowUnsafeOperations())
-      SOFT_ERROR_ANY(
+      SOFT_ERROR_ER(
           node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
           "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.")
 
@@ -1077,8 +1116,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       if (constIndex >= constSize) {
         const std::string idxStr = std::to_string(constIndex);
         const std::string sizeStr = std::to_string(constSize);
-        SOFT_ERROR_ANY(node, ARRAY_INDEX_OUT_OF_BOUNDS,
-                       "You are trying to access element with index " + idxStr + " of an array with size " + sizeStr)
+        SOFT_ERROR_ER(node, ARRAY_INDEX_OUT_OF_BOUNDS,
+                      "You are trying to access element with index " + idxStr + " of an array with size " + sizeStr)
       }
     }
 
@@ -1093,7 +1132,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     SymbolType lhsBaseTy = lhsType;
     TypeChecker::autoDeReference(lhsBaseTy);
     if (!lhsBaseTy.is(TY_STRUCT))
-      SOFT_ERROR_ANY(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName())
+      SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName())
 
     // Retrieve registry entry
     const std::string &structName = lhsBaseTy.getSubType();
@@ -1102,12 +1141,12 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     // Get accessed field
     SymbolTableEntry *memberEntry = structScope->lookupStrict(fieldName);
     if (!memberEntry)
-      SOFT_ERROR_ANY(node, REFERENCED_UNDEFINED_VARIABLE, "Field '" + node->identifier + "' not found in struct " + structName)
+      SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Field '" + node->identifier + "' not found in struct " + structName)
     SymbolType memberType = memberEntry->getType();
 
     // Check for insufficient visibility
     if (structScope->isImportedBy(rootScope) && !memberEntry->getType().isPublic())
-      SOFT_ERROR_ANY(node, INSUFFICIENT_VISIBILITY, "Cannot access field '" + fieldName + "' due to its private visibility")
+      SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access field '" + fieldName + "' due to its private visibility")
 
     // Set field to used
     memberEntry->used = true;
@@ -1145,7 +1184,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
   if (lhsType.is(TY_INVALID)) {
     const std::string varName = lhsEntry ? lhsEntry->name : "";
-    SOFT_ERROR_ANY(node, REFERENCED_UNDEFINED_VARIABLE, "Variable '" + varName + "' was referenced before declared")
+    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Variable '" + varName + "' was referenced before declared")
   }
 
   return ExprResult{node->setEvaluatedSymbolType(lhsType, manIdx), lhsEntry};
@@ -1188,7 +1227,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (!varEntry) {
     const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqIdentifier);
     if (!registryEntry)
-      SOFT_ERROR_ANY(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found")
+      SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found")
     varEntry = registryEntry->targetEntry;
     accessScope = registryEntry->targetScope;
   }
@@ -1197,13 +1236,14 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   node->entries.at(manIdx) = varEntry;
   node->accessScopes.at(manIdx) = accessScope;
   SymbolType varType = varEntry->getType();
+  HANDLE_UNRESOLVED_TYPE_ER(varType)
 
   if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->global) {
     // Check if overloaded function was referenced
     const std::vector<Function *> *manifestations = varEntry->declNode->getFctManifestations();
     if (manifestations->size() > 1)
-      SOFT_ERROR_ANY(node, REFERENCED_OVERLOADED_FCT,
-                     "Overloaded functions or functions with optional parameters cannot be referenced")
+      SOFT_ERROR_ER(node, REFERENCED_OVERLOADED_FCT,
+                    "Overloaded functions or functions with optional parameters cannot be referenced")
     // Set referenced function to used
     Function *referencedFunction = manifestations->front();
     referencedFunction->used = true;
@@ -1211,23 +1251,23 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   }
 
   if (varType.is(TY_INVALID))
-    SOFT_ERROR_ANY(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.")
+    SOFT_ERROR_ER(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.")
 
   // The base type should be a primitive, struct, function or procedure
   if (!varType.getBaseType().isPrimitive() && !varType.getBaseType().isOneOf({TY_STRUCT, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
-    SOFT_ERROR_ANY(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here")
+    SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here")
 
   // Check if is an imported variable
   if (accessScope->isImportedBy(currentScope)) {
     // Check if the entry is public
     if (varEntry->scope->type != SCOPE_ENUM && !varEntry->getType().isPublic())
-      SOFT_ERROR_ANY(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility")
+      SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility")
   }
 
   // Check if we have seen a 'this.' prefix, because the generator needs that
   if (varEntry->scope->type == SCOPE_STRUCT && node->identifierFragments.front() != THIS_VARIABLE_NAME)
-    SOFT_ERROR_ANY(node, REFERENCED_UNDEFINED_VARIABLE,
-                   "The symbol '" + node->fqIdentifier + "' could not be found. Missing 'this.' prefix?")
+    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE,
+                  "The symbol '" + node->fqIdentifier + "' could not be found. Missing 'this.' prefix?")
 
   // Set symbol table entry to used
   varEntry->used = true;
@@ -1246,8 +1286,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     // Check if the entry is public if it is imported
     assert(nameRegistryEntry->targetEntry != nullptr);
     if (!nameRegistryEntry->targetEntry->getType().isPublic() && accessScope->parent->isImportedBy(currentScope))
-      SOFT_ERROR_ANY(node, INSUFFICIENT_VISIBILITY,
-                     "Cannot access struct '" + nameRegistryEntry->targetEntry->name + "' due to its private visibility")
+      SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY,
+                    "Cannot access struct '" + nameRegistryEntry->targetEntry->name + "' due to its private visibility")
   }
 
   return ExprResult{node->setEvaluatedSymbolType(varType, manIdx), varEntry};
@@ -1269,8 +1309,9 @@ std::any TypeChecker::visitValue(ValueNode *node) {
   // Typed nil
   if (node->isNil) {
     auto nilType = std::any_cast<SymbolType>(visit(node->nilType()));
+    HANDLE_UNRESOLVED_TYPE_ER(nilType)
     if (nilType.is(TY_DYN))
-      SOFT_ERROR_ANY(node->nilType(), UNEXPECTED_DYN_TYPE, "Nil must have an explicit type")
+      SOFT_ERROR_ER(node->nilType(), UNEXPECTED_DYN_TYPE, "Nil must have an explicit type")
     return ExprResult{node->setEvaluatedSymbolType(nilType, manIdx)};
   }
 
@@ -1325,7 +1366,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     data.argTypes.reserve(args.size());
     for (AssignExprNode *arg : args) {
       // Visit argument
-      const SymbolType argType = any_cast<ExprResult>(visit(arg)).type;
+      const SymbolType argType = std::any_cast<ExprResult>(visit(arg)).type;
+      HANDLE_UNRESOLVED_TYPE_ER(argType)
       assert(!argType.hasAnyGenericParts());
       // Save arg type to arg types list
       data.argTypes.push_back(argType);
@@ -1338,10 +1380,14 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     firstFragEntry->used = true;
     // Decide of which type the function call is
     const SymbolType &baseType = firstFragEntry->getType().getBaseType();
-    if (baseType.is(TY_STRUCT) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
-      data.callType = FctCallNode::TYPE_METHOD;
-    } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
-      data.callType = FctCallNode::TYPE_FCT_PTR;
+    HANDLE_UNRESOLVED_TYPE_ER(baseType)
+    if (baseType.is(TY_STRUCT)) {
+      data.callType = firstFragEntry->scope->type == SCOPE_GLOBAL ? FctCallNode::TYPE_CTOR : FctCallNode::TYPE_METHOD;
+    } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+      if (firstFragEntry->scope->type != SCOPE_GLOBAL)
+        data.callType = FctCallNode::TYPE_FCT_PTR;
+    } else if (!baseType.is(TY_ALIAS)) {
+      SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE, "The symbol '" + node->functionNameFragments.front() + "' is not a function")
     }
   }
 
@@ -1351,25 +1397,34 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     data.thisType = firstFragEntry->getType();
     Scope *structBodyScope = data.thisType.getBaseType().getBodyScope();
     assert(structBodyScope != nullptr);
-    visitMethodCall(node, structBodyScope);
+    bool success = visitMethodCall(node, structBodyScope);
+    if (!success) // Check if soft errors occurred
+      return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
     assert(data.calleeParentScope != nullptr);
   } else if (data.isFctPtrCall()) {
     // This is a function pointer call
     const SymbolType &functionType = firstFragEntry->getType().getBaseType();
     assert(functionType.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-    visitFctPtrCall(node, functionType);
+    bool success = visitFctPtrCall(node, functionType);
+    if (!success) // Check if soft errors occurred
+      return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
+  } else if (data.isCtorCall()) {
+    // This is a constructor call
+    const std::string knownStructName = visitOrdinaryFctCall(node);
+    if (knownStructName == UNRESOLVED_TYPE_NAME) // Check if soft errors occurred
+      return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
+
+    // Set a name to the thisType that is known to the current source file
+    data.thisType = data.thisType.replaceBaseSubType(knownStructName);
+    assert(data.thisType.is(TY_STRUCT));
   } else {
     // This is an ordinary function call
     assert(data.isOrdinaryCall());
     const std::string knownStructName = visitOrdinaryFctCall(node);
-    assert(data.calleeParentScope != nullptr);
+    if (knownStructName == UNRESOLVED_TYPE_NAME) // Check if soft errors occurred
+      return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
 
-    // Only ordinary function calls can be constructors
-    if (data.isCtorCall()) {
-      // Set a name to the thisType that is known to the current source file
-      data.thisType = data.thisType.replaceBaseSubType(knownStructName);
-      assert(data.thisType.is(TY_STRUCT));
-    }
+    assert(data.calleeParentScope != nullptr);
   }
 
   if (!data.isFctPtrCall()) {
@@ -1382,7 +1437,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
         errArgTypes.push_back({argType, false});
       const std::string signature = Function::getSignature(functionName, data.thisType, SymbolType(TY_DYN), errArgTypes, {});
       // Throw error
-      SOFT_ERROR_ANY(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + signature + "' could not be found")
+      SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + signature + "' could not be found")
     }
 
     // Check if we need to request a re-visit, because the function body was not type-checked yet
@@ -1395,8 +1450,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     // Check if the called function has sufficient visibility
     data.isImported = data.calleeParentScope->isImportedBy(rootScope);
     if (data.isImported && !functionEntry->getType().isPublic())
-      SOFT_ERROR_ANY(node, INSUFFICIENT_VISIBILITY,
-                     "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility")
+      SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY,
+                    "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility")
 
     // Check if down-call, fct ptr calls can't be down-calls
     data.isDownCall = !data.isImported && data.callee->isDownCall(node);
@@ -1471,19 +1526,15 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
     // Retrieve concrete template types from type alias
     concreteTemplateTypes = aliasedTypeContainerEntry->getType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
-    if (!concreteTemplateTypes.empty() && node->hasTemplateTypes) {
-      softError(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list");
-      return "";
-    }
+    if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
+      SOFT_ERROR_STR(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
   // Check if the exported name registry contains that function name
   const NameRegistryEntry *functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName);
-  if (!functionRegistryEntry) {
-    softError(node, REFERENCED_UNDEFINED_FUNCTION,
-              "Function/procedure/struct '" + node->functionNameFragments.back() + "' could not be found");
-    return "";
-  }
+  if (!functionRegistryEntry)
+    SOFT_ERROR_STR(node, REFERENCED_UNDEFINED_FUNCTION,
+                   "Function/procedure/struct '" + node->functionNameFragments.back() + "' could not be found")
   SymbolTableEntry *functionEntry = functionRegistryEntry->targetEntry;
 
   // Check if the target symbol is a struct -> this must be a constructor call
@@ -1493,20 +1544,20 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
   // Get concrete template types
   if (node->hasTemplateTypes) {
     // Only constructors may have template types
-    if (!data.isCtorCall()) {
-      softError(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls");
-      return "";
-    }
+    if (!data.isCtorCall())
+      SOFT_ERROR_STR(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls")
 
     for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
       auto templateType = std::any_cast<SymbolType>(visit(templateTypeNode));
       assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
 
+      // Abort if the type is unresolved
+      if (templateType.is(TY_UNRESOLVED))
+        return UNRESOLVED_TYPE_NAME;
+
       // Check if the given type is generic
-      if (templateType.is(TY_GENERIC)) {
-        softError(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here");
-        return "";
-      }
+      if (templateType.is(TY_GENERIC))
+        SOFT_ERROR_STR(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here")
 
       concreteTemplateTypes.push_back(templateType);
     }
@@ -1524,9 +1575,8 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
     Struct *thisStruct = StructManager::matchStruct(structEntry->scope, structName, concreteTemplateTypes, node);
     if (!thisStruct) {
       const std::string signature = Struct::getSignature(structName, concreteTemplateTypes);
-      softError(node, UNKNOWN_DATATYPE,
-                "Could not find struct candidate for struct '" + signature + "'. Do the template types match?");
-      return "";
+      SOFT_ERROR_STR(node, UNKNOWN_DATATYPE,
+                     "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
     }
 
     // Override function name
@@ -1535,10 +1585,8 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
     // Retrieve the name registry entry for the constructor
     functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName + MEMBER_ACCESS_TOKEN + functionName);
     // Check if the constructor was found
-    if (!functionRegistryEntry) {
-      softError(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor");
-      return "";
-    }
+    if (!functionRegistryEntry)
+      SOFT_ERROR_STR(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor")
 
     // Set the 'this' type of the function to the struct type
     data.thisType = structEntry->getType();
@@ -1564,29 +1612,30 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
   return knownStructName;
 }
 
-void TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionType) const {
+bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionType) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if the given argument types match the type
   const std::vector<SymbolType> &actualArgTypes = data.argTypes;
   const std::vector<SymbolType> expectedArgTypes = functionType.getFunctionParamTypes();
   if (actualArgTypes.size() != expectedArgTypes.size())
-    SOFT_ERROR_VOID(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
+    SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
   for (size_t i = 0; i < actualArgTypes.size(); i++) {
     const SymbolType &actualType = actualArgTypes.at(i);
     const SymbolType &expectedType = expectedArgTypes.at(i);
     if (!expectedType.matches(actualType, true, true, true))
-      SOFT_ERROR_VOID(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
+      SOFT_ERROR_BOOL(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
                       "Expected " + expectedType.getName() + " but got " + actualType.getName())
   }
+  return true;
 }
 
-void TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
+bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Methods cannot have template types
   if (node->hasTemplateTypes)
-    SOFT_ERROR_VOID(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls")
+    SOFT_ERROR_BOOL(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls")
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
@@ -1595,10 +1644,10 @@ void TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
     // Retrieve field entry
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
     if (!fieldEntry)
-      SOFT_ERROR_VOID(node, INVALID_MEMBER_ACCESS,
+      SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS,
                       "The type " + data.thisType.getName() + " does not have a member with the name '" + identifier + "'")
     if (!fieldEntry->getType().isBaseType(TY_STRUCT))
-      SOFT_ERROR_VOID(node, INVALID_MEMBER_ACCESS, "Cannot call a method on '" + identifier + "', since it is no struct")
+      SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS, "Cannot call a method on '" + identifier + "', since it is no struct")
     fieldEntry->used = true;
 
     // Get struct type and scope
@@ -1621,6 +1670,8 @@ void TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
   data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, localThisType, localArgTypes, false, node);
+
+  return true;
 }
 
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
@@ -1630,12 +1681,13 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
     node->actualSize = static_cast<long>(node->itemLst()->args().size());
     for (AssignExprNode *arg : node->itemLst()->args()) {
       const SymbolType itemType = std::any_cast<ExprResult>(visit(arg)).type;
+      HANDLE_UNRESOLVED_TYPE_ER(itemType)
       if (actualItemType.is(TY_DYN)) // Perform type inference
         actualItemType = itemType;
       else if (itemType != actualItemType) // Check if types are matching
-        SOFT_ERROR_ANY(arg, ARRAY_ITEM_TYPE_NOT_MATCHING,
-                       "All provided values have to be of the same data type. You provided " + actualItemType.getName() +
-                           " and " + itemType.getName())
+        SOFT_ERROR_ER(arg, ARRAY_ITEM_TYPE_NOT_MATCHING,
+                      "All provided values have to be of the same data type. You provided " + actualItemType.getName() + " and " +
+                          itemType.getName())
     }
   }
 
@@ -1659,12 +1711,12 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // Check if access scope was altered
   if (accessScope != nullptr && accessScope != currentScope)
-    SOFT_ERROR_ANY(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'")
+    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'")
 
   // Retrieve struct
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(structName);
   if (!registryEntry)
-    SOFT_ERROR_ANY(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'")
+    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'")
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *structEntry = registryEntry->targetEntry;
   Scope *structScope = accessScope = registryEntry->targetScope;
@@ -1679,16 +1731,17 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     concreteTemplateTypes = aliasedTypeContainerEntry->getType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!concreteTemplateTypes.empty() && node->templateTypeLst())
-      SOFT_ERROR_ANY(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
+      SOFT_ERROR_ER(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
   if (node->templateTypeLst()) {
     concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       auto concreteType = std::any_cast<SymbolType>(visit(dataType));
+      HANDLE_UNRESOLVED_TYPE_ER(concreteType)
       // Check if generic type
       if (concreteType.is(TY_GENERIC))
-        SOFT_ERROR_ANY(dataType, EXPECTED_NON_GENERIC_TYPE, "Struct instantiations may only take concrete template types")
+        SOFT_ERROR_ER(dataType, EXPECTED_NON_GENERIC_TYPE, "Struct instantiations may only take concrete template types")
       concreteTemplateTypes.push_back(concreteType);
     }
   }
@@ -1698,7 +1751,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   Struct *spiceStruct = StructManager::matchStruct(structScope->parent, structName, concreteTemplateTypes, node);
   if (!spiceStruct) {
     const std::string structSignature = Struct::getSignature(structName, concreteTemplateTypes);
-    SOFT_ERROR_ANY(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found")
+    SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found")
   }
   node->instantiatedStructs.at(manIdx) = spiceStruct;
 
@@ -1715,14 +1768,15 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Check if the number of fields matches
   if (node->fieldLst()) { // Check if any fields are passed. Empty braces are also allowed
     if (spiceStruct->fieldTypes.size() != node->fieldLst()->args().size())
-      SOFT_ERROR_ANY(node->fieldLst(), NUMBER_OF_FIELDS_NOT_MATCHING,
-                     "You've passed too less/many field values. Pass either none or all of them")
+      SOFT_ERROR_ER(node->fieldLst(), NUMBER_OF_FIELDS_NOT_MATCHING,
+                    "You've passed too less/many field values. Pass either none or all of them")
 
     // Check if the field types are matching
     for (size_t i = 0; i < node->fieldLst()->args().size(); i++) {
       // Get actual type
       AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
+      HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
       const SymbolTableEntry *expectedField = structScope->symbolTable.lookupStrictByIndex(i);
       assert(expectedField != nullptr);
@@ -1739,8 +1793,8 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   } else {
     for (SymbolType &fieldType : spiceStruct->fieldTypes) {
       if (fieldType.isRef())
-        SOFT_ERROR_ANY(node, REFERENCE_WITHOUT_INITIALIZER,
-                       "The struct takes at least one reference field. You need to instantiate it with all fields.")
+        SOFT_ERROR_ER(node, REFERENCE_WITHOUT_INITIALIZER,
+                      "The struct takes at least one reference field. You need to instantiate it with all fields.")
     }
   }
 
@@ -1759,6 +1813,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 std::any TypeChecker::visitDataType(DataTypeNode *node) {
   // Visit base data type
   auto type = std::any_cast<SymbolType>(visit(node->baseDataType()));
+  HANDLE_UNRESOLVED_TYPE_ST(type)
 
   // Attach the specifiers to the type
   if (node->specifierLst()) {
@@ -1768,11 +1823,11 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
         type.specifiers.setConst(true);
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
-          SOFT_ERROR_ANY(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
+          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
         type.specifiers.setSigned(true);
       } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
-          SOFT_ERROR_ANY(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
+          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
         type.specifiers.setSigned(false);
       } else if (specifier->type == SpecifierNode::TY_HEAP) {
         type.specifiers.setHeap(true);
@@ -1788,8 +1843,8 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
           entryName = "param";
         else if (node->isReturnType)
           entryName = "return variable";
-        SOFT_ERROR_ANY(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                       "Cannot use this specifier on a " + std::string(entryName) + " definition")
+        SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                      "Cannot use this specifier on a " + std::string(entryName) + " definition")
       }
     }
   }
@@ -1800,8 +1855,8 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
 
     // Only the outermost array can have an unknown size
     if (type.isArray() && type.getArraySize() == ARRAY_SIZE_UNKNOWN)
-      SOFT_ERROR_ANY(node, ARRAY_SIZE_INVALID,
-                     "Usage of incomplete array type. Only the outermost array type may have unknown size")
+      SOFT_ERROR_ST(node, ARRAY_SIZE_INVALID,
+                    "Usage of incomplete array type. Only the outermost array type may have unknown size")
 
     switch (typeModifier.modifierType) {
     case DataTypeNode::TYPE_PTR: {
@@ -1817,17 +1872,17 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       if (!varName.empty()) {
         SymbolTableEntry *globalVar = rootScope->lookupStrict(varName);
         if (!globalVar)
-          SOFT_ERROR_ANY(node, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + varName + "' ")
+          SOFT_ERROR_ST(node, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + varName + "' ")
         if (!globalVar->getType().isConst())
-          SOFT_ERROR_ANY(node, EXPECTED_CONST_VARIABLE, "The size of the array must be known at compile time")
+          SOFT_ERROR_ST(node, EXPECTED_CONST_VARIABLE, "The size of the array must be known at compile time")
         if (!globalVar->getType().is(TY_INT))
-          SOFT_ERROR_ANY(node, OPERATOR_WRONG_DATA_TYPE, "Expected variable of type int")
+          SOFT_ERROR_ST(node, OPERATOR_WRONG_DATA_TYPE, "Expected variable of type int")
         assert(globalVar->compileTimeValue != nullptr);
         typeModifier.hardcodedSize = globalVar->compileTimeValue->intValue;
       }
 
       if (typeModifier.hasSize && typeModifier.hardcodedSize <= 1)
-        SOFT_ERROR_ANY(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated")
+        SOFT_ERROR_ST(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated")
       type = type.toArray(node, typeModifier.hardcodedSize);
       break;
     }
@@ -1858,10 +1913,16 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
     return node->setEvaluatedSymbolType(SymbolType(TY_STRING), manIdx);
   case BaseDataTypeNode::TYPE_BOOL:
     return node->setEvaluatedSymbolType(SymbolType(TY_BOOL), manIdx);
-  case BaseDataTypeNode::TY_CUSTOM:
-    return node->setEvaluatedSymbolType(std::any_cast<SymbolType>(visit(node->customDataType())), manIdx);
-  case BaseDataTypeNode::TY_FUNCTION:
-    return node->setEvaluatedSymbolType(std::any_cast<SymbolType>(visit(node->functionDataType())), manIdx);
+  case BaseDataTypeNode::TY_CUSTOM: {
+    auto customType = std::any_cast<SymbolType>(visit(node->customDataType()));
+    HANDLE_UNRESOLVED_TYPE_ST(customType)
+    return node->setEvaluatedSymbolType(customType, manIdx);
+  }
+  case BaseDataTypeNode::TY_FUNCTION: {
+    auto functionType = std::any_cast<SymbolType>(visit(node->functionDataType()));
+    HANDLE_UNRESOLVED_TYPE_ST(functionType)
+    return node->setEvaluatedSymbolType(functionType, manIdx);
+  }
   default:
     return node->setEvaluatedSymbolType(SymbolType(TY_DYN), manIdx);
   }
@@ -1903,7 +1964,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   // Check if the type exists in the exported names registry
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqTypeName);
   if (!registryEntry)
-    SOFT_ERROR_ANY(node, UNKNOWN_DATATYPE, "Unknown datatype '" + node->fqTypeName + "'")
+    SOFT_ERROR_ST(node, UNKNOWN_DATATYPE, "Unknown datatype '" + node->fqTypeName + "'")
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *entry = registryEntry->targetEntry;
   assert(entry != nullptr);
@@ -1928,9 +1989,10 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       templateTypes.reserve(node->templateTypeLst()->dataTypes().size());
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
         auto templateType = std::any_cast<SymbolType>(visit(dataType));
+        HANDLE_UNRESOLVED_TYPE_ST(templateType)
         // Generic types are only allowed for parameters and fields at this point
         if (entryType.is(TY_STRUCT) && templateType.is(TY_GENERIC) && !isParamOrFieldOrReturnType)
-          SOFT_ERROR_ANY(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here")
+          SOFT_ERROR_ST(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here")
         if (entryType.is(TY_GENERIC))
           allTemplateTypesConcrete = false;
         templateTypes.push_back(templateType);
@@ -1941,7 +2003,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     if (entryType.is(TY_STRUCT)) {
       // Check if struct is defined before the current code location, if defined in the same source file
       if (entry->declNode->codeLoc.sourceFilePath == node->codeLoc.sourceFilePath && entry->declNode->codeLoc > node->codeLoc)
-        SOFT_ERROR_ANY(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage")
+        SOFT_ERROR_ST(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage")
 
       if (allTemplateTypesConcrete || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
         // Set the struct instance to used, if found
@@ -1958,7 +2020,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       const std::string interfaceName = node->typeNameFragments.back();
       Interface *spiceInterface = InterfaceManager::matchInterface(localAccessScope, interfaceName, templateTypes, node);
       if (!spiceInterface)
-        SOFT_ERROR_ANY(node, UNKNOWN_DATATYPE, "Unknown interface " + Interface::getSignature(interfaceName, templateTypes))
+        SOFT_ERROR_ST(node, UNKNOWN_DATATYPE, "Unknown interface " + Interface::getSignature(interfaceName, templateTypes))
       entryType.setBodyScope(spiceInterface->interfaceScope);
     }
 
@@ -1970,7 +2032,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
   const std::string errorMessage =
       entryType.is(TY_INVALID) ? "Used type before declared" : "Expected type, but got " + entryType.getName();
-  SOFT_ERROR_ANY(node, EXPECTED_TYPE, errorMessage);
+  SOFT_ERROR_ER(node, EXPECTED_TYPE, errorMessage)
 }
 
 std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
@@ -1978,8 +2040,9 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   SymbolType returnType(TY_DYN);
   if (node->isFunction) {
     returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+    HANDLE_UNRESOLVED_TYPE_ST(returnType)
     if (returnType.is(TY_DYN))
-      SOFT_ERROR_ANY(node->returnType(), UNEXPECTED_DYN_TYPE, "Function types cannot have return type dyn")
+      SOFT_ERROR_ER(node->returnType(), UNEXPECTED_DYN_TYPE, "Function types cannot have return type dyn")
   }
 
   // Visit param types
@@ -1987,6 +2050,7 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   if (const TypeLstNode *paramTypeListNode = node->paramTypeLst(); paramTypeListNode != nullptr) {
     for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes()) {
       auto paramType = std::any_cast<SymbolType>(visit(paramTypeNode));
+      HANDLE_UNRESOLVED_TYPE_ST(returnType)
       paramTypes.push_back(paramType);
     }
   }

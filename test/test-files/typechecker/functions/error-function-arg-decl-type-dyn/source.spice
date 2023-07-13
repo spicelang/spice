@@ -3,5 +3,5 @@ f<int> testFunction(int arg0, dyn arg1 = "value", dyn arg2) {
 }
 
 f<int> main() {
-    testFunction();
+    testFunction(12345);
 }

@@ -32,6 +32,7 @@ const long ARRAY_SIZE_UNKNOWN = 0;
 
 enum SymbolSuperType : uint16_t {
   TY_INVALID,
+  TY_UNRESOLVED,
   TY_DOUBLE,
   TY_INT,
   TY_SHORT,

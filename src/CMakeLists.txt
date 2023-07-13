@@ -72,6 +72,7 @@ set(SOURCES
         typechecker/InterfaceManager.h
         typechecker/TypeMatcher.cpp
         typechecker/TypeMatcher.h
+        typechecker/MacroDefs.h
         # Borrow checker
         borrowchecker/BorrowChecker.cpp
         borrowchecker/BorrowChecker.h
