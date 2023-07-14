@@ -81,7 +81,7 @@ bool FileUtil::isCommandAvailable(const std::string &cmd) {
  */
 std::filesystem::path FileUtil::getStdDir() {
 #ifdef OS_UNIX
-  if (std::filesystem::exists(std::filesystem::path("/usr/lib/spice/std/")
+  if (std::filesystem::exists(std::filesystem::path("/usr/lib/spice/std/")))
     return std::filesystem::path("/usr/lib/spice/std/");
 #endif
   if (std::getenv("SPICE_STD_DIR")) {
