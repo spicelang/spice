@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <exception>
 #include <string>
 
@@ -9,7 +10,7 @@ namespace spice::compiler {
 
 // GCOV_EXCL_START
 
-enum CliErrorType {
+enum CliErrorType : uint8_t {
   INCOMPLETE_TARGET_TRIPLE,
   INVALID_TARGET_TRIPLE,
   SOURCE_FILE_MISSING,

@@ -72,6 +72,7 @@ set(SOURCES
         typechecker/InterfaceManager.h
         typechecker/TypeMatcher.cpp
         typechecker/TypeMatcher.h
+        typechecker/MacroDefs.h
         # Borrow checker
         borrowchecker/BorrowChecker.cpp
         borrowchecker/BorrowChecker.h
@@ -118,14 +119,14 @@ set(SOURCES
         model/GenericType.cpp
         model/GenericType.h
         # Exception handling
+        exception/ErrorManager.cpp
+        exception/ErrorManager.h
         exception/CompilerError.cpp
         exception/CompilerError.h
         exception/CliError.cpp
         exception/CliError.h
         exception/SemanticError.cpp
         exception/SemanticError.h
-        exception/IRError.cpp
-        exception/IRError.h
         exception/LinkerError.cpp
         exception/LinkerError.h
         exception/LexerError.cpp

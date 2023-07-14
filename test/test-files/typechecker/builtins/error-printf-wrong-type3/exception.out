@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/builtins/error-printf-wrong-type3/source.spice:3:18:
 Types of printf call not matching: The placeholder string expects string, String, char* or char[], but got int*
 

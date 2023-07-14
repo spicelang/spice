@@ -1,14 +1,9 @@
-type TestStruct struct {
-    int value
-}
-
-f<int> operator<<(TestStruct& ts, int i) {
-    return ts.value << i;
+p testProc(string arg0, bool arg1 = false, int arg2) {
+    printf("Test");
 }
 
 f<int> main() {
-    TestStruct ts = TestStruct{ 123 };
-    ts << 123;
+    testProc("test", true);
 }
 
 /*import "std/os/thread";

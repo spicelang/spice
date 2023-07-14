@@ -67,6 +67,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      if (templateType.is(TY_UNRESOLVED))
+        continue;
       // Check if it is a generic type
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
@@ -98,6 +100,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       usedGenericTypes.emplace_back(templateType);
   }
 
+  // Set generic if either the function or the parent struct is generic
+  if (!usedGenericTypes.empty())
+    node->isGeneric = true;
+
   // Set type of 'this' variable
   if (node->isMethod) {
     SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
@@ -107,6 +113,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Retrieve return type
   auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+  HANDLE_UNRESOLVED_TYPE_PTR(returnType)
   if (returnType.is(TY_DYN))
     throw SemanticError(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed");
   if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
@@ -190,6 +197,8 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      if (templateType.is(TY_UNRESOLVED))
+        continue;
       // Check if it is a generic type
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
@@ -220,6 +229,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     for (const SymbolType &templateType : thisType.getTemplateTypes())
       usedGenericTypes.emplace_back(templateType);
   }
+
+  // Set generic if either the function or the parent struct is generic
+  if (!usedGenericTypes.empty())
+    node->isGeneric = true;
 
   // Set type of 'this' variable
   if (node->isMethod) {
@@ -297,6 +310,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      if (templateType.is(TY_UNRESOLVED))
+        continue;
       // Check if it is a generic type
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
@@ -315,6 +330,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     for (DataTypeNode *dataType : node->interfaceTypeLst()->dataTypes()) {
       // Visit interface type
       auto interfaceType = std::any_cast<SymbolType>(visit(dataType));
+      if (interfaceType.is(TY_UNRESOLVED))
+        continue;
       // Check if it is an interface type
       if (!interfaceType.is(TY_INTERFACE))
         throw SemanticError(dataType, EXPECTED_INTERFACE_TYPE, "Expected interface type, got " + interfaceType.getName());
@@ -339,6 +356,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   for (FieldNode *field : node->fields()) {
     // Visit field type
     auto fieldType = std::any_cast<SymbolType>(visit(field));
+    if (fieldType.is(TY_UNRESOLVED))
+      continue;
 
     // Check for struct with infinite size.
     // This can happen if the struct A has a field with type A
@@ -381,6 +400,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      HANDLE_UNRESOLVED_TYPE_PTR(templateType)
       // Check if it is a generic type
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
@@ -407,7 +427,8 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   signatures.reserve(node->signatures().size());
   for (SignatureNode *signature : node->signatures()) {
     auto method = std::any_cast<std::vector<Function *> *>(visit(signature));
-    assert(method != nullptr);
+    if (!method)
+      return nullptr;
     signatures.insert(signatures.end(), method->begin(), method->end());
   }
 
@@ -478,6 +499,7 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   typeConditions.reserve(node->typeAltsLst()->dataTypes().size());
   for (const auto &typeAlt : node->typeAltsLst()->dataTypes()) {
     auto typeCondition = std::any_cast<SymbolType>(visit(typeAlt));
+    HANDLE_UNRESOLVED_TYPE_PTR(typeCondition)
     if (!typeCondition.is(TY_DYN))
       typeConditions.push_back(typeCondition);
   }
@@ -503,6 +525,7 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
 
   // Update type of the aliased type container entry
   auto aliasedType = std::any_cast<SymbolType>(visit(node->dataType()));
+  HANDLE_UNRESOLVED_TYPE_PTR(aliasedType)
   node->aliasedTypeContainerEntry->updateType(aliasedType, false);
   node->aliasedTypeContainerEntry->used = true; // The container type is always used per default
 
@@ -512,9 +535,11 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
 std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
   // Insert variable name to symbol table
   auto globalVarType = std::any_cast<SymbolType>(visit(node->dataType()));
+  HANDLE_UNRESOLVED_TYPE_PTR(globalVarType)
 
   if (node->constant()) { // Variable is initialized here
     SymbolType rhsType = std::any_cast<ExprResult>(visit(node->constant())).type;
+    HANDLE_UNRESOLVED_TYPE_PTR(rhsType)
     if (globalVarType.is(TY_DYN)) { // Perform type inference
       globalVarType = rhsType;
     } else if (!globalVarType.matches(rhsType, false, true, true)) { // Check if types are matching
@@ -554,6 +579,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
     for (DataTypeNode *arg : node->argTypeLst()->dataTypes()) {
       // Visit argument
       auto argType = std::any_cast<SymbolType>(visit(arg));
+      HANDLE_UNRESOLVED_TYPE_PTR(argType)
       // Check if the argument type is 'dyn'
       if (argType.is(TY_DYN))
         throw SemanticError(arg, UNEXPECTED_DYN_TYPE, "Dyn data type is not allowed as arg type for external functions");
@@ -568,6 +594,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   const bool isFunction = node->returnType();
   if (isFunction) { // External function
     returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+    HANDLE_UNRESOLVED_TYPE_PTR(returnType)
     // Check if return type is dyn
     if (returnType.is(TY_DYN))
       throw SemanticError(node->returnType(), UNEXPECTED_DYN_TYPE, "dyn is not allowed as return type for external functions");

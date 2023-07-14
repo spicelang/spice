@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/arrays/error-index-not-type-int/source.spice:3:30:
 Array index not of type int or long: Array index must be of type int or long
 

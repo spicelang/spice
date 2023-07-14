@@ -2,7 +2,6 @@
 
 #include "ObjectEmitter.h"
 
-#include <exception/IRError.h>
 #include <util/FileUtil.h>
 #include <util/RawStringOStream.h>
 
@@ -25,14 +24,14 @@ void ObjectEmitter::emit() const {
   // Open file output stream
   std::error_code errorCode;
   llvm::raw_fd_ostream stream(objectFile, errorCode, llvm::sys::fs::OF_None);
-  if (errorCode)                                                                           // GCOV_EXCL_LINE
-    throw IRError(CANT_OPEN_OUTPUT_FILE, "File '" + objectFile + "' could not be opened"); // GCOV_EXCL_LINE
+  if (errorCode)                                                                                 // GCOV_EXCL_LINE
+    throw CompilerError(CANT_OPEN_OUTPUT_FILE, "File '" + objectFile + "' could not be opened"); // GCOV_EXCL_LINE
 
   llvm::legacy::PassManager passManager;
   // GCOV_EXCL_START
   if (resourceManager.targetMachine->addPassesToEmitFile(passManager, stream, nullptr, llvm::CGFT_ObjectFile,
                                                          cliOptions.disableVerifier))
-    throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type");
+    throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type");
   // GCOV_EXCL_STOP
 
   // Emit object file
@@ -49,7 +48,7 @@ void ObjectEmitter::getASMString(std::string &output) const {
   // GCOV_EXCL_START
   if (resourceManager.targetMachine->addPassesToEmitFile(passManager, ostream, nullptr, llvm::CGFT_AssemblyFile,
                                                          cliOptions.disableVerifier))
-    throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type");
+    throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type");
   // GCOV_EXCL_STOP
 
   // Emit object file
@@ -62,7 +61,7 @@ void ObjectEmitter::dumpAsm() const {
   // GCOV_EXCL_START
   if (resourceManager.targetMachine->addPassesToEmitFile(passManager, llvm::outs(), nullptr, llvm::CGFT_AssemblyFile,
                                                          cliOptions.disableVerifier))
-    throw IRError(WRONG_TYPE, "Target machine can't emit a file of this type");
+    throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type");
   // GCOV_EXCL_STOP
 
   // Emit object file

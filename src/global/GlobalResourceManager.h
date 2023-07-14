@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include <exception/ErrorManager.h>
 #include <global/CacheManager.h>
 #include <global/RuntimeModuleManager.h>
 #include <linker/ExternalLinkerInterface.h>
+#include <util/CodeLoc.h>
 #include <util/Timer.h>
 
 #include <llvm/IR/IRBuilder.h>
@@ -31,6 +33,12 @@ const char *const LTO_FILE_NAME = "lto-module";
  */
 class GlobalResourceManager {
 public:
+  // Structs
+  struct SoftError {
+    const CodeLoc codeLoc;
+    const std::string message;
+  };
+
   // Constructors
   explicit GlobalResourceManager(const CliOptions &cliOptions);
   GlobalResourceManager(const GlobalResourceManager &) = delete;
@@ -53,6 +61,7 @@ public:
   BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
   BS::synced_stream tout;
   std::mutex objectEmitLock;
+  ErrorManager errorManager;
 };
 
 } // namespace spice::compiler

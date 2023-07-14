@@ -298,6 +298,15 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
     // GCOV_EXCL_STOP
   } while (typeChecker.reVisitRequested);
 
+  // Check if there are any soft errors and if so, print them
+  if (!resourceManager.errorManager.softErrors.empty()) {
+    std::stringstream errorStream;
+    errorStream << "There are unresolved errors. Please fix them and recompile.";
+    for (const ErrorManager::SoftError &error : resourceManager.errorManager.softErrors)
+      errorStream << "\n\n" << error.message;
+    throw CompilerError(UNRESOLVED_SOFT_ERRORS, errorStream.str());
+  }
+
   // Check if all dyn variables were type-inferred successfully
   globalScope->checkSuccessfulTypeInference();
 
@@ -738,7 +747,7 @@ void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType 
     outputStr << compilerStageIoTypeName[in] << " --> " << compilerStageIoTypeName[out];
     outputStr << " (" << std::to_string(stageRuntime) << " ms";
     if (stageRuns > 0)
-      outputStr << "; " << std::to_string(stageRuns) << " runs";
+      outputStr << "; " << std::to_string(stageRuns) << " run(s)";
     outputStr << ")\n";
     // Print
     if (fromThread) {

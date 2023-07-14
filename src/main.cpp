@@ -3,7 +3,6 @@
 #include <SourceFile.h>
 #include <cli/CLIInterface.h>
 #include <exception/CliError.h>
-#include <exception/IRError.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
@@ -45,7 +44,7 @@ bool compileProject(CliOptions &cliOptions) {
     std::cout << e.what() << "\n";
   } catch (SemanticError &e) {
     std::cout << e.what() << "\n";
-  } catch (IRError &e) {
+  } catch (CompilerError &e) {
     std::cout << e.what() << "\n";
   }
   return false;

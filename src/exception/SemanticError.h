@@ -13,7 +13,7 @@ namespace spice::compiler {
 class ASTNode;
 struct CodeLoc;
 
-enum SemanticErrorType {
+enum SemanticErrorType : uint8_t {
   REFERENCED_UNDEFINED_FUNCTION,
   REFERENCED_UNDEFINED_VARIABLE,
   REFERENCED_UNDEFINED_STRUCT,
@@ -107,13 +107,10 @@ public:
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;
-
-private:
-  // Members
-  std::string errorMessage;
-
-  // Private methods
   [[nodiscard]] static std::string getMessagePrefix(SemanticErrorType errorType);
+
+  // Public members
+  std::string errorMessage;
 };
 
 } // namespace spice::compiler

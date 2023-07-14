@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/generics/error-failing-type-condition/source.spice:8:16:
 Referenced undefined function: Function/procedure 'max(short,short)' could not be found
 

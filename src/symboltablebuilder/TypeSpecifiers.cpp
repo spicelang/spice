@@ -49,6 +49,7 @@ TypeSpecifiers TypeSpecifiers::of(uint16_t superType) {
     return TypeSpecifiers(SPECIFIER_DEFAULTS_IMPORT);
   case TY_DYN:
   case TY_INVALID:
+  case TY_UNRESOLVED:
     return {};
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Symbol specifier fallthrough"); // GCOV_EXCL_LINE

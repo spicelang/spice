@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/methods/error-this-type-no-struct/source.spice:7:5:
 Member access is only allowed on structs and Strings: Cannot call a method on 'thisIsNotAStruct', since it is no struct
 

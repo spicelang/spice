@@ -3,7 +3,6 @@
 #include "GlobalResourceManager.h"
 
 #include <SourceFile.h>
-#include <exception/IRError.h>
 
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
@@ -28,7 +27,7 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
   std::string error;
   const llvm::Target *target = llvm::TargetRegistry::lookupTarget(cliOptions.targetTriple, error);
   if (!target)
-    throw IRError(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // GCOV_EXCL_LINE
+    throw CompilerError(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // GCOV_EXCL_LINE
 
   // Create target machine for LLVM
   llvm::TargetOptions opt;

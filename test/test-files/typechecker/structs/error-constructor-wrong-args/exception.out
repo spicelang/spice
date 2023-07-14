@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/structs/error-constructor-wrong-args/source.spice:11:22:
 Referenced undefined function: Function/procedure 'TestStruct.ctor(int)' could not be found
 

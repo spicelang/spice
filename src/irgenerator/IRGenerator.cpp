@@ -3,7 +3,6 @@
 #include "IRGenerator.h"
 
 #include <SourceFile.h>
-#include <exception/IRError.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
@@ -262,7 +261,7 @@ void IRGenerator::verifyFunction(llvm::Function *fct, const CodeLoc &codeLoc) co
   std::string output;
   llvm::raw_string_ostream oss(output);
   if (llvm::verifyFunction(*fct, &oss))
-    throw IRError(codeLoc, INVALID_FUNCTION, output);
+    throw CompilerError(codeLoc, INVALID_FUNCTION, output);
 }
 
 void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
@@ -274,7 +273,7 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
   std::string output;
   llvm::raw_string_ostream oss(output);
   if (llvm::verifyModule(*module, &oss))
-    throw IRError(codeLoc, INVALID_MODULE, output);
+    throw CompilerError(codeLoc, INVALID_MODULE, output);
 }
 
 LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {

@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/generics/error-generic-type-check/source.spice:4:18:
 Types of printf call not matching: The placeholder string expects int, short, long, byte or bool, but got string
 
