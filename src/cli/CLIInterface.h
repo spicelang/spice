@@ -25,25 +25,27 @@ enum OptLevel : uint8_t {
  * Representation of the various cli options
  */
 struct CliOptions {
-  std::string mainSourceFile; // e.g. main.spice
-  std::string targetTriple;   // In format: <arch><sub>-<vendor>-<sys>-<abi>
+  std::filesystem::path mainSourceFile; // e.g. ./main.spice
+  std::string targetTriple;             // In format: <arch><sub>-<vendor>-<sys>-<abi>
   std::string targetArch = TARGET_UNKNOWN;
   std::string targetVendor = TARGET_UNKNOWN;
   std::string targetOs = TARGET_UNKNOWN;
-  bool execute = false;
   bool isNativeTarget = true;
   bool useCPUFeatures = true;
-  std::string cacheDir;               // Where the cache files go. Should always be a temp directory
-  std::string outputDir;              // Where the object files go. Should always be a temp directory
-  std::string outputPath;             // Where the output binary goes.
-  unsigned short compileJobCount = 0; // 0 for auto
+  bool execute = false;
+  std::filesystem::path cacheDir;         // Where the cache files go. Should always be a temp directory
+  std::filesystem::path outputDir = "./"; // Where the object files go. Should always be a temp directory
+  std::filesystem::path outputPath;       // Where the output binary goes.
+  unsigned short compileJobCount = 0;     // 0 for auto
   bool ignoreCache = false;
   bool printDebugOutput = false;
-  bool dumpCST = false;
-  bool dumpAST = false;
-  bool dumpIR = false;
-  bool dumpAssembly = false;
-  bool dumpSymbolTables = false;
+  struct DumpSettings {
+    bool dumpCST = false;
+    bool dumpAST = false;
+    bool dumpIR = false;
+    bool dumpAssembly = false;
+    bool dumpSymbolTables = false;
+  } dumpSettings;
   bool disableAstOpt = false;
   OptLevel optLevel = O2;
   bool useLTO = false;
@@ -71,6 +73,7 @@ public:
   CliOptions cliOptions;
   bool shouldCompile = false;
   bool shouldInstall = false;
+  bool shouldUninstall = false;
   bool shouldExecute = false;
 
 private:

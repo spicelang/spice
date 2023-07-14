@@ -31,61 +31,57 @@ void CLIInterface::createInterface() {
   addUninstallSubcommand();
 
   app.final_callback([&]() {
+    if (shouldInstall || shouldUninstall) {
+      // Prepare the installation path
+      std::filesystem::path installPath = FileUtil::getSpiceBinDir();
+      installPath /= cliOptions.mainSourceFile.stem();
+      std::filesystem::create_directories(installPath);
+#if OS_WINDOWS
+      installPath.replace_extension("exe");
+#endif
+
+      // If the binary should be installed, set the output path to the Spice bin directory
+      if (shouldInstall)
+        cliOptions.outputPath = installPath;
+
+      // If the binary should be uninstalled, check if the executable exists and uninstall it
+      if (shouldUninstall) {
+        if (std::filesystem::exists(installPath) && std::filesystem::remove(installPath))
+          std::cout << "Successfully uninstalled.\n";
+        else
+          CompilerWarning(UNINSTALL_FAILED, "The executable was not found at the expected location").print();
+      }
+    }
+
     if (!shouldCompile)
       return;
 
     if (shouldExecute)
       cliOptions.execute = true;
 
-    // If the binary should be installed, set the output path to the Spice bin directory
-    if (shouldInstall) {
-      std::string installPath = FileUtil::getSpiceBinDir();
-      FileUtil::createDirs(installPath);
-      installPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
-#if OS_WINDOWS
-      installPath += ".exe";
-#endif
-      cliOptions.outputPath = installPath;
-    }
-
     // Ensure that both, the output path and the output dir have valid values
-    if (cliOptions.outputPath.empty())
-      cliOptions.outputPath = ".";
-    if (cliOptions.outputPath == "." || cliOptions.outputPath == "..") {
-      cliOptions.outputPath += FileUtil::DIR_SEPARATOR;
-      cliOptions.outputPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
+    if (cliOptions.outputPath.empty()) {
+      cliOptions.outputPath = cliOptions.mainSourceFile;
       if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
-        cliOptions.outputPath += ".wasm";
+        cliOptions.outputPath.replace_extension("wasm");
       } else {
 #if OS_WINDOWS
-        cliOptions.outputPath += ".exe";
+        cliOptions.outputPath.replace_extension("exe");
+#else
+        cliOptions.outputPath.replace_extension("");
 #endif
       }
     }
 
-    // Add relative prefix to filename
-    if (cliOptions.mainSourceFile.find("/\\") == std::string::npos)
-      cliOptions.mainSourceFile = "./" + cliOptions.mainSourceFile;
-
     // Get temporary directory of system
-    std::string tmpDir = std::filesystem::temp_directory_path().string();
-    if (tmpDir.back() != '/' && tmpDir.back() != '\\')
-      tmpDir += FileUtil::DIR_SEPARATOR;
-
-    // Set cacheDir to <system-tmp-dir>/spice/cache
-    std::stringstream cacheDir;
-    cacheDir << tmpDir << "spice" << FileUtil::DIR_SEPARATOR << "cache";
-    cliOptions.cacheDir = cacheDir.str();
-
-    // Set outputDir to <system-tmp-dir>/spice/objects
-    std::stringstream outputDir;
+    std::filesystem::path tmpDir = std::filesystem::temp_directory_path();
+    cliOptions.cacheDir = tmpDir / "spice" / "cache";
     uint64_t millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    outputDir << tmpDir << "spice" << FileUtil::DIR_SEPARATOR << "output" << FileUtil::DIR_SEPARATOR << std::to_string(millis);
-    cliOptions.outputDir = outputDir.str();
+    cliOptions.outputDir = tmpDir / "spice" / "output" / std::to_string(millis);
 
-    // Create the output dir if it does not exist already
-    if (!FileUtil::dirExists(cliOptions.outputDir))
-      FileUtil::createDirs(cliOptions.outputDir);
+    // Create directories in case they not exist yet
+    std::filesystem::create_directories(cliOptions.cacheDir);
+    std::filesystem::create_directories(cliOptions.outputDir);
   });
 }
 
@@ -125,7 +121,9 @@ void CLIInterface::runBinary() const {
     std::cout << "Running executable ...\n\n";
 
   // Run executable
-  int exitCode = std::system(cliOptions.outputPath.c_str()) / 256;
+  std::filesystem::path executablePath = cliOptions.outputPath;
+  executablePath.make_preferred();
+  int exitCode = std::system(executablePath.string().c_str()) / 256;
   if (exitCode != 0)
     throw CliError(NON_ZERO_EXIT_CODE, "Your Spice executable exited with non-zero exit code " + std::to_string(exitCode));
 }
@@ -158,7 +156,7 @@ void CLIInterface::addBuildSubcommand() {
   subCmd->add_option<std::string>("--target-os", cliOptions.targetOs, "Target os for emitted executable (for cross-compiling)");
 
   // --output
-  subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
+  subCmd->add_option<std::filesystem::path>("--output,-o", cliOptions.outputPath, "Set the output file path");
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
   // --disable-verifier
@@ -182,7 +180,7 @@ void CLIInterface::addRunSubcommand() {
   addCompileSubcommandOptions(subCmd);
 
   // --output
-  subCmd->add_option<std::string>("--output,-o", cliOptions.outputPath, "Set the output file path");
+  subCmd->add_option<std::filesystem::path>("--output,-o", cliOptions.outputPath, "Set the output file path");
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
   // --disable-verifier
@@ -199,7 +197,8 @@ void CLIInterface::addInstallSubcommand() {
   subCmd->alias("i");
   subCmd->ignore_case();
   subCmd->callback([&]() {
-    shouldCompile = shouldInstall = true; // Requires the source file to be compiled
+    shouldCompile = true;
+    shouldInstall = true;
   });
 
   addCompileSubcommandOptions(subCmd);
@@ -213,22 +212,10 @@ void CLIInterface::addUninstallSubcommand() {
   CLI::App *subCmd = app.add_subcommand("uninstall", "Builds your Spice program and runs it immediately");
   subCmd->alias("u");
   subCmd->ignore_case();
-  subCmd->callback([&]() {
-    std::string installPath = FileUtil::getSpiceBinDir();
-    installPath += FileUtil::getFileName(cliOptions.mainSourceFile.substr(0, cliOptions.mainSourceFile.length() - 6));
-#if OS_WINDOWS
-    installPath += ".exe";
-#endif
-    if (!FileUtil::fileExists(installPath)) {
-      CompilerWarning(UNINSTALL_FAILED, "The executable was not found at the expected location").print();
-      return;
-    }
-    FileUtil::deleteFile(installPath);
-    std::cout << "Successfully uninstalled.\n";
-  });
+  subCmd->callback([&]() { shouldUninstall = true; });
 
   // Source file
-  subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
+  subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
       ->check(CLI::ExistingFile)
       ->required();
 }
@@ -237,15 +224,15 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
   // --dump-cst
-  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dumpCST, "Dump CST as serialized string and SVG image");
+  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dumpSettings.dumpCST, "Dump CST as serialized string and SVG image");
   // --dump-ast
-  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
+  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpSettings.dumpAST, "Dump AST as serialized string and SVG image");
   // --dump-symtab
-  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSettings.dumpSymbolTables, "Dump serialized symbol tables");
   // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpIR, "Dump LLVM-IR");
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
   // --dump-assembly
-  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpAssembly, "Dump Assembly code");
+  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpSettings.dumpAssembly, "Dump Assembly code");
 
   // --jobs
   subCmd->add_option<unsigned short>("--jobs,-j", cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
@@ -271,7 +258,7 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
       "-lto", [&]() { cliOptions.useLTO = true; }, "Enable link time optimization (LTO)");
 
   // Source file
-  subCmd->add_option<std::string>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
+  subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
       ->check(CLI::ExistingFile)
       ->required();
 }

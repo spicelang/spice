@@ -12,11 +12,7 @@
 
 #include "util/FileUtil.h"
 
-#if OS_WINDOWS
-const char *const PATH_TEST_FILES = ".\\test-files\\";
-#else
 const char *const PATH_TEST_FILES = "./test-files/";
-#endif
 const unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
 const unsigned int IR_FILE_SKIP_LINES = 5; // Skip the first couple of lines, because they contain target dependent information
 extern bool updateRefs;
@@ -47,7 +43,7 @@ const char *const CTL_LTO = "with-lto";
 struct TestCase {
   const std::string testSuite;
   const std::string testName;
-  const std::string testPath;
+  const std::filesystem::path testPath;
 };
 
 // Typedefs
@@ -67,12 +63,11 @@ public:
   // Public static methods
   static std::vector<TestCase> collectTestCases(const std::string &suiteName, bool useSubDirs);
   static bool checkRefMatch(
-      const std::string &refPath, GetOutputFct getActualOutput,
+      const std::filesystem::path &refPath, GetOutputFct getActualOutput,
       ModifyOutputFct modifyOutput = [](std::string &, std::string &) {});
   static void handleError(const TestCase &testCase, const std::exception &error);
-  static std::vector<std::string> getSubdirs(const std::string &basePath);
-  static std::string getFileContent(const std::string &filePath);
-  static std::vector<std::string> getFileContentLinesVector(const std::string &filePath);
+  static std::vector<std::string> getSubdirs(const std::filesystem::path &basePath);
+  static std::vector<std::string> getFileContentLinesVector(const std::filesystem::path &filePath);
   static std::string toCamelCase(std::string input);
   static constexpr const char *getDefaultExecutableName() {
 #if OS_WINDOWS

@@ -22,7 +22,7 @@ void IROptimizer::prepare() {
 }
 
 void IROptimizer::optimizeDefault() {
-  if (cliOptions.printDebugOutput && cliOptions.dumpIR)
+  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR)
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " ...\n"; // GCOV_EXCL_LINE
 
   // Run passes
@@ -33,7 +33,7 @@ void IROptimizer::optimizeDefault() {
 }
 
 void IROptimizer::optimizePreLink() {
-  if (cliOptions.printDebugOutput && cliOptions.dumpIR)                                                 // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR)                                    // GCOV_EXCL_LINE
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (pre-link) ...\n"; // GCOV_EXCL_LINE
 
   // Run passes
@@ -48,7 +48,7 @@ void IROptimizer::optimizePreLink() {
 }
 
 void IROptimizer::optimizePostLink(llvm::Module &ltoModule) {
-  if (cliOptions.printDebugOutput && cliOptions.dumpIR)                                                  // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR)                                     // GCOV_EXCL_LINE
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (post-link) ...\n"; // GCOV_EXCL_LINE
 
   // Compute module summary index

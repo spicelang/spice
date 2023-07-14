@@ -13,7 +13,7 @@
 
 namespace spice::compiler {
 
-void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std::string &sourceFileDir) {
+void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std::filesystem::path &sourceFileDir) {
   llvm::Module *module = irGenerator->module;
   llvm::LLVMContext &context = irGenerator->context;
   const std::string producerString = "spice version " + std::string(SPICE_VERSION);
@@ -33,14 +33,15 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std
   diBuilder = std::make_unique<llvm::DIBuilder>(*module);
 
   // Create compilation unit
-  const std::filesystem::path absolutePath = std::filesystem::absolute(sourceFileDir + FileUtil::DIR_SEPARATOR + sourceFileName);
-  llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir);
+  std::filesystem::path absolutePath = std::filesystem::absolute(sourceFileDir / sourceFileName);
+  absolutePath.make_preferred();
+  llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
   compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C11, cuDiFile, producerString,
                                              irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
                                              false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
   // Create another DIFile as scope for subprograms
-  diFile = diBuilder->createFile(sourceFileName, sourceFileDir);
+  diFile = diBuilder->createFile(sourceFileName, sourceFileDir.string());
 
   pointerWidth = irGenerator->module->getDataLayout().getPointerSizeInBits();
 

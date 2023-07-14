@@ -29,34 +29,38 @@ void execTestCase(const TestCase &testCase) {
     GTEST_SKIP();
 
   // Create fake cli options
-  std::string sourceFilePath = testCase.testPath + spice::compiler::FileUtil::DIR_SEPARATOR + REF_NAME_SOURCE;
+  std::filesystem::path sourceFilePath = testCase.testPath / REF_NAME_SOURCE;
   llvm::Triple targetTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
-  CliOptions cliOptions = {/* mainSourceFile= */ sourceFilePath,
-                           /* targetTriple= */ targetTriple.getTriple(),
-                           /* targetArch= */ std::string(targetTriple.getArchName()),
-                           /* targetVendor= */ std::string(targetTriple.getVendorName()),
-                           /* targetOs= */ std::string(targetTriple.getOSName()),
-                           /* execute= */ false, // If we set this to 'true', the compiler will not emit object files
-                           /* isNativeTarget= */ true,
-                           /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
-                           /* cacheDir= */ "./cache",
-                           /* outputDir= */ ".",
-                           /* outputPath= */ ".",
-                           /* compileJobCount= */ 0,
-                           /* ignoreCache */ true,
-                           /* printDebugOutput= */ false,
-                           /* dumpCST= */ false,
-                           /* dumpAST= */ false,
-                           /* dumpIR= */ false,
-                           /* dumpAssembly= */ false,
-                           /* dumpSymbolTables= */ false,
-                           /* disableAstOpt= */ false,
-                           /* optLevel= */ O0,
-                           /* useLTO= */ FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_LTO),
-                           /* noEntryFct= */ false,
-                           /* debugInfo= */ FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_DEBUG_INFO),
-                           /* disableVerifier= */ false,
-                           /* testMode= */ true};
+  CliOptions cliOptions = {
+      /* mainSourceFile= */ sourceFilePath,
+      /* targetTriple= */ targetTriple.getTriple(),
+      /* targetArch= */ std::string(targetTriple.getArchName()),
+      /* targetVendor= */ std::string(targetTriple.getVendorName()),
+      /* targetOs= */ std::string(targetTriple.getOSName()),
+      /* isNativeTarget= */ true,
+      /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
+      /* execute= */ false,      // If we set this to 'true', the compiler will not emit object files
+      /* cacheDir= */ "./cache",
+      /* outputDir= */ ".",
+      /* outputPath= */ ".",
+      /* compileJobCount= */ 0,
+      /* ignoreCache */ true,
+      /* printDebugOutput= */ false,
+      CliOptions::DumpSettings{
+          /* dumpCST= */ false,
+          /* dumpAST= */ false,
+          /* dumpIR= */ false,
+          /* dumpAssembly= */ false,
+          /* dumpSymbolTables= */ false,
+      },
+      /* disableAstOpt= */ false,
+      /* optLevel= */ O0,
+      /* useLTO= */ std::filesystem::exists(testCase.testPath / CTL_LTO),
+      /* noEntryFct= */ false,
+      /* debugInfo= */ std::filesystem::exists(testCase.testPath / CTL_DEBUG_INFO),
+      /* disableVerifier= */ false,
+      /* testMode= */ true,
+  };
 
   // Instantiate GlobalResourceManager
   GlobalResourceManager resourceManager(cliOptions);
@@ -70,7 +74,7 @@ void execTestCase(const TestCase &testCase) {
     mainSourceFile->runParser();
 
     // Check CST
-    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_PARSE_TREE, [&]() {
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_PARSE_TREE, [&]() {
       mainSourceFile->runCSTVisualizer();
       return mainSourceFile->compilerOutput.cstString;
     });
@@ -80,7 +84,7 @@ void execTestCase(const TestCase &testCase) {
     mainSourceFile->runASTOptimizer();
 
     // Check AST
-    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYNTAX_TREE, [&]() {
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYNTAX_TREE, [&]() {
       mainSourceFile->runASTVisualizer();
       return mainSourceFile->compilerOutput.astString;
     });
@@ -93,11 +97,11 @@ void execTestCase(const TestCase &testCase) {
     mainSourceFile->runEscapeAnalyzer();
 
     // Check symbol table output (check happens here, to include updates from type checker, borrow checker and escape analyzer)
-    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_SYMBOL_TABLE,
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYMBOL_TABLE,
                             [&]() { return mainSourceFile->globalScope->getSymbolTableJSON().dump(/*indent=*/2); });
 
     // Fail if an error was expected
-    if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT))
+    if (std::filesystem::exists(testCase.testPath / REF_NAME_ERROR_OUTPUT))
       FAIL() << "Expected error, but got no error";
 
     // Run backend for all dependencies
@@ -109,7 +113,7 @@ void execTestCase(const TestCase &testCase) {
 
     // Check unoptimized IR code
     TestUtil::checkRefMatch(
-        testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_IR, [&]() { return mainSourceFile->compilerOutput.irString; },
+        testCase.testPath / REF_NAME_IR, [&]() { return mainSourceFile->compilerOutput.irString; },
         [&](std::string &expectedOutput, std::string &actualOutput) {
           // Cut of first few lines to be target independent
           TestUtil::eraseIRModuleHeader(expectedOutput);
@@ -124,7 +128,7 @@ void execTestCase(const TestCase &testCase) {
     // Check optimized IR code
     for (uint8_t i = 1; i <= 5; i++) {
       TestUtil::checkRefMatch(
-          testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_OPT_IR[i - 1],
+          testCase.testPath / REF_NAME_OPT_IR[i - 1],
           [&]() {
             cliOptions.optLevel = static_cast<OptLevel>(i);
 
@@ -151,7 +155,7 @@ void execTestCase(const TestCase &testCase) {
     // Check assembly code
     bool objectFilesEmitted = false;
     if (!skipNonGitHubTests) {
-      TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ASM, [&]() {
+      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ASM, [&]() {
         mainSourceFile->runObjectEmitter();
         objectFilesEmitted = true;
 
@@ -161,7 +165,7 @@ void execTestCase(const TestCase &testCase) {
 
     // Check warnings
     mainSourceFile->collectAndPrintWarnings();
-    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_WARNING_OUTPUT, [&]() {
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&]() {
       std::stringstream actualWarningString;
       for (const CompilerWarning &warning : mainSourceFile->compilerOutput.warnings)
         actualWarningString << warning.warningMessage << "\n";
@@ -169,13 +173,13 @@ void execTestCase(const TestCase &testCase) {
     });
 
     // Check if the execution output matches the expected output
-    TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_EXECUTION_OUTPUT, [&]() {
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, [&]() {
       // Prepare linker
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
 
       // Parse linker flags
-      const std::string linkerFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + INPUT_NAME_LINKER_FLAGS;
-      if (FileUtil::fileExists(linkerFlagsFile))
+      const std::filesystem::path linkerFlagsFile = testCase.testPath / INPUT_NAME_LINKER_FLAGS;
+      if (std::filesystem::exists(linkerFlagsFile))
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           resourceManager.linker.addLinkerFlag(linkerFlag);
 
@@ -195,8 +199,8 @@ void execTestCase(const TestCase &testCase) {
       if (enableLeakDetection)
         cmd += "valgrind -q --leak-check=full --num-callers=100 --error-exitcode=1 ";
       cmd += TestUtil::getDefaultExecutableName();
-      const std::string cliFlagsFile = testCase.testPath + FileUtil::DIR_SEPARATOR + INPUT_NAME_CLI_FLAGS;
-      if (FileUtil::fileExists(cliFlagsFile))
+      const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
+      if (std::filesystem::exists(cliFlagsFile))
         cmd += " " + TestUtil::getFileContentLinesVector(cliFlagsFile)[0];
       const ExecResult result = FileUtil::exec(cmd);
 

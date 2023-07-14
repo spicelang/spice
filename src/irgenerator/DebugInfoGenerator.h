@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <stack>
 
 #include <llvm/IR/DIBuilder.h>
@@ -23,7 +24,7 @@ public:
   explicit DebugInfoGenerator(IRGenerator *irGenerator) : irGenerator(irGenerator) {}
 
   // Public methods
-  void initialize(const std::string &sourceFileName, const std::string &sourceFileDir);
+  void initialize(const std::string &sourceFileName, const std::filesystem::path &sourceFileDir);
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
   void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
   void generateGlobalStringDebugInfo(llvm::GlobalVariable *global, const std::string &name, size_t length,

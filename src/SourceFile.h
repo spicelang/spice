@@ -99,8 +99,8 @@ struct NameRegistryEntry {
 class SourceFile {
 public:
   // Constructors
-  explicit SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::string &filePath,
-                      bool stdFile);
+  explicit SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name,
+                      const std::filesystem::path &filePath, bool stdFile);
   SourceFile(const SourceFile &) = delete;
 
   // Friend classes
@@ -149,9 +149,9 @@ public:
   // Public fields
   std::string name;
   std::string fileName;
-  std::string filePath;
+  std::filesystem::path filePath;
   std::string fileDir;
-  std::string objectFilePath;
+  std::filesystem::path objectFilePath;
   bool stdFile = false;
   bool mainFile = true;
   CompileStageType previousStage = NONE;

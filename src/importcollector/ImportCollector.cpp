@@ -23,41 +23,42 @@ std::any ImportCollector::visitEntry(EntryNode *node) {
 }
 
 std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
-  std::string importPath = node->importPath;
-  bool isStd = importPath.rfind("std/", 0) == 0;
+  bool isStd = node->importPath.starts_with("std/");
 
-  std::string basePath;
+  std::filesystem::path basePath;
   if (isStd) { // Include source file from standard library
     // Find std library
-    const std::string stdPath = FileUtil::getStdDir();
+    const std::filesystem::path stdPath = FileUtil::getStdDir();
     if (stdPath.empty())
-      throw SemanticError(node, STD_NOT_FOUND, "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
+      throw CompilerError(STD_NOT_FOUND, "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
     // Format: /dir/to/path/file
-    basePath = stdPath + importPath.substr(importPath.find("std/") + 4);
+    basePath = stdPath / node->importPath.substr(node->importPath.find("std/") + 4);
   } else { // Include own source file
     // Format: /dir/to/path/file
-    basePath = FileUtil::getFileDir(sourceFile->filePath) + FileUtil::DIR_SEPARATOR + importPath;
+    basePath = sourceFile->filePath.parent_path() / node->importPath;
   }
+  basePath.make_preferred();
 
   // Format: /dir/to/path/file.spice
-  const std::string defaultPath = basePath + ".spice";
+  std::filesystem::path defaultPath = basePath;
+  defaultPath.replace_filename(basePath.stem().string() + ".spice");
   // Format: /dir/to/path/file_linux.spice
-  const std::string osPath = basePath + "_" + cliOptions.targetOs + ".spice";
+  std::filesystem::path osPath = basePath;
+  osPath.replace_filename(basePath.stem().string() + "_" + cliOptions.targetOs + ".spice");
   // Format: /dir/to/path/file_linux_x86_64.spice
-  const std::string osArchPath = basePath + "_" + cliOptions.targetOs + "_" + cliOptions.targetArch + ".spice";
+  std::filesystem::path osArchPath = basePath;
+  osArchPath.replace_filename(basePath.stem().string() + "_" + cliOptions.targetOs + "_" + cliOptions.targetArch + ".spice");
 
   // Check which source file to import
-  if (FileUtil::fileExists(osArchPath)) // file_os_arch.spice is third choice
+  std::filesystem::path importPath;
+  if (std::filesystem::exists(osArchPath)) // file_os_arch.spice is first choice
     importPath = osArchPath;
-  else if (FileUtil::fileExists(osPath)) // file_os.spice is second choice
+  else if (std::filesystem::exists(osPath)) // file_os.spice is second choice
     importPath = osPath;
-  else if (FileUtil::fileExists(defaultPath)) // file.spice is first choice
+  else if (std::filesystem::exists(defaultPath)) // file.spice is third choice
     importPath = defaultPath;
   else
-    throw SemanticError(node, IMPORTED_FILE_NOT_EXISTING, "The source file '" + importPath + ".spice' does not exist");
-
-  // Use the correct dir separator for the current OS
-  CommonUtil::replaceAll(importPath, "/", std::string(1, FileUtil::DIR_SEPARATOR));
+    throw SemanticError(node, IMPORTED_FILE_NOT_EXISTING, "The source file '" + node->importPath + ".spice' does not exist");
 
   // Check if the import already exists
   SymbolTableEntry *importEntry = rootScope->lookupStrict(node->importName);
@@ -70,7 +71,7 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
   // Create the imported source file
   const auto importedSourceFile = resourceManager.createSourceFile(sourceFile, node->importName, importPath, isStd);
   // Register it as a dependency to the current source file
-  sourceFile->addDependency(importedSourceFile, node, node->importName, importPath);
+  sourceFile->addDependency(importedSourceFile, node, node->importName, importPath.generic_string());
 
   return nullptr;
 }

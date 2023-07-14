@@ -24,7 +24,7 @@ using namespace spice::compiler;
  * @return Vector of tests cases
  */
 std::vector<TestCase> TestUtil::collectTestCases(const std::string &suiteName, bool useSubDirs) {
-  std::string suitePath = std::string(PATH_TEST_FILES) + suiteName;
+  const std::filesystem::path suitePath = std::filesystem::path(PATH_TEST_FILES) / suiteName;
 
   std::vector<TestCase> testCases;
   testCases.reserve(EXPECTED_NUMBER_OF_TESTS);
@@ -35,22 +35,18 @@ std::vector<TestCase> TestUtil::collectTestCases(const std::string &suiteName, b
 
     // Convert them to test cases
     for (const std::string &groupDirName : testGroupDirs) {
-      std::stringstream groupPathBuilder;
-      groupPathBuilder << suitePath << FileUtil::DIR_SEPARATOR << groupDirName;
-      const std::string &groupPath = groupPathBuilder.str();
+      const std::filesystem::path groupPath = suitePath / groupDirName;
       for (const std::string &caseDirName : TestUtil::getSubdirs(groupPath)) {
-        std::stringstream testPathBuilder;
-        testPathBuilder << groupPath << FileUtil::DIR_SEPARATOR << caseDirName;
-        TestCase tc = {toCamelCase(groupDirName), toCamelCase(caseDirName), testPathBuilder.str()};
+        const std::filesystem::path testPath = groupPath / caseDirName;
+        const TestCase tc = {toCamelCase(groupDirName), toCamelCase(caseDirName), testPath};
         testCases.push_back(tc);
       }
     }
   } else {
     // Collect test cases
     for (const std::string &caseDirName : TestUtil::getSubdirs(suitePath)) {
-      std::stringstream testPathBuilder;
-      testPathBuilder << suitePath << FileUtil::DIR_SEPARATOR << caseDirName;
-      TestCase tc = {toCamelCase(suiteName), toCamelCase(caseDirName), testPathBuilder.str()};
+      const std::filesystem::path testPath = suitePath / caseDirName;
+      const TestCase tc = {toCamelCase(suiteName), toCamelCase(caseDirName), testPath};
       testCases.push_back(tc);
     }
   }
@@ -66,9 +62,10 @@ std::vector<TestCase> TestUtil::collectTestCases(const std::string &suiteName, b
  *
  * @return True, if the ref file was found
  */
-bool TestUtil::checkRefMatch(const std::string &refPath, GetOutputFct getActualOutput, ModifyOutputFct modifyOutputFct) {
+bool TestUtil::checkRefMatch(const std::filesystem::path &refPath, GetOutputFct getActualOutput,
+                             ModifyOutputFct modifyOutputFct) {
   // Cancel if the ref file does not exist
-  if (!FileUtil::fileExists(refPath))
+  if (!std::filesystem::exists(refPath))
     return false;
 
   // Get actual output
@@ -76,7 +73,7 @@ bool TestUtil::checkRefMatch(const std::string &refPath, GetOutputFct getActualO
   if (updateRefs) { // Update refs
     FileUtil::writeToFile(refPath, actualOutput);
   } else { // Check refs
-    std::string expectedOutput = getFileContent(refPath);
+    std::string expectedOutput = FileUtil::getFileContent(refPath);
     modifyOutputFct(expectedOutput, actualOutput);
     EXPECT_EQ(expectedOutput, actualOutput);
   }
@@ -95,12 +92,12 @@ void TestUtil::handleError(const TestCase &testCase, const std::exception &error
   CommonUtil::replaceAll(errorWhat, "\\", "/");
 
   // Fail if no ref file exists
-  std::string refPath = testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT;
-  if (!FileUtil::fileExists(refPath))
+  const std::filesystem::path refPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
+  if (!std::filesystem::exists(refPath))
     FAIL() << "Expected no error, but got: " + errorWhat;
 
   // Check if the exception message matches the expected output
-  TestUtil::checkRefMatch(testCase.testPath + FileUtil::DIR_SEPARATOR + REF_NAME_ERROR_OUTPUT, [&]() { return errorWhat; });
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ERROR_OUTPUT, [&]() { return errorWhat; });
 }
 
 /**
@@ -109,11 +106,10 @@ void TestUtil::handleError(const TestCase &testCase, const std::exception &error
  * @param basePath Path to a directory
  * @return Vector of subdirs
  */
-std::vector<std::string> TestUtil::getSubdirs(const std::string &basePath) {
+std::vector<std::string> TestUtil::getSubdirs(const std::filesystem::path &basePath) {
   std::vector<std::string> subdirs;
-  DIR *dir;
   struct dirent *ent;
-  if ((dir = opendir(basePath.c_str())) != nullptr) {
+  if (DIR *dir = opendir(basePath.string().c_str()); dir != nullptr) {
     while ((ent = readdir(dir)) != nullptr) {
       if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
         subdirs.emplace_back(ent->d_name);
@@ -124,26 +120,12 @@ std::vector<std::string> TestUtil::getSubdirs(const std::string &basePath) {
 }
 
 /**
- * Retrieve the contents of a file as a string
- *
- * @param filePath File path
- * @return File contents as a string
- */
-std::string TestUtil::getFileContent(const std::string &filePath) {
-  std::ifstream inputFileStream;
-  inputFileStream.open(filePath);
-  std::ostringstream stringStream;
-  stringStream << inputFileStream.rdbuf();
-  return stringStream.str();
-}
-
-/**
  * Retrieve the contents of a file as a vector of line strings. Empty lines are omitted
  *
  * @param filePath File path
  * @return Vector of strings which are the lines of the file
  */
-std::vector<std::string> TestUtil::getFileContentLinesVector(const std::string &filePath) {
+std::vector<std::string> TestUtil::getFileContentLinesVector(const std::filesystem::path &filePath) {
   std::vector<std::string> lines;
   std::ifstream inputFileStream;
   inputFileStream.open(filePath);
@@ -178,9 +160,9 @@ std::string TestUtil::toCamelCase(std::string input) {
  * @return Disabled or not
  */
 bool TestUtil::isDisabled(const TestCase &testCase, bool isGHActions) {
-  if (FileUtil::fileExists(testCase.testPath + FileUtil::DIR_SEPARATOR + CTL_SKIP_DISABLED))
+  if (std::filesystem::exists(testCase.testPath / CTL_SKIP_DISABLED))
     return true;
-  if (isGHActions && FileUtil::fileExists(testCase.testPath + CTL_SKIP_GH))
+  if (isGHActions && std::filesystem::exists(testCase.testPath / CTL_SKIP_GH))
     return true;
   return false;
 }

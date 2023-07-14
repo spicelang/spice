@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <utility>
 
@@ -12,11 +13,13 @@ namespace spice::compiler {
 struct CodeLoc {
 public:
   // Constructors
-  CodeLoc(size_t line, size_t col, std::string sourceFilePath = "");
-  explicit CodeLoc(const antlr4::Token *token, std::string sourceFilePath = "");
+  CodeLoc(size_t line, size_t col, std::filesystem::path sourceFilePath = "")
+      : line(line), col(col), sourceFilePath(std::move(sourceFilePath)) {}
+  explicit CodeLoc(const antlr4::Token *token, std::filesystem::path sourceFilePath = "")
+      : line(token->getLine()), col(token->getCharPositionInLine() + 1), sourceFilePath(std::move(sourceFilePath)){};
 
   // Public members
-  std::string sourceFilePath;
+  std::filesystem::path sourceFilePath;
   size_t line;
   size_t col;
 

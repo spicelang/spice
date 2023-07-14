@@ -45,7 +45,7 @@ void ExternalLinkerInterface::link() const {
   for (const std::string &linkerFlag : linkerFlags)
     linkerCommandBuilder << " " + linkerFlag;
   // Append output path
-  linkerCommandBuilder << " -o " + outputPath;
+  linkerCommandBuilder << " -o " + outputPath.string();
   // Append object files
   for (const std::string &objectFilePath : objectFilePaths)
     linkerCommandBuilder << " " + objectFilePath;

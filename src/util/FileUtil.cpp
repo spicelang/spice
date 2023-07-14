@@ -12,71 +12,31 @@
 namespace spice::compiler {
 
 /**
- * Checks if a certain file exists on the file system
- *
- * @param filePath Path to the file
- * @return Existence of the file
- */
-bool FileUtil::fileExists(const std::string &filePath) { return std::ifstream(filePath.c_str()).good(); }
-
-/**
- * Deletes the file at the given location
- *
- * @param filePath Path to the file
- */
-void FileUtil::deleteFile(const std::string &filePath) { std::remove(filePath.c_str()); }
-
-/**
- * Checks if a certain dir exists on the file system
- *
- * @param dirPath Path to the dir
- * @return Existence of the dir
- */
-bool FileUtil::dirExists(const std::string &dirPath) {
-  struct stat info {};
-  if (stat(dirPath.c_str(), &info) != 0)
-    return false;
-  else if (info.st_mode & S_IFDIR)
-    return true;
-  return false;
-}
-
-/**
- * Creates a directories at the specified path (recursively)
- *
- * @param dirPath Path to the dir
- * @return Successful or not
- */
-bool FileUtil::createDirs(const std::string &dirPath) { return std::filesystem::create_directories(dirPath); }
-
-/**
  * Creates a file and writes fileContent to it.
  *
  * @param fileName File name
  * @param fileContent String to write into the file
  */
-void FileUtil::writeToFile(const std::string &fileName, const std::string &fileContent) {
+void FileUtil::writeToFile(const std::filesystem::path &filePath, const std::string &fileContent) {
   std::ofstream file;
-  file.open(fileName);
+  file.open(filePath);
   file << fileContent;
   file.close();
 }
 
 /**
- * Extracts the name of a file from its full path and returns it
+ * Retrieve the contents of a file as a string
  *
- * @param filePath Full path to the file (absolute or relative)
- * @return Name of the file
+ * @param filePath File path
+ * @return File contents as a string
  */
-std::string FileUtil::getFileName(const std::string &filePath) { return filePath.substr(filePath.find_last_of("/\\") + 1); }
-
-/**
- * Extracts the directory of a file from its full path and returns it
- *
- * @param filePath Full path to the file (absolute or relative)
- * @return Path of dir
- */
-std::string FileUtil::getFileDir(const std::string &filePath) { return filePath.substr(0, filePath.find_last_of("/\\")); }
+std::string FileUtil::getFileContent(const std::filesystem::path &filePath) {
+  std::ifstream inputFileStream;
+  inputFileStream.open(filePath);
+  std::ostringstream stringStream;
+  stringStream << inputFileStream.rdbuf();
+  return stringStream.str();
+}
 
 /**
  * Execute external command. Used to execute compiled binaries
@@ -89,13 +49,13 @@ ExecResult FileUtil::exec(const std::string &cmd) {
   if (!pipe)                                                            // GCOV_EXCL_LINE
     throw CompilerError(IO_ERROR, "Failed to execute command: " + cmd); // GCOV_EXCL_LINE
   char buffer[128];
-  std::string result;
+  std::stringstream result;
   while (!feof(pipe)) {
     if (fgets(buffer, 128, pipe) != nullptr)
-      result += buffer;
+      result << buffer;
   }
   int exitCode = pclose(pipe) / 256;
-  return {result, exitCode};
+  return {result.str(), exitCode};
 }
 
 /**
@@ -110,7 +70,7 @@ bool FileUtil::isCommandAvailable(const std::string &cmd) {
 #else
   const std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
 #endif
-  return std::system(checkCmd.c_str());
+  return std::system(checkCmd.c_str()) != 0;
 }
 
 /**
@@ -119,19 +79,15 @@ bool FileUtil::isCommandAvailable(const std::string &cmd) {
  *
  * @return Std directory
  */
-std::string FileUtil::getStdDir() {
+std::filesystem::path FileUtil::getStdDir() {
 #ifdef OS_UNIX
-  if (FileUtil::fileExists("/usr/lib/spice/std"))
-    return "/usr/lib/spice/std/";
+  if (std::filesystem::exists(std::filesystem::path("/usr/lib/spice/std/")
+    return std::filesystem::path("/usr/lib/spice/std/");
 #endif
-  if (std::getenv("SPICE_STD_DIR") && FileUtil::dirExists(std::string(std::getenv("SPICE_STD_DIR")))) {
-    std::string stdPath = std::string(std::getenv("SPICE_STD_DIR"));
-#ifdef OS_WINDOWS
-    CommonUtil::replaceAll(stdPath, "/", "\\");
-#endif
-    if (!stdPath.ends_with(FileUtil::DIR_SEPARATOR))
-      stdPath += FileUtil::DIR_SEPARATOR;
-    return stdPath;
+  if (std::getenv("SPICE_STD_DIR")) {
+    std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR"));
+    if (std::filesystem::exists(stdPath))
+      return stdPath;
   }
   return ""; // GCOV_EXCL_LINE
 }
@@ -141,9 +97,9 @@ std::string FileUtil::getStdDir() {
  *
  * @return Installation directory
  */
-std::string FileUtil::getSpiceBinDir() {
+std::filesystem::path FileUtil::getSpiceBinDir() {
 #if OS_WINDOWS
-  return std::string(std::getenv("USERPROFILE")) + R"(\spice\bin\)";
+  return std::filesystem::path(std::getenv("USERPROFILE")) / "spice" / "bin";
 #else
   return "/usr/local/bin/";
 #endif
