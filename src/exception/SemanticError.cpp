@@ -111,8 +111,6 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Types of printf call not matching";
   case PRINTF_ARG_COUNT_ERROR:
     return "Printf arg number not matching template string";
-  case STD_NOT_FOUND:
-    return "Std lib not found";
   case DUPLICATE_IMPORT_NAME:
     return "Duplicate import name";
   case IMPORTED_FILE_NOT_EXISTING:

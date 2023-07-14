@@ -63,14 +63,15 @@ GlobalResourceManager::~GlobalResourceManager() {
 }
 
 SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const std::string &dependencyName,
-                                                    const std::string &path, bool isStdFile) {
+                                                    const std::filesystem::path &path, bool isStdFile) {
   // Check if the source file was already added (e.g. by another source file that imports it)
-  if (sourceFiles.contains(path))
-    return sourceFiles.at(path);
+  const std::string filePathStr = path.string();
+  if (sourceFiles.contains(filePathStr))
+    return sourceFiles.at(filePathStr);
 
   // Create the new source file
   auto newSourceFile = new SourceFile(*this, parent, dependencyName, path, isStdFile);
-  sourceFiles.insert({path, newSourceFile});
+  sourceFiles.insert({filePathStr, newSourceFile});
   return newSourceFile;
 }
 

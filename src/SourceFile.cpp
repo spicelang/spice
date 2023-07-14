@@ -27,11 +27,12 @@
 
 namespace spice::compiler {
 
-SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::string &filePath,
-                       bool stdFile)
+SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name,
+                       const std::filesystem::path &filePath, bool stdFile)
     : resourceManager(resourceManager), tout(resourceManager.tout), name(std::move(name)), filePath(filePath), stdFile(stdFile),
       parent(parent) {
-  objectFilePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + FileUtil::getFileName(filePath) + ".o";
+  objectFilePath = resourceManager.cliOptions.outputDir / filePath.filename();
+  objectFilePath.replace_extension("o");
 
   if (mainFile)
     resourceManager.totalTimer.start();
@@ -52,7 +53,7 @@ void SourceFile::runLexer() {
   // Read from file
   std::ifstream fileInputStream(filePath);
   if (!fileInputStream)
-    throw CompilerError(SOURCE_FILE_NOT_FOUND, "Source file at path '" + filePath + "' does not exist.");
+    throw CompilerError(SOURCE_FILE_NOT_FOUND, "Source file at path '" + filePath.string() + "' does not exist.");
 
   // Create error handlers for lexer and parser
   antlrCtx.lexerErrorHandler = std::make_unique<AntlrThrowingErrorListener>(MODE_LEXER);
@@ -100,7 +101,7 @@ void SourceFile::runParser() {
 
 void SourceFile::runCSTVisualizer() {
   // Only execute if enabled
-  if (restoredFromCache || (!resourceManager.cliOptions.dumpCST && !resourceManager.cliOptions.testMode))
+  if (restoredFromCache || (!resourceManager.cliOptions.dumpSettings.dumpCST && !resourceManager.cliOptions.testMode))
     return;
   // Check if this stage has already been done
   if (previousStage >= CST_VISUALIZER)
@@ -119,7 +120,7 @@ void SourceFile::runCSTVisualizer() {
   // If this is the root source file, output the serialized string and the SVG file
   if (parent == nullptr) {
     compilerOutput.cstString = dotCode.str();
-    if (resourceManager.cliOptions.dumpCST)
+    if (resourceManager.cliOptions.dumpSettings.dumpCST)
       visualizerOutput("CST", compilerOutput.cstString);
   }
 
@@ -170,7 +171,7 @@ void SourceFile::runASTOptimizer() {
 
 void SourceFile::runASTVisualizer() {
   // Only execute if enabled
-  if (restoredFromCache || (!resourceManager.cliOptions.dumpAST && !resourceManager.cliOptions.testMode))
+  if (restoredFromCache || (!resourceManager.cliOptions.dumpSettings.dumpAST && !resourceManager.cliOptions.testMode))
     return;
   // Check if this stage has already been done
   if (previousStage >= AST_VISUALIZER)
@@ -188,7 +189,7 @@ void SourceFile::runASTVisualizer() {
   // If this is the root source file, output the serialized string and the SVG file
   if (parent == nullptr) {
     compilerOutput.astString = dotCode.str();
-    if (resourceManager.cliOptions.dumpAST)
+    if (resourceManager.cliOptions.dumpSettings.dumpAST)
       visualizerOutput("AST", compilerOutput.astString);
   }
 
@@ -318,7 +319,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   compilerOutput.symbolTableString = globalScope->getSymbolTableJSON().dump(/*indent=*/2);
 
   // Dump symbol table
-  if (resourceManager.cliOptions.dumpSymbolTables) { // GCOV_EXCL_START
+  if (resourceManager.cliOptions.dumpSettings.dumpSymbolTables) { // GCOV_EXCL_START
     std::cout << "\nSymbol table of file " << filePath << ":\n\n";
     std::cout << compilerOutput.symbolTableString << "\n\n";
   } // GCOV_EXCL_STOP
@@ -379,7 +380,7 @@ void SourceFile::runIRGenerator() {
   timer.start();
 
   // Create LLVM module for this source file
-  llvmModule = std::make_unique<llvm::Module>(FileUtil::getFileName(filePath), resourceManager.context);
+  llvmModule = std::make_unique<llvm::Module>(filePath.filename().string(), resourceManager.context);
 
   // Generate this source file
   IRGenerator irGenerator(resourceManager, this);
@@ -389,7 +390,7 @@ void SourceFile::runIRGenerator() {
   compilerOutput.irString = irGenerator.getIRString();
 
   // Dump unoptimized IR code
-  if (resourceManager.cliOptions.dumpIR)                                  // GCOV_EXCL_LINE
+  if (resourceManager.cliOptions.dumpSettings.dumpIR)                     // GCOV_EXCL_LINE
     tout.println("\nUnoptimized IR code:\n" + irGenerator.getIRString()); // GCOV_EXCL_LINE
 
   previousStage = IR_GENERATOR;
@@ -420,7 +421,7 @@ void SourceFile::runDefaultIROptimizer() {
   compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
 
   // Dump optimized IR code
-  if (resourceManager.cliOptions.dumpIR)                                         // GCOV_EXCL_LINE
+  if (resourceManager.cliOptions.dumpSettings.dumpIR)                            // GCOV_EXCL_LINE
     tout.println("\nOptimized IR code:\n" + irOptimizer.getOptimizedIRString()); // GCOV_EXCL_LINE
 
   previousStage = IR_OPTIMIZER;
@@ -451,7 +452,7 @@ void SourceFile::runPreLinkIROptimizer() {
   compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
 
   // Dump optimized IR code
-  if (resourceManager.cliOptions.dumpIR)                                         // GCOV_EXCL_LINE
+  if (resourceManager.cliOptions.dumpSettings.dumpIR)                            // GCOV_EXCL_LINE
     tout.println("\nOptimized IR code:\n" + irOptimizer.getOptimizedIRString()); // GCOV_EXCL_LINE
 
   timer.pause();
@@ -506,7 +507,7 @@ void SourceFile::runPostLinkIROptimizer() {
   compilerOutput.irOptString = irOptimizer.getOptimizedIRString(module);
 
   // Dump optimized IR code
-  if (resourceManager.cliOptions.dumpIR)                                                           // GCOV_EXCL_LINE
+  if (resourceManager.cliOptions.dumpSettings.dumpIR)                                              // GCOV_EXCL_LINE
     tout.println("\nOptimized IR code (post-link):\n" + irOptimizer.getOptimizedIRString(module)); // GCOV_EXCL_LINE
 
   previousStage = IR_OPTIMIZER;
@@ -535,13 +536,13 @@ void SourceFile::runObjectEmitter() {
     objectEmitter.getASMString(compilerOutput.asmString);
 
   // Dump assembly code
-  if (resourceManager.cliOptions.dumpAssembly) { // GCOV_EXCL_START
+  if (resourceManager.cliOptions.dumpSettings.dumpAssembly) { // GCOV_EXCL_START
     tout.println("\nAssembly code:\n");
     objectEmitter.dumpAsm();
   } // GCOV_EXCL_STOP
 
   // Add object file to linker objects
-  resourceManager.linker.addObjectFilePath(objectFilePath);
+  resourceManager.linker.addObjectFilePath(objectFilePath.string());
 
   previousStage = OBJECT_EMITTER;
   timer.stop();
@@ -711,9 +712,7 @@ void SourceFile::visualizerPreamble(std::stringstream &output) const {
     output << "digraph {\n rankdir=\"TB\";\n";
   else
     output << "subgraph {\n";
-  std::string replacedFilePath = filePath;
-  CommonUtil::replaceAll(replacedFilePath, "\\", "/");
-  output << " label=\"" + replacedFilePath + "\";\n ";
+  output << " label=\"" + filePath.generic_string() + "\";\n ";
 }
 
 void SourceFile::visualizerOutput(std::string outputName, const std::string &output) const {
@@ -726,15 +725,20 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
     throw CompilerError(IO_ERROR, "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable");
   // GCOV_EXCL_STOP
 
+  // Prepare file paths
+  std::transform(outputName.begin(), outputName.end(), outputName.begin(), ::tolower);
+  std::filesystem::path dotFilePath = resourceManager.cliOptions.outputDir / outputName;
+  dotFilePath.replace_extension("dot");
+  dotFilePath.make_preferred();
+  std::filesystem::path svgFilePath = resourceManager.cliOptions.outputDir / outputName;
+  svgFilePath.replace_extension("svg");
+  svgFilePath.make_preferred();
+
   // Generate SVG
   std::cout << "\nGenerating SVG file ... ";
-  std::transform(outputName.begin(), outputName.end(), outputName.begin(), ::tolower);
-  const std::string fileBasePath = resourceManager.cliOptions.outputDir + FileUtil::DIR_SEPARATOR + outputName;
-  const std::string dotFilePath = fileBasePath + ".dot";
-  const std::string svgFilePath = fileBasePath + ".svg";
-  FileUtil::writeToFile(dotFilePath, output);
-  FileUtil::exec("dot -Tsvg -o" + svgFilePath + " " + dotFilePath);
-  std::cout << "done.\nSVG file can be found at: " << svgFilePath << ".svg\n";
+  FileUtil::writeToFile(dotFilePath.string(), output);
+  FileUtil::exec("dot -Tsvg -o" + svgFilePath.string() + " " + dotFilePath.string());
+  std::cout << "done.\nSVG file can be found at: " << svgFilePath << "\n";
 }
 
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,

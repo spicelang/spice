@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 
 namespace spice::compiler {
@@ -12,7 +13,7 @@ class SourceFile;
 class CacheManager {
 public:
   // Constructors
-  explicit CacheManager(const std::string &cacheDir) : cacheDir(cacheDir) {}
+  explicit CacheManager(const std::filesystem::path &cacheDir) : cacheDir(cacheDir) {}
   CacheManager(const CacheManager &) = delete;
 
   // Public methods
@@ -21,7 +22,7 @@ public:
 
 private:
   // Private members
-  const std::string &cacheDir;
+  const std::filesystem::path &cacheDir;
 };
 
 } // namespace spice::compiler

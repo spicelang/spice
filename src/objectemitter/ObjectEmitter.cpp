@@ -11,28 +11,25 @@
 namespace spice::compiler {
 
 void ObjectEmitter::emit() const {
-  const std::string &objectFile = sourceFile->objectFilePath;
+  const std::filesystem::path &objectFile = sourceFile->objectFilePath;
 
-  // GCOV_EXCL_START
-  if (cliOptions.printDebugOutput && cliOptions.dumpAssembly)
-    resourceManager.tout.println("\nEmitting object file for triplet '" + cliOptions.targetTriple + "' to path: " + objectFile);
-  // GCOV_EXCL_STOP
+  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpAssembly)                                // GCOV_EXCL_LINE
+    resourceManager.tout.println("\nEmitting object file for target triple '" + cliOptions.targetTriple + // GCOV_EXCL_LINE
+                                 "' to path: " + objectFile.string());                                    // GCOV_EXCL_LINE
 
   // Lock the mutex
   resourceManager.objectEmitLock.lock();
 
   // Open file output stream
   std::error_code errorCode;
-  llvm::raw_fd_ostream stream(objectFile, errorCode, llvm::sys::fs::OF_None);
-  if (errorCode)                                                                                 // GCOV_EXCL_LINE
-    throw CompilerError(CANT_OPEN_OUTPUT_FILE, "File '" + objectFile + "' could not be opened"); // GCOV_EXCL_LINE
+  llvm::raw_fd_ostream stream(objectFile.string(), errorCode, llvm::sys::fs::OF_None);
+  if (errorCode)                                                                                          // GCOV_EXCL_LINE
+    throw CompilerError(CANT_OPEN_OUTPUT_FILE, "File '" + objectFile.string() + "' could not be opened"); // GCOV_EXCL_LINE
 
   llvm::legacy::PassManager passManager;
-  // GCOV_EXCL_START
-  if (resourceManager.targetMachine->addPassesToEmitFile(passManager, stream, nullptr, llvm::CGFT_ObjectFile,
-                                                         cliOptions.disableVerifier))
+  if (resourceManager.targetMachine->addPassesToEmitFile(passManager, stream, nullptr, llvm::CGFT_ObjectFile, // GCOV_EXCL_LINE
+                                                         cliOptions.disableVerifier))                         // GCOV_EXCL_LINE
     throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type");
-  // GCOV_EXCL_STOP
 
   // Emit object file
   passManager.run(module);

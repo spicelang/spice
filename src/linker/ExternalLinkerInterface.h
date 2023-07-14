@@ -24,7 +24,7 @@ public:
   void addLinkerFlag(const std::string &linkerFlag);
 
   // Public members
-  std::string outputPath;
+  std::filesystem::path outputPath;
 
 private:
   // Members

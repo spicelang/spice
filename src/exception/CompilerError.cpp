@@ -43,6 +43,8 @@ std::string CompilerError::getMessagePrefix(CompilerErrorType type) {
     return "Internal compiler error";
   case IO_ERROR:
     return "I/O Error";
+  case STD_NOT_FOUND:
+    return "Std lib not found";
   case UNHANDLED_BRANCH:
     return "Unhandled code branch";
   case TYPE_CHECKER_RUNS_EXCEEDED:

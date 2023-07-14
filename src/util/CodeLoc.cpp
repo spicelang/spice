@@ -8,16 +8,6 @@
 
 namespace spice::compiler {
 
-CodeLoc::CodeLoc(size_t line, size_t col, std::string sourceFilePath)
-    : line(line), col(col), sourceFilePath(std::move(sourceFilePath)) {
-  CommonUtil::replaceAll(this->sourceFilePath, "\\", "/");
-}
-
-CodeLoc::CodeLoc(const antlr4::Token *token, std::string sourceFilePath)
-    : line(token->getLine()), col(token->getCharPositionInLine() + 1), sourceFilePath(std::move(sourceFilePath)) {
-  CommonUtil::replaceAll(this->sourceFilePath, "\\", "/");
-}
-
 /**
  * Returns the code location as a string for using it as a map key or similar
  *
@@ -31,7 +21,7 @@ std::string CodeLoc::toString() const { return "L" + std::to_string(line) + "C" 
  * @return Pretty code location
  */
 std::string CodeLoc::toPrettyString() const {
-  return (sourceFilePath.empty() ? "" : sourceFilePath + ":") + std::to_string(line) + ":" + std::to_string(col);
+  return (sourceFilePath.empty() ? "" : sourceFilePath.generic_string() + ":") + std::to_string(line) + ":" + std::to_string(col);
 }
 
 /**

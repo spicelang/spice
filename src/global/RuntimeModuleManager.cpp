@@ -37,12 +37,12 @@ bool RuntimeModuleManager::isModuleAvailable(RuntimeModule requestedModule) cons
 bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, RuntimeModule requestedModule) {
   const auto [importName, fileName] = resolveNamePair(requestedModule);
 
-  const std::string filePath = FileUtil::getStdDir() + "runtime" + FileUtil::DIR_SEPARATOR + fileName + ".spice";
+  const std::filesystem::path filePath = FileUtil::getStdDir() / "runtime" / (std::string(fileName) + ".spice");
   if (filePath == parentSourceFile->filePath)
     return false;
 
   const auto moduleSourceFile = resourceManager.createSourceFile(parentSourceFile, importName, filePath, true);
-  parentSourceFile->addDependency(moduleSourceFile, parentSourceFile->ast.get(), importName, filePath);
+  parentSourceFile->addDependency(moduleSourceFile, parentSourceFile->ast.get(), importName, filePath.string());
 
   // Run frontend and type checker for runtime module source file
   const auto runtimeFile = parentSourceFile->dependencies.at(importName).first;

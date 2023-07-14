@@ -111,7 +111,7 @@ public:
 private:
   // Members
   ASTNode *currentNode;
-  const std::string &filePath;
+  const std::filesystem::path &filePath;
   antlr4::ANTLRInputStream *inputStream;
   bool isParam = false;
   bool isGlobal = false;

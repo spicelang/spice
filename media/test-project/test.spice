@@ -1,9 +1,7 @@
-p testProc(string arg0, bool arg1 = false, int arg2) {
-    printf("Test");
-}
+import "source2" as s2;
 
 f<int> main() {
-    testProc("test", true);
+    result = s2.nonExistingFunc();
 }
 
 /*import "std/os/thread";

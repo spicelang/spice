@@ -45,7 +45,8 @@ public:
   ~GlobalResourceManager();
 
   // Public methods
-  SourceFile *createSourceFile(SourceFile *parent, const std::string &dependencyName, const std::string &path, bool isStdFile);
+  SourceFile *createSourceFile(SourceFile *parent, const std::string &dependencyName, const std::filesystem::path &path,
+                               bool isStdFile);
 
   // Public members
   std::unordered_map<std::string, SourceFile *> sourceFiles;
