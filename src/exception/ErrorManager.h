@@ -29,11 +29,7 @@ public:
   ErrorManager() = default;
 
   // Public methods
-  void addSoftError(const ASTNode *astNode, CompilerErrorType errorType, const std::string &message);
   void addSoftError(const ASTNode *astNode, SemanticErrorType errorType, const std::string &message);
-  void addSoftError(const ASTNode *astNode, LexerErrorType errorType, const std::string &message);
-  void addSoftError(const ASTNode *astNode, ParserErrorType errorType, const std::string &message);
-  void addSoftError(const ASTNode *astNode, LinkerErrorType errorType, const std::string &message);
 
   // Public members
   std::vector<SoftError> softErrors;
