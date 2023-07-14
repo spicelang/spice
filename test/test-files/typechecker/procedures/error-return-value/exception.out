@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/procedures/error-return-value/source.spice:3:12:
 Return with value in procedure: Return with value in procedure is not allowed
 

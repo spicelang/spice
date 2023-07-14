@@ -405,9 +405,11 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
       HANDLE_UNRESOLVED_TYPE_PTR(paramType)
 
       // Check if the type is present in the template for generic types
-      if (!paramType.isCoveredByGenericTypeList(usedGenericTypes))
-        SOFT_ERROR_ER(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
-                      "Generic param type not included in the template type list of the function")
+      if (!paramType.isCoveredByGenericTypeList(usedGenericTypes)) {
+        softError(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+                  "Generic param type not included in the template type list of the function");
+        continue;
+      }
 
       paramTypes.push_back(paramType);
       paramList.push_back({paramType, false});
@@ -464,7 +466,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
 
     // References with no initialization are illegal
     if (localVarType.isRef() && !node->isParam && !node->isForEachItem)
-      SOFT_ERROR_ER(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly")
+      softError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
   }
 
   // Update the type of the variable
@@ -1383,11 +1385,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     HANDLE_UNRESOLVED_TYPE_ER(baseType)
     if (baseType.is(TY_STRUCT)) {
       data.callType = firstFragEntry->scope->type == SCOPE_GLOBAL ? FctCallNode::TYPE_CTOR : FctCallNode::TYPE_METHOD;
-    } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-      if (firstFragEntry->scope->type != SCOPE_GLOBAL)
-        data.callType = FctCallNode::TYPE_FCT_PTR;
-    } else if (!baseType.is(TY_ALIAS)) {
-      SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE, "The symbol '" + node->functionNameFragments.front() + "' is not a function")
+    } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
+      data.callType = FctCallNode::TYPE_FCT_PTR;
     }
   }
 
@@ -1408,23 +1407,20 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     bool success = visitFctPtrCall(node, functionType);
     if (!success) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
-  } else if (data.isCtorCall()) {
-    // This is a constructor call
-    const std::string knownStructName = visitOrdinaryFctCall(node);
-    if (knownStructName == UNRESOLVED_TYPE_NAME) // Check if soft errors occurred
-      return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
-
-    // Set a name to the thisType that is known to the current source file
-    data.thisType = data.thisType.replaceBaseSubType(knownStructName);
-    assert(data.thisType.is(TY_STRUCT));
   } else {
     // This is an ordinary function call
-    assert(data.isOrdinaryCall());
+    assert(data.isOrdinaryCall() || data.isCtorCall());
     const std::string knownStructName = visitOrdinaryFctCall(node);
     if (knownStructName == UNRESOLVED_TYPE_NAME) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
-
     assert(data.calleeParentScope != nullptr);
+
+    // Only ordinary function calls can be constructors
+    if (data.isCtorCall()) {
+      // Set a name to the thisType that is known to the current source file
+      data.thisType = data.thisType.replaceBaseSubType(knownStructName);
+      assert(data.thisType.is(TY_STRUCT));
+    }
   }
 
   if (!data.isFctPtrCall()) {

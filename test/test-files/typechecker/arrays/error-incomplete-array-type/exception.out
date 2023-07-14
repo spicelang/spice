@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/arrays/error-incomplete-array-type/source.spice:1:8:
 Array size invalid: Usage of incomplete array type. Only the outermost array type may have unknown size
 

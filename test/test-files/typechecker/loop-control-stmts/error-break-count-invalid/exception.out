@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/loop-control-stmts/error-break-count-invalid/source.spice:3:9:
 Invalid number of break calls: Break count must be >= 1, you provided 0
 

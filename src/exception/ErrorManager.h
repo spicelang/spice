@@ -37,6 +37,10 @@ public:
 
   // Public members
   std::vector<SoftError> softErrors;
+
+private:
+  // Private methods
+  void addSoftError(const CodeLoc &codeLoc, const std::string &message);
 };
 
 } // namespace spice::compiler

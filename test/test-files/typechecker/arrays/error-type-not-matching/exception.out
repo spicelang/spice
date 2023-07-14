@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/arrays/error-type-not-matching/source.spice:2:41:
 Array item type not matching: All provided values have to be of the same data type. You provided long and bool
 

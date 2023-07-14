@@ -11,7 +11,7 @@ void ErrorManager::addSoftError(const ASTNode *astNode, CompilerErrorType errorT
   std::stringstream errorMessage;
   errorMessage << "[Error|Compiler]:\n" << CompilerError::getMessagePrefix(errorType) << ": " << message;
   // Add to soft errors list
-  softErrors.emplace_back(SoftError{astNode->codeLoc, errorMessage.str()});
+  addSoftError(astNode->codeLoc, errorMessage.str());
 }
 
 void ErrorManager::addSoftError(const ASTNode *astNode, SemanticErrorType errorType, const std::string &message) {
@@ -22,7 +22,7 @@ void ErrorManager::addSoftError(const ASTNode *astNode, SemanticErrorType errorT
   if (!astNode->errorMessage.empty())
     errorMessage << "\n\n" << astNode->errorMessage;
   // Add to soft errors list
-  softErrors.emplace_back(SoftError{astNode->codeLoc, errorMessage.str()});
+  addSoftError(astNode->codeLoc, errorMessage.str());
 }
 
 void ErrorManager::addSoftError(const ASTNode *astNode, LexerErrorType errorType, const std::string &message) {
@@ -31,7 +31,7 @@ void ErrorManager::addSoftError(const ASTNode *astNode, LexerErrorType errorType
   errorMessage << "[Error|Lexer] " << astNode->codeLoc.toPrettyString() << ": ";
   errorMessage << LexerError::getMessagePrefix(errorType) << ": " << message;
   // Add to soft errors list
-  softErrors.emplace_back(SoftError{astNode->codeLoc, errorMessage.str()});
+  addSoftError(astNode->codeLoc, errorMessage.str());
 }
 
 void ErrorManager::addSoftError(const ASTNode *astNode, ParserErrorType errorType, const std::string &message) {
@@ -40,7 +40,7 @@ void ErrorManager::addSoftError(const ASTNode *astNode, ParserErrorType errorTyp
   errorMessage << "[Error|Parser] " << astNode->codeLoc.toPrettyString() << ": ";
   errorMessage << ParserError::getMessagePrefix(errorType) << ": " << message;
   // Add to soft errors list
-  softErrors.emplace_back(SoftError{astNode->codeLoc, errorMessage.str()});
+  addSoftError(astNode->codeLoc, errorMessage.str());
 }
 
 void ErrorManager::addSoftError(const ASTNode *astNode, LinkerErrorType errorType, const std::string &message) {
@@ -48,7 +48,15 @@ void ErrorManager::addSoftError(const ASTNode *astNode, LinkerErrorType errorTyp
   std::stringstream errorMessage;
   errorMessage << "[Error|Linker] " << LinkerError::getMessagePrefix(errorType) << ": " << message;
   // Add to soft errors list
-  softErrors.emplace_back(SoftError{astNode->codeLoc, errorMessage.str()});
+  addSoftError(astNode->codeLoc, errorMessage.str());
+}
+
+void ErrorManager::addSoftError(const CodeLoc &codeLoc, const std::string &message) {
+  // Avoid duplicate errors
+  for (const SoftError &error : softErrors)
+    if (error.codeLoc == codeLoc)
+      return;
+  softErrors.emplace_back(SoftError{codeLoc, message});
 }
 
 } // namespace spice::compiler

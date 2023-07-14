@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/methods/error-this-field-not-existing/source.spice:9:5:
 Member access is only allowed on structs and Strings: The type TestStruct does not have a member with the name 'nonExisting'
 

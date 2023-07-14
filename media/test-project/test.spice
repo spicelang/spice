@@ -1,13 +1,9 @@
-import "std/data/vector";
-import "std/data/pair";
+p testProc(string arg0, bool arg1 = false, int arg2) {
+    printf("Test");
+}
 
 f<int> main() {
-    Vector<Pair<int, string>> pairVector = Vector<Pair<int, string>>();
-    pairVector.pushBack(Pair<int, string>(0, "Hello"));
-    pairVector.pushBack(Pair<int, string>(1, "World"));
-
-    Pair<int, string> p1 = pairVector.get(1);
-    printf("Hello %s!\n", p1.getSecond());
+    testProc("test", true);
 }
 
 /*import "std/os/thread";

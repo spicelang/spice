@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/do-while-loops/error-do-while-condition-bool/source.spice:4:12:
 Condition must be bool: Do-While loop condition must be of type bool
 

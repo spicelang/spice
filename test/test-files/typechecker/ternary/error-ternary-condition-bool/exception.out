@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/ternary/error-ternary-condition-bool/source.spice:2:25:
 Wrong data type for operator: Condition operand in ternary must be a bool
 

@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/arrays/error-size-global-var-unknown/source.spice:4:5:
 Referenced undefined variable: Could not find global variable 'GLOBAL_VAR_INVALID' 
 

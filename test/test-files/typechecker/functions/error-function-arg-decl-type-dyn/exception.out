@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/functions/error-function-arg-decl-type-dyn/source.spice:1:21:
 Parameter type dyn not valid in function/procedure definition without default value: Type of parameter 'arg2' is invalid
 

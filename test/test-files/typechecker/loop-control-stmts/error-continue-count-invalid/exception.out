@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/loop-control-stmts/error-continue-count-invalid/source.spice:3:9:
 Invalid number of continue calls: Continue count must be >= 1, you provided 0
 

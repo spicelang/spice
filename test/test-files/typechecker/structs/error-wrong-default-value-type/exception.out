@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/structs/error-wrong-default-value-type/source.spice:2:5:
 The type of a field value does not match the declaration: Type of the default values does not match the field type
 
