@@ -73,14 +73,7 @@ void execTestCase(const TestCase &testCase) {
     mainSourceFile->runLexer();
     mainSourceFile->runParser();
 
-    // Check CST
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_PARSE_TREE, [&]() {
-      mainSourceFile->runCSTVisualizer();
-      return mainSourceFile->compilerOutput.cstString;
-    });
-
-    // Build and optimize AST
-    mainSourceFile->runASTBuilder();
+    // Optimize AST
     mainSourceFile->runASTOptimizer();
 
     // Check AST

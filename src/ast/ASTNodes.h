@@ -32,8 +32,6 @@ union CompileTimeValue {
   bool boolValue;
 };
 
-#define ERROR_MESSAGE_CONTEXT 20
-const char *const RESERVED_KEYWORDS[8] = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
 const char *const MEMBER_ACCESS_TOKEN = ".";
 const char *const SCOPE_ACCESS_TOKEN = "::";
 
@@ -44,20 +42,6 @@ public:
   // Constructors
   ASTNode(ASTNode *parent, CodeLoc codeLoc) : parent(parent), codeLoc(std::move(codeLoc)) {}
   ASTNode(const ASTNode &) = delete;
-
-  // Destructors
-  virtual ~ASTNode() {
-    for (const ASTNode *child : children)
-      delete child;
-  }
-  void deleteRecursive(const ASTNode *anchorNode) { // NOLINT(misc-no-recursion)
-    for (ASTNode *child : children) {
-      if (child != anchorNode)
-        child->deleteRecursive(anchorNode);
-    }
-    children.clear();
-    delete this;
-  }
 
   // Virtual methods
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
@@ -106,8 +90,6 @@ public:
       if (child == this) [[unlikely]] {
         // Replace in children vector
         child = replacementNode;
-        // De-allocate subtree without destroying the replacement node
-        deleteRecursive(replacementNode);
         break;
       }
     }
@@ -119,8 +101,6 @@ public:
       if (child == this) [[unlikely]] {
         // Remove from children vector
         child = nullptr;
-        // De-allocate subtree
-        delete this;
         break;
       }
     }
@@ -232,13 +212,13 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitMainFctDef(this); }
 
   // Public get methods
-  [[nodiscard]] FctAttrNode *fctAttrs() const { return getChild<FctAttrNode>(); }
+  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
-  [[nodiscard]] std::string getSignature() const { return takesArgs ? "main()" : "main(int, string[])"; }
+  [[nodiscard]] std::string getSignature() const { return takesArgs ? "main(int, string[])" : "main()"; }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members

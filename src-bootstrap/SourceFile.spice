@@ -35,8 +35,6 @@ type CompileStageIOType enum {
 type TimerOutput struct {
   unsigned long lexer = 0
   unsigned long parser = 0
-  unsigned long cstVisualizer = 0
-  unsigned long astBuilder = 0
   unsigned long astOptimizer = 0
   unsigned long astVisualizer = 0
   unsigned long importCollector = 0
@@ -118,18 +116,6 @@ public p SourceFile.runLexer() {
 
 public p SourceFile.runParser() {
     // Parse this source file
-}
-
-public p SourceFile.runCSTVisualizer(string* output) {
-    // Only execute if enabled
-    if !cliOptions.dumpCST && !cliOptions.testMode { return; }
-
-    // ToDo: Extend
-}
-
-public p SourceFile.runASTBuilder() {
-    // Transform the imported source files
-    // ToDo: Extend
 }
 
 public p SourceFile.runASTVisualizer(string* output) {

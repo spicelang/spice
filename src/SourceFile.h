@@ -62,8 +62,6 @@ struct SourceFileAntlrCtx {
 struct TimerOutput {
   uint64_t lexer = 0;
   uint64_t parser = 0;
-  uint64_t cstVisualizer = 0;
-  uint64_t astBuilder = 0;
   uint64_t astOptimizer = 0;
   uint64_t astVisualizer = 0;
   uint64_t importCollector = 0;
@@ -158,6 +156,7 @@ public:
   SourceFile *parent;
   std::string cacheKey;
   bool restoredFromCache = false;
+  EntryNode* ast;
   std::unique_ptr<Scope> globalScope;
   std::unique_ptr<llvm::Module> llvmModule;
   std::unordered_map<std::string, std::pair<SourceFile *, const ASTNode *>> dependencies;

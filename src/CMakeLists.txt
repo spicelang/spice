@@ -140,13 +140,14 @@ set(SOURCES
         util/CodeLoc.h
         util/CompilerWarning.cpp
         util/CompilerWarning.h
+        util/ParserHelper.cpp
         util/Timer.h
         #util/Memory.h
         util/RawStringOStream.cpp
         util/RawStringOStream.h
 )
 
-add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS} util/ParserHelper.h)
 
 # Include Antlr components
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)

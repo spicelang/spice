@@ -7,102 +7,33 @@ options {
 }
 
 @header {
-  #include <vector>
-  #include <ast/ASTNodes.h>
+  #include <util/ParserHelper.h>
 
   using namespace spice::compiler;
 }
 
 @members {
-  ASTNode* parent = nullptr;
-
-  CodeLoc makeCodeLoc(antlr4::ParserRuleContext *context) {
-    return CodeLoc(context->start, getSourceName());
-  }
-
-  void saveErrorMessage(ASTNode *node, const antlr4::ParserRuleContext *ctx) {
-    const antlr4::misc::Interval sourceInterval(ctx->start->getStartIndex(), ctx->stop->getStopIndex());
-    antlr4::misc::Interval extendedSourceInterval(sourceInterval);
-
-    antlr4::ANTLRInputStream *inputStream = static_cast<antlr4::ANTLRInputStream *>(ctx->start->getInputStream());
-    if (inputStream->getText(extendedSourceInterval).find('\n') != std::string::npos) {
-      extendedSourceInterval.b = extendedSourceInterval.a;
-      while (inputStream->getText(extendedSourceInterval).find('\n') == std::string::npos)
-        extendedSourceInterval.b++;
-    }
-
-    size_t indentation = 0;
-    for (; indentation < ERROR_MESSAGE_CONTEXT; indentation++) {
-      extendedSourceInterval.a--;
-      if (extendedSourceInterval.a < 0 || inputStream->getText(extendedSourceInterval).find('\n') != std::string::npos) {
-        extendedSourceInterval.a++;
-        break;
-      }
-    }
-    for (size_t suffixContext = 0; suffixContext < ERROR_MESSAGE_CONTEXT; suffixContext++) {
-      extendedSourceInterval.b++;
-      if (extendedSourceInterval.b > inputStream->size() ||
-          inputStream->getText(extendedSourceInterval).find('\n') != std::string::npos) {
-        extendedSourceInterval.b--;
-        break;
-      }
-    }
-
-    // Trim start
-    while (inputStream->getText(extendedSourceInterval)[0] == ' ') {
-      extendedSourceInterval.a++;
-      indentation--;
-    }
-
-    // Trim end
-    if (inputStream->getText(extendedSourceInterval)[extendedSourceInterval.length() - 1] == '\n')
-      extendedSourceInterval.b--;
-
-    const std::string lineNumberStr = std::to_string(ctx->start->getLine());
-    indentation += lineNumberStr.length() + 2;
-
-    std::stringstream ss;
-    ss << lineNumberStr << "  " << inputStream->getText(extendedSourceInterval) << "\n";
-    for (size_t i = 0; i < indentation; i++)
-      ss << " ";
-    for (size_t i = 0; i < std::min(sourceInterval.length(), extendedSourceInterval.length()); i++)
-      ss << "^";
-    node->errorMessage = ss.str();
-  }
+  ParserHelper helper;
 }
 
-// Top level definitions and declarations
-entry returns [EntryNode *node]: {
-    EntryNode *entryNode = new EntryNode(nullptr, makeCodeLoc($ctx));
-    entryNode->reserveChildren($ctx->children.size());
-    parent = entryNode;
-} (
-    mainFunctionDef |
-    functionDef |
-    procedureDef |
-    structDef |
-    interfaceDef {} |
-    enumDef {} |
-    genericTypeDef {} |
-    aliasDef {} |
-    globalVarDef {} |
-    importStmt {} |
-    extDecl {} |
-    modAttr {}
-)* {
-    parent = nullptr;
-    $node = entryNode;
+entry returns [Ptr<EntryNode> node]: {
+  auto entryNode = helper.createNode<EntryNode>($ctx);
+}
+(mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importStmt | extDecl | modAttr)*
+{
+  helper.concludeNode($ctx, entryNode);
+  $node = std::move(entryNode);
 };
-mainFunctionDef returns [MainFctDefNode *node]: {
-  MainFctDefNode *mainFctDefNode = new MainFctDefNode(parent, makeCodeLoc($ctx));
-  mainFctDefNode->reserveChildren($ctx->children.size());
-  parent->addChild(mainFctDefNode);
-  ASTNode *originalParent = parent;
-  parent = mainFctDefNode;
-} fctAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE {
-  //saveErrorMessage(mainFctDefNode, $ctx);
-  parent = originalParent;
+
+mainFunctionDef returns [Ptr<MainFctDefNode> node]: {
+  auto mainFctDefNode = helper.createNode<MainFctDefNode>($ctx);
+}
+fctAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE
+{
+  helper.concludeNode($ctx, mainFctDefNode);
+  $node = std::move(mainFctDefNode);
 };
+
 functionDef: fctAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: fctAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 fctName: (TYPE_IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
@@ -127,7 +58,14 @@ elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
 anonymousBlockStmt: LBRACE stmtLst RBRACE;
 
 // Statements, declarations, definitions and lists
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | doWhileLoop | ifStmt | assertStmt | unsafeBlockDef | anonymousBlockStmt)*;
+stmtLst returns [Ptr<StmtLstNode> node]: {
+  auto stmtLstNode = helper.createNode<StmtLstNode>($ctx);
+}
+(stmt | forLoop | foreachLoop | whileLoop | doWhileLoop | ifStmt | assertStmt | unsafeBlockDef | anonymousBlockStmt)*
+{
+  helper.concludeNode($ctx, stmtLstNode);
+  $node = std::move(stmtLstNode);
+};
 typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;
@@ -136,7 +74,14 @@ enumItemLst: enumItem (COMMA enumItem)*;
 enumItem: TYPE_IDENTIFIER (ASSIGN INT_LIT)?;
 field: dataType IDENTIFIER (ASSIGN constant)?;
 signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER (LESS typeLst GREATER)? LPAREN typeLst? RPAREN SEMICOLON;
-stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
+stmt returns [Ptr<StmtNode> node]: {
+  auto stmtNode = helper.createNode<StmtNode>($ctx);
+}
+(declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON
+{
+  helper.concludeNode($ctx, stmtNode);
+  $node = std::move(stmtNode);
+};
 declStmt: dataType IDENTIFIER (ASSIGN assignExpr)?;
 specifierLst: specifier+;
 specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC | HEAP;
