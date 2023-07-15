@@ -109,8 +109,6 @@ public:
   // Compiler pipeline triggers
   void runLexer();
   void runParser();
-  void runCSTVisualizer();
-  void runASTBuilder();
   void runASTOptimizer();
   void runASTVisualizer();
   void runImportCollector();
@@ -160,7 +158,6 @@ public:
   SourceFile *parent;
   std::string cacheKey;
   bool restoredFromCache = false;
-  std::unique_ptr<EntryNode> ast;
   std::unique_ptr<Scope> globalScope;
   std::unique_ptr<llvm::Module> llvmModule;
   std::unordered_map<std::string, std::pair<SourceFile *, const ASTNode *>> dependencies;

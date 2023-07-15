@@ -4,7 +4,7 @@
 
 #include <SourceFile.h>
 #include <exception/CompilerError.h>
-#include <symboltablebuilder/Scope.h>
+#include <global/GlobalResourceManager.h>
 #include <util/FileUtil.h>
 
 namespace spice::compiler {
@@ -42,7 +42,8 @@ bool RuntimeModuleManager::addModule(SourceFile *parentSourceFile, RuntimeModule
     return false;
 
   const auto moduleSourceFile = resourceManager.createSourceFile(parentSourceFile, importName, filePath, true);
-  parentSourceFile->addDependency(moduleSourceFile, parentSourceFile->ast.get(), importName, filePath.string());
+  parentSourceFile->addDependency(moduleSourceFile, parentSourceFile->antlrCtx.parser->entry()->node, importName,
+                                  filePath.string());
 
   // Run frontend and type checker for runtime module source file
   const auto runtimeFile = parentSourceFile->dependencies.at(importName).first;

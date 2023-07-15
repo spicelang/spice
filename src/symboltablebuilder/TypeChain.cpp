@@ -2,6 +2,7 @@
 
 #include "SymbolType.h"
 
+#include <ast/ASTNodes.h>
 #include <exception/CompilerError.h>
 
 namespace spice::compiler {

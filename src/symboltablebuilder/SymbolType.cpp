@@ -2,6 +2,7 @@
 
 #include "SymbolType.h"
 
+#include <ast/ASTNodes.h>
 #include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
 #include <irgenerator/NameMangling.h>
@@ -245,6 +246,16 @@ bool SymbolType::isBaseType(SymbolSuperType superType) const {
  */
 bool SymbolType::isSameContainerTypeAs(const SymbolType &otherType) const {
   return (is(TY_PTR) && otherType.is(TY_PTR)) || (is(TY_REF) && otherType.is(TY_REF)) || (is(TY_ARRAY) && otherType.is(TY_ARRAY));
+}
+
+/**
+ * Get the original subtype without any path fragments
+ *
+ * @return Original subtype
+ */
+std::string SymbolType::getOriginalSubType() const {
+  assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
+  return CommonUtil::getLastFragment(typeChain.back().subType, SCOPE_ACCESS_TOKEN);
 }
 
 /**

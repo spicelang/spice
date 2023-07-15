@@ -2,7 +2,6 @@
 
 #include "SourceFile.h"
 
-#include <ast/ASTBuilder.h>
 #include <astoptimizer/ASTOptimizer.h>
 #include <borrowchecker/BorrowChecker.h>
 #include <escapeanalyzer/EscapeAnalyzer.h>
@@ -23,7 +22,6 @@
 #include <util/FileUtil.h>
 #include <util/Timer.h>
 #include <visualizer/ASTVisualizer.h>
-#include <visualizer/CSTVisualizer.h>
 
 namespace spice::compiler {
 
@@ -99,60 +97,6 @@ void SourceFile::runParser() {
   printStatusMessage("Parser", IO_TOKENS, IO_CST, compilerOutput.times.parser);
 }
 
-void SourceFile::runCSTVisualizer() {
-  // Only execute if enabled
-  if (restoredFromCache || (!resourceManager.cliOptions.dumpSettings.dumpCST && !resourceManager.cliOptions.testMode))
-    return;
-  // Check if this stage has already been done
-  if (previousStage >= CST_VISUALIZER)
-    return;
-
-  Timer timer(&compilerOutput.times.cstVisualizer);
-  timer.start();
-
-  // Generate dot code for this source file
-  std::stringstream dotCode;
-  visualizerPreamble(dotCode);
-  CSTVisualizer cstVisualizer(resourceManager, this, antlrCtx.lexer.get(), antlrCtx.parser.get());
-  dotCode << std::any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry())) << "}";
-  antlrCtx.parser->reset();
-
-  // If this is the root source file, output the serialized string and the SVG file
-  if (parent == nullptr) {
-    compilerOutput.cstString = dotCode.str();
-    if (resourceManager.cliOptions.dumpSettings.dumpCST)
-      visualizerOutput("CST", compilerOutput.cstString);
-  }
-
-  previousStage = CST_VISUALIZER;
-  timer.stop();
-  printStatusMessage("CST Visualizer", IO_CST, IO_CST, compilerOutput.times.cstVisualizer);
-}
-
-void SourceFile::runASTBuilder() {
-  // Skip if restored from cache or this stage has already been done
-  if (restoredFromCache || previousStage >= AST_BUILDER)
-    return;
-
-  Timer timer(&compilerOutput.times.astBuilder);
-  timer.start();
-
-  // Create AST
-  ast = std::make_unique<EntryNode>(nullptr, CodeLoc(1, 1, filePath));
-
-  // Build AST for this source file
-  ASTBuilder astBuilder(resourceManager, this, ast.get(), antlrCtx.inputStream.get());
-  astBuilder.visit(antlrCtx.parser->entry());
-  antlrCtx.parser->reset();
-
-  // Create global scope
-  globalScope = std::make_unique<Scope>(nullptr, this, SCOPE_GLOBAL, &ast->codeLoc);
-
-  previousStage = AST_BUILDER;
-  timer.stop();
-  printStatusMessage("AST Builder", IO_CST, IO_AST, compilerOutput.times.astBuilder);
-}
-
 void SourceFile::runASTOptimizer() {
   // Skip if restored from cache or this stage has already been done
   if (restoredFromCache || previousStage >= AST_OPTIMIZER)
@@ -162,7 +106,7 @@ void SourceFile::runASTOptimizer() {
   timer.start();
 
   ASTOptimizer astOptimizer(resourceManager, this);
-  astOptimizer.visit(static_cast<EntryNode *>(ast.get()));
+  astOptimizer.visit(antlrCtx.parser->entry()->node);
 
   previousStage = AST_OPTIMIZER;
   timer.stop();
@@ -183,8 +127,8 @@ void SourceFile::runASTVisualizer() {
   // Generate dot code for this source file
   std::stringstream dotCode;
   visualizerPreamble(dotCode);
-  ASTVisualizer astVisualizer(resourceManager, this, ast.get());
-  dotCode << std::any_cast<std::string>(astVisualizer.visit(ast.get())) << "}";
+  ASTVisualizer astVisualizer(resourceManager, this, antlrCtx.parser->entry()->node);
+  dotCode << std::any_cast<std::string>(astVisualizer.visit(antlrCtx.parser->entry()->node)) << "}";
 
   // If this is the root source file, output the serialized string and the SVG file
   if (parent == nullptr) {
@@ -208,7 +152,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
 
   // Collect the imports for this source file
   ImportCollector importCollector(resourceManager, this);
-  importCollector.visit(static_cast<EntryNode *>(ast.get()));
+  importCollector.visit(antlrCtx.parser->entry()->node);
 
   previousStage = IMPORT_COLLECTOR;
   timer.stop();
@@ -234,7 +178,7 @@ void SourceFile::runSymbolTableBuilder() {
 
   // Build symbol table of the current file
   SymbolTableBuilder symbolTableBuilder(resourceManager, this);
-  symbolTableBuilder.visit(static_cast<EntryNode *>(ast.get()));
+  symbolTableBuilder.visit(antlrCtx.parser->entry()->node);
 
   previousStage = SYMBOL_TABLE_BUILDER;
   timer.stop();
@@ -263,7 +207,7 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
 
   // Then type-check the current file
   TypeChecker typeChecker(resourceManager, this, TC_MODE_PREPARE);
-  typeChecker.visit(static_cast<EntryNode *>(ast.get()));
+  typeChecker.visit(antlrCtx.parser->entry()->node);
 
   previousStage = TYPE_CHECKER_PRE;
   timer.stop();
@@ -285,7 +229,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
 
     // Type-check the current file first. Multiple times, if requested
     timer.resume();
-    typeChecker.visit(static_cast<EntryNode *>(ast.get()));
+    typeChecker.visit(antlrCtx.parser->entry()->node);
     timer.pause();
 
     // Then type-check all dependencies
@@ -343,7 +287,7 @@ void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
 
   // Then borrow-check current file
   BorrowChecker borrowChecker(resourceManager, this);
-  borrowChecker.visit(static_cast<EntryNode *>(ast.get()));
+  borrowChecker.visit(antlrCtx.parser->entry()->node);
 
   previousStage = BORROW_CHECKER;
   timer.stop();
@@ -364,7 +308,7 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
 
   // Then escape-analyze current file
   EscapeAnalyzer escapeAnalyzer(resourceManager, this);
-  escapeAnalyzer.visit(static_cast<EntryNode *>(ast.get()));
+  escapeAnalyzer.visit(antlrCtx.parser->entry()->node);
 
   previousStage = ESCAPE_ANALYZER;
   timer.stop();
@@ -384,7 +328,7 @@ void SourceFile::runIRGenerator() {
 
   // Generate this source file
   IRGenerator irGenerator(resourceManager, this);
-  irGenerator.visit(static_cast<EntryNode *>(ast.get()));
+  irGenerator.visit(antlrCtx.parser->entry()->node);
 
   // Save the ir string in the compiler output
   compilerOutput.irString = irGenerator.getIRString();
@@ -569,8 +513,6 @@ void SourceFile::concludeCompilation() {
 void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
   runLexer();
   runParser();
-  runCSTVisualizer();
-  runASTBuilder();
   runASTOptimizer();
   runASTVisualizer();
   runImportCollector();

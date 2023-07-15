@@ -2,6 +2,8 @@
 
 #include "Interface.h"
 
+#include <ast/ASTNodes.h>
+
 namespace spice::compiler {
 
 /**

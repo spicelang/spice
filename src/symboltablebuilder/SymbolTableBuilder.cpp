@@ -3,7 +3,6 @@
 #include "SymbolTableBuilder.h"
 
 #include <SourceFile.h>
-#include <ast/ASTBuilder.h>
 #include <exception/SemanticError.h>
 
 namespace spice::compiler {

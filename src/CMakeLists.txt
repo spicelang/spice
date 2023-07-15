@@ -19,8 +19,6 @@ set(SOURCES
         cli/CLIInterface.cpp
         cli/CLIInterface.h
         # CST visualizer
-        visualizer/CSTVisualizer.cpp
-        visualizer/CSTVisualizer.h
         # AST builder
         ast/ASTNodes.cpp
         ast/ASTNodes.h
@@ -30,8 +28,6 @@ set(SOURCES
         ast/ASTVisitor.h
         ast/ParallelizableASTVisitor.cpp
         ast/ParallelizableASTVisitor.h
-        ast/ASTBuilder.cpp
-        ast/ASTBuilder.h
         # AST visualizer
         visualizer/ASTVisualizer.cpp
         visualizer/ASTVisualizer.h

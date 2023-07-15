@@ -13,6 +13,7 @@
 #include <model/Function.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
+#include <symboltablebuilder/SymbolType.h>
 #include <symboltablebuilder/TypeSpecifiers.h>
 #include <util/CodeLoc.h>
 
@@ -30,6 +31,11 @@ union CompileTimeValue {
   const char *stringValue;
   bool boolValue;
 };
+
+#define ERROR_MESSAGE_CONTEXT 20
+const char *const RESERVED_KEYWORDS[8] = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
+const char *const MEMBER_ACCESS_TOKEN = ".";
+const char *const SCOPE_ACCESS_TOKEN = "::";
 
 // =========================================================== AstNode ===========================================================
 
@@ -63,6 +69,11 @@ public:
     T *node = new T(this, loc);
     children.push_back(node);
     return node;
+  }
+
+  template <typename T> void addChild(T *child) {
+    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from AstNode");
+    children.push_back(child);
   }
 
   template <typename T> [[nodiscard]] T *getChild(size_t i = 0) const {

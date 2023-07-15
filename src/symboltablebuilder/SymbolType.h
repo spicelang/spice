@@ -7,7 +7,6 @@
 #include <utility>
 #include <vector>
 
-#include <ast/ASTBuilder.h>
 #include <symboltablebuilder/TypeSpecifiers.h>
 #include <util/CommonUtil.h>
 
@@ -137,10 +136,7 @@ public:
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
     return typeChain.back().subType;
   }
-  [[nodiscard]] inline std::string getOriginalSubType() const {
-    assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
-    return CommonUtil::getLastFragment(typeChain.back().subType, SCOPE_ACCESS_TOKEN);
-  }
+  [[nodiscard]] std::string getOriginalSubType() const;
   [[nodiscard]] inline SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
   [[nodiscard]] SymbolType getBaseType() const {
     assert(!typeChain.empty());
