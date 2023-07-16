@@ -100,10 +100,6 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       usedGenericTypes.emplace_back(templateType);
   }
 
-  // Set generic if either the function or the parent struct is generic
-  if (!usedGenericTypes.empty())
-    node->isGeneric = true;
-
   // Set type of 'this' variable
   if (node->isMethod) {
     SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
@@ -229,10 +225,6 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     for (const SymbolType &templateType : thisType.getTemplateTypes())
       usedGenericTypes.emplace_back(templateType);
   }
-
-  // Set generic if either the function or the parent struct is generic
-  if (!usedGenericTypes.empty())
-    node->isGeneric = true;
 
   // Set type of 'this' variable
   if (node->isMethod) {

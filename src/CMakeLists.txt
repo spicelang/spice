@@ -18,8 +18,7 @@ set(SOURCES
         # CLI
         cli/CLIInterface.cpp
         cli/CLIInterface.h
-        # CST visualizer
-        # AST builder
+        # AST
         ast/ASTNodes.cpp
         ast/ASTNodes.h
         ast/AbstractASTVisitor.cpp
@@ -141,13 +140,14 @@ set(SOURCES
         util/CompilerWarning.cpp
         util/CompilerWarning.h
         util/ParserHelper.cpp
+        util/ParserHelper.h
         util/Timer.h
         #util/Memory.h
         util/RawStringOStream.cpp
         util/RawStringOStream.h
 )
 
-add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS} util/ParserHelper.h)
+add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 # Include Antlr components
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)

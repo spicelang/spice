@@ -47,7 +47,6 @@ void execTestCase(const TestCase &testCase) {
       /* ignoreCache */ true,
       /* printDebugOutput= */ false,
       CliOptions::DumpSettings{
-          /* dumpCST= */ false,
           /* dumpAST= */ false,
           /* dumpIR= */ false,
           /* dumpAssembly= */ false,

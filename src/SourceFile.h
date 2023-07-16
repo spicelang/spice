@@ -32,8 +32,6 @@ enum CompileStageType : uint8_t {
   NONE,
   LEXER,
   PARSER,
-  CST_VISUALIZER,
-  AST_BUILDER,
   AST_OPTIMIZER,
   AST_VISUALIZER,
   IMPORT_COLLECTOR,
@@ -47,7 +45,7 @@ enum CompileStageType : uint8_t {
   OBJECT_EMITTER
 };
 
-enum CompileStageIOType { IO_CODE, IO_TOKENS, IO_CST, IO_AST, IO_IR, IO_OBJECT_FILE };
+enum CompileStageIOType { IO_CODE, IO_TOKENS, IO_AST, IO_IR, IO_OBJECT_FILE };
 
 struct SourceFileAntlrCtx {
   // Create error handlers for lexer and parser
@@ -76,7 +74,6 @@ struct TimerOutput {
 };
 
 struct CompilerOutput {
-  std::string cstString;
   std::string astString;
   std::string symbolTableString;
   std::string irString;

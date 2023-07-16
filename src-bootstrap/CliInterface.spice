@@ -20,7 +20,6 @@ public type CliOptions struct {
     public unsigned short compileJobCount = 0 // O for auto
     public bool ignoreCache = false
     public bool printDebugOutput = false
-    public bool dumpCST = false
     public bool dumpAST = false
     public bool dumpIR = false
     public bool dumpAssembly = false
@@ -153,9 +152,6 @@ p CliInterface.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --debug-output
     CliFlag& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
     debugOutputFlag.addAlias("-d");
-    // --dump-cst
-    CliFlag& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dumpCST, "Dump CST as serialized string and SVG image");
-    dumpCstFlag.addAlias("-cst");
     // --dump-ast
     CliFlag& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dumpAST, "Dump AST as serialized string and SVG image");
     dumpAstFlag.addAlias("-ast");

@@ -1,5 +1,7 @@
 f<int> main() {
-    //printf("Hello World!");
+    int i = 0;
+    i++;
+    printf("%d", i);
 }
 
 /*import "std/os/thread";

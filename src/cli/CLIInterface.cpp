@@ -223,8 +223,6 @@ void CLIInterface::addUninstallSubcommand() {
 void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
-  // --dump-cst
-  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dumpSettings.dumpCST, "Dump CST as serialized string and SVG image");
   // --dump-ast
   subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpSettings.dumpAST, "Dump AST as serialized string and SVG image");
   // --dump-symtab

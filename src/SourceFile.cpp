@@ -98,7 +98,7 @@ void SourceFile::runParser() {
 
   previousStage = PARSER;
   timer.stop();
-  printStatusMessage("Parser", IO_TOKENS, IO_CST, compilerOutput.times.parser);
+  printStatusMessage("Parser", IO_TOKENS, IO_AST, compilerOutput.times.parser);
 }
 
 void SourceFile::runASTOptimizer() {
@@ -690,7 +690,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,
                                     uint64_t stageRuntime, bool fromThread /*=false*/, unsigned short stageRuns /*=0*/) const {
   if (resourceManager.cliOptions.printDebugOutput) {
-    const char *const compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
+    const char *const compilerStageIoTypeName[] = {"Code", "Tokens", "AST", "IR", "OBJECT_FILE"};
     // Build output string
     std::stringstream outputStr;
     outputStr << "[" << stage << "] for " << fileName << ": ";

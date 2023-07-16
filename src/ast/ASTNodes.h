@@ -35,6 +35,22 @@ union CompileTimeValue {
 const char *const MEMBER_ACCESS_TOKEN = ".";
 const char *const SCOPE_ACCESS_TOKEN = "::";
 
+// Operator overload function names
+const char *const OP_FCT_PLUS = "op.plus";
+const char *const OP_FCT_MINUS = "op.minus";
+const char *const OP_FCT_MUL = "op.mul";
+const char *const OP_FCT_DIV = "op.div";
+const char *const OP_FCT_EQUAL = "op.equal";
+const char *const OP_FCT_NOT_EQUAL = "op.notequal";
+const char *const OP_FCT_SHL = "op.shl";
+const char *const OP_FCT_SHR = "op.shr";
+const char *const OP_FCT_PLUS_EQUAL = "op.plusequal";
+const char *const OP_FCT_MINUS_EQUAL = "op.minusequal";
+const char *const OP_FCT_MUL_EQUAL = "op.mulequal";
+const char *const OP_FCT_DIV_EQUAL = "op.divequal";
+const char *const OP_FCT_POSTFIX_PLUS_PLUS = "op.plusplus.post";
+const char *const OP_FCT_POSTFIX_MINUS_MINUS = "op.minusminus.post";
+
 // =========================================================== AstNode ===========================================================
 
 class ASTNode {
@@ -46,14 +62,6 @@ public:
   // Virtual methods
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
   virtual std::any accept(ParallelizableASTVisitor *visitor) const = 0;
-
-  // Public methods
-  template <typename T> T *createChild(const CodeLoc &loc) {
-    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from AstNode");
-    T *node = new T(this, loc);
-    children.push_back(node);
-    return node;
-  }
 
   template <typename T> void addChild(T *child) {
     static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from AstNode");
@@ -299,7 +307,6 @@ public:
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
-  bool isGeneric = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers functionSpecifiers = TypeSpecifiers::of(TY_FUNCTION);
   Scope *structScope = nullptr;
@@ -340,7 +347,6 @@ public:
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
-  bool isGeneric = false;
   bool isCtor = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers procedureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
@@ -746,9 +752,6 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
-
-  // Public members
-  size_t numberOfTypes = 0;
 };
 
 // ======================================================= TypeAltsLstNode =======================================================
@@ -764,9 +767,6 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
-
-  // Public members
-  size_t numberOfAlts = 0;
 };
 
 // ======================================================== ParamLstNode =========================================================
@@ -812,9 +812,6 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<EnumItemNode *> items() const { return getChildren<EnumItemNode>(); }
-
-  // Public members
-  EnumDefNode *enumDef = nullptr;
 };
 
 // ========================================================= EnumItemNode ========================================================
@@ -1759,8 +1756,8 @@ public:
     TYPE_STRING,
     TYPE_BOOL,
     TYPE_DYN,
-    TY_CUSTOM,
-    TY_FUNCTION
+    TYPE_CUSTOM,
+    TYPE_FUNCTION
   };
 
   // Constructors

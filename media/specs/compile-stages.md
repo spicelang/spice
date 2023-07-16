@@ -35,7 +35,7 @@ graph TD;
     Note: Splits the source input into tokens (ANTLR)
 
 2.  **Parser** <br>
-    Input/Output: Tokens -> CST <br>
+    Input/Output: Tokens -> AST <br>
     Note: Parses tokens to a Concrete Syntax Tree (ANTLR)
 
 3. **AST Optimizer** <br>

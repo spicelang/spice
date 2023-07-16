@@ -3,6 +3,7 @@
 #pragma once
 
 #include <ast/ASTNodes.h>
+#include <exception/ParserError.h>
 #include <util/CodeLoc.h>
 
 #include "antlr4-runtime.h"
@@ -43,8 +44,19 @@ public:
     assert(parentStack.top() == node);
     parentStack.pop();
   }
-  static CodeLoc getCodeLoc(const antlr4::ParserRuleContext *context);
+  static CodeLoc getCodeLoc(const antlr4::ParserRuleContext *ctx) {
+    return CodeLoc(ctx->start, ctx->start->getInputStream()->getSourceName());
+  }
+  int32_t parseInt(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal);
+  int16_t parseShort(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal);
+  int64_t parseLong(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal);
+  static int8_t parseChar(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal);
+  static std::string parseString(std::string input);
+  template <typename T>
+  T parseNumeric(ConstantNode *constantNode, antlr4::tree::TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
   static void saveErrorMessage(ASTNode *node, const antlr4::ParserRuleContext *ctx);
+  static void replaceEscapeChars(std::string &string);
+  static std::string getIdentifier(antlr4::tree::TerminalNode *terminal);
 
 private:
   // Private members

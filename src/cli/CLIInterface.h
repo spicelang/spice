@@ -40,7 +40,6 @@ struct CliOptions {
   bool ignoreCache = false;
   bool printDebugOutput = false;
   struct DumpSettings {
-    bool dumpCST = false;
     bool dumpAST = false;
     bool dumpIR = false;
     bool dumpAssembly = false;

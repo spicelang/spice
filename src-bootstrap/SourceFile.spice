@@ -8,8 +8,6 @@ type CompileStageType enum {
     NONE,
     LEXER,
     PARSER,
-    CST_VISUALIZER,
-    AST_BUILDER,
     AST_OPTIMIZER,
     AST_VISUALIZER,
     IMPORT_COLLECTOR,
@@ -26,7 +24,6 @@ type CompileStageType enum {
 type CompileStageIOType enum {
     IO_CODE,
     IO_TOKENS,
-    IO_CST,
     IO_AST,
     IO_IR,
     IO_OBJECT_FILE
