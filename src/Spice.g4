@@ -16,6 +16,7 @@ options {
   ParserHelper helper;
 }
 
+// Top level definitions and declarations
 entry returns [Ptr<EntryNode> node]
 @init {
   auto entryNode = helper.createNode<EntryNode>($ctx);
@@ -35,7 +36,7 @@ mainFunctionDef returns [Ptr<MainFctDefNode> node]
 
   helper.concludeNode($ctx, mainFctDefNode);
   $node = std::move(mainFctDefNode);
-}: (fctAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE);
+}: fctAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 
 functionDef returns [Ptr<FctDefNode> node]
 @init {
@@ -140,7 +141,7 @@ fctName returns [Ptr<FctNameNode> node]
       fctNameNode->overloadedOperator = FctNameNode::OP_MINUS_MINUS;
       fctNameNode->name = OP_FCT_POSTFIX_MINUS_MINUS;
     } else {
-      assert(false);
+      assert(false && "FctName parsing fall-through");
     }
     fctNameNode->fqName = fctNameNode->name;
     fctNameNode->nameFragments.push_back(fctNameNode->name);
@@ -490,7 +491,7 @@ specifier returns [Ptr<SpecifierNode> node]
     else if (symbolType == SpiceParser::HEAP)
       specifierNode->type = SpecifierNode::TY_HEAP;
     else
-      assert(false);
+      assert(false && "Specifier parsing fall-through");
   }
 
   helper.concludeNode($ctx, specifierNode);
@@ -608,14 +609,14 @@ printfCall returns [Ptr<PrintfCallNode> node]
 }
 @after {
   // Extract templated string
-  std::string templatedString = $templateString->getText();
+  std::string templatedString = $ctx->STRING_LIT()->getText();
   templatedString = templatedString.substr(1, templatedString.size() - 2);
   ParserHelper::replaceEscapeChars(templatedString);
   printfCallNode->templatedString = templatedString;
 
   helper.concludeNode($ctx, printfCallNode);
   $node = std::move(printfCallNode);
-}: PRINTF LPAREN templateString=STRING_LIT (COMMA assignExpr)* RPAREN;
+}: PRINTF LPAREN STRING_LIT (COMMA assignExpr)* RPAREN;
 
 sizeOfCall returns [Ptr<SizeofCallNode> node]
 @init {
@@ -654,6 +655,34 @@ assignExpr returns [Ptr<AssignExprNode> node]
   auto assignExprNode = helper.createNode<AssignExprNode>($ctx);
 }
 @after {
+  // Extract assign operator
+  if (auto assignOp = $ctx->assignOp(); assignOp != nullptr) {
+    if (assignOp->ASSIGN())
+      assignExprNode->op = AssignExprNode::OP_ASSIGN;
+    else if (assignOp->PLUS_EQUAL())
+      assignExprNode->op = AssignExprNode::OP_PLUS_EQUAL;
+    else if (assignOp->MINUS_EQUAL())
+      assignExprNode->op = AssignExprNode::OP_MINUS_EQUAL;
+    else if (assignOp->MUL_EQUAL())
+      assignExprNode->op = AssignExprNode::OP_MUL_EQUAL;
+    else if (assignOp->DIV_EQUAL())
+      assignExprNode->op = AssignExprNode::OP_DIV_EQUAL;
+    else if (assignOp->REM_EQUAL())
+      assignExprNode->op = AssignExprNode::OP_REM_EQUAL;
+    else if (assignOp->SHL_EQUAL())
+      assignExprNode->op = AssignExprNode::OP_SHL_EQUAL;
+    else if (assignOp->SHR_EQUAL())
+      assignExprNode->op = AssignExprNode::OP_SHR_EQUAL;
+    else if (assignOp->AND_EQUAL())
+      assignExprNode->op = AssignExprNode::OP_AND_EQUAL;
+    else if (assignOp->OR_EQUAL())
+      assignExprNode->op = AssignExprNode::OP_OR_EQUAL;
+    else if (assignOp->XOR_EQUAL())
+      assignExprNode->op = AssignExprNode::OP_XOR_EQUAL;
+    else
+      assert(false && "AssignExpr parsing fall-through");
+  }
+
   helper.concludeNode($ctx, assignExprNode);
   $node = std::move(assignExprNode);
 }: prefixUnaryExpr assignOp assignExpr | ternaryExpr;
@@ -790,13 +819,34 @@ castExpr returns [Ptr<CastExprNode> node]
 
   helper.concludeNode($ctx, castExprNode);
   $node = std::move(castExprNode);
-}: (LPAREN dataType RPAREN prefixUnaryExpr | prefixUnaryExpr);
+}: LPAREN dataType RPAREN prefixUnaryExpr | prefixUnaryExpr;
 
 prefixUnaryExpr returns [Ptr<PrefixUnaryExprNode> node]
 @init {
   auto prefixUnaryExprNode = helper.createNode<PrefixUnaryExprNode>($ctx);
 }
 @after {
+  // Extract assign operator
+  if (auto prefixUnaryOp = $ctx->prefixUnaryOp()) {
+    if (prefixUnaryOp->MINUS()) {
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS;
+    } else if (prefixUnaryOp->PLUS_PLUS()) {
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_PLUS_PLUS;
+    } else if (prefixUnaryOp->MINUS_MINUS()) {
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS_MINUS;
+    } else if (prefixUnaryOp->NOT()) {
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_NOT;
+    } else if (prefixUnaryOp->BITWISE_NOT()) {
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_BITWISE_NOT;
+    } else if (prefixUnaryOp->MUL()) {
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_INDIRECTION;
+    } else if (prefixUnaryOp->BITWISE_AND()) {
+      prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_ADDRESS_OF;
+    } else {
+      assert(false && "PrefixUnaryExpr parsing fall-through");
+    }
+  }
+
   helper.concludeNode($ctx, prefixUnaryExprNode);
   $node = std::move(prefixUnaryExprNode);
 }: postfixUnaryExpr | prefixUnaryOp prefixUnaryExpr;
@@ -806,9 +856,26 @@ postfixUnaryExpr returns [Ptr<PostfixUnaryExprNode> node]
   auto postfixUnaryExprNode = helper.createNode<PostfixUnaryExprNode>($ctx);
 }
 @after {
+  if ($ctx->postfixUnaryExpr()) {
+    for (ParserRuleContext::ParseTree *subTree : $ctx->children) {
+      ParserRuleContext *rule;
+      if (auto t1 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::LBRACKET) {
+        postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_SUBSCRIPT;
+      } else if (auto t2 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::DOT) {
+        postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MEMBER_ACCESS;
+      } else if (auto t3 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+        postfixUnaryExprNode->identifier = ParserHelper::getIdentifier(t3);
+      } else if (auto t4 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t4 != nullptr && t4->getSymbol()->getType() == SpiceParser::PLUS_PLUS) {
+        postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_PLUS_PLUS;
+      } else if (auto t5 = dynamic_cast<antlr4::tree::TerminalNode *>(subTree); t5 != nullptr && t5->getSymbol()->getType() == SpiceParser::MINUS_MINUS) {
+        postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MINUS_MINUS;
+      }
+    }
+  }
+
   helper.concludeNode($ctx, postfixUnaryExprNode);
   $node = std::move(postfixUnaryExprNode);
-}: atomicExpr | postfixUnaryExpr (DOT IDENTIFIER | LBRACKET assignExpr RBRACKET | PLUS_PLUS | MINUS_MINUS);
+}: atomicExpr | postfixUnaryExpr LBRACKET assignExpr RBRACKET | postfixUnaryExpr DOT IDENTIFIER | postfixUnaryExpr PLUS_PLUS | postfixUnaryExpr MINUS_MINUS;
 
 atomicExpr returns [Ptr<AtomicExprNode> node]
 @init {
@@ -1055,7 +1122,7 @@ functionDataType returns [Ptr<FunctionDataTypeNode> node]
 
 // Shorthands
 assignOp: ASSIGN | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | REM_EQUAL | SHL_EQUAL | SHR_EQUAL | AND_EQUAL | OR_EQUAL | XOR_EQUAL;
-prefixUnaryOp: MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND | LOGICAL_AND; // Here, '&&' means the same as two times '&'
+prefixUnaryOp: MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND;
 overloadableOp: PLUS | MINUS | MUL | DIV | EQUAL | NOT_EQUAL | LESS LESS | GREATER GREATER | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | PLUS_PLUS | MINUS_MINUS;
 
 // Keyword tokens

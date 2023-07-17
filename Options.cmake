@@ -8,6 +8,11 @@ set(SPICE_BUILT_BY "$ENV{USERNAME}" CACHE STRING "Spice built by person")
 add_definitions(-DSPICE_BUILT_BY="${SPICE_BUILT_BY}")
 message(STATUS "Spice: Built by is set to '${SPICE_BUILT_BY}'")
 
+# Allow big object files
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wa,-mbig-obj")
+SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wa,-mbig-obj")
+SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wa,-mbig-obj")
+
 # Link time optimization
 option(SPICE_LTO "Enable link time optimization (LTO) for the compiler executable" OFF)
 if (SPICE_LTO)

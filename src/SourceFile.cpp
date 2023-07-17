@@ -684,7 +684,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
   std::cout << "\nGenerating SVG file ... ";
   FileUtil::writeToFile(dotFilePath.string(), output);
   FileUtil::exec("dot -Tsvg -o" + svgFilePath.string() + " " + dotFilePath.string());
-  std::cout << "done.\nSVG file can be found at: " << svgFilePath << "\n";
+  std::cout << "done.\nSVG file can be found at: " << svgFilePath.string() << "\n";
 }
 
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,

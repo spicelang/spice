@@ -6,7 +6,8 @@
 #include <exception/ParserError.h>
 #include <util/CodeLoc.h>
 
-#include "antlr4-runtime.h"
+#include "ANTLRInputStream.h"
+#include "ParserRuleContext.h"
 
 namespace spice::compiler {
 
