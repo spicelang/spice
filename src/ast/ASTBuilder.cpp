@@ -414,10 +414,6 @@ std::any ASTBuilder::visitFieldLst(SpiceParser::FieldLstContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  // Tell all field types that they are such
-  for (FieldNode *field : fieldLstNode->fields())
-    field->dataType()->isFieldType = true;
-
   return concludeNode(ctx, fieldLstNode);
 }
 
@@ -429,6 +425,9 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
 
   // Visit children
   visitChildren(ctx);
+
+  // Tell the data type that it is a field type
+  fieldNode->dataType()->isFieldType = true;
 
   return concludeNode(ctx, fieldNode);
 }
@@ -570,7 +569,7 @@ std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
   // If no name is given, use the path as name
   importStmtNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER()) : importStmtNode->importPath;
 
-  return importStmtNode;
+  return concludeNode(ctx, importStmtNode);
 }
 
 std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
@@ -964,11 +963,12 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
 std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
   auto fctCallNode = createNode<FctCallNode>(ctx);
 
-  // Enrich
-  if (fctCallNode->argLst())
-    fctCallNode->hasArgs = true;
-  if (fctCallNode->templateTypeLst())
-    fctCallNode->hasTemplateTypes = true;
+  // Visit children
+  visitChildren(ctx);
+
+  // Enrich)
+  fctCallNode->hasArgs = fctCallNode->argLst();
+  fctCallNode->hasTemplateTypes = fctCallNode->templateTypeLst();
 
   for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
     if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
@@ -987,9 +987,6 @@ std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
       fctCallNode->fqFunctionName += MEMBER_ACCESS_TOKEN;
     }
   }
-
-  // Visit children
-  visitChildren(ctx);
 
   return concludeNode(ctx, fctCallNode);
 }
@@ -1086,6 +1083,10 @@ std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_BOOL;
   else if (ctx->TYPE_DYN())
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_DYN;
+  else if (ctx->customDataType())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_CUSTOM;
+  else if (ctx->functionDataType())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_FUNCTION;
 
   // Visit children
   visitChildren(ctx);
@@ -1102,7 +1103,8 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
       const std::string fragment = t1->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
       customDataTypeNode->fqTypeName += fragment + SCOPE_ACCESS_TOKEN;
-    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
       const std::string fragment = t2->toString();
       customDataTypeNode->typeNameFragments.push_back(fragment);
       customDataTypeNode->fqTypeName += fragment;

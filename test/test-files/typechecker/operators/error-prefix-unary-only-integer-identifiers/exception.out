@@ -2,4 +2,4 @@
 Wrong data type for operator: Cannot apply '--' operator on type string
 
 2  --"test";
-   ^^
+   ^^^^^^^^

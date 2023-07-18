@@ -1,11 +1,25 @@
-type TestEnum enum {
-    ITEM_NAME,
-    ITEM_NAME2,
-    ITEM_NAME
+type T int|long;
+
+type TestStruct<T> struct {
+    T _f1
+    unsigned long length
 }
 
+p TestStruct.ctor(const unsigned long initialLength) {
+    this.length = initialLength;
+}
+
+p TestStruct.printLength() {
+    printf("%d\n", this.length);
+}
+
+type Alias alias TestStruct<long>;
+
 f<int> main() {
-    printf("Item: %d", TestEnum::ITEM_NAME2);
+    Alias a = Alias{12345l, (unsigned long) 54321l};
+    a.printLength();
+    dyn b = Alias(12l);
+    b.printLength();
 }
 
 /*import "std/os/thread";

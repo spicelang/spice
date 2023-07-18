@@ -17,8 +17,6 @@
 #include <symboltablebuilder/SymbolTable.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeChecker.h>
-#include <util/CodeLoc.h>
-#include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
 #include <util/Timer.h>
@@ -139,11 +137,8 @@ void SourceFile::runASTBuilder() {
 
   // Build AST for this source file
   ASTBuilder astBuilder(resourceManager, this, antlrCtx.inputStream.get());
-  astBuilder.visit(antlrCtx.parser->entry());
+  ast = std::any_cast<EntryNode *>(astBuilder.visit(antlrCtx.parser->entry()));
   antlrCtx.parser->reset();
-
-  // Get AST entry node
-  ast = resourceManager.astNodes.front().get();
 
   // Create global scope
   globalScope = std::make_unique<Scope>(nullptr, this, SCOPE_GLOBAL, &ast->codeLoc);

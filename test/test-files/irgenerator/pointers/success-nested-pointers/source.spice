@@ -11,5 +11,5 @@ p testProc(int[4]*** nums) {
 f<int> main() {
     int[4] intArray = { 1, 2, 3, 4 };
     printf("1: %d\n", intArray[1]);
-    testProc(&&&intArray);
+    testProc(& & &intArray);
 }

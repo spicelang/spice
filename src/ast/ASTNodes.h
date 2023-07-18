@@ -359,7 +359,7 @@ public:
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
+  [[nodiscard]] FieldLstNode *fieldLst() const { return getChild<FieldLstNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
   [[nodiscard]] TypeLstNode *interfaceTypeLst() const { return getChild<TypeLstNode>(hasTemplateTypes ? 1 : 0); }
 
@@ -1771,8 +1771,8 @@ public:
     TYPE_STRING,
     TYPE_BOOL,
     TYPE_DYN,
-    TY_CUSTOM,
-    TY_FUNCTION
+    TYPE_CUSTOM,
+    TYPE_FUNCTION
   };
 
   // Constructors
