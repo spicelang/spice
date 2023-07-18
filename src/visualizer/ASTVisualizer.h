@@ -52,6 +52,7 @@ public:
   std::any visitArgLst(ArgLstNode *ctx) override { return buildNode(ctx); }
   std::any visitEnumItemLst(EnumItemLstNode *ctx) override { return buildNode(ctx); }
   std::any visitEnumItem(EnumItemNode *ctx) override { return buildNode(ctx); }
+  std::any visitFieldLst(FieldLstNode *ctx) override { return buildNode(ctx); }
   std::any visitField(FieldNode *ctx) override { return buildNode(ctx); }
   std::any visitSignature(SignatureNode *ctx) override { return buildNode(ctx); }
   std::any visitStmt(StmtNode *ctx) override { return buildNode(ctx); }
@@ -192,6 +193,8 @@ private:
       return "EnumItemLst";
     if (std::is_same<EnumItemNode, T>())
       return "EnumItem";
+    if (std::is_same<FieldLstNode, T>())
+      return "FieldLst";
     if (std::is_same<FieldNode, T>())
       return "Field";
     if (std::is_same<SignatureNode, T>())

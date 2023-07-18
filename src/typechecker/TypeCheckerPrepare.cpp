@@ -100,10 +100,6 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       usedGenericTypes.emplace_back(templateType);
   }
 
-  // Set generic if either the function or the parent struct is generic
-  if (!usedGenericTypes.empty())
-    node->isGeneric = true;
-
   // Set type of 'this' variable
   if (node->isMethod) {
     SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
@@ -230,10 +226,6 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
       usedGenericTypes.emplace_back(templateType);
   }
 
-  // Set generic if either the function or the parent struct is generic
-  if (!usedGenericTypes.empty())
-    node->isGeneric = true;
-
   // Set type of 'this' variable
   if (node->isMethod) {
     SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
@@ -304,7 +296,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve struct template types
-  if (node->isGeneric) {
+  if (node->hasTemplateTypes) {
     usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
     templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
@@ -394,7 +386,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve interface template types
-  if (node->isGeneric) {
+  if (node->hasTemplateTypes) {
     usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
     templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {

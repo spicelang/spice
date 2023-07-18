@@ -8,7 +8,7 @@ mainFunctionDef: fctAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN L
 functionDef: fctAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: fctAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 fctName: (TYPE_IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
-structDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
+structDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE fieldLst RBRACE;
 interfaceDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE TYPE_IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
@@ -36,6 +36,7 @@ paramLst: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
 enumItemLst: enumItem (COMMA enumItem)*;
 enumItem: TYPE_IDENTIFIER (ASSIGN INT_LIT)?;
+fieldLst: field*;
 field: dataType IDENTIFIER (ASSIGN constant)?;
 signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER (LESS typeLst GREATER)? LPAREN typeLst? RPAREN SEMICOLON;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;

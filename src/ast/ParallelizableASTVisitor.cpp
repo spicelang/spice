@@ -71,6 +71,8 @@ std::any ParallelizableASTVisitor::visitEnumItemLst(const EnumItemLstNode *node)
 
 std::any ParallelizableASTVisitor::visitEnumItem(const EnumItemNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitFieldLst(const FieldLstNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitField(const FieldNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitSignature(const SignatureNode *node) { return visitChildren(node); }

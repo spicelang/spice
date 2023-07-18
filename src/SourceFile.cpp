@@ -137,13 +137,13 @@ void SourceFile::runASTBuilder() {
   Timer timer(&compilerOutput.times.astBuilder);
   timer.start();
 
-  // Create AST
-  ast = std::make_unique<EntryNode>(nullptr, CodeLoc(1, 1, filePath));
-
   // Build AST for this source file
-  ASTBuilder astBuilder(resourceManager, this, ast.get(), antlrCtx.inputStream.get());
+  ASTBuilder astBuilder(resourceManager, this, antlrCtx.inputStream.get());
   astBuilder.visit(antlrCtx.parser->entry());
   antlrCtx.parser->reset();
+
+  // Get AST entry node
+  ast = resourceManager.astNodes.front().get();
 
   // Create global scope
   globalScope = std::make_unique<Scope>(nullptr, this, SCOPE_GLOBAL, &ast->codeLoc);
@@ -162,7 +162,7 @@ void SourceFile::runASTOptimizer() {
   timer.start();
 
   ASTOptimizer astOptimizer(resourceManager, this);
-  astOptimizer.visit(static_cast<EntryNode *>(ast.get()));
+  astOptimizer.visit(ast);
 
   previousStage = AST_OPTIMIZER;
   timer.stop();
@@ -183,8 +183,8 @@ void SourceFile::runASTVisualizer() {
   // Generate dot code for this source file
   std::stringstream dotCode;
   visualizerPreamble(dotCode);
-  ASTVisualizer astVisualizer(resourceManager, this, ast.get());
-  dotCode << std::any_cast<std::string>(astVisualizer.visit(ast.get())) << "}";
+  ASTVisualizer astVisualizer(resourceManager, this, ast);
+  dotCode << std::any_cast<std::string>(astVisualizer.visit(ast)) << "}";
 
   // If this is the root source file, output the serialized string and the SVG file
   if (parent == nullptr) {
@@ -208,7 +208,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
 
   // Collect the imports for this source file
   ImportCollector importCollector(resourceManager, this);
-  importCollector.visit(static_cast<EntryNode *>(ast.get()));
+  importCollector.visit(ast);
 
   previousStage = IMPORT_COLLECTOR;
   timer.stop();
@@ -234,7 +234,7 @@ void SourceFile::runSymbolTableBuilder() {
 
   // Build symbol table of the current file
   SymbolTableBuilder symbolTableBuilder(resourceManager, this);
-  symbolTableBuilder.visit(static_cast<EntryNode *>(ast.get()));
+  symbolTableBuilder.visit(ast);
 
   previousStage = SYMBOL_TABLE_BUILDER;
   timer.stop();
@@ -263,7 +263,7 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
 
   // Then type-check the current file
   TypeChecker typeChecker(resourceManager, this, TC_MODE_PREPARE);
-  typeChecker.visit(static_cast<EntryNode *>(ast.get()));
+  typeChecker.visit(ast);
 
   previousStage = TYPE_CHECKER_PRE;
   timer.stop();
@@ -285,7 +285,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
 
     // Type-check the current file first. Multiple times, if requested
     timer.resume();
-    typeChecker.visit(static_cast<EntryNode *>(ast.get()));
+    typeChecker.visit(ast);
     timer.pause();
 
     // Then type-check all dependencies
@@ -343,7 +343,7 @@ void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
 
   // Then borrow-check current file
   BorrowChecker borrowChecker(resourceManager, this);
-  borrowChecker.visit(static_cast<EntryNode *>(ast.get()));
+  borrowChecker.visit(ast);
 
   previousStage = BORROW_CHECKER;
   timer.stop();
@@ -364,7 +364,7 @@ void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
 
   // Then escape-analyze current file
   EscapeAnalyzer escapeAnalyzer(resourceManager, this);
-  escapeAnalyzer.visit(static_cast<EntryNode *>(ast.get()));
+  escapeAnalyzer.visit(ast);
 
   previousStage = ESCAPE_ANALYZER;
   timer.stop();
@@ -384,7 +384,7 @@ void SourceFile::runIRGenerator() {
 
   // Generate this source file
   IRGenerator irGenerator(resourceManager, this);
-  irGenerator.visit(static_cast<EntryNode *>(ast.get()));
+  irGenerator.visit(ast);
 
   // Save the ir string in the compiler output
   compilerOutput.irString = irGenerator.getIRString();
