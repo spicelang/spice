@@ -1508,7 +1508,7 @@ public:
 class PrefixUnaryExprNode : public ASTNode {
 public:
   // Enums
-  enum PrefixUnaryOp { OP_NONE, OP_MINUS, OP_PLUS_PLUS, OP_MINUS_MINUS, OP_NOT, OP_BITWISE_NOT, OP_INDIRECTION, OP_ADDRESS_OF };
+  enum PrefixUnaryOp { OP_NONE, OP_MINUS, OP_PLUS_PLUS, OP_MINUS_MINUS, OP_NOT, OP_BITWISE_NOT, OP_DEREFERENCE, OP_ADDRESS_OF };
 
   // Constructors
   using ASTNode::ASTNode;

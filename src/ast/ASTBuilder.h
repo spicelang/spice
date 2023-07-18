@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include <CompilerPass.h>
-#include <SpiceVisitor.h>
-
 #include <functional>
 #include <utility>
+
+#include <CompilerPass.h>
+#include <SpiceVisitor.h>
+#include <util/GlobalDefinitions.h>
 
 namespace spice::compiler {
 
@@ -106,7 +107,6 @@ public:
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override;
   std::any visitFunctionDataType(SpiceParser::FunctionDataTypeContext *ctx) override;
   std::any visitAssignOp(SpiceParser::AssignOpContext *ctx) override;
-  std::any visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) override;
   std::any visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) override;
 
 private:
@@ -118,9 +118,7 @@ private:
   // Private methods
   template <typename T> T *createNode(const ParserRuleContext *ctx);
   template <typename T> T *concludeNode(const ParserRuleContext *ctx, T *node);
-  static CodeLoc getCodeLoc(const antlr4::ParserRuleContext *ctx) {
-    return CodeLoc(ctx->start, ctx->start->getInputStream()->getSourceName());
-  }
+  ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) { return CodeLoc(ctx->start, filePath); }
   int32_t parseInt(ConstantNode *constantNode, TerminalNode *terminal);
   int16_t parseShort(ConstantNode *constantNode, TerminalNode *terminal);
   int64_t parseLong(ConstantNode *constantNode, TerminalNode *terminal);

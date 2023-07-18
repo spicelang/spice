@@ -101,7 +101,6 @@ public:
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override { return buildRule(ctx); }
   std::any visitFunctionDataType(SpiceParser::FunctionDataTypeContext *ctx) override { return buildRule(ctx); }
   std::any visitAssignOp(SpiceParser::AssignOpContext *ctx) override { return buildRule(ctx); }
-  std::any visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) override { return buildRule(ctx); }
   std::any visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) override { return buildRule(ctx); }
 
 private:

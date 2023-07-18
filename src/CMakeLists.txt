@@ -144,6 +144,7 @@ set(SOURCES
         util/CodeLoc.h
         util/CompilerWarning.cpp
         util/CompilerWarning.h
+        util/GlobalDefinitions.h
         util/Timer.h
         #util/Memory.h
         util/RawStringOStream.cpp

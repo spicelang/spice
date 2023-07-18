@@ -9,6 +9,7 @@
 #include <exception/ParserError.h>
 #include <typechecker/OpRuleManager.h>
 #include <util/CommonUtil.h>
+#include <util/GlobalDefinitions.h>
 
 namespace spice::compiler {
 
@@ -181,6 +182,10 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
+  // Tell all items about the enum def
+  for (EnumItemNode *enumItem : enumDefNode->itemLst()->items())
+    enumItem->enumDef = enumDefNode;
+
   return concludeNode(ctx, enumDefNode);
 }
 
@@ -247,21 +252,79 @@ std::any ASTBuilder::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx
   return concludeNode(ctx, unsafeBlockDefNode);
 }
 
-std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {}
+std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
+  auto forLoopNode = createNode<ForLoopNode>(ctx);
 
-std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {}
+  return concludeNode(ctx, forLoopNode);
+}
 
-std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {}
+std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {}
+  return nullptr;
+}
 
-std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {}
+std::any ASTBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
+  auto foreachLoopNode = createNode<ForeachLoopNode>(ctx);
 
-std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {}
+  // Tell the foreach item that it is one
+  foreachLoopNode->itemVarDecl()->isForEachItem = true;
+
+  return concludeNode(ctx, foreachLoopNode);
+}
+
+std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
+  // Visit children
+  visitChildren(ctx);
+
+  return nullptr;
+}
+
+std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
+  auto whileLoopNode = createNode<WhileLoopNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, whileLoopNode);
+}
+
+std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {
+  auto doWhileLoopNode = createNode<DoWhileLoopNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, doWhileLoopNode);
+}
+
+std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
+  auto ifStmtNode = createNode<IfStmtNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, ifStmtNode);
+}
+
+std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
+  auto elseStmtNode = createNode<ElseStmtNode>(ctx);
+
+  // Enrich
+  elseStmtNode->isElseIf = ctx->ifStmt();
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, elseStmtNode);
+}
 
 std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) {
   auto anonymousBlockStmtNode = createNode<AnonymousBlockStmtNode>(ctx);
@@ -370,99 +433,787 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
   return concludeNode(ctx, fieldNode);
 }
 
-std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {}
+std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
+  auto signatureNode = createNode<SignatureNode>(ctx);
 
-std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {}
+  // Extract method name
+  signatureNode->methodName = getIdentifier(ctx->IDENTIFIER());
+  // Extract signature type
+  signatureNode->signatureType = ctx->F() ? SignatureNode::TYPE_FUNCTION : SignatureNode::TYPE_PROCEDURE;
+  signatureNode->signatureSpecifiers = ctx->F() ? TypeSpecifiers::of(TY_FUNCTION) : TypeSpecifiers::of(TY_PROCEDURE);
+  // Extract other metadata
+  signatureNode->hasTemplateTypes = ctx->F() ? ctx->LESS().size() == 2 : ctx->LESS().size() == 1;
+  signatureNode->hasParams = ctx->typeLst().size() == 2 || (ctx->typeLst().size() == 1 && !signatureNode->hasTemplateTypes);
 
-std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {}
+  return concludeNode(ctx, signatureNode);
+}
 
-std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {}
+std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
+  auto stmtNode = createNode<StmtNode>(ctx);
 
-std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitFctAttr(SpiceParser::FctAttrContext *ctx) {}
+  return concludeNode(ctx, stmtNode);
+}
 
-std::any ASTBuilder::visitAttrLst(SpiceParser::AttrLstContext *ctx) {}
+std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
+  auto declStmtNode = createNode<DeclStmtNode>(ctx);
 
-std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {}
+  // Enrich
+  declStmtNode->varName = getIdentifier(ctx->IDENTIFIER());
+  declStmtNode->hasAssignment = ctx->ASSIGN();
 
-std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {}
+  return concludeNode(ctx, declStmtNode);
+}
 
-std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {}
+std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
+  auto specifierLstNode = createNode<SpecifierLstNode>(ctx);
 
-std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {}
+  // Check if we have both, signed and unsigned specifier
+  bool seenSignedOrUnsigned = false;
+  for (const SpecifierNode *specifier : specifierLstNode->specifiers()) {
+    if (specifier->type != SpecifierNode::TY_SIGNED && specifier->type != SpecifierNode::TY_UNSIGNED)
+      continue;
+    if (seenSignedOrUnsigned)
+      throw ParserError(specifier->codeLoc, INVALID_SPECIFIER_COMBINATION, "A variable can not be signed and unsigned");
+    seenSignedOrUnsigned = true;
+  }
 
-std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {}
+  return concludeNode(ctx, specifierLstNode);
+}
 
-std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {}
+std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
+  auto specifierNode = createNode<SpecifierNode>(ctx);
 
-std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {}
+  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+    auto token = spice_pointer_cast<TerminalNode *>(subTree);
+    size_t symbolType = token->getSymbol()->getType();
+    if (symbolType == SpiceParser::CONST)
+      specifierNode->type = SpecifierNode::TY_CONST;
+    else if (symbolType == SpiceParser::SIGNED)
+      specifierNode->type = SpecifierNode::TY_SIGNED;
+    else if (symbolType == SpiceParser::UNSIGNED)
+      specifierNode->type = SpecifierNode::TY_UNSIGNED;
+    else if (symbolType == SpiceParser::INLINE)
+      specifierNode->type = SpecifierNode::TY_INLINE;
+    else if (symbolType == SpiceParser::PUBLIC)
+      specifierNode->type = SpecifierNode::TY_PUBLIC;
+    else if (symbolType == SpiceParser::HEAP)
+      specifierNode->type = SpecifierNode::TY_HEAP;
+    else
+      assert(false && "Unknown specifier type");
+  }
 
-std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {}
+  return concludeNode(ctx, specifierNode);
+}
 
-std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {}
+std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
+  auto modAttrNode = createNode<ModAttrNode>(ctx);
 
-std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {}
+  return concludeNode(ctx, modAttrNode);
+}
 
-std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {}
+std::any ASTBuilder::visitFctAttr(SpiceParser::FctAttrContext *ctx) {
+  auto fctAttrNode = createNode<FctAttrNode>(ctx);
 
-std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {}
+  return concludeNode(ctx, fctAttrNode);
+}
 
-std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {}
+std::any ASTBuilder::visitAttrLst(SpiceParser::AttrLstContext *ctx) {
+  auto attrLstNode = createNode<AttrLstNode>(ctx);
 
-std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {}
+  return concludeNode(ctx, attrLstNode);
+}
 
-std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {}
+std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
+  auto attrNode = createNode<AttrNode>(ctx);
 
-std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {}
+  // Extract key
+  for (const TerminalNode *keyFragment : ctx->IDENTIFIER()) {
+    if (!attrNode->key.empty())
+      attrNode->key += MEMBER_ACCESS_TOKEN;
+    attrNode->key += keyFragment->getSymbol()->getText();
+  }
 
-std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {}
+  return concludeNode(ctx, attrNode);
+}
 
-std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {}
+std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
+  auto importStmtNode = createNode<ImportStmtNode>(ctx);
 
-std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {}
+  // Extract path
+  const std::string pathStr = ctx->STRING_LIT()->getText();
+  importStmtNode->importPath = pathStr.substr(1, pathStr.size() - 2);
 
-std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {}
+  // If no name is given, use the path as name
+  importStmtNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER()) : importStmtNode->importPath;
 
-std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {}
+  return importStmtNode;
+}
 
-std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {}
+std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
+  auto returnStmtNode = createNode<ReturnStmtNode>(ctx);
 
-std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {}
+  // Enrich
+  returnStmtNode->hasReturnValue = ctx->assignExpr();
 
-std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {}
+  return concludeNode(ctx, returnStmtNode);
+}
 
-std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {}
+std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
+  auto breakStmtNode = createNode<BreakStmtNode>(ctx);
 
-std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {}
+  // Extract number of breaks
+  if (ctx->INT_LIT())
+    breakStmtNode->breakTimes = std::stoi(ctx->INT_LIT()->toString());
 
-std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {}
+  return concludeNode(ctx, breakStmtNode);
+}
 
-std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext *ctx) {}
+std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
+  auto continueStmtNode = createNode<ContinueStmtNode>(ctx);
 
-std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {}
+  // Extract number of continues
+  if (ctx->INT_LIT())
+    continueStmtNode->continueTimes = std::stoi(ctx->INT_LIT()->toString());
 
-std::any ASTBuilder::visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) {}
+  // Visit children
+  visitChildren(ctx);
 
-std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) {}
+  return concludeNode(ctx, continueStmtNode);
+}
+
+std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
+  auto assertStmtNode = createNode<AssertStmtNode>(ctx);
+
+  // Enrich
+  antlr4::misc::Interval interval(ctx->assignExpr()->start->getStartIndex(), ctx->assignExpr()->stop->getStopIndex());
+  assertStmtNode->expressionString = inputStream->getText(interval);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, assertStmtNode);
+}
+
+std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
+  // Visit children
+  visitChildren(ctx);
+
+  return nullptr;
+}
+
+std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
+  auto printfCallNode = createNode<PrintfCallNode>(ctx);
+
+  // Enrich
+  std::string templatedString = ctx->STRING_LIT()->getText();
+  templatedString = templatedString.substr(1, templatedString.size() - 2);
+  replaceEscapeChars(templatedString);
+  printfCallNode->templatedString = templatedString;
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, printfCallNode);
+}
+
+std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
+  auto sizeofCallNode = createNode<SizeofCallNode>(ctx);
+
+  // Check if type or value
+  sizeofCallNode->isType = ctx->TYPE();
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, sizeofCallNode);
+}
+
+std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
+  auto alignofCallNode = createNode<AlignofCallNode>(ctx);
+
+  // Check if type or value
+  alignofCallNode->isType = ctx->TYPE();
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, alignofCallNode);
+}
+
+std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
+  auto lenCallNode = createNode<LenCallNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, lenCallNode);
+}
+
+std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
+  auto assignExprNode = createNode<AssignExprNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, assignExprNode);
+}
+
+std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
+  auto ternaryExprNode = createNode<TernaryExprNode>(ctx);
+
+  // Check if is shortened
+  ternaryExprNode->isShortened = ctx->logicalOrExpr().size() == 2;
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, ternaryExprNode);
+}
+
+std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
+  auto logicalOrExprNode = createNode<LogicalOrExprNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, logicalOrExprNode);
+}
+
+std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
+  auto logicalAndExprNode = createNode<LogicalAndExprNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, logicalAndExprNode);
+}
+
+std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
+  auto bitwiseOrExprNode = createNode<BitwiseOrExprNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, bitwiseOrExprNode);
+}
+
+std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
+  auto bitwiseXorExprNode = createNode<BitwiseXorExprNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, bitwiseXorExprNode);
+}
+
+std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
+  auto bitwiseAndExprNode = createNode<BitwiseAndExprNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, bitwiseAndExprNode);
+}
+
+std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
+  auto equalityExprNode = createNode<EqualityExprNode>(ctx);
+
+  // Extract operator
+  if (ctx->EQUAL())
+    equalityExprNode->op = EqualityExprNode::OP_EQUAL;
+  else if (ctx->NOT_EQUAL())
+    equalityExprNode->op = EqualityExprNode::OP_NOT_EQUAL;
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, equalityExprNode);
+}
+
+std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
+  auto relationalExprNode = createNode<RelationalExprNode>(ctx);
+
+  // Extract operator
+  if (ctx->LESS())
+    relationalExprNode->op = RelationalExprNode::OP_LESS;
+  else if (ctx->GREATER())
+    relationalExprNode->op = RelationalExprNode::OP_GREATER;
+  else if (ctx->LESS_EQUAL())
+    relationalExprNode->op = RelationalExprNode::OP_LESS_EQUAL;
+  else if (ctx->GREATER_EQUAL())
+    relationalExprNode->op = RelationalExprNode::OP_GREATER_EQUAL;
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, relationalExprNode);
+}
+
+std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
+  auto shiftExprNode = createNode<ShiftExprNode>(ctx);
+
+  // Extract operator
+  if (!ctx->LESS().empty())
+    shiftExprNode->op = ShiftExprNode::OP_SHIFT_LEFT;
+  else if (!ctx->GREATER().empty())
+    shiftExprNode->op = ShiftExprNode::OP_SHIFT_RIGHT;
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, shiftExprNode);
+}
+
+std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
+  auto additiveExprNode = createNode<AdditiveExprNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::PLUS)
+      additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_PLUS, SymbolType(TY_INVALID));
+    else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::MINUS)
+      additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, SymbolType(TY_INVALID));
+  }
+
+  return concludeNode(ctx, additiveExprNode);
+}
+
+std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
+  auto multiplicativeExprNode = createNode<MultiplicativeExprNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL)
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_MUL, SymbolType(TY_INVALID));
+    else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::DIV)
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_DIV, SymbolType(TY_INVALID));
+    else if (auto t3 = dynamic_cast<TerminalNode *>(subTree); t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::REM)
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, SymbolType(TY_INVALID));
+  }
+
+  return concludeNode(ctx, multiplicativeExprNode);
+}
+
+std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
+  auto castExprNode = createNode<CastExprNode>(ctx);
+
+  // Enrich
+  castExprNode->isCasted = ctx->LPAREN();
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, castExprNode);
+}
+
+std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
+  auto prefixUnaryExprNode = createNode<PrefixUnaryExprNode>(ctx);
+
+  // Extract operator
+  if (ctx->MINUS())
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS;
+  else if (ctx->PLUS_PLUS())
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_PLUS_PLUS;
+  else if (ctx->MINUS_MINUS())
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_MINUS_MINUS;
+  else if (ctx->NOT())
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_NOT;
+  else if (ctx->BITWISE_NOT())
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_BITWISE_NOT;
+  else if (ctx->MUL())
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_DEREFERENCE;
+  else if (ctx->BITWISE_AND())
+    prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_ADDRESS_OF;
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, prefixUnaryExprNode);
+}
+
+std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
+  auto postfixUnaryExprNode = createNode<PostfixUnaryExprNode>(ctx);
+
+  // Extract operator
+  if (ctx->LBRACKET()) {
+    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_SUBSCRIPT;
+  } else if (ctx->DOT()) {
+    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MEMBER_ACCESS;
+    postfixUnaryExprNode->identifier = getIdentifier(ctx->IDENTIFIER());
+  } else if (ctx->PLUS_PLUS()) {
+    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_PLUS_PLUS;
+  } else if (ctx->MINUS_MINUS()) {
+    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MINUS_MINUS;
+  }
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, postfixUnaryExprNode);
+}
+
+std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
+  auto atomicExprNode = createNode<AtomicExprNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      std::string fragment = getIdentifier(t1);
+      atomicExprNode->identifierFragments.push_back(fragment);
+      if (!atomicExprNode->fqIdentifier.empty())
+        atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+      atomicExprNode->fqIdentifier += fragment;
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      std::string fragment = getIdentifier(t2);
+      atomicExprNode->identifierFragments.push_back(fragment);
+      if (!atomicExprNode->fqIdentifier.empty())
+        atomicExprNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+      atomicExprNode->fqIdentifier += fragment;
+    }
+  }
+
+  return concludeNode(ctx, atomicExprNode);
+}
+
+std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
+  auto valueNode = createNode<ValueNode>(ctx);
+
+  // Enrich
+  valueNode->isNil = ctx->NIL();
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, valueNode);
+}
+
+std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
+  auto constantNode = createNode<ConstantNode>(ctx);
+
+  // Enrich
+  if (ctx->DOUBLE_LIT()) {
+    constantNode->type = ConstantNode::TYPE_DOUBLE;
+    constantNode->compileTimeValue.doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
+  } else if (ctx->INT_LIT()) {
+    constantNode->type = ConstantNode::TYPE_INT;
+    constantNode->compileTimeValue.intValue = parseInt(constantNode, ctx->INT_LIT());
+  } else if (ctx->SHORT_LIT()) {
+    constantNode->type = ConstantNode::TYPE_SHORT;
+    constantNode->compileTimeValue.shortValue = parseShort(constantNode, ctx->SHORT_LIT());
+  } else if (ctx->LONG_LIT()) {
+    constantNode->type = ConstantNode::TYPE_LONG;
+    constantNode->compileTimeValue.longValue = parseLong(constantNode, ctx->LONG_LIT());
+  } else if (ctx->CHAR_LIT()) {
+    constantNode->type = ConstantNode::TYPE_CHAR;
+    constantNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
+  } else if (ctx->STRING_LIT()) {
+    // Transfer ownership to the AST node
+    constantNode->compileTimeStringValue = parseString(ctx->STRING_LIT()->toString());
+    // Save a pointer to the string in the compile time value
+    constantNode->type = ConstantNode::TYPE_STRING;
+    constantNode->compileTimeValue.stringValue = constantNode->compileTimeStringValue.c_str();
+  } else if (ctx->TRUE()) {
+    constantNode->type = ConstantNode::TYPE_BOOL;
+    constantNode->compileTimeValue.boolValue = true;
+  } else if (ctx->FALSE()) {
+    constantNode->type = ConstantNode::TYPE_BOOL;
+    constantNode->compileTimeValue.boolValue = false;
+  }
+  constantNode->hasDirectCompileTimeValue = true;
+
+  return concludeNode(ctx, constantNode);
+}
+
+std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
+  auto fctCallNode = createNode<FctCallNode>(ctx);
+
+  // Enrich
+  if (fctCallNode->argLst())
+    fctCallNode->hasArgs = true;
+  if (fctCallNode->templateTypeLst())
+    fctCallNode->hasTemplateTypes = true;
+
+  for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
+    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const std::string fragment = t1->toString();
+      fctCallNode->functionNameFragments.push_back(fragment);
+      fctCallNode->fqFunctionName += fragment;
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = t2->toString();
+      fctCallNode->functionNameFragments.push_back(fragment);
+      fctCallNode->fqFunctionName += fragment;
+    } else if (auto t3 = dynamic_cast<TerminalNode *>(subTree);
+               t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::SCOPE_ACCESS) {
+      fctCallNode->fqFunctionName += SCOPE_ACCESS_TOKEN;
+    } else if (auto t4 = dynamic_cast<TerminalNode *>(subTree); t4 != nullptr && t4->getSymbol()->getType() == SpiceParser::DOT) {
+      fctCallNode->fqFunctionName += MEMBER_ACCESS_TOKEN;
+    }
+  }
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, fctCallNode);
+}
+
+std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
+  auto arrayInitializationNode = createNode<ArrayInitializationNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, arrayInitializationNode);
+}
+
+std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
+  auto structInstantiationNode = createNode<StructInstantiationNode>(ctx);
+
+  // Enrich
+  for (antlr4::ParserRuleContext::ParseTree *subTree : ctx->children) {
+    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const std::string fragment = t1->toString();
+      structInstantiationNode->structNameFragments.push_back(fragment);
+      structInstantiationNode->fqStructName += fragment + SCOPE_ACCESS_TOKEN;
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = t2->toString();
+      structInstantiationNode->structNameFragments.push_back(fragment);
+      structInstantiationNode->fqStructName += fragment;
+    }
+  }
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, structInstantiationNode);
+}
+
+std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
+  auto dataTypeNode = createNode<DataTypeNode>(ctx);
+
+  // Enrich
+  for (int i = 0; i < ctx->children.size(); i++) {
+    antlr4::tree::ParseTree *subTree = ctx->children[i];
+    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL) {
+      dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_PTR, false, 0);
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::BITWISE_AND) {
+      dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_REF, false, 0);
+    } else if (auto t3 = dynamic_cast<TerminalNode *>(subTree);
+               t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::LBRACKET) {
+      i++; // Consume LBRACKET
+      subTree = ctx->children[i];
+      bool hasSize = false;
+      unsigned int hardCodedSize = 0;
+      std::string sizeVarName;
+      if (auto t4 = dynamic_cast<TerminalNode *>(subTree); t4 != nullptr && t4->getSymbol()->getType() == SpiceParser::INT_LIT) {
+        hasSize = true;
+        hardCodedSize = std::stoi(t4->getSymbol()->getText());
+        i++; // Consume INT_LIT
+      } else if (auto t5 = dynamic_cast<TerminalNode *>(subTree);
+                 t5 != nullptr && t5->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+        hasSize = true;
+        sizeVarName = getIdentifier(t5);
+        i++; // Consume TYPE_IDENTIFIER
+      }
+      dataTypeNode->tmQueue.push({DataTypeNode::TYPE_ARRAY, hasSize, hardCodedSize, sizeVarName});
+    }
+  }
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, dataTypeNode);
+}
+
+std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
+  auto baseDataTypeNode = createNode<BaseDataTypeNode>(ctx);
+
+  // Enrich
+  if (ctx->TYPE_DOUBLE())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_DOUBLE;
+  else if (ctx->TYPE_INT())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_INT;
+  else if (ctx->TYPE_SHORT())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_SHORT;
+  else if (ctx->TYPE_LONG())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_LONG;
+  else if (ctx->TYPE_BYTE())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_BYTE;
+  else if (ctx->TYPE_CHAR())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_CHAR;
+  else if (ctx->TYPE_STRING())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_STRING;
+  else if (ctx->TYPE_BOOL())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_BOOL;
+  else if (ctx->TYPE_DYN())
+    baseDataTypeNode->type = BaseDataTypeNode::TYPE_DYN;
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, baseDataTypeNode);
+}
+
+std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
+  auto customDataTypeNode = createNode<CustomDataTypeNode>(ctx);
+
+  // Enrich
+  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const std::string fragment = t1->toString();
+      customDataTypeNode->typeNameFragments.push_back(fragment);
+      customDataTypeNode->fqTypeName += fragment + SCOPE_ACCESS_TOKEN;
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = t2->toString();
+      customDataTypeNode->typeNameFragments.push_back(fragment);
+      customDataTypeNode->fqTypeName += fragment;
+    }
+  }
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, customDataTypeNode);
+}
+
+std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext *ctx) {
+  auto functionDataTypeNode = createNode<FunctionDataTypeNode>(ctx);
+
+  // Enrich
+  functionDataTypeNode->isFunction = ctx->dataType();
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, functionDataTypeNode);
+}
+
+std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
+  auto assignExprNode = spice_pointer_cast<AssignExprNode *>(parentStack.top());
+
+  // Extract assign operator
+  if (ctx->ASSIGN())
+    assignExprNode->op = AssignExprNode::OP_ASSIGN;
+  else if (ctx->PLUS_EQUAL())
+    assignExprNode->op = AssignExprNode::OP_PLUS_EQUAL;
+  else if (ctx->MINUS_EQUAL())
+    assignExprNode->op = AssignExprNode::OP_MINUS_EQUAL;
+  else if (ctx->MUL_EQUAL())
+    assignExprNode->op = AssignExprNode::OP_MUL_EQUAL;
+  else if (ctx->DIV_EQUAL())
+    assignExprNode->op = AssignExprNode::OP_DIV_EQUAL;
+  else if (ctx->REM_EQUAL())
+    assignExprNode->op = AssignExprNode::OP_REM_EQUAL;
+  else if (ctx->SHL_EQUAL())
+    assignExprNode->op = AssignExprNode::OP_SHL_EQUAL;
+  else if (ctx->SHR_EQUAL())
+    assignExprNode->op = AssignExprNode::OP_SHR_EQUAL;
+  else if (ctx->AND_EQUAL())
+    assignExprNode->op = AssignExprNode::OP_AND_EQUAL;
+  else if (ctx->OR_EQUAL())
+    assignExprNode->op = AssignExprNode::OP_OR_EQUAL;
+  else if (ctx->XOR_EQUAL())
+    assignExprNode->op = AssignExprNode::OP_XOR_EQUAL;
+  else
+    assert(false && "Unknown assign operator");
+  assignExprNode->hasOperator = true;
+
+  return nullptr;
+}
+
+std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) {
+  auto fctNameNode = spice_pointer_cast<FctNameNode *>(parentStack.top());
+
+  // Enrich
+  if (ctx->PLUS()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_PLUS;
+    fctNameNode->name = OP_FCT_PLUS;
+  } else if (ctx->MINUS()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_MINUS;
+    fctNameNode->name = OP_FCT_MINUS;
+  } else if (ctx->MUL()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_MUL;
+    fctNameNode->name = OP_FCT_MUL;
+  } else if (ctx->DIV()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_DIV;
+    fctNameNode->name = OP_FCT_DIV;
+  } else if (ctx->EQUAL()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_EQUAL;
+    fctNameNode->name = OP_FCT_EQUAL;
+  } else if (ctx->NOT_EQUAL()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_NOT_EQUAL;
+    fctNameNode->name = OP_FCT_NOT_EQUAL;
+  } else if (ctx->LESS().size() == 2) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_SHL;
+    fctNameNode->name = OP_FCT_SHL;
+  } else if (ctx->GREATER().size() == 2) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_SHR;
+    fctNameNode->name = OP_FCT_SHR;
+  } else if (ctx->PLUS_EQUAL()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_PLUS_EQUAL;
+    fctNameNode->name = OP_FCT_PLUS_EQUAL;
+  } else if (ctx->MINUS_EQUAL()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_MINUS_EQUAL;
+    fctNameNode->name = OP_FCT_MINUS_EQUAL;
+  } else if (ctx->MUL_EQUAL()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_MUL_EQUAL;
+    fctNameNode->name = OP_FCT_MUL_EQUAL;
+  } else if (ctx->DIV_EQUAL()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_DIV_EQUAL;
+    fctNameNode->name = OP_FCT_DIV_EQUAL;
+  } else if (ctx->PLUS_PLUS()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_PLUS_PLUS;
+    fctNameNode->name = OP_FCT_POSTFIX_PLUS_PLUS;
+  } else if (ctx->MINUS_MINUS()) {
+    fctNameNode->overloadedOperator = FctNameNode::OP_MINUS_MINUS;
+    fctNameNode->name = OP_FCT_POSTFIX_MINUS_MINUS;
+  } else {
+    assert(false);
+  }
+  fctNameNode->fqName = fctNameNode->name;
+  fctNameNode->nameFragments.push_back(fctNameNode->name);
+
+  return nullptr;
+}
 
 template <typename T> T *ASTBuilder::createNode(const ParserRuleContext *ctx) {
   ASTNode *parent = nullptr;
@@ -670,12 +1421,10 @@ void ASTBuilder::saveErrorMessage(ASTNode *node, const ParserRuleContext *ctx) {
   const std::string lineNumberStr = std::to_string(ctx->start->getLine());
   indentation += lineNumberStr.length() + 2;
 
+  // Build error message
   std::stringstream ss;
   ss << lineNumberStr << "  " << inputStream->getText(extendedSourceInterval) << "\n";
-  for (size_t i = 0; i < indentation; i++)
-    ss << " ";
-  for (size_t i = 0; i < std::min(sourceInterval.length(), extendedSourceInterval.length()); i++)
-    ss << "^";
+  ss << std::string(indentation, ' ') << std::string(std::min(sourceInterval.length(), extendedSourceInterval.length()), '^');
   node->errorMessage = ss.str();
 }
 

@@ -1,5 +1,11 @@
-f<int> main() {
+type TestEnum enum {
+    ITEM_NAME,
+    ITEM_NAME2,
+    ITEM_NAME
+}
 
+f<int> main() {
+    printf("Item: %d", TestEnum::ITEM_NAME2);
 }
 
 /*import "std/os/thread";

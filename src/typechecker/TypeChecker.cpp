@@ -1066,7 +1066,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   case PrefixUnaryExprNode::OP_BITWISE_NOT:
     operandType = OpRuleManager::getPrefixBitwiseNotResultType(node, operandType, 0);
     break;
-  case PrefixUnaryExprNode::OP_INDIRECTION:
+  case PrefixUnaryExprNode::OP_DEREFERENCE:
     operandType = OpRuleManager::getPrefixMulResultType(node, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_ADDRESS_OF:
