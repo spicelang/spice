@@ -1,9 +1,9 @@
 digraph {
  rankdir="TB";
  label="./test-files/benchmark/success-pidigits/source.spice";
- L1C1_Entry [color="lightgreen",label="Entry"];
+ L4C1_Entry [color="lightgreen",label="Entry"];
  L4C1_MainFctDef [color="lightgreen",label="MainFctDef"];
- L1C1_Entry -> L4C1_MainFctDef;
+ L4C1_Entry -> L4C1_MainFctDef;
  L5C5_StmtLst [color="lightgreen",label="StmtLst"];
  L4C1_MainFctDef -> L5C5_StmtLst;
  L5C5_Stmt [color="lightgreen",label="Stmt"];

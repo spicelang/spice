@@ -50,6 +50,7 @@ public:
 
   // Public members
   std::unordered_map<std::string, SourceFile *> sourceFiles;
+  std::vector<std::unique_ptr<ASTNode>> astNodes; // The GlobalResourceManager owns all AST nodes
   const CliOptions &cliOptions;
   ExternalLinkerInterface linker;
   CacheManager cacheManager;

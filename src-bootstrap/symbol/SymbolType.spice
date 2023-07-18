@@ -18,7 +18,7 @@ public type SymbolSuperType enum {
     TY_DYN,
     TY_PTR,
     TY_ARRAY,
-    TY_FUNCTION,
+    TYPE_FUNCTION,
     TY_PROCEDURE,
     TY_IMPORT
 }

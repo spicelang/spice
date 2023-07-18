@@ -2,4 +2,4 @@
 Cannot re-assign constant variable: Trying to assign value to a constant
 
 3  i = 1234;
-     ^
+   ^^^^^^^^

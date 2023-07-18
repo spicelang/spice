@@ -1,9 +1,9 @@
 digraph {
  rankdir="TB";
  label="./test-files/benchmark/success-hello-world2/source.spice";
- L1C1_Entry [color="lightgreen",label="Entry"];
+ L3C1_Entry [color="lightgreen",label="Entry"];
  L3C1_MainFctDef [color="lightgreen",label="MainFctDef"];
- L1C1_Entry -> L3C1_MainFctDef;
+ L3C1_Entry -> L3C1_MainFctDef;
  L4C5_StmtLst [color="lightgreen",label="StmtLst"];
  L3C1_MainFctDef -> L4C5_StmtLst;
  L4C5_Stmt [color="lightgreen",label="Stmt"];

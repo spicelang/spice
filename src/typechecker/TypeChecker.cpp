@@ -1066,7 +1066,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   case PrefixUnaryExprNode::OP_BITWISE_NOT:
     operandType = OpRuleManager::getPrefixBitwiseNotResultType(node, operandType, 0);
     break;
-  case PrefixUnaryExprNode::OP_INDIRECTION:
+  case PrefixUnaryExprNode::OP_DEREFERENCE:
     operandType = OpRuleManager::getPrefixMulResultType(node, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_ADDRESS_OF:
@@ -1909,12 +1909,12 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
     return node->setEvaluatedSymbolType(SymbolType(TY_STRING), manIdx);
   case BaseDataTypeNode::TYPE_BOOL:
     return node->setEvaluatedSymbolType(SymbolType(TY_BOOL), manIdx);
-  case BaseDataTypeNode::TY_CUSTOM: {
+  case BaseDataTypeNode::TYPE_CUSTOM: {
     auto customType = std::any_cast<SymbolType>(visit(node->customDataType()));
     HANDLE_UNRESOLVED_TYPE_ST(customType)
     return node->setEvaluatedSymbolType(customType, manIdx);
   }
-  case BaseDataTypeNode::TY_FUNCTION: {
+  case BaseDataTypeNode::TYPE_FUNCTION: {
     auto functionType = std::any_cast<SymbolType>(visit(node->functionDataType()));
     HANDLE_UNRESOLVED_TYPE_ST(functionType)
     return node->setEvaluatedSymbolType(functionType, manIdx);

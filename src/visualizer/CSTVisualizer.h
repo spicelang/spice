@@ -49,6 +49,7 @@ public:
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override { return buildRule(ctx); }
+  std::any visitFieldLst(SpiceParser::FieldLstContext *ctx) override { return buildRule(ctx); }
   std::any visitField(SpiceParser::FieldContext *ctx) override { return buildRule(ctx); }
   std::any visitSignature(SpiceParser::SignatureContext *ctx) override { return buildRule(ctx); }
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override { return buildRule(ctx); }
@@ -100,7 +101,6 @@ public:
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override { return buildRule(ctx); }
   std::any visitFunctionDataType(SpiceParser::FunctionDataTypeContext *ctx) override { return buildRule(ctx); }
   std::any visitAssignOp(SpiceParser::AssignOpContext *ctx) override { return buildRule(ctx); }
-  std::any visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) override { return buildRule(ctx); }
   std::any visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) override { return buildRule(ctx); }
 
 private:

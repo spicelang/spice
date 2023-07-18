@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include <CompilerPass.h>
-#include <SpiceVisitor.h>
-
 #include <functional>
 #include <utility>
+
+#include <CompilerPass.h>
+#include <SpiceVisitor.h>
+#include <util/GlobalDefinitions.h>
 
 namespace spice::compiler {
 
@@ -21,13 +22,13 @@ const char *const SCOPE_ACCESS_TOKEN = "::";
 
 class ASTBuilder : private CompilerPass, public SpiceVisitor {
 private:
+  // Private type defs
   using TerminalNode = antlr4::tree::TerminalNode;
   using ParserRuleContext = antlr4::ParserRuleContext;
 
 public:
   // Constructors
-  ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile, ASTNode *rootNode,
-             antlr4::ANTLRInputStream *inputStream);
+  ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile, antlr4::ANTLRInputStream *inputStream);
 
   // Public methods
   std::any visitEntry(SpiceParser::EntryContext *ctx) override;
@@ -59,6 +60,7 @@ public:
   std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override;
   std::any visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) override;
   std::any visitEnumItem(SpiceParser::EnumItemContext *ctx) override;
+  std::any visitFieldLst(SpiceParser::FieldLstContext *ctx) override;
   std::any visitField(SpiceParser::FieldContext *ctx) override;
   std::any visitSignature(SpiceParser::SignatureContext *ctx) override;
   std::any visitStmt(SpiceParser::StmtContext *ctx) override;
@@ -105,20 +107,18 @@ public:
   std::any visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) override;
   std::any visitFunctionDataType(SpiceParser::FunctionDataTypeContext *ctx) override;
   std::any visitAssignOp(SpiceParser::AssignOpContext *ctx) override;
-  std::any visitPrefixUnaryOp(SpiceParser::PrefixUnaryOpContext *ctx) override;
   std::any visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx) override;
 
 private:
   // Members
-  ASTNode *currentNode;
   const std::filesystem::path &filePath;
   antlr4::ANTLRInputStream *inputStream;
-  bool isParam = false;
-  bool isGlobal = false;
-  bool isField = false;
-  bool isReturnType = false;
+  std::stack<ASTNode *> parentStack;
 
   // Private methods
+  template <typename T> T *createNode(const ParserRuleContext *ctx);
+  template <typename T> T *concludeNode(const ParserRuleContext *ctx, T *node);
+  ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) { return CodeLoc(ctx->start, filePath); }
   int32_t parseInt(ConstantNode *constantNode, TerminalNode *terminal);
   int16_t parseShort(ConstantNode *constantNode, TerminalNode *terminal);
   int64_t parseLong(ConstantNode *constantNode, TerminalNode *terminal);

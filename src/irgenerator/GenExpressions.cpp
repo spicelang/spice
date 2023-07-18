@@ -614,7 +614,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     break;
   }
-  case PrefixUnaryExprNode::OP_INDIRECTION: {
+  case PrefixUnaryExprNode::OP_DEREFERENCE: {
     // Make sure the value is present
     resolveValue(lhsNode, lhs);
 

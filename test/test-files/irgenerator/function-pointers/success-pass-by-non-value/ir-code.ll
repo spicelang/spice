@@ -40,11 +40,11 @@ define private i32 @_Z6invokeRKPFiPcE(ptr %0) {
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %testFct = alloca ptr, align 8
-  %testFct1 = alloca ptr, align 8
+  %testFctPtr = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   store ptr @_Z4testPc, ptr %testFct, align 8
-  store ptr %testFct, ptr %testFct1, align 8
-  %1 = call i32 @_Z6invokePPKPFiPcE(ptr %testFct1)
+  store ptr %testFct, ptr %testFctPtr, align 8
+  %1 = call i32 @_Z6invokePPKPFiPcE(ptr %testFctPtr)
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1)
   %3 = call i32 @_Z6invokeRKPFiPcE(ptr %testFct)
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %3)

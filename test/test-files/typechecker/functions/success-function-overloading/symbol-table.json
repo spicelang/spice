@@ -125,7 +125,7 @@
       "codeLoc": "L12C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "main(int, string[])",
+      "name": "main()",
       "orderIndex": 2,
       "state": "declared",
       "type": "f<int>()"

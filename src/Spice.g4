@@ -8,7 +8,7 @@ mainFunctionDef: fctAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN L
 functionDef: fctAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 procedureDef: fctAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 fctName: (TYPE_IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
-structDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
+structDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE fieldLst RBRACE;
 interfaceDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE TYPE_IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
@@ -36,6 +36,7 @@ paramLst: declStmt (COMMA declStmt)*;
 argLst: assignExpr (COMMA assignExpr)*;
 enumItemLst: enumItem (COMMA enumItem)*;
 enumItem: TYPE_IDENTIFIER (ASSIGN INT_LIT)?;
+fieldLst: field*;
 field: dataType IDENTIFIER (ASSIGN constant)?;
 signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER (LESS typeLst GREATER)? LPAREN typeLst? RPAREN SEMICOLON;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
@@ -73,8 +74,8 @@ shiftExpr: additiveExpr ((LESS LESS | GREATER GREATER) additiveExpr)?;
 additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: LPAREN dataType RPAREN prefixUnaryExpr | prefixUnaryExpr;
-prefixUnaryExpr: postfixUnaryExpr | prefixUnaryOp prefixUnaryExpr;
-postfixUnaryExpr: atomicExpr | postfixUnaryExpr LBRACKET assignExpr RBRACKET | postfixUnaryExpr DOT IDENTIFIER | postfixUnaryExpr PLUS_PLUS | postfixUnaryExpr MINUS_MINUS;
+prefixUnaryExpr: postfixUnaryExpr | (MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND) prefixUnaryExpr;
+postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS);
 atomicExpr: constant | value | ((IDENTIFIER | TYPE_IDENTIFIER) SCOPE_ACCESS)* (IDENTIFIER | TYPE_IDENTIFIER) | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values
@@ -92,7 +93,6 @@ functionDataType: (P | F LESS dataType GREATER) LPAREN typeLst? RPAREN;
 
 // Shorthands
 assignOp: ASSIGN | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | REM_EQUAL | SHL_EQUAL | SHR_EQUAL | AND_EQUAL | OR_EQUAL | XOR_EQUAL;
-prefixUnaryOp: MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND | LOGICAL_AND; // Here, '&&' means the same as two times '&'
 overloadableOp: PLUS | MINUS | MUL | DIV | EQUAL | NOT_EQUAL | LESS LESS | GREATER GREATER | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | PLUS_PLUS | MINUS_MINUS;
 
 // Keyword tokens

@@ -88,7 +88,7 @@
       "codeLoc": "L7C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "main(int, string[])",
+      "name": "main()",
       "orderIndex": 1,
       "state": "declared",
       "type": "f<int>()"

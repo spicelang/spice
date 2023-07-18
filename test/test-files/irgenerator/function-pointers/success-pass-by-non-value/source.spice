@@ -12,6 +12,7 @@ f<int> invoke(f<int>(string)& fctPtr) {
 
 f<int> main() {
     f<int>(string) testFct = test;
-    printf("%d\n", invoke(&&testFct));
+    f<int>(string)* testFctPtr = &testFct;
+    printf("%d\n", invoke(&testFctPtr));
     printf("%d\n", invoke(testFct));
 }

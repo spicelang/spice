@@ -40,18 +40,7 @@ public:
   ASTNode(const ASTNode &) = delete;
 
   // Destructors
-  virtual ~ASTNode() {
-    for (const ASTNode *child : children)
-      delete child;
-  }
-  void deleteRecursive(const ASTNode *anchorNode) { // NOLINT(misc-no-recursion)
-    for (ASTNode *child : children) {
-      if (child != anchorNode)
-        child->deleteRecursive(anchorNode);
-    }
-    children.clear();
-    delete this;
-  }
+  virtual ~ASTNode() = default;
 
   // Virtual methods
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
@@ -59,14 +48,19 @@ public:
 
   // Public methods
   template <typename T> T *createChild(const CodeLoc &loc) {
-    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from AstNode");
+    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
     T *node = new T(this, loc);
     children.push_back(node);
     return node;
   }
 
+  template <typename T> void addChild(T *node) {
+    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
+    children.push_back(node);
+  }
+
   template <typename T> [[nodiscard]] T *getChild(size_t i = 0) const {
-    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from AstNode");
+    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
     size_t j = 0;
     for (ASTNode *child : children) {
       if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr) {
@@ -78,7 +72,7 @@ public:
   }
 
   template <typename T> [[nodiscard]] std::vector<T *> getChildren() const {
-    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from AstNode");
+    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
     std::vector<T *> nodes;
     for (ASTNode *child : children) {
       if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr)
@@ -95,8 +89,6 @@ public:
       if (child == this) [[unlikely]] {
         // Replace in children vector
         child = replacementNode;
-        // De-allocate subtree without destroying the replacement node
-        deleteRecursive(replacementNode);
         break;
       }
     }
@@ -108,8 +100,6 @@ public:
       if (child == this) [[unlikely]] {
         // Remove from children vector
         child = nullptr;
-        // De-allocate subtree
-        delete this;
         break;
       }
     }
@@ -221,13 +211,13 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitMainFctDef(this); }
 
   // Public get methods
-  [[nodiscard]] FctAttrNode *fctAttrs() const { return getChild<FctAttrNode>(); }
+  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
-  [[nodiscard]] std::string getSignature() const { return takesArgs ? "main()" : "main(int, string[])"; }
+  [[nodiscard]] std::string getSignature() const { return takesArgs ? "main(int, string[])" : "main()"; }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
@@ -308,7 +298,6 @@ public:
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
-  bool isGeneric = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers functionSpecifiers = TypeSpecifiers::of(TY_FUNCTION);
   Scope *structScope = nullptr;
@@ -349,7 +338,6 @@ public:
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
-  bool isGeneric = false;
   bool isCtor = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers procedureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
@@ -371,16 +359,16 @@ public:
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
+  [[nodiscard]] FieldLstNode *fieldLst() const { return getChild<FieldLstNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
-  [[nodiscard]] TypeLstNode *interfaceTypeLst() const { return getChild<TypeLstNode>(isGeneric ? 1 : 0); }
+  [[nodiscard]] TypeLstNode *interfaceTypeLst() const { return getChild<TypeLstNode>(hasTemplateTypes ? 1 : 0); }
 
   // Other methods
   std::vector<Struct *> *getStructManifestations() override { return &structManifestations; }
 
   // Public members
   std::string structName;
-  bool isGeneric = false;
+  bool hasTemplateTypes = false;
   bool hasInterfaces = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers structSpecifiers = TypeSpecifiers::of(TY_STRUCT);
@@ -409,7 +397,7 @@ public:
 
   // Public members
   std::string interfaceName;
-  bool isGeneric = false;
+  bool hasTemplateTypes = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
   std::vector<Interface *> interfaceManifestations;
@@ -845,6 +833,21 @@ public:
   bool hasValue = false;
   SymbolTableEntry *entry = nullptr;
   EnumDefNode *enumDef = nullptr;
+};
+
+// ========================================================= FieldLstNode ========================================================
+
+class FieldLstNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFieldLst(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFieldLst(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
 };
 
 // ========================================================== FieldNode ==========================================================
@@ -1505,7 +1508,7 @@ public:
 class PrefixUnaryExprNode : public ASTNode {
 public:
   // Enums
-  enum PrefixUnaryOp { OP_NONE, OP_MINUS, OP_PLUS_PLUS, OP_MINUS_MINUS, OP_NOT, OP_BITWISE_NOT, OP_INDIRECTION, OP_ADDRESS_OF };
+  enum PrefixUnaryOp { OP_NONE, OP_MINUS, OP_PLUS_PLUS, OP_MINUS_MINUS, OP_NOT, OP_BITWISE_NOT, OP_DEREFERENCE, OP_ADDRESS_OF };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1768,8 +1771,8 @@ public:
     TYPE_STRING,
     TYPE_BOOL,
     TYPE_DYN,
-    TY_CUSTOM,
-    TY_FUNCTION
+    TYPE_CUSTOM,
+    TYPE_FUNCTION
   };
 
   // Constructors
