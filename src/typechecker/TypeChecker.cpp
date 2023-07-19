@@ -500,8 +500,8 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
     return nullptr;
   }
 
-  //if (!node->hasReturnValue && !returnVar->isInitialized())
-  //  SOFT_ERROR_ST(node, RETURN_WITHOUT_VALUE_RESULT, "Return without value, but result variable is not initialized yet")
+  if (!node->hasReturnValue && !returnVar->isInitialized())
+    SOFT_ERROR_ST(node, RETURN_WITHOUT_VALUE_RESULT, "Return without value, but result variable is not initialized yet")
 
   if (!node->hasReturnValue)
     return nullptr;

@@ -28,7 +28,7 @@
           "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
-          "state": "declared",
+          "state": "initialized",
           "type": "int"
         }
       ]
