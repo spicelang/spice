@@ -1238,8 +1238,8 @@ template <typename T> T *ASTBuilder::createNode(const ParserRuleContext *ctx) {
 }
 
 template <typename T> T *ASTBuilder::concludeNode(const ParserRuleContext *ctx, T *node) {
-  // For all nodes, except the entry node, create and save the error message
-  if constexpr (!std::is_same_v<T, EntryNode>)
+  // For all nodes, except the entry and stmtLst nodes, create and save the error message
+  if constexpr (!std::is_same_v<T, EntryNode> && !std::is_same_v<T, StmtLstNode>)
     saveErrorMessage(node, ctx);
 
   // This node is no longer the parent for its children
@@ -1385,48 +1385,45 @@ std::string ASTBuilder::getIdentifier(TerminalNode *terminal) {
 
 void ASTBuilder::saveErrorMessage(ASTNode *node, const ParserRuleContext *ctx) {
   const antlr4::misc::Interval sourceInterval(ctx->start->getStartIndex(), ctx->stop->getStopIndex());
-  antlr4::misc::Interval extendedSourceInterval(sourceInterval);
+  antlr4::misc::Interval extSourceInterval(sourceInterval);
 
-  if (inputStream->getText(extendedSourceInterval).find('\n') != std::string::npos) {
-    extendedSourceInterval.b = extendedSourceInterval.a;
-    while (inputStream->getText(extendedSourceInterval).find('\n') == std::string::npos)
-      extendedSourceInterval.b++;
-  }
+  // If we have a multi-line interval, only use the first line
+  if (size_t offset = inputStream->getText(extSourceInterval).find('\n'); offset != std::string::npos)
+    extSourceInterval.b = extSourceInterval.a + static_cast<ssize_t>(offset);
 
-  size_t indentation = 0;
-  for (; indentation < ERROR_MESSAGE_CONTEXT; indentation++) {
-    extendedSourceInterval.a--;
-    if (extendedSourceInterval.a < 0 || inputStream->getText(extendedSourceInterval).find('\n') != std::string::npos) {
-      extendedSourceInterval.a++;
+  size_t markerIndentation = 0;
+  for (; markerIndentation < ERROR_MESSAGE_CONTEXT; markerIndentation++) {
+    extSourceInterval.a--;
+    if (extSourceInterval.a < 0 || inputStream->getText(extSourceInterval).find('\n') != std::string::npos) {
+      extSourceInterval.a++;
       break;
     }
   }
   for (size_t suffixContext = 0; suffixContext < ERROR_MESSAGE_CONTEXT; suffixContext++) {
-    extendedSourceInterval.b++;
-    if (extendedSourceInterval.b > inputStream->size() ||
-        inputStream->getText(extendedSourceInterval).find('\n') != std::string::npos) {
-      extendedSourceInterval.b--;
+    extSourceInterval.b++;
+    if (extSourceInterval.b > inputStream->size() || inputStream->getText(extSourceInterval).find('\n') != std::string::npos) {
+      extSourceInterval.b--;
       break;
     }
   }
 
   // Trim start
-  while (inputStream->getText(extendedSourceInterval)[0] == ' ') {
-    extendedSourceInterval.a++;
-    indentation--;
+  while (inputStream->getText(extSourceInterval)[0] == ' ') {
+    extSourceInterval.a++;
+    markerIndentation--;
   }
 
   // Trim end
-  if (inputStream->getText(extendedSourceInterval)[extendedSourceInterval.length() - 1] == '\n')
-    extendedSourceInterval.b--;
+  if (inputStream->getText(extSourceInterval)[extSourceInterval.length() - 1] == '\n')
+    extSourceInterval.b--;
 
   const std::string lineNumberStr = std::to_string(ctx->start->getLine());
-  indentation += lineNumberStr.length() + 2;
+  markerIndentation += lineNumberStr.length() + 2;
 
   // Build error message
   std::stringstream ss;
-  ss << lineNumberStr << "  " << inputStream->getText(extendedSourceInterval) << "\n";
-  ss << std::string(indentation, ' ') << std::string(std::min(sourceInterval.length(), extendedSourceInterval.length()), '^');
+  ss << lineNumberStr << "  " << inputStream->getText(extSourceInterval) << "\n";
+  ss << std::string(markerIndentation, ' ') << std::string(std::min(sourceInterval.length(), extSourceInterval.length()), '^');
   node->errorMessage = ss.str();
 }
 

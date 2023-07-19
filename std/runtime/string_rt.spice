@@ -163,6 +163,8 @@ public p operator+=<StrTyChar>(String& a, const StrTyChar& b) {
 public f<String> operator*<IntLongShort>(const String& str, const IntLongShort n) {
     // Cancel if operand is less than 2
     if n < 2 { return; }
+    //if n < 1 { return String(); }
+    //if n == 2 { return str; }
 
     // Copy the input string
     result = String(str);

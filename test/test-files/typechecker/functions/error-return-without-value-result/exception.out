@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/functions/error-return-without-value-result/source.spice:4:9:
 Return without initialization of result variable: Return without value, but result variable is not initialized yet
 

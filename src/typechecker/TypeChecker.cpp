@@ -500,9 +500,8 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
     return nullptr;
   }
 
-  // ToDo: Check if function without return value
-  // if (!node->hasReturnValue)
-  //  SOFT_ERROR(node, RETURN_WITHOUT_VALUE_RESULT, "Return without value, but result variable is not initialized yet")
+  //if (!node->hasReturnValue && !returnVar->isInitialized())
+  //  SOFT_ERROR_ST(node, RETURN_WITHOUT_VALUE_RESULT, "Return without value, but result variable is not initialized yet")
 
   if (!node->hasReturnValue)
     return nullptr;
@@ -728,6 +727,9 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
       // In case the lhs variable is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsVar->name); lhsCapture)
         lhsCapture->setCaptureMode(READ_WRITE);
+
+      // Update the state of the variable
+      lhsVar->updateState(INITIALIZED, node, false);
     }
 
     return ExprResult{node->setEvaluatedSymbolType(rhsType, manIdx)};
@@ -1047,17 +1049,27 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   case PrefixUnaryExprNode::OP_PLUS_PLUS:
     operandType = OpRuleManager::getPrefixPlusPlusResultType(node, operandType, 0);
 
-    // In case the lhs is captured, notify the capture about the write access
-    if (Capture *lhsCapture = operandEntry ? currentScope->symbolTable.lookupCapture(operandEntry->name) : nullptr; lhsCapture)
-      lhsCapture->setCaptureMode(READ_WRITE);
+    if (operandEntry) {
+      // In case the lhs is captured, notify the capture about the write access
+      if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(operandEntry->name); lhsCapture)
+        lhsCapture->setCaptureMode(READ_WRITE);
+
+      // Update the state of the variable
+      operandEntry->updateState(INITIALIZED, node, false);
+    }
 
     break;
   case PrefixUnaryExprNode::OP_MINUS_MINUS:
     operandType = OpRuleManager::getPrefixMinusMinusResultType(node, operandType, 0);
 
-    // In case the lhs is captured, notify the capture about the write access
-    if (Capture *lhsCapture = operandEntry ? currentScope->symbolTable.lookupCapture(operandEntry->name) : nullptr; lhsCapture)
-      lhsCapture->setCaptureMode(READ_WRITE);
+    if (operandEntry) {
+      // In case the lhs is captured, notify the capture about the write access
+      if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(operandEntry->name); lhsCapture)
+        lhsCapture->setCaptureMode(READ_WRITE);
+
+      // Update the state of the variable
+      operandEntry->updateState(INITIALIZED, node, false);
+    }
 
     break;
   case PrefixUnaryExprNode::OP_NOT:
@@ -1163,9 +1175,14 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     lhsType = result.type;
     lhsEntry = result.entry;
 
-    // In case the lhs is captured, notify the capture about the write access
-    if (Capture *lhsCapture = lhsEntry ? currentScope->symbolTable.lookupCapture(lhsEntry->name) : nullptr; lhsCapture)
-      lhsCapture->setCaptureMode(READ_WRITE);
+    if (lhsEntry) {
+      // In case the lhs is captured, notify the capture about the write access
+      if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsEntry->name); lhsCapture)
+        lhsCapture->setCaptureMode(READ_WRITE);
+
+      // Update the state of the variable
+      lhsEntry->updateState(INITIALIZED, node, false);
+    }
 
     break;
   }
@@ -1174,9 +1191,14 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     lhsType = result.type;
     lhsEntry = result.entry;
 
-    // In case the lhs is captured, notify the capture about the write access
-    if (Capture *lhsCapture = lhsEntry ? currentScope->symbolTable.lookupCapture(lhsEntry->name) : nullptr; lhsCapture)
-      lhsCapture->setCaptureMode(READ_WRITE);
+    if (lhsEntry) {
+      // In case the lhs is captured, notify the capture about the write access
+      if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsEntry->name); lhsCapture)
+        lhsCapture->setCaptureMode(READ_WRITE);
+
+      // Update the state of the variable
+      lhsEntry->updateState(INITIALIZED, node, false);
+    }
 
     break;
   }
