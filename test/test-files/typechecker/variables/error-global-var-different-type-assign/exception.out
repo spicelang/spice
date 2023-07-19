@@ -1,5 +1,20 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/variables/error-global-var-different-type-assign/source.spice:1:33:
 Wrong data type for operator: Expected unsigned short, but got int
 
 1  rt UNSIGNED_SHORT = -10;
                        ^^^
+
+[Error|Semantic] ./test-files/typechecker/variables/error-global-var-different-type-assign/source.spice:2:25:
+Wrong data type for operator: Expected const int, but got short
+
+2  t signed int TEST = 6s;
+                       ^^
+
+[Error|Semantic] ./test-files/typechecker/variables/error-global-var-different-type-assign/source.spice:5:23:
+Used before declared: Symbol 'TEST' was used before declared.
+
+5  printf("Int: %d", TEST);
+                     ^^^^

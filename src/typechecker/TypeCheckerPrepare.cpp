@@ -51,11 +51,11 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
 std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Check if name is dtor
   if (node->fctName->name == DTOR_FUNCTION_NAME)
-    throw SemanticError(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function");
+    SOFT_ERROR_BOOL(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function")
 
   // Check if all control paths in the function return
   if (!node->returnsOnAllControlPaths(nullptr))
-    throw SemanticError(node, MISSING_RETURN_STMT, "Not all control paths of this function have a return statement");
+    SOFT_ERROR_BOOL(node, MISSING_RETURN_STMT, "Not all control paths of this function have a return statement")
 
   // Change to function scope
   currentScope = node->fctScope;
@@ -111,10 +111,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
   HANDLE_UNRESOLVED_TYPE_PTR(returnType)
   if (returnType.is(TY_DYN))
-    throw SemanticError(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed");
+    SOFT_ERROR_BOOL(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
   if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
-    throw SemanticError(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
-                        "Generic return type not included in the template type list of the function");
+    SOFT_ERROR_BOOL(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+                    "Generic return type not included in the template type list of the function")
 
   // Visit parameters
   std::vector<std::string> paramNames;
@@ -394,8 +394,10 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_PTR(templateType)
       // Check if it is a generic type
-      if (!templateType.is(TY_GENERIC))
-        throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+      if (!templateType.is(TY_GENERIC)) {
+        softError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+        continue;
+      }
       // Convert generic symbol type to generic type
       GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
@@ -455,8 +457,10 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
     names.push_back(enumItem->itemName);
     // Check for duplicate value
     if (enumItem->hasValue) {
-      if (std::find(values.begin(), values.end(), enumItem->itemValue) != values.end())
-        throw SemanticError(enumItem, DUPLICATE_ENUM_ITEM_VALUE, "Duplicate enum item value, please use another");
+      if (std::find(values.begin(), values.end(), enumItem->itemValue) != values.end()) {
+        softError(enumItem, DUPLICATE_ENUM_ITEM_VALUE, "Duplicate enum item value, please use another");
+        continue;
+      }
       values.push_back(enumItem->itemValue);
     }
   }
@@ -535,8 +539,8 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
     if (globalVarType.is(TY_DYN)) { // Perform type inference
       globalVarType = rhsType;
     } else if (!globalVarType.matches(rhsType, false, true, true)) { // Check if types are matching
-      throw SemanticError(node->constant(), OPERATOR_WRONG_DATA_TYPE,
-                          "Expected " + globalVarType.getName() + ", but got " + rhsType.getName());
+      SOFT_ERROR_BOOL(node->constant(), OPERATOR_WRONG_DATA_TYPE,
+                      "Expected " + globalVarType.getName() + ", but got " + rhsType.getName())
     }
 
     // Update compile time value of entry with the value of the constant
@@ -545,11 +549,11 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
 
   // Check if the type is still missing
   if (globalVarType.is(TY_DYN))
-    throw SemanticError(node->dataType(), GLOBAL_OF_TYPE_DYN, "Global variables must have an explicit data type");
+    SOFT_ERROR_BOOL(node->dataType(), GLOBAL_OF_TYPE_DYN, "Global variables must have an explicit data type")
 
   // Check if we would need to insert instructions in the global scope to initialize the variable
   if (!globalVarType.isPrimitive())
-    throw SemanticError(node->dataType(), GLOBAL_OF_INVALID_TYPE, "Spice does only global variables of primitive type");
+    SOFT_ERROR_BOOL(node->dataType(), GLOBAL_OF_INVALID_TYPE, "Spice does only global variables of primitive type")
 
   // Update type of global var entry
   assert(node->entry != nullptr);
@@ -557,7 +561,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
 
   // Check if a value is attached
   if (!node->constant() && globalVarType.isConst())
-    throw SemanticError(node, GLOBAL_CONST_WITHOUT_VALUE, "You must specify a value for constant global variables");
+    SOFT_ERROR_BOOL(node, GLOBAL_CONST_WITHOUT_VALUE, "You must specify a value for constant global variables")
 
   return nullptr;
 }
@@ -573,8 +577,10 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
       auto argType = std::any_cast<SymbolType>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_PTR(argType)
       // Check if the argument type is 'dyn'
-      if (argType.is(TY_DYN))
-        throw SemanticError(arg, UNEXPECTED_DYN_TYPE, "Dyn data type is not allowed as arg type for external functions");
+      if (argType.is(TY_DYN)) {
+        softError(arg, UNEXPECTED_DYN_TYPE, "Dyn data type is not allowed as arg type for external functions");
+        continue;
+      }
       // Save argument
       argTypes.push_back(argType);
       argList.push_back({argType, false});
@@ -589,7 +595,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
     HANDLE_UNRESOLVED_TYPE_PTR(returnType)
     // Check if return type is dyn
     if (returnType.is(TY_DYN))
-      throw SemanticError(node->returnType(), UNEXPECTED_DYN_TYPE, "dyn is not allowed as return type for external functions");
+      SOFT_ERROR_BOOL(node->returnType(), UNEXPECTED_DYN_TYPE, "dyn is not allowed as return type for external functions")
   }
 
   // Add function to current scope

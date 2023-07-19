@@ -1092,7 +1092,7 @@ public:
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override { return true; }
   [[nodiscard]] StmtLstNode *getParentScopeNode() const {
     assert(dynamic_cast<StmtLstNode *>(parent->parent) != nullptr);
-    return static_cast<StmtLstNode *>(parent->parent);
+    return spice_pointer_cast<StmtLstNode *>(parent->parent);
   }
 
   // Public members

@@ -1,5 +1,13 @@
+type T dyn;
+type U int|double;
+
+type Node<T, U> struct {
+    T* _data1
+    U _data2
+}
+
 f<int> main() {
-    printf("Hello World!");
+    dyn _node = Node<Node<Node<Node<Node<string, double>, int>, double>, int>, double>{};
 }
 
 /*import "std/os/thread";
