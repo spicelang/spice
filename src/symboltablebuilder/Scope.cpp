@@ -70,8 +70,8 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
 
   // Collect all variables in this scope
   for (const auto &[name, entry] : symbolTable.symbols) {
-    // Skip 'this' variables
-    if (name == THIS_VARIABLE_NAME)
+    // Skip 'this' and result variables
+    if (name == THIS_VARIABLE_NAME || name == RETURN_VARIABLE_NAME)
       continue;
     // Found variable, that goes out of scope
     varsGoingOutOfScope.push_back(&symbolTable.symbols.at(name));

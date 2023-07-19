@@ -91,57 +91,8 @@ std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
     fctNameNode->nameFragments.push_back(fctIdentifier);
   }
 
-  // Extract overloaded operator
-  if (ctx->OPERATOR()) {
-    SpiceParser::OverloadableOpContext *op = ctx->overloadableOp();
-    if (op->PLUS()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_PLUS;
-      fctNameNode->name = OP_FCT_PLUS;
-    } else if (op->MINUS()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_MINUS;
-      fctNameNode->name = OP_FCT_MINUS;
-    } else if (op->MUL()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_MUL;
-      fctNameNode->name = OP_FCT_MUL;
-    } else if (op->DIV()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_DIV;
-      fctNameNode->name = OP_FCT_DIV;
-    } else if (op->EQUAL()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_EQUAL;
-      fctNameNode->name = OP_FCT_EQUAL;
-    } else if (op->NOT_EQUAL()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_NOT_EQUAL;
-      fctNameNode->name = OP_FCT_NOT_EQUAL;
-    } else if (op->LESS().size() == 2) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_SHL;
-      fctNameNode->name = OP_FCT_SHL;
-    } else if (op->GREATER().size() == 2) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_SHR;
-      fctNameNode->name = OP_FCT_SHR;
-    } else if (op->PLUS_EQUAL()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_PLUS_EQUAL;
-      fctNameNode->name = OP_FCT_PLUS_EQUAL;
-    } else if (op->MINUS_EQUAL()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_MINUS_EQUAL;
-      fctNameNode->name = OP_FCT_MINUS_EQUAL;
-    } else if (op->MUL_EQUAL()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_MUL_EQUAL;
-      fctNameNode->name = OP_FCT_MUL_EQUAL;
-    } else if (op->DIV_EQUAL()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_DIV_EQUAL;
-      fctNameNode->name = OP_FCT_DIV_EQUAL;
-    } else if (op->PLUS_PLUS()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_PLUS_PLUS;
-      fctNameNode->name = OP_FCT_POSTFIX_PLUS_PLUS;
-    } else if (op->MINUS_MINUS()) {
-      fctNameNode->overloadedOperator = FctNameNode::OP_MINUS_MINUS;
-      fctNameNode->name = OP_FCT_POSTFIX_MINUS_MINUS;
-    } else {
-      assert(false && "FctName parsing fall-through");
-    }
-    fctNameNode->fqName = fctNameNode->name;
-    fctNameNode->nameFragments.push_back(fctNameNode->name);
-  }
+  // Visit children
+  visitChildren(ctx);
 
   return concludeNode(ctx, fctNameNode);
 }
