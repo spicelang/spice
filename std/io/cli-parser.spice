@@ -45,11 +45,11 @@ public f<int> CliParser.parse(unsigned int argc, string[] argv) {
         // Check all commonly used flags
         if (arg == "-v" || arg == "--version") {     // Version info
             this.printVersion();
-            return;
+            return 0;
         }
         if (arg == "-h" || arg == "--help") { // Help
             this.printHelp(argv[0]);
-            return;
+            return 0;
         }
 
         // Check for flags

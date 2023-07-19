@@ -131,7 +131,7 @@
           "isVolatile": false,
           "name": "length",
           "orderIndex": 1,
-          "state": "declared",
+          "state": "initialized",
           "type": "unsigned long"
         },
         {

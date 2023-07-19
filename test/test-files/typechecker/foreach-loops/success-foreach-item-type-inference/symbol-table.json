@@ -256,7 +256,7 @@
           "isVolatile": false,
           "name": "cursor",
           "orderIndex": 1,
-          "state": "declared",
+          "state": "initialized",
           "type": "unsigned long"
         },
         {

@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/variables/error-global-const-not-initialized/source.spice:1:1:
 Global const without value: You must specify a value for constant global variables
 

@@ -1,5 +1,14 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/ext-decl/error-ext-dyn-arg/source.spice:1:28:
 Unexpected dyn type: Dyn data type is not allowed as arg type for external functions
 
 1  nt> exteralFunction(dyn, int);
                        ^^^
+
+[Error|Semantic] ./test-files/typechecker/ext-decl/error-ext-dyn-arg/source.spice:4:5:
+Referenced undefined function: Function/procedure/struct 'extFunction' could not be found
+
+4  extFunction(1, 3);
+   ^^^^^^^^^^^^^^^^^

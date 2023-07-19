@@ -1,3 +1,6 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/enums/error-duplicate-item-value/source.spice:3:5:
 Duplicate enum item value: Duplicate enum item value, please use another
 

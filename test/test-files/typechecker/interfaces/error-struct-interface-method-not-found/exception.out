@@ -1,5 +1,14 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
 [Error|Semantic] ./test-files/typechecker/interfaces/error-struct-interface-method-not-found/source.spice:9:1:
 Interface method not implemented: The struct 'AstNode' does not implement the method 'bool accept(Visitor*)', requested of interface 'Visitable'
 
 9  type AstNode struct : Visitable {}
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./test-files/typechecker/interfaces/error-struct-interface-method-not-found/source.spice:11:1:
+Interface method not implemented: The struct 'AstEntryNode' does not implement the method 'bool accept(Visitor*)', requested of interface 'Visitable'
+
+11  type AstEntryNode struct : Visitable {
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
