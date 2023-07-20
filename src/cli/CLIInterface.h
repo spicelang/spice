@@ -50,6 +50,7 @@ struct CliOptions {
   OptLevel optLevel = O2;
   bool useLTO = false;
   bool noEntryFct = false;
+  bool staticLinking = false;
   bool generateDebugInfo = false;
   bool disableVerifier = false;
   bool testMode = false;

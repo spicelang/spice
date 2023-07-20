@@ -33,6 +33,7 @@ You can apply following options to the `build` command:
 | `-O<n>`      | -                    | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz`                            |
 | `-lto`       | -                    | Enable link-time-optimization                                                                                   |
 | `-g`         | `--debug-info`       | Generate debug info to debug the executable in GDB, etc.                                                        |
+| -            | `--static`           | Produce stand-alone executable by linking statically                                                            |
 | -            | `--no-entry`         | Do not require or generate main function (useful for web assembly target)                                       |
 | -            | `--disable-verifier` | Disable LLVM module and function verification (only recommended for debugging the compiler)                     |
 | -            | `--ignore-cache`     | Compile always and ignore the compile cache                                                                     |

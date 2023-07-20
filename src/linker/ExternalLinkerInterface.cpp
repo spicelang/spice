@@ -16,6 +16,10 @@ void ExternalLinkerInterface::prepare() {
   // Set target to linker
   addLinkerFlag("--target=" + cliOptions.targetTriple);
 
+  // Static linking
+  if (cliOptions.staticLinking)
+    addLinkerFlag("-static");
+
   // Web Assembly
   if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
     addLinkerFlag("-nostdlib");
