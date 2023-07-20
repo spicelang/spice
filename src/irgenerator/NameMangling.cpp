@@ -178,9 +178,8 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
   }
   case TY_FUNCTION: {
     out << "PF";
-    mangleType(out, chainElement.paramTypes.front());
-    for (size_t i = 1; i < chainElement.paramTypes.size(); i++)
-      mangleType(out, chainElement.paramTypes.at(i));
+    for (const SymbolType &paramType : chainElement.paramTypes)
+      mangleType(out, paramType);
     out << "E";
     break;
   }

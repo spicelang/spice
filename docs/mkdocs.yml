@@ -89,7 +89,7 @@ nav:
     - language/attributes.md
     - language/arrays.md
     - language/pointers.md
-    #- language/references.md
+    - language/references.md
     - language/enums.md
     - language/structs.md
     - language/methods.md

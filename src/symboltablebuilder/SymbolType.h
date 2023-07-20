@@ -185,6 +185,8 @@ public:
   [[nodiscard]] const SymbolType &getFunctionReturnType() const;
   void setFunctionParamTypes(const std::vector<SymbolType> &paramTypes);
   [[nodiscard]] std::vector<SymbolType> getFunctionParamTypes() const;
+  void setFunctionParamAndReturnTypes(const std::vector<SymbolType> &paramAndReturnTypes);
+  [[nodiscard]] const std::vector<SymbolType> &getFunctionParamAndReturnTypes() const;
   [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);

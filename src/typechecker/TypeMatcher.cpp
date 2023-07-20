@@ -9,9 +9,27 @@ namespace spice::compiler {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "misc-no-recursion"
 
+bool TypeMatcher::matchRequestedToCandidateTypes(const std::vector<SymbolType> &candidateTypes,
+                                                 const std::vector<SymbolType> &requestedTypes, TypeMapping &typeMapping,
+                                                 ResolverFct &resolverFct, bool strictSpecifiers) {
+  // Check if the size of template types matches
+  if (requestedTypes.size() != candidateTypes.size())
+    return false;
+
+  // Loop through both lists at the same time and match each pair of template types individually
+  for (size_t i = 0; i < candidateTypes.size(); i++) {
+    const SymbolType &requestedType = requestedTypes.at(i);
+    const SymbolType &candidateType = candidateTypes.at(i);
+
+    // Match the pair of template types
+    if (!matchRequestedToCandidateType(candidateType, requestedType, typeMapping, resolverFct, strictSpecifiers))
+      return false;
+  }
+  return true;
+}
+
 bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
-                                                std::function<const GenericType *(const std::string &)> &resolveGenericType,
-                                                bool strictSpecifierMatching) {
+                                                ResolverFct &resolverFct, bool strictSpecifiers) {
   // Unwrap both types as far as possible
   while (candidateType.isSameContainerTypeAs(requestedType)) {
     requestedType = requestedType.getContainedTy();
@@ -28,7 +46,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts())
-    return candidateType.matches(requestedType, true, !strictSpecifierMatching, true);
+    return candidateType.matches(requestedType, true, !strictSpecifiers, true);
 
   // Check if the candidate type itself is generic
   if (candidateType.isBaseType(TY_GENERIC)) { // The candidate type itself is generic
@@ -43,14 +61,14 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
         knownConcreteType = knownConcreteType.removeReferenceWrapper();
 
       // Check if the known concrete type matches the requested type
-      return knownConcreteType.matches(requestedType, true, !strictSpecifierMatching, true);
+      return knownConcreteType.matches(requestedType, true, !strictSpecifiers, true);
     } else {
       // Retrieve generic candidate type by its name
-      const GenericType *genericCandidateType = resolveGenericType(genericTypeName);
+      const GenericType *genericCandidateType = resolverFct(genericTypeName);
       assert(genericCandidateType != nullptr);
 
       // Check if the requested type fulfills all conditions of the generic candidate type
-      if (!genericCandidateType->checkConditionsOf(requestedType, true, !strictSpecifierMatching))
+      if (!genericCandidateType->checkConditionsOf(requestedType, true, !strictSpecifiers))
         return false;
 
       // Add to type mapping
@@ -59,28 +77,28 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
       return true; // The type was successfully matched, by enriching the type mapping
     }
-  } else { // The candidate type itself is non-generic, but one or several template types are
+  } else { // The candidate type itself is non-generic, but one or several template or param types are
     // Check if supertype and subtype are equal
-    if (requestedType.getSuperType() != candidateType.getSuperType() ||
-        requestedType.getOriginalSubType() != candidateType.getOriginalSubType() ||
-        requestedType.getBodyScope()->parent != candidateType.getBodyScope()->parent)
+    if (requestedType.getSuperType() != candidateType.getSuperType())
+      return false;
+    const bool isFctType = candidateType.isOneOf({TY_FUNCTION, TY_PROCEDURE});
+    if (!isFctType && requestedType.getOriginalSubType() != candidateType.getOriginalSubType())
+      return false;
+    if (!isFctType && requestedType.getBodyScope()->parent != candidateType.getBodyScope()->parent)
       return false;
 
-    const std::vector<SymbolType> &requestedTypeTemplateTypes = requestedType.getTemplateTypes();
-    const std::vector<SymbolType> &candidateTypeTemplateTypes = candidateType.getTemplateTypes();
-
-    // Check if the size of template type matches
-    if (requestedTypeTemplateTypes.size() != candidateTypeTemplateTypes.size())
-      return false;
-
-    // Loop through both lists at the same time and match each pair of template types individually
-    for (size_t i = 0; i < candidateTypeTemplateTypes.size(); i++) {
-      const SymbolType &requestedTypeTemplateType = requestedTypeTemplateTypes.at(i);
-      const SymbolType &candidateTypeTemplateType = candidateTypeTemplateTypes.at(i);
-
-      // Match the pair of template types
-      if (!matchRequestedToCandidateType(candidateTypeTemplateType, requestedTypeTemplateType, typeMapping, resolveGenericType,
-                                         strictSpecifierMatching))
+    // If we have a function/procedure type, check the param and return types. Otherwise, check the template types
+    if (isFctType) {
+      // Check param  and return types
+      const std::vector<SymbolType> &candidatePRTypes = candidateType.getFunctionParamAndReturnTypes();
+      const std::vector<SymbolType> &requestedPRTypes = requestedType.getFunctionParamAndReturnTypes();
+      if (!matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictSpecifiers))
+        return false;
+    } else {
+      // Check template types
+      const std::vector<SymbolType> &candidateTTypes = candidateType.getTemplateTypes();
+      const std::vector<SymbolType> &requestedTTypes = requestedType.getTemplateTypes();
+      if (!matchRequestedToCandidateTypes(candidateTTypes, requestedTTypes, typeMapping, resolverFct, strictSpecifiers))
         return false;
     }
 
@@ -97,14 +115,24 @@ void TypeMatcher::substantiateTypeWithTypeMapping(SymbolType &symbolType, const 
     assert(typeMapping.contains(genericTypeName));
     const SymbolType &replacementType = typeMapping.at(genericTypeName);
     symbolType = symbolType.replaceBaseType(replacementType);
-  } else { // The symbol type itself is non-generic, but one or several template types are
-    std::vector<SymbolType> templateTypes = symbolType.getBaseType().getTemplateTypes();
-    // Substantiate every template type
-    for (SymbolType &templateType : templateTypes)
-      if (templateType.hasAnyGenericParts())
-        substantiateTypeWithTypeMapping(templateType, typeMapping);
-    // Attach the list of concrete template types to the symbol type
-    symbolType.setBaseTemplateTypes(templateTypes);
+  } else { // The symbol type itself is non-generic, but one or several template or param types are
+    if (symbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+      // Substantiate each param type
+      std::vector<SymbolType> paramTypes = symbolType.getFunctionParamAndReturnTypes();
+      for (SymbolType &paramType : paramTypes)
+        if (paramType.hasAnyGenericParts())
+          substantiateTypeWithTypeMapping(paramType, typeMapping);
+      // Attach the list of concrete param types to the symbol type
+      symbolType.setFunctionParamAndReturnTypes(paramTypes);
+    } else {
+      // Substantiate each template type
+      std::vector<SymbolType> templateTypes = symbolType.getBaseType().getTemplateTypes();
+      for (SymbolType &templateType : templateTypes)
+        if (templateType.hasAnyGenericParts())
+          substantiateTypeWithTypeMapping(templateType, typeMapping);
+      // Attach the list of concrete template types to the symbol type
+      symbolType.setBaseTemplateTypes(templateTypes);
+    }
   }
 }
 

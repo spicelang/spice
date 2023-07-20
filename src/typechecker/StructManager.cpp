@@ -175,15 +175,15 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
   if (typeCount != candidate.templateTypes.size())
     return false;
 
+  // Give the type matcher a way to retrieve instances of GenericType by their name
+  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
+    return getGenericTypeOfCandidateByName(candidate, genericTypeName);
+  };
+
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
     const SymbolType &requestedType = requestedTemplateTypes.at(i);
     SymbolType &candidateType = candidate.templateTypes.at(i);
-
-    // Give the type matcher a way to retrieve instances of GenericType by their name
-    std::function<const GenericType *(const std::string &)> genericTypeResolver = [=](const std::string &genericTypeName) {
-      return getGenericTypeOfCandidateByName(candidate, genericTypeName);
-    };
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver, false))

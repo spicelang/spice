@@ -3,8 +3,8 @@ title: Operator Overloading
 ---
 
 Spice allows overloading operators for [custom struct types](../structs).
-Currently, this works for the operators `+`, `-`, `*`, `/`, `==`, `!=`, `+=`, `-=`, `*=`, `/=`, `++` (postfix) and
-`--` (postfix).
+Currently, this works for the operators `+`, `-`, `*`, `/`, `==`, `!=`, `<<`, `>>`, `+=`, `-=`, `*=`, `/=`,
+`++` (postfix) and `--` (postfix).
 In the future, more operators will be supported for overloading.
 
 ## Usage
