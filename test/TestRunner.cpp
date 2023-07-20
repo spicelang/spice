@@ -57,6 +57,7 @@ void execTestCase(const TestCase &testCase) {
       /* optLevel= */ O0,
       /* useLTO= */ std::filesystem::exists(testCase.testPath / CTL_LTO),
       /* noEntryFct= */ false,
+      /* staticLinking= */ false,
       /* debugInfo= */ std::filesystem::exists(testCase.testPath / CTL_DEBUG_INFO),
       /* disableVerifier= */ false,
       /* testMode= */ true,
