@@ -977,6 +977,9 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
 std::any ASTBuilder::visitLambda(SpiceParser::LambdaContext *ctx) {
   auto lambdaNode = createNode<LambdaNode>(ctx);
 
+  // Enrich
+  lambdaNode->hasParams = ctx->paramLst();
+
   // Visit children
   visitChildren(ctx);
 

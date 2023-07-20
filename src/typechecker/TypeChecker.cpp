@@ -1334,6 +1334,10 @@ std::any TypeChecker::visitValue(ValueNode *node) {
   if (node->structInstantiation())
     return visit(node->structInstantiation());
 
+  // Lambda
+  if (node->lambda())
+    return visit(node->lambda());
+
   // Typed nil
   if (node->isNil) {
     auto nilType = std::any_cast<SymbolType>(visit(node->nilType()));
@@ -1830,6 +1834,53 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   structType.specifiers.setPublic(false);
 
   return ExprResult{node->setEvaluatedSymbolType(structType, manIdx), anonymousEntry};
+}
+
+std::any TypeChecker::visitLambda(LambdaNode *node) {
+  // Check if all control paths in the lambda body return
+  if (!node->returnsOnAllControlPaths(nullptr))
+    SOFT_ERROR_BOOL(node, MISSING_RETURN_STMT, "Not all control paths of this lambda function have a return statement")
+
+  // Change to function scope
+  currentScope = node->bodyScope;
+  assert(currentScope->type == SCOPE_LAMBDA_BODY);
+
+  // Visit return data type
+  SymbolType returnType(TY_DYN);
+  if (node->returnType()) {
+    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+    HANDLE_UNRESOLVED_TYPE_ST(returnType)
+    if (returnType.is(TY_DYN))
+      SOFT_ERROR_BOOL(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
+  }
+
+  // Visit parameters
+  std::vector<std::string> paramNames;
+  std::vector<SymbolType> paramTypes;
+  ParamList paramList;
+  if (node->hasParams) {
+    // Visit param list to retrieve the param names
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    for (const NamedParam &param : namedParamList) {
+      paramNames.push_back(param.name);
+      paramTypes.push_back(param.type);
+      paramList.push_back({param.type, param.isOptional});
+    }
+  }
+
+  // Leave function body scope
+  currentScope = node->bodyScope->parent;
+
+  // Prepare type of function
+  SymbolType functionType(TY_FUNCTION);
+  functionType.setFunctionReturnType(returnType);
+  functionType.setFunctionParamTypes(paramTypes);
+
+  // Create function object
+  const std::string fctName = "lambda:" + node->codeLoc.toPrettyLineAndColumn();
+  node->lambdaFunction = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+
+  return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
 
 std::any TypeChecker::visitDataType(DataTypeNode *node) {

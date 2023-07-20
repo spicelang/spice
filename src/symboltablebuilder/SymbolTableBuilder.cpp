@@ -513,4 +513,25 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
   return nullptr;
 }
 
+std::any SymbolTableBuilder::visitLambda(LambdaNode *node) {
+  // Create scope for the anonymous block body
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
+
+  // Create symbol for 'result' variable
+  currentScope->insert(RETURN_VARIABLE_NAME, node);
+
+  // Create symbols for the parameters
+  if (node->hasParams)
+    visit(node->paramLst());
+
+  // Visit body
+  visit(node->body());
+
+  // Leave anonymous block body scope
+  currentScope = node->bodyScope->parent;
+
+  return nullptr;
+}
+
 } // namespace spice::compiler

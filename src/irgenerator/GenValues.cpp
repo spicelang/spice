@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
+#include "symboltablebuilder/SymbolTableBuilder.h"
 
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
@@ -21,6 +22,10 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
   // Struct instantiation
   if (node->structInstantiation())
     return visit(node->structInstantiation());
+
+  // Lambda
+  if (node->lambda())
+    return visit(node->lambda());
 
   if (node->isNil) {
     // Retrieve type of the nil constant
@@ -394,6 +399,115 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     returnSymbol->updateAddress(result.ptr);
 
   return result;
+}
+
+std::any IRGenerator::visitLambda(const LambdaNode *node) {
+  const Function &spiceFunc = node->lambdaFunction;
+  std::vector<std::string> paramNames;
+  std::vector<SymbolTableEntry *> paramSymbols;
+  std::vector<llvm::Type *> paramTypes;
+
+  // Change scope
+  currentScope = node->bodyScope;
+
+  // Visit parameters
+  size_t argIdx = 0;
+  if (node->hasParams) {
+    const size_t numOfParams = spiceFunc.paramList.size();
+    paramNames.reserve(numOfParams);
+    paramSymbols.reserve(numOfParams);
+    paramTypes.reserve(numOfParams);
+    for (; argIdx < numOfParams; argIdx++) {
+      const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
+      // Get symbol table entry of param
+      SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+      assert(paramSymbol != nullptr);
+      // Retrieve type of param
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+      // Add it to the lists
+      paramNames.push_back(param->varName);
+      paramSymbols.push_back(paramSymbol);
+      paramTypes.push_back(paramType);
+    }
+  }
+
+  // Get return type
+  llvm::Type *returnType = spiceFunc.returnType.toLLVMType(context, currentScope);
+
+  // Create function or implement declared function
+  const std::string mangledName = NameMangling::mangleFunction(spiceFunc);
+  llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
+  module->getOrInsertFunction(mangledName, funcType);
+  llvm::Function *lambda = module->getFunction(mangledName);
+
+  // Set attributes to function
+  lambda->setDSOLocal(true);
+  lambda->setLinkage(llvm::Function::PrivateLinkage);
+
+  // Add debug info
+  diGenerator.generateFunctionDebugInfo(lambda, &spiceFunc);
+  diGenerator.setSourceLocation(node);
+
+  // Create entry block
+  llvm::BasicBlock *bEntry = createBlock();
+  switchToBlock(bEntry, lambda);
+
+  // Reset alloca insert markers to this block
+  allocaInsertBlock = bEntry;
+  allocaInsertInst = nullptr;
+
+  // Declare result variable
+  llvm::Value *resultAddr = insertAlloca(returnType, RETURN_VARIABLE_NAME);
+  SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
+  assert(resultEntry != nullptr);
+  resultEntry->updateAddress(resultAddr);
+  // Generate debug info
+  diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr, SIZE_MAX);
+
+  // Store function argument values
+  for (auto &arg : lambda->args()) {
+    // Get information about the parameter
+    const size_t argNumber = arg.getArgNo();
+    const std::string paramName = paramNames.at(argNumber);
+    llvm::Type *paramType = funcType->getParamType(argNumber);
+    // Allocate space for it
+    llvm::Value *paramAddress = insertAlloca(paramType, paramName);
+    // Update the symbol table entry
+    SymbolTableEntry *paramSymbol = paramSymbols.at(argNumber);
+    assert(paramSymbol != nullptr);
+    paramSymbol->updateAddress(paramAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    // Store the value at the new address
+    builder.CreateStore(&arg, paramAddress);
+  }
+
+  // Store the default values for optional function args
+  if (node->paramLst()) {
+    const std::vector<DeclStmtNode *> params = node->paramLst()->params();
+    for (; argIdx < params.size(); argIdx++)
+      visit(params.at(argIdx));
+  }
+
+  // Visit function body
+  visit(node->body());
+
+  // Create return statement if the block is not terminated yet
+  if (!blockAlreadyTerminated) {
+    llvm::Value *result = builder.CreateLoad(returnType, resultEntry->getAddress());
+    builder.CreateRet(result);
+  }
+
+  // Conclude debug info for function
+  diGenerator.concludeFunctionDebugInfo();
+
+  // Verify function
+  verifyFunction(lambda, node->codeLoc);
+
+  // Change back to original scope
+  currentScope = node->bodyScope->parent;
+
+  return LLVMExprResult{.ptr = lambda, .node = node};
 }
 
 std::any IRGenerator::visitDataType(const DataTypeNode *node) {
