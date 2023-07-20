@@ -153,6 +153,8 @@ std::any ParallelizableASTVisitor::visitArrayInitialization(const ArrayInitializ
 
 std::any ParallelizableASTVisitor::visitStructInstantiation(const StructInstantiationNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitLambda(const LambdaNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitDataType(const DataTypeNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitBaseDataType(const BaseDataTypeNode *node) { return visitChildren(node); }

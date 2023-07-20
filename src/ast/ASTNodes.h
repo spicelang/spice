@@ -1721,6 +1721,24 @@ public:
   std::vector<Struct *> instantiatedStructs;
 };
 
+// ======================================================== LambdaNode ===========================================================
+
+class LambdaNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visit methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambda(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambda(this); }
+
+  // Public get methods
+  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
+  [[nodiscard]] AssignExprNode *lambdaExpr() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] StmtLstNode *stmtLst() const { return getChild<StmtLstNode>(); }
+};
+
 // ======================================================= DataTypeNode ==========================================================
 
 class DataTypeNode : public ASTNode {

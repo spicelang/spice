@@ -101,6 +101,7 @@ public:
   std::any visitFctCall(SpiceParser::FctCallContext *ctx) override;
   std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override;
   std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override;
+  std::any visitLambda(SpiceParser::LambdaContext *ctx) override;
   std::any visitConstant(SpiceParser::ConstantContext *ctx) override;
   std::any visitDataType(SpiceParser::DataTypeContext *ctx) override;
   std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override;
