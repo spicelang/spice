@@ -48,6 +48,24 @@ public inline f<T&> Optional.get() {
 }
 
 /**
+ * Get the value of the optional. If the optional is not present, return the default value
+ *
+ * @return Data value or default value
+ */
+public inline f<T> Optional.orElse(const T& defaultValue) {
+    return this.isPresent() ? this.data : defaultValue;
+}
+
+/**
+  * Get the value of the optional. If the optional is not present, return the value of `getFct`
+  *
+  * @return Data value or value of the function
+  */
+public inline f<T&> Optional.orElseGet(f<T&>() getFct) {
+    return this.isPresent() ? this.data : getFct();
+}
+
+/**
  * Clears the value of the optional
  */
 public inline p Optional.clear() {

@@ -341,7 +341,7 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
   SymbolType &candidateThisType = candidate.thisType;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
-  std::function<const GenericType *(const std::string &)> genericTypeResolver = [=](const std::string &genericTypeName) {
+  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
     return getGenericTypeOfCandidateByName(candidate, genericTypeName);
   };
 
@@ -372,17 +372,17 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
   if (requestedArgTypes.size() != candidate.paramList.size())
     return false;
 
+  // Give the type matcher a way to retrieve instances of GenericType by their name
+  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
+    return getGenericTypeOfCandidateByName(candidate, genericTypeName);
+  };
+
   // Loop over all parameters
   for (size_t i = 0; i < requestedArgTypes.size(); i++) {
     // Retrieve actual and requested types
     const SymbolType &requestedParamType = requestedArgTypes.at(i);
     assert(!candidate.paramList.at(i).isOptional);
     SymbolType &candidateParamType = candidate.paramList.at(i).type;
-
-    // Give the type matcher a way to retrieve instances of GenericType by their name
-    std::function<const GenericType *(const std::string &)> genericTypeResolver = [=](const std::string &genericTypeName) {
-      return getGenericTypeOfCandidateByName(candidate, genericTypeName);
-    };
 
     // Check if the requested param type matches the candidate param type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateParamType, requestedParamType, typeMapping, genericTypeResolver,
@@ -422,7 +422,7 @@ bool FunctionManager::matchReturnType(Function &candidate, const SymbolType &req
   SymbolType &candidateReturnType = candidate.returnType;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
-  std::function<const GenericType *(const std::string &)> genericTypeResolver = [=](const std::string &genericTypeName) {
+  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
     return getGenericTypeOfCandidateByName(candidate, genericTypeName);
   };
 

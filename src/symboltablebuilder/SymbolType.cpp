@@ -254,12 +254,24 @@ bool SymbolType::isSameContainerTypeAs(const SymbolType &otherType) const {
  */
 bool SymbolType::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
   const SymbolType &baseType = getBaseType();
+
   // Check if the type itself is generic
   if (baseType.is(TY_GENERIC))
     return true;
+
   // Check if the type has generic template types
   const auto templateTypes = baseType.getTemplateTypes();
-  return std::any_of(templateTypes.begin(), templateTypes.end(), [](const SymbolType &t) { return t.hasAnyGenericParts(); });
+  if (std::any_of(templateTypes.begin(), templateTypes.end(), [](const SymbolType &t) { return t.hasAnyGenericParts(); }))
+    return true;
+
+  // Check param and return types or functions/procedures
+  if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    const auto paramTypes = baseType.getFunctionParamAndReturnTypes();
+    if (std::any_of(paramTypes.begin(), paramTypes.end(), [](const SymbolType &t) { return t.hasAnyGenericParts(); }))
+      return true;
+  }
+
+  return false; // Does not have generic parts
 }
 
 /**
@@ -335,9 +347,8 @@ void SymbolType::setFunctionReturnType(const SymbolType &returnType) {
   assert(is(TY_FUNCTION));
   std::vector<SymbolType> &paramTypes = typeChain.back().paramTypes;
   if (paramTypes.empty())
-    paramTypes.push_back(returnType);
-  else
-    paramTypes.at(0) = returnType;
+    paramTypes.resize(1);
+  paramTypes.at(0) = returnType;
 }
 
 /**
@@ -361,7 +372,7 @@ void SymbolType::setFunctionParamTypes(const std::vector<SymbolType> &newParamTy
   std::vector<SymbolType> &paramTypes = typeChain.back().paramTypes;
   // Resize param types if required
   if (paramTypes.size() < newParamTypes.size() + 1)
-    paramTypes.resize(newParamTypes.size() + 1);
+    paramTypes.resize(newParamTypes.size() + 1, SymbolType(TY_DYN));
   // Set the function param types
   for (size_t i = 0; i < newParamTypes.size(); i++)
     paramTypes.at(i + 1) = newParamTypes.at(i);
@@ -374,9 +385,29 @@ void SymbolType::setFunctionParamTypes(const std::vector<SymbolType> &newParamTy
  */
 std::vector<SymbolType> SymbolType::getFunctionParamTypes() const {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  if (!typeChain.back().paramTypes.empty())
-    return {typeChain.back().paramTypes.begin() + 1, typeChain.back().paramTypes.end()};
-  return {};
+  if (typeChain.back().paramTypes.empty())
+    return {};
+  return {typeChain.back().paramTypes.begin() + 1, typeChain.back().paramTypes.end()};
+}
+
+/**
+ * Set the param and return types of a function or procedure type
+ *
+ * @param newParamAndReturnTypes Function param and return types (first is return type, rest are param types)
+ */
+void SymbolType::setFunctionParamAndReturnTypes(const std::vector<SymbolType> &newParamAndReturnTypes) {
+  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  typeChain.back().paramTypes = newParamAndReturnTypes;
+}
+
+/**
+ * Get the param and return types of a function or procedure type
+ *
+ * @return Function param and return types (first is return type, rest are param types)
+ */
+const std::vector<SymbolType> &SymbolType::getFunctionParamAndReturnTypes() const {
+  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  return typeChain.back().paramTypes;
 }
 
 /**

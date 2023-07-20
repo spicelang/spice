@@ -15,9 +15,15 @@ class SymbolType;
  */
 class TypeMatcher {
 public:
+  // Type defs
+  using ResolverFct = std::function<const GenericType *(const std::string &)>;
+
+  // Public methods
+  static bool matchRequestedToCandidateTypes(const std::vector<SymbolType> &candidateType,
+                                             const std::vector<SymbolType> &requestedType, TypeMapping &typeMapping,
+                                             ResolverFct &resolverFct, bool strictSpecifiers);
   static bool matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
-                                            std::function<const GenericType *(const std::string &)> &resolveGenericType,
-                                            bool genericTypeResolver);
+                                            ResolverFct &resolverFct, bool strictSpecifiers);
   static void substantiateTypeWithTypeMapping(SymbolType &symbolType, const TypeMapping &typeMapping);
 };
 

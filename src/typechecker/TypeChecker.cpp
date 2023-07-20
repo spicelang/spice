@@ -372,9 +372,11 @@ std::any TypeChecker::visitField(FieldNode *node) {
 }
 
 std::any TypeChecker::visitSignature(SignatureNode *node) {
+  const bool isFunction = node->signatureType == SignatureNode::TYPE_FUNCTION;
+
   // Visit return type
   SymbolType returnType(TY_DYN);
-  if (node->signatureType == SignatureNode::TYPE_FUNCTION)
+  if (isFunction)
     returnType = std::any_cast<SymbolType>(visit(node->returnType()));
   HANDLE_UNRESOLVED_TYPE_PTR(returnType)
 
@@ -424,9 +426,9 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   manifestation->used = true;
 
   // Prepare signature type
-  SymbolType signatureType(node->signatureType == SignatureNode::TYPE_FUNCTION ? TY_FUNCTION : TY_PROCEDURE);
+  SymbolType signatureType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
   signatureType.specifiers = node->signatureSpecifiers;
-  if (node->signatureType == SignatureNode::TYPE_FUNCTION)
+  if (isFunction)
     signatureType.setFunctionReturnType(returnType);
   signatureType.setFunctionParamTypes(paramTypes);
 
@@ -765,7 +767,9 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     SOFT_ERROR_ER(condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool")
 
   // Check if trueType and falseType are matching
-  if (!trueType.matches(falseType, false, true, false))
+  const SymbolType trueTypeModified = trueType.removeReferenceWrapper();
+  const SymbolType falseTypeModified = falseType.removeReferenceWrapper();
+  if (!trueTypeModified.matches(falseTypeModified, false, true, false))
     SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE,
                   "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
                       falseType.getName(true))
