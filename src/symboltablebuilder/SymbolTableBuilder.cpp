@@ -515,11 +515,11 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
 
 std::any SymbolTableBuilder::visitLambda(LambdaNode *node) {
   // Create scope for the anonymous block body
-  node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
 
   // Create symbol for 'result' variable
-  currentScope->insert(RETURN_VARIABLE_NAME, node);
+  if (node->isFunction)
+    currentScope->insert(RETURN_VARIABLE_NAME, node);
 
   // Create symbols for the parameters
   if (node->hasParams)

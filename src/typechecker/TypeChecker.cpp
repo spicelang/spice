@@ -1842,8 +1842,7 @@ std::any TypeChecker::visitLambda(LambdaNode *node) {
     SOFT_ERROR_BOOL(node, MISSING_RETURN_STMT, "Not all control paths of this lambda function have a return statement")
 
   // Change to function scope
-  currentScope = node->bodyScope;
-  assert(currentScope->type == SCOPE_LAMBDA_BODY);
+  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
 
   // Visit return data type
   SymbolType returnType(TY_DYN);
@@ -1852,6 +1851,14 @@ std::any TypeChecker::visitLambda(LambdaNode *node) {
     HANDLE_UNRESOLVED_TYPE_ST(returnType)
     if (returnType.is(TY_DYN))
       SOFT_ERROR_BOOL(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
+  }
+
+  // Set return type to the result variable
+  if (!returnType.is(TY_DYN)) {
+    SymbolTableEntry *resultVarEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
+    assert(resultVarEntry != nullptr);
+    resultVarEntry->updateType(returnType, false);
+    resultVarEntry->used = true;
   }
 
   // Visit parameters
@@ -1868,16 +1875,20 @@ std::any TypeChecker::visitLambda(LambdaNode *node) {
     }
   }
 
+  // Visit body
+  visit(node->body());
+
   // Leave function body scope
   currentScope = node->bodyScope->parent;
 
   // Prepare type of function
-  SymbolType functionType(TY_FUNCTION);
-  functionType.setFunctionReturnType(returnType);
+  SymbolType functionType(node->isFunction ? TY_FUNCTION : TY_PROCEDURE);
+  if (node->isFunction)
+    functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
 
   // Create function object
-  const std::string fctName = "lambda:" + node->codeLoc.toPrettyLineAndColumn();
+  const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
   node->lambdaFunction = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};

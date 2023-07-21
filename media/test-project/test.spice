@@ -1,10 +1,11 @@
-f<int> main() {
-    f<int>(int, int) add = (int x, int y) -> int {
-        return x + y;
-    };
+f<int> test(f<int>(int, int) customAdder) {
+    return customAdder(1, 2);
+}
 
-    printf("1 + 2: %d\n", add(1, 2));
-    printf("3 + 4: %d\n", add(3, 4));
+f<int> main() {
+    printf("1 + 2: %d\n", test((int x, int y) -> int {
+        return x + y;
+    }));
 }
 
 /*import "std/os/thread";
