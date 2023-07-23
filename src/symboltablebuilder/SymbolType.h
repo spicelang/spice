@@ -122,6 +122,7 @@ public:
     return isOneOf({TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL});
   }
   [[nodiscard]] bool isIterator(const ASTNode *node) const;
+  [[nodiscard]] bool isStringObj() const;
   [[nodiscard]] bool implements(const SymbolType &symbolType, const ASTNode *node) const;
   [[nodiscard]] bool isBaseType(SymbolSuperType superType) const;
   [[nodiscard]] inline bool isOneOf(const std::vector<SymbolSuperType> &superTypes) const {

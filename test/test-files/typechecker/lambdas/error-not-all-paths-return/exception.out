@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./test-files/typechecker/lambdas/error-not-all-paths-return/source.spice:2:24:
+Missing return statement: Not all control paths of this lambda function have a return statement
+
+2  (bool& input) -> int {
+   ^^^^^^^^^^^^^^^^^^^^^^

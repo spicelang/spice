@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {
 
@@ -1646,10 +1647,15 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionT
   const std::vector<SymbolType> expectedArgTypes = functionType.getFunctionParamTypes();
   if (actualArgTypes.size() != expectedArgTypes.size())
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
+
+  // Create resolver function, that always returns a nullptr
+  TypeMatcher::ResolverFct resolverFct = [=](const std::string &genericTypeName) { return nullptr; };
+
   for (size_t i = 0; i < actualArgTypes.size(); i++) {
     const SymbolType &actualType = actualArgTypes.at(i);
     const SymbolType &expectedType = expectedArgTypes.at(i);
-    if (!expectedType.matches(actualType, true, true, true))
+    TypeMapping tm;
+    if (!TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
       SOFT_ERROR_BOOL(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
                       "Expected " + expectedType.getName() + " but got " + actualType.getName())
   }
@@ -1838,8 +1844,8 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
 std::any TypeChecker::visitLambda(LambdaNode *node) {
   // Check if all control paths in the lambda body return
-  if (!node->returnsOnAllControlPaths(nullptr))
-    SOFT_ERROR_BOOL(node, MISSING_RETURN_STMT, "Not all control paths of this lambda function have a return statement")
+  if (node->isFunction && !node->returnsOnAllControlPaths(nullptr))
+    SOFT_ERROR_ER(node, MISSING_RETURN_STMT, "Not all control paths of this lambda function have a return statement")
 
   // Change to function scope
   changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
@@ -1850,7 +1856,7 @@ std::any TypeChecker::visitLambda(LambdaNode *node) {
     returnType = std::any_cast<SymbolType>(visit(node->returnType()));
     HANDLE_UNRESOLVED_TYPE_ST(returnType)
     if (returnType.is(TY_DYN))
-      SOFT_ERROR_BOOL(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
+      SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
   }
 
   // Set return type to the result variable
@@ -1869,6 +1875,9 @@ std::any TypeChecker::visitLambda(LambdaNode *node) {
     // Visit param list to retrieve the param names
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList) {
+      if (param.isOptional)
+        SOFT_ERROR_ER(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters")
+
       paramNames.push_back(param.name);
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});

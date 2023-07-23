@@ -83,6 +83,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Missing return statement";
   case INVALID_PARAM_ORDER:
     return "Invalid argument order";
+  case LAMBDA_WITH_OPTIONAL_PARAMS:
+    return "Lambda with optional parameters";
   case REFERENCED_OVERLOADED_FCT:
     return "Referenced overloaded function";
   case DTOR_MUST_BE_PROCEDURE:

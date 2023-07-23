@@ -1,38 +1,7 @@
-f<int> test(f<int>(int, int) customAdder) {
-    return customAdder(1, 2);
-}
-
 f<int> main() {
-    printf("1 + 2: %d\n", test((int x, int y) -> int {
-        return x + y;
-    }));
+    p(int, bool) x = (int x, bool y = false) -> x > y;
+    x(1, true);
 }
-
-/*import "std/os/thread";
-
-f<int> fib(int n) {
-    if n <= 2 { return 1; }
-    return fib(n - 1) + fib(n - 2);
-}
-
-p calcFib30() {
-    int result = fib(30);
-    printf("Thread returned with result: %d\n", result);
-}
-
-f<int> main() {
-    int threadCount = 8;
-    Thread[8] threads = {};
-    for unsigned int i = 0; i < threadCount; i++ {
-        threads[i] = Thread(calcFib30);
-    }
-    printf("Started all threads. Waiting for results ...\n");
-    for unsigned int i = 0; i < threadCount; i++ {
-        Thread& thread = threads[i];
-        thread.join();
-    }
-    printf("Program finished");
-}*/
 
 /*type T int|long;
 

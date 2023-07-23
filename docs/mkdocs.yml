@@ -84,6 +84,7 @@ nav:
     - language/foreach-loops.md
     - language/procedures.md
     - language/functions.md
+    #- language/lambda-functions.md
     - language/modules.md
     - language/declaration-specifiers.md
     - language/attributes.md

@@ -508,7 +508,8 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
     visit(node->assignExpr());
 
   // Add variable entry to symbol table
-  currentScope->insert(node->varName, node);
+  SymbolTableEntry *varEntry = currentScope->insert(node->varName, node);
+  varEntry->isParam = node->isParam;
 
   return nullptr;
 }
