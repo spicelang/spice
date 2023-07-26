@@ -83,7 +83,8 @@ declare i1 @_ZN14NumberIteratorIsE7isValidEv(ptr)
 
 declare ptr @_ZN14NumberIteratorIsE3getEv(ptr)
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 declare %struct.NumberIterator.0 @_Z5rangell(i64, i64)
 
@@ -96,3 +97,4 @@ declare void @_ZN14NumberIteratorIlE4nextEv(ptr)
 declare void @_ZN14NumberIteratorIsE4nextEv(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }

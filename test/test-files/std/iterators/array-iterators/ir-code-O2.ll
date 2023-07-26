@@ -40,7 +40,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   store i32 321, ptr %.fca.3.gep, align 4
   %.fca.4.gep = getelementptr inbounds [5 x i32], ptr %a, i64 0, i64 4
   store i32 -99, ptr %.fca.4.gep, align 4
-  %4 = call %struct.ArrayIterator @_Z7iteratePim(ptr nonnull %a, i64 5) #2
+  %4 = call %struct.ArrayIterator @_Z7iteratePim(ptr nonnull %a, i64 5) #3
   %.fca.0.extract24 = extractvalue %struct.ArrayIterator %4, 0
   %.fca.1.extract26 = extractvalue %struct.ArrayIterator %4, 1
   %.fca.1.gep27 = getelementptr inbounds %struct.ArrayIterator, ptr %it, i64 0, i32 1
@@ -49,156 +49,156 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   store ptr %.fca.0.extract24, ptr %it, align 8
   store i64 %.fca.1.extract26, ptr %.fca.1.gep27, align 8
   store i64 %.fca.2.extract28, ptr %.fca.2.gep29, align 8
-  %5 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %it) #2
+  %5 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %it) #3
   br i1 %5, label %assert.exit.L9, label %assert.then.L9, !prof !0
 
 assert.then.L9:                                   ; preds = %0
   %6 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.8)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L9:                                   ; preds = %0
-  %7 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
+  %7 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #3
   %8 = load i32, ptr %7, align 4
   %9 = icmp eq i32 %8, 123
   br i1 %9, label %assert.exit.L10, label %assert.then.L10, !prof !0
 
 assert.then.L10:                                  ; preds = %assert.exit.L9
   %10 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.10)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L10:                                  ; preds = %assert.exit.L9
-  %11 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
+  %11 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #3
   %12 = load i32, ptr %11, align 4
   %13 = icmp eq i32 %12, 123
   br i1 %13, label %assert.exit.L11, label %assert.then.L11, !prof !0
 
 assert.then.L11:                                  ; preds = %assert.exit.L10
   %14 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.10)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L11:                                  ; preds = %assert.exit.L10
-  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %it) #2
-  %15 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
+  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %it) #3
+  %15 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #3
   %16 = load i32, ptr %15, align 4
   %17 = icmp eq i32 %16, 4321
   br i1 %17, label %assert.exit.L13, label %assert.then.L13, !prof !0
 
 assert.then.L13:                                  ; preds = %assert.exit.L11
   %18 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.9)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L13:                                  ; preds = %assert.exit.L11
-  %19 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %it) #2
+  %19 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %it) #3
   br i1 %19, label %assert.exit.L14, label %assert.then.L14, !prof !0
 
 assert.then.L14:                                  ; preds = %assert.exit.L13
   %20 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.8)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L14:                                  ; preds = %assert.exit.L13
-  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %it) #2
-  %21 = call %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr nonnull %it) #2
+  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %it) #3
+  %21 = call %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr nonnull %it) #3
   %.fca.0.extract16 = extractvalue %struct.Pair %21, 0
   %.fca.1.extract18 = extractvalue %struct.Pair %21, 1
   %.fca.1.gep19 = getelementptr inbounds %struct.Pair, ptr %pair, i64 0, i32 1
   store i64 %.fca.0.extract16, ptr %pair, align 8
   store ptr %.fca.1.extract18, ptr %.fca.1.gep19, align 8
-  %22 = call ptr @_ZN4PairImRiE8getFirstEv(ptr nonnull %pair) #2
+  %22 = call ptr @_ZN4PairImRiE8getFirstEv(ptr nonnull %pair) #3
   %23 = load i64, ptr %22, align 8
   %24 = icmp eq i64 %23, 2
   br i1 %24, label %assert.exit.L17, label %assert.then.L17, !prof !0
 
 assert.then.L17:                                  ; preds = %assert.exit.L14
   %25 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.5)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L17:                                  ; preds = %assert.exit.L14
-  %26 = call ptr @_ZN4PairImRiE9getSecondEv(ptr nonnull %pair) #2
+  %26 = call ptr @_ZN4PairImRiE9getSecondEv(ptr nonnull %pair) #3
   %27 = load i32, ptr %26, align 4
   %28 = icmp eq i32 %27, 9876
   br i1 %28, label %assert.exit.L18, label %assert.then.L18, !prof !0
 
 assert.then.L18:                                  ; preds = %assert.exit.L17
   %29 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.6)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L18:                                  ; preds = %assert.exit.L17
-  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %it) #2
-  call void @_Z13op.minusequalR13ArrayIteratorIiEi(ptr nonnull %it, i32 3) #2
-  %30 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
+  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %it) #3
+  call void @_Z13op.minusequalR13ArrayIteratorIiEi(ptr nonnull %it, i32 3) #3
+  %30 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #3
   %31 = load i32, ptr %30, align 4
   %32 = icmp eq i32 %31, 123
   br i1 %32, label %assert.exit.L23, label %assert.then.L23, !prof !0
 
 assert.then.L23:                                  ; preds = %assert.exit.L18
   %33 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.10)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L23:                                  ; preds = %assert.exit.L18
-  %34 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %it) #2
+  %34 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %it) #3
   br i1 %34, label %assert.exit.L24, label %assert.then.L24, !prof !0
 
 assert.then.L24:                                  ; preds = %assert.exit.L23
   %35 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.8)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L24:                                  ; preds = %assert.exit.L23
-  call void @_Z16op.plusplus.postR13ArrayIteratorIiE(ptr nonnull %it) #2
-  %36 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
+  call void @_Z16op.plusplus.postR13ArrayIteratorIiE(ptr nonnull %it) #3
+  %36 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #3
   %37 = load i32, ptr %36, align 4
   %38 = icmp eq i32 %37, 4321
   br i1 %38, label %assert.exit.L26, label %assert.then.L26, !prof !0
 
 assert.then.L26:                                  ; preds = %assert.exit.L24
   %39 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.9)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L26:                                  ; preds = %assert.exit.L24
-  call void @_Z18op.minusminus.postR13ArrayIteratorIiE(ptr nonnull %it) #2
-  %40 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
+  call void @_Z18op.minusminus.postR13ArrayIteratorIiE(ptr nonnull %it) #3
+  %40 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #3
   %41 = load i32, ptr %40, align 4
   %42 = icmp eq i32 %41, 123
   br i1 %42, label %assert.exit.L28, label %assert.then.L28, !prof !0
 
 assert.then.L28:                                  ; preds = %assert.exit.L26
   %43 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.10)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L28:                                  ; preds = %assert.exit.L26
-  call void @_Z12op.plusequalR13ArrayIteratorIiEi(ptr nonnull %it, i32 4) #2
-  %44 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #2
+  call void @_Z12op.plusequalR13ArrayIteratorIiEi(ptr nonnull %it, i32 4) #3
+  %44 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %it) #3
   %45 = load i32, ptr %44, align 4
   %46 = icmp eq i32 %45, -99
   br i1 %46, label %assert.exit.L30, label %assert.then.L30, !prof !0
 
 assert.then.L30:                                  ; preds = %assert.exit.L28
   %47 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.11)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L30:                                  ; preds = %assert.exit.L28
-  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %it) #2
-  %48 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %it) #2
+  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %it) #3
+  %48 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %it) #3
   br i1 %48, label %assert.then.L32, label %assert.exit.L32, !prof !1
 
 assert.then.L32:                                  ; preds = %assert.exit.L30
   %49 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.12)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L32:                                  ; preds = %assert.exit.L30
-  %50 = call %struct.ArrayIterator @_Z7iteratePim(ptr nonnull %a, i64 5) #2
+  %50 = call %struct.ArrayIterator @_Z7iteratePim(ptr nonnull %a, i64 5) #3
   %.fca.0.extract10 = extractvalue %struct.ArrayIterator %50, 0
   store ptr %.fca.0.extract10, ptr %1, align 8
   %.fca.1.extract12 = extractvalue %struct.ArrayIterator %50, 1
@@ -207,13 +207,13 @@ assert.exit.L32:                                  ; preds = %assert.exit.L30
   %.fca.2.extract14 = extractvalue %struct.ArrayIterator %50, 2
   %.fca.2.gep15 = getelementptr inbounds %struct.ArrayIterator, ptr %1, i64 0, i32 2
   store i64 %.fca.2.extract14, ptr %.fca.2.gep15, align 8
-  %51 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %1) #2
+  %51 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %1) #3
   br i1 %51, label %foreach.body.L35, label %foreach.exit.L35
 
 foreach.body.L35:                                 ; preds = %assert.exit.L32, %foreach.body.L35
-  %52 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %1) #2
-  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %1) #2
-  %53 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %1) #2
+  %52 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %1) #3
+  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %1) #3
+  %53 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %1) #3
   br i1 %53, label %foreach.body.L35, label %foreach.exit.L35
 
 foreach.exit.L35:                                 ; preds = %foreach.body.L35, %assert.exit.L32
@@ -223,7 +223,7 @@ foreach.exit.L35:                                 ; preds = %foreach.body.L35, %
 
 assert.then.L38:                                  ; preds = %foreach.exit.L35
   %56 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.13)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L38:                                  ; preds = %foreach.exit.L35
@@ -233,7 +233,7 @@ assert.exit.L38:                                  ; preds = %foreach.exit.L35
 
 assert.then.L39:                                  ; preds = %assert.exit.L38
   %59 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L39:                                  ; preds = %assert.exit.L38
@@ -243,11 +243,11 @@ assert.exit.L39:                                  ; preds = %assert.exit.L38
 
 assert.then.L40:                                  ; preds = %assert.exit.L39
   %62 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.15)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L40:                                  ; preds = %assert.exit.L39
-  %63 = call %struct.ArrayIterator @_Z7iteratePim(ptr nonnull %a, i64 5) #2
+  %63 = call %struct.ArrayIterator @_Z7iteratePim(ptr nonnull %a, i64 5) #3
   %.fca.0.extract4 = extractvalue %struct.ArrayIterator %63, 0
   store ptr %.fca.0.extract4, ptr %2, align 8
   %.fca.1.extract6 = extractvalue %struct.ArrayIterator %63, 1
@@ -256,16 +256,16 @@ assert.exit.L40:                                  ; preds = %assert.exit.L39
   %.fca.2.extract8 = extractvalue %struct.ArrayIterator %63, 2
   %.fca.2.gep9 = getelementptr inbounds %struct.ArrayIterator, ptr %2, i64 0, i32 2
   store i64 %.fca.2.extract8, ptr %.fca.2.gep9, align 8
-  %64 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %2) #2
+  %64 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %2) #3
   br i1 %64, label %foreach.body.L43, label %foreach.exit.L43
 
 foreach.body.L43:                                 ; preds = %assert.exit.L40, %foreach.body.L43
-  %65 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %2) #2
+  %65 = call ptr @_ZN13ArrayIteratorIiE3getEv(ptr nonnull %2) #3
   %66 = load i32, ptr %65, align 4
   %67 = add i32 %66, 1
   store i32 %67, ptr %65, align 4
-  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %2) #2
-  %68 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %2) #2
+  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %2) #3
+  %68 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %2) #3
   br i1 %68, label %foreach.body.L43, label %foreach.exit.L43
 
 foreach.exit.L43:                                 ; preds = %foreach.body.L43, %assert.exit.L40
@@ -275,7 +275,7 @@ foreach.exit.L43:                                 ; preds = %foreach.body.L43, %
 
 assert.then.L46:                                  ; preds = %foreach.exit.L43
   %71 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.19)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L46:                                  ; preds = %foreach.exit.L43
@@ -285,7 +285,7 @@ assert.exit.L46:                                  ; preds = %foreach.exit.L43
 
 assert.then.L47:                                  ; preds = %assert.exit.L46
   %74 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.17)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L47:                                  ; preds = %assert.exit.L46
@@ -295,11 +295,11 @@ assert.exit.L47:                                  ; preds = %assert.exit.L46
 
 assert.then.L48:                                  ; preds = %assert.exit.L47
   %77 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.18)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L48:                                  ; preds = %assert.exit.L47
-  %78 = call %struct.ArrayIterator @_Z7iteratePim(ptr nonnull %a, i64 5) #2
+  %78 = call %struct.ArrayIterator @_Z7iteratePim(ptr nonnull %a, i64 5) #3
   %.fca.0.extract = extractvalue %struct.ArrayIterator %78, 0
   store ptr %.fca.0.extract, ptr %3, align 8
   %.fca.1.extract = extractvalue %struct.ArrayIterator %78, 1
@@ -308,19 +308,19 @@ assert.exit.L48:                                  ; preds = %assert.exit.L47
   %.fca.2.extract = extractvalue %struct.ArrayIterator %78, 2
   %.fca.2.gep = getelementptr inbounds %struct.ArrayIterator, ptr %3, i64 0, i32 2
   store i64 %.fca.2.extract, ptr %.fca.2.gep, align 8
-  %79 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %3) #2
+  %79 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %3) #3
   br i1 %79, label %foreach.body.L50, label %foreach.exit.L50
 
 foreach.body.L50:                                 ; preds = %assert.exit.L48, %foreach.body.L50
-  %pair3 = call %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr nonnull %3) #2
+  %pair3 = call %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr nonnull %3) #3
   %pair3.fca.0.extract = extractvalue %struct.Pair %pair3, 0
   %pair3.fca.1.extract = extractvalue %struct.Pair %pair3, 1
   %80 = trunc i64 %pair3.fca.0.extract to i32
   %81 = load i32, ptr %pair3.fca.1.extract, align 4
   %82 = add i32 %81, %80
   store i32 %82, ptr %pair3.fca.1.extract, align 4
-  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %3) #2
-  %83 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %3) #2
+  call void @_ZN13ArrayIteratorIiE4nextEv(ptr nonnull %3) #3
+  %83 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr nonnull %3) #3
   br i1 %83, label %foreach.body.L50, label %foreach.exit.L50
 
 foreach.exit.L50:                                 ; preds = %foreach.body.L50, %assert.exit.L48
@@ -330,7 +330,7 @@ foreach.exit.L50:                                 ; preds = %foreach.body.L50, %
 
 assert.then.L53:                                  ; preds = %foreach.exit.L50
   %86 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.19)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L53:                                  ; preds = %foreach.exit.L50
@@ -340,7 +340,7 @@ assert.exit.L53:                                  ; preds = %foreach.exit.L50
 
 assert.then.L54:                                  ; preds = %assert.exit.L53
   %89 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.20)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L54:                                  ; preds = %assert.exit.L53
@@ -350,7 +350,7 @@ assert.exit.L54:                                  ; preds = %assert.exit.L53
 
 assert.then.L55:                                  ; preds = %assert.exit.L54
   %92 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.21)
-  call void @exit(i32 1) #2
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L55:                                  ; preds = %assert.exit.L54
@@ -365,7 +365,8 @@ declare i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr) local_unnamed_addr
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
-declare void @exit(i32) local_unnamed_addr
+; Function Attrs: cold noreturn nounwind
+declare void @llvm.trap() #2
 
 declare ptr @_ZN13ArrayIteratorIiE3getEv(ptr) local_unnamed_addr
 
@@ -387,7 +388,8 @@ declare void @_Z12op.plusequalR13ArrayIteratorIiEi(ptr, i32) local_unnamed_addr
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
-attributes #2 = { nounwind }
+attributes #2 = { cold noreturn nounwind }
+attributes #3 = { nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}
 !1 = !{!"branch_weights", i32 1, i32 2000}

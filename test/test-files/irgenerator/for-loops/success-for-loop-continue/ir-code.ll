@@ -74,6 +74,8 @@ for.exit.L2:                                      ; preds = %for.head.L2
   ret i32 %18
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }

@@ -65,12 +65,14 @@ define dso_local i32 @main() #1 !dbg !71 {
   ret i32 %9, !dbg !92
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
 declare ptr @_ZN6String6getRawEv(ptr)
 
 attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #1 = { noinline nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.module.flags = !{!16, !17, !18, !19, !20, !21, !22}
 !llvm.ident = !{!23}

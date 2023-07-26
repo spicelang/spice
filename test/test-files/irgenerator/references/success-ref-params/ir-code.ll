@@ -28,7 +28,8 @@ define private void @_Z4procRiRK6Struct(ptr %0, ptr %1) {
   ret void
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
 
 define private i32 @_Z4funcRdRK6Struct(ptr %0, ptr %1) {
   %result = alloca i32, align 4
@@ -49,7 +50,7 @@ define private i32 @_Z4funcRdRK6Struct(ptr %0, ptr %1) {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
   %i = alloca i32, align 4
   %1 = alloca %struct.Struct, align 8
@@ -68,7 +69,7 @@ define dso_local i32 @main() #0 {
 
 assert.then.L20:                                  ; preds = %0
   %7 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
-  call void @exit(i32 1)
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L20:                                  ; preds = %0
@@ -85,7 +86,7 @@ assert.exit.L20:                                  ; preds = %0
 
 assert.then.L24:                                  ; preds = %assert.exit.L20
   %13 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
-  call void @exit(i32 1)
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L24:                                  ; preds = %assert.exit.L20
@@ -94,8 +95,11 @@ assert.exit.L24:                                  ; preds = %assert.exit.L20
   ret i32 %15
 }
 
-declare void @exit(i32)
+; Function Attrs: cold noreturn nounwind
+declare void @llvm.trap() #2
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { nofree nounwind }
+attributes #1 = { noinline nounwind optnone uwtable }
+attributes #2 = { cold noreturn nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}

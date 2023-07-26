@@ -32,7 +32,8 @@ define private void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull %0) {
   ret void
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
 define private i32 @_ZN10TestStructIhE7getTestEv(ptr noundef nonnull %0) {
   %result = alloca i32, align 4
@@ -63,3 +64,4 @@ if.exit.L18:                                      ; preds = %if.then.L18, %1
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { nofree nounwind }

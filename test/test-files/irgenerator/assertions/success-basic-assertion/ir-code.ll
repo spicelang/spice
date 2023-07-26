@@ -16,7 +16,7 @@ define dso_local i32 @main() #0 {
 
 assert.then.L2:                                   ; preds = %0
   %1 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
-  call void @exit(i32 1)
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L2:                                   ; preds = %0
@@ -25,7 +25,7 @@ assert.exit.L2:                                   ; preds = %0
 
 assert.then.L5:                                   ; preds = %assert.exit.L2
   %3 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
-  call void @exit(i32 1)
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L5:                                   ; preds = %assert.exit.L2
@@ -34,10 +34,14 @@ assert.exit.L5:                                   ; preds = %assert.exit.L2
   ret i32 %5
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-declare void @exit(i32)
+; Function Attrs: cold noreturn nounwind
+declare void @llvm.trap() #2
 
 attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}

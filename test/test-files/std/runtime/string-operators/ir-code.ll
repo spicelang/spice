@@ -313,7 +313,8 @@ define dso_local i32 @main() #0 {
   ret i32 %140
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 declare void @_ZN6String4ctorEPc(ptr, ptr)
 
@@ -344,3 +345,4 @@ declare void @_Z11op.mulequalR6Stringi(ptr, i32)
 declare void @_ZN6String4dtorEv(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }

@@ -519,15 +519,20 @@ std::any SymbolTableBuilder::visitLambda(LambdaNode *node) {
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
 
   // Create symbol for 'result' variable
-  if (node->isFunction)
+  if (node->isFunction && node->hasBody)
     currentScope->insert(RETURN_VARIABLE_NAME, node);
 
   // Create symbols for the parameters
   if (node->hasParams)
     visit(node->paramLst());
 
-  // Visit body
-  visit(node->body());
+  // Visit body or lambda expression
+  if (node->hasBody) {
+    visit(node->body());
+  } else {
+    assert(node->isFunction);
+    visit(node->lambdaExpr());
+  }
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;

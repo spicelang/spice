@@ -14,13 +14,13 @@ define dso_local i32 @_Z17functionInModuleBii(i32 %0, i32 %1) local_unnamed_addr
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #1 {
-  %1 = tail call i32 @_Z17functionInModuleBii(i32 1, i32 2) #3
+  %1 = tail call i32 @_Z17functionInModuleBii(i32 1, i32 2) #4
   %2 = icmp eq i32 %1, 3
   br i1 %2, label %assert.exit.L4, label %assert.then.L4, !prof !0
 
 assert.then.L4:                                   ; preds = %0
   %3 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.0)
-  tail call void @exit(i32 1) #3
+  tail call void @llvm.trap()
   unreachable
 
 assert.exit.L4:                                   ; preds = %0
@@ -31,11 +31,13 @@ assert.exit.L4:                                   ; preds = %0
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #2
 
-declare void @exit(i32) local_unnamed_addr
+; Function Attrs: cold noreturn nounwind
+declare void @llvm.trap() #3
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memory(none) }
 attributes #1 = { noinline nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
-attributes #3 = { nounwind }
+attributes #3 = { cold noreturn nounwind }
+attributes #4 = { nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}

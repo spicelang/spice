@@ -465,7 +465,7 @@ std::any IRGenerator::visitLambda(const LambdaNode *node) {
 
   // Declare result variable
   SymbolTableEntry *resultEntry = nullptr;
-  if (node->isFunction) {
+  if (node->isFunction && node->hasBody) {
     resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
     assert(resultEntry != nullptr);
     llvm::Value *resultAddr = insertAlloca(returnType, RETURN_VARIABLE_NAME);
@@ -500,16 +500,22 @@ std::any IRGenerator::visitLambda(const LambdaNode *node) {
   }
 
   // Visit function body
-  visit(node->body());
+  if (node->hasBody) {
+    visit(node->body());
 
-  // Create return statement if the block is not terminated yet
-  if (!blockAlreadyTerminated) {
-    if (node->isFunction) {
-      llvm::Value *result = builder.CreateLoad(returnType, resultEntry->getAddress());
-      builder.CreateRet(result);
-    } else {
-      builder.CreateRetVoid();
+    // Create return statement if the block is not terminated yet
+    if (!blockAlreadyTerminated) {
+      if (node->isFunction) {
+        llvm::Value *result = builder.CreateLoad(returnType, resultEntry->getAddress());
+        builder.CreateRet(result);
+      } else {
+        builder.CreateRetVoid();
+      }
     }
+  } else {
+    assert(node->isFunction);
+    llvm::Value *exprResult = resolveValue(node->lambdaExpr(), currentScope);
+    builder.CreateRet(exprResult);
   }
 
   // Conclude debug info for function

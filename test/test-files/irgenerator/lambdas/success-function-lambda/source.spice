@@ -1,0 +1,18 @@
+f<int> main() {
+    f<string>() callbackWithoutArgs = () -> string {
+        return "Callback called!\n";
+    };
+    printf("%s", callbackWithoutArgs());
+
+    f<String>(String&, double) callbackWithArgs1 = (String& str, double d) -> String {
+        printf("Callback called with args: %s, %f\n", str, d);
+        return str;
+    };
+    printf("%s\n", callbackWithArgs1(String("Hello"), 3.14));
+
+    f<short>(String, short) callbackWithArgs2 = (String str, short b) -> short {
+        printf("Callback called with args: %s, %d\n", str, b);
+        return ~b;
+    };
+    printf("%d\n", (callbackWithArgs2(String("Hello World!"), 321s) ^ 956s) == 1 ? 9 : 12);
+}

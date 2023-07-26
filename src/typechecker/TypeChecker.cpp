@@ -389,8 +389,10 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_PTR(templateType)
       // Check if it is a generic type
-      if (!templateType.is(TY_GENERIC))
-        SOFT_ERROR_ER(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types")
+      if (!templateType.is(TY_GENERIC)) {
+        softError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+        return static_cast<std::vector<Function *> *>(nullptr);
+      }
       // Convert generic symbol type to generic type
       GenericType *genericType = rootScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
@@ -842,7 +844,7 @@ std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   HANDLE_UNRESOLVED_TYPE_ER(currentType)
   // Loop through all remaining operands
-  for (size_t i = 2; i < node->operands().size(); i++) {
+  for (size_t i = 1; i < node->operands().size(); i++) {
     SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
     HANDLE_UNRESOLVED_TYPE_ER(rhsTy)
     currentType = OpRuleManager::getBitwiseXorResultType(node, currentType, rhsTy, i - 1);
@@ -1852,15 +1854,15 @@ std::any TypeChecker::visitLambda(LambdaNode *node) {
 
   // Visit return data type
   SymbolType returnType(TY_DYN);
-  if (node->returnType()) {
+  if (node->isFunction && node->hasBody) {
     returnType = std::any_cast<SymbolType>(visit(node->returnType()));
     HANDLE_UNRESOLVED_TYPE_ST(returnType)
-    if (returnType.is(TY_DYN))
+    if (returnType.is(TY_DYN)) {
+      currentScope = node->bodyScope->parent;
       SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
-  }
+    }
 
-  // Set return type to the result variable
-  if (!returnType.is(TY_DYN)) {
+    // Lookup result variable
     SymbolTableEntry *resultVarEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
     assert(resultVarEntry != nullptr);
     resultVarEntry->updateType(returnType, false);
@@ -1875,8 +1877,10 @@ std::any TypeChecker::visitLambda(LambdaNode *node) {
     // Visit param list to retrieve the param names
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList) {
-      if (param.isOptional)
-        SOFT_ERROR_ER(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters")
+      if (param.isOptional) {
+        softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
+        continue;
+      }
 
       paramNames.push_back(param.name);
       paramTypes.push_back(param.type);
@@ -1884,8 +1888,18 @@ std::any TypeChecker::visitLambda(LambdaNode *node) {
     }
   }
 
-  // Visit body
-  visit(node->body());
+  // Visit body or lambda expression
+  if (node->hasBody) {
+    visit(node->body());
+  } else {
+    assert(node->isFunction);
+    returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
+    HANDLE_UNRESOLVED_TYPE_ER(returnType)
+    if (returnType.is(TY_DYN)) {
+      currentScope = node->bodyScope->parent;
+      SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed");
+    }
+  }
 
   // Leave function body scope
   currentScope = node->bodyScope->parent;

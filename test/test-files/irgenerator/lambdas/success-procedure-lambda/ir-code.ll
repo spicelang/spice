@@ -43,7 +43,8 @@ define private void @_Z12lambda.L2C31v() {
   ret void
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 define private void @_Z12lambda.L7C44R18__rt_string.Stringd(ptr %0, double %1) {
   %str = alloca ptr, align 8
@@ -76,3 +77,4 @@ define private void @_Z13lambda.L12C4118__rt_string.Stringb(%struct.String %0, i
 declare void @_ZN6String4dtorEv(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }

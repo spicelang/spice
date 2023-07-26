@@ -25,7 +25,7 @@ define dso_local i32 @main() #0 {
 
 assert.then.L5:                                   ; preds = %0
   %3 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
-  call void @exit(i32 1)
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L5:                                   ; preds = %0
@@ -39,7 +39,7 @@ assert.exit.L5:                                   ; preds = %0
 
 assert.then.L9:                                   ; preds = %assert.exit.L5
   %9 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
-  call void @exit(i32 1)
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L9:                                   ; preds = %assert.exit.L5
@@ -53,7 +53,7 @@ assert.exit.L9:                                   ; preds = %assert.exit.L5
 
 assert.then.L11:                                  ; preds = %assert.exit.L9
   %15 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
-  call void @exit(i32 1)
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L11:                                  ; preds = %assert.exit.L9
@@ -65,7 +65,7 @@ assert.exit.L11:                                  ; preds = %assert.exit.L9
 
 assert.then.L13:                                  ; preds = %assert.exit.L11
   %19 = call i32 (ptr, ...) @printf(ptr @anon.string.3)
-  call void @exit(i32 1)
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L13:                                  ; preds = %assert.exit.L11
@@ -80,7 +80,7 @@ assert.exit.L13:                                  ; preds = %assert.exit.L11
 
 assert.then.L15:                                  ; preds = %assert.exit.L13
   %26 = call i32 (ptr, ...) @printf(ptr @anon.string.4)
-  call void @exit(i32 1)
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L15:                                  ; preds = %assert.exit.L13
@@ -95,7 +95,7 @@ assert.exit.L15:                                  ; preds = %assert.exit.L13
 
 assert.then.L17:                                  ; preds = %assert.exit.L15
   %33 = call i32 (ptr, ...) @printf(ptr @anon.string.5)
-  call void @exit(i32 1)
+  call void @llvm.trap()
   unreachable
 
 assert.exit.L17:                                  ; preds = %assert.exit.L15
@@ -104,10 +104,14 @@ assert.exit.L17:                                  ; preds = %assert.exit.L15
   ret i32 %35
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-declare void @exit(i32)
+; Function Attrs: cold noreturn nounwind
+declare void @llvm.trap() #2
 
 attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}

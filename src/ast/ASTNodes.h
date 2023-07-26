@@ -1746,6 +1746,7 @@ public:
   // Public members
   bool hasParams = false;
   bool isFunction = false;
+  bool hasBody = false;
   Scope *bodyScope = nullptr;
   Function lambdaFunction;
 };

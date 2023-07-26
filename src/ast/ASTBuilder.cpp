@@ -979,7 +979,8 @@ std::any ASTBuilder::visitLambda(SpiceParser::LambdaContext *ctx) {
 
   // Enrich
   lambdaNode->hasParams = ctx->paramLst();
-  lambdaNode->isFunction = ctx->dataType();
+  lambdaNode->isFunction = ctx->dataType() || ctx->assignExpr();
+  lambdaNode->hasBody = ctx->stmtLst();
 
   // Visit children
   visitChildren(ctx);

@@ -161,9 +161,9 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   // Print the error message
   llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
   builder.CreateCall(printfFct, globalString);
-  // Generate call to exit()
-  llvm::Function *exitFct = stdFunctionManager.getExitFct();
-  builder.CreateCall(exitFct, builder.getInt32(EXIT_FAILURE));
+  // Generate call to llvm.trap()
+  llvm::Function *trapFct = stdFunctionManager.getTrapFct();
+  builder.CreateCall(trapFct);
   // Create unreachable instruction
   builder.CreateUnreachable();
 
