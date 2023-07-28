@@ -20,7 +20,7 @@ define dso_local i32 @main() local_unnamed_addr #1 {
 
 assert.then.L4:                                   ; preds = %0
   %3 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.0)
-  tail call void @llvm.trap()
+  tail call void @exit(i32 1)
   unreachable
 
 assert.exit.L4:                                   ; preds = %0
@@ -32,7 +32,7 @@ assert.exit.L4:                                   ; preds = %0
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @llvm.trap() #3
+declare void @exit(i32) local_unnamed_addr #3
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memory(none) }
 attributes #1 = { noinline nounwind optnone uwtable }

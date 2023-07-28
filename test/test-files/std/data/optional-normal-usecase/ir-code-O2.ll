@@ -44,7 +44,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
 
 assert.then.L18:                                  ; preds = %0
   %16 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.1)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L18:                                  ; preds = %0
@@ -79,7 +79,7 @@ declare void @_ZN8OptionalI18__rt_string.StringE4ctorERK18__rt_string.String(ptr
 declare i1 @_ZN8OptionalI18__rt_string.StringE9isPresentEv(ptr) local_unnamed_addr
 
 ; Function Attrs: cold noreturn nounwind
-declare void @llvm.trap() #2
+declare void @exit(i32) local_unnamed_addr #2
 
 declare void @_ZN6String4dtorEv(ptr) local_unnamed_addr
 

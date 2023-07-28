@@ -69,7 +69,7 @@ define dso_local i32 @main() #1 {
 
 assert.then.L20:                                  ; preds = %0
   %7 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L20:                                  ; preds = %0
@@ -86,7 +86,7 @@ assert.exit.L20:                                  ; preds = %0
 
 assert.then.L24:                                  ; preds = %assert.exit.L20
   %13 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L24:                                  ; preds = %assert.exit.L20
@@ -96,7 +96,7 @@ assert.exit.L24:                                  ; preds = %assert.exit.L20
 }
 
 ; Function Attrs: cold noreturn nounwind
-declare void @llvm.trap() #2
+declare void @exit(i32) #2
 
 attributes #0 = { nofree nounwind }
 attributes #1 = { noinline nounwind optnone uwtable }

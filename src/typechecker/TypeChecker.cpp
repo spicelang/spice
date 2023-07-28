@@ -1877,10 +1877,8 @@ std::any TypeChecker::visitLambda(LambdaNode *node) {
     // Visit param list to retrieve the param names
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList) {
-      if (param.isOptional) {
+      if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
-        continue;
-      }
 
       paramNames.push_back(param.name);
       paramTypes.push_back(param.type);

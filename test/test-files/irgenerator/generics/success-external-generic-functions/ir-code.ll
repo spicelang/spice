@@ -32,7 +32,7 @@ define dso_local i32 @main() #0 {
 
 assert.then.L12:                                  ; preds = %0
   %6 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L12:                                  ; preds = %0
@@ -57,7 +57,7 @@ declare ptr @_Z7getAIncPi(ptr)
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @llvm.trap() #3
+declare void @exit(i32) #3
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

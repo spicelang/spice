@@ -19,18 +19,19 @@ llvm::Function *StdFunctionManager::getPrintfFct() const {
   return printfFct;
 }
 
-llvm::Function *StdFunctionManager::getTrapFct() const {
-  llvm::Function *trapFct = getProcedure("llvm.trap", {});
+llvm::Function *StdFunctionManager::getExitFct() const {
+  llvm::Function *exitFct = getProcedure("exit", builder.getInt32Ty());
   // Set attributes
-  trapFct->addFnAttr(llvm::Attribute::Cold);
-  trapFct->addFnAttr(llvm::Attribute::NoReturn);
-  trapFct->addFnAttr(llvm::Attribute::NoUnwind);
-  return trapFct;
+  exitFct->addFnAttr(llvm::Attribute::Cold);
+  exitFct->addFnAttr(llvm::Attribute::NoReturn);
+  exitFct->addFnAttr(llvm::Attribute::NoUnwind);
+  return exitFct;
 }
 
 llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
   llvm::Type *ptrTy = builder.getPtrTy();
-  llvm::Function *memcpyFct = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::memcpy, {ptrTy, ptrTy, ptrTy});
+  llvm::ArrayRef<llvm::Type *> paramList = {ptrTy, ptrTy, builder.getInt64Ty()};
+  llvm::Function *memcpyFct = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::memcpy, paramList);
   // Set attributes
   memcpyFct->addFnAttr(llvm::Attribute::NoCallback);
   memcpyFct->addFnAttr(llvm::Attribute::NoFree);

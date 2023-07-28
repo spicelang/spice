@@ -75,6 +75,7 @@ nfpms:
     dependencies:
       - build-essential
       - clang
+      - lld
     contents:
       - src: std
         dst: /usr/lib/spice/std

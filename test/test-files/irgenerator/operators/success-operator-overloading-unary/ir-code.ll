@@ -46,7 +46,7 @@ define dso_local i32 @main() #0 {
 
 assert.then.L14:                                  ; preds = %0
   %8 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L14:                                  ; preds = %0
@@ -57,7 +57,7 @@ assert.exit.L14:                                  ; preds = %0
 
 assert.then.L15:                                  ; preds = %assert.exit.L14
   %11 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L15:                                  ; preds = %assert.exit.L14
@@ -73,7 +73,7 @@ declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @llvm.trap() #3
+declare void @exit(i32) #3
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

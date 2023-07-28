@@ -51,7 +51,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
 
 assert.then.L9:                                   ; preds = %0
   %11 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.0)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L9:                                   ; preds = %0
@@ -66,7 +66,7 @@ assert.exit.L9:                                   ; preds = %0
 
 assert.then.L13:                                  ; preds = %assert.exit.L9
   %14 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.11)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L13:                                  ; preds = %assert.exit.L9
@@ -77,7 +77,7 @@ assert.exit.L13:                                  ; preds = %assert.exit.L9
 
 assert.then.L14:                                  ; preds = %assert.exit.L13
   %18 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.13)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L14:                                  ; preds = %assert.exit.L13
@@ -88,7 +88,7 @@ assert.exit.L14:                                  ; preds = %assert.exit.L13
 
 assert.then.L15:                                  ; preds = %assert.exit.L14
   %22 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.13)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L15:                                  ; preds = %assert.exit.L14
@@ -100,7 +100,7 @@ assert.exit.L15:                                  ; preds = %assert.exit.L14
 
 assert.then.L17:                                  ; preds = %assert.exit.L15
   %26 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.12)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L17:                                  ; preds = %assert.exit.L15
@@ -109,7 +109,7 @@ assert.exit.L17:                                  ; preds = %assert.exit.L15
 
 assert.then.L18:                                  ; preds = %assert.exit.L17
   %28 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.11)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L18:                                  ; preds = %assert.exit.L17
@@ -127,7 +127,7 @@ assert.exit.L18:                                  ; preds = %assert.exit.L17
 
 assert.then.L21:                                  ; preds = %assert.exit.L18
   %33 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.6)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L21:                                  ; preds = %assert.exit.L18
@@ -138,7 +138,7 @@ assert.exit.L21:                                  ; preds = %assert.exit.L18
 
 assert.then.L22:                                  ; preds = %assert.exit.L21
   %37 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.7)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L22:                                  ; preds = %assert.exit.L21
@@ -148,7 +148,7 @@ assert.exit.L22:                                  ; preds = %assert.exit.L21
 
 assert.then.L24:                                  ; preds = %assert.exit.L22
   %39 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.15)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L24:                                  ; preds = %assert.exit.L22
@@ -161,7 +161,7 @@ assert.exit.L24:                                  ; preds = %assert.exit.L22
 
 assert.then.L29:                                  ; preds = %assert.exit.L24
   %41 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.11)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L29:                                  ; preds = %assert.exit.L24
@@ -173,7 +173,7 @@ assert.exit.L29:                                  ; preds = %assert.exit.L24
 
 assert.then.L33:                                  ; preds = %assert.exit.L29
   %45 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.13)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L33:                                  ; preds = %assert.exit.L29
@@ -182,7 +182,7 @@ assert.exit.L33:                                  ; preds = %assert.exit.L29
 
 assert.then.L34:                                  ; preds = %assert.exit.L33
   %47 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.11)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L34:                                  ; preds = %assert.exit.L33
@@ -194,7 +194,7 @@ assert.exit.L34:                                  ; preds = %assert.exit.L33
 
 assert.then.L36:                                  ; preds = %assert.exit.L34
   %51 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.12)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L36:                                  ; preds = %assert.exit.L34
@@ -206,7 +206,7 @@ assert.exit.L36:                                  ; preds = %assert.exit.L34
 
 assert.then.L38:                                  ; preds = %assert.exit.L36
   %55 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.13)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L38:                                  ; preds = %assert.exit.L36
@@ -218,7 +218,7 @@ assert.exit.L38:                                  ; preds = %assert.exit.L36
 
 assert.then.L40:                                  ; preds = %assert.exit.L38
   %59 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.14)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L40:                                  ; preds = %assert.exit.L38
@@ -228,7 +228,7 @@ assert.exit.L40:                                  ; preds = %assert.exit.L38
 
 assert.then.L42:                                  ; preds = %assert.exit.L40
   %61 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.15)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L42:                                  ; preds = %assert.exit.L40
@@ -255,7 +255,7 @@ foreach.exit.L45:                                 ; preds = %foreach.body.L45, %
 
 assert.then.L48:                                  ; preds = %foreach.exit.L45
   %69 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.16)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L48:                                  ; preds = %foreach.exit.L45
@@ -266,7 +266,7 @@ assert.exit.L48:                                  ; preds = %foreach.exit.L45
 
 assert.then.L49:                                  ; preds = %assert.exit.L48
   %73 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.17)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L49:                                  ; preds = %assert.exit.L48
@@ -277,7 +277,7 @@ assert.exit.L49:                                  ; preds = %assert.exit.L48
 
 assert.then.L50:                                  ; preds = %assert.exit.L49
   %77 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.18)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L50:                                  ; preds = %assert.exit.L49
@@ -307,7 +307,7 @@ foreach.exit.L53:                                 ; preds = %foreach.body.L53, %
 
 assert.then.L56:                                  ; preds = %foreach.exit.L53
   %87 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.22)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L56:                                  ; preds = %foreach.exit.L53
@@ -318,7 +318,7 @@ assert.exit.L56:                                  ; preds = %foreach.exit.L53
 
 assert.then.L57:                                  ; preds = %assert.exit.L56
   %91 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.20)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L57:                                  ; preds = %assert.exit.L56
@@ -329,7 +329,7 @@ assert.exit.L57:                                  ; preds = %assert.exit.L56
 
 assert.then.L58:                                  ; preds = %assert.exit.L57
   %95 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.21)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L58:                                  ; preds = %assert.exit.L57
@@ -362,7 +362,7 @@ foreach.exit.L60:                                 ; preds = %foreach.body.L60, %
 
 assert.then.L63:                                  ; preds = %foreach.exit.L60
   %105 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.22)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L63:                                  ; preds = %foreach.exit.L60
@@ -373,7 +373,7 @@ assert.exit.L63:                                  ; preds = %foreach.exit.L60
 
 assert.then.L64:                                  ; preds = %assert.exit.L63
   %109 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.23)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L64:                                  ; preds = %assert.exit.L63
@@ -384,7 +384,7 @@ assert.exit.L64:                                  ; preds = %assert.exit.L63
 
 assert.then.L65:                                  ; preds = %assert.exit.L64
   %113 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.24)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L65:                                  ; preds = %assert.exit.L64
@@ -403,7 +403,7 @@ declare i64 @_ZN6VectorIiE7getSizeEv(ptr) local_unnamed_addr
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 ; Function Attrs: cold noreturn nounwind
-declare void @llvm.trap() #2
+declare void @exit(i32) local_unnamed_addr #2
 
 declare %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr) local_unnamed_addr
 

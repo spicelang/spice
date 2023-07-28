@@ -40,7 +40,7 @@ define dso_local i32 @main() local_unnamed_addr #1 {
 
 assert.then.L12:                                  ; preds = %0
   %4 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.2)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L12:                                  ; preds = %0
@@ -53,7 +53,7 @@ assert.exit.L12:                                  ; preds = %0
 
 assert.then.L16:                                  ; preds = %assert.exit.L12
   %7 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.1)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L16:                                  ; preds = %assert.exit.L12
@@ -66,7 +66,7 @@ assert.exit.L16:                                  ; preds = %assert.exit.L12
 
 assert.then.L21:                                  ; preds = %assert.exit.L16
   %10 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.2)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L21:                                  ; preds = %assert.exit.L16
@@ -76,7 +76,7 @@ assert.exit.L21:                                  ; preds = %assert.exit.L16
 
 assert.then.L22:                                  ; preds = %assert.exit.L21
   %13 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.3)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L22:                                  ; preds = %assert.exit.L21
@@ -93,7 +93,7 @@ assert.exit.L22:                                  ; preds = %assert.exit.L21
 
 assert.then.L30:                                  ; preds = %assert.exit.L22
   %16 = call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.4)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L30:                                  ; preds = %assert.exit.L22
@@ -106,7 +106,7 @@ declare void @_ZN5Timer4ctorEv(ptr) local_unnamed_addr
 declare i64 @_ZN5Timer11getDurationEv(ptr) local_unnamed_addr
 
 ; Function Attrs: cold noreturn nounwind
-declare void @llvm.trap() #2
+declare void @exit(i32) local_unnamed_addr #2
 
 declare void @_ZN5Timer5startEv(ptr) local_unnamed_addr
 

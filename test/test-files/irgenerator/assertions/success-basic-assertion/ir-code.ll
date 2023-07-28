@@ -4,7 +4,7 @@ target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16
 target triple = "x86_64-w64-windows-gnu"
 
 @anon.string.0 = private unnamed_addr constant [55 x i8] c"Assertion failed: Condition 'true' evaluated to false.\00", align 1
-@printf.str.0 = private unnamed_addr constant [25 x i8] c"First assertion was true\00", align 1
+@printf.str.0 = private unnamed_addr constant [26 x i8] c"First assertion was true\0A\00", align 1
 @anon.string.1 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition '1 != 1' evaluated to false.\00", align 1
 @printf.str.1 = private unnamed_addr constant [12 x i8] c"Unreachable\00", align 1
 
@@ -16,7 +16,7 @@ define dso_local i32 @main() #0 {
 
 assert.then.L2:                                   ; preds = %0
   %1 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L2:                                   ; preds = %0
@@ -25,7 +25,7 @@ assert.exit.L2:                                   ; preds = %0
 
 assert.then.L5:                                   ; preds = %assert.exit.L2
   %3 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
-  call void @llvm.trap()
+  call void @exit(i32 1)
   unreachable
 
 assert.exit.L5:                                   ; preds = %assert.exit.L2
@@ -38,7 +38,7 @@ assert.exit.L5:                                   ; preds = %assert.exit.L2
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 ; Function Attrs: cold noreturn nounwind
-declare void @llvm.trap() #2
+declare void @exit(i32) #2
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }

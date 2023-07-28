@@ -19,7 +19,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
 
 assert.then.L6:                                   ; preds = %0
   %3 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.0)
-  tail call void @llvm.trap()
+  tail call void @exit(i32 1)
   unreachable
 
 assert.exit.L6:                                   ; preds = %0
@@ -29,7 +29,7 @@ assert.exit.L6:                                   ; preds = %0
 
 assert.then.L10:                                  ; preds = %assert.exit.L6
   %6 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.1)
-  tail call void @llvm.trap()
+  tail call void @exit(i32 1)
   unreachable
 
 assert.exit.L10:                                  ; preds = %assert.exit.L6
@@ -39,7 +39,7 @@ assert.exit.L10:                                  ; preds = %assert.exit.L6
 
 assert.then.L14:                                  ; preds = %assert.exit.L10
   %9 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.2)
-  tail call void @llvm.trap()
+  tail call void @exit(i32 1)
   unreachable
 
 assert.exit.L14:                                  ; preds = %assert.exit.L10
@@ -49,7 +49,7 @@ assert.exit.L14:                                  ; preds = %assert.exit.L10
 
 assert.then.L18:                                  ; preds = %assert.exit.L14
   %12 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.3)
-  tail call void @llvm.trap()
+  tail call void @exit(i32 1)
   unreachable
 
 assert.exit.L18:                                  ; preds = %assert.exit.L14
@@ -58,7 +58,7 @@ assert.exit.L18:                                  ; preds = %assert.exit.L14
 
 assert.then.L26:                                  ; preds = %assert.exit.L18
   %14 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.4)
-  tail call void @llvm.trap()
+  tail call void @exit(i32 1)
   unreachable
 
 assert.exit.L26:                                  ; preds = %assert.exit.L18
@@ -67,7 +67,7 @@ assert.exit.L26:                                  ; preds = %assert.exit.L18
 
 assert.then.L28:                                  ; preds = %assert.exit.L26
   %16 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.5)
-  tail call void @llvm.trap()
+  tail call void @exit(i32 1)
   unreachable
 
 assert.exit.L28:                                  ; preds = %assert.exit.L26
@@ -81,7 +81,7 @@ declare double @_Z8toDoubleh(i8) local_unnamed_addr
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 ; Function Attrs: cold noreturn nounwind
-declare void @llvm.trap() #2
+declare void @exit(i32) local_unnamed_addr #2
 
 declare i32 @_Z5toInth(i8) local_unnamed_addr
 

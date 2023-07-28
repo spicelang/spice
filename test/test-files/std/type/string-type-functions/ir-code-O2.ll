@@ -28,7 +28,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
 
 assert.then.L35:                                  ; preds = %0
   %8 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.7)
-  tail call void @llvm.trap()
+  tail call void @exit(i32 1)
   unreachable
 
 assert.exit.L35:                                  ; preds = %0
@@ -37,7 +37,7 @@ assert.exit.L35:                                  ; preds = %0
 
 assert.then.L37:                                  ; preds = %assert.exit.L35
   %10 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.9)
-  tail call void @llvm.trap()
+  tail call void @exit(i32 1)
   unreachable
 
 assert.exit.L37:                                  ; preds = %assert.exit.L35
@@ -63,7 +63,7 @@ declare i1 @_Z6toBoolPc(ptr) local_unnamed_addr
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
 ; Function Attrs: cold noreturn nounwind
-declare void @llvm.trap() #2
+declare void @exit(i32) local_unnamed_addr #2
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
