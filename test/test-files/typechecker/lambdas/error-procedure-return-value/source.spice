@@ -1,5 +1,5 @@
 f<int> main() {
-    p(int, int) add = (int x, int y) -> {
+    p(int, int) add = p(int x, int y) {
         return x + y;
     };
 }

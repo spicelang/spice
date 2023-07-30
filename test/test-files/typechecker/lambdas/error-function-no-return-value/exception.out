@@ -1,8 +1,8 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/lambdas/error-function-no-return-value/source.spice:2:52:
+[Error|Semantic] ./test-files/typechecker/lambdas/error-function-no-return-value/source.spice:2:51:
 Return without initialization of result variable: Return without value, but result variable is not initialized yet
 
-2  x, int y) -> int { return; };
-                      ^^^^^^
+2  nt>(int x, int y) { return; };
+                       ^^^^^^

@@ -1,5 +1,5 @@
 f<int> main() {
-    f<int>(int, int) add = (int x, int y) -> dyn {
+    f<int>(int, int) add = f<dyn>(int x, int y) {
         return x + y;
     };
 }

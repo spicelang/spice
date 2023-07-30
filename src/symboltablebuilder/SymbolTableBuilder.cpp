@@ -514,25 +514,54 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
   return nullptr;
 }
 
-std::any SymbolTableBuilder::visitLambda(LambdaNode *node) {
+std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
   // Create scope for the anonymous block body
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
 
   // Create symbol for 'result' variable
-  if (node->isFunction && node->hasBody)
-    currentScope->insert(RETURN_VARIABLE_NAME, node);
+  currentScope->insert(RETURN_VARIABLE_NAME, node);
 
   // Create symbols for the parameters
   if (node->hasParams)
     visit(node->paramLst());
 
-  // Visit body or lambda expression
-  if (node->hasBody) {
-    visit(node->body());
-  } else {
-    assert(node->isFunction);
-    visit(node->lambdaExpr());
-  }
+  // Visit body
+  visit(node->body());
+
+  // Leave anonymous block body scope
+  currentScope = node->bodyScope->parent;
+
+  return nullptr;
+}
+
+std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
+  // Create scope for the anonymous block body
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
+
+  // Create symbols for the parameters
+  if (node->hasParams)
+    visit(node->paramLst());
+
+  // Visit body
+  visit(node->body());
+
+  // Leave anonymous block body scope
+  currentScope = node->bodyScope->parent;
+
+  return nullptr;
+}
+
+std::any SymbolTableBuilder::visitLambdaExpr(LambdaExprNode *node) {
+  // Create scope for the anonymous block body
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->lambdaExpr()->codeLoc);
+
+  // Create symbols for the parameters
+  if (node->hasParams)
+    visit(node->paramLst());
+
+  // Visit lambda expression
+  visit(node->lambdaExpr());
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;

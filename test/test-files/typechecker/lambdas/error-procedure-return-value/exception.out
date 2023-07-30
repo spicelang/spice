@@ -1,8 +1,5 @@
-[Error|Compiler]:
-Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+[Error|Semantic] ./test-files/typechecker/lambdas/error-procedure-return-value/source.spice:2:5:
+Wrong data type for operator: Cannot apply '=' operator on types p(int,int) and f<dyn>(int,int)
 
-[Error|Semantic] ./test-files/typechecker/lambdas/error-procedure-return-value/source.spice:3:16:
-Return with value in procedure: Return with value in procedure is not allowed
-
-3  return x + y;
-          ^^^^^
+2  p(int, int) add = p(int x, int y) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

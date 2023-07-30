@@ -142,7 +142,11 @@ std::any ASTVisitor::visitArrayInitialization(ArrayInitializationNode *node) { r
 
 std::any ASTVisitor::visitStructInstantiation(StructInstantiationNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitLambda(LambdaNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitLambdaFunc(LambdaFuncNode *node) { return visitChildren(node); }
+
+std::any ASTVisitor::visitLambdaProc(LambdaProcNode *node) { return visitChildren(node); }
+
+std::any ASTVisitor::visitLambdaExpr(LambdaExprNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitDataType(DataTypeNode *node) { return visitChildren(node); }
 

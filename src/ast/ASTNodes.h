@@ -1597,7 +1597,9 @@ public:
   [[nodiscard]] FctCallNode *fctCall() const { return getChild<FctCallNode>(); }
   [[nodiscard]] ArrayInitializationNode *arrayInitialization() const { return getChild<ArrayInitializationNode>(); }
   [[nodiscard]] StructInstantiationNode *structInstantiation() const { return getChild<StructInstantiationNode>(); }
-  [[nodiscard]] LambdaNode *lambda() const { return getChild<LambdaNode>(); }
+  [[nodiscard]] LambdaFuncNode *lambdaFunc() const { return getChild<LambdaFuncNode>(); }
+  [[nodiscard]] LambdaProcNode *lambdaProc() const { return getChild<LambdaProcNode>(); }
+  [[nodiscard]] LambdaExprNode *lambdaExpr() const { return getChild<LambdaExprNode>(); }
   [[nodiscard]] DataTypeNode *nilType() const { return getChild<DataTypeNode>(); }
 
   // Public members
@@ -1722,20 +1724,20 @@ public:
   std::vector<Struct *> instantiatedStructs;
 };
 
-// ======================================================== LambdaNode ===========================================================
+// ======================================================== LambdaFuncNode
+// ===========================================================
 
-class LambdaNode : public ASTNode {
+class LambdaFuncNode : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
 
   // Visit methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambda(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambda(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaFunc(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaFunc(this); }
 
   // Public get methods
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
-  [[nodiscard]] AssignExprNode *lambdaExpr() const { return getChild<AssignExprNode>(); }
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
@@ -1745,8 +1747,57 @@ public:
 
   // Public members
   bool hasParams = false;
-  bool isFunction = false;
-  bool hasBody = false;
+  Scope *bodyScope = nullptr;
+  Function lambdaFunction;
+};
+
+// ======================================================== LambdaProcNode
+// ===========================================================
+
+class LambdaProcNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visit methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaProc(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaProc(this); }
+
+  // Public get methods
+  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
+  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+
+  // Public members
+  bool hasParams = false;
+  Scope *bodyScope = nullptr;
+  Function lambdaProcedure;
+};
+
+// ======================================================== LambdaExprNode
+// ===========================================================
+
+class LambdaExprNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visit methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaExpr(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaExpr(this); }
+
+  // Public get methods
+  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
+  [[nodiscard]] AssignExprNode *lambdaExpr() const { return getChild<AssignExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
+
+  // Public members
+  bool hasParams = false;
   Scope *bodyScope = nullptr;
   Function lambdaFunction;
 };

@@ -153,8 +153,12 @@ bool FctCallNode::hasReturnValueReceiver() const {
   return !node->parent->isStmtNode();
 }
 
-bool LambdaNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return !hasBody || body()->returnsOnAllControlPaths(overrideUnreachable);
+bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+  return body()->returnsOnAllControlPaths(overrideUnreachable);
+}
+
+bool LambdaProcNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+  return body()->returnsOnAllControlPaths(overrideUnreachable);
 }
 
 } // namespace spice::compiler

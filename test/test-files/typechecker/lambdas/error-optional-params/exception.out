@@ -1,8 +1,5 @@
-[Error|Compiler]:
-Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+[Error|Semantic] ./test-files/typechecker/lambdas/error-optional-params/source.spice:2:5:
+Wrong data type for operator: Cannot apply '=' operator on types p(int,bool) and f<dyn>(int,bool)
 
-[Error|Semantic] ./test-files/typechecker/lambdas/error-optional-params/source.spice:2:22:
-Lambda with optional parameters: Lambdas cannot have optional parameters
-
-2  (int x, bool y = false) -> {
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2  p(int, bool) x = p(int x, bool y = false) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
