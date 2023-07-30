@@ -20,11 +20,11 @@ f<ShoppingCart> newShoppingCart() {
 }
 
 f<ShoppingCart> anotherShoppingCart() {
-    ShoppingItem[3] items = {
+    ShoppingItem[3] items = [
         ShoppingItem { "Spaghetti", 100.0, "g" },
         ShoppingItem { "Rice", 125.5, "g" },
         ShoppingItem { "Doughnut", 6.0, "pcs" }
-    };
+    ];
     return ShoppingCart { "Another Cart", items };
 }
 

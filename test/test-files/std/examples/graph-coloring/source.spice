@@ -58,12 +58,12 @@ f<int> main() {
        | /   |
       (0)---(1)
     */
-    bool[VERTEX_COUNT][VERTEX_COUNT] graph = {
-        { false, true, true, true },
-        { true, false, true, false },
-        { true, true, false, true },
-        { true, false, true, false }
-    };
+    bool[VERTEX_COUNT][VERTEX_COUNT] graph = [
+        [ false, true, true, true ],
+        [ true, false, true, false ],
+        [ true, true, false, true ],
+        [ true, false, true, false ]
+    ];
     int m = 3; // Number of colors
 
     // Initialize all color values as 0.

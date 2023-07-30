@@ -15,7 +15,7 @@ p sort(int[10]& array, f<bool>(int, int) sortFct) {
 }
 
 f<int> main() {
-    int[10] array = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+    int[10] array = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
     sort(array, (int a, int b) -> (a > b));
     printArray(array);
 }

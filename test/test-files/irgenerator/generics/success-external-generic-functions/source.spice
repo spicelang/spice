@@ -3,7 +3,7 @@ import "source1" as s1;
 f<int> main() {
     s1::printFormat(1.123);
     s1::printFormat(543);
-    s1::printFormat({"Hello", "World"});
+    s1::printFormat(["Hello", "World"]);
     int test = 1234;
     s1::printFormat(&test);
 

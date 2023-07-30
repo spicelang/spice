@@ -1,5 +1,5 @@
 f<int> main() {
     int[2] intArray;
-    intArray = { 1, 2 };
+    intArray = [ 1, 2 ];
     printf("intArray[1]: %d\n", intArray[1]);
 }

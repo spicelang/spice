@@ -1,4 +1,4 @@
 f<int> main() {
-    dyn array = { 1l, 2l , 3l, 4l , 5l, false, 7l };
+    dyn array = [ 1l, 2l , 3l, 4l , 5l, false, 7l ];
     printf("Array item: %d", array[1]);
 }
