@@ -4,7 +4,7 @@ type Test struct {
 }
 
 f<int> main() {
-    Test t = {};
+    Test t = Test{};
     printf("Int: %d\n", t.i);
     printf("String: %s\n", t.s);
 }

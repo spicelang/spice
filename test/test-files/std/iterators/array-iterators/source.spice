@@ -2,7 +2,7 @@ import "std/runtime/iterator_rt";
 
 f<int> main() {
     // Create test array to iterate over
-    int[5] a = { 123, 4321, 9876, 321, -99 };
+    int[5] a = [ 123, 4321, 9876, 321, -99 ];
 
     // Test base functionality
     dyn it = iterate(a, len(a));

@@ -662,9 +662,9 @@ digraph {
  L15C24_atomicExpr -> L15C24_value;
  L15C24_arrayInitialization [color="lightgreen",label="arrayInitialization"];
  L15C24_value -> L15C24_arrayInitialization;
- L15C24 [color="lightblue",label="LBRACE: {"];
+ L15C24 [color="lightblue",label="LBRACKET: ["];
  L15C24_arrayInitialization -> L15C24
- L15C25 [color="lightblue",label="RBRACE: }"];
+ L15C25 [color="lightblue",label="RBRACKET: ]"];
  L15C24_arrayInitialization -> L15C25
  L15C26 [color="lightblue",label="SEMICOLON: ;"];
  L15C4_stmt -> L15C26

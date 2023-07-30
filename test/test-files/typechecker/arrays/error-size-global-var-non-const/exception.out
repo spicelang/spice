@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./test-files/typechecker/arrays/error-size-global-var-non-const/source.spice:4:5:
 Expected const variable: The size of the array must be known at compile time
 
-4  char[SIZE] test = {'H', 'e', '
+4  char[SIZE] test = ['H', 'e', '
    ^^^^^^^^^^
