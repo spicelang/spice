@@ -9,9 +9,6 @@
 
 namespace spice::compiler {
 
-// Forward declarations
-class ThreadFactory;
-
 class ExternalLinkerInterface {
 public:
   // Constructors

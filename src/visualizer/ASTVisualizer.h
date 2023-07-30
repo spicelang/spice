@@ -92,6 +92,7 @@ public:
   std::any visitFctCall(FctCallNode *ctx) override { return buildNode(ctx); }
   std::any visitArrayInitialization(ArrayInitializationNode *ctx) override { return buildNode(ctx); }
   std::any visitStructInstantiation(StructInstantiationNode *ctx) override { return buildNode(ctx); }
+  std::any visitLambda(LambdaNode *ctx) override { return buildNode(ctx); }
   std::any visitDataType(DataTypeNode *ctx) override { return buildNode(ctx); }
   std::any visitBaseDataType(BaseDataTypeNode *ctx) override { return buildNode(ctx); }
   std::any visitCustomDataType(CustomDataTypeNode *ctx) override { return buildNode(ctx); }
@@ -271,6 +272,8 @@ private:
       return "ArrayInitialization";
     if (std::is_same<StructInstantiationNode, T>())
       return "StructInstantiation";
+    if (std::is_same<LambdaNode, T>())
+      return "Lambda";
     if (std::is_same<DataTypeNode, T>())
       return "DataType";
     if (std::is_same<BaseDataTypeNode, T>())

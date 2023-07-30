@@ -127,129 +127,153 @@ define dso_local i32 @main() #0 {
   call void @_ZN6String4ctorEPc(ptr %2, ptr @anon.string.1)
   %41 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %1, ptr %2)
   store %struct.String %41, ptr %3, align 8
-  %42 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, %struct.String %41)
+  %42 = getelementptr inbounds %struct.String, ptr %3, i32 0, i32 0
+  %43 = load ptr, ptr %42, align 8
+  %44 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %43)
   call void @_ZN6String4ctorEPc(ptr %4, ptr @anon.string.2)
   call void @_ZN6String4ctorEPc(ptr %5, ptr @anon.string.3)
-  %43 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %4, ptr %5)
-  store %struct.String %43, ptr %s1, align 8
-  store %struct.String %43, ptr %s1, align 8
-  %44 = load %struct.String, ptr %s1, align 8
-  %45 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, %struct.String %44)
+  %45 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %4, ptr %5)
+  store %struct.String %45, ptr %s1, align 8
+  store %struct.String %45, ptr %s1, align 8
+  %46 = getelementptr inbounds %struct.String, ptr %s1, i32 0, i32 0
+  %47 = load ptr, ptr %46, align 8
+  %48 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %47)
   store ptr @anon.string.4, ptr %6, align 8
-  %46 = call %struct.String @_Z7op.plusRK6StringRKPc(ptr %s1, ptr %6)
-  store %struct.String %46, ptr %7, align 8
-  %47 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, %struct.String %46)
+  %49 = call %struct.String @_Z7op.plusRK6StringRKPc(ptr %s1, ptr %6)
+  store %struct.String %49, ptr %7, align 8
+  %50 = getelementptr inbounds %struct.String, ptr %7, i32 0, i32 0
+  %51 = load ptr, ptr %50, align 8
+  %52 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %51)
   call void @_ZN6String4ctorEPc(ptr %8, ptr @anon.string.5)
-  %48 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %8, ptr %s1)
-  store %struct.String %48, ptr %9, align 8
-  %49 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, %struct.String %48)
-  %50 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %s1, ptr %s1)
-  store %struct.String %50, ptr %10, align 8
-  %51 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, %struct.String %50)
+  %53 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %8, ptr %s1)
+  store %struct.String %53, ptr %9, align 8
+  %54 = getelementptr inbounds %struct.String, ptr %9, i32 0, i32 0
+  %55 = load ptr, ptr %54, align 8
+  %56 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, ptr %55)
+  %57 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %s1, ptr %s1)
+  store %struct.String %57, ptr %10, align 8
+  %58 = getelementptr inbounds %struct.String, ptr %10, i32 0, i32 0
+  %59 = load ptr, ptr %58, align 8
+  %60 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, ptr %59)
   store ptr @anon.string.6, ptr %11, align 8
-  %52 = call %struct.String @_Z7op.plusRK6StringRKPc(ptr %s1, ptr %11)
-  store %struct.String %52, ptr %12, align 8
-  %53 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %12, ptr %s1)
-  store %struct.String %53, ptr %13, align 8
-  %54 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.5, %struct.String %53)
+  %61 = call %struct.String @_Z7op.plusRK6StringRKPc(ptr %s1, ptr %11)
+  store %struct.String %61, ptr %12, align 8
+  %62 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %12, ptr %s1)
+  store %struct.String %62, ptr %13, align 8
+  %63 = getelementptr inbounds %struct.String, ptr %13, i32 0, i32 0
+  %64 = load ptr, ptr %63, align 8
+  %65 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.5, ptr %64)
   call void @_ZN6String4ctorEPc(ptr %14, ptr @anon.string.7)
-  %55 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %14, ptr %s1)
-  store %struct.String %55, ptr %15, align 8
+  %66 = call %struct.String @_Z7op.plusRK6StringRK6String(ptr %14, ptr %s1)
+  store %struct.String %66, ptr %15, align 8
   store ptr @anon.string.8, ptr %16, align 8
-  %56 = call %struct.String @_Z7op.plusRK6StringRKPc(ptr %15, ptr %16)
-  store %struct.String %56, ptr %17, align 8
-  %57 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.6, %struct.String %56)
+  %67 = call %struct.String @_Z7op.plusRK6StringRKPc(ptr %15, ptr %16)
+  store %struct.String %67, ptr %17, align 8
+  %68 = getelementptr inbounds %struct.String, ptr %17, i32 0, i32 0
+  %69 = load ptr, ptr %68, align 8
+  %70 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.6, ptr %69)
   call void @_ZN6String4ctorEPc(ptr %18, ptr @anon.string.9)
-  %58 = call %struct.String @_Z6op.mulsRK6String(i16 4, ptr %18)
-  store %struct.String %58, ptr %19, align 8
-  %59 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.7, %struct.String %58)
+  %71 = call %struct.String @_Z6op.mulsRK6String(i16 4, ptr %18)
+  store %struct.String %71, ptr %19, align 8
+  %72 = getelementptr inbounds %struct.String, ptr %19, i32 0, i32 0
+  %73 = load ptr, ptr %72, align 8
+  %74 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.7, ptr %73)
   call void @_ZN6String4ctorEPc(ptr %20, ptr @anon.string.10)
-  %60 = call %struct.String @_Z6op.mulRK6Stringi(ptr %20, i32 5)
-  store %struct.String %60, ptr %s2, align 8
-  store %struct.String %60, ptr %s2, align 8
-  %61 = load %struct.String, ptr %s2, align 8
-  %62 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.8, %struct.String %61)
+  %75 = call %struct.String @_Z6op.mulRK6Stringi(ptr %20, i32 5)
+  store %struct.String %75, ptr %s2, align 8
+  store %struct.String %75, ptr %s2, align 8
+  %76 = getelementptr inbounds %struct.String, ptr %s2, i32 0, i32 0
+  %77 = load ptr, ptr %76, align 8
+  %78 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.8, ptr %77)
   call void @_ZN6String4ctorEh(ptr %21, i8 97)
-  %63 = call %struct.String @_Z6op.muliRK6String(i32 20, ptr %21)
-  store %struct.String %63, ptr %22, align 8
-  %64 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.9, %struct.String %63)
+  %79 = call %struct.String @_Z6op.muliRK6String(i32 20, ptr %21)
+  store %struct.String %79, ptr %22, align 8
+  %80 = getelementptr inbounds %struct.String, ptr %22, i32 0, i32 0
+  %81 = load ptr, ptr %80, align 8
+  %82 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.9, ptr %81)
   call void @_ZN6String4ctorEh(ptr %23, i8 99)
-  %65 = call %struct.String @_Z6op.muliRK6String(i32 2, ptr %23)
-  store %struct.String %65, ptr %24, align 8
-  %66 = call %struct.String @_Z6op.mulRK6Stringi(ptr %24, i32 7)
-  store %struct.String %66, ptr %s3, align 8
-  store %struct.String %66, ptr %s3, align 8
-  %67 = load %struct.String, ptr %s3, align 8
-  %68 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.10, %struct.String %67)
+  %83 = call %struct.String @_Z6op.muliRK6String(i32 2, ptr %23)
+  store %struct.String %83, ptr %24, align 8
+  %84 = call %struct.String @_Z6op.mulRK6Stringi(ptr %24, i32 7)
+  store %struct.String %84, ptr %s3, align 8
+  store %struct.String %84, ptr %s3, align 8
+  %85 = getelementptr inbounds %struct.String, ptr %s3, i32 0, i32 0
+  %86 = load ptr, ptr %85, align 8
+  %87 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.10, ptr %86)
   call void @_ZN6String4ctorEPc(ptr %25, ptr @anon.string.11)
-  %69 = call %struct.String @_Z6op.mulRK6Stringi(ptr %25, i32 1)
-  store %struct.String %69, ptr %26, align 8
-  %70 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.11, %struct.String %69)
-  %71 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.12, ptr @anon.string.13)
-  %72 = zext i1 %71 to i32
-  %73 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i32 %72)
-  %74 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.14, ptr @anon.string.15)
-  %75 = zext i1 %74 to i32
-  %76 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.13, i32 %75)
-  %77 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.16, ptr @anon.string.17)
-  %78 = zext i1 %77 to i32
-  %79 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.14, i32 %78)
+  %88 = call %struct.String @_Z6op.mulRK6Stringi(ptr %25, i32 1)
+  store %struct.String %88, ptr %26, align 8
+  %89 = getelementptr inbounds %struct.String, ptr %26, i32 0, i32 0
+  %90 = load ptr, ptr %89, align 8
+  %91 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.11, ptr %90)
+  %92 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.12, ptr @anon.string.13)
+  %93 = zext i1 %92 to i32
+  %94 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i32 %93)
+  %95 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.14, ptr @anon.string.15)
+  %96 = zext i1 %95 to i32
+  %97 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.13, i32 %96)
+  %98 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.16, ptr @anon.string.17)
+  %99 = zext i1 %98 to i32
+  %100 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.14, i32 %99)
   call void @_ZN6String4ctorEPc(ptr %27, ptr @anon.string.18)
   call void @_ZN6String4ctorEPc(ptr %28, ptr @anon.string.19)
-  %80 = call i1 @_Z8op.equalRK6StringRK6String(ptr %27, ptr %28)
-  %81 = zext i1 %80 to i32
-  %82 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.15, i32 %81)
+  %101 = call i1 @_Z8op.equalRK6StringRK6String(ptr %27, ptr %28)
+  %102 = zext i1 %101 to i32
+  %103 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.15, i32 %102)
   call void @_ZN6String4ctorEPc(ptr %29, ptr @anon.string.20)
   call void @_ZN6String4ctorEPc(ptr %30, ptr @anon.string.21)
-  %83 = call i1 @_Z8op.equalRK6StringRK6String(ptr %29, ptr %30)
-  %84 = zext i1 %83 to i32
-  %85 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.16, i32 %84)
+  %104 = call i1 @_Z8op.equalRK6StringRK6String(ptr %29, ptr %30)
+  %105 = zext i1 %104 to i32
+  %106 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.16, i32 %105)
   call void @_ZN6String4ctorEPc(ptr %31, ptr @anon.string.22)
   call void @_ZN6String4ctorEPc(ptr %32, ptr @anon.string.23)
-  %86 = call i1 @_Z8op.equalRK6StringRK6String(ptr %31, ptr %32)
-  %87 = zext i1 %86 to i32
-  %88 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.17, i32 %87)
-  %89 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.24, ptr @anon.string.25)
-  %90 = xor i1 %89, true
-  %91 = zext i1 %90 to i32
-  %92 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.18, i32 %91)
-  %93 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.26, ptr @anon.string.27)
-  %94 = xor i1 %93, true
-  %95 = zext i1 %94 to i32
-  %96 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.19, i32 %95)
-  %97 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.28, ptr @anon.string.29)
-  %98 = xor i1 %97, true
-  %99 = zext i1 %98 to i32
-  %100 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.20, i32 %99)
+  %107 = call i1 @_Z8op.equalRK6StringRK6String(ptr %31, ptr %32)
+  %108 = zext i1 %107 to i32
+  %109 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.17, i32 %108)
+  %110 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.24, ptr @anon.string.25)
+  %111 = xor i1 %110, true
+  %112 = zext i1 %111 to i32
+  %113 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.18, i32 %112)
+  %114 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.26, ptr @anon.string.27)
+  %115 = xor i1 %114, true
+  %116 = zext i1 %115 to i32
+  %117 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.19, i32 %116)
+  %118 = call i1 @_Z10isRawEqualPcPc(ptr @anon.string.28, ptr @anon.string.29)
+  %119 = xor i1 %118, true
+  %120 = zext i1 %119 to i32
+  %121 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.20, i32 %120)
   call void @_ZN6String4ctorEPc(ptr %33, ptr @anon.string.30)
   call void @_ZN6String4ctorEPc(ptr %34, ptr @anon.string.31)
-  %101 = call i1 @_Z11op.notequalRK6StringRK6String(ptr %33, ptr %34)
-  %102 = zext i1 %101 to i32
-  %103 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.21, i32 %102)
+  %122 = call i1 @_Z11op.notequalRK6StringRK6String(ptr %33, ptr %34)
+  %123 = zext i1 %122 to i32
+  %124 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.21, i32 %123)
   call void @_ZN6String4ctorEPc(ptr %35, ptr @anon.string.32)
   call void @_ZN6String4ctorEPc(ptr %36, ptr @anon.string.33)
-  %104 = call i1 @_Z11op.notequalRK6StringRK6String(ptr %35, ptr %36)
-  %105 = zext i1 %104 to i32
-  %106 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.22, i32 %105)
+  %125 = call i1 @_Z11op.notequalRK6StringRK6String(ptr %35, ptr %36)
+  %126 = zext i1 %125 to i32
+  %127 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.22, i32 %126)
   call void @_ZN6String4ctorEPc(ptr %37, ptr @anon.string.34)
   call void @_ZN6String4ctorEPc(ptr %38, ptr @anon.string.35)
-  %107 = call i1 @_Z11op.notequalRK6StringRK6String(ptr %37, ptr %38)
-  %108 = zext i1 %107 to i32
-  %109 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.23, i32 %108)
+  %128 = call i1 @_Z11op.notequalRK6StringRK6String(ptr %37, ptr %38)
+  %129 = zext i1 %128 to i32
+  %130 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.23, i32 %129)
   call void @_ZN6String4ctorEPc(ptr %s4, ptr @anon.string.36)
   store i8 108, ptr %39, align 1
   call void @_Z12op.plusequalR6StringRKh(ptr %s4, ptr %39)
-  %110 = load %struct.String, ptr %s4, align 8
-  %111 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.24, %struct.String %110)
+  %131 = getelementptr inbounds %struct.String, ptr %s4, i32 0, i32 0
+  %132 = load ptr, ptr %131, align 8
+  %133 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.24, ptr %132)
   call void @_ZN6String4ctorEPc(ptr %s5, ptr @anon.string.37)
   store ptr @anon.string.38, ptr %40, align 8
   call void @_Z12op.plusequalR6StringRKPc(ptr %s5, ptr %40)
-  %112 = load %struct.String, ptr %s5, align 8
-  %113 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.25, %struct.String %112)
+  %134 = getelementptr inbounds %struct.String, ptr %s5, i32 0, i32 0
+  %135 = load ptr, ptr %134, align 8
+  %136 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.25, ptr %135)
   call void @_ZN6String4ctorEPc(ptr %s6, ptr @anon.string.39)
   call void @_Z11op.mulequalR6Stringi(ptr %s6, i32 3)
-  %114 = load %struct.String, ptr %s6, align 8
-  %115 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.26, %struct.String %114)
+  %137 = getelementptr inbounds %struct.String, ptr %s6, i32 0, i32 0
+  %138 = load ptr, ptr %137, align 8
+  %139 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.26, ptr %138)
   call void @_ZN6String4dtorEv(ptr %37)
   call void @_ZN6String4dtorEv(ptr %38)
   call void @_ZN6String4dtorEv(ptr %36)
@@ -285,11 +309,12 @@ define dso_local i32 @main() #0 {
   call void @_ZN6String4dtorEv(ptr %30)
   call void @_ZN6String4dtorEv(ptr %29)
   call void @_ZN6String4dtorEv(ptr %32)
-  %116 = load i32, ptr %result, align 4
-  ret i32 %116
+  %140 = load i32, ptr %result, align 4
+  ret i32 %140
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 declare void @_ZN6String4ctorEPc(ptr, ptr)
 
@@ -320,3 +345,4 @@ declare void @_Z11op.mulequalR6Stringi(ptr, i32)
 declare void @_ZN6String4dtorEv(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }

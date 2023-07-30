@@ -19,10 +19,11 @@ if.exit.L2:                                       ; preds = %1
   ret void
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   call void @_Z13executeActionb(i1 false)
@@ -30,4 +31,5 @@ define dso_local i32 @main() #0 {
   ret i32 %1
 }
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { nofree nounwind }
+attributes #1 = { noinline nounwind optnone uwtable }

@@ -1,0 +1,10 @@
+f<int> main() {
+    f<int>(bool&) si = (bool& input) -> int {
+        if (!input) {
+            input = false;
+        } else {
+            return 2;
+        }
+    };
+    si(false);
+}

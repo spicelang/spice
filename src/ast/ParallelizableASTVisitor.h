@@ -76,6 +76,7 @@ class ConstantNode;
 class FctCallNode;
 class ArrayInitializationNode;
 class StructInstantiationNode;
+class LambdaNode;
 class DataTypeNode;
 class BaseDataTypeNode;
 class CustomDataTypeNode;
@@ -156,6 +157,7 @@ public:
   virtual std::any visitFctCall(const FctCallNode *node);
   virtual std::any visitArrayInitialization(const ArrayInitializationNode *node);
   virtual std::any visitStructInstantiation(const StructInstantiationNode *node);
+  virtual std::any visitLambda(const LambdaNode *node);
   virtual std::any visitDataType(const DataTypeNode *node);
   virtual std::any visitBaseDataType(const BaseDataTypeNode *node);
   virtual std::any visitCustomDataType(const CustomDataTypeNode *node);

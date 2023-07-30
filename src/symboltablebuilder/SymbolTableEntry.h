@@ -52,6 +52,7 @@ public:
   const bool global;
   const CompileTimeValue *compileTimeValue = nullptr;
   bool isVolatile = false;
+  bool isParam = false;
   bool anonymous = false;
   bool used = false;
   bool omitDtorCall = false;

@@ -90,7 +90,7 @@ main:
 	movq	%rsi, %rcx
 	imulq	%rdx, %rcx
 	movq	%rsi, %r8
-	shlq	$1, %r8
+	shlq	%r8
 	addq	%r13, %r8
 	imulq	%r11, %r8
 	imulq	%r11, %r12

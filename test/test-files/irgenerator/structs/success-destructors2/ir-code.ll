@@ -31,7 +31,8 @@ define dso_local i32 @main() #0 {
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
 define private void @_ZN6Vector4dtorEv(ptr noundef nonnull %0) {
   %this = alloca ptr, align 8
@@ -42,3 +43,4 @@ define private void @_ZN6Vector4dtorEv(ptr noundef nonnull %0) {
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { nofree nounwind }

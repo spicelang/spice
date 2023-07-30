@@ -79,11 +79,12 @@ postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | 
 atomicExpr: constant | value | ((IDENTIFIER | TYPE_IDENTIFIER) SCOPE_ACCESS)* (IDENTIFIER | TYPE_IDENTIFIER) | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values
-value: fctCall | arrayInitialization | structInstantiation | NIL LESS dataType GREATER;
+value: fctCall | arrayInitialization | structInstantiation | lambda | NIL LESS dataType GREATER;
 constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
 fctCall: (IDENTIFIER SCOPE_ACCESS)* (IDENTIFIER DOT)* (IDENTIFIER | TYPE_IDENTIFIER) (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACE argLst? RBRACE;
 structInstantiation: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
+lambda: LPAREN paramLst? RPAREN ARROW (assignExpr | dataType? LBRACE stmtLst RBRACE);
 
 // Types
 dataType: specifierLst? baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | TYPE_IDENTIFIER)? RBRACKET)*;
@@ -185,6 +186,7 @@ SEMICOLON: ';';
 COLON: ':';
 COMMA: ',';
 DOT: '.';
+ARROW: '->';
 SCOPE_ACCESS: '::';
 ELLIPSIS: '...';
 FCT_ATTR_PREAMBLE: '#';

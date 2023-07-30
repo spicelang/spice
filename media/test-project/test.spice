@@ -1,66 +1,91 @@
-import "std/os/thread";
+import "std/runtime/iterator_rt";
 
-f<int> fib(int n) {
-    if n <= 2 { return 1; }
-    return fib(n - 1) + fib(n - 2);
-}
+f<int> main(int argc, string[] argv) {
+    // Create test vector to iterate over
+    Vector<int> vi = Vector<int>();
+    vi.pushBack(123);
+    vi.pushBack(4321);
+    vi.pushBack(9876);
+    assert vi.getSize() == 3;
 
-p calcFib30() {
-    int result = fib(30);
-    printf("Thread returned with result: %d\n", result);
-}
+    // Test base functionality
+    dyn it = iterate(vi);
+    assert it.isValid();
+    assert it.get() == 123;
+    assert it.get() == 123;
+    it.next();
+    assert it.get() == 4321;
+    assert it.isValid();
+    it.next();
+    dyn pair = it.getIdx();
+    assert pair.getFirst() == 2;
+    assert pair.getSecond() == 9876;
+    it.next();
+    assert !it.isValid();
 
-f<int> main() {
-    int threadCount = 8;
-    Thread[8] threads = {};
-    for unsigned int i = 0; i < threadCount; i++ {
-        threads[i] = Thread(calcFib30);
+    // Add new items to the vector
+    vi.pushBack(321);
+    vi.pushBack(-99);
+    assert it.isValid();
+
+    // Test overloaded operators
+    it -= 3;
+    assert it.get() == 123;
+    assert it.isValid();
+    it++;
+    assert it.get() == 4321;
+    it--;
+    assert it.get() == 123;
+    it += 4;
+    assert it.get() == -99;
+    it.next();
+    assert !it.isValid();
+
+    // Test foreach value
+    foreach int item : iterate(vi) {
+        item++;
     }
-    printf("Started all threads. Waiting for results ...\n");
-    for unsigned int i = 0; i < threadCount; i++ {
-        Thread& thread = threads[i];
-        thread.join();
+    assert vi.get(0) == 123;
+    assert vi.get(1) == 4321;
+    assert vi.get(2) == 9876;
+
+    // Test foreach ref
+    foreach int& item : iterate(vi) {
+        item++;
     }
-    printf("Program finished");
+    assert vi.get(0) == 124;
+    assert vi.get(1) == 4322;
+    assert vi.get(2) == 9877;
+
+    foreach long idx, int& item : iterate(vi) {
+        item += idx;
+    }
+    assert vi.get(0) == 124;
+    assert vi.get(1) == 4323;
+    assert vi.get(2) == 9879;
+
+    printf("All assertions passed!");
 }
 
-/*import "std/data/optional";
+/*f<int> main() {
+    f<string>() callbackWithoutArgs = () -> string {
+        return "Callback called!\n";
+    };
+    printf("%s", callbackWithoutArgs());
 
-f<int&> getter() {
-    printf("Getter called\n");
-    return 123;
-}
+    f<String>(String&, double) callbackWithArgs1 = (String& str, double d) -> String {
+        printf("Callback called with args: %s, %f\n", str, d);
+        return str;
+    };
+    printf("%s\n", callbackWithArgs1(String("Hello"), 3.14));
 
-f<int> main() {
-    Optional<int> opt = Optional<int>();
-    printf("%d", opt.orElseGet(getter));
+    f<short>(String, short) callbackWithArgs2 = (String str, short b) -> short {
+        printf("Callback called with args: %s, %d\n", str, b);
+        return ~b;
+    };
+    printf("%d\n", (callbackWithArgs2(String("Hello World!"), 321s) ^ 956s) == 1 ? 9 : 12);
 }*/
 
-/*import "std/os/thread";
-
-f<int> fib(int n) {
-    if n <= 2 { return 1; }
-    return fib(n - 1) + fib(n - 2);
-}
-
-p calcFib30() {
-    int result = fib(30);
-    printf("Thread returned with result: %d\n", result);
-}
-
-f<int> main() {
-    int threadCount = 8;
-    Thread[8] threads = {};
-    for unsigned int i = 0; i < threadCount; i++ {
-        threads[i] = Thread(calcFib30);
-    }
-    printf("Started all threads. Waiting for results ...\n");
-    for unsigned int i = 0; i < threadCount; i++ {
-        Thread& thread = threads[i];
-        thread.join();
-    }
-    printf("Program finished");
-}*/
 
 /*type T int|long;
 

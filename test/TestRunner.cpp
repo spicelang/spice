@@ -6,8 +6,9 @@
 #include <vector>
 
 #include <gtest/gtest.h>
-#include <llvm/ADT/Triple.h>
-#include <llvm/Support/Host.h>
+
+#include <llvm/TargetParser/Host.h>
+#include <llvm/TargetParser/Triple.h>
 
 #include <SourceFile.h>
 #include <cli/CLIInterface.h>

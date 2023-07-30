@@ -1,1 +1,2 @@
-First assertion was trueAssertion failed: Condition '1 != 1' evaluated to false.
+First assertion was true
+Assertion failed: Condition '1 != 1' evaluated to false.

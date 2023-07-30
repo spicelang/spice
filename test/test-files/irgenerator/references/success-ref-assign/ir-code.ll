@@ -104,10 +104,14 @@ assert.exit.L17:                                  ; preds = %assert.exit.L15
   ret i32 %35
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-declare void @exit(i32)
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #2
 
 attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}

@@ -53,11 +53,15 @@ declare void @_Z11printFormatPi(ptr)
 
 declare ptr @_Z7getAIncPi(ptr)
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
-declare void @exit(i32)
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #3
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { nofree nounwind }
+attributes #3 = { cold noreturn nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}

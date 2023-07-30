@@ -9,16 +9,35 @@ namespace spice::compiler {
 
 llvm::Function *StdFunctionManager::getPrintfFct() const {
   llvm::Function *printfFct = getFunction("printf", builder.getInt32Ty(), builder.getInt8PtrTy(), true);
-  // Set noundef attribute to template string
+  // Set attributes
+  printfFct->addFnAttr(llvm::Attribute::NoFree);
+  printfFct->addFnAttr(llvm::Attribute::NoUnwind);
+  printfFct->addParamAttr(0, llvm::Attribute::NoCapture);
   printfFct->addParamAttr(0, llvm::Attribute::NoUndef);
+  printfFct->addParamAttr(0, llvm::Attribute::ReadOnly);
+  printfFct->addRetAttr(llvm::Attribute::NoUndef);
   return printfFct;
 }
 
-llvm::Function *StdFunctionManager::getExitFct() const { return getProcedure("exit", builder.getInt32Ty()); }
+llvm::Function *StdFunctionManager::getExitFct() const {
+  llvm::Function *exitFct = getProcedure("exit", builder.getInt32Ty());
+  // Set attributes
+  exitFct->addFnAttr(llvm::Attribute::Cold);
+  exitFct->addFnAttr(llvm::Attribute::NoReturn);
+  exitFct->addFnAttr(llvm::Attribute::NoUnwind);
+  return exitFct;
+}
 
 llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
   llvm::Type *ptrTy = builder.getPtrTy();
-  return getProcedure("llvm.memcpy.p0.p0.i64", {ptrTy, ptrTy, builder.getInt64Ty(), builder.getInt1Ty()});
+  llvm::ArrayRef<llvm::Type *> paramList = {ptrTy, ptrTy, builder.getInt64Ty()};
+  llvm::Function *memcpyFct = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::memcpy, paramList);
+  // Set attributes
+  memcpyFct->addFnAttr(llvm::Attribute::NoCallback);
+  memcpyFct->addFnAttr(llvm::Attribute::NoFree);
+  memcpyFct->addFnAttr(llvm::Attribute::NoUnwind);
+  memcpyFct->addFnAttr(llvm::Attribute::WillReturn);
+  return memcpyFct;
 }
 
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
@@ -51,9 +70,12 @@ llvm::Function *StdFunctionManager::getIteratorNextFct(const Function *spiceFunc
 
 llvm::Function *StdFunctionManager::getFunction(const char *funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
                                                 bool varArg /*=false*/) const {
+  // Check if function already exists in the current module
   llvm::Function *opFct = module->getFunction(funcName);
   if (opFct != nullptr)
     return opFct;
+
+  // Add function to the current module
   llvm::FunctionType *opFctTy = llvm::FunctionType::get(returnType, args, varArg);
   module->getOrInsertFunction(funcName, opFctTy);
   return module->getFunction(funcName);

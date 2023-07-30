@@ -95,6 +95,7 @@ public:
   std::any visitFctCall(SpiceParser::FctCallContext *ctx) override { return buildRule(ctx); }
   std::any visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) override { return buildRule(ctx); }
   std::any visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) override { return buildRule(ctx); }
+  std::any visitLambda(SpiceParser::LambdaContext *ctx) override { return buildRule(ctx); }
   std::any visitConstant(SpiceParser::ConstantContext *ctx) override { return buildRule(ctx); }
   std::any visitDataType(SpiceParser::DataTypeContext *ctx) override { return buildRule(ctx); }
   std::any visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) override { return buildRule(ctx); }

@@ -453,9 +453,11 @@ declare void @_ZN6VectorIiE8pushBackERKi(ptr, ptr)
 
 declare i64 @_ZN6VectorIiE7getSizeEv(ptr)
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
-declare void @exit(i32)
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #3
 
 declare %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr)
 
@@ -485,6 +487,8 @@ declare void @_ZN6VectorIiE4dtorEv(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { nofree nounwind }
+attributes #3 = { cold noreturn nounwind }
 
 !llvm.module.flags = !{!7, !8, !9, !10, !11, !12, !13}
 !llvm.ident = !{!14}

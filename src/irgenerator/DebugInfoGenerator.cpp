@@ -13,7 +13,7 @@
 
 namespace spice::compiler {
 
-void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std::filesystem::path &sourceFileDir) {
+void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::filesystem::path sourceFileDir) {
   llvm::Module *module = irGenerator->module;
   llvm::LLVMContext &context = irGenerator->context;
   const std::string producerString = "spice version " + std::string(SPICE_VERSION);
@@ -35,6 +35,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, const std
   // Create compilation unit
   std::filesystem::path absolutePath = std::filesystem::absolute(sourceFileDir / sourceFileName);
   absolutePath.make_preferred();
+  sourceFileDir.make_preferred();
   llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
   compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C11, cuDiFile, producerString,
                                              irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,

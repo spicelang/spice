@@ -52,7 +52,7 @@ for.exit.L4:                                      ; preds = %for.head.L5.prehead
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #0
 
 ; Function Attrs: nofree nosync nounwind memory(argmem: readwrite)
-define private fastcc i1 @_Z11solveSudokuPA9A9iii(ptr %0, i32 %1, i32 %2) unnamed_addr #1 {
+define private fastcc i1 @_Z11solveSudokuPA9A9iii(ptr nocapture %0, i32 %1, i32 %2) unnamed_addr #1 {
 land.exit.L45C8:
   %3 = icmp eq i32 %1, 8
   %4 = icmp eq i32 %2, 9
@@ -126,7 +126,7 @@ if.then.L52:                                      ; preds = %if.exit.L45
   %54 = add i32 %spec.select23, 1
   %55 = icmp eq i32 %spec.select, 8
   %56 = icmp eq i32 %54, 9
-  %land_phi = select i1 %55, i1 %56, i1 false
+  %land_phi = and i1 %55, %56
   br i1 %land_phi, label %common.ret, label %if.exit.L45
 
 for.body.L56:                                     ; preds = %for.head.L56.preheader, %if.exit.L57
@@ -409,7 +409,7 @@ if.then.L83:                                      ; preds = %0
   br label %if.exit.L83
 
 if.else.L83:                                      ; preds = %0
-  %2 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
   br label %if.exit.L83
 
 if.exit.L83:                                      ; preds = %if.else.L83, %if.then.L83

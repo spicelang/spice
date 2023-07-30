@@ -14,7 +14,8 @@ define private i32 @_Z8testFuncv() {
   ret i32 1
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
 
 define private i32 @_Z8testFuncPc(ptr %0) {
   %result = alloca i32, align 4
@@ -26,7 +27,7 @@ define private i32 @_Z8testFuncPc(ptr %0) {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
   %res = alloca i32, align 4
   store i32 0, ptr %result, align 4
@@ -40,4 +41,5 @@ define dso_local i32 @main() #0 {
   ret i32 %5
 }
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { nofree nounwind }
+attributes #1 = { noinline nounwind optnone uwtable }

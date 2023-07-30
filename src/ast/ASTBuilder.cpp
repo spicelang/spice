@@ -974,6 +974,20 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
   return concludeNode(ctx, structInstantiationNode);
 }
 
+std::any ASTBuilder::visitLambda(SpiceParser::LambdaContext *ctx) {
+  auto lambdaNode = createNode<LambdaNode>(ctx);
+
+  // Enrich
+  lambdaNode->hasParams = ctx->paramLst();
+  lambdaNode->isFunction = ctx->dataType() || ctx->assignExpr();
+  lambdaNode->hasBody = ctx->stmtLst();
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, lambdaNode);
+}
+
 std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   auto dataTypeNode = createNode<DataTypeNode>(ctx);
 

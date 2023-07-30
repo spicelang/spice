@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./test-files/typechecker/interfaces/error-template-non-generic-type/source.spice:2:20:
+Expected a generic type: A template list can only contain generic types
+
+2  f<bool> accept<int>(Visitor*);
+                  ^^^

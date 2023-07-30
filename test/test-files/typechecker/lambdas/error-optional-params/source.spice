@@ -1,0 +1,6 @@
+f<int> main() {
+    p(int, bool) x = (int x, bool y = false) -> {
+        x++;
+    };
+    x(1, true);
+}

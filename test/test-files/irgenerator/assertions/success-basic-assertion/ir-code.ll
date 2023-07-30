@@ -4,7 +4,7 @@ target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16
 target triple = "x86_64-w64-windows-gnu"
 
 @anon.string.0 = private unnamed_addr constant [55 x i8] c"Assertion failed: Condition 'true' evaluated to false.\00", align 1
-@printf.str.0 = private unnamed_addr constant [25 x i8] c"First assertion was true\00", align 1
+@printf.str.0 = private unnamed_addr constant [26 x i8] c"First assertion was true\0A\00", align 1
 @anon.string.1 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition '1 != 1' evaluated to false.\00", align 1
 @printf.str.1 = private unnamed_addr constant [12 x i8] c"Unreachable\00", align 1
 
@@ -34,10 +34,14 @@ assert.exit.L5:                                   ; preds = %assert.exit.L2
   ret i32 %5
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-declare void @exit(i32)
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #2
 
 attributes #0 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}

@@ -69,11 +69,15 @@ assert.exit.L15:                                  ; preds = %assert.exit.L14
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
-declare void @exit(i32)
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #3
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { nofree nounwind }
+attributes #3 = { cold noreturn nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}

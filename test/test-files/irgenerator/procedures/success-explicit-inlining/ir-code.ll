@@ -13,10 +13,11 @@ define private void @_Z11printAValuev() #0 {
   ret void
 }
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #1 {
+define dso_local i32 @main() #2 {
   %result = alloca i32, align 4
   store i32 0, ptr %result, align 4
   %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
@@ -27,4 +28,5 @@ define dso_local i32 @main() #1 {
 }
 
 attributes #0 = { alwaysinline }
-attributes #1 = { noinline nounwind optnone uwtable }
+attributes #1 = { nofree nounwind }
+attributes #2 = { noinline nounwind optnone uwtable }

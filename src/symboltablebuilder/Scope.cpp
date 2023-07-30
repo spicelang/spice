@@ -73,6 +73,9 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
     // Skip 'this' and result variables
     if (name == THIS_VARIABLE_NAME || name == RETURN_VARIABLE_NAME)
       continue;
+    // Skip parameters (ToDo: Remove when copy constructors work for by-value argument passing)
+    if (entry.isParam)
+      continue;
     // Found variable, that goes out of scope
     varsGoingOutOfScope.push_back(&symbolTable.symbols.at(name));
   }

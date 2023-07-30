@@ -508,7 +508,34 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
     visit(node->assignExpr());
 
   // Add variable entry to symbol table
-  currentScope->insert(node->varName, node);
+  SymbolTableEntry *varEntry = currentScope->insert(node->varName, node);
+  varEntry->isParam = node->isParam;
+
+  return nullptr;
+}
+
+std::any SymbolTableBuilder::visitLambda(LambdaNode *node) {
+  // Create scope for the anonymous block body
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
+
+  // Create symbol for 'result' variable
+  if (node->isFunction && node->hasBody)
+    currentScope->insert(RETURN_VARIABLE_NAME, node);
+
+  // Create symbols for the parameters
+  if (node->hasParams)
+    visit(node->paramLst());
+
+  // Visit body or lambda expression
+  if (node->hasBody) {
+    visit(node->body());
+  } else {
+    assert(node->isFunction);
+    visit(node->lambdaExpr());
+  }
+
+  // Leave anonymous block body scope
+  currentScope = node->bodyScope->parent;
 
   return nullptr;
 }

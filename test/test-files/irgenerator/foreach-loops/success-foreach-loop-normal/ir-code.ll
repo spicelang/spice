@@ -53,9 +53,11 @@ declare i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr)
 
 declare ptr @_ZN13ArrayIteratorIiE3getEv(ptr)
 
-declare i32 @printf(ptr noundef, ...)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
 declare void @_ZN13ArrayIteratorIiE4nextEv(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { nofree nounwind }

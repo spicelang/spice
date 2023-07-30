@@ -23,7 +23,7 @@ if.exit.L2:                                       ; preds = %2, %tailrecurse.bac
 
 tailrecurse.backedge:                             ; preds = %if.exit.L2, %if.exit.L3
   %.tr7.be = phi i32 [ %8, %if.exit.L3 ], [ 1, %if.exit.L2 ]
-  %.tr.be = add i32 %.tr8, -1
+  %.tr.be = add nsw i32 %.tr8, -1
   %6 = icmp eq i32 %.tr.be, 0
   br i1 %6, label %if.then.L2, label %if.exit.L2
 

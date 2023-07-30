@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {
 
@@ -388,8 +389,10 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_PTR(templateType)
       // Check if it is a generic type
-      if (!templateType.is(TY_GENERIC))
-        SOFT_ERROR_ER(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types")
+      if (!templateType.is(TY_GENERIC)) {
+        softError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
+        return static_cast<std::vector<Function *> *>(nullptr);
+      }
       // Convert generic symbol type to generic type
       GenericType *genericType = rootScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
@@ -841,7 +844,7 @@ std::any TypeChecker::visitBitwiseXorExpr(BitwiseXorExprNode *node) {
   SymbolType currentType = std::any_cast<ExprResult>(visit(node->operands()[0])).type;
   HANDLE_UNRESOLVED_TYPE_ER(currentType)
   // Loop through all remaining operands
-  for (size_t i = 2; i < node->operands().size(); i++) {
+  for (size_t i = 1; i < node->operands().size(); i++) {
     SymbolType rhsTy = std::any_cast<ExprResult>(visit(node->operands()[i])).type;
     HANDLE_UNRESOLVED_TYPE_ER(rhsTy)
     currentType = OpRuleManager::getBitwiseXorResultType(node, currentType, rhsTy, i - 1);
@@ -1107,6 +1110,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
   switch (node->op) {
   case PostfixUnaryExprNode::OP_SUBSCRIPT: {
+    lhsType = lhsType.removeReferenceWrapper();
+
     // Check if we can apply the subscript operator on the lhs type
     if (!lhsType.isOneOf({TY_ARRAY, TY_STRING, TY_PTR}))
       SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE,
@@ -1333,6 +1338,10 @@ std::any TypeChecker::visitValue(ValueNode *node) {
   // Struct instantiation
   if (node->structInstantiation())
     return visit(node->structInstantiation());
+
+  // Lambda
+  if (node->lambda())
+    return visit(node->lambda());
 
   // Typed nil
   if (node->isNil) {
@@ -1642,10 +1651,15 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionT
   const std::vector<SymbolType> expectedArgTypes = functionType.getFunctionParamTypes();
   if (actualArgTypes.size() != expectedArgTypes.size())
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
+
+  // Create resolver function, that always returns a nullptr
+  TypeMatcher::ResolverFct resolverFct = [=](const std::string &genericTypeName) { return nullptr; };
+
   for (size_t i = 0; i < actualArgTypes.size(); i++) {
     const SymbolType &actualType = actualArgTypes.at(i);
     const SymbolType &expectedType = expectedArgTypes.at(i);
-    if (!expectedType.matches(actualType, true, true, true))
+    TypeMapping tm;
+    if (!TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
       SOFT_ERROR_BOOL(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
                       "Expected " + expectedType.getName() + " but got " + actualType.getName())
   }
@@ -1830,6 +1844,77 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   structType.specifiers.setPublic(false);
 
   return ExprResult{node->setEvaluatedSymbolType(structType, manIdx), anonymousEntry};
+}
+
+std::any TypeChecker::visitLambda(LambdaNode *node) {
+  // Check if all control paths in the lambda body return
+  if (node->isFunction && !node->returnsOnAllControlPaths(nullptr))
+    SOFT_ERROR_ER(node, MISSING_RETURN_STMT, "Not all control paths of this lambda function have a return statement")
+
+  // Change to function scope
+  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+
+  // Visit return data type
+  SymbolType returnType(TY_DYN);
+  if (node->isFunction && node->hasBody) {
+    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+    HANDLE_UNRESOLVED_TYPE_ST(returnType)
+    if (returnType.is(TY_DYN)) {
+      currentScope = node->bodyScope->parent;
+      SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
+    }
+
+    // Lookup result variable
+    SymbolTableEntry *resultVarEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
+    assert(resultVarEntry != nullptr);
+    resultVarEntry->updateType(returnType, false);
+    resultVarEntry->used = true;
+  }
+
+  // Visit parameters
+  std::vector<std::string> paramNames;
+  std::vector<SymbolType> paramTypes;
+  ParamList paramList;
+  if (node->hasParams) {
+    // Visit param list to retrieve the param names
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    for (const NamedParam &param : namedParamList) {
+      if (param.isOptional)
+        softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
+
+      paramNames.push_back(param.name);
+      paramTypes.push_back(param.type);
+      paramList.push_back({param.type, param.isOptional});
+    }
+  }
+
+  // Visit body or lambda expression
+  if (node->hasBody) {
+    visit(node->body());
+  } else {
+    assert(node->isFunction);
+    returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
+    HANDLE_UNRESOLVED_TYPE_ER(returnType)
+    if (returnType.is(TY_DYN)) {
+      currentScope = node->bodyScope->parent;
+      SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed");
+    }
+  }
+
+  // Leave function body scope
+  currentScope = node->bodyScope->parent;
+
+  // Prepare type of function
+  SymbolType functionType(node->isFunction ? TY_FUNCTION : TY_PROCEDURE);
+  if (node->isFunction)
+    functionType.setFunctionReturnType(returnType);
+  functionType.setFunctionParamTypes(paramTypes);
+
+  // Create function object
+  const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
+  node->lambdaFunction = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+
+  return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
 
 std::any TypeChecker::visitDataType(DataTypeNode *node) {

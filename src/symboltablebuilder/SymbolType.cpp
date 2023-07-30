@@ -2,6 +2,7 @@
 
 #include "SymbolType.h"
 
+#include <SourceFile.h>
 #include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
 #include <irgenerator/NameMangling.h>
@@ -206,6 +207,15 @@ bool SymbolType::isIterator(const ASTNode *node) const {
   SymbolType genericType(TY_GENERIC, "T");
   SymbolType iteratorType(TY_INTERFACE, "Iterable", {.bodyScope = nullptr}, {genericType});
   return implements(iteratorType, node);
+}
+
+/**
+ * Check if the current type is a string object
+ *
+ * @return String object or not
+ */
+bool SymbolType::isStringObj() const {
+  return is(TY_STRUCT) && getOriginalSubType() == STROBJ_NAME && getBodyScope()->sourceFile->stdFile;
 }
 
 /**

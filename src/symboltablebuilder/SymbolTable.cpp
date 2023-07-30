@@ -4,6 +4,7 @@
 
 #include <ast/ASTNodes.h>
 #include <model/GenericType.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 #include <util/CodeLoc.h>
 #include <util/CompilerWarning.h>
 
@@ -76,6 +77,9 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-
   if (!entry) { // Symbol was not found in the current scope
     // We reached the root scope, the symbol does not exist at all
     if (parent == nullptr)
+      return nullptr;
+    // If we search for the result variable, we want to stop the search when exiting a lambda body
+    if (name == RETURN_VARIABLE_NAME && scope->type == SCOPE_LAMBDA_BODY)
       return nullptr;
     // If there is a parent scope, continue the search there
     entry = parent->lookup(name);

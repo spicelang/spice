@@ -1,0 +1,7 @@
+type Visitable interface {
+    f<bool> accept<int>(Visitor*);
+}
+
+f<int> main() {
+
+}

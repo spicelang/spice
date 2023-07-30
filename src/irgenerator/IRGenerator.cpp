@@ -303,15 +303,20 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
       llvm::Value *rhsAddress = resolveAddress(rhs);
       assert(rhsAddress != nullptr);
 
-      // Allocate space for the reference and store the address
-      llvm::Value *refAddress = insertAlloca(rhsAddress->getType());
+      // Check if we already have an address
+      llvm::Value *refAddress = lhsEntry->getAddress();
+      if (!refAddress) {
+        // If not, allocate space for the reference and store the address
+        refAddress = insertAlloca(builder.getPtrTy());
+        lhsEntry->updateAddress(refAddress);
+      }
       builder.CreateStore(rhsAddress, refAddress);
-      lhsEntry->updateAddress(refAddress);
 
       return LLVMExprResult{.value = rhsAddress, .ptr = refAddress, .entry = lhsEntry};
     }
 
-    if (rhsSType.isRef()) { // Reference to reference assignment
+    // Reference to reference assignment (only for struct fields that are not initialized yet)
+    if (rhsSType.isRef() && rhs.entry && lhsEntry->isField()) {
       // Get address of right side
       llvm::Value *referencedAddress = resolveAddress(rhs);
       assert(referencedAddress != nullptr);
