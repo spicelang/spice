@@ -5,7 +5,7 @@ target triple = "x86_64-w64-windows-gnu"
 
 @printf.str.0 = private unnamed_addr constant [21 x i8] c"Faculty of %d is: %d\00", align 1
 
-; Function Attrs: nofree nosync nounwind memory(none)
+; Function Attrs: nofree norecurse nosync nounwind memory(none)
 define private fastcc i32 @_Z7facultyi(i32 %0) unnamed_addr #0 {
   %2 = icmp slt i32 %0, 2
   br i1 %2, label %common.ret, label %if.exit.L2.preheader
@@ -63,7 +63,7 @@ if.exit.L2:                                       ; preds = %if.exit.L2.preheade
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #1 {
-  %1 = tail call fastcc i32 @_Z7facultyi(i32 10) #5
+  %1 = tail call fastcc i32 @_Z7facultyi(i32 10) #4
   %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 10, i32 %1)
   ret i32 0
 }
@@ -71,18 +71,17 @@ define dso_local i32 @main() local_unnamed_addr #1 {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #2
 
-; Function Attrs: nocallback nofree nosync nounwind willreturn memory(none)
+; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare i32 @llvm.vector.reduce.mul.v4i32(<4 x i32>) #3
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare i32 @llvm.usub.sat.i32(i32, i32) #4
+declare i32 @llvm.usub.sat.i32(i32, i32) #3
 
-attributes #0 = { nofree nosync nounwind memory(none) }
+attributes #0 = { nofree norecurse nosync nounwind memory(none) }
 attributes #1 = { noinline nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
-attributes #3 = { nocallback nofree nosync nounwind willreturn memory(none) }
-attributes #4 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #5 = { nounwind }
+attributes #3 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #4 = { nounwind }
 
 !0 = distinct !{!0, !1, !2}
 !1 = !{!"llvm.loop.isvectorized", i32 1}

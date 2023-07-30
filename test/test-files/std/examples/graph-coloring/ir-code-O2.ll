@@ -18,7 +18,7 @@ define private fastcc i1 @_Z13graphColoringA4A4biiPi(i32 %0, ptr nocapture %1) u
 for.head.L38.preheader:                           ; preds = %2
   %4 = sext i32 %0 to i64
   %5 = getelementptr inbounds i32, ptr %1, i64 %4
-  %6 = add i32 %0, 1
+  %6 = add nuw nsw i32 %0, 1
   store i32 1, ptr %5, align 4
   %7 = tail call fastcc i1 @_Z13graphColoringA4A4biiPi(i32 %6, ptr %1)
   br i1 %7, label %common.ret, label %if.exit.L42
@@ -41,9 +41,9 @@ land.1.L14C16.232.i:                              ; preds = %land.1.L14C16.129.i
   %16 = load i32, ptr %15, align 4
   %17 = icmp eq i32 %16, %9
   %18 = icmp eq i32 %13, %10
-  %or.cond = select i1 %17, i1 true, i1 %18
+  %or.cond = or i1 %18, %17
   %19 = icmp eq i32 %16, %13
-  %or.cond76 = select i1 %or.cond, i1 true, i1 %19
+  %or.cond76 = or i1 %19, %or.cond
   br i1 %or.cond76, label %common.ret, label %if.then.L31
 
 common.ret:                                       ; preds = %for.head.L38.preheader, %if.exit.L42, %if.exit.L42.1, %if.exit.L42.2, %land.1.L14C16.232.i, %land.1.L14C16.129.i, %if.then.L29, %if.then.L31

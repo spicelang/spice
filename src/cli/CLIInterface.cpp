@@ -6,8 +6,8 @@
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
 
-#include <llvm/ADT/Triple.h>
-#include <llvm/Support/Host.h>
+#include <llvm/TargetParser/Host.h>
+#include <llvm/TargetParser/Triple.h>
 
 namespace spice::compiler {
 

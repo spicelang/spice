@@ -729,60 +729,63 @@ define private fastcc i32 @_Z21countLiveNeighborCellA10A10iii([10 x [10 x i32]] 
   %.fca.9.9.gep = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 9, i64 9
   store i32 %.fca.9.9.extract, ptr %.fca.9.9.gep, align 4
   %4 = add i32 %1, -1
-  %5 = add i32 %1, 1
-  %.not22 = icmp sgt i32 %4, %5
-  br i1 %.not22, label %for.exit.L46, label %for.body.L46.lr.ph
+  %5 = add nsw i32 %1, 1
+  %.not25 = icmp sgt i32 %4, %5
+  br i1 %.not25, label %for.exit.L46, label %for.body.L46.lr.ph
 
 for.body.L46.lr.ph:                               ; preds = %3
   %6 = add i32 %2, -1
-  %7 = add i32 %2, 1
-  %.not1819 = icmp sgt i32 %6, %7
+  %7 = add nsw i32 %2, 1
+  %.not1822 = icmp sgt i32 %6, %7
+  %8 = sext i32 %6 to i64
+  %9 = sext i32 %2 to i64
+  %10 = sext i32 %4 to i64
+  %11 = sext i32 %1 to i64
   br label %for.body.L46
 
 for.body.L46:                                     ; preds = %for.body.L46.lr.ph, %for.tail.L46
-  %i.024 = phi i32 [ %4, %for.body.L46.lr.ph ], [ %23, %for.tail.L46 ]
-  %count.023 = phi i32 [ 0, %for.body.L46.lr.ph ], [ %count.1.lcssa, %for.tail.L46 ]
-  br i1 %.not1819, label %for.tail.L46, label %for.body.L47.lr.ph
+  %indvars.iv31 = phi i64 [ %10, %for.body.L46.lr.ph ], [ %indvars.iv.next32, %for.tail.L46 ]
+  %count.026 = phi i32 [ 0, %for.body.L46.lr.ph ], [ %count.1.lcssa, %for.tail.L46 ]
+  br i1 %.not1822, label %for.tail.L46, label %for.body.L47.lr.ph
 
 for.body.L47.lr.ph:                               ; preds = %for.body.L46
-  %8 = icmp eq i32 %i.024, %1
-  %9 = icmp slt i32 %i.024, 0
-  %10 = icmp ugt i32 %i.024, 9
-  %11 = zext i32 %i.024 to i64
+  %12 = icmp ne i64 %indvars.iv31, %11
+  %13 = icmp sgt i64 %indvars.iv31, 9
   br label %for.body.L47
 
 for.body.L47:                                     ; preds = %for.body.L47.lr.ph, %for.tail.L47
-  %j.021 = phi i32 [ %6, %for.body.L47.lr.ph ], [ %22, %for.tail.L47 ]
-  %count.120 = phi i32 [ %count.023, %for.body.L47.lr.ph ], [ %count.2, %for.tail.L47 ]
-  %12 = icmp eq i32 %j.021, %2
-  %land_phi = select i1 %8, i1 %12, i1 false
-  %13 = icmp slt i32 %j.021, 0
-  %14 = or i1 %land_phi, %9
-  %or.cond = select i1 %14, i1 true, i1 %13
-  %15 = icmp ugt i32 %j.021, 9
-  %16 = select i1 %or.cond, i1 true, i1 %10
-  %or.cond26 = select i1 %16, i1 true, i1 %15
-  br i1 %or.cond26, label %for.tail.L47, label %if.exit.L48
+  %indvars.iv = phi i64 [ %8, %for.body.L47.lr.ph ], [ %indvars.iv.next, %for.tail.L47 ]
+  %count.123 = phi i32 [ %count.026, %for.body.L47.lr.ph ], [ %count.2, %for.tail.L47 ]
+  %14 = icmp ne i64 %indvars.iv, %9
+  %land_phi.not21 = select i1 %12, i1 true, i1 %14
+  %15 = or i64 %indvars.iv, %indvars.iv31
+  %16 = and i64 %15, 2147483648
+  %lor_phi.not = icmp eq i64 %16, 0
+  %or.cond = and i1 %land_phi.not21, %lor_phi.not
+  %or.cond.not = xor i1 %or.cond, true
+  %17 = icmp sgt i64 %indvars.iv, 9
+  %lor_phi1 = or i1 %13, %17
+  %or.cond29 = or i1 %lor_phi1, %or.cond.not
+  br i1 %or.cond29, label %for.tail.L47, label %if.exit.L48
 
 if.exit.L48:                                      ; preds = %for.body.L47
-  %17 = zext i32 %j.021 to i64
-  %18 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %11, i64 %17
+  %18 = getelementptr inbounds [10 x [10 x i32]], ptr %matrix, i64 0, i64 %indvars.iv31, i64 %indvars.iv
   %19 = load i32, ptr %18, align 4
   %20 = icmp eq i32 %19, 1
   %21 = zext i1 %20 to i32
-  %spec.select = add i32 %count.120, %21
+  %spec.select = add i32 %count.123, %21
   br label %for.tail.L47
 
 for.tail.L47:                                     ; preds = %if.exit.L48, %for.body.L47
-  %count.2 = phi i32 [ %spec.select, %if.exit.L48 ], [ %count.120, %for.body.L47 ]
-  %22 = add i32 %j.021, 1
-  %.not18 = icmp sgt i32 %22, %7
+  %count.2 = phi i32 [ %spec.select, %if.exit.L48 ], [ %count.123, %for.body.L47 ]
+  %indvars.iv.next = add i64 %indvars.iv, 1
+  %.not18 = icmp sgt i64 %indvars.iv, %9
   br i1 %.not18, label %for.tail.L46, label %for.body.L47
 
 for.tail.L46:                                     ; preds = %for.tail.L47, %for.body.L46
-  %count.1.lcssa = phi i32 [ %count.023, %for.body.L46 ], [ %count.2, %for.tail.L47 ]
-  %23 = add i32 %i.024, 1
-  %.not = icmp sgt i32 %23, %5
+  %count.1.lcssa = phi i32 [ %count.026, %for.body.L46 ], [ %count.2, %for.tail.L47 ]
+  %indvars.iv.next32 = add i64 %indvars.iv31, 1
+  %.not = icmp sgt i64 %indvars.iv31, %11
   br i1 %.not, label %for.exit.L46, label %for.body.L46
 
 for.exit.L46:                                     ; preds = %for.tail.L46, %3
@@ -999,34 +1002,34 @@ define dso_local i32 @main() local_unnamed_addr #3 {
 for.head.L65.preheader:                           ; preds = %0, %for.head.L65.preheader
   %indvars.iv = phi i64 [ 0, %0 ], [ %indvars.iv.next, %for.head.L65.preheader ]
   %1 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 0
-  %2 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
+  %2 = tail call fastcc i32 @_Z14genFakeRandIntv() #5, !range !2
   store i32 %2, ptr %1, align 4
   %3 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 1
-  %4 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
+  %4 = tail call fastcc i32 @_Z14genFakeRandIntv() #5, !range !2
   store i32 %4, ptr %3, align 4
   %5 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 2
-  %6 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
+  %6 = tail call fastcc i32 @_Z14genFakeRandIntv() #5, !range !2
   store i32 %6, ptr %5, align 4
   %7 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 3
-  %8 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
+  %8 = tail call fastcc i32 @_Z14genFakeRandIntv() #5, !range !2
   store i32 %8, ptr %7, align 4
   %9 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 4
-  %10 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
+  %10 = tail call fastcc i32 @_Z14genFakeRandIntv() #5, !range !2
   store i32 %10, ptr %9, align 4
   %11 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 5
-  %12 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
+  %12 = tail call fastcc i32 @_Z14genFakeRandIntv() #5, !range !2
   store i32 %12, ptr %11, align 4
   %13 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 6
-  %14 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
+  %14 = tail call fastcc i32 @_Z14genFakeRandIntv() #5, !range !2
   store i32 %14, ptr %13, align 4
   %15 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 7
-  %16 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
+  %16 = tail call fastcc i32 @_Z14genFakeRandIntv() #5, !range !2
   store i32 %16, ptr %15, align 4
   %17 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 8
-  %18 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
+  %18 = tail call fastcc i32 @_Z14genFakeRandIntv() #5, !range !2
   store i32 %18, ptr %17, align 4
   %19 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i64 %indvars.iv, i64 9
-  %20 = tail call fastcc i32 @_Z14genFakeRandIntv() #5
+  %20 = tail call fastcc i32 @_Z14genFakeRandIntv() #5, !range !2
   store i32 %20, ptr %19, align 4
   %indvars.iv.next = add nuw nsw i64 %indvars.iv, 1
   %exitcond.not = icmp eq i64 %indvars.iv.next, 10
@@ -1958,3 +1961,4 @@ attributes #5 = { nounwind }
 
 !0 = distinct !{!0, !1}
 !1 = !{!"llvm.loop.peeled.count", i32 1}
+!2 = !{i32 -1, i32 2}
