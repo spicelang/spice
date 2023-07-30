@@ -1110,6 +1110,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
   switch (node->op) {
   case PostfixUnaryExprNode::OP_SUBSCRIPT: {
+    lhsType = lhsType.removeReferenceWrapper();
+
     // Check if we can apply the subscript operator on the lhs type
     if (!lhsType.isOneOf({TY_ARRAY, TY_STRING, TY_PTR}))
       SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE,

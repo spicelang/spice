@@ -87,7 +87,8 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
-  const SymbolType assignExprSymbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
+  SymbolType assignExprSymbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
+  assignExprSymbolType = assignExprSymbolType.removeReferenceWrapper();
   assert(assignExprSymbolType.isArray() && assignExprSymbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
 
   // Return length value

@@ -1,0 +1,28 @@
+p swap(int& a, int& b) {
+    int temp = a;
+    a = b;
+    b = temp;
+}
+
+p sort(int[10]& array, f<bool>(int, int) sortFct) {
+    for (int i = 0; i < len(array) - 1; ++i) {
+        for (int j = 0; j < len(array) - i - 1; ++j) {
+            if (sortFct(array[j], array[j + 1])) {
+                swap(array[j], array[j + 1]);
+            }
+        }
+    }
+}
+
+f<int> main() {
+    int[10] array = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+    sort(array, (int a, int b) -> (a > b));
+    printArray(array);
+}
+
+p printArray(int[10]& array) {
+    for (int i = 0; i < len(array); ++i) {
+        printf("%d ", array[i]);
+    }
+    printf("\n");
+}

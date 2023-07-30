@@ -17,44 +17,45 @@ define dso_local i32 @main() #0 {
   %s = alloca i16, align 2
   %1 = alloca %struct.NumberIterator.0, align 8
   %l = alloca ptr, align 8
+  %2 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  %2 = call %struct.NumberIterator @_Z5rangess(i16 3, i16 8)
-  store %struct.NumberIterator %2, ptr %shortIterator, align 2
-  store %struct.NumberIterator %2, ptr %shortIterator, align 2
+  %3 = call %struct.NumberIterator @_Z5rangess(i16 3, i16 8)
+  store %struct.NumberIterator %3, ptr %shortIterator, align 2
+  store %struct.NumberIterator %3, ptr %shortIterator, align 2
   br label %foreach.head.L5
 
 foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
-  %3 = call i1 @_ZN14NumberIteratorIsE7isValidEv(ptr %shortIterator)
-  br i1 %3, label %foreach.body.L5, label %foreach.exit.L5
+  %4 = call i1 @_ZN14NumberIteratorIsE7isValidEv(ptr %shortIterator)
+  br i1 %4, label %foreach.body.L5, label %foreach.exit.L5
 
 foreach.body.L5:                                  ; preds = %foreach.head.L5
-  %4 = call ptr @_ZN14NumberIteratorIsE3getEv(ptr %shortIterator)
-  %5 = load i16, ptr %4, align 2
-  store i16 %5, ptr %s, align 2
-  %6 = load i16, ptr %s, align 2
-  %7 = sext i16 %6 to i32
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %7)
-  %9 = load i16, ptr %s, align 2
-  %10 = and i16 %9, 1
-  %11 = sext i16 %10 to i32
-  %12 = icmp eq i32 %11, 1
-  br i1 %12, label %if.then.L7, label %if.exit.L7
+  %5 = call ptr @_ZN14NumberIteratorIsE3getEv(ptr %shortIterator)
+  %6 = load i16, ptr %5, align 2
+  store i16 %6, ptr %s, align 2
+  %7 = load i16, ptr %s, align 2
+  %8 = sext i16 %7 to i32
+  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %8)
+  %10 = load i16, ptr %s, align 2
+  %11 = and i16 %10, 1
+  %12 = sext i16 %11 to i32
+  %13 = icmp eq i32 %12, 1
+  br i1 %13, label %if.then.L7, label %if.exit.L7
 
 if.then.L7:                                       ; preds = %foreach.body.L5
-  %13 = call %struct.NumberIterator.0 @_Z5rangell(i64 1, i64 2)
-  store %struct.NumberIterator.0 %13, ptr %1, align 8
+  %14 = call %struct.NumberIterator.0 @_Z5rangell(i64 1, i64 2)
+  store %struct.NumberIterator.0 %14, ptr %1, align 8
   br label %foreach.head.L8
 
 foreach.head.L8:                                  ; preds = %foreach.tail.L8, %if.then.L7
-  %14 = call i1 @_ZN14NumberIteratorIlE7isValidEv(ptr %1)
-  br i1 %14, label %foreach.body.L8, label %foreach.exit.L8
+  %15 = call i1 @_ZN14NumberIteratorIlE7isValidEv(ptr %1)
+  br i1 %15, label %foreach.body.L8, label %foreach.exit.L8
 
 foreach.body.L8:                                  ; preds = %foreach.head.L8
-  %15 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr %1)
-  store ptr %15, ptr %l, align 8
-  %16 = load ptr, ptr %l, align 8
-  %17 = load i64, ptr %16, align 8
-  %18 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 %17)
+  %16 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr %1)
+  store ptr %16, ptr %2, align 8
+  %17 = load ptr, ptr %2, align 8
+  %18 = load i64, ptr %17, align 8
+  %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 %18)
   br label %foreach.exit.L5
 
 foreach.tail.L8:                                  ; No predecessors!
@@ -72,9 +73,9 @@ foreach.tail.L5:                                  ; preds = %if.exit.L7
   br label %foreach.head.L5
 
 foreach.exit.L5:                                  ; preds = %foreach.body.L8, %foreach.head.L5
-  %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
-  %20 = load i32, ptr %result, align 4
-  ret i32 %20
+  %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %21 = load i32, ptr %result, align 4
+  ret i32 %21
 }
 
 declare %struct.NumberIterator @_Z5rangess(i16, i16)

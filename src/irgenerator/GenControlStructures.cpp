@@ -158,18 +158,18 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     // Store idx to idx var
     llvm::Value *idxAddrInPair = builder.CreateStructGEP(pairTy, pairPtr, 0, "idx_addr");
     LLVMExprResult idxResult = {.ptr = idxAddrInPair};
-    doAssignment(idxAddress, idxEntry, idxResult, SymbolType(TY_LONG), false);
+    doAssignment(idxAddress, idxEntry, idxResult, SymbolType(TY_LONG), true);
     // Store item to item var
     llvm::Value *itemAddrInPair = builder.CreateStructGEP(pairTy, pairPtr, 1, "item_addr");
     LLVMExprResult itemResult = {.refPtr = itemAddrInPair};
-    doAssignment(itemAddress, itemEntry, itemResult, itemRefSTy, false);
+    doAssignment(itemAddress, itemEntry, itemResult, itemRefSTy, true);
   } else {
     // Call .get() on iterator
     assert(node->getFct);
     llvm::Function *getFct = stdFunctionManager.getIteratorGetFct(node->getFct);
     llvm::Value *getItemPtr = builder.CreateCall(getFct, iterator);
     LLVMExprResult getResult = {.ptr = getItemPtr};
-    doAssignment(itemAddress, itemEntry, getResult, itemRefSTy, false);
+    doAssignment(itemAddress, itemEntry, getResult, itemRefSTy, true);
   }
   // Visit body
   visit(node->body());

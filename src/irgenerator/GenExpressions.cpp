@@ -659,6 +659,8 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
   switch (node->op) {
   case PostfixUnaryExprNode::OP_SUBSCRIPT: {
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+
     // Get the LLVM type of the operand
     llvm::Type *lhsTy = lhsSTy.toLLVMType(context, currentScope);
 
