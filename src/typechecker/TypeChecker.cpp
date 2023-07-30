@@ -1863,7 +1863,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
 
   // Visit return type
-  SymbolType returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+  auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
   HANDLE_UNRESOLVED_TYPE_ST(returnType)
   if (returnType.is(TY_DYN)) {
     currentScope = node->bodyScope->parent;
@@ -1939,8 +1939,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   currentScope = node->bodyScope->parent;
 
   // Prepare type of function
-  SymbolType functionType(TY_FUNCTION);
-  functionType.setFunctionReturnType(SymbolType(TY_DYN));
+  SymbolType functionType(TY_PROCEDURE);
   functionType.setFunctionParamTypes(paramTypes);
 
   // Create function object
