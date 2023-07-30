@@ -89,7 +89,9 @@ public:
   std::any visitFctCall(const FctCallNode *node) override;
   std::any visitArrayInitialization(const ArrayInitializationNode *node) override;
   std::any visitStructInstantiation(const StructInstantiationNode *node) override;
-  std::any visitLambda(const LambdaNode *node) override;
+  std::any visitLambdaFunc(const LambdaFuncNode *node) override;
+  std::any visitLambdaProc(const LambdaProcNode *node) override;
+  std::any visitLambdaExpr(const LambdaExprNode *node) override;
   std::any visitDataType(const DataTypeNode *node) override;
 
   // Public methods

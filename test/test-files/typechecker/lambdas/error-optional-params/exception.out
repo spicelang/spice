@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./test-files/typechecker/lambdas/error-optional-params/source.spice:2:22:
 Lambda with optional parameters: Lambdas cannot have optional parameters
 
-2  (int x, bool y = false) -> {
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2  p(int x, bool y = false) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -974,18 +974,40 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
   return concludeNode(ctx, structInstantiationNode);
 }
 
-std::any ASTBuilder::visitLambda(SpiceParser::LambdaContext *ctx) {
-  auto lambdaNode = createNode<LambdaNode>(ctx);
+std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
+  auto lambdaFuncNode = createNode<LambdaFuncNode>(ctx);
 
   // Enrich
-  lambdaNode->hasParams = ctx->paramLst();
-  lambdaNode->isFunction = ctx->dataType() || ctx->assignExpr();
-  lambdaNode->hasBody = ctx->stmtLst();
+  lambdaFuncNode->hasParams = ctx->paramLst();
 
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, lambdaNode);
+  return concludeNode(ctx, lambdaFuncNode);
+}
+
+std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
+  auto lambdaProcNode = createNode<LambdaProcNode>(ctx);
+
+  // Enrich
+  lambdaProcNode->hasParams = ctx->paramLst();
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, lambdaProcNode);
+}
+
+std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
+  auto lambdaExprNode = createNode<LambdaExprNode>(ctx);
+
+  // Enrich
+  lambdaExprNode->hasParams = ctx->paramLst();
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, lambdaExprNode);
 }
 
 std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {

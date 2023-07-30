@@ -52,7 +52,9 @@ public:
   std::any visitField(FieldNode *node) override;
   std::any visitSignature(SignatureNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
-  std::any visitLambda(LambdaNode *node) override;
+  std::any visitLambdaFunc(LambdaFuncNode *node) override;
+  std::any visitLambdaProc(LambdaProcNode *node) override;
+  std::any visitLambdaExpr(LambdaExprNode *node) override;
 
 private:
   // Private members

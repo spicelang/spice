@@ -79,12 +79,14 @@ postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | 
 atomicExpr: constant | value | ((IDENTIFIER | TYPE_IDENTIFIER) SCOPE_ACCESS)* (IDENTIFIER | TYPE_IDENTIFIER) | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values
-value: fctCall | arrayInitialization | structInstantiation | lambda | NIL LESS dataType GREATER;
+value: fctCall | arrayInitialization | structInstantiation| lambdaFunc | lambdaProc | lambdaExpr  | NIL LESS dataType GREATER;
 constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
 fctCall: (IDENTIFIER SCOPE_ACCESS)* (IDENTIFIER DOT)* (IDENTIFIER | TYPE_IDENTIFIER) (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACKET argLst? RBRACKET;
 structInstantiation: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
-lambda: LPAREN paramLst? RPAREN ARROW (assignExpr | dataType? LBRACE stmtLst RBRACE);
+lambdaFunc: F LESS dataType GREATER LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+lambdaProc: P LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+lambdaExpr: LPAREN paramLst? RPAREN ARROW assignExpr;
 
 // Types
 dataType: specifierLst? baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | TYPE_IDENTIFIER)? RBRACKET)*;
@@ -187,6 +189,7 @@ COLON: ':';
 COMMA: ',';
 DOT: '.';
 ARROW: '->';
+DOUBLE_ARROW: '=>';
 SCOPE_ACCESS: '::';
 ELLIPSIS: '...';
 FCT_ATTR_PREAMBLE: '#';

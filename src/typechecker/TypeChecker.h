@@ -102,7 +102,9 @@ public:
   std::any visitFctCall(FctCallNode *node) override;
   std::any visitArrayInitialization(ArrayInitializationNode *node) override;
   std::any visitStructInstantiation(StructInstantiationNode *node) override;
-  std::any visitLambda(LambdaNode *node) override;
+  std::any visitLambdaFunc(LambdaFuncNode *node) override;
+  std::any visitLambdaProc(LambdaProcNode *node) override;
+  std::any visitLambdaExpr(LambdaExprNode *node) override;
   std::any visitDataType(DataTypeNode *node) override;
   std::any visitBaseDataType(BaseDataTypeNode *node) override;
   std::any visitCustomDataType(CustomDataTypeNode *node) override;

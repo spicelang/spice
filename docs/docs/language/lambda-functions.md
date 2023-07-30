@@ -38,5 +38,5 @@ int result = lambda(String("Hello"), true);
 ### Inline lambdas
 
 ```spice
-sort((int x, int y) -> x < y);
+sort((int x, int y) => x < y);
 ```

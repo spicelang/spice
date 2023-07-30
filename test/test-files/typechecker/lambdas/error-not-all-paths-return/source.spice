@@ -1,5 +1,5 @@
 f<int> main() {
-    f<int>(bool&) si = (bool& input) -> int {
+    f<int>(bool&) si = f<int>(bool& input) {
         if (!input) {
             input = false;
         } else {

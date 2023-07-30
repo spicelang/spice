@@ -1,5 +1,5 @@
 f<int> main() {
-    f<int>(int, int) add = (int x, int y) -> int {
+    f<int>(int, int) add = f<int>(int x, int y) {
         return "String";
     };
 }

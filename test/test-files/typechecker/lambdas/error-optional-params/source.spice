@@ -1,5 +1,5 @@
 f<int> main() {
-    p(int, bool) x = (int x, bool y = false) -> {
+    p(int, bool) x = p(int x, bool y = false) {
         x++;
     };
     x(1, true);

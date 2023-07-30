@@ -1,16 +1,16 @@
 f<int> main() {
-    f<string>() callbackWithoutArgs = () -> string {
+    f<string>() callbackWithoutArgs = f<string>() {
         return "Callback called!\n";
     };
     printf("%s", callbackWithoutArgs());
 
-    f<bool>(String&, double) callbackWithArgs1 = (String& str, double d) -> bool {
+    f<bool>(String&, double) callbackWithArgs1 = f<bool>(String& str, double d) {
         printf("Callback called with args: %s, %f\n", str, d);
         return str.getRaw() == "Hello" && d == 3.14;
     };
     printf("%d\n", callbackWithArgs1(String("Hello"), 3.14));
 
-    f<short>(String, short) callbackWithArgs2 = (String str, short b) -> short {
+    f<short>(String, short) callbackWithArgs2 = f<short>(String str, short b) {
         printf("Callback called with args: %s, %d\n", str, b);
         return ~b;
     };
