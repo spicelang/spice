@@ -14,6 +14,8 @@ namespace spice::compiler {
 const char *const ANON_GLOBAL_STRING_NAME = "anon.string.";
 const char *const ANON_GLOBAL_ARRAY_NAME = "anon.array.";
 const char *const ANON_GLOBAL_STRUCT_NAME = "anon.struct.";
+const char *const ANON_GLOBAL_CAPTURES_ARRAY_NAME = "anon.captures.";
+const char *const CAPTURES_PARAM_NAME = "captures";
 
 enum Likeliness { UNSPECIFIED, LIKELY, UNLIKELY };
 

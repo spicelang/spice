@@ -12,15 +12,15 @@ namespace spice::compiler {
 std::string Capture::getName() const { return name.empty() ? capturedEntry->name : name; }
 
 /**
- * Set the mode of this capture.
+ * Set the type of this capture.
  * Possible values are READ_ONLY and READ_WRITE
  *
- * @param captureMode Capture mode
+ * @param captureType Capture type
  */
-void Capture::setCaptureMode(CaptureMode captureMode) {
-  mode = captureMode;
+void Capture::setCaptureType(CaptureType captureType) {
+  type = captureType;
   // Set the captured symbol table entry to volatile if appropriate
-  capturedEntry->isVolatile = captureMode == READ_WRITE;
+  capturedEntry->isVolatile = captureType == READ_WRITE;
 }
 
 /**

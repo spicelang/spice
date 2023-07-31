@@ -177,6 +177,16 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
 }
 
 /**
+ * Set capturing for this scope to required. Also set the capture mode
+ *
+ * @param captureMode Capture mode
+ */
+void SymbolTable::setCapturingRequired(CaptureMode captureMode) {
+  capturingRequired = true;
+  capturingMode = captureMode;
+}
+
+/**
  * Deletes an existing anonymous symbol
  *
  * @param name Anonymous symbol name

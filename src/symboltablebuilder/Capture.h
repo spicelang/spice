@@ -10,7 +10,8 @@
 
 namespace spice::compiler {
 
-enum CaptureMode { READ_ONLY, READ_WRITE };
+enum CaptureMode : uint8_t { BY_VALUE, BY_REFERENCE };
+enum CaptureType : uint8_t { READ_ONLY, READ_WRITE };
 
 class Capture {
 public:
@@ -19,7 +20,7 @@ public:
 
   // Public methods
   [[nodiscard]] std::string getName() const;
-  void setCaptureMode(CaptureMode captureMode);
+  void setCaptureType(CaptureType captureType);
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
   // Public members
@@ -27,7 +28,7 @@ public:
 
 private:
   // Members
-  CaptureMode mode = READ_ONLY;
+  CaptureType type = READ_ONLY;
   std::string name;
 };
 

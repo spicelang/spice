@@ -1,7 +1,8 @@
 f<int> main() {
     int z = 2;
+    int w = 3;
     p(int&) foo = p(int& x) {
-        x += z;
+        x += z + w;
     };
     int x = 1;
     foo(x);

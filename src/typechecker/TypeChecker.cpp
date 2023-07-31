@@ -731,7 +731,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
 
       // In case the lhs variable is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsVar->name); lhsCapture)
-        lhsCapture->setCaptureMode(READ_WRITE);
+        lhsCapture->setCaptureType(READ_WRITE);
 
       // Update the state of the variable
       lhsVar->updateState(INITIALIZED, node, false);
@@ -1059,7 +1059,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     if (operandEntry) {
       // In case the lhs is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(operandEntry->name); lhsCapture)
-        lhsCapture->setCaptureMode(READ_WRITE);
+        lhsCapture->setCaptureType(READ_WRITE);
 
       // Update the state of the variable
       operandEntry->updateState(INITIALIZED, node, false);
@@ -1072,7 +1072,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     if (operandEntry) {
       // In case the lhs is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(operandEntry->name); lhsCapture)
-        lhsCapture->setCaptureMode(READ_WRITE);
+        lhsCapture->setCaptureType(READ_WRITE);
 
       // Update the state of the variable
       operandEntry->updateState(INITIALIZED, node, false);
@@ -1187,7 +1187,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     if (lhsEntry) {
       // In case the lhs is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsEntry->name); lhsCapture)
-        lhsCapture->setCaptureMode(READ_WRITE);
+        lhsCapture->setCaptureType(READ_WRITE);
 
       // Update the state of the variable
       lhsEntry->updateState(INITIALIZED, node, false);
@@ -1203,7 +1203,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     if (lhsEntry) {
       // In case the lhs is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsEntry->name); lhsCapture)
-        lhsCapture->setCaptureMode(READ_WRITE);
+        lhsCapture->setCaptureType(READ_WRITE);
 
       // Update the state of the variable
       lhsEntry->updateState(INITIALIZED, node, false);

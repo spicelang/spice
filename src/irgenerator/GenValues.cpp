@@ -417,13 +417,31 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
   // Change scope
   changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
 
+  // If there are captures, we pass them in a struct as the first function argument
+  const std::unordered_map<std::string, Capture> &captures = node->bodyScope->symbolTable.captures;
+  const bool hasCaptures = !captures.empty();
+  llvm::StructType *capturesStructType = nullptr;
+  if (hasCaptures) {
+    const CaptureMode capturingMode = node->bodyScope->symbolTable.capturingMode;
+    // Create captures struct type
+    std::vector<llvm::Type *> captureTypes;
+    captureTypes.resize(captures.size(), builder.getPtrTy());
+    if (capturingMode == BY_VALUE)
+      for (const std::pair<std::string, Capture> &capture : captures)
+        captureTypes.push_back(capture.second.capturedEntry->getType().toLLVMType(context, currentScope));
+    capturesStructType = llvm::StructType::create(context, captureTypes, getUnusedGlobalName(ANON_GLOBAL_CAPTURES_ARRAY_NAME));
+    // Add the captures struct as first parameter
+    paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
+    paramTypes.push_back(builder.getPtrTy()); // The captures struct is always passed as pointer
+  }
+
   // Visit parameters
   size_t argIdx = 0;
   if (node->hasParams) {
     const size_t numOfParams = spiceFunc.paramList.size();
     paramInfoList.reserve(numOfParams);
     paramTypes.reserve(numOfParams);
-    for (; argIdx < numOfParams; argIdx++) {
+    for (; argIdx < numOfParams + static_cast<int>(hasCaptures); argIdx++) {
       const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
       // Get symbol table entry of param
       SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
@@ -475,16 +493,19 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
   diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr, SIZE_MAX);
 
   // Store function argument values
+  llvm::Value *captureStructAddress = nullptr;
   for (auto &arg : lambda->args()) {
     // Get parameter info
     const size_t argNumber = arg.getArgNo();
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
-    assert(paramSymbol != nullptr);
     // Allocate space for it
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    paramSymbol->updateAddress(paramAddress);
+    if (hasCaptures && argNumber == 0)
+      captureStructAddress = paramAddress;
+    else
+      paramSymbol->updateAddress(paramAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
     // Store the value at the new address
@@ -498,6 +519,17 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
       visit(params.at(argIdx));
   }
 
+  // Extract captures from captures struct
+  if (hasCaptures) {
+    assert(!paramInfoList.empty());
+    size_t captureIdx = 0;
+    for (const std::pair<std::string, Capture> &capture : captures) {
+      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructAddress, captureIdx);
+      capture.second.capturedEntry->pushAddress(captureAddress);
+      captureIdx++;
+    }
+  }
+
   visit(node->body());
 
   // Create return statement if the block is not terminated yet
@@ -505,6 +537,11 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
     llvm::Value *result = builder.CreateLoad(returnType, resultEntry->getAddress());
     builder.CreateRet(result);
   }
+
+  // Pop capture addresses
+  if (hasCaptures)
+    for (const std::pair<std::string, Capture> &capture : captures)
+      capture.second.capturedEntry->popAddress();
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
@@ -531,6 +568,24 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
 
   // Change scope
   changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+
+  // If there are captures, we pass them in a struct as the first function argument
+  const std::unordered_map<std::string, Capture> &captures = node->bodyScope->symbolTable.captures;
+  const bool hasCaptures = !captures.empty();
+  llvm::StructType *capturesStructType = nullptr;
+  if (hasCaptures) {
+    const CaptureMode capturingMode = node->bodyScope->symbolTable.capturingMode;
+    // Create captures struct type
+    std::vector<llvm::Type *> captureTypes;
+    captureTypes.resize(captures.size(), builder.getPtrTy());
+    if (capturingMode == BY_VALUE)
+      for (const std::pair<std::string, Capture> &capture : captures)
+        captureTypes.push_back(capture.second.capturedEntry->getType().toLLVMType(context, currentScope));
+    capturesStructType = llvm::StructType::create(context, captureTypes, getUnusedGlobalName(ANON_GLOBAL_CAPTURES_ARRAY_NAME));
+    // Add the captures struct as first parameter
+    paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
+    paramTypes.push_back(builder.getPtrTy()); // The captures struct is always passed as pointer
+  }
 
   // Visit parameters
   size_t argIdx = 0;
@@ -578,17 +633,20 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
   allocaInsertBlock = bEntry;
   allocaInsertInst = nullptr;
 
-  // Store function argument values
+  // Save values of parameters to locals
+  llvm::Value *captureStructAddress = nullptr;
   for (auto &arg : lambda->args()) {
     // Get information about the parameter
     const size_t argNumber = arg.getArgNo();
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
-    assert(paramSymbol != nullptr);
     // Allocate space for it
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    paramSymbol->updateAddress(paramAddress);
+    if (hasCaptures && argNumber == 0)
+      captureStructAddress = paramAddress;
+    else
+      paramSymbol->updateAddress(paramAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
     // Store the value at the new address
@@ -602,11 +660,27 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
       visit(params.at(argIdx));
   }
 
+  // Extract captures from captures struct
+  if (hasCaptures) {
+    assert(!paramInfoList.empty());
+    size_t captureIdx = 0;
+    for (const std::pair<std::string, Capture> &capture : captures) {
+      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructAddress, captureIdx);
+      capture.second.capturedEntry->pushAddress(captureAddress);
+      captureIdx++;
+    }
+  }
+
   visit(node->body());
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated)
     builder.CreateRetVoid();
+
+  // Pop capture addresses
+  if (hasCaptures)
+    for (const std::pair<std::string, Capture> &capture : captures)
+      capture.second.capturedEntry->popAddress();
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();

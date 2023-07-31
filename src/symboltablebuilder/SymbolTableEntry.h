@@ -39,6 +39,8 @@ public:
   void setStructLLVMType(llvm::StructType *newStructType);
   [[nodiscard]] virtual llvm::Value *getAddress() const;
   void updateAddress(llvm::Value *address);
+  void pushAddress(llvm::Value *address);
+  void popAddress();
   [[nodiscard]] bool isField() const;
   [[nodiscard]] bool isInitialized() const { return lifecycle.isInitialized(); }
   [[nodiscard]] bool isDead() const { return lifecycle.isDead(); }
