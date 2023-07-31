@@ -1,8 +1,11 @@
 f<int> main() {
-    p(int, bool) x = p(int x, bool y = false) {
-        x++;
+    int z = 2;
+    p(int&) foo = p(int& x) {
+        x += z;
     };
-    x(1, true);
+    int x = 1;
+    foo(x);
+    printf("%d", x);
 }
 
 

@@ -23,14 +23,12 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   assert(currentScope != nullptr);
 
   // Visit parameters
-  std::vector<std::string> paramNames;
-  std::vector<SymbolTableEntry *> paramSymbols;
+  std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
   std::vector<SymbolType> paramSymbolTypes;
   std::vector<llvm::Type *> paramTypes;
   if (node->takesArgs) {
     const size_t numOfParams = node->paramLst()->params().size();
-    paramNames.reserve(numOfParams);
-    paramSymbols.reserve(numOfParams);
+    paramInfoList.reserve(numOfParams);
     paramSymbolTypes.reserve(numOfParams);
     paramTypes.reserve(numOfParams);
     for (DeclStmtNode *param : node->paramLst()->params()) {
@@ -40,8 +38,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
       // Retrieve type of param
       auto paramType = any_cast<llvm::Type *>(visit(param->dataType()));
       // Add it to the lists
-      paramNames.push_back(param->varName);
-      paramSymbols.push_back(paramSymbol);
+      paramInfoList.emplace_back(param->varName, paramSymbol);
       paramSymbolTypes.push_back(paramSymbol->getType());
       paramTypes.push_back(paramType);
     }
@@ -93,13 +90,12 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   for (auto &arg : fct->args()) {
     // Get information about the parameter
     const size_t argNumber = arg.getArgNo();
-    const std::string paramName = paramNames.at(argNumber);
-    llvm::Type *paramType = fctType->getParamType(argNumber);
+    auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+    assert(paramSymbol != nullptr);
     // Allocate space for it
+    llvm::Type *paramType = fctType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    SymbolTableEntry *paramSymbol = paramSymbols.at(argNumber);
-    assert(paramSymbol != nullptr);
     paramSymbol->updateAddress(paramAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
@@ -148,16 +144,9 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       continue;
     }
 
-    std::vector<std::string> paramNames;
-    std::vector<SymbolTableEntry *> paramSymbols;
-    std::vector<llvm::Type *> paramTypes;
-
-    // Add 'this' type as first argument type
+    // Change to struct scope
     if (manifestation->isMethod()) {
       const SymbolType &thisType = manifestation->thisType;
-      paramNames.emplace_back(THIS_VARIABLE_NAME);
-      paramTypes.push_back(builder.getPtrTy());
-      // Change to struct scope
       const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
       assert(currentScope != nullptr);
@@ -168,18 +157,20 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     assert(currentScope != nullptr);
 
     // Get 'this' entry
+    std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
+    std::vector<llvm::Type *> paramTypes;
     if (manifestation->isMethod()) {
       SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
       assert(thisEntry != nullptr);
-      paramSymbols.push_back(thisEntry);
+      paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
+      paramTypes.push_back(builder.getPtrTy());
     }
 
     // Visit parameters
     size_t argIdx = 0;
     if (node->hasParams) {
       const size_t numOfParams = manifestation->paramList.size();
-      paramNames.reserve(numOfParams);
-      paramSymbols.reserve(numOfParams);
+      paramInfoList.reserve(numOfParams);
       paramTypes.reserve(numOfParams);
       for (; argIdx < numOfParams; argIdx++) {
         const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
@@ -189,8 +180,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         // Retrieve type of param
         llvm::Type *paramType = manifestation->getParamTypes().at(argIdx).toLLVMType(context, currentScope);
         // Add it to the lists
-        paramNames.push_back(param->varName);
-        paramSymbols.push_back(paramSymbol);
+        paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
       }
     }
@@ -246,13 +236,12 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     for (auto &arg : func->args()) {
       // Get information about the parameter
       const size_t argNumber = arg.getArgNo();
-      const std::string paramName = paramNames.at(argNumber);
-      llvm::Type *paramType = funcType->getParamType(argNumber);
+      auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+      assert(paramSymbol != nullptr);
       // Allocate space for it
+      llvm::Type *paramType = funcType->getParamType(argNumber);
       llvm::Value *paramAddress = insertAlloca(paramType, paramName);
       // Update the symbol table entry
-      SymbolTableEntry *paramSymbol = paramSymbols.at(argNumber);
-      assert(paramSymbol != nullptr);
       paramSymbol->updateAddress(paramAddress);
       // Generate debug info
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
@@ -314,16 +303,9 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       continue;
     }
 
-    std::vector<std::string> paramNames;
-    std::vector<SymbolTableEntry *> paramSymbols;
-    std::vector<llvm::Type *> paramTypes;
-
-    // Add 'this' type as first argument type
+    // Change to struct scope
     if (manifestation->isMethod()) {
       const SymbolType &thisType = manifestation->thisType;
-      paramNames.emplace_back(THIS_VARIABLE_NAME);
-      paramTypes.push_back(thisType.toLLVMType(context, currentScope)->getPointerTo());
-      // Change to struct scope
       const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
       assert(currentScope != nullptr);
@@ -334,19 +316,21 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     assert(currentScope != nullptr);
 
     // Get 'this' entry
+    std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
+    std::vector<llvm::Type *> paramTypes;
     SymbolTableEntry *thisEntry = nullptr;
     if (manifestation->isMethod()) {
       thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
       assert(thisEntry != nullptr);
-      paramSymbols.push_back(thisEntry);
+      paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
+      paramTypes.push_back(builder.getPtrTy());
     }
 
     // Visit parameters
     size_t argIdx = 0;
     if (node->hasParams) {
       const size_t numOfParams = manifestation->paramList.size();
-      paramNames.reserve(numOfParams);
-      paramSymbols.reserve(numOfParams);
+      paramInfoList.reserve(numOfParams);
       paramTypes.reserve(numOfParams);
       for (; argIdx < numOfParams; argIdx++) {
         const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
@@ -356,8 +340,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         // Retrieve type of param
         llvm::Type *paramType = manifestation->getParamTypes().at(argIdx).toLLVMType(context, currentScope);
         // Add it to the lists
-        paramNames.push_back(param->varName);
-        paramSymbols.push_back(paramSymbol);
+        paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
       }
     }
@@ -405,13 +388,12 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     for (auto &arg : proc->args()) {
       // Get information about the parameter
       const size_t argNumber = arg.getArgNo();
-      const std::string paramName = paramNames.at(argNumber);
-      llvm::Type *paramType = procType->getParamType(argNumber);
+      auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+      assert(paramSymbol != nullptr);
       // Allocate space for it
+      llvm::Type *paramType = procType->getParamType(argNumber);
       llvm::Value *paramAddress = insertAlloca(paramType, paramName);
       // Update the symbol table entry
-      SymbolTableEntry *paramSymbol = paramSymbols.at(argNumber);
-      assert(paramSymbol != nullptr);
       paramSymbol->updateAddress(paramAddress);
       // Generate debug info
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);

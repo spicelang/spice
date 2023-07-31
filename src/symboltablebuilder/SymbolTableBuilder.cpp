@@ -515,8 +515,9 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
 }
 
 std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
-  // Create scope for the anonymous block body
+  // Create scope for the lambda body
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
+  currentScope->symbolTable.capturingRequired = true; // Requires capturing because the LLVM IR will end up in a separate function
 
   // Create symbol for 'result' variable
   currentScope->insert(RETURN_VARIABLE_NAME, node);
@@ -535,8 +536,9 @@ std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
 }
 
 std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
-  // Create scope for the anonymous block body
+  // Create scope for the lambda body
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
+  currentScope->symbolTable.capturingRequired = true; // Requires capturing because the LLVM IR will end up in a separate function
 
   // Create symbols for the parameters
   if (node->hasParams)

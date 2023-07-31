@@ -411,8 +411,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
 std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *node) {
   const Function &spiceFunc = node->lambdaFunction;
-  std::vector<std::string> paramNames;
-  std::vector<SymbolTableEntry *> paramSymbols;
+  std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
@@ -422,8 +421,7 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
   size_t argIdx = 0;
   if (node->hasParams) {
     const size_t numOfParams = spiceFunc.paramList.size();
-    paramNames.reserve(numOfParams);
-    paramSymbols.reserve(numOfParams);
+    paramInfoList.reserve(numOfParams);
     paramTypes.reserve(numOfParams);
     for (; argIdx < numOfParams; argIdx++) {
       const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
@@ -433,8 +431,7 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
       // Retrieve type of param
       llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
       // Add it to the lists
-      paramNames.push_back(param->varName);
-      paramSymbols.push_back(paramSymbol);
+      paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
     }
   }
@@ -479,15 +476,14 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
 
   // Store function argument values
   for (auto &arg : lambda->args()) {
-    // Get information about the parameter
+    // Get parameter info
     const size_t argNumber = arg.getArgNo();
-    const std::string paramName = paramNames.at(argNumber);
-    llvm::Type *paramType = funcType->getParamType(argNumber);
+    auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+    assert(paramSymbol != nullptr);
     // Allocate space for it
+    llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    SymbolTableEntry *paramSymbol = paramSymbols.at(argNumber);
-    assert(paramSymbol != nullptr);
     paramSymbol->updateAddress(paramAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
@@ -530,8 +526,7 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
 
 std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *node) {
   const Function &spiceFunc = node->lambdaProcedure;
-  std::vector<std::string> paramNames;
-  std::vector<SymbolTableEntry *> paramSymbols;
+  std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
@@ -541,8 +536,7 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
   size_t argIdx = 0;
   if (node->hasParams) {
     const size_t numOfParams = spiceFunc.paramList.size();
-    paramNames.reserve(numOfParams);
-    paramSymbols.reserve(numOfParams);
+    paramInfoList.reserve(numOfParams);
     paramTypes.reserve(numOfParams);
     for (; argIdx < numOfParams; argIdx++) {
       const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
@@ -552,8 +546,7 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
       // Retrieve type of param
       llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
       // Add it to the lists
-      paramNames.push_back(param->varName);
-      paramSymbols.push_back(paramSymbol);
+      paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
     }
   }
@@ -589,13 +582,12 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
   for (auto &arg : lambda->args()) {
     // Get information about the parameter
     const size_t argNumber = arg.getArgNo();
-    const std::string paramName = paramNames.at(argNumber);
-    llvm::Type *paramType = funcType->getParamType(argNumber);
+    auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+    assert(paramSymbol != nullptr);
     // Allocate space for it
+    llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    SymbolTableEntry *paramSymbol = paramSymbols.at(argNumber);
-    assert(paramSymbol != nullptr);
     paramSymbol->updateAddress(paramAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
@@ -636,8 +628,7 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
 
 std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   const Function &spiceFunc = node->lambdaFunction;
-  std::vector<std::string> paramNames;
-  std::vector<SymbolTableEntry *> paramSymbols;
+  std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
@@ -647,8 +638,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   size_t argIdx = 0;
   if (node->hasParams) {
     const size_t numOfParams = spiceFunc.paramList.size();
-    paramNames.reserve(numOfParams);
-    paramSymbols.reserve(numOfParams);
+    paramInfoList.reserve(numOfParams);
     paramTypes.reserve(numOfParams);
     for (; argIdx < numOfParams; argIdx++) {
       const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
@@ -658,8 +648,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
       // Retrieve type of param
       llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
       // Add it to the lists
-      paramNames.push_back(param->varName);
-      paramSymbols.push_back(paramSymbol);
+      paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
     }
   }
@@ -700,13 +689,12 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   for (auto &arg : lambda->args()) {
     // Get information about the parameter
     const size_t argNumber = arg.getArgNo();
-    const std::string paramName = paramNames.at(argNumber);
-    llvm::Type *paramType = funcType->getParamType(argNumber);
+    auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+    assert(paramSymbol != nullptr);
     // Allocate space for it
+    llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    SymbolTableEntry *paramSymbol = paramSymbols.at(argNumber);
-    assert(paramSymbol != nullptr);
     paramSymbol->updateAddress(paramAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
