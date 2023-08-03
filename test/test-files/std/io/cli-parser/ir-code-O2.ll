@@ -3,7 +3,7 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%struct.CliParser = type { ptr, ptr, ptr, ptr, %struct.Vector, i1 }
+%struct.CliParser = type { ptr, ptr, ptr, ptr, %struct.Vector, i1, ptr }
 %struct.Vector = type { ptr, i64, i64 }
 %struct.CliOptions = type { i1 }
 

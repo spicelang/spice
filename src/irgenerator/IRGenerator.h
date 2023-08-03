@@ -24,6 +24,9 @@ class SourceFile;
 
 class IRGenerator : private CompilerPass, public ParallelizableASTVisitor {
 public:
+  // Type definitions
+  using ParamInfoList = std::vector<std::pair<std::string, SymbolTableEntry *>>;
+
   // Constructors
   IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
 
@@ -129,8 +132,13 @@ private:
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   void materializeConstant(LLVMExprResult &exprResult);
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
-  void changeToScope(Scope *scope, const ScopeType scopeType);
+  void changeToScope(Scope *scope, ScopeType scopeType);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
+  llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Function *lambda);
+  llvm::Value *storeLambdaArgumentValues(ParamInfoList &paramInfoList, bool hasCaptures, llvm::Function *lambda);
+  void visitMandatoryLambdaParameters(const ParamLstNode *node, const Function &spiceFunc, ParamInfoList &paramInfoList,
+                                      std::vector<llvm::Type *> &paramTypes, bool hasCaptures, size_t &argIdx);
+  void visitOptionalLambdaParameters(const ParamLstNode *node, size_t &argIdx);
 
   // Private members
   llvm::LLVMContext &context;

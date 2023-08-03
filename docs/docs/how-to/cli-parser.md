@@ -31,7 +31,7 @@ So if we compile and run this code, we will get the following output:
 $ ./app-name
 Short description of the app
 
-Usage: .\app-name [options]
+Usage: ./app-name [options]
 
 Flags:
 --help,-h                       Print this help message
@@ -70,7 +70,7 @@ Now we get this help text:
 $ ./app-name
 Short description of the app
 
-Usage: .\test [options]
+Usage: ./app-name [options]
 
 Flags:
 --help,-h                       Print this help message

@@ -1,31 +1,33 @@
-import "std/io/cli-parser";
+f<int> main() {
+    f<string>() callbackWithoutArgs = f<string>() {
+        return "Callback called!\n";
+    };
+    printf("%s", callbackWithoutArgs());
 
-f<int> main(int argc, string[] argv) {
-    CliParser cli = CliParser("app-name", "Short description of the app");
-    cli.setVersion("v1.0.0");
-    cli.setFooter("(c) 2023 by John Doe");
+    f<bool>(String&, double) callbackWithArgs1 = f<bool>(String& str, double d) {
+        printf("Callback called with args: %s, %f\n", str, d);
+        return str.getRaw() == "Hello" && d == 3.14;
+    };
+    printf("%d\n", callbackWithArgs1(String("Hello"), 3.14));
 
-    bool flagValue = false;
-    cli.addFlag("--hi", flagValue, "Say Hi");
-
-    cli.parse(argc, argv);
-
-    if flagValue {
-        printf("Hi!");
-    }
+    f<short>(String, short) callbackWithArgs2 = f<short>(String str, short b) {
+        printf("Callback called with args: %s, %d\n", str, b);
+        return ~b;
+    };
+    printf("%d\n", (callbackWithArgs2(String("Hello World!"), 321s) ^ 956s) == 1 ? 9 : 12);
 }
 
 /*f<int> main() {
     int z = 2;
     int w = 3;
-    p(int&) foo = p(int& x) {
-        x += z + w;
+    p(int&) foo = p(int& x) { // {ptr (fctPtr), ptr (captureStructPtr)}
+        //x += z + w;
+        x = 5;
     };
     int x = 1;
-    foo(x);
+    foo(x); // Load fctPtr and call it with captureStructPtr
     printf("%d", x);
 }*/
-
 
 /*type T int|long;
 
