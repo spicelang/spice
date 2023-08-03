@@ -70,6 +70,7 @@ nav:
     - cli/uninstall.md
   - Tutorials:
     - how-to/web-assembly.md
+    - how-to/cli-parser.md
   - Documentation:
     - language/hello-world.md
     - language/main-function.md

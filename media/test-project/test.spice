@@ -1,34 +1,17 @@
 import "std/io/cli-parser";
-import "std/text/print";
-
-type CliOptions struct {
-    bool sayHi = false
-}
-
-p callback(bool& value) {
-    printf("Callback called with value %d\n", value);
-}
 
 f<int> main(int argc, string[] argv) {
-    // Setup simple cli
-    CliParser cli = CliParser("spice", "This is a test tool");
-    cli.setVersion("0.1.0");
-    cli.setFooter("(c) Marc Auberer 2023");
+    CliParser cli = CliParser("app-name", "Short description of the app");
+    cli.setVersion("v1.0.0");
+    cli.setFooter("(c) 2023 by John Doe");
 
-    // Setup cli flags
-    CliOptions options;
-    cli.addFlag("--hi", options.sayHi, "Say hi to the user");
-    cli.addFlag("--callback", callback, "Call a callback function");
-    cli.addFlag("-cb", p(bool& value) {
-        printf("CB called with value %d\n", value);
-    }, "Call a callback function");
+    bool flagValue = false;
+    cli.addFlag("--hi", flagValue, "Say Hi");
 
-    // Parse cli arguments
     cli.parse(argc, argv);
 
-    // Print hi if requested
-    if options.sayHi {
-        println("Hi!");
+    if flagValue {
+        printf("Hi!");
     }
 }
 
