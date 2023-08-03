@@ -150,8 +150,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   functionEntry->updateType(functionType, false);
 
   // Build function object
-  const Function spiceFunc(node->fctName->name, functionEntry, thisType, returnType, paramList, usedGenericTypes, node,
-                           /*external=*/false);
+  Function spiceFunc(node->fctName->name, functionEntry, thisType, returnType, paramList, usedGenericTypes, node, false);
+  spiceFunc.bodyScope = node->fctScope;
   FunctionManager::insertFunction(currentScope, spiceFunc, &node->fctManifestations);
 
   // Check function attributes
@@ -266,8 +266,9 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   procedureEntry->updateType(procedureType, false);
 
   // Build procedure object
-  const Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramList, usedGenericTypes, node,
-                           /*external=*/false);
+  Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramList, usedGenericTypes, node,
+                     false);
+  spiceProc.bodyScope = node->procScope;
   FunctionManager::insertFunction(currentScope, spiceProc, &node->procManifestations);
 
   // Check procedure attributes
@@ -278,7 +279,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
       node->procManifestations.front()->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
   }
 
-  // Rename / duplicate the original child block to reflect the substantiated versions of the procedure
+  // Rename / duplicate the original child scope to reflect the substantiated versions of the procedure
   currentScope->renameChildScope(node->getScopeId(), node->procManifestations.front()->getSignature(false));
   for (size_t i = 1; i < node->procManifestations.size(); i++)
     currentScope->copyChildScope(node->procManifestations.front()->getSignature(false),

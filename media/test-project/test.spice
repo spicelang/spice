@@ -1,4 +1,38 @@
-f<int> main() {
+import "std/io/cli-parser";
+import "std/text/print";
+
+type CliOptions struct {
+    bool sayHi = false
+}
+
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
+}
+
+f<int> main(int argc, string[] argv) {
+    // Setup simple cli
+    CliParser cli = CliParser("spice", "This is a test tool");
+    cli.setVersion("0.1.0");
+    cli.setFooter("(c) Marc Auberer 2023");
+
+    // Setup cli flags
+    CliOptions options;
+    cli.addFlag("--hi", options.sayHi, "Say hi to the user");
+    cli.addFlag("--callback", callback, "Call a callback function");
+    cli.addFlag("-cb", p(bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
+
+    // Parse cli arguments
+    cli.parse(argc, argv);
+
+    // Print hi if requested
+    if options.sayHi {
+        println("Hi!");
+    }
+}
+
+/*f<int> main() {
     int z = 2;
     int w = 3;
     p(int&) foo = p(int& x) {
@@ -7,7 +41,7 @@ f<int> main() {
     int x = 1;
     foo(x);
     printf("%d", x);
-}
+}*/
 
 
 /*type T int|long;

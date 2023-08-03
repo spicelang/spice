@@ -161,4 +161,9 @@ bool LambdaProcNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   return body()->returnsOnAllControlPaths(overrideUnreachable);
 }
 
+bool FctCallNode::FctCallData::takesCaptures() const {
+  assert(callee->bodyScope != nullptr);
+  return !callee->bodyScope->symbolTable.captures.empty();
+}
+
 } // namespace spice::compiler

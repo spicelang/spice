@@ -68,6 +68,7 @@ public:
   std::unordered_map<std::string, SymbolType> typeMapping;
   SymbolTableEntry *entry = nullptr;
   ASTNode *declNode = nullptr;
+  Scope *bodyScope = nullptr;
   bool mangleFunctionName = true;
   std::string predefinedMangledName;
   bool genericSubstantiation = false;

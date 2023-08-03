@@ -67,7 +67,7 @@ nav:
     - cli/build.md
     - cli/run.md
     - cli/install.md
-    - cli/uninstall.md#
+    - cli/uninstall.md
   - Tutorials:
     - how-to/web-assembly.md
   - Documentation:

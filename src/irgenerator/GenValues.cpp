@@ -164,6 +164,14 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     argValues.push_back(thisPtr);
   }
 
+  // If we have a lambda call that takes captures, add them to the argument list
+  /*if (data.isFctPtrCall() && data.takesCaptures()) {
+    const std::unordered_map<std::string, Capture> &captures = data.callee->bodyScope->symbolTable.captures;
+    for (const std::pair<const std::string, Capture> &capture : captures) {
+
+    }
+  }*/
+
   // Get arg values
   if (node->hasArgs) {
     argValues.reserve(node->argLst()->args().size());

@@ -125,7 +125,7 @@ size_t Scope::getFieldCount() const {
   size_t fieldCount = 0;
   for (const auto &symbol : symbolTable.symbols) {
     const SymbolType &symbolType = symbol.second.getType();
-    if (!symbolType.isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
+    if (!symbolType.is(TY_IMPORT) && !symbol.second.declNode->isFctOrProcDef())
       fieldCount++;
   }
   return fieldCount;

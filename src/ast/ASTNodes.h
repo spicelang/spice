@@ -167,6 +167,7 @@ public:
     return nullptr;
   }
 
+  [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStmtNode() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
 
@@ -219,6 +220,7 @@ public:
   [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
   [[nodiscard]] std::string getSignature() const { return takesArgs ? "main(int, string[])" : "main()"; }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  bool isFctOrProcDef() const override { return true; }
 
   // Public members
   SymbolTableEntry *entry = nullptr;
@@ -292,6 +294,7 @@ public:
   }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &fctManifestations; }
+  bool isFctOrProcDef() const override { return true; }
 
   // Public members
   FctNameNode *fctName;
@@ -332,6 +335,7 @@ public:
   }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &procManifestations; }
+  bool isFctOrProcDef() const override { return true; }
 
   // Public members
   FctNameNode *procName;
@@ -1657,6 +1661,7 @@ public:
     [[nodiscard]] bool isMethodCall() const { return callType == TYPE_METHOD; }
     [[nodiscard]] bool isCtorCall() const { return callType == TYPE_CTOR; }
     [[nodiscard]] bool isFctPtrCall() const { return callType == TYPE_FCT_PTR; }
+    [[nodiscard]] bool takesCaptures() const;
   };
 
   // Constructors

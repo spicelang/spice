@@ -227,6 +227,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       Scope *childScope = matchScope->getChildScope(newSignature);
       assert(childScope != nullptr);
       childScope->isGenericScope = false;
+      substantiatedFunction->bodyScope = childScope;
 
       // Insert symbols for generic type names with concrete types into the child block
       for (const auto &[typeName, concreteType] : substantiatedFunction->typeMapping)
