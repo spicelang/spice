@@ -1,21 +1,11 @@
-p test(p(int&) l) {
-    int x = 1;
-    l(x);
-    assert x == 6;
-}
+import "std/os/thread";
 
 f<int> main() {
-    int z = 2;
-    int w = 3;
-    p(int&) foo = p(int& x) {
-        printf("Test\n");
-        x += z + w;
-    };
-    int x = 1;
-    foo(x);
-    assert x == 6;
-    test(foo);
-    printf("All tests passed!\n");
+    Thread t = Thread(p() {
+        printf("Hello from another thread");
+    });
+    t.join();
+    printf("Test");
 }
 
 /*type T int|long;

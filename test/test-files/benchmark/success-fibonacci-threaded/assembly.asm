@@ -39,21 +39,6 @@
 	popq	%rsi
 	retq
 
-	.def	.L_Z9calcFib30v;
-	.scl	3;
-	.type	32;
-	.endef
-	.p2align	4, 0x90
-.L_Z9calcFib30v:
-	subq	$40, %rsp
-	movl	$30, %ecx
-	callq	.L_Z3fibi
-	leaq	.Lprintf.str.0(%rip), %rcx
-	movl	%eax, %edx
-	callq	printf
-	addq	$40, %rsp
-	retq
-
 	.def	main;
 	.scl	2;
 	.type	32;
@@ -99,42 +84,42 @@ main:
 	leaq	-64(%rbp), %rsi
 	addq	$56, %rsi
 	movq	%rbp, %rcx
-	leaq	.L_Z9calcFib30v(%rip), %rdx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -64(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_Z9calcFib30v(%rip), %rdx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -56(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_Z9calcFib30v(%rip), %rdx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -48(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_Z9calcFib30v(%rip), %rdx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -40(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_Z9calcFib30v(%rip), %rdx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -32(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_Z9calcFib30v(%rip), %rdx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -24(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_Z9calcFib30v(%rip), %rdx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -16(%rbp)
 	movq	%rbp, %rcx
-	leaq	.L_Z9calcFib30v(%rip), %rdx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	(%rbp), %rax
 	movq	%rax, -8(%rbp)
@@ -170,6 +155,21 @@ main:
 	popq	%rbp
 	retq
 	.seh_endproc
+
+	.def	.L_Z13lambda.L12C29v;
+	.scl	3;
+	.type	32;
+	.endef
+	.p2align	4, 0x90
+.L_Z13lambda.L12C29v:
+	subq	$40, %rsp
+	movl	$30, %ecx
+	callq	.L_Z3fibi
+	leaq	.Lprintf.str.0(%rip), %rcx
+	movl	%eax, %edx
+	callq	printf
+	addq	$40, %rsp
+	retq
 
 	.section	.rdata,"dr"
 .Lprintf.str.0:
