@@ -1,0 +1,31 @@
+/**
+ * This is the generalized error type in Spice and part of the error handling mechanism.
+ */
+public type Error struct {
+    public int code = 0l
+    public string message = "Runtime error"
+}
+
+public p Error.ctor(int errorCode, string message) {
+    this.errorCode = errorCode;
+    this.message = message;
+}
+
+public p Error.ctor(string message) {
+    this.errorCode = 1;
+    this.message = message;
+}
+
+/**
+ * Prints the error message to the console.
+ */
+public p Error.print() {
+    printf("%s\n", this.message);
+}
+
+/**
+ * Panic with this error
+ */
+public p Error.panic() {
+    panic(*this);
+}

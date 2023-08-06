@@ -363,9 +363,9 @@ std::any TypeChecker::visitField(FieldNode *node) {
   HANDLE_UNRESOLVED_TYPE_ST(fieldType)
 
   if (node->defaultValue()) {
-    const auto defaultValueType = std::any_cast<ExprResult>(visit(node->defaultValue())).type;
+    const SymbolType defaultValueType = std::any_cast<ExprResult>(visit(node->defaultValue())).type;
     HANDLE_UNRESOLVED_TYPE_ST(fieldType)
-    if (defaultValueType != fieldType)
+    if (!fieldType.matches(defaultValueType, false, true, true))
       SOFT_ERROR_ST(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
   }
 

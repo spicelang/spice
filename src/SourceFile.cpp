@@ -260,6 +260,8 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
   TypeChecker typeChecker(resourceManager, this, TC_MODE_PREPARE);
   typeChecker.visit(ast);
 
+  checkForSoftErrors();
+
   previousStage = TYPE_CHECKER_PRE;
   timer.stop();
   printStatusMessage("Type Checker Pre", IO_AST, IO_AST, compilerOutput.times.typeCheckerPre);
@@ -294,14 +296,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
     // GCOV_EXCL_STOP
   } while (typeChecker.reVisitRequested);
 
-  // Check if there are any soft errors and if so, print them
-  if (!resourceManager.errorManager.softErrors.empty()) {
-    std::stringstream errorStream;
-    errorStream << "There are unresolved errors. Please fix them and recompile.";
-    for (const ErrorManager::SoftError &error : resourceManager.errorManager.softErrors)
-      errorStream << "\n\n" << error.message;
-    throw CompilerError(UNRESOLVED_SOFT_ERRORS, errorStream.str());
-  }
+  checkForSoftErrors();
 
   // Check if all dyn variables were type-inferred successfully
   globalScope->checkSuccessfulTypeInference();
@@ -660,6 +655,17 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName
   } while (!symbolName.empty());
 
   return registryEntry;
+}
+
+void SourceFile::checkForSoftErrors() {
+  // Check if there are any soft errors and if so, print them
+  if (!resourceManager.errorManager.softErrors.empty()) {
+    std::stringstream errorStream;
+    errorStream << "There are unresolved errors. Please fix them and recompile.";
+    for (const ErrorManager::SoftError &error : resourceManager.errorManager.softErrors)
+      errorStream << "\n\n" << error.message;
+    throw CompilerError(UNRESOLVED_SOFT_ERRORS, errorStream.str());
+  }
 }
 
 void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)

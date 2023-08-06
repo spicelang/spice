@@ -1,11 +1,12 @@
-import "std/os/thread";
+import "std/type/result";
+
+f<Result<int>> test() {
+    return err("This failed");
+}
 
 f<int> main() {
-    Thread t = Thread(p() {
-        printf("Hello from another thread");
-    });
-    t.join();
-    printf("Test");
+    dyn res = test();
+    printf("%d\n", res.unwrap());
 }
 
 /*type T int|long;

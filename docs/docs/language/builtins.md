@@ -100,3 +100,16 @@ len({1, 2, 3, 4}); // 4
 string[5] stringArray = {"string1", "string2", "string3"};
 len(stringArray); // 5
 ```
+
+## The `panic` builtin
+Panic is used to terminate the program with an error message.
+
+### Signature
+`void panic(const Error& error)`
+
+`error`: Error object containing the error code and message.
+
+### Usage example
+```spice
+panic(Error("This is an error message")));
+```
