@@ -1903,6 +1903,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   SymbolType functionType(TY_FUNCTION);
   functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
+  functionType.setHasLambdaCaptures(!node->bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
@@ -1941,6 +1942,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   // Prepare type of function
   SymbolType functionType(TY_PROCEDURE);
   functionType.setFunctionParamTypes(paramTypes);
+  functionType.setHasLambdaCaptures(!node->bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
@@ -1987,6 +1989,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   if (isFunction)
     functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
+  functionType.setHasLambdaCaptures(!node->bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();

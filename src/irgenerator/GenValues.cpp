@@ -165,12 +165,19 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   // If we have a lambda call that takes captures, add them to the argument list
-  /*if (data.isFctPtrCall() && data.takesCaptures()) {
-    const std::unordered_map<std::string, Capture> &captures = data.callee->bodyScope->symbolTable.captures;
-    for (const std::pair<const std::string, Capture> &capture : captures) {
-
-    }
-  }*/
+  llvm::Value *fctPtr = nullptr;
+  if (data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures()) {
+    llvm::Value *structPtrPtr = firstFragEntry->getAddress();
+    llvm::Value *structPtr = builder.CreateLoad(builder.getPtrTy(), structPtrPtr);
+    llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
+    // Load fctPtr
+    fctPtr = builder.CreateStructGEP(fatStructType, structPtr, 0);
+    // Load captures struct
+    llvm::Value *capturesPtrPtr = builder.CreateStructGEP(fatStructType, structPtr, 1);
+    llvm::Value *capturesPtr = builder.CreateLoad(builder.getPtrTy(), capturesPtrPtr);
+    // Add captures to argument list
+    argValues.push_back(capturesPtr);
+  }
 
   // Get arg values
   if (node->hasArgs) {
@@ -214,7 +221,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // Function is not defined in the current module -> declare it
   // This can happen when:
-  // 1) If this is an imported source file
+  // 1) If we call into an imported source file
   // 2) This is a down-call to a function, which is defined later in the same file
   llvm::FunctionType *fctType = nullptr;
   if (data.isFctPtrCall() || data.isImported || data.isDownCall) {
@@ -226,6 +233,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     // Get arg types
     std::vector<llvm::Type *> argTypes;
     if (data.isMethodCall() || data.isCtorCall())
+      argTypes.push_back(builder.getPtrTy());
+    if (data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures())
       argTypes.push_back(builder.getPtrTy());
     for (const SymbolType &paramType : paramSTypes)
       argTypes.push_back(paramType.toLLVMType(context, accessScope));
@@ -241,8 +250,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     SymbolTableEntry *firstFragEntry = currentScope->lookup(node->functionNameFragments.front());
     assert(firstFragEntry != nullptr);
     SymbolType firstFragType = firstFragEntry->getType();
-    llvm::Value *fctPtr = firstFragEntry->getAddress();
-    assert(fctPtr != nullptr);
+    if (!fctPtr)
+      fctPtr = firstFragEntry->getAddress();
     autoDeReferencePtr(fctPtr, firstFragType, currentScope);
     llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr);
 
@@ -433,10 +442,12 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
     const CaptureMode capturingMode = node->bodyScope->symbolTable.capturingMode;
     // Create captures struct type
     std::vector<llvm::Type *> captureTypes;
-    captureTypes.resize(captures.size(), builder.getPtrTy());
-    if (capturingMode == BY_VALUE)
-      for (const std::pair<const std::string, Capture> &capture : captures)
-        captureTypes.push_back(capture.second.capturedEntry->getType().toLLVMType(context, currentScope));
+    for (const std::pair<const std::string, Capture> &capture : captures) {
+      llvm::Type *captureType = builder.getPtrTy();
+      if (capturingMode == BY_VALUE)
+        captureType = capture.second.capturedEntry->getType().toLLVMType(context, currentScope);
+      captureTypes.push_back(captureType);
+    }
     capturesStructType = llvm::StructType::create(context, captureTypes, getUnusedGlobalName(ANON_GLOBAL_CAPTURES_ARRAY_NAME));
     // Add the captures struct as first parameter
     paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
@@ -445,7 +456,22 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
 
   // Visit parameters
   size_t argIdx = 0;
-  visitMandatoryLambdaParameters(node->paramLst(), spiceFunc, paramInfoList, paramTypes, hasCaptures, argIdx);
+  if (node->hasParams) {
+    const size_t numOfParams = spiceFunc.paramList.size();
+    paramInfoList.reserve(numOfParams);
+    paramTypes.reserve(numOfParams);
+    for (; argIdx < numOfParams; argIdx++) {
+      const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
+      // Get symbol table entry of param
+      SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+      assert(paramSymbol != nullptr);
+      // Retrieve type of param
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+      // Add it to the lists
+      paramInfoList.emplace_back(param->varName, paramSymbol);
+      paramTypes.push_back(paramType);
+    }
+  }
 
   // Get return type
   llvm::Type *returnType = spiceFunc.returnType.toLLVMType(context, currentScope);
@@ -486,17 +512,39 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
   diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr, SIZE_MAX);
 
   // Store function argument values
-  llvm::Value *captureStructAddress = storeLambdaArgumentValues(paramInfoList, hasCaptures, lambda);
+  llvm::Value *captureStructPtrPtr = nullptr;
+  for (auto &arg : lambda->args()) {
+    // Get parameter info
+    const size_t argNumber = arg.getArgNo();
+    auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+    // Allocate space for it
+    llvm::Type *paramType = funcType->getParamType(argNumber);
+    llvm::Value *paramAddress = insertAlloca(paramType, paramName);
+    // Update the symbol table entry
+    if (hasCaptures && argNumber == 0)
+      captureStructPtrPtr = paramAddress;
+    else
+      paramSymbol->updateAddress(paramAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    // Store the value at the new address
+    builder.CreateStore(&arg, paramAddress);
+  }
 
   // Store the default values for optional function args
-  visitOptionalLambdaParameters(node->paramLst(), argIdx);
+  if (node->paramLst()) {
+    const std::vector<DeclStmtNode *> params = node->paramLst()->params();
+    for (; argIdx < params.size(); argIdx++)
+      visit(params.at(argIdx));
+  }
 
   // Extract captures from captures struct
   if (hasCaptures) {
     assert(!paramInfoList.empty());
+    llvm::Value *captureStructPtr = builder.CreateLoad(builder.getPtrTy(), captureStructPtrPtr);
     size_t captureIdx = 0;
     for (const std::pair<const std::string, Capture> &capture : captures) {
-      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructAddress, captureIdx);
+      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
       capture.second.capturedEntry->pushAddress(captureAddress);
       captureIdx++;
     }
@@ -552,19 +600,36 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
     const CaptureMode capturingMode = node->bodyScope->symbolTable.capturingMode;
     // Create captures struct type
     std::vector<llvm::Type *> captureTypes;
-    captureTypes.resize(captures.size(), builder.getPtrTy());
-    if (capturingMode == BY_VALUE)
-      for (const std::pair<const std::string, Capture> &capture : captures)
-        captureTypes.push_back(capture.second.capturedEntry->getType().toLLVMType(context, currentScope));
+    for (const std::pair<const std::string, Capture> &capture : captures) {
+      llvm::Type *captureType = builder.getPtrTy();
+      if (capturingMode == BY_VALUE)
+        captureType = capture.second.capturedEntry->getType().toLLVMType(context, currentScope);
+      captureTypes.push_back(captureType);
+    }
     capturesStructType = llvm::StructType::create(context, captureTypes, getUnusedGlobalName(ANON_GLOBAL_CAPTURES_ARRAY_NAME));
     // Add the captures struct as first parameter
     paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
-    paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
+    paramTypes.push_back(builder.getPtrTy()); // The captures struct is always passed as pointer
   }
 
   // Visit parameters
   size_t argIdx = 0;
-  visitMandatoryLambdaParameters(node->paramLst(), spiceFunc, paramInfoList, paramTypes, hasCaptures, argIdx);
+  if (node->hasParams) {
+    const size_t numOfParams = spiceFunc.paramList.size();
+    paramInfoList.reserve(numOfParams);
+    paramTypes.reserve(numOfParams);
+    for (; argIdx < numOfParams; argIdx++) {
+      const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
+      // Get symbol table entry of param
+      SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+      assert(paramSymbol != nullptr);
+      // Retrieve type of param
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+      // Add it to the lists
+      paramInfoList.emplace_back(param->varName, paramSymbol);
+      paramTypes.push_back(paramType);
+    }
+  }
 
   // Create function or implement declared function
   const std::string mangledName = NameMangling::mangleFunction(spiceFunc);
@@ -593,18 +658,40 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
   allocaInsertBlock = bEntry;
   allocaInsertInst = nullptr;
 
-  // Store function argument values
-  llvm::Value *captureStructAddress = storeLambdaArgumentValues(paramInfoList, hasCaptures, lambda);
+  // Save values of parameters to locals
+  llvm::Value *captureStructPtrPtr = nullptr;
+  for (auto &arg : lambda->args()) {
+    // Get information about the parameter
+    const size_t argNumber = arg.getArgNo();
+    auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+    // Allocate space for it
+    llvm::Type *paramType = funcType->getParamType(argNumber);
+    llvm::Value *paramAddress = insertAlloca(paramType, paramName);
+    // Update the symbol table entry
+    if (hasCaptures && argNumber == 0)
+      captureStructPtrPtr = paramAddress;
+    else
+      paramSymbol->updateAddress(paramAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    // Store the value at the new address
+    builder.CreateStore(&arg, paramAddress);
+  }
 
   // Store the default values for optional function args
-  visitOptionalLambdaParameters(node->paramLst(), argIdx);
+  if (node->paramLst()) {
+    const std::vector<DeclStmtNode *> params = node->paramLst()->params();
+    for (; argIdx < params.size(); argIdx++)
+      visit(params.at(argIdx));
+  }
 
   // Extract captures from captures struct
   if (hasCaptures) {
     assert(!paramInfoList.empty());
+    llvm::Value *captureStructPtr = builder.CreateLoad(builder.getPtrTy(), captureStructPtrPtr);
     size_t captureIdx = 0;
     for (const std::pair<const std::string, Capture> &capture : captures) {
-      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructAddress, captureIdx);
+      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
       capture.second.capturedEntry->pushAddress(captureAddress);
       captureIdx++;
     }
@@ -658,10 +745,12 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     const CaptureMode capturingMode = node->bodyScope->symbolTable.capturingMode;
     // Create captures struct type
     std::vector<llvm::Type *> captureTypes;
-    captureTypes.resize(captures.size(), builder.getPtrTy());
-    if (capturingMode == BY_VALUE)
-      for (const std::pair<const std::string, Capture> &capture : captures)
-        captureTypes.push_back(capture.second.capturedEntry->getType().toLLVMType(context, currentScope));
+    for (const std::pair<const std::string, Capture> &capture : captures) {
+      llvm::Type *captureType = builder.getPtrTy();
+      if (capturingMode == BY_VALUE)
+        captureType = capture.second.capturedEntry->getType().toLLVMType(context, currentScope);
+      captureTypes.push_back(captureType);
+    }
     capturesStructType = llvm::StructType::create(context, captureTypes, getUnusedGlobalName(ANON_GLOBAL_CAPTURES_ARRAY_NAME));
     // Add the captures struct as first parameter
     paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
@@ -670,7 +759,22 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
 
   // Visit parameters
   size_t argIdx = 0;
-  visitMandatoryLambdaParameters(node->paramLst(), spiceFunc, paramInfoList, paramTypes, hasCaptures, argIdx);
+  if (node->hasParams) {
+    const size_t numOfParams = spiceFunc.paramList.size();
+    paramInfoList.reserve(numOfParams);
+    paramTypes.reserve(numOfParams);
+    for (; argIdx < numOfParams; argIdx++) {
+      const DeclStmtNode *param = node->paramLst()->params().at(argIdx);
+      // Get symbol table entry of param
+      SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
+      assert(paramSymbol != nullptr);
+      // Retrieve type of param
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+      // Add it to the lists
+      paramInfoList.emplace_back(param->varName, paramSymbol);
+      paramTypes.push_back(paramType);
+    }
+  }
 
   // Get return type
   llvm::Type *returnType = builder.getVoidTy();
@@ -704,18 +808,40 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   allocaInsertBlock = bEntry;
   allocaInsertInst = nullptr;
 
-  // Store function argument values
-  llvm::Value *captureStructAddress = storeLambdaArgumentValues(paramInfoList, hasCaptures, lambda);
+  // Save values of parameters to locals
+  llvm::Value *captureStructPtrPtr = nullptr;
+  for (auto &arg : lambda->args()) {
+    // Get information about the parameter
+    const size_t argNumber = arg.getArgNo();
+    auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
+    // Allocate space for it
+    llvm::Type *paramType = funcType->getParamType(argNumber);
+    llvm::Value *paramAddress = insertAlloca(paramType, paramName);
+    // Update the symbol table entry
+    if (hasCaptures && argNumber == 0)
+      captureStructPtrPtr = paramAddress;
+    else
+      paramSymbol->updateAddress(paramAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    // Store the value at the new address
+    builder.CreateStore(&arg, paramAddress);
+  }
 
   // Store the default values for optional function args
-  visitOptionalLambdaParameters(node->paramLst(), argIdx);
+  if (node->paramLst()) {
+    const std::vector<DeclStmtNode *> params = node->paramLst()->params();
+    for (; argIdx < params.size(); argIdx++)
+      visit(params.at(argIdx));
+  }
 
   // Extract captures from captures struct
   if (hasCaptures) {
     assert(!paramInfoList.empty());
+    llvm::Value *captureStructPtr = builder.CreateLoad(builder.getPtrTy(), captureStructPtrPtr);
     size_t captureIdx = 0;
     for (const std::pair<const std::string, Capture> &capture : captures) {
-      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructAddress, captureIdx);
+      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
       capture.second.capturedEntry->pushAddress(captureAddress);
       captureIdx++;
     }
@@ -755,69 +881,10 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
   // Only set the source location if this is not the root scope
   if (currentScope != rootScope && !node->isParamType && !node->isReturnType && !node->isFieldType)
     diGenerator.setSourceLocation(node);
-
   // Retrieve symbol type
   SymbolType symbolType = node->getEvaluatedSymbolType(manIdx);
   assert(!symbolType.is(TY_DYN)); // Symbol type should not be dyn anymore at this point
-
   return symbolType.toLLVMType(context, currentScope);
-}
-
-void IRGenerator::visitMandatoryLambdaParameters(const ParamLstNode *paramLst, const Function &spiceFunc,
-                                                 ParamInfoList &paramInfoList, std::vector<llvm::Type *> &paramTypes,
-                                                 bool hasCaptures, size_t &argIdx) {
-  // If we have no parameters, skip
-  if (!paramLst || paramLst->params().empty())
-    return;
-
-  // Visit mandatory parameters
-  const size_t numOfParams = spiceFunc.paramList.size();
-  paramInfoList.reserve(numOfParams);
-  paramTypes.reserve(numOfParams);
-  for (; argIdx < numOfParams + static_cast<int>(hasCaptures); argIdx++) {
-    const DeclStmtNode *param = paramLst->params().at(argIdx);
-    // Get symbol table entry of param
-    SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
-    assert(paramSymbol != nullptr);
-    // Retrieve type of param
-    llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
-    // Add it to the lists
-    paramInfoList.emplace_back(param->varName, paramSymbol);
-    paramTypes.push_back(paramType);
-  }
-}
-
-void IRGenerator::visitOptionalLambdaParameters(const ParamLstNode *paramLst, size_t &argIdx) {
-  // If we have no parameters, skip
-  if (!paramLst || paramLst->params().empty())
-    return;
-
-  const std::vector<DeclStmtNode *> params = paramLst->params();
-  for (; argIdx < params.size(); argIdx++)
-    visit(params.at(argIdx));
-}
-
-llvm::Value *IRGenerator::storeLambdaArgumentValues(ParamInfoList &paramInfoList, bool hasCaptures, llvm::Function *lambda) {
-  // Store function argument values
-  llvm::Value *captureStructAddress = nullptr;
-  for (auto &arg : lambda->args()) {
-    // Get parameter info
-    const size_t argNumber = arg.getArgNo();
-    auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
-    // Allocate space for it
-    llvm::Type *paramType = lambda->getFunctionType()->getParamType(argNumber);
-    llvm::Value *paramAddress = this->insertAlloca(paramType, paramName);
-    // Update the symbol table entry
-    if (hasCaptures && argNumber == 0)
-      captureStructAddress = paramAddress;
-    else
-      paramSymbol->updateAddress(paramAddress);
-    // Generate debug info
-    this->diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
-    // Store the value at the new address
-    this->builder.CreateStore(&arg, paramAddress);
-  }
-  return captureStructAddress;
 }
 
 llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Function *lambda) {
@@ -842,11 +909,11 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *cap
   }
 
   // Create fat pointer
-  llvm::StructType *structType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
-  llvm::Value *fatFctPtr = insertAlloca(structType, "fat.ptr");
-  llvm::Value *fctPtr = builder.CreateStructGEP(structType, fatFctPtr, 0);
-  builder.CreateStore(fctPtr, lambda);
-  llvm::Value *capturePtr = builder.CreateStructGEP(structType, fatFctPtr, 1);
+  llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
+  llvm::Value *fatFctPtr = insertAlloca(fatStructType, "fat.ptr");
+  llvm::Value *fctPtr = builder.CreateStructGEP(fatStructType, fatFctPtr, 0);
+  builder.CreateStore(lambda, fctPtr);
+  llvm::Value *capturePtr = builder.CreateStructGEP(fatStructType, fatFctPtr, 1);
   builder.CreateStore(captureStructAddress, capturePtr);
 
   return fatFctPtr;

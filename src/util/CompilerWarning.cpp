@@ -30,7 +30,7 @@ CompilerWarning::CompilerWarning(CompilerWarningType type, const std::string &me
 /**
  * Print the compiler warning to the standard error output
  */
-void CompilerWarning::print() const { std::cout << warningMessage << "\n"; }
+void CompilerWarning::print() const { std::cout << "\033[33m" << warningMessage << "\033[0m\n"; }
 
 /**
  * Get the prefix of the warning message for a particular error

@@ -1,0 +1,17 @@
+f<int> main() {
+    int z = 2;
+    int w = 3;
+    p(int&) foo1 = p(int& x) { // {ptr (fctPtr), ptr (captureStructPtr)}
+        x += z + w;
+    };
+    f<bool>(int&) foo2 = f<bool>(int& x) { // {ptr (fctPtr), ptr (captureStructPtr)}
+        x += z + w;
+        return true;
+    };
+    int x = 1;
+    foo1(x); // Load fctPtr and call it with captureStructPtr
+    assert x == 6;
+    assert foo2(x); // Load fctPtr and call it with captureStructPtr
+    assert x == 11;
+    printf("All tests passed!\n");
+}

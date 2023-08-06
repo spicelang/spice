@@ -1,33 +1,22 @@
-f<int> main() {
-    f<string>() callbackWithoutArgs = f<string>() {
-        return "Callback called!\n";
-    };
-    printf("%s", callbackWithoutArgs());
-
-    f<bool>(String&, double) callbackWithArgs1 = f<bool>(String& str, double d) {
-        printf("Callback called with args: %s, %f\n", str, d);
-        return str.getRaw() == "Hello" && d == 3.14;
-    };
-    printf("%d\n", callbackWithArgs1(String("Hello"), 3.14));
-
-    f<short>(String, short) callbackWithArgs2 = f<short>(String str, short b) {
-        printf("Callback called with args: %s, %d\n", str, b);
-        return ~b;
-    };
-    printf("%d\n", (callbackWithArgs2(String("Hello World!"), 321s) ^ 956s) == 1 ? 9 : 12);
+p test(p(int&) l) {
+    int x = 1;
+    l(x);
+    assert x == 6;
 }
 
-/*f<int> main() {
+f<int> main() {
     int z = 2;
     int w = 3;
-    p(int&) foo = p(int& x) { // {ptr (fctPtr), ptr (captureStructPtr)}
-        //x += z + w;
-        x = 5;
+    p(int&) foo = p(int& x) {
+        printf("Test\n");
+        x += z + w;
     };
     int x = 1;
-    foo(x); // Load fctPtr and call it with captureStructPtr
-    printf("%d", x);
-}*/
+    foo(x);
+    assert x == 6;
+    test(foo);
+    printf("All tests passed!\n");
+}
 
 /*type T int|long;
 

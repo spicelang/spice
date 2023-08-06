@@ -177,14 +177,14 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     break;
   }
   case TY_FUNCTION: {
-    out << "PF";
+    out << (chainElement.data.hasCaptures ? "PFC" : "PF");
     for (const SymbolType &paramType : chainElement.paramTypes)
       mangleType(out, paramType);
     out << "E";
     break;
   }
   case TY_PROCEDURE: {
-    out << "PFv";
+    out << (chainElement.data.hasCaptures ? "PFCv" : "PFv");
     for (size_t i = 1; i < chainElement.paramTypes.size(); i++)
       mangleType(out, chainElement.paramTypes.at(i));
     out << "E";

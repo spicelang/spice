@@ -135,10 +135,6 @@ private:
   void changeToScope(Scope *scope, ScopeType scopeType);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
   llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Function *lambda);
-  llvm::Value *storeLambdaArgumentValues(ParamInfoList &paramInfoList, bool hasCaptures, llvm::Function *lambda);
-  void visitMandatoryLambdaParameters(const ParamLstNode *node, const Function &spiceFunc, ParamInfoList &paramInfoList,
-                                      std::vector<llvm::Type *> &paramTypes, bool hasCaptures, size_t &argIdx);
-  void visitOptionalLambdaParameters(const ParamLstNode *node, size_t &argIdx);
 
   // Private members
   llvm::LLVMContext &context;

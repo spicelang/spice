@@ -177,8 +177,15 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         // Get symbol table entry of param
         SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
+        const SymbolType paramSymbolType = manifestation->getParamTypes().at(argIdx);
+        // Pass the information if captures are taken for function/procedure types
+        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
+          SymbolType paramSymbolType = paramSymbol->getType();
+          paramSymbolType.setHasLambdaCaptures(true);
+          paramSymbol->updateType(paramSymbolType, true);
+        }
         // Retrieve type of param
-        llvm::Type *paramType = manifestation->getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+        llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
         // Add it to the lists
         paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
@@ -337,8 +344,15 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         // Get symbol table entry of param
         SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
+        const SymbolType paramSymbolType = manifestation->getParamTypes().at(argIdx);
+        // Pass the information if captures are taken for function/procedure types
+        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
+          SymbolType paramSymbolType = paramSymbol->getType();
+          paramSymbolType.setHasLambdaCaptures(true);
+          paramSymbol->updateType(paramSymbolType, true);
+        }
         // Retrieve type of param
-        llvm::Type *paramType = manifestation->getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+        llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
         // Add it to the lists
         paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);

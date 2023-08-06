@@ -1661,7 +1661,6 @@ public:
     [[nodiscard]] bool isMethodCall() const { return callType == TYPE_METHOD; }
     [[nodiscard]] bool isCtorCall() const { return callType == TYPE_CTOR; }
     [[nodiscard]] bool isFctPtrCall() const { return callType == TYPE_FCT_PTR; }
-    [[nodiscard]] bool takesCaptures() const;
   };
 
   // Constructors
