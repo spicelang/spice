@@ -30,7 +30,7 @@ class Interface;
 const char *const STROBJ_NAME = "String";
 const long ARRAY_SIZE_UNKNOWN = 0;
 
-enum SymbolSuperType : uint16_t {
+enum SymbolSuperType : uint8_t {
   TY_INVALID,
   TY_UNRESOLVED,
   TY_DOUBLE,
@@ -61,6 +61,7 @@ public:
   union TypeChainElementData {
     size_t arraySize = 0; // TY_ARRAY
     Scope *bodyScope;     // TY_STRUCT, TY_INTERFACE, TY_ENUM
+    bool hasCaptures;     // TY_FUNCTION, TY_PROCEDURE (lambdas)
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
   };
@@ -188,6 +189,8 @@ public:
   [[nodiscard]] std::vector<SymbolType> getFunctionParamTypes() const;
   void setFunctionParamAndReturnTypes(const std::vector<SymbolType> &paramAndReturnTypes);
   [[nodiscard]] const std::vector<SymbolType> &getFunctionParamAndReturnTypes() const;
+  void setHasLambdaCaptures(bool hasCaptures);
+  [[nodiscard]] bool hasLambdaCaptures() const;
   [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);

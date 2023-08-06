@@ -401,23 +401,43 @@ std::vector<SymbolType> SymbolType::getFunctionParamTypes() const {
 }
 
 /**
- * Set the param and return types of a function or procedure type
+ * Set has captures of a function or procedure type
+ *
+ * @param hasCaptures Has captures
+ */
+void SymbolType::setHasLambdaCaptures(bool hasCaptures) {
+  assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  typeChain.front().data.hasCaptures = hasCaptures;
+}
+
+/**
+ * Check if a function or procedure type has captures
+ *
+ * @return Has captures
+ */
+bool SymbolType::hasLambdaCaptures() const {
+  assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  return typeChain.front().data.hasCaptures;
+}
+
+/**
+ * Set the param and return types of a function or procedure base type
  *
  * @param newParamAndReturnTypes Function param and return types (first is return type, rest are param types)
  */
 void SymbolType::setFunctionParamAndReturnTypes(const std::vector<SymbolType> &newParamAndReturnTypes) {
-  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  typeChain.back().paramTypes = newParamAndReturnTypes;
+  assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  typeChain.front().paramTypes = newParamAndReturnTypes;
 }
 
 /**
- * Get the param and return types of a function or procedure type
+ * Get the param and return types of a function or procedure base type
  *
  * @return Function param and return types (first is return type, rest are param types)
  */
 const std::vector<SymbolType> &SymbolType::getFunctionParamAndReturnTypes() const {
-  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  return typeChain.back().paramTypes;
+  assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  return typeChain.front().paramTypes;
 }
 
 /**

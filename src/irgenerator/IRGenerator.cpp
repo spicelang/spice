@@ -157,7 +157,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     return builder.getFalse();
 
   // Pointer or reference
-  if (symbolType.isOneOf({TY_PTR, TY_REF}))
+  if (symbolType.isOneOf({TY_PTR, TY_REF, TY_FUNCTION, TY_PROCEDURE}))
     return llvm::Constant::getNullValue(builder.getPtrTy());
 
   // Array

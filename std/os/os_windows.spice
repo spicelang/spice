@@ -4,6 +4,10 @@ public const string OS_NAME = "windows";
 // Contains the native path separator
 public const char PATH_SEPARATOR = '\\';
 
+// System exit codes
+public const int EXIT_CODE_SUCCESS = 0;
+public const int EXIT_CODE_ERROR = 1;
+
 // Returns if the current OS is Linux
 public f<bool> isLinux() {
     return false;

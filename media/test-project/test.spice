@@ -1,10 +1,12 @@
-f<int> main() {
-    p(int, bool) x = p(int x, bool y = false) {
-        x++;
-    };
-    x(1, true);
-}
+import "std/os/thread";
 
+f<int> main() {
+    Thread t = Thread(p() {
+        printf("Hello from another thread");
+    });
+    t.join();
+    printf("Test");
+}
 
 /*type T int|long;
 

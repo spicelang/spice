@@ -116,7 +116,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(SymbolType &symbolType, const 
     const SymbolType &replacementType = typeMapping.at(genericTypeName);
     symbolType = symbolType.replaceBaseType(replacementType);
   } else { // The symbol type itself is non-generic, but one or several template or param types are
-    if (symbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    if (symbolType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
       // Substantiate each param type
       std::vector<SymbolType> paramTypes = symbolType.getFunctionParamAndReturnTypes();
       for (SymbolType &paramType : paramTypes)

@@ -46,10 +46,10 @@ const uint8_t SPECIFIER_DEFAULTS_INTERFACE = 0b000'010;
 const uint8_t SPECIFIER_DEFAULTS_ENUM = 0b001'010;
 // Defaults: Heap: 0, Inline: 0, Const: 1, Signed: 0, Unsigned: 1, Public: 0
 const uint8_t SPECIFIER_DEFAULTS_ALIAS = 0b001'010;
-// Defaults: Heap: 0, Inline: 0, Const: 1, Signed: 0, Unsigned: 1, Public: 0
-const uint8_t SPECIFIER_DEFAULTS_FUNCTION = 0b001'010;
-// Defaults: Heap: 0, Inline: 0, Const: 1, Signed: 0, Unsigned: 1, Public: 0
-const uint8_t SPECIFIER_DEFAULTS_PROCEDURE = 0b001'010;
+// Defaults: Heap: 0, Inline: 0, Const: 0, Signed: 0, Unsigned: 1, Public: 0
+const uint8_t SPECIFIER_DEFAULTS_FUNCTION = 0b000'010;
+// Defaults: Heap: 0, Inline: 0, Const: 0, Signed: 0, Unsigned: 1, Public: 0
+const uint8_t SPECIFIER_DEFAULTS_PROCEDURE = 0b000'010;
 // Defaults: Heap: 0, Inline: 0, Const: 1, Signed: 0, Unsigned: 1, Public: 1
 const uint8_t SPECIFIER_DEFAULTS_IMPORT = 0b001'011;
 

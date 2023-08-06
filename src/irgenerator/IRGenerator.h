@@ -14,6 +14,8 @@ namespace spice::compiler {
 const char *const ANON_GLOBAL_STRING_NAME = "anon.string.";
 const char *const ANON_GLOBAL_ARRAY_NAME = "anon.array.";
 const char *const ANON_GLOBAL_STRUCT_NAME = "anon.struct.";
+const char *const ANON_GLOBAL_CAPTURES_ARRAY_NAME = "anon.captures.";
+const char *const CAPTURES_PARAM_NAME = "captures";
 
 enum Likeliness { UNSPECIFIED, LIKELY, UNLIKELY };
 
@@ -22,6 +24,9 @@ class SourceFile;
 
 class IRGenerator : private CompilerPass, public ParallelizableASTVisitor {
 public:
+  // Type definitions
+  using ParamInfoList = std::vector<std::pair<std::string, SymbolTableEntry *>>;
+
   // Constructors
   IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
 
@@ -127,8 +132,9 @@ private:
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   void materializeConstant(LLVMExprResult &exprResult);
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
-  void changeToScope(Scope *scope, const ScopeType scopeType);
+  void changeToScope(Scope *scope, ScopeType scopeType);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
+  llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Function *lambda);
 
   // Private members
   llvm::LLVMContext &context;

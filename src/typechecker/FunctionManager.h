@@ -50,7 +50,7 @@ private:
   [[nodiscard]] static bool matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping,
                                           bool strictSpecifierMatching);
   [[nodiscard]] static bool matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedArgTypes,
-                                          TypeMapping &typeMapping, bool strictSpecifierMatching);
+                                          TypeMapping &typeMapping, bool strictSpecifierMatching, bool &needsSubstantiation);
   static void substantiateReturnType(Function &candidate, TypeMapping &typeMapping);
   static bool matchReturnType(Function &candidate, const SymbolType &requestedReturnType, TypeMapping &typeMapping,
                               bool strictSpecifierMatching);

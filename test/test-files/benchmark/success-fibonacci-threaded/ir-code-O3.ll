@@ -33,19 +33,9 @@ if.exit.L4:                                       ; preds = %1, %if.exit.L4
   br i1 %8, label %common.ret.loopexit, label %if.exit.L4
 }
 
-; Function Attrs: nofree nounwind
-define private void @_Z9calcFib30v() #1 {
-  %1 = tail call fastcc i32 @_Z3fibi(i32 30)
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %1)
-  ret void
-}
-
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
-
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() local_unnamed_addr #2 {
-for.body.L16:
+define dso_local i32 @main() local_unnamed_addr #1 {
+for.body.L11:
   %threads = alloca [8 x %struct.Thread], align 8
   %0 = alloca %struct.Thread, align 8
   %.fca.1.0.gep = getelementptr inbounds [8 x %struct.Thread], ptr %threads, i64 0, i64 1, i32 0
@@ -55,28 +45,28 @@ for.body.L16:
   %.fca.5.0.gep = getelementptr inbounds [8 x %struct.Thread], ptr %threads, i64 0, i64 5, i32 0
   %.fca.6.0.gep = getelementptr inbounds [8 x %struct.Thread], ptr %threads, i64 0, i64 6, i32 0
   %.fca.7.0.gep = getelementptr inbounds [8 x %struct.Thread], ptr %threads, i64 0, i64 7, i32 0
-  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z9calcFib30v) #3
+  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z13lambda.L12C29v) #3
   %1 = load i64, ptr %0, align 8
   store i64 %1, ptr %threads, align 8
-  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z9calcFib30v) #3
+  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z13lambda.L12C29v) #3
   %2 = load i64, ptr %0, align 8
   store i64 %2, ptr %.fca.1.0.gep, align 8
-  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z9calcFib30v) #3
+  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z13lambda.L12C29v) #3
   %3 = load i64, ptr %0, align 8
   store i64 %3, ptr %.fca.2.0.gep, align 8
-  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z9calcFib30v) #3
+  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z13lambda.L12C29v) #3
   %4 = load i64, ptr %0, align 8
   store i64 %4, ptr %.fca.3.0.gep, align 8
-  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z9calcFib30v) #3
+  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z13lambda.L12C29v) #3
   %5 = load i64, ptr %0, align 8
   store i64 %5, ptr %.fca.4.0.gep, align 8
-  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z9calcFib30v) #3
+  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z13lambda.L12C29v) #3
   %6 = load i64, ptr %0, align 8
   store i64 %6, ptr %.fca.5.0.gep, align 8
-  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z9calcFib30v) #3
+  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z13lambda.L12C29v) #3
   %7 = load i64, ptr %0, align 8
   store i64 %7, ptr %.fca.6.0.gep, align 8
-  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z9calcFib30v) #3
+  call void @_ZN6Thread4ctorEPFvE(ptr nonnull %0, ptr nonnull @_Z13lambda.L12C29v) #3
   %8 = load i64, ptr %0, align 8
   store i64 %8, ptr %.fca.7.0.gep, align 8
   %puts = call i32 @puts(ptr nonnull dereferenceable(1) @str)
@@ -92,14 +82,24 @@ for.body.L16:
   ret i32 0
 }
 
+; Function Attrs: nofree nounwind
+define private void @_Z13lambda.L12C29v() #2 {
+  %1 = tail call fastcc i32 @_Z3fibi(i32 30)
+  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %1)
+  ret void
+}
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #2
+
 declare void @_ZN6Thread4ctorEPFvE(ptr, ptr) local_unnamed_addr
 
 declare void @_ZN6Thread4joinEv(ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #1
+declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #2
 
 attributes #0 = { nofree nosync nounwind memory(none) }
-attributes #1 = { nofree nounwind }
-attributes #2 = { noinline nounwind optnone uwtable }
+attributes #1 = { noinline nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 attributes #3 = { nounwind }

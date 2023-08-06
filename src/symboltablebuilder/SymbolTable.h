@@ -44,6 +44,7 @@ public:
   SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc, size_t numericSuffix = 0);
   Capture *lookupCapture(const std::string &symbolName);
   Capture *lookupCaptureStrict(const std::string &symbolName);
+  void setCapturingRequired(CaptureMode captureMode);
   void deleteAnonymous(const std::string &name);
   [[nodiscard]] nlohmann::json toJSON() const;
 
@@ -53,6 +54,7 @@ public:
   std::unordered_map<std::string, SymbolTableEntry> symbols;
   std::unordered_map<std::string, Capture> captures;
   bool capturingRequired = false;
+  CaptureMode capturingMode = BY_VALUE;
 };
 
 } // namespace spice::compiler

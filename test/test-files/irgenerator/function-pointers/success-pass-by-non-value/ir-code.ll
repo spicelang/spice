@@ -15,7 +15,7 @@ define private i32 @_Z4testPc(ptr %0) {
   ret i32 12
 }
 
-define private i32 @_Z6invokePPKPFiPcE(ptr %0) {
+define private i32 @_Z6invokePPPFiPcE(ptr %0) {
   %result = alloca i32, align 4
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
@@ -26,7 +26,7 @@ define private i32 @_Z6invokePPKPFiPcE(ptr %0) {
   ret i32 %5
 }
 
-define private i32 @_Z6invokeRKPFiPcE(ptr %0) {
+define private i32 @_Z6invokeRPFiPcE(ptr %0) {
   %result = alloca i32, align 4
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
@@ -44,9 +44,9 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store ptr @_Z4testPc, ptr %testFct, align 8
   store ptr %testFct, ptr %testFctPtr, align 8
-  %1 = call i32 @_Z6invokePPKPFiPcE(ptr %testFctPtr)
+  %1 = call i32 @_Z6invokePPPFiPcE(ptr %testFctPtr)
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1)
-  %3 = call i32 @_Z6invokeRKPFiPcE(ptr %testFct)
+  %3 = call i32 @_Z6invokeRPFiPcE(ptr %testFct)
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %3)
   %5 = load i32, ptr %result, align 4
   ret i32 %5

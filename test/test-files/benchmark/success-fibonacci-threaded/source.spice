@@ -5,16 +5,14 @@ f<int> fib(int n) {
     return fib(n - 1) + fib(n - 2);
 }
 
-p calcFib30() {
-    int result = fib(30);
-    printf("Thread returned with result: %d\n", result);
-}
-
 f<int> main() {
     int threadCount = 8;
     Thread[8] threads = [];
     for unsigned int i = 0; i < threadCount; i++ {
-        threads[i] = Thread(calcFib30);
+        threads[i] = Thread(p() {
+            int result = fib(30);
+            printf("Thread returned with result: %d\n", result);
+        });
     }
     printf("Started all threads. Waiting for results ...\n");
     for unsigned int i = 0; i < threadCount; i++ {

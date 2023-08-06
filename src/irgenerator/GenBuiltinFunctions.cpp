@@ -32,7 +32,7 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
       llvm::Type *argBaseType = argSymbolType.getBaseType().toLLVMType(context, currentScope);
       argValPtr = builder.CreateInBoundsGEP(argBaseType, argValPtr, indices);
-      argVal = builder.CreateLoad(builder.getInt8Ty()->getPointerTo(), argValPtr);
+      argVal = builder.CreateLoad(builder.getPtrTy(), argValPtr);
     } else {
       argVal = resolveValue(arg);
     }

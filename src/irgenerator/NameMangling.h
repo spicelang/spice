@@ -13,6 +13,34 @@ class Function;
 class Struct;
 class Interface;
 
+/**
+ * Helper for name mangling.
+ * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
+ *
+ * Names:
+ * - P: pointer
+ * - R: reference
+ * - A: array
+ * - d: double
+ * - i: int
+ * - j: unsigned int
+ * - s: short
+ * - t: unsigned short
+ * - l: long
+ * - m: unsigned long
+ * - a: byte
+ * - h: unsigned byte / unsigned char
+ * - c: char
+ * - Pc: string (char*)
+ * - b: bool
+ * - v: void
+ * - K: const
+ * - C: capturing
+ *
+ * Reserved:
+ * - I
+ * - E
+ */
 class NameMangling {
 public:
   // Public methods

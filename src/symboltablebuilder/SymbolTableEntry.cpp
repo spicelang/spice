@@ -99,6 +99,24 @@ void SymbolTableEntry::updateAddress(llvm::Value *address) {
 }
 
 /**
+ * Push a new address to the stack
+ *
+ * @param address Address to push
+ */
+void SymbolTableEntry::pushAddress(llvm::Value *address) {
+  assert(address != nullptr);
+  memAddress.push(address);
+}
+
+/**
+ * Remove the last address from the stack
+ */
+void SymbolTableEntry::popAddress() {
+  assert(!memAddress.empty());
+  memAddress.pop();
+}
+
+/**
  * Check if this symbol is a struct field
  *
  * @return Struct field or not

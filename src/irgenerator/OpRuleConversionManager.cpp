@@ -586,7 +586,9 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
     llvm::Value *result = builder.CreateCall(opFct, {lhsV(), rhsV()});
     return {.value = result};
   }
-  case COMB(TY_BOOL, TY_BOOL):
+  case COMB(TY_BOOL, TY_BOOL):         // fallthrough
+  case COMB(TY_FUNCTION, TY_FUNCTION): // fallthrough
+  case COMB(TY_PROCEDURE, TY_PROCEDURE):
     return {.value = builder.CreateICmpEQ(lhsV(), rhsV())};
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: =="); // GCOV_EXCL_LINE
@@ -706,7 +708,9 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
     // Negate the result
     return {.value = builder.CreateNot(result)};
   }
-  case COMB(TY_BOOL, TY_BOOL):
+  case COMB(TY_BOOL, TY_BOOL):         // fallthrough
+  case COMB(TY_FUNCTION, TY_FUNCTION): // fallthrough
+  case COMB(TY_PROCEDURE, TY_PROCEDURE):
     return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !="); // GCOV_EXCL_LINE

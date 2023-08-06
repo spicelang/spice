@@ -102,7 +102,10 @@ std::string SymbolType::TypeChainElement::getName(bool withSize) const {
     return "dyn";
   case TY_FUNCTION: {
     std::stringstream functionName;
-    functionName << "f<" << paramTypes.front().getName(true) << ">(";
+    functionName << "f";
+    if (data.hasCaptures)
+      functionName << "[]";
+    functionName << "<" << paramTypes.front().getName(true) << ">(";
     for (size_t i = 1; i < paramTypes.size(); i++) {
       if (i > 1)
         functionName << ",";
@@ -113,7 +116,10 @@ std::string SymbolType::TypeChainElement::getName(bool withSize) const {
   }
   case TY_PROCEDURE: {
     std::stringstream procedureName;
-    procedureName << "p(";
+    procedureName << "p";
+    if (data.hasCaptures)
+      procedureName << "[]";
+    procedureName << "(";
     for (size_t i = 1; i < paramTypes.size(); i++) {
       if (i > 1)
         procedureName << ",";

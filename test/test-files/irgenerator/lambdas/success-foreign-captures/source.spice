@@ -1,0 +1,21 @@
+p test(p(int&) l1, f<bool>(int&) l2) {
+    int x = 1;
+    l1(x);
+    assert x == 6;
+    assert l2(x);
+    assert x == 11;
+}
+
+f<int> main() {
+    int z = 2;
+    int w = 3;
+    p(int&) foo1 = p(int& x) {
+        x += z + w;
+    };
+    f<bool>(int&) foo2 = f<bool>(int& x) {
+        x += z + w;
+        return true;
+    };
+    test(foo1, foo2);
+    printf("All tests passed!\n");
+}

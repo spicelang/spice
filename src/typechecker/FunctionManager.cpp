@@ -5,7 +5,6 @@
 #include <ast/ASTNodes.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
-#include <typechecker/TypeChecker.h>
 #include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {
@@ -168,7 +167,8 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
         continue; // Leave this manifestation and try the next one
 
       // Check arg types requirement
-      if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching))
+      bool forceSubstantiation = false;
+      if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching, forceSubstantiation))
         continue; // Leave this manifestation and try the next one
 
       // Substantiate return type
@@ -194,7 +194,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       }
 
       // Check if the function is generic needs to be substantiated
-      if (presetFunction.templateTypes.empty()) {
+      if (presetFunction.templateTypes.empty() && !forceSubstantiation) {
         assert(matchScope->functions.contains(defCodeLocStr) && matchScope->functions.at(defCodeLocStr).contains(signature));
         matches.push_back(&matchScope->functions.at(defCodeLocStr).at(signature));
         matches.back()->used = true;
@@ -213,6 +213,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       // Insert the substantiated version if required
       Function *substantiatedFunction = insertSubstantiation(matchScope, candidate, presetFunction.declNode);
       substantiatedFunction->genericSubstantiation = true;
+      substantiatedFunction->alreadyTypeChecked = false;
       substantiatedFunction->declNode->getFctManifestations()->push_back(substantiatedFunction);
 
       // Copy function entry
@@ -227,6 +228,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       Scope *childScope = matchScope->getChildScope(newSignature);
       assert(childScope != nullptr);
       childScope->isGenericScope = false;
+      substantiatedFunction->bodyScope = childScope;
 
       // Insert symbols for generic type names with concrete types into the child block
       for (const auto &[typeName, concreteType] : substantiatedFunction->typeMapping)
@@ -301,7 +303,8 @@ bool FunctionManager::matchInterfaceMethod(Scope *matchScope, const std::string 
       typeMapping.reserve(candidate.templateTypes.size());
 
       // Check arg types requirement
-      if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching))
+      bool forceSubstantiation = false;
+      if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching, forceSubstantiation))
         continue; // Leave this manifestation and try the next one
 
       if (!matchReturnType(candidate, requestedReturnType, typeMapping, strictSpecifierMatching))
@@ -367,7 +370,7 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
  * @return Fulfilled or not
  */
 bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedArgTypes,
-                                    TypeMapping &typeMapping, bool strictSpecifierMatching) {
+                                    TypeMapping &typeMapping, bool strictSpecifierMatching, bool &needsSubstantiation) {
   // If the number of arguments does not match with the number of params, the matching fails
   if (requestedArgTypes.size() != candidate.paramList.size())
     return false;
@@ -392,6 +395,12 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
     // Substantiate the candidate param type, based on the type mapping
     if (candidateParamType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType, typeMapping);
+
+    // If we have a function/procedure type we need to take care of the information, if it takes captures
+    if (requestedParamType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedParamType.hasLambdaCaptures()) {
+      candidateParamType.setHasLambdaCaptures(true);
+      needsSubstantiation = true;
+    }
   }
 
   return true;
