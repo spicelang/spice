@@ -260,8 +260,6 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
   TypeChecker typeChecker(resourceManager, this, TC_MODE_PREPARE);
   typeChecker.visit(ast);
 
-  checkForSoftErrors();
-
   previousStage = TYPE_CHECKER_PRE;
   timer.stop();
   printStatusMessage("Type Checker Pre", IO_AST, IO_AST, compilerOutput.times.typeCheckerPre);

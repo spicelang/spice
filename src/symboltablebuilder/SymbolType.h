@@ -28,6 +28,7 @@ class Interface;
 
 // Constants
 const char *const STROBJ_NAME = "String";
+const char *const ERROBJ_NAME = "Error";
 const long ARRAY_SIZE_UNKNOWN = 0;
 
 enum SymbolSuperType : uint8_t {
@@ -124,11 +125,12 @@ public:
   }
   [[nodiscard]] bool isIterator(const ASTNode *node) const;
   [[nodiscard]] bool isStringObj() const;
+  [[nodiscard]] bool isErrorObj() const;
   [[nodiscard]] bool implements(const SymbolType &symbolType, const ASTNode *node) const;
   [[nodiscard]] bool isBaseType(SymbolSuperType superType) const;
   [[nodiscard]] inline bool isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
     const SymbolSuperType superType = getSuperType();
-    return std::any_of(superTypes.begin(), superTypes.end(), [&superType](int type) { return type == superType; });
+    return std::ranges::any_of(superTypes, [&superType](int type) { return type == superType; });
   }
   [[nodiscard]] bool isSameContainerTypeAs(const SymbolType &otherType) const;
   [[nodiscard]] inline SymbolSuperType getSuperType() const {
@@ -152,7 +154,7 @@ public:
   void setTemplateTypes(const std::vector<SymbolType> &templateTypes);
   void setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes);
   [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
-  [[nodiscard]] bool isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const;
+  [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
   [[nodiscard]] std::string getName(bool withSize = false) const;
   [[nodiscard]] inline size_t getArraySize() const {
     assert(getSuperType() == TY_ARRAY);

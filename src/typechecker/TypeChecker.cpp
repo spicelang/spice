@@ -421,6 +421,12 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
     }
   }
 
+  // Check if all template types were used in the function parameters
+  if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; })) {
+    softError(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters");
+    return static_cast<std::vector<Function *> *>(nullptr);
+  }
+
   // Build signature object
   Function signature(node->methodName, nullptr, SymbolType(TY_DYN), returnType, paramList, usedGenericTypes, node, false);
 
@@ -676,6 +682,18 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
     SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays")
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
+}
+
+std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
+  SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  HANDLE_UNRESOLVED_TYPE_ER(argType)
+  argType = argType.removeReferenceWrapper();
+
+  // Check if arg is of type array
+  if (!argType.isErrorObj())
+    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
+
+  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_DYN), manIdx)};
 }
 
 std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {

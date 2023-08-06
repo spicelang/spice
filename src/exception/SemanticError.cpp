@@ -139,6 +139,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Array item type not matching";
   case EXPECTED_ARRAY_TYPE:
     return "Expected array type";
+  case EXPECTED_ERROR_TYPE:
+    return "Expected error type";
   case RETURN_WITHOUT_VALUE_RESULT:
     return "Return without initialization of result variable";
   case RETURN_WITH_VALUE_IN_PROCEDURE:
@@ -155,12 +157,12 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Reference without initializer";
   case GENERIC_TYPE_NOT_IN_TEMPLATE:
     return "Generic type not contained in template";
+  case GENERIC_TYPE_NOT_USED:
+    return "Template types not used";
   case SPECIFIER_AT_ILLEGAL_CONTEXT:
     return "Specifier at illegal context";
   case INSUFFICIENT_VISIBILITY:
     return "Insufficient symbol visibility";
-  case TID_INVALID:
-    return "Invalid thread id";
   case JOIN_ARG_MUST_BE_TID:
     return "Argument of join builtin must be a tid";
   case EXPECTED_GENERIC_TYPE:

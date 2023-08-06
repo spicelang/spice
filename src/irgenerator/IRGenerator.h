@@ -71,6 +71,7 @@ public:
   std::any visitSizeofCall(const SizeofCallNode *node) override;
   std::any visitAlignofCall(const AlignofCallNode *node) override;
   std::any visitLenCall(const LenCallNode *node) override;
+  std::any visitPanicCall(const PanicCallNode *node) override;
   // Expressions
   std::any visitAssignExpr(const AssignExprNode *node) override;
   std::any visitTernaryExpr(const TernaryExprNode *node) override;

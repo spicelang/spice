@@ -1,4 +1,12 @@
-import "std/type/result";
+import "std/iterator/number-iterator";
+
+f<int> main() {
+    foreach double i, int item : range(1s, 12s) {
+        printf("Item at index %f: %d", i, item);
+    }
+}
+
+/*import "std/type/result";
 
 f<Result<int>> test() {
     return err("This failed");
@@ -7,7 +15,7 @@ f<Result<int>> test() {
 f<int> main() {
     dyn res = test();
     printf("%d\n", res.unwrap());
-}
+}*/
 
 /*type T int|long;
 

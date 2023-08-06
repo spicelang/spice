@@ -219,6 +219,15 @@ bool SymbolType::isStringObj() const {
 }
 
 /**
+ * Check if the current type is a error object
+ *
+ * @return Error object or not
+ */
+bool SymbolType::isErrorObj() const {
+  return is(TY_STRUCT) && getOriginalSubType() == ERROBJ_NAME && getBodyScope()->sourceFile->stdFile;
+}
+
+/**
  * Check if the current type implements the given interface type
  *
  * @param symbolType Interface type
@@ -271,13 +280,13 @@ bool SymbolType::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
 
   // Check if the type has generic template types
   const auto templateTypes = baseType.getTemplateTypes();
-  if (std::any_of(templateTypes.begin(), templateTypes.end(), [](const SymbolType &t) { return t.hasAnyGenericParts(); }))
+  if (std::ranges::any_of(templateTypes, [](const SymbolType &t) { return t.hasAnyGenericParts(); }))
     return true;
 
   // Check param and return types or functions/procedures
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
     const auto paramTypes = baseType.getFunctionParamAndReturnTypes();
-    if (std::any_of(paramTypes.begin(), paramTypes.end(), [](const SymbolType &t) { return t.hasAnyGenericParts(); }))
+    if (std::ranges::any_of(paramTypes, [](const SymbolType &t) { return t.hasAnyGenericParts(); }))
       return true;
   }
 
@@ -307,14 +316,28 @@ void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTyp
  */
 const std::vector<SymbolType> &SymbolType::getTemplateTypes() const { return typeChain.back().templateTypes; }
 
-bool SymbolType::isCoveredByGenericTypeList(const std::vector<GenericType> &genericTypeList) const {
+/**
+ * Check if the given generic type list has a substantiation for the current (generic) type
+ *
+ * @param genericTypeList Generic type list
+ * @return Has substantiation or not
+ */
+bool SymbolType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const {
   const SymbolType baseType = getBaseType();
   // Check if the symbol type itself is generic
-  if (baseType.is(TY_GENERIC))
-    return std::any_of(genericTypeList.begin(), genericTypeList.end(), [=](const GenericType &t) { return t == baseType; });
+  if (baseType.is(TY_GENERIC)) {
+    return std::ranges::any_of(genericTypeList, [&](GenericType &t) {
+      if (t == baseType) {
+        t.used = true;
+        return true;
+      }
+      return false;
+    });
+  }
   auto &baseTemplateTypes = baseType.getTemplateTypes();
-  return std::all_of(baseTemplateTypes.begin(), baseTemplateTypes.end(),
-                     [&](const SymbolType &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); });
+  return std::ranges::all_of(baseTemplateTypes, [&](const SymbolType &templateType) {
+    return templateType.isCoveredByGenericTypeList(genericTypeList);
+  });
 }
 
 /**

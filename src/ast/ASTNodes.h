@@ -1225,6 +1225,21 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 };
 
+// ======================================================== PanicCallNode ========================================================
+
+class PanicCallNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPanicCall(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitPanicCall(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+};
+
 // ======================================================= AssignExprNode ========================================================
 
 class AssignExprNode : public ASTNode {

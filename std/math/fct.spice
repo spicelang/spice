@@ -36,9 +36,8 @@ public inline f<Numeric> abs<Numeric>(Numeric input) {
  * @param input Intput number
  * @return Rounding result
  */
-public inline f<WholeNumber> floor<WholeNumber>(double input) {
-    int truncatedInt = toInt(input);
-    return (WholeNumber) truncatedInt;
+public inline f<int> floor(double input) {
+    return toInt(input);
 }
 
 /**
@@ -47,12 +46,12 @@ public inline f<WholeNumber> floor<WholeNumber>(double input) {
  * @param input Intput number
  * @return Rounding result
  */
-public inline f<WholeNumber> ceil<WholeNumber>(double input) {
+public inline f<int> ceil(double input) {
     int truncatedInt = toInt(input);
     if truncatedInt != input {
         truncatedInt++;
     }
-    return (WholeNumber) truncatedInt;
+    return truncatedInt;
 }
 
 /**
