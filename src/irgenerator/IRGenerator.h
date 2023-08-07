@@ -108,6 +108,7 @@ public:
   llvm::Value *resolveAddress(const ASTNode *node, bool storeVolatile = false);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult, bool storeVolatile = false);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
+  [[nodiscard]] llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const SymbolType &type, const ASTNode *node);
   [[nodiscard]] std::string getIRString() const;
 
 private:

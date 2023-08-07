@@ -127,6 +127,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Unknown datatype";
   case NUMBER_OF_FIELDS_NOT_MATCHING:
     return "Number of struct fields not matching declaration";
+  case FIELD_DEFAULT_VALUE_NO_COMPILETIME_CONST:
+    return "Field default value no compiletime constant";
   case FIELD_TYPE_NOT_MATCHING:
     return "The type of a field value does not match the declaration";
   case ARRAY_SIZE_INVALID:
@@ -191,6 +193,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Array index out of bounds";
   case EXPECTED_CONST_VARIABLE:
     return "Expected const variable";
+  case DIVISION_BY_ZERO:
+    return "Division by zero";
   case COMING_SOON_SA:
     return "Coming soon";
   }

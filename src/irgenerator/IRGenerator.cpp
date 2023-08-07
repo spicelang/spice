@@ -200,7 +200,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
       // Retrieve default field value
       llvm::Constant *defaultFieldValue;
       if (fieldNode->defaultValue())
-        defaultFieldValue = std::any_cast<llvm::Constant *>(visit(fieldNode->defaultValue()));
+        defaultFieldValue = getConst(fieldNode->defaultValue()->getCompileTimeValue(), fieldEntry->getType(), fieldNode);
       else
         defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getType());
 
@@ -210,6 +210,31 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
   }
 
   throw CompilerError(INTERNAL_ERROR, "Cannot determine default value for symbol type"); // GCOV_EXCL_LINE
+}
+
+llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, const SymbolType &type, const ASTNode *node) {
+  if (type.is(TY_DOUBLE))
+    return llvm::ConstantFP::get(context, llvm::APFloat(compileTimeValue.doubleValue));
+
+  if (type.is(TY_INT))
+    return builder.getInt32(compileTimeValue.intValue);
+
+  if (type.is(TY_SHORT))
+    return builder.getInt16(compileTimeValue.shortValue);
+
+  if (type.is(TY_LONG))
+    return builder.getInt64(compileTimeValue.longValue);
+
+  if (type.isOneOf({TY_BYTE, TY_CHAR}))
+    return builder.getInt8(compileTimeValue.charValue);
+
+  if (type.is(TY_STRING))
+    return createGlobalStringConst(ANON_GLOBAL_STRING_NAME, compileTimeValue.stringValue, node->codeLoc);
+
+  if (type.is(TY_BOOL))
+    return builder.getInt1(compileTimeValue.boolValue);
+
+  throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
 }
 
 llvm::BasicBlock *IRGenerator::createBlock(const std::string &blockName /*=""*/) {

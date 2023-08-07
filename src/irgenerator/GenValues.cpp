@@ -48,55 +48,7 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
 }
 
 std::any IRGenerator::visitConstant(const ConstantNode *node) {
-  const CompileTimeValue &compileTimeValue = node->getCompileTimeValue();
-
-  // Value is a double constant
-  if (node->type == ConstantNode::TYPE_DOUBLE) {
-    llvm::Constant *value = llvm::ConstantFP::get(context, llvm::APFloat(compileTimeValue.doubleValue));
-    return value;
-  }
-
-  // Value is an integer constant
-  if (node->type == ConstantNode::TYPE_INT) {
-    llvm::Type *intTy = builder.getInt32Ty();
-    llvm::Constant *constInt = llvm::ConstantInt::get(intTy, compileTimeValue.intValue, node->isSigned);
-    return constInt;
-  }
-
-  // Value is a short constant
-  if (node->type == ConstantNode::TYPE_SHORT) {
-    llvm::Type *shortTy = builder.getInt16Ty();
-    llvm::Constant *constShort = llvm::ConstantInt::get(shortTy, compileTimeValue.shortValue, node->isSigned);
-    return constShort;
-  }
-
-  // Value is a long constant
-  if (node->type == ConstantNode::TYPE_LONG) {
-    llvm::Type *longTy = builder.getInt64Ty();
-    llvm::Constant *constLong = llvm::ConstantInt::get(longTy, compileTimeValue.longValue, node->isSigned);
-    return constLong;
-  }
-
-  // Value is a char constant
-  if (node->type == ConstantNode::TYPE_CHAR) {
-    llvm::Type *charTy = builder.getInt8Ty();
-    llvm::Constant *constChar = llvm::ConstantInt::get(charTy, compileTimeValue.charValue, node->isSigned);
-    return constChar;
-  }
-
-  // Value is a string constant
-  if (node->type == ConstantNode::TYPE_STRING) {
-    llvm::Constant *constString = createGlobalStringConst(ANON_GLOBAL_STRING_NAME, compileTimeValue.stringValue, node->codeLoc);
-    return constString;
-  }
-
-  // Value is a boolean constant
-  if (node->type == ConstantNode::TYPE_BOOL) {
-    llvm::Constant *constBool = compileTimeValue.boolValue ? builder.getTrue() : builder.getFalse();
-    return constBool;
-  }
-
-  throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
+  return getConst(node->getCompileTimeValue(), node->getEvaluatedSymbolType(manIdx), node);
 }
 
 std::any IRGenerator::visitFctCall(const FctCallNode *node) {
