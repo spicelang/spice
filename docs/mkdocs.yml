@@ -85,7 +85,7 @@ nav:
     - language/foreach-loops.md
     - language/procedures.md
     - language/functions.md
-    #- language/lambda-functions.md
+    - language/lambda-functions.md
     - language/modules.md
     - language/declaration-specifiers.md
     - language/attributes.md
@@ -98,7 +98,7 @@ nav:
     - language/constructors-destructors.md
     - language/aliases.md
     - language/generics.md
-    #- language/threads.md
+    - language/threads.md
     - language/number-formats.md
     - language/operator-overloading.md
     - language/operator-precedence.md

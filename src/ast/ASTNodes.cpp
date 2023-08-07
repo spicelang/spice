@@ -98,7 +98,13 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   return returns;
 }
 
-const CompileTimeValue &TernaryExprNode::getCompileTimeValue() const {
+bool TernaryExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const LogicalOrExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant()->getCompileTimeValue(); }
+
+CompileTimeValue TernaryExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
@@ -119,23 +125,279 @@ const CompileTimeValue &TernaryExprNode::getCompileTimeValue() const {
   }
 }
 
-const CompileTimeValue &LogicalOrExprNode::getCompileTimeValue() const {
+bool LogicalOrExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const LogicalAndExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue LogicalOrExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
   // Check if one expression evaluates to 'true'
-  const std::vector<LogicalAndExprNode *> &ops = operands();
-  for (const LogicalAndExprNode *op : ops) {
-    // If one of the operands does not have a value, the whole expression has no value
-    if (!op->hasCompileTimeValue())
-      return compileTimeValue;
+  for (const LogicalAndExprNode *op : operands()) {
+    assert(op->hasCompileTimeValue());
     // If one operand evaluates to 'true' the whole expression is 'true'
-    const CompileTimeValue &opCompileTimeValue = op->getCompileTimeValue();
+    CompileTimeValue opCompileTimeValue = op->getCompileTimeValue();
     if (opCompileTimeValue.boolValue)
-      return opCompileTimeValue;
+      return CompileTimeValue{.boolValue = true};
   }
+
   // Return 'false'
-  return ops.front()->getCompileTimeValue();
+  return CompileTimeValue{.boolValue = false};
+}
+
+bool LogicalAndExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const BitwiseOrExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue LogicalAndExprNode::getCompileTimeValue() const {
+  if (children.size() == 1)
+    return children.front()->getCompileTimeValue();
+
+  // Check if all expressions evaluate to 'true'
+  for (const BitwiseOrExprNode *op : operands()) {
+    assert(op->hasCompileTimeValue());
+    // If one operand evaluates to 'false' the whole expression is 'false'
+    CompileTimeValue opCompileTimeValue = op->getCompileTimeValue();
+    if (!opCompileTimeValue.boolValue)
+      return CompileTimeValue{.boolValue = false};
+  }
+
+  // Return 'false'
+  return CompileTimeValue{.boolValue = false};
+}
+
+bool BitwiseOrExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const BitwiseXorExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue BitwiseOrExprNode::getCompileTimeValue() const {
+  if (children.size() == 1)
+    return children.front()->getCompileTimeValue();
+
+  const std::vector<BitwiseXorExprNode *> ops = operands();
+  CompileTimeValue result = ops.front()->getCompileTimeValue();
+  for (size_t i = 1; i < ops.size(); i++) {
+    assert(ops.at(i)->hasCompileTimeValue());
+    CompileTimeValue opCompileTimeValue = ops.at(i)->getCompileTimeValue();
+    result.longValue |= opCompileTimeValue.longValue;
+  }
+
+  return result;
+}
+
+bool BitwiseXorExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const BitwiseAndExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue BitwiseXorExprNode::getCompileTimeValue() const {
+  if (children.size() == 1)
+    return children.front()->getCompileTimeValue();
+
+  const std::vector<BitwiseAndExprNode *> ops = operands();
+  CompileTimeValue result = ops.front()->getCompileTimeValue();
+  for (size_t i = 1; i < ops.size(); i++) {
+    assert(ops.at(i)->hasCompileTimeValue());
+    CompileTimeValue opCompileTimeValue = ops.at(i)->getCompileTimeValue();
+    result.longValue ^= opCompileTimeValue.longValue;
+  }
+
+  return result;
+}
+
+bool BitwiseAndExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const EqualityExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue BitwiseAndExprNode::getCompileTimeValue() const {
+  if (children.size() == 1)
+    return children.front()->getCompileTimeValue();
+
+  const std::vector<EqualityExprNode *> ops = operands();
+  CompileTimeValue result = ops.front()->getCompileTimeValue();
+  for (size_t i = 1; i < ops.size(); i++) {
+    assert(ops.at(i)->hasCompileTimeValue());
+    CompileTimeValue opCompileTimeValue = ops.at(i)->getCompileTimeValue();
+    result.longValue &= opCompileTimeValue.longValue;
+  }
+
+  return result;
+}
+
+bool EqualityExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const RelationalExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue EqualityExprNode::getCompileTimeValue() const {
+  if (children.size() == 1)
+    return children.front()->getCompileTimeValue();
+
+  const std::vector<RelationalExprNode *> ops = operands();
+  CompileTimeValue op0Value = ops.at(0)->getCompileTimeValue();
+  CompileTimeValue op1Value = ops.at(1)->getCompileTimeValue();
+  if (op == OP_EQUAL)
+    return CompileTimeValue{.boolValue = op0Value.longValue == op1Value.longValue};
+  if (op == OP_NOT_EQUAL)
+    return CompileTimeValue{.boolValue = op0Value.longValue != op1Value.longValue};
+
+  throw CompilerError(UNHANDLED_BRANCH, "EqualityExprNode::getCompileTimeValue()");
+}
+
+bool RelationalExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const ShiftExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue RelationalExprNode::getCompileTimeValue() const {
+  if (children.size() == 1)
+    return children.front()->getCompileTimeValue();
+
+  const std::vector<ShiftExprNode *> ops = operands();
+  CompileTimeValue op0Value = ops.at(0)->getCompileTimeValue();
+  CompileTimeValue op1Value = ops.at(1)->getCompileTimeValue();
+  if (op == OP_LESS)
+    return CompileTimeValue{.boolValue = op0Value.longValue < op1Value.longValue};
+  if (op == OP_GREATER)
+    return CompileTimeValue{.boolValue = op0Value.longValue > op1Value.longValue};
+  if (op == OP_LESS_EQUAL)
+    return CompileTimeValue{.boolValue = op0Value.longValue <= op1Value.longValue};
+  if (op == OP_GREATER_EQUAL)
+    return CompileTimeValue{.boolValue = op0Value.longValue >= op1Value.longValue};
+
+  throw CompilerError(UNHANDLED_BRANCH, "RelationalExprNode::getCompileTimeValue()");
+}
+
+bool ShiftExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const AdditiveExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue ShiftExprNode::getCompileTimeValue() const {
+  if (children.size() == 1)
+    return children.front()->getCompileTimeValue();
+
+  const std::vector<AdditiveExprNode *> ops = operands();
+  CompileTimeValue op0Value = ops.at(0)->getCompileTimeValue();
+  CompileTimeValue op1Value = ops.at(1)->getCompileTimeValue();
+  if (op == OP_SHIFT_LEFT)
+    return CompileTimeValue{.longValue = op0Value.longValue << op1Value.longValue};
+  if (op == OP_SHIFT_RIGHT)
+    return CompileTimeValue{.longValue = op0Value.longValue >> op1Value.longValue};
+
+  throw CompilerError(UNHANDLED_BRANCH, "ShiftExprNode::getCompileTimeValue()");
+}
+
+bool AdditiveExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const MultiplicativeExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue AdditiveExprNode::getCompileTimeValue() const {
+  if (children.size() == 1)
+    return children.front()->getCompileTimeValue();
+
+  const std::vector<MultiplicativeExprNode *> ops = operands();
+  CompileTimeValue result = ops.front()->getCompileTimeValue();
+  OpQueue opQueueCopy = opQueue;
+  for (size_t i = 1; i < ops.size(); i++) {
+    assert(ops.at(i)->hasCompileTimeValue());
+    CompileTimeValue opCompileTimeValue = ops.at(i)->getCompileTimeValue();
+    const AdditiveOp op = opQueueCopy.front().first;
+    opQueueCopy.pop();
+    if (op == OP_PLUS)
+      result.longValue += opCompileTimeValue.longValue;
+    else if (op == OP_MINUS)
+      result.longValue -= opCompileTimeValue.longValue;
+    else
+      throw CompilerError(UNHANDLED_BRANCH, "AdditiveExprNode::getCompileTimeValue()");
+  }
+  return result;
+}
+
+bool MultiplicativeExprNode::hasCompileTimeValue() const {
+  return std::ranges::all_of(operands(), [](const CastExprNode *node) { return node->hasCompileTimeValue(); });
+}
+
+CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
+  if (children.size() == 1)
+    return children.front()->getCompileTimeValue();
+
+  const std::vector<CastExprNode *> ops = operands();
+  CompileTimeValue result = ops.front()->getCompileTimeValue();
+  OpQueue opQueueCopy = opQueue;
+  for (size_t i = 1; i < ops.size(); i++) {
+    assert(ops.at(i)->hasCompileTimeValue());
+    CompileTimeValue opCompileTimeValue = ops.at(i)->getCompileTimeValue();
+    const MultiplicativeOp op = opQueueCopy.front().first;
+    opQueueCopy.pop();
+    if (op == OP_MUL) {
+      result.longValue *= opCompileTimeValue.longValue;
+    } else if (op == OP_DIV) {
+      if (opCompileTimeValue.longValue == 0)
+        throw SemanticError(ops.at(i), DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
+      result.longValue /= opCompileTimeValue.longValue;
+    } else if (op == OP_REM) {
+      result.longValue %= opCompileTimeValue.longValue;
+    } else {
+      throw CompilerError(UNHANDLED_BRANCH, "MultiplicativeExprNode::getCompileTimeValue()");
+    }
+  }
+  return result;
+}
+
+bool CastExprNode::hasCompileTimeValue() const { return prefixUnaryExpr()->hasCompileTimeValue(); }
+
+CompileTimeValue CastExprNode::getCompileTimeValue() const {
+  if (children.size() == 1)
+    return children.front()->getCompileTimeValue();
+
+  return prefixUnaryExpr()->getCompileTimeValue();
+}
+
+bool PrefixUnaryExprNode::hasCompileTimeValue() const {
+  if (postfixUnaryExpr())
+    return postfixUnaryExpr()->hasCompileTimeValue();
+
+  bool isOperatorSupported =
+      op == OP_NONE || op == OP_MINUS || op == OP_PLUS_PLUS || op == OP_MINUS_MINUS || op == OP_NOT || op == OP_BITWISE_NOT;
+  return isOperatorSupported && prefixUnary()->hasCompileTimeValue();
+}
+
+CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const {
+  if (postfixUnaryExpr())
+    return postfixUnaryExpr()->getCompileTimeValue();
+
+  CompileTimeValue opValue = prefixUnary()->getCompileTimeValue();
+  if (op == OP_MINUS)
+    return CompileTimeValue{.longValue = -opValue.longValue};
+  if (op == OP_PLUS_PLUS)
+    return CompileTimeValue{.longValue = ++opValue.longValue};
+  if (op == OP_MINUS_MINUS)
+    return CompileTimeValue{.longValue = --opValue.longValue};
+  if (op == OP_NOT)
+    return CompileTimeValue{.boolValue = !opValue.boolValue};
+  if (op == OP_BITWISE_NOT)
+    return CompileTimeValue{.longValue = ~opValue.longValue};
+
+  throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExprNode::getCompileTimeValue()");
+}
+
+bool PostfixUnaryExprNode::hasCompileTimeValue() const {
+  if (atomicExpr())
+    return atomicExpr()->hasCompileTimeValue();
+
+  bool isOperatorSupported = op == OP_NONE || op == OP_PLUS_PLUS || op == OP_MINUS_MINUS;
+  return isOperatorSupported && postfixUnaryExpr()->hasCompileTimeValue();
+}
+
+CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const {
+  if (atomicExpr())
+    return atomicExpr()->getCompileTimeValue();
+
+  CompileTimeValue opValue = postfixUnaryExpr()->getCompileTimeValue();
+  if (op == OP_PLUS_PLUS)
+    return CompileTimeValue{.longValue = opValue.longValue++};
+  if (op == OP_MINUS_MINUS)
+    return CompileTimeValue{.longValue = opValue.longValue--};
+
+  throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExprNode::getCompileTimeValue()");
 }
 
 /**

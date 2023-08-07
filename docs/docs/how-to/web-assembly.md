@@ -73,7 +73,7 @@ WebAssembly.instantiateStreaming(fetch('main.wasm'))
   .then((results) => {
     // WebAssembly
     const startWasm = window.performance.now();
-    let result = results.instance.exports._f__void__int__fibo__int(fiboBase); // Use the mangled name here
+    let result = results.instance.exports._Z4fiboi(fiboBase); // Use the mangled name here
     const stopWasm = window.performance.now();
     console.log("Fibonacci Spice wasm: " + result);
     console.log("Duration (millis): " + (stopWasm - startWasm));
@@ -108,9 +108,9 @@ Navigate to `http://127.0.0.1:8080` and open the developer console. After waitin
 
 ```
 Fibonacci Spice wasm: 1134903170
-index.js:10 Duration (millis): 5346.60000000149
-index.js:15 Fibonacci JS: 1134903170
-index.js:16 Duration (millis): 8946.19999999553
+Duration (millis): 5346.60000000149
+Fibonacci JS: 1134903170
+Duration (millis): 8946.19999999553
 ```
 
 Congrats on your first WebAssembly project in Spice!

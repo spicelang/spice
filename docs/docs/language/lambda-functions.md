@@ -13,7 +13,7 @@ Lambdas in Spice work like this:
 
 ```spice
 // Definition
-p(int, double) lambda = (int a, double b) -> {
+p(int, double) lambda = p(int a, double b) {
     printf("Lambda was called with %d and %f", a, b);
 };
 // Call
@@ -24,7 +24,7 @@ lambda(5, 3.14);
 
 ```spice
 // Definition
-f<int>(const String&, bool) lambda = (const String& str, bool b) -> {
+f<int>(const String&, bool) lambda = f<int>(const String& str, bool b) {
     if (b) {
         return str.getLength();
     } else {

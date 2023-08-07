@@ -37,7 +37,7 @@ argLst: assignExpr (COMMA assignExpr)*;
 enumItemLst: enumItem (COMMA enumItem)*;
 enumItem: TYPE_IDENTIFIER (ASSIGN INT_LIT)?;
 fieldLst: field*;
-field: dataType IDENTIFIER (ASSIGN constant)?;
+field: dataType IDENTIFIER (ASSIGN ternaryExpr)?;
 signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER (LESS typeLst GREATER)? LPAREN typeLst? RPAREN SEMICOLON;
 stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt) SEMICOLON;
 declStmt: dataType IDENTIFIER (ASSIGN assignExpr)?;
@@ -80,7 +80,7 @@ postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | 
 atomicExpr: constant | value | ((IDENTIFIER | TYPE_IDENTIFIER) SCOPE_ACCESS)* (IDENTIFIER | TYPE_IDENTIFIER) | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values
-value: fctCall | arrayInitialization | structInstantiation| lambdaFunc | lambdaProc | lambdaExpr  | NIL LESS dataType GREATER;
+value: fctCall | arrayInitialization | structInstantiation| lambdaFunc | lambdaProc | lambdaExpr | NIL LESS dataType GREATER;
 constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
 fctCall: (IDENTIFIER SCOPE_ACCESS)* (IDENTIFIER DOT)* (IDENTIFIER | TYPE_IDENTIFIER) (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACKET argLst? RBRACKET;

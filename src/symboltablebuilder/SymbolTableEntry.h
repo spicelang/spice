@@ -52,7 +52,6 @@ public:
   ASTNode *declNode;
   const size_t orderIndex;
   const bool global;
-  const CompileTimeValue *compileTimeValue = nullptr;
   bool isVolatile = false;
   bool isParam = false;
   bool anonymous = false;

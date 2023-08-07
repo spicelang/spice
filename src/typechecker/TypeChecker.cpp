@@ -362,8 +362,11 @@ std::any TypeChecker::visitField(FieldNode *node) {
   auto fieldType = std::any_cast<SymbolType>(visit(node->dataType()));
   HANDLE_UNRESOLVED_TYPE_ST(fieldType)
 
-  if (node->defaultValue()) {
-    const SymbolType defaultValueType = std::any_cast<ExprResult>(visit(node->defaultValue())).type;
+  if (TernaryExprNode *defaultValueNode = node->defaultValue(); defaultValueNode != nullptr) {
+    if (!defaultValueNode->hasCompileTimeValue())
+      SOFT_ERROR_ST(node, FIELD_DEFAULT_VALUE_NO_COMPILETIME_CONST, "Default values must be computable at compile time")
+
+    const SymbolType defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
     HANDLE_UNRESOLVED_TYPE_ST(fieldType)
     if (!fieldType.matches(defaultValueType, false, true, true))
       SOFT_ERROR_ST(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
@@ -2085,8 +2088,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
           SOFT_ERROR_ST(node, EXPECTED_CONST_VARIABLE, "The size of the array must be known at compile time")
         if (!globalVar->getType().is(TY_INT))
           SOFT_ERROR_ST(node, OPERATOR_WRONG_DATA_TYPE, "Expected variable of type int")
-        assert(globalVar->compileTimeValue != nullptr);
-        typeModifier.hardcodedSize = globalVar->compileTimeValue->intValue;
+        typeModifier.hardcodedSize = globalVar->declNode->getCompileTimeValue().intValue;
       }
 
       if (typeModifier.hasSize && typeModifier.hardcodedSize <= 1)

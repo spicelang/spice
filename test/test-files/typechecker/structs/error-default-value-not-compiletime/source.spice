@@ -1,0 +1,10 @@
+f<int> test() { return 123; }
+
+type Test struct {
+    int i = test()
+}
+
+f<int> main() {
+    Test t;
+    printf("%d\n", t.i);
+}

@@ -134,18 +134,18 @@ public:
     return children.front()->getEvaluatedSymbolType(idx);
   }
 
-  [[nodiscard]] virtual const CompileTimeValue &getCompileTimeValue() const { // NOLINT(misc-no-recursion)
-    if (hasDirectCompileTimeValue || children.empty())
-      return compileTimeValue;
-    return children.front()->getCompileTimeValue();
-  }
-
-  [[nodiscard]] bool hasCompileTimeValue() const { // NOLINT(misc-no-recursion)
+  [[nodiscard]] virtual bool hasCompileTimeValue() const { // NOLINT(misc-no-recursion)
     if (hasDirectCompileTimeValue)
       return true;
     if (children.size() != 1)
       return false;
     return children.front()->hasCompileTimeValue();
+  }
+
+  [[nodiscard]] virtual CompileTimeValue getCompileTimeValue() const { // NOLINT(misc-no-recursion)
+    if (hasDirectCompileTimeValue || children.empty())
+      return compileTimeValue;
+    return children.front()->getCompileTimeValue();
   }
 
   [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *overrideUnreachable) const { // NOLINT(misc-no-recursion)
@@ -177,7 +177,7 @@ public:
   const CodeLoc codeLoc;
   std::string errorMessage;
   std::vector<SymbolType> symbolTypes;
-  CompileTimeValue compileTimeValue = {};
+  CompileTimeValue compileTimeValue = {.boolValue = false};
   std::string compileTimeStringValue;
   bool hasDirectCompileTimeValue = false;
   bool unreachable = false;
@@ -220,7 +220,7 @@ public:
   [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
   [[nodiscard]] std::string getSignature() const { return takesArgs ? "main(int, string[])" : "main()"; }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
-  bool isFctOrProcDef() const override { return true; }
+  [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
   SymbolTableEntry *entry = nullptr;
@@ -294,7 +294,7 @@ public:
   }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &fctManifestations; }
-  bool isFctOrProcDef() const override { return true; }
+  [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
   FctNameNode *fctName;
@@ -335,7 +335,7 @@ public:
   }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations() override { return &procManifestations; }
-  bool isFctOrProcDef() const override { return true; }
+  [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
   FctNameNode *procName;
@@ -483,6 +483,10 @@ public:
   // Public get methods
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override { return true; }
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
   std::string varName;
@@ -867,7 +871,7 @@ public:
 
   // Public get methods
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] ConstantNode *defaultValue() const { return getChild<ConstantNode>(); }
+  [[nodiscard]] TernaryExprNode *defaultValue() const { return getChild<TernaryExprNode>(); }
 
   // Public members
   std::string fieldName;
@@ -1168,6 +1172,9 @@ public:
   // Public get methods
   [[nodiscard]] std::vector<AssignExprNode *> args() const { return getChildren<AssignExprNode>(); }
 
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+
   // Public members
   std::string templatedString;
 };
@@ -1186,6 +1193,9 @@ public:
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
 
   // Public members
   bool isType = false;
@@ -1206,6 +1216,9 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
 
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+
   // Public members
   bool isType = false;
 };
@@ -1223,6 +1236,9 @@ public:
 
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
 };
 
 // ======================================================== PanicCallNode ========================================================
@@ -1238,6 +1254,9 @@ public:
 
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
 };
 
 // ======================================================= AssignExprNode ========================================================
@@ -1296,7 +1315,8 @@ public:
   [[nodiscard]] std::vector<LogicalOrExprNode *> operands() const { return getChildren<LogicalOrExprNode>(); }
 
   // Other methods
-  [[nodiscard]] const CompileTimeValue &getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   bool isShortened = false;
 };
@@ -1316,7 +1336,8 @@ public:
   [[nodiscard]] std::vector<LogicalAndExprNode *> operands() const { return getChildren<LogicalAndExprNode>(); }
 
   // Other methods
-  [[nodiscard]] const CompileTimeValue &getCompileTimeValue() const override;
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
 
 // ===================================================== LogicalAndExprNode ======================================================
@@ -1332,6 +1353,10 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<BitwiseOrExprNode *> operands() const { return getChildren<BitwiseOrExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
 
 // ===================================================== BitwiseOrExprNode =======================================================
@@ -1347,6 +1372,10 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<BitwiseXorExprNode *> operands() const { return getChildren<BitwiseXorExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
 
 // ==================================================== BitwiseXorExprNode =======================================================
@@ -1362,6 +1391,10 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<BitwiseAndExprNode *> operands() const { return getChildren<BitwiseAndExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
 
 // ==================================================== BitwiseAndExprNode =======================================================
@@ -1377,6 +1410,10 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<EqualityExprNode *> operands() const { return getChildren<EqualityExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 };
 
 // ===================================================== EqualityExprNode ========================================================
@@ -1395,6 +1432,10 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<RelationalExprNode *> operands() const { return getChildren<RelationalExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
   EqualityOp op = OP_NONE;
@@ -1416,6 +1457,10 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<ShiftExprNode *> operands() const { return getChildren<ShiftExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
   RelationalOp op = OP_NONE;
@@ -1441,6 +1486,10 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<AdditiveExprNode *> operands() const { return getChildren<AdditiveExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
   ShiftOp op = OP_NONE;
@@ -1469,6 +1518,10 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<MultiplicativeExprNode *> operands() const { return getChildren<MultiplicativeExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
   OpQueue opQueue;
@@ -1499,6 +1552,10 @@ public:
   // Public get methods
   [[nodiscard]] std::vector<CastExprNode *> operands() const { return getChildren<CastExprNode>(); }
 
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+
   // Public members
   OpQueue opQueue;
 };
@@ -1517,6 +1574,10 @@ public:
   // Public get methods
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] PrefixUnaryExprNode *prefixUnaryExpr() const { return getChild<PrefixUnaryExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
   bool isCasted = false;
@@ -1540,6 +1601,10 @@ public:
   [[nodiscard]] PrefixUnaryExprNode *prefixUnary() const { return getChild<PrefixUnaryExprNode>(); }
   [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
 
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+
   // Public members
   PrefixUnaryOp op = OP_NONE;
 };
@@ -1562,6 +1627,10 @@ public:
   [[nodiscard]] AtomicExprNode *atomicExpr() const { return getChild<AtomicExprNode>(); }
   [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override;
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
   PostfixUnaryOp op = OP_NONE;
@@ -1690,7 +1759,8 @@ public:
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
   [[nodiscard]] ArgLstNode *argLst() const { return getChild<ArgLstNode>(); }
 
-  // Util methods
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
   void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
   [[nodiscard]] bool hasReturnValueReceiver() const;
 
@@ -1744,8 +1814,7 @@ public:
   std::vector<Struct *> instantiatedStructs;
 };
 
-// ======================================================== LambdaFuncNode
-// ===========================================================
+// ====================================================== LambdaFuncNode =========================================================
 
 class LambdaFuncNode : public ASTNode {
 public:
@@ -1763,6 +1832,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
+  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
@@ -1771,8 +1841,7 @@ public:
   Function lambdaFunction;
 };
 
-// ======================================================== LambdaProcNode
-// ===========================================================
+// ====================================================== LambdaProcNode =========================================================
 
 class LambdaProcNode : public ASTNode {
 public:
@@ -1789,6 +1858,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
+  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
@@ -1797,8 +1867,7 @@ public:
   Function lambdaProcedure;
 };
 
-// ======================================================== LambdaExprNode
-// ===========================================================
+// ====================================================== LambdaExprNode =========================================================
 
 class LambdaExprNode : public ASTNode {
 public:
@@ -1815,6 +1884,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
+  [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
 
   // Public members
   bool hasParams = false;
