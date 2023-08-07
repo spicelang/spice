@@ -363,9 +363,9 @@ std::any TypeChecker::visitField(FieldNode *node) {
   HANDLE_UNRESOLVED_TYPE_ST(fieldType)
 
   if (node->defaultValue()) {
-    const auto defaultValueType = std::any_cast<ExprResult>(visit(node->defaultValue())).type;
+    const SymbolType defaultValueType = std::any_cast<ExprResult>(visit(node->defaultValue())).type;
     HANDLE_UNRESOLVED_TYPE_ST(fieldType)
-    if (defaultValueType != fieldType)
+    if (!fieldType.matches(defaultValueType, false, true, true))
       SOFT_ERROR_ST(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
   }
 
@@ -419,6 +419,12 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
       paramTypes.push_back(paramType);
       paramList.push_back({paramType, false});
     }
+  }
+
+  // Check if all template types were used in the function parameters
+  if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; })) {
+    softError(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters");
+    return static_cast<std::vector<Function *> *>(nullptr);
   }
 
   // Build signature object
@@ -676,6 +682,18 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
     SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays")
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
+}
+
+std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
+  SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  HANDLE_UNRESOLVED_TYPE_ER(argType)
+  argType = argType.removeReferenceWrapper();
+
+  // Check if arg is of type array
+  if (!argType.isErrorObj())
+    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
+
+  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_DYN), manIdx)};
 }
 
 std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
@@ -1241,6 +1259,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     return visit(node->alignofCall());
   if (node->lenCall())
     return visit(node->lenCall());
+  if (node->panicCall())
+    return visit(node->panicCall());
 
   // Check for assign expression within parentheses
   if (node->assignExpr())

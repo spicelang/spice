@@ -1,11 +1,14 @@
-import "std/os/thread";
+import "std/data/vector";
 
 f<int> main() {
-    Thread t = Thread(p() {
-        printf("Hello from another thread");
-    });
-    t.join();
-    printf("Test");
+    Vector<int> v = Vector<int>();
+    v.pushBack(1);
+    v.pushBack(2);
+    v.pushBack(3);
+    v.pushBack(4);
+    v.pushBack(5);
+    v.get(3) = 6;
+    printf("%d\n", v.get(3));
 }
 
 /*type T int|long;

@@ -1,0 +1,59 @@
+import "std/type/error";
+
+// Generic types
+type T dyn;
+
+/**
+ * Result in Spice are wrappers around values, that allow to either provide a value or an error object.
+ * This is useful for functions that return a value, but also can fail. The error can then be dealt with
+ * on the caller side.
+ */
+public type Result<T> struct {
+    T data
+    Error error
+}
+
+public p Result.ctor(const T& data) {
+    this.data = data;
+}
+
+public p Result.ctor(const Error& error) {
+    this.error = error;
+}
+
+/**
+ * Returns the stored data object.
+ * If an error is present, this function will panic.
+ */
+public inline f<T> Result.unwrap() {
+    if this.error.code != 0 { panic(this.error); }
+    return this.data;
+}
+
+/**
+ * Returns a result object with a value and no error.
+ */
+public inline f<Result<T>> ok<T>(const T& data) {
+    return Result<T>(data);
+}
+
+/**
+ * Returns a result object with an error and no value.
+ */
+public inline f<Result<T>> err<T>(const T& data, const Error& error) {
+    return Result<T>(error);
+}
+
+/**
+ * Returns a result object with an error and no value.
+ */
+public inline f<Result<T>> err<T>(const T& data, int code, string message) {
+    return Result<T>(Error(code, message));
+}
+
+/**
+ * Returns a result object with an error and no value.
+ */
+public inline f<Result<T>> err<T>(const T& data, string message) {
+    return Result<T>(Error(message));
+}

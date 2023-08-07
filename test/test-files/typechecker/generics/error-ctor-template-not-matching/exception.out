@@ -1,8 +1,8 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/generics/error-ctor-template-not-matching/source.spice:8:15:
+[Error|Semantic] ./test-files/typechecker/generics/error-ctor-template-not-matching/source.spice:10:15:
 Unknown datatype: Could not find struct candidate for struct 'Optional'. Do the template types match?
 
-8  dyn oi = Optional();
-            ^^^^^^^^^^
+10  dyn oi = Optional();
+             ^^^^^^^^^^

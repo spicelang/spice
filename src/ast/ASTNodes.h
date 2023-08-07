@@ -1225,6 +1225,21 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 };
 
+// ======================================================== PanicCallNode ========================================================
+
+class PanicCallNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPanicCall(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitPanicCall(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+};
+
 // ======================================================= AssignExprNode ========================================================
 
 class AssignExprNode : public ASTNode {
@@ -1572,6 +1587,7 @@ public:
   [[nodiscard]] SizeofCallNode *sizeofCall() const { return getChild<SizeofCallNode>(); }
   [[nodiscard]] AlignofCallNode *alignofCall() const { return getChild<AlignofCallNode>(); }
   [[nodiscard]] LenCallNode *lenCall() const { return getChild<LenCallNode>(); }
+  [[nodiscard]] PanicCallNode *panicCall() const { return getChild<PanicCallNode>(); }
 
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override {

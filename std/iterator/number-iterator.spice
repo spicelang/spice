@@ -1,4 +1,5 @@
 import "std/iterator/iterable";
+import "std/type/error";
 
 // Generic type definitions
 type N int|long|short;
@@ -13,7 +14,7 @@ public type NumberIterator<N> struct : Iterable<N> {
 }
 
 public p NumberIterator.ctor(N lowerBound, N upperBound) {
-    assert lowerBound <= upperBound;
+    if lowerBound > upperBound { panic(Error("Upper bound is below lower bound")); }
     this.currentNumber = lowerBound;
     this.lowerBound = lowerBound;
     this.upperBound = upperBound;
@@ -51,7 +52,7 @@ public inline f<bool> NumberIterator.isValid() {
  * Returns the current number of the number range and moves the cursor to the next item
  */
 public inline p NumberIterator.next() {
-    assert this.isValid();
+    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
     this.currentNumber++;
 }
 
@@ -61,7 +62,7 @@ public inline p NumberIterator.next() {
  * @param it NumberIterator
  */
 public inline p operator++<N>(NumberIterator<N>& it) {
-    assert it.currentNumber <= it.upperBound;
+    if it.currentNumber > it.upperBound { panic(Error("Iterator out of bounds")); }
     it.currentNumber++;
 }
 
@@ -71,7 +72,7 @@ public inline p operator++<N>(NumberIterator<N>& it) {
  * @param it NumberIterator
  */
 public inline p operator--<N>(NumberIterator<N>& it) {
-    assert it.currentNumber > it.lowerBound;
+    if it.currentNumber <= it.lowerBound { panic(Error("Iterator out of bounds")); }
     it.currentNumber--;
 }
 
@@ -82,8 +83,7 @@ public inline p operator--<N>(NumberIterator<N>& it) {
  * @param offset Offset
  */
 public inline p operator+=<N>(NumberIterator<N>& it, N offset) {
-    assert it.currentNumber + offset <= it.upperBound;
-    assert it.currentNumber + offset >= it.lowerBound;
+    if it.currentNumber + offset > it.upperBound || it.currentNumber + offset < it.lowerBound { panic(Error("Iterator out of bounds")); }
     it.currentNumber += offset;
 }
 
@@ -94,8 +94,7 @@ public inline p operator+=<N>(NumberIterator<N>& it, N offset) {
  * @param offset Offset
  */
 public inline p operator-=<N>(NumberIterator<N>& it, N offset) {
-    assert it.currentNumber - offset <= it.upperBound;
-    assert it.currentNumber - offset >= it.lowerBound;
+    if it.currentNumber - offset > it.upperBound || it.currentNumber - offset < it.lowerBound { panic(Error("Iterator out of bounds")); }
     it.currentNumber -= offset;
 }
 

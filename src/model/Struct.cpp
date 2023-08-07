@@ -82,7 +82,7 @@ std::vector<SymbolType> Struct::getTemplateTypes() const {
  * @return Has reference as field type or not
  */
 bool Struct::hasReferenceFields() const {
-  return std::any_of(fieldTypes.begin(), fieldTypes.end(), [](const SymbolType &fieldType) { return fieldType.isRef(); });
+  return std::ranges::any_of(fieldTypes, [](const SymbolType &fieldType) { return fieldType.isRef(); });
 }
 
 /**

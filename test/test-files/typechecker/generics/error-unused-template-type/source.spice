@@ -1,0 +1,9 @@
+type T dyn;
+
+f<T> test<T>(int test) {
+    return T();
+}
+
+f<int> main() {
+    test(0);
+}

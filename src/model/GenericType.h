@@ -26,6 +26,9 @@ public:
   [[nodiscard]] bool checkConditionsOf(const SymbolType &symbolType, bool ignoreArraySize = false,
                                        bool ignoreSpecifiers = false) const;
 
+  // Public members
+  bool used = false;
+
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(GenericType, typeChain, typeConditions)
 

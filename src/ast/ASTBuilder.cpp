@@ -629,6 +629,15 @@ std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
   return concludeNode(ctx, lenCallNode);
 }
 
+std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {
+  auto panicCallNode = createNode<PanicCallNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, panicCallNode);
+}
+
 std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   auto assignExprNode = createNode<AssignExprNode>(ctx);
 

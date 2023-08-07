@@ -96,4 +96,23 @@ std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   return LLVMExprResult{.value = lengthValue};
 }
 
+std::any IRGenerator::visitPanicCall(const PanicCallNode *node) {
+  // Create constant for error message
+  const std::string codeLoc = node->codeLoc.toPrettyString();
+  const std::string errorMsg = "Program panicked at " + codeLoc + ":\n" + node->errorMessage + "\n";
+  llvm::Constant *globalString = builder.CreateGlobalStringPtr(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
+  // Print the error message
+  llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
+  builder.CreateCall(printfFct, globalString);
+  // Generate call to exit()
+  llvm::Function *exitFct = stdFunctionManager.getExitFct();
+  builder.CreateCall(exitFct, builder.getInt32(EXIT_FAILURE));
+  // Create unreachable instruction
+  builder.CreateUnreachable();
+  // Unreachable counts as terminator
+  blockAlreadyTerminated = true;
+
+  return nullptr;
+}
+
 } // namespace spice::compiler

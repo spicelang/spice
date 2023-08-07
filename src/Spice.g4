@@ -54,11 +54,12 @@ continueStmt: CONTINUE INT_LIT?;
 assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Builtin functions
-builtinCall: printfCall | sizeOfCall | alignOfCall | lenCall;
+builtinCall: printfCall | sizeOfCall | alignOfCall | lenCall | panicCall;
 printfCall: PRINTF LPAREN STRING_LIT (COMMA assignExpr)* RPAREN;
 sizeOfCall: SIZEOF LPAREN (assignExpr | TYPE dataType) RPAREN;
 alignOfCall: ALIGNOF LPAREN (assignExpr | TYPE dataType) RPAREN;
 lenCall: LEN LPAREN assignExpr RPAREN;
+panicCall: PANIC LPAREN assignExpr RPAREN;
 
 // Expression loop
 assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr;
@@ -141,6 +142,7 @@ PRINTF: 'printf';
 SIZEOF: 'sizeof';
 ALIGNOF: 'alignof';
 LEN: 'len';
+PANIC: 'panic';
 EXT: 'ext';
 TRUE: 'true';
 FALSE: 'false';

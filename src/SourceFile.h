@@ -144,6 +144,7 @@ public:
   void addNameRegistryEntry(const std::string &symbolName, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true,
                             SymbolTableEntry *importEntry = nullptr, const std::string &predecessorName = "");
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
+  void checkForSoftErrors();
   void collectAndPrintWarnings();
 
   // Public fields

@@ -1,4 +1,5 @@
 import "std/iterator/iterable";
+import "std/type/error";
 
 // Generic type definitions
 type I dyn;
@@ -49,7 +50,7 @@ public inline const f<bool> ArrayIterator.isValid() {
  * Returns the current item of the array and moves the cursor to the next one
  */
 public inline p ArrayIterator.next() {
-    assert this.isValid();
+    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
     this.cursor++;
 }
 
@@ -59,7 +60,7 @@ public inline p ArrayIterator.next() {
  * @param it ArrayIterator
  */
 public inline p operator++<I>(ArrayIterator<I>& it) {
-    assert it.cursor < it.size- 1;
+    if it.cursor >= it.size - 1 { panic(Error("Iterator out of bounds")); }
     it.cursor++;
 }
 
@@ -69,7 +70,7 @@ public inline p operator++<I>(ArrayIterator<I>& it) {
  * @param it ArrayIterator
  */
 public inline p operator--<I>(ArrayIterator<I>& it) {
-    assert it.cursor > 0;
+    if it.cursor <= 0 { panic(Error("Iterator out of bounds")); }
     it.cursor--;
 }
 
@@ -80,8 +81,7 @@ public inline p operator--<I>(ArrayIterator<I>& it) {
  * @param offset Offset
  */
 public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
-    assert it.cursor + offset < it.size;
-    assert it.cursor + offset >= 0;
+    if it.cursor + offset >= it.size || it.cursor + offset < 0 { panic(Error("Iterator out of bounds")); }
     it.cursor += offset;
 }
 
@@ -92,7 +92,6 @@ public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
  * @param offset Offset
  */
 public inline p operator-=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
-    assert it.cursor - offset < it.size;
-    assert it.cursor - offset >= 0;
+    if it.cursor - offset >= it.size || it.cursor - offset < 0 { panic(Error("Iterator out of bounds")); }
     it.cursor -= offset;
 }

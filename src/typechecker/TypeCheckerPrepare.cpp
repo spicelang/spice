@@ -88,16 +88,14 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     assert(structEntry != nullptr);
     // Set struct to used
     structEntry->used = true;
-    /*auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
-    if (manifestations)
-      for (auto &manifestation : *manifestations)
-        manifestation.second.used = true;*/
     // Get type and ptr type
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
-    for (const SymbolType &templateType : thisType.getTemplateTypes())
+    for (const SymbolType &templateType : thisType.getTemplateTypes()) {
       usedGenericTypes.emplace_back(templateType);
+      usedGenericTypes.back().used = true;
+    }
   }
 
   // Set type of 'this' variable
@@ -106,15 +104,6 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     assert(thisEntry != nullptr);
     thisEntry->updateType(thisPtrType, false);
   }
-
-  // Retrieve return type
-  auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
-  HANDLE_UNRESOLVED_TYPE_PTR(returnType)
-  if (returnType.is(TY_DYN))
-    SOFT_ERROR_BOOL(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
-  if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
-    SOFT_ERROR_BOOL(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
-                    "Generic return type not included in the template type list of the function")
 
   // Visit parameters
   std::vector<std::string> paramNames;
@@ -133,6 +122,19 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
                             "Generic param type not included in the template type list of the function");
     }
   }
+
+  // Check if all template types were used by at least one parameter
+  if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; }))
+    SOFT_ERROR_BOOL(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters")
+
+  // Retrieve return type
+  auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+  HANDLE_UNRESOLVED_TYPE_PTR(returnType)
+  if (returnType.is(TY_DYN))
+    SOFT_ERROR_BOOL(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
+  if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
+    SOFT_ERROR_BOOL(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+                    "Generic return type not included in the template type list of the function")
 
   // Leave function body scope
   currentScope = node->fctScope->parent;
@@ -214,16 +216,14 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     assert(structEntry != nullptr);
     // Set struct to used
     structEntry->used = true;
-    /*auto manifestations = StructManager::getManifestationList(structParentScope, structEntry->getDeclCodeLoc());
-    if (manifestations)
-      for (auto &manifestation : *manifestations)
-        manifestation.second.used = true;*/
     // Get type and ptr type
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
-    for (const SymbolType &templateType : thisType.getTemplateTypes())
+    for (const SymbolType &templateType : thisType.getTemplateTypes()) {
       usedGenericTypes.emplace_back(templateType);
+      usedGenericTypes.back().used = true;
+    }
   }
 
   // Set type of 'this' variable
@@ -250,6 +250,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
                             "Generic param type not included in the template type list of the procedure");
     }
   }
+
+  // Check if all template types were used by at least one parameter
+  if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; }))
+    SOFT_ERROR_BOOL(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters")
 
   // Leave procedure body scope
   currentScope = node->procScope->parent;
@@ -369,6 +373,10 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     if (!fieldType.isCoveredByGenericTypeList(templateTypesGeneric))
       throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
   }
+
+  // Check if all template types were used by at least one field
+  if (std::ranges::any_of(templateTypesGeneric, [&](const GenericType &genericType) { return !genericType.used; }))
+    throw SemanticError(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the struct fields");
 
   // Change to the root scope
   currentScope = rootScope;

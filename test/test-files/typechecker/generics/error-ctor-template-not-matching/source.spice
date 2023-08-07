@@ -1,6 +1,8 @@
 type T dyn;
 
-type Optional<T> struct {}
+type Optional<T> struct {
+    T value
+}
 
 p Optional.ctor() {}
 
