@@ -2,8 +2,13 @@
  * This is the generalized error type in Spice and part of the error handling mechanism.
  */
 public type Error struct {
-    public int code = 0
-    public string message = "Runtime error"
+    public int code
+    public string message
+}
+
+public p Error.ctor() {
+    this.code = 0;
+    this.message = "Runtime error";
 }
 
 public p Error.ctor(int errorCode, string message) {

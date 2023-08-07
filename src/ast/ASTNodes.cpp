@@ -146,11 +146,13 @@ const CompileTimeValue &LogicalOrExprNode::getCompileTimeValue() const {
 bool FctCallNode::hasReturnValueReceiver() const {
   ASTNode *node = parent;
   while (!node->isAssignExpr()) {
+    // As soon as we have a node with more than one child, we know that the return value is used
     if (node->children.size() > 1)
       return true;
     node = node->parent;
   }
-  return !node->parent->isStmtNode();
+  // Also check the condition of the assign expression
+  return node->children.size() > 1 || !node->parent->isStmtNode();
 }
 
 bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
