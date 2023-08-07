@@ -49,7 +49,7 @@ public inline f<bool> VectorIterator.isValid() {
  * Returns the current item of the vector iterator and moves the cursor to the next item
  */
 public inline p VectorIterator.next() {
-    assert this.isValid();
+    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
     this.cursor++;
 }
 
@@ -59,7 +59,7 @@ public inline p VectorIterator.next() {
  * @param it VectorIterator
  */
 public inline p operator++<I>(VectorIterator<I>& it) {
-    assert it.cursor < it.vector.getSize();
+    if it.cursor >= it.vector.getSize() { panic(Error("Iterator out of bounds")); }
     it.cursor++;
 }
 
@@ -69,7 +69,7 @@ public inline p operator++<I>(VectorIterator<I>& it) {
  * @param it VectorIterator
  */
 public inline p operator--<I>(VectorIterator<I>& it) {
-    assert it.cursor > 0;
+    if it.cursor <= 0 { panic(Error("Iterator out of bounds")); }
     it.cursor--;
 }
 
@@ -80,8 +80,7 @@ public inline p operator--<I>(VectorIterator<I>& it) {
  * @param offset Offset
  */
 public inline p operator+=<I, Numeric>(VectorIterator<I>& it, Numeric offset) {
-    assert it.cursor + offset < it.vector.getSize();
-    assert it.cursor + offset >= 0;
+    if it.cursor + offset >= it.vector.getSize() || it.cursor + offset < 0 { panic(Error("Iterator out of bounds")); }
     it.cursor += offset;
 }
 
@@ -92,7 +91,6 @@ public inline p operator+=<I, Numeric>(VectorIterator<I>& it, Numeric offset) {
  * @param offset Offset
  */
 public inline p operator-=<I, Numeric>(VectorIterator<I>& it, Numeric offset) {
-    assert it.cursor - offset < it.vector.getSize();
-    assert it.cursor - offset >= 0;
+    if it.cursor - offset >= it.vector.getSize() || it.cursor - offset < 0 { panic(Error("Iterator out of bounds")); }
     it.cursor -= offset;
 }

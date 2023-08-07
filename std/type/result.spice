@@ -40,20 +40,20 @@ public inline f<Result<T>> ok<T>(const T& data) {
 /**
  * Returns a result object with an error and no value.
  */
-public inline f<Result<T>> err<T>(const Error& error) {
+public inline f<Result<T>> err<T>(const T& data, const Error& error) {
     return Result<T>(error);
 }
 
 /**
  * Returns a result object with an error and no value.
  */
-public inline f<Result<T>> err<T>(int code, string message) {
+public inline f<Result<T>> err<T>(const T& data, int code, string message) {
     return Result<T>(Error(code, message));
 }
 
 /**
  * Returns a result object with an error and no value.
  */
-public inline f<Result<T>> err<T>(string message) {
+public inline f<Result<T>> err<T>(const T& data, string message) {
     return Result<T>(Error(message));
 }

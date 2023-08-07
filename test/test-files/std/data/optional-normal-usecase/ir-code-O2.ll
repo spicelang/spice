@@ -26,7 +26,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %3 = call i1 @"_ZN8OptionalI20std/data/stack.StackIdEE9isPresentEv"(ptr nonnull %oi) #3
   %4 = zext i1 %3 to i32
   %5 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %4)
-  call void @"_ZN8OptionalI20std/data/stack.StackIdEE3setERK20std/data/stack.StackIdE"(ptr nonnull %oi, ptr nonnull %doubleStack) #3
+  call void @"_ZN8OptionalI20std/data/stack.StackIdEE3setER20std/data/stack.StackIdE"(ptr nonnull %oi, ptr nonnull %doubleStack) #3
   %6 = call i1 @"_ZN8OptionalI20std/data/stack.StackIdEE9isPresentEv"(ptr nonnull %oi) #3
   %7 = zext i1 %6 to i32
   %8 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %7)
@@ -38,7 +38,7 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %13 = zext i1 %12 to i32
   %14 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.3, i32 %13)
   call void @_ZN6String4ctorEPc(ptr nonnull %2, ptr nonnull @anon.string.0) #3
-  call void @_ZN8OptionalI18__rt_string.StringE4ctorERK18__rt_string.String(ptr nonnull %oi2, ptr nonnull %2) #3
+  call void @_ZN8OptionalI18__rt_string.StringE4ctorER18__rt_string.String(ptr nonnull %oi2, ptr nonnull %2) #3
   %15 = call i1 @_ZN8OptionalI18__rt_string.StringE9isPresentEv(ptr nonnull %oi2) #3
   br i1 %15, label %assert.exit.L18, label %assert.then.L18, !prof !0
 
@@ -64,7 +64,7 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_a
 
 declare i1 @"_ZN8OptionalI20std/data/stack.StackIdEE9isPresentEv"(ptr) local_unnamed_addr
 
-declare void @"_ZN8OptionalI20std/data/stack.StackIdEE3setERK20std/data/stack.StackIdE"(ptr, ptr) local_unnamed_addr
+declare void @"_ZN8OptionalI20std/data/stack.StackIdEE3setER20std/data/stack.StackIdE"(ptr, ptr) local_unnamed_addr
 
 declare ptr @"_ZN8OptionalI20std/data/stack.StackIdEE3getEv"(ptr) local_unnamed_addr
 
@@ -74,7 +74,7 @@ declare void @"_ZN8OptionalI20std/data/stack.StackIdEE5clearEv"(ptr) local_unnam
 
 declare void @_ZN6String4ctorEPc(ptr, ptr) local_unnamed_addr
 
-declare void @_ZN8OptionalI18__rt_string.StringE4ctorERK18__rt_string.String(ptr, ptr) local_unnamed_addr
+declare void @_ZN8OptionalI18__rt_string.StringE4ctorER18__rt_string.String(ptr, ptr) local_unnamed_addr
 
 declare i1 @_ZN8OptionalI18__rt_string.StringE9isPresentEv(ptr) local_unnamed_addr
 

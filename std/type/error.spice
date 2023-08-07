@@ -7,12 +7,12 @@ public type Error struct {
 }
 
 public p Error.ctor(int errorCode, string message) {
-    this.errorCode = errorCode;
+    this.code = errorCode;
     this.message = message;
 }
 
 public p Error.ctor(string message) {
-    this.errorCode = 1;
+    this.code = 1;
     this.message = message;
 }
 

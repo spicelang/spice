@@ -799,21 +799,17 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   if (node->assignExpr())
     return visit(node->assignExpr());
 
-  // Is call to printf builtin
+  // Check for builtin calls
   if (node->printfCall())
     return visit(node->printfCall());
-
-  // Is call to sizeof builtin
   if (node->sizeofCall())
     return visit(node->sizeofCall());
-
-  // Is call to alignof builtin
   if (node->alignofCall())
     return visit(node->alignofCall());
-
-  // Is call to len builtin
   if (node->lenCall())
     return visit(node->lenCall());
+  if (node->panicCall())
+    return visit(node->panicCall());
 
   // Identifier (local or global variable access)
   assert(!node->identifierFragments.empty());

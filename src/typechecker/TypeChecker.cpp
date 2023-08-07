@@ -1259,6 +1259,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     return visit(node->alignofCall());
   if (node->lenCall())
     return visit(node->lenCall());
+  if (node->panicCall())
+    return visit(node->panicCall());
 
   // Check for assign expression within parentheses
   if (node->assignExpr())

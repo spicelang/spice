@@ -1,3 +1,5 @@
+import "std/type/error";
+
 // Constants
 const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
@@ -102,7 +104,7 @@ public f<T&> Queue.pop() {
  * @return First item
  */
 public f<T&> Queue.front() {
-    assert !this.isEmpty();
+    if this.isEmpty() { panic(Error("Access index out of bounds")); }
     unsafe {
         return this.contents[(int) this.idxFront];
     }
@@ -114,7 +116,7 @@ public f<T&> Queue.front() {
  * @return Last item
  */
 public f<T&> Queue.back() {
-    assert !this.isEmpty();
+    if this.isEmpty() { panic(Error("Access index out of bounds")); }
     unsafe {
         return this.contents[(int) this.idxBack];
     }

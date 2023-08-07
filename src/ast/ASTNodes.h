@@ -1587,6 +1587,7 @@ public:
   [[nodiscard]] SizeofCallNode *sizeofCall() const { return getChild<SizeofCallNode>(); }
   [[nodiscard]] AlignofCallNode *alignofCall() const { return getChild<AlignofCallNode>(); }
   [[nodiscard]] LenCallNode *lenCall() const { return getChild<LenCallNode>(); }
+  [[nodiscard]] PanicCallNode *panicCall() const { return getChild<PanicCallNode>(); }
 
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override {
