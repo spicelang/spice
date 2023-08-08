@@ -1,17 +1,7 @@
-import "std/data/vector";
-import "std/os/thread";
-
-//import "std/os/thread-pool";
+import "std/os/thread-pool";
 
 f<int> main() {
-    Vector<Thread> vec;
-    vec.pushBack(Thread(p() {}));
-    vec.pushBack(Thread(p() {}));
-    vec.pushBack(Thread(p() {}));
-
-    Thread& ref = vec.get(1);
-
-    /*ThreadPool tp = ThreadPool(3s);
+    ThreadPool tp = ThreadPool(3s);
     tp.enqueue(p() {
         printf("Hello from task 1\n");
     });
@@ -23,8 +13,7 @@ f<int> main() {
     });
     tp.enqueue(p() {
         printf("Hello from task 4\n");
-    });*/
-
+    });
 }
 
 /*type T int|long;

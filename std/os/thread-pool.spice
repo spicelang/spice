@@ -41,7 +41,7 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
     // Create worker threads
     for (unsigned short i = 0s; i < this.workerThreadCount; i++) {
         this.workerThreads.pushBack(Thread(workerRoutine));
-        Thread& workerThread = this.workerThreads.back();
+        Thread& wfx = this.workerThreads.back();
         //workerThread.run();
     }
 }
