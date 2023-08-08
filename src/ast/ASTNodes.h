@@ -954,6 +954,7 @@ public:
   std::vector<SymbolTableEntry *> entries;
   bool isParam = false;
   bool isForEachItem = false;
+  Function *defaultCtor = nullptr;
 };
 
 // ======================================================= SpecifierLstNode ======================================================

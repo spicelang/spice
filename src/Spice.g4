@@ -14,7 +14,7 @@ enumDef: specifierLst? TYPE TYPE_IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON;
 globalVarDef: dataType TYPE_IDENTIFIER (ASSIGN constant)? SEMICOLON;
-extDecl: fctAttr? EXT (F LESS dataType GREATER | P) IDENTIFIER LPAREN (typeLst ELLIPSIS?)? RPAREN SEMICOLON;
+extDecl: fctAttr? EXT (F LESS dataType GREATER | P) (IDENTIFIER | TYPE_IDENTIFIER) LPAREN (typeLst ELLIPSIS?)? RPAREN SEMICOLON;
 
 // Control structures
 unsafeBlockDef: UNSAFE LBRACE stmtLst RBRACE;

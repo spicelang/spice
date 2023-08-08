@@ -1,0 +1,116 @@
+import "std/os/thread";
+import "std/data/queue";
+import "std/data/vector";
+import "std/os/system";
+
+/**
+ * A thread pool that can be used to run multiple jobs in parallel.
+ */
+public type ThreadPool struct {
+    Vector<Thread> workerThreads
+    Queue<p()> queuedJobs
+    unsigned short runningJobs
+    unsigned short workerThreadCount
+    bool stopRequested = false
+    bool paused = false
+}
+
+/**
+ * Create a new thread pool.
+ *
+ * @param maxConcurrentJobs The maximum number of jobs that can be run at the same time. If 0, the number of CPU cores is used.
+ */
+public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
+    this.workerThreads = Vector<Thread>();
+    this.queuedJobs = Queue<p()>();
+    this.workerThreadCount = workerThreadCount > 0s ? workerThreadCount : (unsigned short) getCPUCoreCount();
+    this.runningJobs = 0s;
+
+    p() workerRoutine = p() {
+        /*p() task;
+        while (true) {
+            if !this.stopRequested { break; }
+            if this.paused { continue; }
+            task = this.queuedJobs.pop();
+            this.runningJobs++;
+            task();
+            this.runningJobs--;
+        }*/
+    };
+
+    // Create worker threads
+    for (unsigned short i = 0s; i < this.workerThreadCount; i++) {
+        this.workerThreads.pushBack(Thread(workerRoutine));
+        Thread& workerThread = this.workerThreads.back();
+        //workerThread.run();
+    }
+}
+
+/**
+ * Destroy the thread pool.
+ */
+public p ThreadPool.dtor() {
+    this.join();
+}
+
+/**
+ * Stop the thread pool. This will wait for all running jobs to finish.
+ */
+public p ThreadPool.join() {
+    // Join worker threads
+    for (unsigned short i = 0s; i < this.workerThreadCount; i++) {
+        Thread& workerThread = this.workerThreads.get((unsigned int) i);
+        workerThread.join();
+    }
+}
+
+/**
+ * Enqueue a job to be run by the thread pool.
+ *
+ * @param job The job routine to enqueue.
+ */
+public p ThreadPool.enqueue(p() job) {
+    this.queuedJobs.push(job);
+}
+
+/**
+ * Pause the thread pool. The worker threads will finish their current job and then wait for the pool to be resumed.
+ */
+public p ThreadPool.pause() {
+    this.paused = true;
+}
+
+/**
+ * Resume the thread pool.
+ */
+public p ThreadPool.resume() {
+    this.paused = false;
+}
+
+/**
+ * Check if the thread pool is paused.
+ */
+public f<bool> ThreadPool.isPaused() {
+    return this.paused;
+}
+
+/**
+ * Retrieve the number of jobs that are currently running.
+ */
+public f<unsigned short> ThreadPool.getRunningJobCount() {
+    return this.runningJobs;
+}
+
+/**
+ * Retrieve the number of jobs that are currently queued.
+ */
+public f<unsigned short> ThreadPool.getQueuedJobCount() {
+    return (unsigned short) this.queuedJobs.getSize();
+}
+
+/**
+ * Retrieve the number of worker threads.
+ */
+public f<unsigned short> ThreadPool.getWorkerThreadCount() {
+    return this.workerThreadCount;
+}

@@ -63,69 +63,106 @@ main:
 	.seh_pushreg %rdi
 	pushq	%rbx
 	.seh_pushreg %rbx
-	subq	$104, %rsp
-	.seh_stackalloc 104
-	leaq	96(%rsp), %rbp
-	.seh_setframe %rbp, 96
+	subq	$184, %rsp
+	.seh_stackalloc 184
+	leaq	128(%rsp), %rbp
+	.seh_setframe %rbp, 128
 	.seh_endprologue
 	callq	__main
-	leaq	-64(%rbp), %r13
-	addq	$8, %r13
-	leaq	-64(%rbp), %r12
-	addq	$16, %r12
-	leaq	-64(%rbp), %r15
-	addq	$24, %r15
-	leaq	-64(%rbp), %r14
-	addq	$32, %r14
-	leaq	-64(%rbp), %rbx
-	addq	$40, %rbx
-	leaq	-64(%rbp), %rdi
-	addq	$48, %rdi
-	leaq	-64(%rbp), %rsi
-	addq	$56, %rsi
-	movq	%rbp, %rcx
+	leaq	-88(%rbp), %r13
+	addq	$16, %r13
+	leaq	-88(%rbp), %r12
+	addq	$32, %r12
+	leaq	-88(%rbp), %r15
+	addq	$48, %r15
+	leaq	-88(%rbp), %r14
+	addq	$64, %r14
+	leaq	-88(%rbp), %rbx
+	addq	$80, %rbx
+	leaq	-88(%rbp), %rdi
+	addq	$96, %rdi
+	leaq	-88(%rbp), %rsi
+	addq	$112, %rsi
+	leaq	-88(%rbp), %rcx
+	addq	$16, %rcx
+	xorl	%edx, %edx
+	movl	$112, %r8d
+	callq	memset
+	leaq	40(%rbp), %rcx
 	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
-	movq	(%rbp), %rax
+	movq	40(%rbp), %rax
+	movq	%rax, -88(%rbp)
+	movq	48(%rbp), %rax
+	movq	%rax, -80(%rbp)
+	leaq	-88(%rbp), %rcx
+	callq	_ZN6Thread3runEv
+	leaq	40(%rbp), %rcx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
+	movq	40(%rbp), %rax
+	movq	%rax, -72(%rbp)
+	movq	48(%rbp), %rax
 	movq	%rax, -64(%rbp)
-	movq	%rbp, %rcx
+	movq	%r13, %rcx
+	callq	_ZN6Thread3runEv
+	leaq	40(%rbp), %rcx
 	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
-	movq	(%rbp), %rax
+	movq	40(%rbp), %rax
 	movq	%rax, -56(%rbp)
-	movq	%rbp, %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
-	callq	_ZN6Thread4ctorEPFvE
-	movq	(%rbp), %rax
+	movq	48(%rbp), %rax
 	movq	%rax, -48(%rbp)
-	movq	%rbp, %rcx
+	movq	%r12, %rcx
+	callq	_ZN6Thread3runEv
+	leaq	40(%rbp), %rcx
 	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
-	movq	(%rbp), %rax
+	movq	40(%rbp), %rax
 	movq	%rax, -40(%rbp)
-	movq	%rbp, %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
-	callq	_ZN6Thread4ctorEPFvE
-	movq	(%rbp), %rax
+	movq	48(%rbp), %rax
 	movq	%rax, -32(%rbp)
-	movq	%rbp, %rcx
+	movq	%r15, %rcx
+	callq	_ZN6Thread3runEv
+	leaq	40(%rbp), %rcx
 	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
-	movq	(%rbp), %rax
+	movq	40(%rbp), %rax
 	movq	%rax, -24(%rbp)
-	movq	%rbp, %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
-	callq	_ZN6Thread4ctorEPFvE
-	movq	(%rbp), %rax
+	movq	48(%rbp), %rax
 	movq	%rax, -16(%rbp)
-	movq	%rbp, %rcx
+	movq	%r14, %rcx
+	callq	_ZN6Thread3runEv
+	leaq	40(%rbp), %rcx
 	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
-	movq	(%rbp), %rax
+	movq	40(%rbp), %rax
 	movq	%rax, -8(%rbp)
+	movq	48(%rbp), %rax
+	movq	%rax, (%rbp)
+	movq	%rbx, %rcx
+	callq	_ZN6Thread3runEv
+	leaq	40(%rbp), %rcx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
+	movq	40(%rbp), %rax
+	movq	%rax, 8(%rbp)
+	movq	48(%rbp), %rax
+	movq	%rax, 16(%rbp)
+	movq	%rdi, %rcx
+	callq	_ZN6Thread3runEv
+	leaq	40(%rbp), %rcx
+	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	callq	_ZN6Thread4ctorEPFvE
+	movq	40(%rbp), %rax
+	movq	%rax, 24(%rbp)
+	movq	48(%rbp), %rax
+	movq	%rax, 32(%rbp)
+	movq	%rsi, %rcx
+	callq	_ZN6Thread3runEv
 	leaq	.Lstr(%rip), %rcx
 	callq	puts
-	leaq	-64(%rbp), %rcx
+	leaq	-88(%rbp), %rcx
 	callq	_ZN6Thread4joinEv
 	movq	%r13, %rcx
 	callq	_ZN6Thread4joinEv
@@ -144,7 +181,7 @@ main:
 	leaq	.Lprintf.str.2(%rip), %rcx
 	callq	printf
 	xorl	%eax, %eax
-	addq	$104, %rsp
+	addq	$184, %rsp
 	popq	%rbx
 	popq	%rdi
 	popq	%rsi

@@ -481,6 +481,14 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     // References with no initialization are illegal
     if (localVarType.isRef() && !node->isParam && !node->isForEachItem)
       softError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
+
+    // If this is a struct, check for the default ctor
+    if (localVarType.is(TY_STRUCT) && !node->isParam && !node->isForEachItem) {
+      Scope *matchScope = localVarType.getBodyScope();
+      assert(matchScope != nullptr);
+      const std::string structName = localVarType.getOriginalSubType();
+      node->defaultCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, localVarType, {}, false, node);
+    }
   }
 
   // Update the type of the variable

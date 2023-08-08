@@ -17,11 +17,19 @@ ext f<Pthread_t> pthread_self();
  * Lightweight thread, that uses posix threads (pthread) under the hood.
  */
 public type Thread struct {
-    Pthread_t threadId
+    p() threadRoutine
+    Pthread_t threadId = 0l
 }
 
 public p Thread.ctor(p() threadRoutine) {
-    pthread_create(&this.threadId, nil<Pthread_attr_t*>, threadRoutine, nil<byte*>);
+    this.threadRoutine = threadRoutine;
+}
+
+/**
+ * Start the thread
+ */
+public p Thread.run() {
+    pthread_create(&this.threadId, nil<Pthread_attr_t*>, this.threadRoutine, nil<byte*>);
 }
 
 /**
