@@ -27,22 +27,22 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
     this.runningJobs = 0s;
 
     p() workerRoutine = p() {
-        /*p() task;
+        p() task;
         while (true) {
             if !this.stopRequested { break; }
-            if this.paused { continue; }
+            /*if this.paused { continue; }
             task = this.queuedJobs.pop();
             this.runningJobs++;
             task();
-            this.runningJobs--;
-        }*/
+            this.runningJobs--;*/
+        }
     };
 
     // Create worker threads
     for (unsigned short i = 0s; i < this.workerThreadCount; i++) {
         this.workerThreads.pushBack(Thread(workerRoutine));
-        Thread& wfx = this.workerThreads.back();
-        //workerThread.run();
+        Thread& workerThread = this.workerThreads.back();
+        workerThread.run();
     }
 }
 

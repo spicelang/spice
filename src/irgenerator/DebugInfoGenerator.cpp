@@ -16,7 +16,19 @@ namespace spice::compiler {
 void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::filesystem::path sourceFileDir) {
   llvm::Module *module = irGenerator->module;
   llvm::LLVMContext &context = irGenerator->context;
-  const std::string producerString = "spice version " + std::string(SPICE_VERSION);
+  const std::string producerString = "spice version " + std::string(SPICE_VERSION) + " (https://github.com/spicelang/spice)";
+
+  // Create DIBuilder
+  diBuilder = std::make_unique<llvm::DIBuilder>(*module);
+
+  // Create compilation unit
+  std::filesystem::path absolutePath = std::filesystem::absolute(sourceFileDir / sourceFileName);
+  absolutePath.make_preferred();
+  sourceFileDir.make_preferred();
+  llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
+  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_lo_user, cuDiFile, producerString,
+                                             irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
+                                             false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
   module->addModuleFlag(llvm::Module::Max, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
   module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
@@ -28,18 +40,6 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
 
   llvm::NamedMDNode *identifierMetadata = module->getOrInsertNamedMetadata("llvm.ident");
   identifierMetadata->addOperand(llvm::MDNode::get(context, llvm::MDString::get(context, producerString)));
-
-  // Create DIBuilder
-  diBuilder = std::make_unique<llvm::DIBuilder>(*module);
-
-  // Create compilation unit
-  std::filesystem::path absolutePath = std::filesystem::absolute(sourceFileDir / sourceFileName);
-  absolutePath.make_preferred();
-  sourceFileDir.make_preferred();
-  llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
-  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C11, cuDiFile, producerString,
-                                             irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
-                                             false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
   // Create another DIFile as scope for subprograms
   diFile = diBuilder->createFile(sourceFileName, sourceFileDir.string());
@@ -61,11 +61,19 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   boolTy = diBuilder->createBasicType("bool", 1, llvm::dwarf::DW_ATE_boolean);
 }
 
-void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc) {
+void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc, bool isLambda) {
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
 
   const ASTNode *node = spiceFunc->declNode;
+  const size_t lineNo = spiceFunc->getDeclCodeLoc().line;
+
+  // Prepare information
+  llvm::DIScope *scope = diFile;
+  llvm::DINode::DIFlags flags = llvm::DINode::FlagPrototyped;
+  llvm::DISubprogram::DISPFlags spFlags = llvm::DISubprogram::SPFlagDefinition;
+  if (isLambda)
+    spFlags |= llvm::DISubprogram::SPFlagLocalToUnit;
 
   // Collect arguments
   std::vector<llvm::Metadata *> argTypes;
@@ -75,27 +83,78 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
     argTypes.push_back(getDITypeForSymbolType(node, spiceFunc->returnType)); // Add result type
   if (spiceFunc->isMethod())
     argTypes.push_back(getDITypeForSymbolType(node, spiceFunc->thisType)); // Add this type
-  for (const SymbolType &argType : spiceFunc->getParamTypes())             // Add arg types
+  if (isLambda) {
+    llvm::DICompositeType *captureStructType = generateCaptureStructDebugInfo(spiceFunc);
+    scope = captureStructType;
+    llvm::DIType *captureStructPtr = diBuilder->createPointerType(captureStructType, pointerWidth);
+    argTypes.push_back(captureStructPtr); // Add this type
+  }
+  for (const SymbolType &argType : spiceFunc->getParamTypes()) // Add arg types
     argTypes.push_back(getDITypeForSymbolType(node, argType));
 
   // Create function type
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
 
-  const size_t lineNo = spiceFunc->getDeclCodeLoc().line;
   const std::string mangledName = NameMangling::mangleFunction(*spiceFunc);
   llvm::DISubprogram *subprogram;
+  const std::string &name = spiceFunc->name;
   if (spiceFunc->isMethod()) {
-    subprogram = diBuilder->createMethod(diFile, spiceFunc->name, mangledName, diFile, lineNo, functionTy, 0, 0, nullptr,
-                                         llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+    subprogram = diBuilder->createMethod(scope, name, mangledName, diFile, lineNo, functionTy, 0, 0, nullptr, flags, spFlags);
   } else {
-    subprogram = diBuilder->createFunction(diFile, spiceFunc->name, mangledName, diFile, lineNo, functionTy, lineNo,
-                                           llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
+    subprogram = diBuilder->createFunction(scope, name, mangledName, diFile, lineNo, functionTy, lineNo, flags, spFlags);
   }
+  subprogram->replaceRetainedNodes({});
 
   // Add debug info to LLVM function
   llvmFunction->setSubprogram(subprogram);
   // Add scope to lexicalBlocks
   lexicalBlocks.push(subprogram);
+}
+
+llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const Function *spiceFunc) {
+  const std::unordered_map<std::string, Capture> &captures = spiceFunc->bodyScope->symbolTable.captures;
+  const CaptureMode captureMode = spiceFunc->bodyScope->symbolTable.capturingMode;
+  const ASTNode *node = spiceFunc->declNode;
+  const size_t lineNo = node->codeLoc.line;
+
+  // Get LLVM type for struct
+  std::vector<llvm::Type *> fieldTypes;
+  std::vector<SymbolTableEntry *> fieldEntries;
+  std::vector<SymbolType> fieldSymbolTypes;
+  for (const auto &[_, capture] : captures) {
+    SymbolType captureType = capture.capturedEntry->getType();
+
+    // Capture by reference
+    if (captureMode == BY_REFERENCE)
+      captureType = captureType.toReference(node);
+
+    fieldEntries.push_back(capture.capturedEntry);
+    fieldSymbolTypes.push_back(captureType);
+    fieldTypes.push_back(captureType.toLLVMType(irGenerator->context, irGenerator->currentScope));
+  }
+  llvm::StructType *structType = llvm::StructType::get(irGenerator->context, fieldTypes, "captures");
+  const llvm::StructLayout *structLayout = irGenerator->module->getDataLayout().getStructLayout(structType);
+  const size_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value();
+
+  llvm::DIScope *scope = lexicalBlocks.top();
+  llvm::DICompositeType *structDiType =
+      diBuilder->createClassType(scope, "", diFile, lineNo, structLayout->getSizeInBits(), alignInBits, 0,
+                                 llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {});
+
+  std::vector<llvm::Metadata *> fieldDITypes;
+  for (size_t i = 0; i < fieldEntries.size(); i++) {
+    llvm::DIType *fieldDiType = getDITypeForSymbolType(node, fieldSymbolTypes.at(i));
+    const std::string &fieldName = fieldEntries.at(i)->name;
+    const size_t offsetInBits = structLayout->getElementOffsetInBits(i);
+    const size_t fieldSize = fieldDiType->getSizeInBits();
+    const size_t fieldAlign = fieldDiType->getAlignInBits();
+    llvm::DIDerivedType *fieldDiDerivedType = diBuilder->createMemberType(
+        structDiType, fieldName, diFile, lineNo, fieldSize, fieldAlign, offsetInBits, llvm::DINode::FlagZero, fieldDiType);
+    fieldDITypes.push_back(fieldDiDerivedType);
+  }
+  structDiType->replaceElements(llvm::MDTuple::get(irGenerator->context, fieldDITypes));
+
+  return structDiType;
 }
 
 void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry) {
@@ -216,6 +275,12 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     Struct *spiceStruct = symbolType.getStruct(node);
     assert(spiceStruct != nullptr);
 
+    // Check if we already know the DI type
+    if (spiceStruct->structDIType != nullptr) {
+      baseDiType = spiceStruct->structDIType;
+      break;
+    }
+
     // Retrieve information about the struct
     const size_t lineNo = spiceStruct->getDeclCodeLoc().line;
     llvm::Type *structType = spiceStruct->entry->getType().toLLVMType(irGenerator->context, irGenerator->currentScope);
@@ -229,6 +294,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     llvm::DICompositeType *structDiType = diBuilder->createStructType(
         diFile, spiceStruct->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
         llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
+    spiceStruct->structDIType = structDiType;
 
     // Collect DI types for fields
     std::vector<llvm::Metadata *> fieldTypes;
@@ -252,6 +318,10 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     baseDiType = structDiType;
     break;
   }
+  case TY_FUNCTION: // fall-through
+  case TY_PROCEDURE:
+    baseDiType = diBuilder->createPointerType(voidTy, pointerWidth);
+    break;
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Debug Info Type fallthrough"); // GCOV_EXCL_LINE
   }

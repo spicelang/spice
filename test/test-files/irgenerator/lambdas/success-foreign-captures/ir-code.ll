@@ -88,7 +88,7 @@ define dso_local i32 @main() #2 {
   %4 = getelementptr inbounds %anon.captures.0, ptr %captures, i32 0, i32 1
   store i32 %3, ptr %4, align 4
   %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
-  store ptr @_Z13lambda.L12C20Ri, ptr %5, align 8
+  store ptr @_Z15lambda.L12C20.0Ri, ptr %5, align 8
   %6 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %6, align 8
   store ptr %fat.ptr, ptr %foo1, align 8
@@ -99,7 +99,7 @@ define dso_local i32 @main() #2 {
   %10 = getelementptr inbounds %anon.captures.0.0, ptr %captures1, i32 0, i32 1
   store i32 %9, ptr %10, align 4
   %11 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 0
-  store ptr @_Z13lambda.L15C26Ri, ptr %11, align 8
+  store ptr @_Z15lambda.L15C26.0Ri, ptr %11, align 8
   %12 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
   store ptr %captures1, ptr %12, align 8
   store ptr %fat.ptr2, ptr %foo2, align 8
@@ -111,7 +111,7 @@ define dso_local i32 @main() #2 {
   ret i32 %16
 }
 
-define private void @_Z13lambda.L12C20Ri(ptr %0, ptr %1) {
+define private void @_Z15lambda.L12C20.0Ri(ptr %0, ptr %1) {
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
@@ -129,7 +129,7 @@ define private void @_Z13lambda.L12C20Ri(ptr %0, ptr %1) {
   ret void
 }
 
-define private i1 @_Z13lambda.L15C26Ri(ptr %0, ptr %1) {
+define private i1 @_Z15lambda.L15C26.0Ri(ptr %0, ptr %1) {
   %result = alloca i1, align 1
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8

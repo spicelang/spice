@@ -111,7 +111,7 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.array.0, i64 40, i1 false)
   store [10 x i32] [i32 10, i32 9, i32 8, i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1], ptr %array, align 4
-  call void @_Z4sortRA10iPFbiiE(ptr %array, ptr @_Z13lambda.L19C17ii)
+  call void @_Z4sortRA10iPFbiiE(ptr %array, ptr @_Z15lambda.L19C17.0ii)
   call void @_Z10printArrayRA10i(ptr %array)
   %2 = load i32, ptr %result, align 4
   ret i32 %2
@@ -120,7 +120,7 @@ define dso_local i32 @main() #0 {
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
 
-define private i1 @_Z13lambda.L19C17ii(i32 %0, i32 %1) {
+define private i1 @_Z15lambda.L19C17.0ii(i32 %0, i32 %1) {
   %a = alloca i32, align 4
   %b = alloca i32, align 4
   store i32 %0, ptr %a, align 4

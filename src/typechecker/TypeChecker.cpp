@@ -498,7 +498,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   node->entries.at(manIdx) = localVarEntry;
 
   // Update the state of the variable
-  localVarEntry->updateState(INITIALIZED, node, node->isParam);
+  localVarEntry->updateState(INITIALIZED, node, true);
 
   return node->setEvaluatedSymbolType(localVarType, manIdx);
 }
@@ -1522,9 +1522,6 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     if (data.isImported && !functionEntry->getType().isPublic())
       SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY,
                     "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility")
-
-    // Check if down-call, fct ptr calls can't be down-calls
-    data.isDownCall = !data.isImported && data.callee->isDownCall(node);
   }
 
   // Retrieve return type
@@ -1545,7 +1542,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
   // Initialize return type if required
   SymbolTableEntry *anonymousSymbol = nullptr;
-  if (returnType.isBaseType(TY_STRUCT)) {
+  if (returnType.is(TY_STRUCT)) {
     SymbolType returnBaseType = returnType.getBaseType();
     const std::string structName = returnBaseType.getOriginalSubType();
     Scope *matchScope = returnBaseType.getBodyScope()->parent;
@@ -1719,7 +1716,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
     // Retrieve field entry
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
     if (!fieldEntry)
-      SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS,
+      SOFT_ERROR_BOOL(node, ACCESS_TO_NON_EXISTING_MEMBER,
                       "The type " + data.thisType.getName() + " does not have a member with the name '" + identifier + "'")
     if (!fieldEntry->getType().isBaseType(TY_STRUCT))
       SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS, "Cannot call a method on '" + identifier + "', since it is no struct")
@@ -1904,7 +1901,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   // Set the type of the result variable
   SymbolTableEntry *resultVarEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultVarEntry != nullptr);
-  resultVarEntry->updateType(returnType, false);
+  resultVarEntry->updateType(returnType, true);
   resultVarEntry->used = true;
 
   // Visit parameters
@@ -1939,6 +1936,8 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
   node->lambdaFunction = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+  node->lambdaFunction.bodyScope = node->bodyScope;
+  node->lambdaFunction.mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -1978,6 +1977,8 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
   node->lambdaProcedure = Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node, false);
+  node->lambdaProcedure.bodyScope = node->bodyScope;
+  node->lambdaProcedure.mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2025,6 +2026,8 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
   node->lambdaFunction = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+  node->lambdaFunction.bodyScope = node->bodyScope;
+  node->lambdaFunction.mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }

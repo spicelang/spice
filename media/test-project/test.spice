@@ -1,4 +1,41 @@
-import "std/os/thread-pool";
+public p test(int t = 123) {
+    int x = 456;
+    p() {
+        printf("%d\n", x);
+    };
+    //cb();
+}
+
+f<int> main() {}
+
+/*import "std/io/cli-parser";
+
+f<int> main(int argc, string[] argv) {
+    CliParser cli = CliParser("spice", "Spice Programming Language");
+    cli.setVersion("v1.0.0");
+    cli.setFooter("(c) Marc Auberer 2021-2023");
+
+    CliSubcommand& build = cli.addSubcommand("build", "Builds your Spice program and emits an executable");
+    CliSubcommand& run = cli.addSubcommand("run", "Build your Spice program and runs it immediately");
+    CliSubcommand& intall = cli.addSubcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
+    CliSubcommand& uninstall = cli.addSubcommand("uninstall", "Builds your Spice program and runs it immediately");
+
+    bool flagValue = false;
+    build.addFlag("-d", flagValue, "Enable debug output");
+    build.addFlag("-cst", flagValue, "Dump CST as serialized string and SVG image");
+    build.addFlag("-ast", flagValue, "Dump AST as serialized string and SVG image");
+    build.addFlag("-symtab", flagValue, "Dump serialized symbol tables");
+    build.addFlag("-ir", flagValue, "Dump LLVM-IR");
+    build.addFlag("-asm", flagValue, "Dump assembly code");
+
+    cli.parse(argc, argv);
+
+    if flagValue {
+        printf("Hi!\n");
+    }
+}*/
+
+/*import "std/os/thread-pool";
 
 f<int> main() {
     ThreadPool tp = ThreadPool(3s);
@@ -14,7 +51,7 @@ f<int> main() {
     tp.enqueue(p() {
         printf("Hello from task 4\n");
     });
-}
+}*/
 
 /*type T int|long;
 

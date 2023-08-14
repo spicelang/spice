@@ -24,17 +24,17 @@ define dso_local i32 @main() #0 {
   %callbackWithArgs2 = alloca ptr, align 8
   %2 = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
-  store ptr @_Z12lambda.L2C39v, ptr %callbackWithoutArgs, align 8
+  store ptr @_Z14lambda.L2C39.0v, ptr %callbackWithoutArgs, align 8
   %3 = load ptr, ptr %callbackWithoutArgs, align 8
   %4 = call ptr %3()
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %4)
-  store ptr @_Z12lambda.L7C50R18__rt_string.Stringd, ptr %callbackWithArgs1, align 8
+  store ptr @_Z14lambda.L7C50.0R18__rt_string.Stringd, ptr %callbackWithArgs1, align 8
   call void @_ZN6String4ctorEPc(ptr %1, ptr @anon.string.2)
   %6 = load ptr, ptr %callbackWithArgs1, align 8
   %7 = call i1 %6(ptr %1, double 3.140000e+00)
   %8 = zext i1 %7 to i32
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %8)
-  store ptr @_Z13lambda.L13C4918__rt_string.Strings, ptr %callbackWithArgs2, align 8
+  store ptr @_Z15lambda.L13C49.018__rt_string.Strings, ptr %callbackWithArgs2, align 8
   call void @_ZN6String4ctorEPc(ptr %2, ptr @anon.string.3)
   %10 = load %struct.String, ptr %2, align 8
   %11 = load ptr, ptr %callbackWithArgs2, align 8
@@ -50,7 +50,7 @@ define dso_local i32 @main() #0 {
   ret i32 %18
 }
 
-define private ptr @_Z12lambda.L2C39v() {
+define private ptr @_Z14lambda.L2C39.0v() {
   %result = alloca ptr, align 8
   ret ptr @anon.string.0
 }
@@ -58,7 +58,7 @@ define private ptr @_Z12lambda.L2C39v() {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-define private i1 @_Z12lambda.L7C50R18__rt_string.Stringd(ptr %0, double %1) {
+define private i1 @_Z14lambda.L7C50.0R18__rt_string.Stringd(ptr %0, double %1) {
   %result = alloca i1, align 1
   %str = alloca ptr, align 8
   %d = alloca double, align 8
@@ -90,7 +90,7 @@ declare i1 @_Z10isRawEqualPcPc(ptr, ptr)
 
 declare void @_ZN6String4ctorEPc(ptr, ptr)
 
-define private i16 @_Z13lambda.L13C4918__rt_string.Strings(%struct.String %0, i16 %1) {
+define private i16 @_Z15lambda.L13C49.018__rt_string.Strings(%struct.String %0, i16 %1) {
   %result = alloca i16, align 2
   %str = alloca %struct.String, align 8
   %b = alloca i16, align 2

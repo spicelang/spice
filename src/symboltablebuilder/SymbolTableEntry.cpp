@@ -24,6 +24,7 @@ const SymbolType &SymbolTableEntry::getType() const { return type; }
  */
 void SymbolTableEntry::updateType(const SymbolType &newType, bool overwriteExistingType) {
   assert(overwriteExistingType || type.isOneOf({TY_INVALID, TY_DYN}));
+  assert(!newType.is(TY_DYN));
   type = newType;
 }
 

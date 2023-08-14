@@ -1,26 +1,20 @@
-import "std/io/cli-option";
-import "std/runtime/iterator_rt";
-import "std/os/os";
+import "std/io/cli-subcommand";
 
 // Generic types
 type T bool|string|int|long|short;
 
 public type CliParser struct {
-    string appName
-    string appDescription
-    string footer = ""
     string versionString = "v0.0.1"
-    //Vector<CliOption> options
-    Vector<CliOption<bool>> flags
-    bool allowUnknownOptions = false
-    p() rootCallback
+    CliSubcommand rootSubcommand
 }
 
 public p CliParser.ctor(string appName, string appDescription = "") {
-    this.appName = appName;
-    this.appDescription = appDescription;
-    //this.options = Vector<CliOption>();
-    this.flags = Vector<CliOption<bool>>();
+    this.rootSubcommand = CliSubcommand(nil<CliSubcommand*>, appName, appDescription);
+    // Add version flag
+    this.rootSubcommand.addFlag("version", f<int>(bool& _) {
+        printf("%s\n", this.versionString);
+        return EXIT_CODE_SUCCESS;
+    }, "Prints the version of the application");
 }
 
 public p CliParser.setVersion(string versionString) {
@@ -28,87 +22,33 @@ public p CliParser.setVersion(string versionString) {
 }
 
 public p CliParser.setFooter(string footer) {
-    this.footer = footer;
+    this.rootSubcommand.setFooter(footer);
 }
 
 public p CliParser.setRootCallback(p() callback) {
-    this.rootCallback = callback;
+    this.rootSubcommand.setCallback(callback);
 }
 
 public p CliParser.allowUnknownOptions() {
-    this.allowUnknownOptions = true;
+    this.rootSubcommand.allowUnknownOptions();
+}
+
+public f<CliSubcommand&> CliParser.addSubcommand(string name, string description) {
+    return this.rootSubcommand.addSubcommand(name, description);
 }
 
 public p CliParser.addOption<T>(string name, T& targetVariable, string description) {
-    //const CliOption option = CliOption<T>(name, targetVariable, description);
-    //this.options.pushBack(option);
+    this.rootSubcommand.addOption(targetVariable, description);
 }
 
 public p CliParser.addFlag(string name, bool& targetVariable, string description) {
-    const dyn flag = CliOption<bool>(name, targetVariable, description);
-    this.flags.pushBack(flag);
+    this.rootSubcommand.addFlag(name, targetVariable, description);
 }
 
-public p CliParser.addFlag(string name, p(bool&) callback, string description) {
-    const dyn flag = CliOption<bool>(name, callback, description);
-    this.flags.pushBack(flag);
+public p CliParser.addFlag(string name, f<int>(bool&) callback, string description) {
+    this.rootSubcommand.addFlag(name, callback, description);
 }
 
 public f<int> CliParser.parse(unsigned int argc, string[] argv) {
-    // Check if we have any arguments
-    if argc == 1 {
-        if this.rootCallback != nil<p()> {
-            p() rc = this.rootCallback;
-            rc();
-        } else {
-            this.printHelp(argv[0]);
-            return EXIT_CODE_SUCCESS;
-        }
-    }
-
-    for unsigned int argNo = 1; argNo < argc; argNo++ {
-        const string arg = argv[argNo];
-
-        // Check all commonly used flags
-        if (arg == "-v" || arg == "--version") { // Version info
-            this.printVersion();
-            return EXIT_CODE_SUCCESS;
-        }
-        if (arg == "-h" || arg == "--help") { // Help
-            this.printHelp(argv[0]);
-            return EXIT_CODE_SUCCESS;
-        }
-
-        // Check for flags
-        foreach const CliOption<bool>& flag : iterate(this.flags) {
-            if (arg == flag.getName()) {
-                flag.setToTrue();
-                flag.callCallback(true);
-                continue 2; // Continue with next argument
-            }
-        }
-
-        // We could not match the argument
-        if !this.allowUnknownOptions {
-            printf("Unknown argument: %s\n", arg);
-            return EXIT_CODE_ERROR;
-        }
-    }
-    return EXIT_CODE_SUCCESS; // Parsing was successful, return success exit code
-}
-
-p CliParser.printHelp(string fileName) {
-    printf("%s\n\nUsage: %s [options]\n\nFlags:\n", this.appDescription, fileName);
-    printf("--help,-h\t\t\tPrint this help message\n");
-    printf("--version,-v\t\t\tPrint version info\n");
-    foreach const CliOption<bool>& flag : iterate(this.flags) {
-        printf("%s\t\t\t%s\n", flag.getName(), flag.getDescription());
-    }
-    if this.footer != "" {
-        printf("\n%s\n", this.footer);
-    }
-}
-
-p CliParser.printVersion() {
-    printf("%s\n", this.versionString);
+    return this.rootSubcommand.parse(argc, argv);
 }

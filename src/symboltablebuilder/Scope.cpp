@@ -44,7 +44,16 @@ void Scope::renameChildScope(const std::string &oldName, const std::string &newN
 void Scope::copyChildScope(const std::string &oldName, const std::string &newName) {
   assert(children.contains(oldName) && !children.contains(newName));
   // Create copy
-  children.insert({newName, std::make_shared<Scope>(*children.at(oldName))});
+  const std::shared_ptr<Scope> newScope = children.at(oldName)->deepCopyScope();
+  // Save copy under new name
+  children.insert({newName, newScope});
+}
+
+std::shared_ptr<Scope> Scope::deepCopyScope() {
+  const std::shared_ptr<Scope> newScope = std::make_shared<Scope>(*this);
+  for (const auto &[childName, oldChild] : children)
+    newScope->children[childName] = oldChild->deepCopyScope();
+  return newScope;
 }
 
 /**

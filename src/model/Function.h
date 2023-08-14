@@ -57,7 +57,6 @@ public:
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
-  [[nodiscard]] bool isDownCall(const ASTNode *callNode) const;
 
   // Public members
   std::string name;
@@ -71,6 +70,7 @@ public:
   Scope *bodyScope = nullptr;
   bool mangleFunctionName = true;
   std::string predefinedMangledName;
+  std::string mangleSuffix;
   bool genericSubstantiation = false;
   bool alreadyTypeChecked = false;
   bool external = false;

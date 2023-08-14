@@ -20,14 +20,14 @@ define dso_local i32 @main() #0 {
   %callbackWithArgs2 = alloca ptr, align 8
   %2 = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
-  store ptr @_Z12lambda.L2C31v, ptr %callbackWithoutArgs, align 8
+  store ptr @_Z14lambda.L2C31.0v, ptr %callbackWithoutArgs, align 8
   %3 = load ptr, ptr %callbackWithoutArgs, align 8
   call void %3()
-  store ptr @_Z12lambda.L7C44R18__rt_string.Stringd, ptr %callbackWithArgs1, align 8
+  store ptr @_Z14lambda.L7C44.0R18__rt_string.Stringd, ptr %callbackWithArgs1, align 8
   call void @_ZN6String4ctorEPc(ptr %1, ptr @anon.string.0)
   %4 = load ptr, ptr %callbackWithArgs1, align 8
   call void %4(ptr %1, double 3.140000e+00)
-  store ptr @_Z13lambda.L12C4118__rt_string.Stringb, ptr %callbackWithArgs2, align 8
+  store ptr @_Z15lambda.L12C41.018__rt_string.Stringb, ptr %callbackWithArgs2, align 8
   call void @_ZN6String4ctorEPc(ptr %2, ptr @anon.string.1)
   %5 = load %struct.String, ptr %2, align 8
   %6 = load ptr, ptr %callbackWithArgs2, align 8
@@ -38,7 +38,7 @@ define dso_local i32 @main() #0 {
   ret i32 %7
 }
 
-define private void @_Z12lambda.L2C31v() {
+define private void @_Z14lambda.L2C31.0v() {
   %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
@@ -46,7 +46,7 @@ define private void @_Z12lambda.L2C31v() {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-define private void @_Z12lambda.L7C44R18__rt_string.Stringd(ptr %0, double %1) {
+define private void @_Z14lambda.L7C44.0R18__rt_string.Stringd(ptr %0, double %1) {
   %str = alloca ptr, align 8
   %d = alloca double, align 8
   store ptr %0, ptr %str, align 8
@@ -61,7 +61,7 @@ define private void @_Z12lambda.L7C44R18__rt_string.Stringd(ptr %0, double %1) {
 
 declare void @_ZN6String4ctorEPc(ptr, ptr)
 
-define private void @_Z13lambda.L12C4118__rt_string.Stringb(%struct.String %0, i1 %1) {
+define private void @_Z15lambda.L12C41.018__rt_string.Stringb(%struct.String %0, i1 %1) {
   %str = alloca %struct.String, align 8
   %b = alloca i1, align 1
   store %struct.String %0, ptr %str, align 8

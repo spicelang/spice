@@ -1,0 +1,146 @@
+import "std/io/cli-option";
+import "std/runtime/iterator_rt";
+
+// Generic types
+type T bool|string|int|long|short;
+
+public type CliSubcommand struct {
+    string name
+    string description
+    CliSubcommand* parent
+    string footer = ""
+    p() callback
+    Vector<CliSubcommand> subcommands
+    Vector<CliOption<bool>> boolOptions
+    Vector<CliOption<string>> stringOptions
+    Vector<CliOption<int>> intOptions
+    Vector<CliOption<long>> longOptions
+    Vector<CliOption<short>> shortOptions
+    bool allowUnknownOptions = false
+}
+
+public p CliSubcommand.ctor(CliSubcommand* parent, string name, string description = "") {
+    this.name = name;
+    this.description = description;
+    this.parent = parent;
+    this.subcommands = Vector<CliSubcommand>();
+    this.boolOptions = Vector<CliOption<bool>>();
+    this.stringOptions = Vector<CliOption<string>>();
+    this.intOptions = Vector<CliOption<int>>();
+    this.longOptions = Vector<CliOption<long>>();
+    this.shortOptions = Vector<CliOption<short>>();
+}
+
+public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 1) {
+    // Check if we have any arguments
+    if argc == layer {
+        if this.callback != nil<p()> {
+            p() rc = this.callback;
+            rc();
+        } else {
+            this.printHelp(argv, layer);
+            return EXIT_CODE_SUCCESS;
+        }
+    }
+
+    for unsigned int argNo = layer; argNo < argc; argNo++ {
+        const string arg = argv[argNo];
+
+        // Check for subcommands
+        foreach const CliSubcommand& subcommand : iterate(this.subcommands) {
+            if arg == subcommand.getName() {
+                return subcommand.parse(argc, argv, layer + 1);
+            }
+        }
+
+        // Check all commonly used flags
+        if (arg == "-h" || arg == "--help") { // Help
+            this.printHelp(argv, layer);
+            return EXIT_CODE_SUCCESS;
+        }
+
+        // Check for flags
+        foreach const CliOption<bool>& flag : iterate(this.boolOptions) {
+            if arg == flag.getName() {
+                flag.setToTrue();
+                flag.callCallback(true);
+                continue 2; // Continue with next argument
+            }
+        }
+
+        // We could not match the argument
+        if !this.allowUnknownOptions {
+            printf("Unknown argument: %s\n", arg);
+            return EXIT_CODE_ERROR;
+        }
+    }
+
+    return EXIT_CODE_SUCCESS; // Parsing was successful, return success exit code
+}
+
+public f<CliSubcommand&> CliSubcommand.addSubcommand(string name, string description) {
+    this.subcommands.pushBack(CliSubcommand(this, name, description));
+    return this.subcommands.back();
+}
+
+public f<string> CliSubcommand.getName() {
+    return this.name;
+}
+
+public f<string> CliSubcommand.getDescription() {
+    return this.description;
+}
+
+public p CliSubcommand.setFooter(string footer) {
+    this.footer = footer;
+}
+
+public p CliSubcommand.setCallback(p() callback) {
+    this.callback = callback;
+}
+
+public p CliSubcommand.allowUnknownOptions() {
+    this.allowUnknownOptions = true;
+    foreach CliSubcommand& subcommand : iterate(this.subcommands) {
+        subcommand.allowUnknownOptions();
+    }
+}
+
+public p CliSubcommand.addOption<T>(string name, T& targetVariable, string description) {
+    this.options.pushBack(CliOption<T>(name, targetVariable, description));
+}
+
+public p CliSubcommand.addFlag(string name, bool& targetVariable, string description) {
+    this.boolOptions.pushBack(CliOption<bool>(name, targetVariable, description));
+}
+
+public p CliSubcommand.addFlag(string name, f<int>(bool&) callback, string description) {
+    this.boolOptions.pushBack(CliOption<bool>(name, callback, description));
+}
+
+p CliSubcommand.printHelp(string[] argv, int layer) {
+    // Build subcommand string
+    String subcommand = String(argv[0]);
+    for int i = 1; i < layer; i++ {
+        subcommand += " " + argv[i];
+    }
+    // Print usage
+    printf("%s\n\nUsage: %s [options]\n", this.description, subcommand);
+    // Print subcommands
+    if !this.subcommands.isEmpty() {
+        printf("\nSubcommands:\n");
+        foreach const CliSubcommand& subCommand : iterate(this.subcommands) {
+            printf("%s\t\t\t%s\n", subCommand.getName(), subCommand.getDescription());
+        }
+    }
+    // Print flags
+    printf("\nFlags:\n");
+    foreach const CliOption<bool>& flag : iterate(this.boolOptions) {
+        printf("%s\t\t\t%s\n", flag.getName(), flag.getDescription());
+    }
+    printf("--help,-h\t\t\tPrint this help message\n");
+    // Print footer
+    if this.footer != "" {
+        printf("\n%s\n", this.footer);
+    }
+}

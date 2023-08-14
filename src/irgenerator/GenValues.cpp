@@ -172,11 +172,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   // Function is not defined in the current module -> declare it
-  // This can happen when:
-  // 1) If we call into an imported source file
-  // 2) This is a down-call to a function, which is defined later in the same file
   llvm::FunctionType *fctType = nullptr;
-  if (data.isFctPtrCall() || data.isImported || data.isDownCall) {
+  if (!module->getFunction(mangledName)) {
     // Get returnType
     llvm::Type *returnType = builder.getVoidTy();
     if (!returnSType.is(TY_DYN))
@@ -192,7 +189,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       argTypes.push_back(paramType.toLLVMType(context, accessScope));
 
     fctType = llvm::FunctionType::get(returnType, argTypes, false);
-    if (data.isImported || data.isDownCall)
+    if (!data.isFctPtrCall())
       module->getOrInsertFunction(mangledName, fctType);
   }
 
@@ -379,7 +376,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 }
 
 std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *node) {
-  const Function &spiceFunc = node->lambdaFunction;
+  Function spiceFunc = node->lambdaFunction;
   ParamInfoList paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 
@@ -429,6 +426,7 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
   llvm::Type *returnType = spiceFunc.returnType.toLLVMType(context, currentScope);
 
   // Create function or implement declared function
+  spiceFunc.mangleSuffix = "." + std::to_string(manIdx);
   const std::string mangledName = NameMangling::mangleFunction(spiceFunc);
   llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
   module->getOrInsertFunction(mangledName, funcType);
@@ -439,7 +437,7 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
   lambda->setLinkage(llvm::Function::PrivateLinkage);
 
   // Add debug info
-  diGenerator.generateFunctionDebugInfo(lambda, &spiceFunc);
+  diGenerator.generateFunctionDebugInfo(lambda, &spiceFunc, true);
   diGenerator.setSourceLocation(node);
 
   // Save alloca insert markers
@@ -473,12 +471,13 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    if (hasCaptures && argNumber == 0)
+    if (hasCaptures && argNumber == 0) {
       captureStructPtrPtr = paramAddress;
-    else
+    } else {
       paramSymbol->updateAddress(paramAddress);
-    // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+      // Generate debug info
+      diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    }
     // Store the value at the new address
     builder.CreateStore(&arg, paramAddress);
   }
@@ -517,6 +516,7 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
+  diGenerator.setSourceLocation(node);
 
   // Restore alloca insert markers
   builder.SetInsertPoint(bOrig);
@@ -537,7 +537,7 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
 }
 
 std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *node) {
-  const Function &spiceFunc = node->lambdaProcedure;
+  Function spiceFunc = node->lambdaProcedure;
   ParamInfoList paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 
@@ -584,6 +584,7 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
   }
 
   // Create function or implement declared function
+  spiceFunc.mangleSuffix = "." + std::to_string(manIdx);
   const std::string mangledName = NameMangling::mangleFunction(spiceFunc);
   llvm::FunctionType *funcType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
   module->getOrInsertFunction(mangledName, funcType);
@@ -594,7 +595,7 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
   lambda->setLinkage(llvm::Function::PrivateLinkage);
 
   // Add debug info
-  diGenerator.generateFunctionDebugInfo(lambda, &spiceFunc);
+  diGenerator.generateFunctionDebugInfo(lambda, &spiceFunc, true);
   diGenerator.setSourceLocation(node);
 
   // Save alloca insert markers
@@ -620,12 +621,13 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    if (hasCaptures && argNumber == 0)
+    if (hasCaptures && argNumber == 0) {
       captureStructPtrPtr = paramAddress;
-    else
+    } else {
       paramSymbol->updateAddress(paramAddress);
-    // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+      // Generate debug info
+      diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
+    }
     // Store the value at the new address
     builder.CreateStore(&arg, paramAddress);
   }
@@ -662,6 +664,7 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
+  diGenerator.setSourceLocation(node);
 
   // Restore alloca insert markers
   builder.SetInsertPoint(bOrig);
@@ -744,7 +747,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   lambda->setLinkage(llvm::Function::PrivateLinkage);
 
   // Add debug info
-  diGenerator.generateFunctionDebugInfo(lambda, &spiceFunc);
+  diGenerator.generateFunctionDebugInfo(lambda, &spiceFunc, true);
   diGenerator.setSourceLocation(node);
 
   // Save alloca insert markers
@@ -810,6 +813,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
+  diGenerator.setSourceLocation(node);
 
   // Restore alloca insert markers
   builder.SetInsertPoint(bOrig);
@@ -845,11 +849,11 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *cap
   // Create capture struct
   llvm::Value *captureStructAddress = insertAlloca(capturesStructType, "captures");
   size_t captureIdx = 0;
-  const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
-  for (const std::pair<const std::string, Capture> &capture : captures) {
+  for (const std::pair<const std::string, Capture> &capture : bodyScope->symbolTable.captures) {
     const SymbolTableEntry *capturedEntry = capture.second.capturedEntry;
     // Get address or value of captured variable, depending on the capturing mode
     llvm::Value *capturedValue = capturedEntry->getAddress();
+    assert(capturedValue != nullptr);
     if (capturingMode == BY_VALUE) {
       llvm::Type *captureType = capturedEntry->getType().toLLVMType(context, currentScope);
       capturedValue = builder.CreateLoad(captureType, capturedValue);

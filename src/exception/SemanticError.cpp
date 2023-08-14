@@ -119,6 +119,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Imported source file not existing";
   case CIRCULAR_DEPENDENCY:
     return "Circular import detected";
+  case ACCESS_TO_NON_EXISTING_MEMBER:
+    return "Access to non-existing member";
   case INVALID_MEMBER_ACCESS:
     return "Member access is only allowed on structs and Strings";
   case SCOPE_ACCESS_ONLY_IMPORTS:

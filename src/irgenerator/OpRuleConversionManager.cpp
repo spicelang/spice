@@ -1620,13 +1620,9 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   const bool isImported = accessScope->isImportedBy(irGenerator->rootScope);
   const CodeLoc &callLoc = node->codeLoc;
   const CodeLoc &defLoc = opFct->entry->getDeclCodeLoc();
-  const bool isDownCall = defLoc.line > callLoc.line || (defLoc.line == callLoc.line && defLoc.col > callLoc.col);
 
   // Function is not defined in the current module -> declare it
-  // This can happen when:
-  // 1) If this is an imported source file
-  // 2) This is a down-call to a function, which is defined later in the same file
-  if (isImported || isDownCall) {
+  if (!irGenerator->module->getFunction(mangledName)) {
     // Get returnType
     llvm::Type *returnType = builder.getVoidTy();
     if (!opFct->returnType.is(TY_DYN))
