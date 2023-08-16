@@ -118,7 +118,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // If we have a lambda call that takes captures, add them to the argument list
   llvm::Value *fctPtr = nullptr;
-  if (data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures()) {
+  const bool isLambdaAndHasCaptures = data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures();
+  if (isLambdaAndHasCaptures) {
     llvm::Value *structPtrPtr = firstFragEntry->getAddress();
     llvm::Value *structPtr = builder.CreateLoad(builder.getPtrTy(), structPtrPtr);
     llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
@@ -436,6 +437,13 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
   lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
 
+  // In case of captures, add attribute to captures argument
+  if (hasCaptures) {
+    lambda->addParamAttr(0, llvm::Attribute::NoUndef);
+    lambda->addParamAttr(0, llvm::Attribute::NonNull);
+    lambda->addDereferenceableParamAttr(0, module->getDataLayout().getPointerSize());
+  }
+
   // Add debug info
   diGenerator.generateFunctionDebugInfo(lambda, &spiceFunc, true);
   diGenerator.setSourceLocation(node);
@@ -594,6 +602,13 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
   lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
 
+  // In case of captures, add attribute to captures argument
+  if (hasCaptures) {
+    lambda->addParamAttr(0, llvm::Attribute::NoUndef);
+    lambda->addParamAttr(0, llvm::Attribute::NonNull);
+    lambda->addDereferenceableParamAttr(0, module->getDataLayout().getPointerSize());
+  }
+
   // Add debug info
   diGenerator.generateFunctionDebugInfo(lambda, &spiceFunc, true);
   diGenerator.setSourceLocation(node);
@@ -745,6 +760,13 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Set attributes to function
   lambda->setDSOLocal(true);
   lambda->setLinkage(llvm::Function::PrivateLinkage);
+
+  // In case of captures, add attribute to captures argument
+  if (hasCaptures) {
+    lambda->addParamAttr(0, llvm::Attribute::NoUndef);
+    lambda->addParamAttr(0, llvm::Attribute::NonNull);
+    lambda->addDereferenceableParamAttr(0, module->getDataLayout().getPointerSize());
+  }
 
   // Add debug info
   diGenerator.generateFunctionDebugInfo(lambda, &spiceFunc, true);

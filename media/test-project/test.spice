@@ -1,9 +1,9 @@
 public p test(int t = 123) {
     int x = 456;
-    p() {
+    dyn cb = p() {
         printf("%d\n", x);
     };
-    //cb();
+    cb();
 }
 
 f<int> main() {}

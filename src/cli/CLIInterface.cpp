@@ -16,6 +16,7 @@ void CLIInterface::createInterface() {
   app.allow_windows_style_options();
   app.positionals_at_end();
   app.footer("(c) Marc Auberer 2021-2023");
+  app.require_subcommand(1);
 
   // Add version flag
   std::string versionName = std::string(SPICE_VERSION);

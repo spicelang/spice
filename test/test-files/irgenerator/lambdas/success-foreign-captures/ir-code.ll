@@ -111,7 +111,7 @@ define dso_local i32 @main() #2 {
   ret i32 %16
 }
 
-define private void @_Z15lambda.L12C20.0Ri(ptr %0, ptr %1) {
+define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
@@ -129,7 +129,7 @@ define private void @_Z15lambda.L12C20.0Ri(ptr %0, ptr %1) {
   ret void
 }
 
-define private i1 @_Z15lambda.L15C26.0Ri(ptr %0, ptr %1) {
+define private i1 @_Z15lambda.L15C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
   %result = alloca i1, align 1
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8

@@ -11,7 +11,7 @@ public type CliOption<T> struct {
     string description
     CliOptionMode mode
     T& targetVariable
-    f<int>(T&) callback
+    p(T&) callback
 }
 
 public p CliOption.ctor(string name, T& targetVariable, string description) {
@@ -21,7 +21,7 @@ public p CliOption.ctor(string name, T& targetVariable, string description) {
     this.targetVariable = targetVariable;
 }
 
-public p CliOption.ctor(string name, f<int>(T&) callback, string description) {
+public p CliOption.ctor(string name, p(T&) callback, string description) {
     this.name = name;
     this.description = description;
     this.mode = CliOptionMode::CALL_CALLBACK;
@@ -48,10 +48,9 @@ public p CliOption.setToTrue() {
     }
 }
 
-public f<int> CliOption.callCallback(T& value) {
+public p CliOption.callCallback(T& value) {
     if this.mode == CliOptionMode::CALL_CALLBACK {
-        f<int>(T&) cb = this.callback;
-        return cb(value);
+        p(T&) cb = this.callback;
+        cb(value);
     }
-    return EXIT_CODE_SUCCESS;
 }

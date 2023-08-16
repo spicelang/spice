@@ -94,7 +94,7 @@ assert.exit.L15:                                  ; preds = %assert.exit.L14
   ret i32 %32
 }
 
-define private void @_Z14lambda.L4C20.0Ri(ptr %0, ptr %1) {
+define private void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
@@ -112,7 +112,7 @@ define private void @_Z14lambda.L4C20.0Ri(ptr %0, ptr %1) {
   ret void
 }
 
-define private i1 @_Z14lambda.L7C26.0Ri(ptr %0, ptr %1) {
+define private i1 @_Z14lambda.L7C26.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
   %result = alloca i1, align 1
   %captures = alloca ptr, align 8
   %x = alloca ptr, align 8

@@ -114,7 +114,7 @@ public p CliSubcommand.addFlag(string name, bool& targetVariable, string descrip
     this.boolOptions.pushBack(CliOption<bool>(name, targetVariable, description));
 }
 
-public p CliSubcommand.addFlag(string name, f<int>(bool&) callback, string description) {
+public p CliSubcommand.addFlag(string name, p(bool&) callback, string description) {
     this.boolOptions.pushBack(CliOption<bool>(name, callback, description));
 }
 

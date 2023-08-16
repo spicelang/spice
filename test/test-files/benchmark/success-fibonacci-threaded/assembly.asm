@@ -89,7 +89,7 @@ main:
 	movl	$112, %r8d
 	callq	memset
 	leaq	40(%rbp), %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	40(%rbp), %rax
 	movq	%rax, -88(%rbp)
@@ -98,7 +98,7 @@ main:
 	leaq	-88(%rbp), %rcx
 	callq	_ZN6Thread3runEv
 	leaq	40(%rbp), %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	40(%rbp), %rax
 	movq	%rax, -72(%rbp)
@@ -107,7 +107,7 @@ main:
 	movq	%r13, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	40(%rbp), %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	40(%rbp), %rax
 	movq	%rax, -56(%rbp)
@@ -116,7 +116,7 @@ main:
 	movq	%r12, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	40(%rbp), %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	40(%rbp), %rax
 	movq	%rax, -40(%rbp)
@@ -125,7 +125,7 @@ main:
 	movq	%r15, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	40(%rbp), %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	40(%rbp), %rax
 	movq	%rax, -24(%rbp)
@@ -134,7 +134,7 @@ main:
 	movq	%r14, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	40(%rbp), %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	40(%rbp), %rax
 	movq	%rax, -8(%rbp)
@@ -143,7 +143,7 @@ main:
 	movq	%rbx, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	40(%rbp), %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	40(%rbp), %rax
 	movq	%rax, 8(%rbp)
@@ -152,7 +152,7 @@ main:
 	movq	%rdi, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	40(%rbp), %rcx
-	leaq	.L_Z13lambda.L12C29v(%rip), %rdx
+	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	40(%rbp), %rax
 	movq	%rax, 24(%rbp)
@@ -193,12 +193,12 @@ main:
 	retq
 	.seh_endproc
 
-	.def	.L_Z13lambda.L12C29v;
+	.def	.L_Z15lambda.L12C29.0v;
 	.scl	3;
 	.type	32;
 	.endef
 	.p2align	4, 0x90
-.L_Z13lambda.L12C29v:
+.L_Z15lambda.L12C29.0v:
 	subq	$40, %rsp
 	movl	$30, %ecx
 	callq	.L_Z3fibi
