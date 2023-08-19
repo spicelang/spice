@@ -38,7 +38,7 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
     cpuName = llvm::sys::getHostCPUName();
     llvm::StringMap<bool> hostFeatures;
     llvm::sys::getHostCPUFeatures(hostFeatures);
-    for (const auto &feature : hostFeatures) {
+    for (const llvm::StringMapEntry<bool> &feature : hostFeatures) {
       if (featureString.rdbuf()->in_avail() > 0)
         featureString << ",";
       featureString << (feature.second ? "+" : "-") << feature.first().str();
@@ -55,7 +55,7 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
 
 GlobalResourceManager::~GlobalResourceManager() {
   // Delete all source files
-  for (auto &sourceFile : sourceFiles)
+  for (const std::pair<const std::string, SourceFile *> &sourceFile : sourceFiles)
     delete sourceFile.second;
 
   // Delete target machine

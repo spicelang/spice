@@ -1,4 +1,18 @@
-import "std/io/cli-parser";
+p test(f<long>() l) {
+    long res = l();
+    printf("%d", res);
+}
+
+f<int> main() {
+    long x = 123l;
+    long y = 456l;
+    dyn l = f<long>() {
+        return x + y + 1l;
+    };
+    test(l);
+}
+
+/*import "std/io/cli-parser";
 
 f<int> main(int argc, string[] argv) {
     CliParser cli = CliParser("spice", "Spice Programming Language");
@@ -23,7 +37,7 @@ f<int> main(int argc, string[] argv) {
     if flagValue {
         printf("Hi!\n");
     }
-}
+}*/
 
 /*import "std/os/thread-pool";
 

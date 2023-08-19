@@ -6,7 +6,7 @@ namespace spice::compiler {
 
 void BitcodeLinker::link() {
   // Link all source file modules in
-  for (const auto &sourceFile : resourceManager.sourceFiles)
+  for (const std::pair<const std::string, SourceFile *> &sourceFile : resourceManager.sourceFiles)
     linker.linkInModule(std::move(sourceFile.second->llvmModule), llvm::Linker::None);
 }
 
