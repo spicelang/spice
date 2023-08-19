@@ -376,20 +376,21 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   return result;
 }
 
-std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *node) {
-  Function spiceFunc = node->lambdaFunction;
+std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
+  Function spiceFunc = node->lambdaFunction.at(manIdx);
   ParamInfoList paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
-  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
+  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
 
   // If there are captures, we pass them in a struct as the first function argument
-  const std::unordered_map<std::string, Capture> &captures = node->bodyScope->symbolTable.captures;
+  const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
   llvm::StructType *capturesStructType = nullptr;
   if (hasCaptures) {
-    const CaptureMode capturingMode = node->bodyScope->symbolTable.capturingMode;
+    const CaptureMode capturingMode = bodyScope->symbolTable.capturingMode;
     // Create captures struct type
     std::vector<llvm::Type *> captureTypes;
     for (const std::pair<const std::string, Capture> &capture : captures) {
@@ -536,28 +537,29 @@ std::any IRGenerator::visitLambdaFunc(const spice::compiler::LambdaFuncNode *nod
   verifyFunction(lambda, node->codeLoc);
 
   // Change back to original scope
-  currentScope = node->bodyScope->parent;
+  currentScope = bodyScope->parent;
 
   // If we have captures, create a struct { <fct-ptr>, <capture struct ptr> }
-  llvm::Value *result = hasCaptures ? buildFatFctPtr(node->bodyScope, capturesStructType, lambda) : lambda;
+  llvm::Value *result = hasCaptures ? buildFatFctPtr(bodyScope, capturesStructType, lambda) : lambda;
 
   return LLVMExprResult{.value = result, .node = node};
 }
 
-std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *node) {
-  Function spiceFunc = node->lambdaProcedure;
+std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
+  Function spiceFunc = node->lambdaProcedure.at(manIdx);
   ParamInfoList paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
-  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
+  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
 
   // If there are captures, we pass them in a struct as the first function argument
-  const std::unordered_map<std::string, Capture> &captures = node->bodyScope->symbolTable.captures;
+  const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
   llvm::StructType *capturesStructType = nullptr;
   if (hasCaptures) {
-    const CaptureMode capturingMode = node->bodyScope->symbolTable.capturingMode;
+    const CaptureMode capturingMode = bodyScope->symbolTable.capturingMode;
     // Create captures struct type
     std::vector<llvm::Type *> captureTypes;
     for (const std::pair<const std::string, Capture> &capture : captures) {
@@ -691,28 +693,29 @@ std::any IRGenerator::visitLambdaProc(const spice::compiler::LambdaProcNode *nod
   verifyFunction(lambda, node->codeLoc);
 
   // Change back to original scope
-  currentScope = node->bodyScope->parent;
+  currentScope = bodyScope->parent;
 
   // If we have captures, create a struct { <fct-ptr>, <capture struct ptr> }
-  llvm::Value *result = hasCaptures ? buildFatFctPtr(node->bodyScope, capturesStructType, lambda) : lambda;
+  llvm::Value *result = hasCaptures ? buildFatFctPtr(bodyScope, capturesStructType, lambda) : lambda;
 
   return LLVMExprResult{.value = result, .node = node};
 }
 
 std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
-  const Function &spiceFunc = node->lambdaFunction;
+  const Function &spiceFunc = node->lambdaFunction.at(manIdx);
   ParamInfoList paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
-  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
+  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
 
   // If there are captures, we pass them in a struct as the first function argument
-  const std::unordered_map<std::string, Capture> &captures = node->bodyScope->symbolTable.captures;
+  const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
   llvm::StructType *capturesStructType = nullptr;
   if (hasCaptures) {
-    const CaptureMode capturingMode = node->bodyScope->symbolTable.capturingMode;
+    const CaptureMode capturingMode = bodyScope->symbolTable.capturingMode;
     // Create captures struct type
     std::vector<llvm::Type *> captureTypes;
     for (const std::pair<const std::string, Capture> &capture : captures) {
@@ -847,10 +850,10 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   verifyFunction(lambda, node->codeLoc);
 
   // Change back to original scope
-  currentScope = node->bodyScope->parent;
+  currentScope = bodyScope->parent;
 
   // If we have captures, create a struct { <fct-ptr>, <capture struct ptr> }
-  llvm::Value *result = hasCaptures ? buildFatFctPtr(node->bodyScope, capturesStructType, lambda) : lambda;
+  llvm::Value *result = hasCaptures ? buildFatFctPtr(bodyScope, capturesStructType, lambda) : lambda;
 
   return LLVMExprResult{.value = result, .node = node};
 }

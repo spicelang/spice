@@ -1,0 +1,8 @@
+public p test(int t = 123) {
+    int x = 456;
+    p() {
+        printf("%d\n", x);
+    };
+}
+
+f<int> main() {}

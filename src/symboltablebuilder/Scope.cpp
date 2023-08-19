@@ -51,8 +51,11 @@ void Scope::copyChildScope(const std::string &oldName, const std::string &newNam
 
 std::shared_ptr<Scope> Scope::deepCopyScope() {
   const std::shared_ptr<Scope> newScope = std::make_shared<Scope>(*this);
-  for (const auto &[childName, oldChild] : children)
+  for (const auto &[childName, oldChild] : children) {
     newScope->children[childName] = oldChild->deepCopyScope();
+    newScope->children[childName]->parent = newScope.get();
+    newScope->children[childName]->symbolTable.parent = &newScope->symbolTable;
+  }
   return newScope;
 }
 

@@ -52,7 +52,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   if (node->hasAssignment && !rhsIsDynArray) { // Assignment
     LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
     assert(assignResult.entry == varEntry);
-    varAddress = assignResult.entry->getAddress();
+    varAddress = varEntry->getAddress();
   } else { // Default value
     // Allocate memory
     varAddress = insertAlloca(varTy);

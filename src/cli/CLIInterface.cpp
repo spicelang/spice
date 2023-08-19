@@ -19,9 +19,9 @@ void CLIInterface::createInterface() {
   app.require_subcommand(1);
 
   // Add version flag
-  std::string versionName = std::string(SPICE_VERSION);
-  std::string builtBy = std::string(SPICE_BUILT_BY);
-  std::string versionString = "Spice version " + versionName + "\nbuilt by: " + builtBy + "\n\n(c) Marc Auberer 2021-2023";
+  const std::string versionName(SPICE_VERSION);
+  const std::string builtBy(SPICE_BUILT_BY);
+  const std::string versionString = "Spice version " + versionName + "\nbuilt by: " + builtBy + "\n\n(c) Marc Auberer 2021-2023";
   app.set_version_flag("--version,-v", versionString);
 
   // Create sub-commands

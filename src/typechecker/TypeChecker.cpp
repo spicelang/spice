@@ -1888,13 +1888,14 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
     SOFT_ERROR_ER(node, MISSING_RETURN_STMT, "Not all control paths of this lambda function have a return statement")
 
   // Change to function scope
-  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
+  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
 
   // Visit return type
   auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
   HANDLE_UNRESOLVED_TYPE_ST(returnType)
   if (returnType.is(TY_DYN)) {
-    currentScope = node->bodyScope->parent;
+    currentScope = bodyScope->parent;
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
   }
 
@@ -1905,7 +1906,6 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   resultVarEntry->used = true;
 
   // Visit parameters
-  std::vector<std::string> paramNames;
   std::vector<SymbolType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
@@ -1915,7 +1915,6 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
 
-      paramNames.push_back(param.name);
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
     }
@@ -1925,29 +1924,29 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   visit(node->body());
 
   // Leave function body scope
-  currentScope = node->bodyScope->parent;
+  currentScope = bodyScope->parent;
 
   // Prepare type of function
   SymbolType functionType(TY_FUNCTION);
   functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
-  functionType.setHasLambdaCaptures(!node->bodyScope->symbolTable.captures.empty());
+  functionType.setHasLambdaCaptures(!bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaFunction = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
-  node->lambdaFunction.bodyScope = node->bodyScope;
-  node->lambdaFunction.mangleSuffix = "." + std::to_string(manIdx);
+  node->lambdaFunction.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+  node->lambdaFunction.at(manIdx).bodyScope = bodyScope;
+  node->lambdaFunction.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
 
 std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   // Change to function scope
-  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
+  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
 
   // Visit parameters
-  std::vector<std::string> paramNames;
   std::vector<SymbolType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
@@ -1957,7 +1956,6 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
 
-      paramNames.push_back(param.name);
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
     }
@@ -1967,28 +1965,29 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   visit(node->body());
 
   // Leave function body scope
-  currentScope = node->bodyScope->parent;
+  currentScope = bodyScope->parent;
 
   // Prepare type of function
   SymbolType functionType(TY_PROCEDURE);
   functionType.setFunctionParamTypes(paramTypes);
-  functionType.setHasLambdaCaptures(!node->bodyScope->symbolTable.captures.empty());
+  functionType.setHasLambdaCaptures(!bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaProcedure = Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node, false);
-  node->lambdaProcedure.bodyScope = node->bodyScope;
-  node->lambdaProcedure.mangleSuffix = "." + std::to_string(manIdx);
+  node->lambdaProcedure.at(manIdx) =
+      Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node, false);
+  node->lambdaProcedure.at(manIdx).bodyScope = bodyScope;
+  node->lambdaProcedure.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
 
 std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   // Change to function scope
-  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
+  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
 
   // Visit parameters
-  std::vector<std::string> paramNames;
   std::vector<SymbolType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
@@ -1998,7 +1997,6 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
 
-      paramNames.push_back(param.name);
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
     }
@@ -2008,12 +2006,12 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   SymbolType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(returnType)
   if (returnType.is(TY_DYN)) {
-    currentScope = node->bodyScope->parent;
+    currentScope = bodyScope->parent;
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
   }
 
   // Leave function body scope
-  currentScope = node->bodyScope->parent;
+  currentScope = bodyScope->parent;
 
   // Prepare type of function
   const bool isFunction = !returnType.is(TY_DYN);
@@ -2021,13 +2019,13 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   if (isFunction)
     functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
-  functionType.setHasLambdaCaptures(!node->bodyScope->symbolTable.captures.empty());
+  functionType.setHasLambdaCaptures(!bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaFunction = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
-  node->lambdaFunction.bodyScope = node->bodyScope;
-  node->lambdaFunction.mangleSuffix = "." + std::to_string(manIdx);
+  node->lambdaFunction.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+  node->lambdaFunction.at(manIdx).bodyScope = bodyScope;
+  node->lambdaFunction.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
