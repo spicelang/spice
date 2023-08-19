@@ -1,13 +1,4 @@
-public p test(int t = 123) {
-    int x = 456;
-    p() {
-        printf("%d\n", x);
-    };
-}
-
-f<int> main() {}
-
-/*import "std/io/cli-parser";
+import "std/io/cli-parser";
 
 f<int> main(int argc, string[] argv) {
     CliParser cli = CliParser("spice", "Spice Programming Language");
@@ -32,7 +23,7 @@ f<int> main(int argc, string[] argv) {
     if flagValue {
         printf("Hi!\n");
     }
-}*/
+}
 
 /*import "std/os/thread-pool";
 

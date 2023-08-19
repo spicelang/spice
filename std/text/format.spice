@@ -1,3 +1,5 @@
+import "std/text/analysis";
+
 // Constants
 const int ASCII_SHIFT_OFFSET = 32;
 
@@ -6,7 +8,7 @@ const int ASCII_SHIFT_OFFSET = 32;
  *
  * @return Formatted size string
  */
-public f<string> formatStorageSize(long bytes) {
+public f<String> formatStorageSize(long bytes) {
     // ToDo when string concatenation works
     return "";
 }
@@ -16,11 +18,11 @@ public f<string> formatStorageSize(long bytes) {
  *
  * @return Text in caps
  */
-public f<string> toUpper(string text) {
+public p toUpper(String& text) {
     const char min = (char) 97;
     const char max = (char) 122;
 
-    foreach char c : text {
+    foreach char& c : text {
         if c >= min && c <= max {
             c += shiftOffset;
         }
@@ -33,11 +35,11 @@ public f<string> toUpper(string text) {
  *
  * @return Text in all-lower letters
  */
-public f<string> toLower(string text) {
+public p toLower(String& text) {
     const char min = (char) 65;
     const char max = (char) 90;
 
-    foreach char c : text {
+    foreach char& c : text {
         if c >= min && c <= max {
             c -= ASCII_SHIFT_OFFSET;
         }
@@ -50,9 +52,28 @@ public f<string> toLower(string text) {
  *
  * @return Capitalized text
  */
-public f<string> capitalize(string text) {
+public p capitalize(String& text) {
     if text[0] >= (char) 97 && text[0] <= (char) 122 {
         text[0] += ASCII_SHIFT_OFFSET;
     }
     return text;
+}
+
+/**
+ * Returns the trimmed string of the given text
+ *
+ * @return Trimmed string
+ */
+public f<String> trim(const String& input) {
+    unsigned long start = 0;
+    unsigned long end = input.length() - 1;
+
+    while isWhitespace(input[start]) {
+        start++;
+    }
+    while isWhitespace(input[end]) {
+        end--;
+    }
+
+    return input.substring(start, end);
 }

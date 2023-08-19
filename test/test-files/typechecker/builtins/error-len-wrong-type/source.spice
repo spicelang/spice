@@ -1,4 +1,4 @@
 f<int> main() {
-    string s;
-    len(s);
+    double d;
+    len(d);
 }

@@ -6,5 +6,16 @@ f<int> main() {
     string output = "Next line";
     print::print(output);
     print::lineBreak(3);
-    print::print("Concluding line");
+    print::println("Concluding line");
+
+    // Print fixed width
+    print::printFixedWidth("Hello", 10); // Length smaller than width
+    print::lineBreak();
+    print::printFixedWidth("Hello", 10, true); // Length smaller than width with ellipsis
+    print::lineBreak();
+    print::printFixedWidth("Hello World!", 12); // Length equal width
+    print::lineBreak();
+    print::printFixedWidth("Hello World!", 7, false); // Length larger than width
+    print::lineBreak();
+    print::printFixedWidth("Hello World!", 5, true); // Length larger than width with ellipsis
 }

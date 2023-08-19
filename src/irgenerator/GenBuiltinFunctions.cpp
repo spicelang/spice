@@ -87,12 +87,18 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
-  SymbolType assignExprSymbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
-  assignExprSymbolType = assignExprSymbolType.removeReferenceWrapper();
-  assert(assignExprSymbolType.isArray() && assignExprSymbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
+  SymbolType symbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
+  symbolType = symbolType.removeReferenceWrapper();
 
-  // Return length value
-  llvm::Value *lengthValue = builder.getInt64(assignExprSymbolType.getArraySize());
+  llvm::Value *lengthValue;
+  if (symbolType.is(TY_STRING)) {
+    llvm::Function *getRawLengthFct = stdFunctionManager.getStringGetRawLengthStringFct();
+    lengthValue = builder.CreateCall(getRawLengthFct, resolveValue(node->assignExpr()));
+  } else {
+    assert(symbolType.isArray() && symbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
+    // Return length value
+    lengthValue = builder.getInt64(symbolType.getArraySize());
+  }
   return LLVMExprResult{.value = lengthValue};
 }
 

@@ -419,24 +419,6 @@ LLVMExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, LLV
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^="); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                                                          size_t opIdx) {
-  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
-  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
-  lhsSTy = lhsSTy.removeReferenceWrapper();
-  rhsSTy = rhsSTy.removeReferenceWrapper();
-
-  switch (getTypeCombination(lhsSTy, rhsSTy)) {
-  case COMB(TY_INT, TY_INT):     // fallthrough
-  case COMB(TY_SHORT, TY_SHORT): // fallthrough
-  case COMB(TY_LONG, TY_LONG):   // fallthrough
-  case COMB(TY_BYTE, TY_BYTE):
-    return {.value = builder.CreateAnd(lhsV(), rhsV())};
-  }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &"); // GCOV_EXCL_LINE
-}
-
 LLVMExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
                                                          size_t opIdx) {
@@ -449,7 +431,8 @@ LLVMExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, LL
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
   case COMB(TY_LONG, TY_LONG):   // fallthrough
-  case COMB(TY_BYTE, TY_BYTE):
+  case COMB(TY_BYTE, TY_BYTE):   // fallthrough
+  case COMB(TY_BOOL, TY_BOOL):
     return {.value = builder.CreateOr(lhsV(), rhsV())};
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |"); // GCOV_EXCL_LINE
@@ -467,10 +450,30 @@ LLVMExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, L
   case COMB(TY_INT, TY_INT):     // fallthrough
   case COMB(TY_SHORT, TY_SHORT): // fallthrough
   case COMB(TY_LONG, TY_LONG):   // fallthrough
-  case COMB(TY_BYTE, TY_BYTE):
+  case COMB(TY_BYTE, TY_BYTE):   // fallthrough
+  case COMB(TY_BOOL, TY_BOOL):
     return {.value = builder.CreateXor(lhsV(), rhsV())};
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^"); // GCOV_EXCL_LINE
+}
+
+LLVMExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+                                                          size_t opIdx) {
+  ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
+  ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
+  lhsSTy = lhsSTy.removeReferenceWrapper();
+  rhsSTy = rhsSTy.removeReferenceWrapper();
+
+  switch (getTypeCombination(lhsSTy, rhsSTy)) {
+  case COMB(TY_INT, TY_INT):     // fallthrough
+  case COMB(TY_SHORT, TY_SHORT): // fallthrough
+  case COMB(TY_LONG, TY_LONG):   // fallthrough
+  case COMB(TY_BYTE, TY_BYTE):   // fallthrough
+  case COMB(TY_BOOL, TY_BOOL):
+    return {.value = builder.CreateAnd(lhsV(), rhsV())};
+  }
+  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,

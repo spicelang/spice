@@ -8,12 +8,12 @@ public type CliParser struct {
     CliSubcommand rootSubcommand
 }
 
-public p CliParser.ctor(string appName, string appDescription/* = ""*/) {
+public p CliParser.ctor(string appName, string appDescription = "") {
     this.rootSubcommand = CliSubcommand(nil<CliSubcommand*>, appName, appDescription);
     // Add version flag
-    /*this.rootSubcommand.addFlag("--version", p(bool& _) {
+    this.rootSubcommand.addFlag("--version", p(bool& _) {
         printf("%s\n", this.versionString);
-    }, "Prints the version of the application");*/
+    }, "Prints the version of the application");
 }
 
 public p CliParser.setVersion(string versionString) {

@@ -1,4 +1,5 @@
 import "std/io/cli-option";
+import "std/text/print";
 import "std/runtime/iterator_rt";
 
 // Generic types
@@ -130,15 +131,21 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
     if !this.subcommands.isEmpty() {
         printf("\nSubcommands:\n");
         foreach const CliSubcommand& subCommand : iterate(this.subcommands) {
-            printf("%s\t\t\t%s\n", subCommand.getName(), subCommand.getDescription());
+            printFixedWidth(subCommand.getName(), 25, true);
+            printFixedWidth(subCommand.getDescription(), 85, true);
+            lineBreak();
         }
     }
     // Print flags
     printf("\nFlags:\n");
     foreach const CliOption<bool>& flag : iterate(this.boolOptions) {
-        printf("%s\t\t\t%s\n", flag.getName(), flag.getDescription());
+        printFixedWidth(flag.getName(), 25, true);
+        printFixedWidth(flag.getDescription(), 85, true);
+        lineBreak();
     }
-    printf("--help,-h\t\t\tPrint this help message\n");
+    printFixedWidth("--help,-h", 25, true);
+    printFixedWidth("Print this help message", 85, true);
+    printf("\n");
     // Print footer
     if this.footer != "" {
         printf("\n%s\n", this.footer);

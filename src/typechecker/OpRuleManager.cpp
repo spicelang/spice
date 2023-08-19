@@ -226,14 +226,6 @@ SymbolType OpRuleManager::getXorEqualResultType(const ASTNode *node, SymbolType 
   return validateBinaryOperation(node, XOR_EQUAL_OP_RULES, ARRAY_LENGTH(XOR_EQUAL_OP_RULES), "^=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
-  // Remove reference wrappers
-  lhs = lhs.removeReferenceWrapper();
-  rhs = rhs.removeReferenceWrapper();
-
-  return validateBinaryOperation(node, LOGICAL_AND_OP_RULES, ARRAY_LENGTH(LOGICAL_AND_OP_RULES), "&&", lhs, rhs);
-}
-
 SymbolType OpRuleManager::getLogicalOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
@@ -242,12 +234,12 @@ SymbolType OpRuleManager::getLogicalOrResultType(const ASTNode *node, SymbolType
   return validateBinaryOperation(node, LOGICAL_OR_OP_RULES, ARRAY_LENGTH(LOGICAL_OR_OP_RULES), "||", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, BITWISE_AND_OP_RULES, ARRAY_LENGTH(BITWISE_AND_OP_RULES), "&", lhs, rhs);
+  return validateBinaryOperation(node, LOGICAL_AND_OP_RULES, ARRAY_LENGTH(LOGICAL_AND_OP_RULES), "&&", lhs, rhs);
 }
 
 SymbolType OpRuleManager::getBitwiseOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
@@ -264,6 +256,14 @@ SymbolType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, SymbolTyp
   rhs = rhs.removeReferenceWrapper();
 
   return validateBinaryOperation(node, BITWISE_XOR_OP_RULES, ARRAY_LENGTH(BITWISE_XOR_OP_RULES), "^", lhs, rhs);
+}
+
+SymbolType OpRuleManager::getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+  // Remove reference wrappers
+  lhs = lhs.removeReferenceWrapper();
+  rhs = rhs.removeReferenceWrapper();
+
+  return validateBinaryOperation(node, BITWISE_AND_OP_RULES, ARRAY_LENGTH(BITWISE_AND_OP_RULES), "&", lhs, rhs);
 }
 
 ExprResult OpRuleManager::getEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {

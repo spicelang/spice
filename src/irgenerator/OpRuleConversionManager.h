@@ -61,11 +61,11 @@ public:
                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
   LLVMExprResult getXorEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
                                  SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
-  LLVMExprResult getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                   SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
   LLVMExprResult getBitwiseOrInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
                                   SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
   LLVMExprResult getBitwiseXorInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
+                                   SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+  LLVMExprResult getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
   LLVMExprResult getEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs, SymbolType rhsSTy,
                               Scope *accessScope, size_t opIdx);

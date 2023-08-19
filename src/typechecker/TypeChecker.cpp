@@ -689,8 +689,12 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
   argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
-  if (!argType.isArray())
-    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays")
+  if (!argType.isArray() && !argType.is(TY_STRING))
+    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
+
+  // If we want to use the len builtin on a string, we need to import the string runtime module
+  if (argType.is(TY_STRING) && !isStringRT())
+    sourceFile->requestRuntimeModule(STRING_RT);
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
 }

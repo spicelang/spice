@@ -1,8 +1,12 @@
-public p test(int t = 123) {
+p test(int t = 123) {
     int x = 456;
-    p() {
-        printf("%d\n", x);
+    dyn l = p() {
+        printf("%d, %d\n", x, t);
     };
+    l();
 }
 
-f<int> main() {}
+f<int> main() {
+    test();
+    test(4321);
+}

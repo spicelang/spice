@@ -40,6 +40,13 @@ llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
   return memcpyFct;
 }
 
+llvm::Function *StdFunctionManager::getStringGetRawLengthStringFct() const {
+  const ParamList paramLst = {{SymbolType(TY_STRING), false}};
+  const Function function("getRawLength", nullptr, SymbolType(TY_DYN), SymbolType(TY_LONG), paramLst, {}, nullptr, false);
+  const std::string mangledName = NameMangling::mangleFunction(function);
+  return getFunction(mangledName.c_str(), builder.getInt64Ty(), {builder.getPtrTy()});
+}
+
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   const ParamList paramLst = {{SymbolType(TY_STRING), false}, {SymbolType(TY_STRING), false}};
   const Function function("isRawEqual", nullptr, SymbolType(TY_DYN), SymbolType(TY_BOOL), paramLst, {}, nullptr, false);
