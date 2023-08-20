@@ -8,7 +8,7 @@ You can use arrays in Spice for any [primitive](../primitive-types) or custom [s
 
 To initialize an `array` e.g. of type string, you can write:
 ```spice
-string[3] myStringArray = { "First item", "Second Item", "Third item" };
+string[3] myStringArray = [ "First item", "Second Item", "Third item" ];
 ```
 
 The `3` in the brackets is the size of the array. The initial values can be provided in curly braces after the assign operator and
@@ -32,7 +32,7 @@ More complex expressions for initial array values and item indexing are possible
 ```spice
 // Initialize array
 dyn condition = 1 != 2;
-bool[3] myBoolArray = { condition ? true : false, false, true };
+bool[3] myBoolArray = [ condition ? true : false, false, true ];
 
 // Access item 0
 int i = 2;

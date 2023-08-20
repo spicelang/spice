@@ -13,7 +13,7 @@ You can write `foreach` loops in two different ways:
 If you only need the item to work with, the recommended way is to use the ordinary `foreach` loop:
 
 ```spice
-int[7] myIntArray = { 1, 5, 4, 0, 12, 12345, 9 };
+int[7] myIntArray = [ 1, 5, 4, 0, 12, 12345, 9 ];
 foreach (const int item : myIntArray) {
     printf("Item: %d", item);
 }
