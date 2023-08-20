@@ -118,18 +118,18 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // If we have a lambda call that takes captures, add them to the argument list
   llvm::Value *fctPtr = nullptr;
-  const bool isLambdaAndHasCaptures = data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures();
-  if (isLambdaAndHasCaptures) {
-    llvm::Value *structPtrPtr = firstFragEntry->getAddress();
-    llvm::Value *structPtr = builder.CreateLoad(builder.getPtrTy(), structPtrPtr);
-    llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
+  if (data.isFctPtrCall()) {
+    llvm::Value *fatPtr = firstFragEntry->getAddress();
     // Load fctPtr
-    fctPtr = builder.CreateStructGEP(fatStructType, structPtr, 0);
-    // Load captures struct
-    llvm::Value *capturesPtrPtr = builder.CreateStructGEP(fatStructType, structPtr, 1);
-    llvm::Value *capturesPtr = builder.CreateLoad(builder.getPtrTy(), capturesPtrPtr);
-    // Add captures to argument list
-    argValues.push_back(capturesPtr);
+    llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
+    fctPtr = builder.CreateStructGEP(fatStructType, fatPtr, 0);
+    if (firstFragEntry->getType().hasLambdaCaptures()) {
+      // Load captures struct
+      llvm::Value *capturesPtrPtr = builder.CreateStructGEP(fatStructType, fatPtr, 1);
+      llvm::Value *capturesPtr = builder.CreateLoad(builder.getPtrTy(), capturesPtrPtr, CAPTURES_PARAM_NAME);
+      // Add captures to argument list
+      argValues.push_back(capturesPtr);
+    }
   }
 
   // Get arg values
@@ -505,7 +505,10 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     size_t captureIdx = 0;
     for (const std::pair<const std::string, Capture> &capture : captures) {
       llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
+      captureAddress->setName(capture.second.getName());
       capture.second.capturedEntry->pushAddress(captureAddress);
+      // Generate debug info
+      diGenerator.generateLocalVarDebugInfo(capture.second.getName(), captureAddress);
       captureIdx++;
     }
   }
@@ -539,10 +542,10 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Change back to original scope
   currentScope = bodyScope->parent;
 
-  // If we have captures, create a struct { <fct-ptr>, <capture struct ptr> }
-  llvm::Value *result = hasCaptures ? buildFatFctPtr(bodyScope, capturesStructType, lambda) : lambda;
+  // Captures, create a struct { <fct-ptr>, <capture struct ptr> }
+  llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);
 
-  return LLVMExprResult{.value = result, .node = node};
+  return LLVMExprResult{.ptr = result, .node = node};
 }
 
 std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
@@ -663,7 +666,10 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     size_t captureIdx = 0;
     for (const std::pair<const std::string, Capture> &capture : captures) {
       llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
+      captureAddress->setName(capture.second.getName());
       capture.second.capturedEntry->pushAddress(captureAddress);
+      // Generate debug info
+      diGenerator.generateLocalVarDebugInfo(capture.second.getName(), captureAddress);
       captureIdx++;
     }
   }
@@ -695,10 +701,10 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   // Change back to original scope
   currentScope = bodyScope->parent;
 
-  // If we have captures, create a struct { <fct-ptr>, <capture struct ptr> }
-  llvm::Value *result = hasCaptures ? buildFatFctPtr(bodyScope, capturesStructType, lambda) : lambda;
+  // Create a struct { <fct-ptr>, <capture struct ptr> }
+  llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);
 
-  return LLVMExprResult{.value = result, .node = node};
+  return LLVMExprResult{.ptr = result, .node = node};
 }
 
 std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
@@ -822,7 +828,10 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     size_t captureIdx = 0;
     for (const std::pair<const std::string, Capture> &capture : captures) {
       llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
+      captureAddress->setName(capture.second.getName());
       capture.second.capturedEntry->pushAddress(captureAddress);
+      // Generate debug info
+      diGenerator.generateLocalVarDebugInfo(capture.second.getName(), captureAddress);
       captureIdx++;
     }
   }
@@ -852,10 +861,10 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Change back to original scope
   currentScope = bodyScope->parent;
 
-  // If we have captures, create a struct { <fct-ptr>, <capture struct ptr> }
-  llvm::Value *result = hasCaptures ? buildFatFctPtr(bodyScope, capturesStructType, lambda) : lambda;
+  // Create a struct { <fct-ptr>, <capture struct ptr> }
+  llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);
 
-  return LLVMExprResult{.value = result, .node = node};
+  return LLVMExprResult{.ptr = result, .node = node};
 }
 
 std::any IRGenerator::visitDataType(const DataTypeNode *node) {
@@ -868,34 +877,43 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
   return symbolType.toLLVMType(context, currentScope);
 }
 
-llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Function *lambda) {
-  const CaptureMode capturingMode = bodyScope->symbolTable.capturingMode;
+llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Value *lambda) {
+  // Create capture struct if required
+  llvm::Value *captureStructAddress = nullptr;
+  if (capturesStructType != nullptr) {
+    assert(bodyScope != nullptr);
+    const CaptureMode capturingMode = bodyScope->symbolTable.capturingMode;
+    captureStructAddress = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
 
-  // Create capture struct
-  llvm::Value *captureStructAddress = insertAlloca(capturesStructType, "captures");
-  size_t captureIdx = 0;
-  for (const std::pair<const std::string, Capture> &capture : bodyScope->symbolTable.captures) {
-    const SymbolTableEntry *capturedEntry = capture.second.capturedEntry;
-    // Get address or value of captured variable, depending on the capturing mode
-    llvm::Value *capturedValue = capturedEntry->getAddress();
-    assert(capturedValue != nullptr);
-    if (capturingMode == BY_VALUE) {
-      llvm::Type *captureType = capturedEntry->getType().toLLVMType(context, currentScope);
-      capturedValue = builder.CreateLoad(captureType, capturedValue);
+    size_t captureIdx = 0;
+    for (const std::pair<const std::string, Capture> &capture : bodyScope->symbolTable.captures) {
+      const SymbolTableEntry *capturedEntry = capture.second.capturedEntry;
+      // Get address or value of captured variable, depending on the capturing mode
+      llvm::Value *capturedValue = capturedEntry->getAddress();
+      assert(capturedValue != nullptr);
+      if (capturingMode == BY_VALUE) {
+        llvm::Type *captureType = capturedEntry->getType().toLLVMType(context, currentScope);
+        capturedValue = builder.CreateLoad(captureType, capturedValue);
+      }
+      // Store it in the capture struct
+      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructAddress, captureIdx);
+      builder.CreateStore(capturedValue, captureAddress);
+      captureIdx++;
     }
-    // Store it in the capture struct
-    llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructAddress, captureIdx);
-    builder.CreateStore(capturedValue, captureAddress);
-    captureIdx++;
   }
 
+  // Create fat ptr struct type if not exists yet
+  if (!llvmTypes.fatPtrType)
+    llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
+
   // Create fat pointer
-  llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
-  llvm::Value *fatFctPtr = insertAlloca(fatStructType, "fat.ptr");
-  llvm::Value *fctPtr = builder.CreateStructGEP(fatStructType, fatFctPtr, 0);
+  llvm::Value *fatFctPtr = insertAlloca(llvmTypes.fatPtrType, "fat.ptr");
+  llvm::Value *fctPtr = builder.CreateStructGEP(llvmTypes.fatPtrType, fatFctPtr, 0);
   builder.CreateStore(lambda, fctPtr);
-  llvm::Value *capturePtr = builder.CreateStructGEP(fatStructType, fatFctPtr, 1);
-  builder.CreateStore(captureStructAddress, capturePtr);
+  if (capturesStructType != nullptr) {
+    llvm::Value *capturePtr = builder.CreateStructGEP(llvmTypes.fatPtrType, fatFctPtr, 1);
+    builder.CreateStore(captureStructAddress, capturePtr);
+  }
 
   return fatFctPtr;
 }

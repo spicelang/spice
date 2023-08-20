@@ -59,6 +59,28 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   charTy = diBuilder->createBasicType("char", 8, llvm::dwarf::DW_ATE_unsigned_char);
   stringTy = diBuilder->createPointerType(charTy, pointerWidth);
   boolTy = diBuilder->createBasicType("bool", 1, llvm::dwarf::DW_ATE_boolean);
+  voidTy = diBuilder->createBasicType("void", 0, llvm::dwarf::DW_ATE_unsigned);
+
+  // Initialize fat ptr type
+  llvm::Type *ptrTy = llvm::PointerType::get(irGenerator->context, 0);
+  if (!irGenerator->llvmTypes.fatPtrType)
+    irGenerator->llvmTypes.fatPtrType = llvm::StructType::get(irGenerator->context, {ptrTy, ptrTy});
+
+  const llvm::StructLayout *structLayout =
+      irGenerator->module->getDataLayout().getStructLayout(irGenerator->llvmTypes.fatPtrType);
+  const uint32_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(irGenerator->llvmTypes.fatPtrType).value();
+  const uint32_t ptrAlignInBits = irGenerator->module->getDataLayout().getABITypeAlign(ptrTy).value();
+
+  fatPtrTy = diBuilder->createStructType(diFile, "_fat_ptr", diFile, 0, structLayout->getSizeInBits(), alignInBits,
+                                         llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0,
+                                         nullptr, "_fat_ptr");
+
+  llvm::DIType *voidPtrDIType = diBuilder->createPointerType(voidTy, pointerWidth, ptrAlignInBits);
+  llvm::DIDerivedType *firstType = diBuilder->createMemberType(fatPtrTy, "first", diFile, 0, pointerWidth, ptrAlignInBits, 0,
+                                                               llvm::DINode::FlagZero, voidPtrDIType);
+  llvm::DIDerivedType *secondType = diBuilder->createMemberType(fatPtrTy, "second", diFile, 0, pointerWidth, ptrAlignInBits,
+                                                                pointerWidth, llvm::DINode::FlagZero, voidPtrDIType);
+  fatPtrTy->replaceElements(llvm::MDTuple::get(irGenerator->context, {firstType, secondType}));
 }
 
 void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc, bool isLambda) {
@@ -132,7 +154,7 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
     fieldSymbolTypes.push_back(captureType);
     fieldTypes.push_back(captureType.toLLVMType(irGenerator->context, irGenerator->currentScope));
   }
-  llvm::StructType *structType = llvm::StructType::get(irGenerator->context, fieldTypes, "captures");
+  llvm::StructType *structType = llvm::StructType::get(irGenerator->context, fieldTypes, CAPTURES_PARAM_NAME);
   const llvm::StructLayout *structLayout = irGenerator->module->getDataLayout().getStructLayout(structType);
   const size_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value();
 
@@ -320,7 +342,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
   }
   case TY_FUNCTION: // fall-through
   case TY_PROCEDURE:
-    baseDiType = diBuilder->createPointerType(voidTy, pointerWidth);
+    baseDiType = fatPtrTy;
     break;
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Debug Info Type fallthrough"); // GCOV_EXCL_LINE

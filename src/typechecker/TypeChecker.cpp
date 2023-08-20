@@ -1715,7 +1715,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
-    const std::string identifier = node->functionNameFragments.at(i);
+    const std::string &identifier = node->functionNameFragments.at(i);
 
     // Retrieve field entry
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);

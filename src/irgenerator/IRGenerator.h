@@ -136,7 +136,7 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
   void changeToScope(Scope *scope, ScopeType scopeType);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
-  llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Function *lambda);
+  llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Value *lambda);
 
   // Private members
   llvm::LLVMContext &context;
@@ -145,6 +145,9 @@ private:
   OpRuleConversionManager conversionManager = OpRuleConversionManager(resourceManager, this);
   const StdFunctionManager stdFunctionManager;
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);
+  struct CommonLLVMTypes {
+    llvm::StructType *fatPtrType = nullptr;
+  } llvmTypes;
   Scope *currentScope;
   std::vector<llvm::BasicBlock *> breakBlocks;
   std::vector<llvm::BasicBlock *> continueBlocks;

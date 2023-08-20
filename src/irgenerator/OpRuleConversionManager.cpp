@@ -713,8 +713,10 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
   }
   case COMB(TY_BOOL, TY_BOOL):         // fallthrough
   case COMB(TY_FUNCTION, TY_FUNCTION): // fallthrough
-  case COMB(TY_PROCEDURE, TY_PROCEDURE):
+  case COMB(TY_PROCEDURE, TY_PROCEDURE): {
+    // ToDo: Use memcompare
     return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
+  }
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !="); // GCOV_EXCL_LINE
 }

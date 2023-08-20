@@ -57,6 +57,7 @@ private:
   llvm::DIType *stringTy = nullptr;
   llvm::DIType *boolTy = nullptr;
   llvm::DIType *voidTy = nullptr;
+  llvm::DICompositeType *fatPtrTy = nullptr;
 
   // Private methods
   [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const ASTNode *node, const SymbolType &symbolType) const;
