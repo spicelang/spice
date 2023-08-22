@@ -23,6 +23,7 @@ public:
   [[nodiscard]] llvm::Function *getPrintfFct() const;
   [[nodiscard]] llvm::Function *getExitFct() const;
   [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
+  [[nodiscard]] llvm::Function *getMemcmpIntrinsic() const;
   [[nodiscard]] llvm::Function *getStringGetRawLengthStringFct() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
   [[nodiscard]] llvm::Function *getIteratorGetFct(const Function *spiceFunc) const;

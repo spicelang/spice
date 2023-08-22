@@ -162,6 +162,9 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
 
   // Function or procedure
   if (symbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    if (!llvmTypes.fatPtrType)
+      llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
+
     llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(SymbolType(TY_PTR));
     return llvm::ConstantStruct::get(llvmTypes.fatPtrType, {ptrDefaultValue, ptrDefaultValue});
   }

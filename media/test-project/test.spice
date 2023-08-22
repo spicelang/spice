@@ -1,26 +1,29 @@
 import "std/io/cli-parser";
 
+type CliOptions struct {
+    bool sayHi = false
+}
+
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
+}
+
 f<int> main(int argc, string[] argv) {
-    CliParser cli = CliParser("spice", "Spice Programming Language");
-    cli.setVersion("v1.0.0");
-    cli.setFooter("(c) Marc Auberer 2021-2023");
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
 
-    CliSubcommand& build = cli.addSubcommand("build", "Builds your Spice program and emits an executable");
-    CliSubcommand& run = cli.addSubcommand("run", "Build your Spice program and runs it immediately");
-    CliSubcommand& intall = cli.addSubcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
-    CliSubcommand& uninstall = cli.addSubcommand("uninstall", "Builds your Spice program and runs it immediately");
+    CliOptions options;
+    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--callback", callback, "Call a callback function");
+    parser.addFlag("-cb", p(bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
 
-    bool flagValue = false;
-    build.addFlag("-d", flagValue, "Enable debug output");
-    build.addFlag("-cst", flagValue, "Dump CST as serialized string and SVG image");
-    build.addFlag("-ast", flagValue, "Dump AST as serialized string and SVG image");
-    build.addFlag("-symtab", flagValue, "Dump serialized symbol tables");
-    build.addFlag("-ir", flagValue, "Dump LLVM-IR");
-    build.addFlag("-asm", flagValue, "Dump assembly code");
+    parser.parse(argc, argv);
 
-    cli.parse(argc, argv);
-
-    if flagValue {
+    // Print hi if requested
+    if options.sayHi {
         printf("Hi!\n");
     }
 }

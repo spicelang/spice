@@ -11,49 +11,47 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.2 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'x == 11' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"All tests passed!\0A\00", align 1
 
-define private void @_Z4testPFCvRiEPFCbRiE(ptr %0, ptr %1) {
-  %l1 = alloca ptr, align 8
-  %l2 = alloca ptr, align 8
+define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } %0, { ptr, ptr } %1) {
+  %l1 = alloca { ptr, ptr }, align 8
+  %l2 = alloca { ptr, ptr }, align 8
   %x = alloca i32, align 4
-  store ptr %0, ptr %l1, align 8
-  store ptr %1, ptr %l2, align 8
+  store { ptr, ptr } %0, ptr %l1, align 8
+  store { ptr, ptr } %1, ptr %l2, align 8
   store i32 1, ptr %x, align 4
-  %3 = load ptr, ptr %l1, align 8
-  %4 = getelementptr inbounds { ptr, ptr }, ptr %3, i32 0, i32 0
-  %5 = getelementptr inbounds { ptr, ptr }, ptr %3, i32 0, i32 1
-  %6 = load ptr, ptr %5, align 8
-  %7 = load ptr, ptr %4, align 8
-  call void %7(ptr %6, ptr %x)
-  %8 = load i32, ptr %x, align 4
-  %9 = icmp eq i32 %8, 6
-  br i1 %9, label %assert.exit.L4, label %assert.then.L4, !prof !0
+  %3 = getelementptr inbounds { ptr, ptr }, ptr %l1, i32 0, i32 0
+  %4 = getelementptr inbounds { ptr, ptr }, ptr %l1, i32 0, i32 1
+  %captures = load ptr, ptr %4, align 8
+  %5 = load ptr, ptr %3, align 8
+  call void %5(ptr %captures, ptr %x)
+  %6 = load i32, ptr %x, align 4
+  %7 = icmp eq i32 %6, 6
+  br i1 %7, label %assert.exit.L4, label %assert.then.L4, !prof !0
 
 assert.then.L4:                                   ; preds = %2
-  %10 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %8 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L4:                                   ; preds = %2
-  %11 = load ptr, ptr %l2, align 8
-  %12 = getelementptr inbounds { ptr, ptr }, ptr %11, i32 0, i32 0
-  %13 = getelementptr inbounds { ptr, ptr }, ptr %11, i32 0, i32 1
-  %14 = load ptr, ptr %13, align 8
-  %15 = load ptr, ptr %12, align 8
-  %16 = call i1 %15(ptr %14, ptr %x)
-  br i1 %16, label %assert.exit.L5, label %assert.then.L5, !prof !0
+  %9 = getelementptr inbounds { ptr, ptr }, ptr %l2, i32 0, i32 0
+  %10 = getelementptr inbounds { ptr, ptr }, ptr %l2, i32 0, i32 1
+  %captures1 = load ptr, ptr %10, align 8
+  %11 = load ptr, ptr %9, align 8
+  %12 = call i1 %11(ptr %captures1, ptr %x)
+  br i1 %12, label %assert.exit.L5, label %assert.then.L5, !prof !0
 
 assert.then.L5:                                   ; preds = %assert.exit.L4
-  %17 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  %13 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L5:                                   ; preds = %assert.exit.L4
-  %18 = load i32, ptr %x, align 4
-  %19 = icmp eq i32 %18, 11
-  br i1 %19, label %assert.exit.L6, label %assert.then.L6, !prof !0
+  %14 = load i32, ptr %x, align 4
+  %15 = icmp eq i32 %14, 11
+  br i1 %15, label %assert.exit.L6, label %assert.then.L6, !prof !0
 
 assert.then.L6:                                   ; preds = %assert.exit.L5
-  %20 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
+  %16 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
 
@@ -74,10 +72,10 @@ define dso_local i32 @main() #2 {
   %w = alloca i32, align 4
   %captures = alloca %anon.captures.0, align 8
   %fat.ptr = alloca { ptr, ptr }, align 8
-  %foo1 = alloca ptr, align 8
+  %foo1 = alloca { ptr, ptr }, align 8
   %captures1 = alloca %anon.captures.0.0, align 8
   %fat.ptr2 = alloca { ptr, ptr }, align 8
-  %foo2 = alloca ptr, align 8
+  %foo2 = alloca { ptr, ptr }, align 8
   store i32 0, ptr %result, align 4
   store i32 2, ptr %z, align 4
   store i32 3, ptr %w, align 4
@@ -91,24 +89,26 @@ define dso_local i32 @main() #2 {
   store ptr @_Z15lambda.L12C20.0Ri, ptr %5, align 8
   %6 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %6, align 8
-  store ptr %fat.ptr, ptr %foo1, align 8
-  %7 = load i32, ptr %w, align 4
-  %8 = getelementptr inbounds %anon.captures.0.0, ptr %captures1, i32 0, i32 0
-  store i32 %7, ptr %8, align 4
-  %9 = load i32, ptr %z, align 4
-  %10 = getelementptr inbounds %anon.captures.0.0, ptr %captures1, i32 0, i32 1
-  store i32 %9, ptr %10, align 4
-  %11 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 0
-  store ptr @_Z15lambda.L15C26.0Ri, ptr %11, align 8
-  %12 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
-  store ptr %captures1, ptr %12, align 8
-  store ptr %fat.ptr2, ptr %foo2, align 8
-  %13 = load ptr, ptr %foo1, align 8
-  %14 = load ptr, ptr %foo2, align 8
-  call void @_Z4testPFCvRiEPFCbRiE(ptr %13, ptr %14)
-  %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  %16 = load i32, ptr %result, align 4
-  ret i32 %16
+  %7 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  store { ptr, ptr } %7, ptr %foo1, align 8
+  %8 = load i32, ptr %w, align 4
+  %9 = getelementptr inbounds %anon.captures.0.0, ptr %captures1, i32 0, i32 0
+  store i32 %8, ptr %9, align 4
+  %10 = load i32, ptr %z, align 4
+  %11 = getelementptr inbounds %anon.captures.0.0, ptr %captures1, i32 0, i32 1
+  store i32 %10, ptr %11, align 4
+  %12 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 0
+  store ptr @_Z15lambda.L15C26.0Ri, ptr %12, align 8
+  %13 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
+  store ptr %captures1, ptr %13, align 8
+  %14 = load { ptr, ptr }, ptr %fat.ptr2, align 8
+  store { ptr, ptr } %14, ptr %foo2, align 8
+  %15 = load { ptr, ptr }, ptr %foo1, align 8
+  %16 = load { ptr, ptr }, ptr %foo2, align 8
+  call void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } %15, { ptr, ptr } %16)
+  %17 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %18 = load i32, ptr %result, align 4
+  ret i32 %18
 }
 
 define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {
@@ -117,15 +117,15 @@ define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8
   store ptr %0, ptr %captures, align 8
   store ptr %1, ptr %x, align 8
   %3 = load ptr, ptr %captures, align 8
-  %4 = getelementptr inbounds %anon.captures.0, ptr %3, i32 0, i32 0
-  %5 = getelementptr inbounds %anon.captures.0, ptr %3, i32 0, i32 1
-  %6 = load i32, ptr %4, align 4
-  %7 = load i32, ptr %5, align 4
-  %8 = add i32 %7, %6
-  %9 = load ptr, ptr %x, align 8
-  %10 = load i32, ptr %9, align 4
-  %11 = add i32 %10, %8
-  store i32 %11, ptr %9, align 4
+  %w = getelementptr inbounds %anon.captures.0, ptr %3, i32 0, i32 0
+  %z = getelementptr inbounds %anon.captures.0, ptr %3, i32 0, i32 1
+  %4 = load i32, ptr %w, align 4
+  %5 = load i32, ptr %z, align 4
+  %6 = add i32 %5, %4
+  %7 = load ptr, ptr %x, align 8
+  %8 = load i32, ptr %7, align 4
+  %9 = add i32 %8, %6
+  store i32 %9, ptr %7, align 4
   ret void
 }
 
@@ -136,15 +136,15 @@ define private i1 @_Z15lambda.L15C26.0Ri(ptr noundef nonnull dereferenceable(8) 
   store ptr %0, ptr %captures, align 8
   store ptr %1, ptr %x, align 8
   %3 = load ptr, ptr %captures, align 8
-  %4 = getelementptr inbounds %anon.captures.0.0, ptr %3, i32 0, i32 0
-  %5 = getelementptr inbounds %anon.captures.0.0, ptr %3, i32 0, i32 1
-  %6 = load i32, ptr %4, align 4
-  %7 = load i32, ptr %5, align 4
-  %8 = add i32 %7, %6
-  %9 = load ptr, ptr %x, align 8
-  %10 = load i32, ptr %9, align 4
-  %11 = add i32 %10, %8
-  store i32 %11, ptr %9, align 4
+  %w = getelementptr inbounds %anon.captures.0.0, ptr %3, i32 0, i32 0
+  %z = getelementptr inbounds %anon.captures.0.0, ptr %3, i32 0, i32 1
+  %4 = load i32, ptr %w, align 4
+  %5 = load i32, ptr %z, align 4
+  %6 = add i32 %5, %4
+  %7 = load ptr, ptr %x, align 8
+  %8 = load i32, ptr %7, align 4
+  %9 = add i32 %8, %6
+  store i32 %9, ptr %7, align 4
   ret i1 true
 }
 

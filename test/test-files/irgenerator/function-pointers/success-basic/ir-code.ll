@@ -13,17 +13,22 @@ define private i32 @_Z4testv() {
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %testFct = alloca ptr, align 8
+  %fat.ptr = alloca { ptr, ptr }, align 8
+  %testFct = alloca { ptr, ptr }, align 8
   %i = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  store ptr @_Z4testv, ptr %testFct, align 8
-  %1 = load ptr, ptr %testFct, align 8
-  %2 = call i32 %1()
-  store i32 %2, ptr %i, align 4
-  %3 = load i32, ptr %i, align 4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
-  %5 = load i32, ptr %result, align 4
-  ret i32 %5
+  %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
+  store ptr @_Z4testv, ptr %1, align 8
+  %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  store { ptr, ptr } %2, ptr %testFct, align 8
+  %3 = getelementptr inbounds { ptr, ptr }, ptr %testFct, i32 0, i32 0
+  %4 = load ptr, ptr %3, align 8
+  %5 = call i32 %4()
+  store i32 %5, ptr %i, align 4
+  %6 = load i32, ptr %i, align 4
+  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %6)
+  %8 = load i32, ptr %result, align 4
+  ret i32 %8
 }
 
 ; Function Attrs: nofree nounwind

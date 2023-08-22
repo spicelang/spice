@@ -14,7 +14,7 @@ define private void @_Z4testv() {
   %x = alloca i32, align 4
   %captures = alloca %anon.captures.0, align 8
   %fat.ptr = alloca { ptr, ptr }, align 8
-  %l = alloca ptr, align 8
+  %l = alloca { ptr, ptr }, align 8
   store i32 123, ptr %t, align 4
   store i32 456, ptr %x, align 4
   %1 = load i32, ptr %t, align 4
@@ -27,13 +27,13 @@ define private void @_Z4testv() {
   store ptr @_Z14lambda.L3C13.0v, ptr %5, align 8
   %6 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %6, align 8
-  store ptr %fat.ptr, ptr %l, align 8
-  %7 = load ptr, ptr %l, align 8
-  %8 = getelementptr inbounds { ptr, ptr }, ptr %7, i32 0, i32 0
-  %9 = getelementptr inbounds { ptr, ptr }, ptr %7, i32 0, i32 1
-  %10 = load ptr, ptr %9, align 8
-  %11 = load ptr, ptr %8, align 8
-  call void %11(ptr %10)
+  %7 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  store { ptr, ptr } %7, ptr %l, align 8
+  %8 = getelementptr inbounds { ptr, ptr }, ptr %l, i32 0, i32 0
+  %9 = getelementptr inbounds { ptr, ptr }, ptr %l, i32 0, i32 1
+  %captures1 = load ptr, ptr %9, align 8
+  %10 = load ptr, ptr %8, align 8
+  call void %10(ptr %captures1)
   ret void
 }
 
@@ -41,11 +41,11 @@ define private void @_Z14lambda.L3C13.0v(ptr noundef nonnull dereferenceable(8) 
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
-  %3 = getelementptr inbounds %anon.captures.0, ptr %2, i32 0, i32 0
-  %4 = getelementptr inbounds %anon.captures.0, ptr %2, i32 0, i32 1
-  %5 = load i32, ptr %4, align 4
-  %6 = load i32, ptr %3, align 4
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %5, i32 %6)
+  %t = getelementptr inbounds %anon.captures.0, ptr %2, i32 0, i32 0
+  %x = getelementptr inbounds %anon.captures.0, ptr %2, i32 0, i32 1
+  %3 = load i32, ptr %x, align 4
+  %4 = load i32, ptr %t, align 4
+  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3, i32 %4)
   ret void
 }
 
@@ -57,7 +57,7 @@ define private void @_Z4testi(i32 %0) {
   %x = alloca i32, align 4
   %captures = alloca %anon.captures.0.0, align 8
   %fat.ptr = alloca { ptr, ptr }, align 8
-  %l = alloca ptr, align 8
+  %l = alloca { ptr, ptr }, align 8
   store i32 %0, ptr %t, align 4
   store i32 456, ptr %x, align 4
   %2 = load i32, ptr %t, align 4
@@ -70,13 +70,13 @@ define private void @_Z4testi(i32 %0) {
   store ptr @_Z14lambda.L3C13.1v, ptr %6, align 8
   %7 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr %captures, ptr %7, align 8
-  store ptr %fat.ptr, ptr %l, align 8
-  %8 = load ptr, ptr %l, align 8
-  %9 = getelementptr inbounds { ptr, ptr }, ptr %8, i32 0, i32 0
-  %10 = getelementptr inbounds { ptr, ptr }, ptr %8, i32 0, i32 1
-  %11 = load ptr, ptr %10, align 8
-  %12 = load ptr, ptr %9, align 8
-  call void %12(ptr %11)
+  %8 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  store { ptr, ptr } %8, ptr %l, align 8
+  %9 = getelementptr inbounds { ptr, ptr }, ptr %l, i32 0, i32 0
+  %10 = getelementptr inbounds { ptr, ptr }, ptr %l, i32 0, i32 1
+  %captures1 = load ptr, ptr %10, align 8
+  %11 = load ptr, ptr %9, align 8
+  call void %11(ptr %captures1)
   ret void
 }
 
@@ -84,11 +84,11 @@ define private void @_Z14lambda.L3C13.1v(ptr noundef nonnull dereferenceable(8) 
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
-  %3 = getelementptr inbounds %anon.captures.0.0, ptr %2, i32 0, i32 0
-  %4 = getelementptr inbounds %anon.captures.0.0, ptr %2, i32 0, i32 1
-  %5 = load i32, ptr %4, align 4
-  %6 = load i32, ptr %3, align 4
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %5, i32 %6)
+  %t = getelementptr inbounds %anon.captures.0.0, ptr %2, i32 0, i32 0
+  %x = getelementptr inbounds %anon.captures.0.0, ptr %2, i32 0, i32 1
+  %3 = load i32, ptr %x, align 4
+  %4 = load i32, ptr %t, align 4
+  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %3, i32 %4)
   ret void
 }
 

@@ -4,7 +4,7 @@ target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16
 target triple = "x86_64-w64-windows-gnu"
 
 %struct.CliParser = type { ptr, %struct.CliSubcommand.15 }
-%struct.CliSubcommand.15 = type { ptr, ptr, ptr, ptr, ptr, %struct.Vector, %struct.Vector.0, %struct.Vector.1, %struct.Vector.2, %struct.Vector.3, %struct.Vector.4, i1 }
+%struct.CliSubcommand.15 = type { ptr, ptr, ptr, ptr, { ptr, ptr }, %struct.Vector, %struct.Vector.0, %struct.Vector.1, %struct.Vector.2, %struct.Vector.3, %struct.Vector.4, i1 }
 %struct.Vector = type { ptr, i64, i64 }
 %struct.Vector.0 = type { ptr, i64, i64 }
 %struct.Vector.1 = type { ptr, i64, i64 }
@@ -46,8 +46,8 @@ define dso_local i32 @main(i32 %0, ptr %1) local_unnamed_addr #1 {
   call void @_ZN9CliParser9setFooterEPc(ptr nonnull %parser, ptr nonnull @anon.string.3) #2
   store i1 false, ptr %options, align 8
   call void @_ZN9CliParser7addFlagEPcRbPc(ptr nonnull %parser, ptr nonnull @anon.string.4, ptr nonnull %options, ptr nonnull @anon.string.5) #2
-  call void @_ZN9CliParser7addFlagEPcPFvRbEPc(ptr nonnull %parser, ptr nonnull @anon.string.6, ptr nonnull @_Z8callbackRb, ptr nonnull @anon.string.9) #2
-  call void @_ZN9CliParser7addFlagEPcPFvRbEPc(ptr nonnull %parser, ptr nonnull @anon.string.8, ptr nonnull @_Z15lambda.L19C27.0Rb, ptr nonnull @anon.string.9) #2
+  call void @_ZN9CliParser7addFlagEPcPFvRbEPc(ptr nonnull %parser, ptr nonnull @anon.string.6, { ptr, ptr } { ptr @_Z8callbackRb, ptr undef }, ptr nonnull @anon.string.9) #2
+  call void @_ZN9CliParser7addFlagEPcPFvRbEPc(ptr nonnull %parser, ptr nonnull @anon.string.8, { ptr, ptr } { ptr @_Z15lambda.L19C27.0Rb, ptr undef }, ptr nonnull @anon.string.9) #2
   %3 = call i32 @_ZN9CliParser5parseEjPPc(ptr nonnull %parser, i32 %0, ptr %1) #2
   %4 = load i1, ptr %options, align 8
   br i1 %4, label %if.then.L26, label %if.exit.L26
@@ -68,7 +68,7 @@ declare void @_ZN9CliParser9setFooterEPc(ptr, ptr) local_unnamed_addr
 
 declare void @_ZN9CliParser7addFlagEPcRbPc(ptr, ptr, ptr, ptr) local_unnamed_addr
 
-declare void @_ZN9CliParser7addFlagEPcPFvRbEPc(ptr, ptr, ptr, ptr) local_unnamed_addr
+declare void @_ZN9CliParser7addFlagEPcPFvRbEPc(ptr, ptr, { ptr, ptr }, ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 define private void @_Z15lambda.L19C27.0Rb(ptr nocapture readonly %0) #0 {
