@@ -13,6 +13,7 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() local_unnamed_addr #0 {
   %testString = alloca %struct.String, align 8
   %1 = alloca %struct.String, align 8
+  call void @_ZN6String4ctorEv(ptr nonnull %testString) #3
   call void @_ZN6String4ctorEPc(ptr nonnull %1, ptr nonnull @anon.string.0) #3
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(24) %testString, ptr noundef nonnull align 8 dereferenceable(24) %1, i64 24, i1 false)
   %2 = call i64 @_ZN6String9getLengthEv(ptr nonnull %testString) #3
@@ -22,6 +23,8 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   call void @_ZN6String4dtorEv(ptr nonnull %testString) #3
   ret i32 0
 }
+
+declare void @_ZN6String4ctorEv(ptr) local_unnamed_addr
 
 declare void @_ZN6String4ctorEPc(ptr, ptr) local_unnamed_addr
 

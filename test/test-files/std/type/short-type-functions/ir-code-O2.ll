@@ -8,8 +8,6 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.2 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 'asLong == 45l' evaluated to false.\00", align 1
 @anon.string.3 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'asByte == (byte) 12' evaluated to false.\00", align 1
 @anon.string.4 = private unnamed_addr constant [64 x i8] c"Assertion failed: Condition 'asChar == 'B'' evaluated to false.\00", align 1
-@anon.string.5 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'asBool1 == true' evaluated to false.\00", align 1
-@anon.string.6 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'asBool2 == false' evaluated to false.\00", align 1
 @anon.string.7 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'isPowerOfTwo(16s)' evaluated to false.\00", align 1
 @anon.string.8 = private unnamed_addr constant [69 x i8] c"Assertion failed: Condition '!isPowerOfTwo(31s)' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [25 x i8] c"All assertions succeeded\00", align 1
@@ -67,42 +65,26 @@ assert.then.L22:                                  ; preds = %assert.exit.L18
 
 assert.exit.L22:                                  ; preds = %assert.exit.L18
   %16 = tail call i1 @_Z6toBools(i16 1) #3
-  br i1 %16, label %assert.exit.L31, label %assert.then.L31, !prof !0
+  %17 = tail call i1 @_Z6toBools(i16 0) #3
+  %18 = tail call i1 @_Z12isPowerOfTwos(i16 16) #3
+  br i1 %18, label %assert.exit.L36, label %assert.then.L36, !prof !0
 
-assert.then.L31:                                  ; preds = %assert.exit.L22
-  %17 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.5)
+assert.then.L36:                                  ; preds = %assert.exit.L22
+  %19 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.7)
   tail call void @exit(i32 1)
   unreachable
 
-assert.exit.L31:                                  ; preds = %assert.exit.L22
-  %18 = tail call i1 @_Z6toBools(i16 0) #3
-  br i1 %18, label %assert.then.L33, label %assert.exit.L33, !prof !1
-
-assert.then.L33:                                  ; preds = %assert.exit.L31
-  %19 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.6)
-  tail call void @exit(i32 1)
-  unreachable
-
-assert.exit.L33:                                  ; preds = %assert.exit.L31
-  %20 = tail call i1 @_Z12isPowerOfTwos(i16 16) #3
-  br i1 %20, label %assert.exit.L36, label %assert.then.L36, !prof !0
-
-assert.then.L36:                                  ; preds = %assert.exit.L33
-  %21 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.7)
-  tail call void @exit(i32 1)
-  unreachable
-
-assert.exit.L36:                                  ; preds = %assert.exit.L33
-  %22 = tail call i1 @_Z12isPowerOfTwos(i16 31) #3
-  br i1 %22, label %assert.then.L37, label %assert.exit.L37, !prof !1
+assert.exit.L36:                                  ; preds = %assert.exit.L22
+  %20 = tail call i1 @_Z12isPowerOfTwos(i16 31) #3
+  br i1 %20, label %assert.then.L37, label %assert.exit.L37, !prof !1
 
 assert.then.L37:                                  ; preds = %assert.exit.L36
-  %23 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.8)
+  %21 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @anon.string.8)
   tail call void @exit(i32 1)
   unreachable
 
 assert.exit.L37:                                  ; preds = %assert.exit.L36
-  %24 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
+  %22 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0)
   ret i32 0
 }
 

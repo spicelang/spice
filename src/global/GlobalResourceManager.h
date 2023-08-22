@@ -33,12 +33,6 @@ const char *const LTO_FILE_NAME = "lto-module";
  */
 class GlobalResourceManager {
 public:
-  // Structs
-  struct SoftError {
-    const CodeLoc codeLoc;
-    const std::string message;
-  };
-
   // Constructors
   explicit GlobalResourceManager(const CliOptions &cliOptions);
   GlobalResourceManager(const GlobalResourceManager &) = delete;

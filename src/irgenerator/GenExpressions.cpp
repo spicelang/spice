@@ -841,8 +841,10 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(address != nullptr);
 
   // If this is a function/procedure reference, return it as value
-  if (varEntry->global && varSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}))
-    return LLVMExprResult{.value = address, .entry = varEntry};
+  if (varEntry->global && varSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    llvm::Value *fatPtr = buildFatFctPtr(nullptr, nullptr, address);
+    return LLVMExprResult{.ptr = fatPtr, .entry = varEntry};
+  }
 
   // Load the address of the referenced variable
   if (varSymbolType.isRef())

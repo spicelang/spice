@@ -39,10 +39,10 @@
         {
           "captures": [],
           "children": [],
-          "name": "for:L18C5",
+          "name": "for:L20C5",
           "symbols": [
             {
-              "codeLoc": "L19C9",
+              "codeLoc": "L21C9",
               "isGlobal": false,
               "isVolatile": false,
               "name": "thread",
@@ -51,7 +51,7 @@
               "type": "std/os/thread::Thread&"
             },
             {
-              "codeLoc": "L18C9",
+              "codeLoc": "L20C9",
               "isGlobal": false,
               "isVolatile": false,
               "name": "i",
@@ -83,6 +83,15 @@
           ],
           "name": "for:L11C5",
           "symbols": [
+            {
+              "codeLoc": "L16C9",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "thread",
+              "orderIndex": 1,
+              "state": "initialized",
+              "type": "std/os/thread::Thread&"
+            },
             {
               "codeLoc": "L11C9",
               "isGlobal": false,

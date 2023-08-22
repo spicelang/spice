@@ -13,29 +13,34 @@ define private i32 @_Z4testPc(ptr %0) {
   ret i32 12
 }
 
-define private i32 @_Z6invokePFiPcE(ptr %0) {
+define private i32 @_Z6invokePFiPcE({ ptr, ptr } %0) {
   %result = alloca i32, align 4
-  %fctPtr = alloca ptr, align 8
-  store ptr %0, ptr %fctPtr, align 8
-  %2 = load ptr, ptr %fctPtr, align 8
-  %3 = call i32 %2(ptr @anon.string.0)
-  ret i32 %3
+  %fctPtr = alloca { ptr, ptr }, align 8
+  store { ptr, ptr } %0, ptr %fctPtr, align 8
+  %2 = getelementptr inbounds { ptr, ptr }, ptr %fctPtr, i32 0, i32 0
+  %3 = load ptr, ptr %2, align 8
+  %4 = call i32 %3(ptr @anon.string.0)
+  ret i32 %4
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %testFct = alloca ptr, align 8
+  %fat.ptr = alloca { ptr, ptr }, align 8
+  %testFct = alloca { ptr, ptr }, align 8
   %i = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  store ptr @_Z4testPc, ptr %testFct, align 8
-  %1 = load ptr, ptr %testFct, align 8
-  %2 = call i32 @_Z6invokePFiPcE(ptr %1)
-  store i32 %2, ptr %i, align 4
-  %3 = load i32, ptr %i, align 4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
-  %5 = load i32, ptr %result, align 4
-  ret i32 %5
+  %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
+  store ptr @_Z4testPc, ptr %1, align 8
+  %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  store { ptr, ptr } %2, ptr %testFct, align 8
+  %3 = load { ptr, ptr }, ptr %testFct, align 8
+  %4 = call i32 @_Z6invokePFiPcE({ ptr, ptr } %3)
+  store i32 %4, ptr %i, align 4
+  %5 = load i32, ptr %i, align 4
+  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %5)
+  %7 = load i32, ptr %result, align 4
+  ret i32 %7
 }
 
 ; Function Attrs: nofree nounwind

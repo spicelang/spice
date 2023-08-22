@@ -221,20 +221,13 @@ const BinaryOpRule LOGICAL_OR_OP_RULES[] = {
     BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false) // bool || bool -> bool
 };
 
-// Bitwise and op rules
-const BinaryOpRule BITWISE_AND_OP_RULES[] = {
-    BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int & int -> int
-    BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false), // short & short -> short
-    BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long & long -> long
-    BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),    // byte & byte -> byte
-};
-
 // Bitwise or op rules
 const BinaryOpRule BITWISE_OR_OP_RULES[] = {
     BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int | int -> int
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false), // short | short -> short
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long | long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),    // byte | byte -> byte
+    BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),    // bool | bool -> bool
 };
 
 // Bitwise xor op rules
@@ -243,6 +236,16 @@ const BinaryOpRule BITWISE_XOR_OP_RULES[] = {
     BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false), // short ^ short -> short
     BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long ^ long -> long
     BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),    // byte ^ byte -> byte
+    BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),    // bool ^ bool -> bool
+};
+
+// Bitwise and op rules
+const BinaryOpRule BITWISE_AND_OP_RULES[] = {
+    BinaryOpRule(TY_INT, TY_INT, TY_INT, false),       // int & int -> int
+    BinaryOpRule(TY_SHORT, TY_SHORT, TY_SHORT, false), // short & short -> short
+    BinaryOpRule(TY_LONG, TY_LONG, TY_LONG, false),    // long & long -> long
+    BinaryOpRule(TY_BYTE, TY_BYTE, TY_BYTE, false),    // byte & byte -> byte
+    BinaryOpRule(TY_BOOL, TY_BOOL, TY_BOOL, false),    // bool & bool -> bool
 };
 
 // Equal op rules
@@ -630,11 +633,11 @@ public:
   static SymbolType getAndEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getOrEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getXorEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getLogicalOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getBitwiseOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getBitwiseXorResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  static SymbolType getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   ExprResult getEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   ExprResult getNotEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getLessResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);

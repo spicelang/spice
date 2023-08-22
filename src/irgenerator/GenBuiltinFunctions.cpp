@@ -29,9 +29,8 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
       argVal = builder.CreateInBoundsGEP(argType, argValPtr, indices);
     } else if (argSymbolType.getBaseType().isStringObj()) {
       llvm::Value *argValPtr = resolveAddress(arg);
-      llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
       llvm::Type *argBaseType = argSymbolType.getBaseType().toLLVMType(context, currentScope);
-      argValPtr = builder.CreateInBoundsGEP(argBaseType, argValPtr, indices);
+      argValPtr = builder.CreateStructGEP(argBaseType, argValPtr, 0);
       argVal = builder.CreateLoad(builder.getPtrTy(), argValPtr);
     } else {
       argVal = resolveValue(arg);
@@ -87,12 +86,18 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
-  SymbolType assignExprSymbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
-  assignExprSymbolType = assignExprSymbolType.removeReferenceWrapper();
-  assert(assignExprSymbolType.isArray() && assignExprSymbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
+  SymbolType symbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
+  symbolType = symbolType.removeReferenceWrapper();
 
-  // Return length value
-  llvm::Value *lengthValue = builder.getInt64(assignExprSymbolType.getArraySize());
+  llvm::Value *lengthValue;
+  if (symbolType.is(TY_STRING)) {
+    llvm::Function *getRawLengthFct = stdFunctionManager.getStringGetRawLengthStringFct();
+    lengthValue = builder.CreateCall(getRawLengthFct, resolveValue(node->assignExpr()));
+  } else {
+    assert(symbolType.isArray() && symbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
+    // Return length value
+    lengthValue = builder.getInt64(symbolType.getArraySize());
+  }
   return LLVMExprResult{.value = lengthValue};
 }
 

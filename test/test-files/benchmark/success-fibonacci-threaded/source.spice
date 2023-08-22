@@ -13,6 +13,8 @@ f<int> main() {
             int result = fib(30);
             printf("Thread returned with result: %d\n", result);
         });
+        Thread& thread = threads[i];
+        thread.run();
     }
     printf("Started all threads. Waiting for results ...\n");
     for unsigned int i = 0; i < threadCount; i++ {

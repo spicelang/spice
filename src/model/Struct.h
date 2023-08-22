@@ -50,6 +50,7 @@ public:
   size_t manifestationIndex = 0;
   bool genericSubstantiation = false;
   bool used = false;
+  llvm::DICompositeType *structDIType = nullptr;
 
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, fieldTypes, templateTypes, interfaceTypes, genericSubstantiation, used)

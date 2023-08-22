@@ -14,31 +14,46 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %callbackWithoutArgs = alloca ptr, align 8
-  %callbackWithArgs1 = alloca ptr, align 8
+  %fat.ptr = alloca { ptr, ptr }, align 8
+  %callbackWithoutArgs = alloca { ptr, ptr }, align 8
+  %fat.ptr1 = alloca { ptr, ptr }, align 8
+  %callbackWithArgs1 = alloca { ptr, ptr }, align 8
   %1 = alloca %struct.String, align 8
-  %callbackWithArgs2 = alloca ptr, align 8
+  %fat.ptr2 = alloca { ptr, ptr }, align 8
+  %callbackWithArgs2 = alloca { ptr, ptr }, align 8
   %2 = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
-  store ptr @_Z12lambda.L2C31v, ptr %callbackWithoutArgs, align 8
-  %3 = load ptr, ptr %callbackWithoutArgs, align 8
-  call void %3()
-  store ptr @_Z12lambda.L7C44R18__rt_string.Stringd, ptr %callbackWithArgs1, align 8
+  %3 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
+  store ptr @_Z14lambda.L2C31.0v, ptr %3, align 8
+  %4 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  store { ptr, ptr } %4, ptr %callbackWithoutArgs, align 8
+  %5 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithoutArgs, i32 0, i32 0
+  %6 = load ptr, ptr %5, align 8
+  call void %6()
+  %7 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 0
+  store ptr @_Z14lambda.L7C44.0R18__rt_string.Stringd, ptr %7, align 8
+  %8 = load { ptr, ptr }, ptr %fat.ptr1, align 8
+  store { ptr, ptr } %8, ptr %callbackWithArgs1, align 8
+  %9 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs1, i32 0, i32 0
   call void @_ZN6String4ctorEPc(ptr %1, ptr @anon.string.0)
-  %4 = load ptr, ptr %callbackWithArgs1, align 8
-  call void %4(ptr %1, double 3.140000e+00)
-  store ptr @_Z13lambda.L12C4118__rt_string.Stringb, ptr %callbackWithArgs2, align 8
+  %10 = load ptr, ptr %9, align 8
+  call void %10(ptr %1, double 3.140000e+00)
+  %11 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 0
+  store ptr @_Z15lambda.L12C41.018__rt_string.Stringb, ptr %11, align 8
+  %12 = load { ptr, ptr }, ptr %fat.ptr2, align 8
+  store { ptr, ptr } %12, ptr %callbackWithArgs2, align 8
+  %13 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs2, i32 0, i32 0
   call void @_ZN6String4ctorEPc(ptr %2, ptr @anon.string.1)
-  %5 = load %struct.String, ptr %2, align 8
-  %6 = load ptr, ptr %callbackWithArgs2, align 8
-  call void %6(%struct.String %5, i1 false)
+  %14 = load %struct.String, ptr %2, align 8
+  %15 = load ptr, ptr %13, align 8
+  call void %15(%struct.String %14, i1 false)
   call void @_ZN6String4dtorEv(ptr %2)
   call void @_ZN6String4dtorEv(ptr %1)
-  %7 = load i32, ptr %result, align 4
-  ret i32 %7
+  %16 = load i32, ptr %result, align 4
+  ret i32 %16
 }
 
-define private void @_Z12lambda.L2C31v() {
+define private void @_Z14lambda.L2C31.0v() {
   %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
@@ -46,7 +61,7 @@ define private void @_Z12lambda.L2C31v() {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-define private void @_Z12lambda.L7C44R18__rt_string.Stringd(ptr %0, double %1) {
+define private void @_Z14lambda.L7C44.0R18__rt_string.Stringd(ptr %0, double %1) {
   %str = alloca ptr, align 8
   %d = alloca double, align 8
   store ptr %0, ptr %str, align 8
@@ -61,7 +76,7 @@ define private void @_Z12lambda.L7C44R18__rt_string.Stringd(ptr %0, double %1) {
 
 declare void @_ZN6String4ctorEPc(ptr, ptr)
 
-define private void @_Z13lambda.L12C4118__rt_string.Stringb(%struct.String %0, i1 %1) {
+define private void @_Z15lambda.L12C41.018__rt_string.Stringb(%struct.String %0, i1 %1) {
   %str = alloca %struct.String, align 8
   %b = alloca i1, align 1
   store %struct.String %0, ptr %str, align 8

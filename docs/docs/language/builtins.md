@@ -58,7 +58,7 @@ Sizeof returns the internal size of a variable, constant or type in bits. To get
 sizeof(12); // 32
 sizeof(type int) // 32
 
-int[9] intArray = {};
+int[9] intArray = [];
 sizeof(intArray); // 9 * 32 = 288
 
 sizeof("Hello World!"); // 64 (Strings are Char pointers internally)
@@ -95,9 +95,9 @@ Len returns the length of a Spice array in items.
 
 ### Usage example
 ```spice
-len({1, 2, 3, 4}); // 4
+len([1, 2, 3, 4]); // 4
 
-string[5] stringArray = {"string1", "string2", "string3"};
+string[5] stringArray = ["string1", "string2", "string3"];
 len(stringArray); // 5
 ```
 

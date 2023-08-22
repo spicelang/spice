@@ -530,7 +530,7 @@ p String.resize<IntLongShort>(unsigned IntLongShort newLength) {
  * @param input Input string
  * @return Length of the input string
  */
-public f<long> getRawLength(string input) {
+public f<unsigned long> getRawLength(string input) {
     result = 0l;
     while input[result] != '\0' {
         result++;

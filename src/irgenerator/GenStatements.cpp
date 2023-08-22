@@ -1,9 +1,10 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
-#include "symboltablebuilder/SymbolTableBuilder.h"
 
 #include <ast/ASTNodes.h>
+#include <irgenerator/NameMangling.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
 
@@ -51,15 +52,25 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   if (node->hasAssignment && !rhsIsDynArray) { // Assignment
     LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
     assert(assignResult.entry == varEntry);
-    varAddress = assignResult.entry->getAddress();
+    varAddress = varEntry->getAddress();
   } else { // Default value
     // Allocate memory
     varAddress = insertAlloca(varTy);
-    // Retrieve default value for lhs symbol type and store it
-    if (!node->isForEachItem) {
+
+    if (node->defaultCtor) {
+      // Call default constructor
+      const std::string mangledName = NameMangling::mangleFunction(*node->defaultCtor);
+      llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), builder.getPtrTy(), false);
+      module->getOrInsertFunction(mangledName, fctType);
+      llvm::Function *fct = module->getFunction(mangledName);
+      assert(fct != nullptr);
+      builder.CreateCall({fctType, fct}, varAddress);
+    } else if (!node->isForEachItem) {
+      // Retrieve default value for lhs symbol type and store it
       llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);
       builder.CreateStore(defaultValue, varAddress);
     }
+
     // Update address in symbol table
     varEntry->updateAddress(varAddress);
   }
@@ -69,8 +80,10 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   varAddress->setName(varEntry->name);
 
   // Generate debug info for variable declaration
-  if (cliOptions.generateDebugInfo)
+  if (cliOptions.generateDebugInfo) {
+    diGenerator.setSourceLocation(node);
     diGenerator.generateLocalVarDebugInfo(node->varName, varAddress, SIZE_MAX, true);
+  }
 
   return nullptr;
 }

@@ -1,51 +1,50 @@
-type Test struct {
-    int f1 = false ? 1 : 2
-    bool f2 = false || false || true
-    bool f3 = true && false && true
-    int f4 = 2 | 3 | 8
-    short f5 = 8s ^ 3s ^ 1s
-    long f6 = 3l & 6l & 10l
-    bool f7 = 2 == 2
-    bool f8 = 90 != -23
-    bool f9 = 2 < 3
-    bool f10 = 2 > 3
-    bool f11 = 123456789l <= 123456789l
-    bool f12 = 54321l >= 123456789l
-    int f13 = 1 + 14 + 321 - 3
-    long f14 = 8l * 11s / 2l / 4
-    byte f15 = (byte) (255 >> 2)
-    int f16 = 13++
-    int f17 = 13--
-    int f18 = -(13)
-    int f19 = ++13
-    int f20 = --13
+import "std/io/cli-parser";
+
+type CliOptions struct {
+    bool sayHi = false
 }
+
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
+}
+
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
+
+    CliOptions options;
+    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--callback", callback, "Call a callback function");
+    parser.addFlag("-cb", p(bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
+
+    parser.parse(argc, argv);
+
+    // Print hi if requested
+    if options.sayHi {
+        printf("Hi!\n");
+    }
+}
+
+/*import "std/os/thread-pool";
 
 f<int> main() {
-    Test t;
-    assert t.f1 == 2;
-    assert t.f2;
-    assert !t.f3;
-    assert t.f4 == 11;
-    assert t.f5 == 10s;
-    assert t.f6 == 2l;
-    assert t.f7;
-    assert t.f8;
-    assert t.f9;
-    assert !t.f10;
-    assert t.f11;
-    assert !t.f12;
-    assert t.f13 == 333;
-    assert t.f14 == 11l;
-    assert t.f15 == (byte) 63;
-    assert t.f16 == 13;
-    assert t.f17 == 13;
-    assert t.f18 == -13;
-    assert t.f19 == 14;
-    assert t.f20 == 12;
-
-    printf("All assertions passed!\n");
-}
+    ThreadPool tp = ThreadPool(3s);
+    tp.enqueue(p() {
+        printf("Hello from task 1\n");
+    });
+    tp.enqueue(p() {
+        printf("Hello from task 2\n");
+    });
+    tp.enqueue(p() {
+        printf("Hello from task 3\n");
+    });
+    tp.enqueue(p() {
+        printf("Hello from task 4\n");
+    });
+}*/
 
 /*type T int|long;
 

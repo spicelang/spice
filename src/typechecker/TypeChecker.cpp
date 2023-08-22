@@ -481,6 +481,14 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     // References with no initialization are illegal
     if (localVarType.isRef() && !node->isParam && !node->isForEachItem)
       softError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
+
+    // If this is a struct, check for the default ctor
+    if (localVarType.is(TY_STRUCT) && !node->isParam && !node->isForEachItem) {
+      Scope *matchScope = localVarType.getBodyScope();
+      assert(matchScope != nullptr);
+      const std::string structName = localVarType.getOriginalSubType();
+      node->defaultCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, localVarType, {}, false, node);
+    }
   }
 
   // Update the type of the variable
@@ -490,7 +498,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   node->entries.at(manIdx) = localVarEntry;
 
   // Update the state of the variable
-  localVarEntry->updateState(INITIALIZED, node, node->isParam);
+  localVarEntry->updateState(INITIALIZED, node, true);
 
   return node->setEvaluatedSymbolType(localVarType, manIdx);
 }
@@ -681,8 +689,12 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
   argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
-  if (!argType.isArray())
-    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays")
+  if (!argType.isArray() && !argType.is(TY_STRING))
+    SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
+
+  // If we want to use the len builtin on a string, we need to import the string runtime module
+  if (argType.is(TY_STRING) && !isStringRT())
+    sourceFile->requestRuntimeModule(STRING_RT);
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
 }
@@ -1514,9 +1526,6 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     if (data.isImported && !functionEntry->getType().isPublic())
       SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY,
                     "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility")
-
-    // Check if down-call, fct ptr calls can't be down-calls
-    data.isDownCall = !data.isImported && data.callee->isDownCall(node);
   }
 
   // Retrieve return type
@@ -1537,7 +1546,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
   // Initialize return type if required
   SymbolTableEntry *anonymousSymbol = nullptr;
-  if (returnType.isBaseType(TY_STRUCT)) {
+  if (returnType.is(TY_STRUCT)) {
     SymbolType returnBaseType = returnType.getBaseType();
     const std::string structName = returnBaseType.getOriginalSubType();
     Scope *matchScope = returnBaseType.getBodyScope()->parent;
@@ -1706,12 +1715,12 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
-    const std::string identifier = node->functionNameFragments.at(i);
+    const std::string &identifier = node->functionNameFragments.at(i);
 
     // Retrieve field entry
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
     if (!fieldEntry)
-      SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS,
+      SOFT_ERROR_BOOL(node, ACCESS_TO_NON_EXISTING_MEMBER,
                       "The type " + data.thisType.getName() + " does not have a member with the name '" + identifier + "'")
     if (!fieldEntry->getType().isBaseType(TY_STRUCT))
       SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS, "Cannot call a method on '" + identifier + "', since it is no struct")
@@ -1883,24 +1892,24 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
     SOFT_ERROR_ER(node, MISSING_RETURN_STMT, "Not all control paths of this lambda function have a return statement")
 
   // Change to function scope
-  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
+  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
 
   // Visit return type
   auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
   HANDLE_UNRESOLVED_TYPE_ST(returnType)
   if (returnType.is(TY_DYN)) {
-    currentScope = node->bodyScope->parent;
+    currentScope = bodyScope->parent;
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
   }
 
   // Set the type of the result variable
   SymbolTableEntry *resultVarEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultVarEntry != nullptr);
-  resultVarEntry->updateType(returnType, false);
+  resultVarEntry->updateType(returnType, true);
   resultVarEntry->used = true;
 
   // Visit parameters
-  std::vector<std::string> paramNames;
   std::vector<SymbolType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
@@ -1910,7 +1919,6 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
 
-      paramNames.push_back(param.name);
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
     }
@@ -1920,27 +1928,29 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   visit(node->body());
 
   // Leave function body scope
-  currentScope = node->bodyScope->parent;
+  currentScope = bodyScope->parent;
 
   // Prepare type of function
   SymbolType functionType(TY_FUNCTION);
   functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
-  functionType.setHasLambdaCaptures(!node->bodyScope->symbolTable.captures.empty());
+  functionType.setHasLambdaCaptures(!bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaFunction = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+  node->lambdaFunction.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+  node->lambdaFunction.at(manIdx).bodyScope = bodyScope;
+  node->lambdaFunction.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
 
 std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   // Change to function scope
-  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
+  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
 
   // Visit parameters
-  std::vector<std::string> paramNames;
   std::vector<SymbolType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
@@ -1950,7 +1960,6 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
 
-      paramNames.push_back(param.name);
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
     }
@@ -1960,26 +1969,29 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   visit(node->body());
 
   // Leave function body scope
-  currentScope = node->bodyScope->parent;
+  currentScope = bodyScope->parent;
 
   // Prepare type of function
   SymbolType functionType(TY_PROCEDURE);
   functionType.setFunctionParamTypes(paramTypes);
-  functionType.setHasLambdaCaptures(!node->bodyScope->symbolTable.captures.empty());
+  functionType.setHasLambdaCaptures(!bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaProcedure = Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node, false);
+  node->lambdaProcedure.at(manIdx) =
+      Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node, false);
+  node->lambdaProcedure.at(manIdx).bodyScope = bodyScope;
+  node->lambdaProcedure.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
 
 std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   // Change to function scope
-  changeToScope(node->bodyScope, SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
+  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
 
   // Visit parameters
-  std::vector<std::string> paramNames;
   std::vector<SymbolType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
@@ -1989,7 +2001,6 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
 
-      paramNames.push_back(param.name);
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
     }
@@ -1999,12 +2010,12 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   SymbolType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(returnType)
   if (returnType.is(TY_DYN)) {
-    currentScope = node->bodyScope->parent;
+    currentScope = bodyScope->parent;
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
   }
 
   // Leave function body scope
-  currentScope = node->bodyScope->parent;
+  currentScope = bodyScope->parent;
 
   // Prepare type of function
   const bool isFunction = !returnType.is(TY_DYN);
@@ -2012,11 +2023,13 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   if (isFunction)
     functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
-  functionType.setHasLambdaCaptures(!node->bodyScope->symbolTable.captures.empty());
+  functionType.setHasLambdaCaptures(!bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaFunction = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+  node->lambdaFunction.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+  node->lambdaFunction.at(manIdx).bodyScope = bodyScope;
+  node->lambdaFunction.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }

@@ -1,0 +1,12 @@
+p test(int t = 123) {
+    int x = 456;
+    dyn l = p() {
+        printf("%d, %d\n", x, t);
+    };
+    l();
+}
+
+f<int> main() {
+    test();
+    test(4321);
+}

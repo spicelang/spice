@@ -1,0 +1,8 @@
+/**
+ * Checks if the given character is a whitespace
+ *
+ * @return Is whitespace
+ */
+public f<bool> isWhitespace(char c) {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}

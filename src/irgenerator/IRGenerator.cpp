@@ -157,8 +157,17 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     return builder.getFalse();
 
   // Pointer or reference
-  if (symbolType.isOneOf({TY_PTR, TY_REF, TY_FUNCTION, TY_PROCEDURE}))
+  if (symbolType.isOneOf({TY_PTR, TY_REF}))
     return llvm::Constant::getNullValue(builder.getPtrTy());
+
+  // Function or procedure
+  if (symbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    if (!llvmTypes.fatPtrType)
+      llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
+
+    llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(SymbolType(TY_PTR));
+    return llvm::ConstantStruct::get(llvmTypes.fatPtrType, {ptrDefaultValue, ptrDefaultValue});
+  }
 
   // Array
   if (symbolType.is(TY_ARRAY)) {
@@ -328,13 +337,9 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
       llvm::Value *rhsAddress = resolveAddress(rhs);
       assert(rhsAddress != nullptr);
 
-      // Check if we already have an address
-      llvm::Value *refAddress = lhsEntry->getAddress();
-      if (!refAddress) {
-        // If not, allocate space for the reference and store the address
-        refAddress = insertAlloca(builder.getPtrTy());
-        lhsEntry->updateAddress(refAddress);
-      }
+      // Store lhs pointer to rhs
+      llvm::Value *refAddress = insertAlloca(builder.getPtrTy());
+      lhsEntry->updateAddress(refAddress);
       builder.CreateStore(rhsAddress, refAddress);
 
       return LLVMExprResult{.value = rhsAddress, .ptr = refAddress, .entry = lhsEntry};
@@ -443,14 +448,9 @@ void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor, cons
 
   // Retrieve metadata for the function
   const std::string mangledName = NameMangling::mangleFunction(*dtor);
-  const bool isImported = dtor->entry->scope->isImportedBy(rootScope);
-  const bool isDownCall = !isImported && dtor->isDownCall(node);
 
   // Function is not defined in the current module -> declare it
-  // This can happen when:
-  // 1) If this is an imported source file
-  // 2) This is a down-call to a function, which is defined later in the same file
-  if (isImported || isDownCall) {
+  if (!module->getFunction(mangledName)) {
     llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), builder.getPtrTy(), false);
     module->getOrInsertFunction(mangledName, fctType);
   }

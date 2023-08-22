@@ -36,7 +36,8 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   }
 
   // Function name
-  mangledName << spiceFunc.name.length() << spiceFunc.name;
+  const std::string name = spiceFunc.name + spiceFunc.mangleSuffix;
+  mangledName << name.length() << name;
 
   // Template types
   if (!spiceFunc.templateTypes.empty()) {

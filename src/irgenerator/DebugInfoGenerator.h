@@ -25,7 +25,8 @@ public:
 
   // Public methods
   void initialize(const std::string &sourceFileName, std::filesystem::path sourceFileDir);
-  void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc);
+  void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc, bool isLambda = false);
+  llvm::DICompositeType *generateCaptureStructDebugInfo(const Function *spiceFunc);
   void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
   void generateGlobalStringDebugInfo(llvm::GlobalVariable *global, const std::string &name, size_t length,
                                      const CodeLoc &codeLoc);
@@ -56,6 +57,7 @@ private:
   llvm::DIType *stringTy = nullptr;
   llvm::DIType *boolTy = nullptr;
   llvm::DIType *voidTy = nullptr;
+  llvm::DICompositeType *fatPtrTy = nullptr;
 
   // Private methods
   [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const ASTNode *node, const SymbolType &symbolType) const;

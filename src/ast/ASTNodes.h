@@ -106,7 +106,7 @@ public:
   }
 
   virtual void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
-    // Reserve children
+    // Resize children
     for (ASTNode *child : children)
       if (child != nullptr)
         child->resizeToNumberOfManifestations(manifestationCount);
@@ -954,6 +954,7 @@ public:
   std::vector<SymbolTableEntry *> entries;
   bool isParam = false;
   bool isForEachItem = false;
+  Function *defaultCtor = nullptr;
 };
 
 // ======================================================= SpecifierLstNode ======================================================
@@ -1735,7 +1736,6 @@ public:
     // Members
     FctCallType callType = TYPE_ORDINARY;
     bool isImported = false;
-    bool isDownCall = false;
     SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
     std::vector<SymbolType> argTypes;
     Function *callee = nullptr;
@@ -1834,11 +1834,12 @@ public:
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  void customItemsInitialization(size_t manifestationCount) override { lambdaFunction.resize(manifestationCount); }
 
   // Public members
   bool hasParams = false;
   Scope *bodyScope = nullptr;
-  Function lambdaFunction;
+  std::vector<Function> lambdaFunction;
 };
 
 // ====================================================== LambdaProcNode =========================================================
@@ -1860,11 +1861,12 @@ public:
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  void customItemsInitialization(size_t manifestationCount) override { lambdaProcedure.resize(manifestationCount); }
 
   // Public members
   bool hasParams = false;
   Scope *bodyScope = nullptr;
-  Function lambdaProcedure;
+  std::vector<Function> lambdaProcedure;
 };
 
 // ====================================================== LambdaExprNode =========================================================
@@ -1885,11 +1887,12 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+  void customItemsInitialization(size_t manifestationCount) override { lambdaFunction.resize(manifestationCount); }
 
   // Public members
   bool hasParams = false;
   Scope *bodyScope = nullptr;
-  Function lambdaFunction;
+  std::vector<Function> lambdaFunction;
 };
 
 // ======================================================= DataTypeNode ==========================================================

@@ -1,20 +1,62 @@
+import "std/text/analysis";
+
 // Prints the given string to the console
-public p print(string text) {
+public inline p print(string text) {
     printf("%s", text);
 }
 
 // Prints the given string to the console with a trailing line break
-public p println(string text) {
+public inline p println(string text) {
     printf("%s\n", text);
 }
 
 // Prints one or several line breaks to the console
-public p lineBreak(unsigned int number = 1) {
+public inline p lineBreak(unsigned int number = 1) {
     for int i = 0; i < number; i++ {
         printf("\n");
     }
 }
 
-public p beep() {
+public inline p beep() {
     printf("\a");
+}
+
+public p printColumn(string text, unsigned int width) {
+    const unsigned long length = len(text);
+    unsigned long i = 0l;
+
+    while (i < length) {
+        // Find the last word that fits within the width
+        unsigned long j = i + width;
+        while (j > i & j < length && !isWhitespace(text[j])) {
+            j--;
+        }
+        // Print the word
+        for (unsigned long k = i; k < j & k < length; k++) {
+            printf("%c", text[k]);
+        }
+        // Move to the next line
+        printf("\n");
+        // Move to the next word
+        i = j;
+        while (i < length && isWhitespace(text[i])) {
+            i++;
+        }
+    }
+}
+
+public p printFixedWidth(string text, unsigned int width, bool ellipsis = false) {
+    unsigned long length = len(text);
+    const bool printEllipsis = ellipsis & length > width;
+
+    for (unsigned long i = 0l; i < width; i++) {
+        if (i < (printEllipsis ? (unsigned long) width - 3 : length)) {
+            printf("%c", text[i]);
+        } else if (printEllipsis) {
+            printf("...");
+            break;
+        } else {
+            printf(" ");
+        }
+    }
 }

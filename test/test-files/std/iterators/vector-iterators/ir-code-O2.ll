@@ -56,11 +56,11 @@ assert.then.L9:                                   ; preds = %0
 
 assert.exit.L9:                                   ; preds = %0
   %12 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr nonnull %vi) #3
-  %.fca.0.extract20 = extractvalue %struct.VectorIterator %12, 0
-  %.fca.1.extract22 = extractvalue %struct.VectorIterator %12, 1
-  %.fca.1.gep23 = getelementptr inbounds %struct.VectorIterator, ptr %it, i64 0, i32 1
-  store ptr %.fca.0.extract20, ptr %it, align 8
-  store i64 %.fca.1.extract22, ptr %.fca.1.gep23, align 8
+  %.fca.0.extract21 = extractvalue %struct.VectorIterator %12, 0
+  %.fca.1.extract23 = extractvalue %struct.VectorIterator %12, 1
+  %.fca.1.gep24 = getelementptr inbounds %struct.VectorIterator, ptr %it, i64 0, i32 1
+  store ptr %.fca.0.extract21, ptr %it, align 8
+  store i64 %.fca.1.extract23, ptr %.fca.1.gep24, align 8
   %13 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr nonnull %it) #3
   br i1 %13, label %assert.exit.L13, label %assert.then.L13, !prof !0
 
@@ -115,11 +115,11 @@ assert.then.L18:                                  ; preds = %assert.exit.L17
 assert.exit.L18:                                  ; preds = %assert.exit.L17
   call void @_ZN14VectorIteratorIiE4nextEv(ptr nonnull %it) #3
   %29 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr nonnull %it) #3
-  %.fca.0.extract12 = extractvalue %struct.Pair %29, 0
-  %.fca.1.extract14 = extractvalue %struct.Pair %29, 1
-  %.fca.1.gep15 = getelementptr inbounds %struct.Pair, ptr %pair, i64 0, i32 1
-  store i64 %.fca.0.extract12, ptr %pair, align 8
-  store ptr %.fca.1.extract14, ptr %.fca.1.gep15, align 8
+  %.fca.0.extract13 = extractvalue %struct.Pair %29, 0
+  %.fca.1.extract15 = extractvalue %struct.Pair %29, 1
+  %.fca.1.gep16 = getelementptr inbounds %struct.Pair, ptr %pair, i64 0, i32 1
+  store i64 %.fca.0.extract13, ptr %pair, align 8
+  store ptr %.fca.1.extract15, ptr %.fca.1.gep16, align 8
   %30 = call ptr @_ZN4PairImRiE8getFirstEv(ptr nonnull %pair) #3
   %31 = load i64, ptr %30, align 8
   %32 = icmp eq i64 %31, 2
@@ -233,11 +233,11 @@ assert.then.L42:                                  ; preds = %assert.exit.L40
 
 assert.exit.L42:                                  ; preds = %assert.exit.L40
   %62 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr nonnull %vi) #3
-  %.fca.0.extract8 = extractvalue %struct.VectorIterator %62, 0
-  store ptr %.fca.0.extract8, ptr %6, align 8
-  %.fca.1.extract10 = extractvalue %struct.VectorIterator %62, 1
-  %.fca.1.gep11 = getelementptr inbounds %struct.VectorIterator, ptr %6, i64 0, i32 1
-  store i64 %.fca.1.extract10, ptr %.fca.1.gep11, align 8
+  %.fca.0.extract9 = extractvalue %struct.VectorIterator %62, 0
+  store ptr %.fca.0.extract9, ptr %6, align 8
+  %.fca.1.extract11 = extractvalue %struct.VectorIterator %62, 1
+  %.fca.1.gep12 = getelementptr inbounds %struct.VectorIterator, ptr %6, i64 0, i32 1
+  store i64 %.fca.1.extract11, ptr %.fca.1.gep12, align 8
   %63 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr nonnull %6) #3
   br i1 %63, label %foreach.body.L45, label %foreach.exit.L45
 
@@ -282,11 +282,11 @@ assert.then.L50:                                  ; preds = %assert.exit.L49
 
 assert.exit.L50:                                  ; preds = %assert.exit.L49
   %78 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr nonnull %vi) #3
-  %.fca.0.extract4 = extractvalue %struct.VectorIterator %78, 0
-  store ptr %.fca.0.extract4, ptr %7, align 8
-  %.fca.1.extract6 = extractvalue %struct.VectorIterator %78, 1
-  %.fca.1.gep7 = getelementptr inbounds %struct.VectorIterator, ptr %7, i64 0, i32 1
-  store i64 %.fca.1.extract6, ptr %.fca.1.gep7, align 8
+  %.fca.0.extract5 = extractvalue %struct.VectorIterator %78, 0
+  store ptr %.fca.0.extract5, ptr %7, align 8
+  %.fca.1.extract7 = extractvalue %struct.VectorIterator %78, 1
+  %.fca.1.gep8 = getelementptr inbounds %struct.VectorIterator, ptr %7, i64 0, i32 1
+  store i64 %.fca.1.extract7, ptr %.fca.1.gep8, align 8
   %79 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr nonnull %7) #3
   br i1 %79, label %foreach.body.L53, label %foreach.exit.L53
 

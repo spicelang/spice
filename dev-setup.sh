@@ -10,12 +10,12 @@ colored_echo() {
 colored_echo "[Step 1] Installing dependencies via Linux packages (Could take a while) ... "
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo apt update -y
-sudo apt-get install -y cmake make ninja-build valgrind ccache uuid-dev openjdk-11-jre-headless
+sudo apt-get install -y cmake make ninja-build valgrind ccache uuid-dev pkg-config openjdk-11-jre-headless
 colored_echo "done."
 
 # Clone LLVM
 colored_echo "[Step 2] Cloning LLVM (Could take a while) ... "
-git clone --depth 1 --branch llvmorg-17.0.0-rc1 https://github.com/llvm/llvm-project llvm
+git clone --depth 1 --branch llvmorg-17.0.0-rc2 https://github.com/llvm/llvm-project llvm
 colored_echo "done."
 
 # Build LLVM
@@ -23,7 +23,7 @@ colored_echo "[Step 3] Building LLVM (Could take a whole while, please be patien
 mkdir ./llvm/build-release 2>/dev/null
 (
   cd ./llvm/build-release || exit
-  cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -fuse-ld=lld" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
   cmake --build .
 )
 colored_echo "done."

@@ -183,13 +183,17 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
   if (is(TY_ENUM))
     return llvm::Type::getInt32Ty(context);
 
-  if (isPtr() || isRef() || (isArray() && getArraySize() == 0) || isOneOf({TY_FUNCTION, TY_PROCEDURE}))
-    return static_cast<llvm::Type *>(llvm::PointerType::get(context, 0));
+  if (isPtr() || isRef() || (isArray() && getArraySize() == 0))
+    return llvm::PointerType::get(context, 0);
+
+  if (isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    llvm::PointerType *ptrTy = llvm::PointerType::get(context, 0);
+    return llvm::StructType::get(context, {ptrTy, ptrTy});
+  }
 
   if (isArray()) {
     llvm::Type *containedType = getContainedTy().toLLVMType(context, accessScope);
-    llvm::ArrayType *arrayType = llvm::ArrayType::get(containedType, getArraySize());
-    return static_cast<llvm::Type *>(arrayType);
+    return llvm::ArrayType::get(containedType, getArraySize());
   }
 
   throw CompilerError(UNHANDLED_BRANCH, "Cannot determine LLVM type of " + getName(true)); // GCOVR_EXCL_LINE

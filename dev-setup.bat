@@ -27,14 +27,14 @@ echo done.
 
 REM - Clone LLVM
 echo [Step 2] Cloning LLVM (Could take a while) ...
-git clone --depth 1 --branch llvmorg-17.0.0-rc1 https://github.com/llvm/llvm-project llvm
+git clone --depth 1 --branch llvmorg-17.0.0-rc2 https://github.com/llvm/llvm-project llvm
 echo done.
 
 REM - Build LLVM
 echo [Step 3] Building LLVM (Could take a whole while, please be patient) ...
 mkdir .\llvm\build-release
 pushd .\llvm\build-release
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -fuse-ld=lld" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
 cmake --build .
 popd
 echo done.

@@ -1,3 +1,5 @@
+import "std/os/os";
+
 // Generic types
 type T bool|string|int|long|short;
 
