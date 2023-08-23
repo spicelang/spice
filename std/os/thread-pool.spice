@@ -1,7 +1,8 @@
 import "std/os/thread";
 import "std/data/queue";
-import "std/data/vector";
 import "std/os/system";
+import "std/os/cpu";
+import "std/runtime/iterator_rt";
 
 /**
  * A thread pool that can be used to run multiple jobs in parallel.
@@ -25,17 +26,30 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
     this.queuedJobs = Queue<p()>();
     this.workerThreadCount = workerThreadCount > 0s ? workerThreadCount : (unsigned short) getCPUCoreCount();
     this.runningJobs = 0s;
+}
 
+/**
+ * Destroy the thread pool.
+ */
+public p ThreadPool.dtor() {
+    this.join();
+}
+
+/**
+ * Start the thread pool.
+ */
+public p ThreadPool.start() {
     p() workerRoutine = p() {
-        p() task;
-        while (true) {
-            if !this.stopRequested { break; }
-            /*if this.paused { continue; }
-            task = this.queuedJobs.pop();
-            this.runningJobs++;
-            task();
-            this.runningJobs--;*/
-        }
+        do {
+            if !this.paused & !this.queuedJobs.isEmpty() {
+                p() task = this.queuedJobs.pop();
+                printf("Worker %d took job\n", getThreadId());
+                this.runningJobs++;
+                task();
+                this.runningJobs--;
+            }
+            yield();
+        } while (!this.stopRequested);
     };
 
     // Create worker threads
@@ -47,19 +61,13 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
 }
 
 /**
- * Destroy the thread pool.
- */
-public p ThreadPool.dtor() {
-    this.join();
-}
-
-/**
  * Stop the thread pool. This will wait for all running jobs to finish.
  */
 public p ThreadPool.join() {
-    // Join worker threads
-    for (unsigned short i = 0s; i < this.workerThreadCount; i++) {
-        Thread& workerThread = this.workerThreads.get((unsigned int) i);
+    // Stop worker threads
+    this.stopRequested = true;
+    // Wait for all worker threads to terminate
+    foreach (const Thread& workerThread : iterate(this.workerThreads)) {
         workerThread.join();
     }
 }

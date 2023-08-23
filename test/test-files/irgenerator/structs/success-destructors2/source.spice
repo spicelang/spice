@@ -10,4 +10,6 @@ f<int> main() {
 
 p Vector.dtor() {
     printf("Destructor called!");
+    assert this.field1 == true;
+    assert this.field2 == "Test";
 }

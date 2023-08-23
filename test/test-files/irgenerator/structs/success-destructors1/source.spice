@@ -5,6 +5,8 @@ type Vector struct {
 
 p Vector.dtor() {
     printf("Destructor called!");
+    assert this.field1 == true;
+    assert this.field2 == "Test";
 }
 
 f<int> main() {

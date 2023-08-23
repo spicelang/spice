@@ -463,13 +463,14 @@ void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor, cons
   llvm::Value *structPtr;
   if (entry->isField()) {
     // Take 'this' var as base pointer
-    SymbolTableEntry *thisVar = currentScope->lookupStrict(THIS_VARIABLE_NAME);
+    const SymbolTableEntry *thisVar = currentScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisVar != nullptr);
-    llvm::Value *baseAddress = thisVar->getAddress();
+    assert(thisVar->getType().isPtr() && thisVar->getType().getContainedTy().is(TY_STRUCT));
+    llvm::Type *thisType = thisVar->getType().getContainedTy().toLLVMType(context, currentScope);
+    llvm::Value *thisPtr = builder.CreateLoad(builder.getPtrTy(), thisVar->getAddress());
     // Add field offset
-    llvm::Type *fieldType = entry->getType().toLLVMType(context, currentScope);
     llvm::ArrayRef<llvm::Value *> indices = {builder.getInt32(0), builder.getInt32(entry->orderIndex)};
-    structPtr = builder.CreateInBoundsGEP(fieldType, baseAddress, indices);
+    structPtr = builder.CreateInBoundsGEP(thisType, thisPtr, indices);
   } else {
     structPtr = entry->getAddress();
   }
