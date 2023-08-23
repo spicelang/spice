@@ -16,7 +16,7 @@ class ASTNode;
 class ConstantNode;
 
 #define ERROR_MESSAGE_CONTEXT 20
-const char *const RESERVED_KEYWORDS[8] = {"new", "switch", "case", "yield", "stash", "pick", "sync", "class"};
+const char *const RESERVED_KEYWORDS[] = {"new", "switch", "case", "stash", "pick", "sync", "class"};
 const char *const MEMBER_ACCESS_TOKEN = ".";
 const char *const SCOPE_ACCESS_TOKEN = "::";
 

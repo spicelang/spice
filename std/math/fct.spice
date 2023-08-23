@@ -31,6 +31,28 @@ public inline f<Numeric> abs<Numeric>(Numeric input) {
 }
 
 /**
+ * Calculate the maximum of two inputs
+ *
+ * @param input1 First input
+ * @param input2 Second input
+ * @return Maximum of inputs
+ */
+public inline f<Numeric> max<Numeric>(Numeric input1, Numeric input2) {
+    return input1 > input2 ? input1 : input2;
+}
+
+/**
+ * Calculate the minimum of two inputs
+ *
+* @param input1 First input
+* @param input2 Second input
+* @return Minimum of inputs
+ */
+public inline f<Numeric> min<Numeric>(Numeric input1, Numeric input2) {
+    return input1 < input2 ? input1 : input2;
+}
+
+/**
  * Round the input number down
  *
  * @param input Intput number
