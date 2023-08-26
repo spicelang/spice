@@ -9,7 +9,9 @@ type Pthread_attr_t struct {
 }
 
 // Link external functions
-ext f<int> pthread_create(Pthread_t* /*thread*/, Pthread_attr_t* /*attr*/, p() /*start_routine*/, byte* /*arg*/);
+// Here we use a little trick to pass the arguments:
+// Spice represents the procedure type as { ptr, ptr } struct, but the pthread_create accepts ptr, ptr.
+ext f<int> pthread_create(Pthread_t* /*thread*/, Pthread_attr_t* /*attr*/, p() /*start_routine + arg*/);
 ext f<int> pthread_join(Pthread_t /*thread*/, byte** /*retval*/);
 ext f<Pthread_t> pthread_self();
 
@@ -29,7 +31,7 @@ public p Thread.ctor(p() threadRoutine) {
  * Start the thread
  */
 public p Thread.run() {
-    pthread_create(&this.threadId, nil<Pthread_attr_t*>, this.threadRoutine, nil<byte*>);
+    pthread_create(&this.threadId, nil<Pthread_attr_t*>, this.threadRoutine);
 }
 
 /**

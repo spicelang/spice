@@ -51,8 +51,7 @@ std::string Struct::getSignature(const std::string &name, const std::vector<Symb
  * @return Substantiated generics or not
  */
 bool Struct::hasSubstantiatedGenerics() const {
-  return std::none_of(templateTypes.begin(), templateTypes.end(),
-                      [](const GenericType &genericType) { return genericType.hasAnyGenericParts(); });
+  return std::ranges::none_of(templateTypes, [](const GenericType &genericType) { return genericType.hasAnyGenericParts(); });
 }
 
 /**

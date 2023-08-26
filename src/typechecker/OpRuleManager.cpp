@@ -564,7 +564,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
                                                             const std::array<SymbolType, N> &op, size_t opIdx) {
   Scope *calleeParentScope = nullptr;
   Function *callee = nullptr;
-  for (auto &[_, sourceFile] : typeChecker->resourceManager.sourceFiles) {
+  for (const auto &[_, sourceFile] : typeChecker->resourceManager.sourceFiles) {
     // Check if there is a registered operator function
     if (!sourceFile->getNameRegistryEntry(fctName))
       continue;

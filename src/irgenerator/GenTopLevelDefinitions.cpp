@@ -130,6 +130,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
   manIdx = 0; // Reset the symbolTypeIndex
   for (const Function *manifestation : node->fctManifestations) {
     assert(manifestation->entry != nullptr);
+    assert(manifestation->alreadyTypeChecked);
 
     // Check if the manifestation is substantiated
     if (!manifestation->isFullySubstantiated()) {
@@ -180,9 +181,9 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         const SymbolType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
-          SymbolType paramSymbolType = paramSymbol->getType();
-          paramSymbolType.setHasLambdaCaptures(true);
-          paramSymbol->updateType(paramSymbolType, true);
+          SymbolType paramSymbolSymbolType = paramSymbol->getType();
+          paramSymbolSymbolType.setHasLambdaCaptures(true);
+          paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
         llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
@@ -296,6 +297,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
   manIdx = 0; // Reset the symbolTypeIndex
   for (const Function *manifestation : node->procManifestations) {
     assert(manifestation->entry != nullptr);
+    assert(manifestation->alreadyTypeChecked);
 
     // Check if the manifestation is substantiated
     if (!manifestation->isFullySubstantiated()) {
@@ -347,9 +349,9 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         const SymbolType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
-          SymbolType paramSymbolType = paramSymbol->getType();
-          paramSymbolType.setHasLambdaCaptures(true);
-          paramSymbol->updateType(paramSymbolType, true);
+          SymbolType paramSymbolSymbolType = paramSymbol->getType();
+          paramSymbolSymbolType.setHasLambdaCaptures(true);
+          paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
         llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);

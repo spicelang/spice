@@ -49,8 +49,7 @@ std::string Interface::getSignature(const std::string &name, const std::vector<S
  * @return Substantiated generics or not
  */
 bool Interface::hasSubstantiatedGenerics() const {
-  return std::none_of(templateTypes.begin(), templateTypes.end(),
-                      [](const GenericType &genericType) { return genericType.hasAnyGenericParts(); });
+  return std::ranges::none_of(templateTypes, [](const GenericType &genericType) { return genericType.hasAnyGenericParts(); });
 }
 
 /**

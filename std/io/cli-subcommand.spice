@@ -79,11 +79,6 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
     return EXIT_CODE_SUCCESS; // Parsing was successful, return success exit code
 }
 
-public f<CliSubcommand&> CliSubcommand.addSubcommand(string name, string description) {
-    this.subcommands.pushBack(CliSubcommand(this, name, description));
-    return this.subcommands.back();
-}
-
 public f<string> CliSubcommand.getName() {
     return this.name;
 }
@@ -107,8 +102,41 @@ public p CliSubcommand.allowUnknownOptions() {
     }
 }
 
-public p CliSubcommand.addOption<T>(string name, T& targetVariable, string description) {
-    this.options.pushBack(CliOption<T>(name, targetVariable, description));
+public f<CliSubcommand&> CliSubcommand.addSubcommand(string name, string description) {
+    this.subcommands.pushBack(CliSubcommand(this, name, description));
+    return this.subcommands.back();
+}
+
+public p CliSubcommand.addOption(string name, string& targetVariable, string description) {
+    this.stringOptions.pushBack(CliOption<string>(name, targetVariable, description));
+}
+
+public p CliSubcommand.addOption(string name, p(string&) callback, string description) {
+    this.stringOptions.pushBack(CliOption<string>(name, callback, description));
+}
+
+public p CliSubcommand.addOption(string name, int& targetVariable, string description) {
+    this.intOptions.pushBack(CliOption<int>(name, targetVariable, description));
+}
+
+public p CliSubcommand.addOption(string name, p(int&) callback, string description) {
+    this.intOptions.pushBack(CliOption<int>(name, callback, description));
+}
+
+public p CliSubcommand.addOption(string name, long& targetVariable, string description) {
+    this.longOptions.pushBack(CliOption<long>(name, targetVariable, description));
+}
+
+public p CliSubcommand.addOption(string name, p(long&) callback, string description) {
+    this.longOptions.pushBack(CliOption<long>(name, callback, description));
+}
+
+public p CliSubcommand.addOption(string name, short& targetVariable, string description) {
+    this.shortOptions.pushBack(CliOption<short>(name, targetVariable, description));
+}
+
+public p CliSubcommand.addOption(string name, p(short&) callback, string description) {
+    this.shortOptions.pushBack(CliOption<short>(name, callback, description));
 }
 
 public p CliSubcommand.addFlag(string name, bool& targetVariable, string description) {

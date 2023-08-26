@@ -680,8 +680,7 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
 }
 
 bool SourceFile::haveAllDependantsBeenTypeChecked() const {
-  return std::all_of(dependants.begin(), dependants.end(),
-                     [=](const SourceFile *dependant) { return dependant->typeCheckerRuns >= 1; });
+  return std::ranges::all_of(dependants, [](const SourceFile *dependant) { return dependant->typeCheckerRuns >= 1; });
 }
 
 /**

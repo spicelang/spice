@@ -17,16 +17,13 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
 
   // Change to function body scope
   currentScope = node->fctScope;
-
   // Visit statements in new scope
   visit(node->body());
-
   // Leave main function body scope
   currentScope = rootScope;
 
   // Set to type-checked
   typeCheckedMainFct = true;
-
   return nullptr;
 }
 
