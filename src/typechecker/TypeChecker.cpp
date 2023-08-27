@@ -1326,7 +1326,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here")
 
   // Check if is an imported variable
-  if (accessScope->isImportedBy(currentScope)) {
+  if (accessScope->isImportedBy(rootScope)) {
     // Check if the entry is public
     if (varEntry->scope->type != SCOPE_ENUM && !varEntry->getType().isPublic())
       SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility")
@@ -1515,7 +1515,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     }
 
     // Check if we need to request a re-visit, because the function body was not type-checked yet
-    if (!data.callee->alreadyTypeChecked && !data.callee->external)
+    const bool isCallToImportedSourceFile = data.callee->entry->scope->isImportedBy(rootScope);
+    if (!data.callee->alreadyTypeChecked && !isCallToImportedSourceFile)
       reVisitRequested = true;
 
     // Get function entry from function object

@@ -34,12 +34,12 @@ public:
   RuntimeModuleManager(const RuntimeModuleManager &) = delete;
 
   // Public methods
-  SourceFile *requestModule(SourceFile *sourceFile, RuntimeModule requestedModule);
+  SourceFile *requestModule(SourceFile *parentSourceFile, RuntimeModule requestedModule);
   [[nodiscard]] bool isModuleAvailable(RuntimeModule requestedModule) const;
 
 private:
   // Private methods
-  bool addModule(SourceFile *parentSourceFile, RuntimeModule requestedModule);
+  SourceFile *loadModule(SourceFile *parentSourceFile, RuntimeModule requestedModule);
   static ModuleNamePair resolveNamePair(RuntimeModule requestedModule);
 
   // Private members

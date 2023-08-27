@@ -130,17 +130,10 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
   manIdx = 0; // Reset the symbolTypeIndex
   for (const Function *manifestation : node->fctManifestations) {
     assert(manifestation->entry != nullptr);
-    assert(manifestation->alreadyTypeChecked);
 
-    // Check if the manifestation is substantiated
-    if (!manifestation->isFullySubstantiated()) {
-      manIdx++; // Increment symbolTypeIndex
-      continue;
-    }
-
-    // Do not generate this manifestation if it is private and used by nobody
+    // Check if the manifestation is substantiated or not public and not used by anybody
     const bool isPublic = manifestation->entry->getType().isPublic();
-    if (!isPublic && !manifestation->used) {
+    if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
     }
@@ -297,20 +290,14 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
   manIdx = 0; // Reset the symbolTypeIndex
   for (const Function *manifestation : node->procManifestations) {
     assert(manifestation->entry != nullptr);
-    assert(manifestation->alreadyTypeChecked);
 
-    // Check if the manifestation is substantiated
-    if (!manifestation->isFullySubstantiated()) {
-      manIdx++; // Increment symbolTypeIndex
-      continue;
-    }
-
-    // Do not generate this manifestation if it is private and used by nobody
+    // Check if the manifestation is substantiated or not public and not used by anybody
     const bool isPublic = manifestation->entry->getType().isPublic();
-    if (!isPublic && !manifestation->used) {
+    if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
     }
+    assert(manifestation->alreadyTypeChecked);
 
     // Change to struct scope
     if (manifestation->isMethod()) {

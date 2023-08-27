@@ -30,8 +30,7 @@ llvm::Function *StdFunctionManager::getExitFct() const {
 
 llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
   llvm::Type *ptrTy = builder.getPtrTy();
-  llvm::ArrayRef<llvm::Type *> paramList = {ptrTy, ptrTy, builder.getInt64Ty()};
-  llvm::Function *memcpyFct = llvm::Intrinsic::getDeclaration(module, llvm::Intrinsic::memcpy, paramList);
+  llvm::Function *memcpyFct = getProcedure("llvm.memcpy.p0.p0.i64", {ptrTy, ptrTy, builder.getInt64Ty(), builder.getInt1Ty()});
   // Set attributes
   memcpyFct->addFnAttr(llvm::Attribute::NoCallback);
   memcpyFct->addFnAttr(llvm::Attribute::NoFree);
@@ -42,8 +41,7 @@ llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
 
 llvm::Function *StdFunctionManager::getMemcmpIntrinsic() const {
   llvm::Type *ptrTy = builder.getPtrTy();
-  llvm::ArrayRef<llvm::Type *> paramList = {ptrTy, ptrTy, builder.getInt64Ty()};
-  llvm::Function *memcmpFct = getFunction("memcmp", builder.getInt32Ty(), paramList);
+  llvm::Function *memcmpFct = getFunction("memcmp", builder.getInt32Ty(), {ptrTy, ptrTy, builder.getInt64Ty()});
   // Set attributes
   memcmpFct->addFnAttr(llvm::Attribute::NoUnwind);
   return memcmpFct;

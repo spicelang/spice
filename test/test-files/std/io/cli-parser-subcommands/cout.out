@@ -1,0 +1,12 @@
+This is a simple test program
+
+Usage: .\source.exe [options]
+
+Subcommands:
+greet                    Greet someone                                                                        
+
+Flags:
+--version                Prints the version of the application                                                
+--help,-h                Print this help message                                                              
+
+Copyright (c) Marc Auberer 2021-2023
