@@ -197,7 +197,6 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   llvm::Value *result;
   if (data.isFctPtrCall()) {
     // Get entry to load the function pointer
-    SymbolTableEntry *firstFragEntry = currentScope->lookup(node->functionNameFragments.front());
     assert(firstFragEntry != nullptr);
     SymbolType firstFragType = firstFragEntry->getType();
     if (!fctPtr)

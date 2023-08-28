@@ -26,6 +26,9 @@ public:
   // Public methods
   void initialize(const std::string &sourceFileName, std::filesystem::path sourceFileDir);
   void generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc, bool isLambda = false);
+  void concludeFunctionDebugInfo();
+  void pushLexicalBlock(const ASTNode *node);
+  void popLexicalBlock();
   llvm::DICompositeType *generateCaptureStructDebugInfo(const Function *spiceFunc);
   void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
   void generateGlobalStringDebugInfo(llvm::GlobalVariable *global, const std::string &name, size_t length,
@@ -33,7 +36,6 @@ public:
   void generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, const size_t argNumber = SIZE_MAX,
                                  bool moveToPrev = false);
   void setSourceLocation(const ASTNode *node);
-  void concludeFunctionDebugInfo();
   void finalize();
 
 private:

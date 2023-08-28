@@ -1,3 +1,6 @@
+// External declarations
+ext f<long> strtol(string, char**, int);
+
 // Converts a string to a double
 public f<double> toDouble(string input) {
     // ToDo: implement
@@ -5,61 +8,31 @@ public f<double> toDouble(string input) {
 }
 
 // Converts a string to an int
-public f<int> toInt(string input) {
-    if input == "" {
-        return 0;
-    }
-
-    bool neg = false;
-
-
-    // ToDo: implement the rest
-    return 0;
+public f<int> toInt(string input, int base = 10) {
+    return (int) toLong(input, base);
 }
 
 // Converts a string to a short
-public f<short> toShort(string input) {
-    if input == "" {
-        return (short) 0;
-    }
-
-    bool neg = false;
-
-
-    // ToDo: implement the rest
-    return (short) 0;
+public f<short> toShort(string input, int base = 10) {
+    return (short) toLong(input, base);
 }
 
 // Converts a string to a long
-public f<long> toLong(string input) {
-    if input == "" {
-        return (long) 0;
-    }
-
-    bool neg = false;
-
-
-    // ToDo: implement the rest
-    return (long) 0;
+public f<long> toLong(string input, int base = 10) {
+    char* endPtr = nil<char*>;
+    result = strtol(input, &endPtr, base);
+    // Check if the conversion was successful
+    if (((string) endPtr) == input || *endPtr != '\0') { return 0l; }
 }
 
 // Converts a string to a byte
-public f<byte> toByte(string input) {
-    if input == "" {
-        return (byte) 0;
-    }
-
-    bool neg = false;
-
-
-    // ToDo: implement the rest
-    return (byte) 0;
+public f<byte> toByte(string input, int base = 10) {
+    return (byte) ((int) toLong(input, base));
 }
 
 // Converts a string to a char
 public f<char> toChar(string input) {
-    // ToDo: Implement
-    return '0';
+    return input[0];
 }
 
 // Converts a string to a bool

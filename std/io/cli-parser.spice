@@ -4,20 +4,15 @@ import "std/io/cli-subcommand";
 type T bool|string|int|long|short;
 
 public type CliParser struct {
-    string versionString = "v0.0.1"
     CliSubcommand rootSubcommand
 }
 
 public p CliParser.ctor(string appName, string appDescription = "") {
-    this.rootSubcommand = CliSubcommand(nil<CliSubcommand*>, appName, appDescription);
-    // Add version flag
-    this.rootSubcommand.addFlag("--version", p(bool& _) {
-        printf("%s\n", this.versionString);
-    }, "Prints the version of the application");
+    this.rootSubcommand = CliSubcommand(nil<CliSubcommand*>, "v0.1.0", appName, appDescription);
 }
 
 public p CliParser.setVersion(string versionString) {
-    this.versionString = versionString;
+    this.rootSubcommand.setVersion(versionString);
 }
 
 public p CliParser.setFooter(string footer) {

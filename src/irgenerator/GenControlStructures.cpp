@@ -13,6 +13,7 @@ std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockDefNode *node) {
 
   // Change scope
   changeToScope(node->bodyScope, SCOPE_UNSAFE_BODY);
+  diGenerator.pushLexicalBlock(node);
 
   // Visit instructions in the block
   visit(node->body());
@@ -20,6 +21,7 @@ std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockDefNode *node) {
   // Change scope back
   currentScope = node->bodyScope->parent;
   assert(currentScope != nullptr);
+  diGenerator.popLexicalBlock();
 
   return nullptr;
 }
@@ -36,6 +38,7 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
 
   // Change scope
   changeToScope(node->bodyScope, SCOPE_FOR_BODY);
+  diGenerator.pushLexicalBlock(node);
 
   // Save the blocks for break and continue
   breakBlocks.push_back(bExit);
@@ -79,6 +82,7 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   // Change scope back
   currentScope = node->bodyScope->parent;
   assert(currentScope != nullptr);
+  diGenerator.popLexicalBlock();
 
   return nullptr;
 }
@@ -95,6 +99,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Change scope
   changeToScope(node->bodyScope, SCOPE_FOREACH_BODY);
+  diGenerator.pushLexicalBlock(node);
 
   // Save the blocks for break and continue
   breakBlocks.push_back(bExit);
@@ -197,6 +202,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Change scope back
   currentScope = node->bodyScope->parent;
   assert(currentScope != nullptr);
+  diGenerator.popLexicalBlock();
 
   return nullptr;
 }
@@ -212,6 +218,7 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
 
   // Change scope
   changeToScope(node->bodyScope, SCOPE_WHILE_BODY);
+  diGenerator.pushLexicalBlock(node);
 
   // Save the blocks for break and continue
   breakBlocks.push_back(bExit);
@@ -246,6 +253,7 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   // Change scope back
   currentScope = node->bodyScope->parent;
   assert(currentScope != nullptr);
+  diGenerator.popLexicalBlock();
 
   return nullptr;
 }
@@ -261,6 +269,7 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
 
   // Change scope
   changeToScope(node->bodyScope, SCOPE_WHILE_BODY);
+  diGenerator.pushLexicalBlock(node);
 
   // Save the blocks for break and continue
   breakBlocks.push_back(bExit);
@@ -295,6 +304,7 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   // Change scope back
   currentScope = node->bodyScope->parent;
   assert(currentScope != nullptr);
+  diGenerator.popLexicalBlock();
 
   return nullptr;
 }
@@ -310,6 +320,7 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
 
   // Change scope
   changeToScope(node->thenBodyScope, SCOPE_IF_ELSE_BODY);
+  diGenerator.pushLexicalBlock(node);
 
   // Retrieve condition value
   llvm::Value *condValue = resolveValue(node->condition());
@@ -326,6 +337,7 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   // Change scope back
   currentScope = node->thenBodyScope->parent;
   assert(currentScope != nullptr);
+  diGenerator.popLexicalBlock();
 
   if (node->elseStmt()) {
     // Switch to else block
@@ -351,6 +363,7 @@ std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
   } else { // It is an else branch
     // Change scope
     changeToScope(node->elseBodyScope, SCOPE_IF_ELSE_BODY);
+    diGenerator.pushLexicalBlock(node);
 
     // Generate IR for nested statements
     visit(node->body());
@@ -358,6 +371,7 @@ std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
     // Change scope back
     currentScope = node->elseBodyScope->parent;
     assert(currentScope != nullptr);
+    diGenerator.popLexicalBlock();
   }
 
   return nullptr;
@@ -369,7 +383,7 @@ std::any IRGenerator::visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node
   // Change scope
   node->bodyScope->parent = currentScope;                           // Needed for nested scopes in generic functions
   node->bodyScope->symbolTable.parent = &currentScope->symbolTable; // Needed for nested scopes in generic functions
-  currentScope = node->bodyScope;
+  changeToScope(node->bodyScope, SCOPE_ANONYMOUS_BLOCK_BODY);
   assert(currentScope != nullptr);
 
   // Visit instructions in the block
@@ -378,6 +392,7 @@ std::any IRGenerator::visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node
   // Change scope back
   currentScope = node->bodyScope->parent;
   assert(currentScope != nullptr);
+  diGenerator.popLexicalBlock();
 
   return nullptr;
 }

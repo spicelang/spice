@@ -1,7 +1,11 @@
 import "std/io/cli-parser";
 
 type CliOptions struct {
-    string greetName = ""
+    bool sayHi = false
+}
+
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
 }
 
 f<int> main(int argc, string[] argv) {
@@ -10,14 +14,17 @@ f<int> main(int argc, string[] argv) {
     parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
 
     CliOptions options;
-    CliSubcommand& greet = parser.addSubcommand("greet", "Greet someone");
-    greet.addOption("--name", options.greetName, "Name of the person to greet");
+    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--callback", callback, "Call a callback function");
+    parser.addFlag("-cb", p(bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
 
     parser.parse(argc, argv);
 
-    // Greet persion if requested
-    if options.greetName != "" {
-        printf("Hello %s!\n", options.greetName);
+    // Print hi if requested
+    if options.sayHi {
+        printf("Hi!\n");
     }
 }
 
