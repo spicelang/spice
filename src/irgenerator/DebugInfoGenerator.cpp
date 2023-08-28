@@ -141,6 +141,9 @@ void DebugInfoGenerator::concludeFunctionDebugInfo() {
 }
 
 void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
+  if (!irGenerator->cliOptions.generateDebugInfo)
+    return;
+
   const size_t line = node->codeLoc.line;
   const size_t col = node->codeLoc.col;
   llvm::DILexicalBlock* lexicalBlock = diBuilder->createLexicalBlock(lexicalBlocks.top(), diFile, line, col);
@@ -148,6 +151,10 @@ void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
 }
 
 void DebugInfoGenerator::popLexicalBlock() {
+  if (!irGenerator->cliOptions.generateDebugInfo)
+    return;
+
+  assert(!lexicalBlocks.empty());
   lexicalBlocks.pop();
 }
 

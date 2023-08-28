@@ -263,187 +263,187 @@ assert.then.L42:                                  ; preds = %assert.exit.L40
 
 assert.exit.L42:                                  ; preds = %assert.exit.L40
   %72 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr %vi), !dbg !95
-  call void @llvm.dbg.declare(metadata ptr %item, metadata !96, metadata !DIExpression()), !dbg !97
+  call void @llvm.dbg.declare(metadata ptr %item, metadata !97, metadata !DIExpression()), !dbg !98
   store %struct.VectorIterator %72, ptr %10, align 8, !dbg !95
-  br label %foreach.head.L45, !dbg !97
-
-foreach.head.L45:                                 ; preds = %foreach.tail.L45, %assert.exit.L42
-  %73 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %10), !dbg !97
-  br i1 %73, label %foreach.body.L45, label %foreach.exit.L45, !dbg !97
-
-foreach.body.L45:                                 ; preds = %foreach.head.L45
-  %74 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %10), !dbg !97
-  %75 = load i32, ptr %74, align 4, !dbg !97
-  store i32 %75, ptr %item, align 4, !dbg !97
-  %76 = load i32, ptr %item, align 4, !dbg !98
-  %77 = add i32 %76, 1, !dbg !98
-  store i32 %77, ptr %item, align 4, !dbg !98
-  br label %foreach.tail.L45, !dbg !98
-
-foreach.tail.L45:                                 ; preds = %foreach.body.L45
-  call void @_ZN14VectorIteratorIiE4nextEv(ptr %10), !dbg !98
   br label %foreach.head.L45, !dbg !98
 
+foreach.head.L45:                                 ; preds = %foreach.tail.L45, %assert.exit.L42
+  %73 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %10), !dbg !98
+  br i1 %73, label %foreach.body.L45, label %foreach.exit.L45, !dbg !98
+
+foreach.body.L45:                                 ; preds = %foreach.head.L45
+  %74 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %10), !dbg !98
+  %75 = load i32, ptr %74, align 4, !dbg !98
+  store i32 %75, ptr %item, align 4, !dbg !98
+  %76 = load i32, ptr %item, align 4, !dbg !99
+  %77 = add i32 %76, 1, !dbg !99
+  store i32 %77, ptr %item, align 4, !dbg !99
+  br label %foreach.tail.L45, !dbg !99
+
+foreach.tail.L45:                                 ; preds = %foreach.body.L45
+  call void @_ZN14VectorIteratorIiE4nextEv(ptr %10), !dbg !99
+  br label %foreach.head.L45, !dbg !99
+
 foreach.exit.L45:                                 ; preds = %foreach.head.L45
-  %78 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 0), !dbg !99
-  %79 = load i32, ptr %78, align 4, !dbg !100
-  %80 = icmp eq i32 %79, 123, !dbg !100
-  br i1 %80, label %assert.exit.L48, label %assert.then.L48, !dbg !100, !prof !43
+  %78 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 0), !dbg !100
+  %79 = load i32, ptr %78, align 4, !dbg !101
+  %80 = icmp eq i32 %79, 123, !dbg !101
+  br i1 %80, label %assert.exit.L48, label %assert.then.L48, !dbg !101, !prof !43
 
 assert.then.L48:                                  ; preds = %foreach.exit.L45
-  %81 = call i32 (ptr, ...) @printf(ptr @anon.string.16), !dbg !100
-  call void @exit(i32 1), !dbg !100
-  unreachable, !dbg !100
+  %81 = call i32 (ptr, ...) @printf(ptr @anon.string.16), !dbg !101
+  call void @exit(i32 1), !dbg !101
+  unreachable, !dbg !101
 
 assert.exit.L48:                                  ; preds = %foreach.exit.L45
-  %82 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 1), !dbg !101
-  %83 = load i32, ptr %82, align 4, !dbg !102
-  %84 = icmp eq i32 %83, 4321, !dbg !102
-  br i1 %84, label %assert.exit.L49, label %assert.then.L49, !dbg !102, !prof !43
+  %82 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 1), !dbg !102
+  %83 = load i32, ptr %82, align 4, !dbg !103
+  %84 = icmp eq i32 %83, 4321, !dbg !103
+  br i1 %84, label %assert.exit.L49, label %assert.then.L49, !dbg !103, !prof !43
 
 assert.then.L49:                                  ; preds = %assert.exit.L48
-  %85 = call i32 (ptr, ...) @printf(ptr @anon.string.17), !dbg !102
-  call void @exit(i32 1), !dbg !102
-  unreachable, !dbg !102
+  %85 = call i32 (ptr, ...) @printf(ptr @anon.string.17), !dbg !103
+  call void @exit(i32 1), !dbg !103
+  unreachable, !dbg !103
 
 assert.exit.L49:                                  ; preds = %assert.exit.L48
-  %86 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 2), !dbg !103
-  %87 = load i32, ptr %86, align 4, !dbg !104
-  %88 = icmp eq i32 %87, 9876, !dbg !104
-  br i1 %88, label %assert.exit.L50, label %assert.then.L50, !dbg !104, !prof !43
+  %86 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 2), !dbg !104
+  %87 = load i32, ptr %86, align 4, !dbg !105
+  %88 = icmp eq i32 %87, 9876, !dbg !105
+  br i1 %88, label %assert.exit.L50, label %assert.then.L50, !dbg !105, !prof !43
 
 assert.then.L50:                                  ; preds = %assert.exit.L49
-  %89 = call i32 (ptr, ...) @printf(ptr @anon.string.18), !dbg !104
-  call void @exit(i32 1), !dbg !104
-  unreachable, !dbg !104
+  %89 = call i32 (ptr, ...) @printf(ptr @anon.string.18), !dbg !105
+  call void @exit(i32 1), !dbg !105
+  unreachable, !dbg !105
 
 assert.exit.L50:                                  ; preds = %assert.exit.L49
-  %90 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr %vi), !dbg !105
-  call void @llvm.dbg.declare(metadata ptr %item1, metadata !106, metadata !DIExpression()), !dbg !107
-  store %struct.VectorIterator %90, ptr %11, align 8, !dbg !105
-  br label %foreach.head.L53, !dbg !107
+  %90 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr %vi), !dbg !106
+  call void @llvm.dbg.declare(metadata ptr %item1, metadata !108, metadata !DIExpression()), !dbg !109
+  store %struct.VectorIterator %90, ptr %11, align 8, !dbg !106
+  br label %foreach.head.L53, !dbg !109
 
 foreach.head.L53:                                 ; preds = %foreach.tail.L53, %assert.exit.L50
-  %91 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %11), !dbg !107
-  br i1 %91, label %foreach.body.L53, label %foreach.exit.L53, !dbg !107
+  %91 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %11), !dbg !109
+  br i1 %91, label %foreach.body.L53, label %foreach.exit.L53, !dbg !109
 
 foreach.body.L53:                                 ; preds = %foreach.head.L53
-  %92 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %11), !dbg !107
-  store ptr %92, ptr %12, align 8, !dbg !107
-  %93 = load ptr, ptr %12, align 8, !dbg !108
-  %94 = load i32, ptr %93, align 4, !dbg !108
-  %95 = add i32 %94, 1, !dbg !108
-  store i32 %95, ptr %93, align 4, !dbg !108
-  br label %foreach.tail.L53, !dbg !108
+  %92 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %11), !dbg !109
+  store ptr %92, ptr %12, align 8, !dbg !109
+  %93 = load ptr, ptr %12, align 8, !dbg !110
+  %94 = load i32, ptr %93, align 4, !dbg !110
+  %95 = add i32 %94, 1, !dbg !110
+  store i32 %95, ptr %93, align 4, !dbg !110
+  br label %foreach.tail.L53, !dbg !110
 
 foreach.tail.L53:                                 ; preds = %foreach.body.L53
-  call void @_ZN14VectorIteratorIiE4nextEv(ptr %11), !dbg !108
-  br label %foreach.head.L53, !dbg !108
+  call void @_ZN14VectorIteratorIiE4nextEv(ptr %11), !dbg !110
+  br label %foreach.head.L53, !dbg !110
 
 foreach.exit.L53:                                 ; preds = %foreach.head.L53
-  %96 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 0), !dbg !109
-  %97 = load i32, ptr %96, align 4, !dbg !110
-  %98 = icmp eq i32 %97, 124, !dbg !110
-  br i1 %98, label %assert.exit.L56, label %assert.then.L56, !dbg !110, !prof !43
+  %96 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 0), !dbg !111
+  %97 = load i32, ptr %96, align 4, !dbg !112
+  %98 = icmp eq i32 %97, 124, !dbg !112
+  br i1 %98, label %assert.exit.L56, label %assert.then.L56, !dbg !112, !prof !43
 
 assert.then.L56:                                  ; preds = %foreach.exit.L53
-  %99 = call i32 (ptr, ...) @printf(ptr @anon.string.19), !dbg !110
-  call void @exit(i32 1), !dbg !110
-  unreachable, !dbg !110
-
-assert.exit.L56:                                  ; preds = %foreach.exit.L53
-  %100 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 1), !dbg !111
-  %101 = load i32, ptr %100, align 4, !dbg !112
-  %102 = icmp eq i32 %101, 4322, !dbg !112
-  br i1 %102, label %assert.exit.L57, label %assert.then.L57, !dbg !112, !prof !43
-
-assert.then.L57:                                  ; preds = %assert.exit.L56
-  %103 = call i32 (ptr, ...) @printf(ptr @anon.string.20), !dbg !112
+  %99 = call i32 (ptr, ...) @printf(ptr @anon.string.19), !dbg !112
   call void @exit(i32 1), !dbg !112
   unreachable, !dbg !112
 
-assert.exit.L57:                                  ; preds = %assert.exit.L56
-  %104 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 2), !dbg !113
-  %105 = load i32, ptr %104, align 4, !dbg !114
-  %106 = icmp eq i32 %105, 9877, !dbg !114
-  br i1 %106, label %assert.exit.L58, label %assert.then.L58, !dbg !114, !prof !43
+assert.exit.L56:                                  ; preds = %foreach.exit.L53
+  %100 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 1), !dbg !113
+  %101 = load i32, ptr %100, align 4, !dbg !114
+  %102 = icmp eq i32 %101, 4322, !dbg !114
+  br i1 %102, label %assert.exit.L57, label %assert.then.L57, !dbg !114, !prof !43
 
-assert.then.L58:                                  ; preds = %assert.exit.L57
-  %107 = call i32 (ptr, ...) @printf(ptr @anon.string.21), !dbg !114
+assert.then.L57:                                  ; preds = %assert.exit.L56
+  %103 = call i32 (ptr, ...) @printf(ptr @anon.string.20), !dbg !114
   call void @exit(i32 1), !dbg !114
   unreachable, !dbg !114
 
+assert.exit.L57:                                  ; preds = %assert.exit.L56
+  %104 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 2), !dbg !115
+  %105 = load i32, ptr %104, align 4, !dbg !116
+  %106 = icmp eq i32 %105, 9877, !dbg !116
+  br i1 %106, label %assert.exit.L58, label %assert.then.L58, !dbg !116, !prof !43
+
+assert.then.L58:                                  ; preds = %assert.exit.L57
+  %107 = call i32 (ptr, ...) @printf(ptr @anon.string.21), !dbg !116
+  call void @exit(i32 1), !dbg !116
+  unreachable, !dbg !116
+
 assert.exit.L58:                                  ; preds = %assert.exit.L57
-  %108 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr %vi), !dbg !115
-  store %struct.VectorIterator %108, ptr %13, align 8, !dbg !115
-  call void @llvm.dbg.declare(metadata ptr %idx, metadata !116, metadata !DIExpression()), !dbg !118
-  call void @llvm.dbg.declare(metadata ptr %item2, metadata !119, metadata !DIExpression()), !dbg !120
-  store i64 0, ptr %idx, align 8, !dbg !118
-  br label %foreach.head.L60, !dbg !120
+  %108 = call %struct.VectorIterator @"_Z7iterateR35std/iterator/vector-iterator.VectorIiE"(ptr %vi), !dbg !117
+  store %struct.VectorIterator %108, ptr %13, align 8, !dbg !117
+  call void @llvm.dbg.declare(metadata ptr %idx, metadata !119, metadata !DIExpression()), !dbg !121
+  call void @llvm.dbg.declare(metadata ptr %item2, metadata !122, metadata !DIExpression()), !dbg !123
+  store i64 0, ptr %idx, align 8, !dbg !121
+  br label %foreach.head.L60, !dbg !123
 
 foreach.head.L60:                                 ; preds = %foreach.tail.L60, %assert.exit.L58
-  %109 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %13), !dbg !120
-  br i1 %109, label %foreach.body.L60, label %foreach.exit.L60, !dbg !120
+  %109 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %13), !dbg !123
+  br i1 %109, label %foreach.body.L60, label %foreach.exit.L60, !dbg !123
 
 foreach.body.L60:                                 ; preds = %foreach.head.L60
-  %pair3 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr %13), !dbg !120
-  store %struct.Pair %pair3, ptr %pair_addr, align 8, !dbg !120
-  %idx_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 0, !dbg !120
-  %110 = load i64, ptr %idx_addr, align 8, !dbg !120
-  store i64 %110, ptr %idx, align 8, !dbg !120
-  %item_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 1, !dbg !120
-  %111 = load ptr, ptr %item_addr, align 8, !dbg !120
-  store ptr %111, ptr %14, align 8, !dbg !120
-  %112 = load i64, ptr %idx, align 8, !dbg !121
-  %113 = trunc i64 %112 to i32, !dbg !121
-  %114 = load ptr, ptr %14, align 8, !dbg !121
-  %115 = load i32, ptr %114, align 4, !dbg !121
-  %116 = add i32 %115, %113, !dbg !121
-  store i32 %116, ptr %114, align 4, !dbg !121
-  br label %foreach.tail.L60, !dbg !121
+  %pair3 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr %13), !dbg !123
+  store %struct.Pair %pair3, ptr %pair_addr, align 8, !dbg !123
+  %idx_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 0, !dbg !123
+  %110 = load i64, ptr %idx_addr, align 8, !dbg !123
+  store i64 %110, ptr %idx, align 8, !dbg !123
+  %item_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 1, !dbg !123
+  %111 = load ptr, ptr %item_addr, align 8, !dbg !123
+  store ptr %111, ptr %14, align 8, !dbg !123
+  %112 = load i64, ptr %idx, align 8, !dbg !124
+  %113 = trunc i64 %112 to i32, !dbg !124
+  %114 = load ptr, ptr %14, align 8, !dbg !124
+  %115 = load i32, ptr %114, align 4, !dbg !124
+  %116 = add i32 %115, %113, !dbg !124
+  store i32 %116, ptr %114, align 4, !dbg !124
+  br label %foreach.tail.L60, !dbg !124
 
 foreach.tail.L60:                                 ; preds = %foreach.body.L60
-  call void @_ZN14VectorIteratorIiE4nextEv(ptr %13), !dbg !121
-  br label %foreach.head.L60, !dbg !121
+  call void @_ZN14VectorIteratorIiE4nextEv(ptr %13), !dbg !124
+  br label %foreach.head.L60, !dbg !124
 
 foreach.exit.L60:                                 ; preds = %foreach.head.L60
-  %117 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 0), !dbg !122
-  %118 = load i32, ptr %117, align 4, !dbg !123
-  %119 = icmp eq i32 %118, 124, !dbg !123
-  br i1 %119, label %assert.exit.L63, label %assert.then.L63, !dbg !123, !prof !43
+  %117 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 0), !dbg !125
+  %118 = load i32, ptr %117, align 4, !dbg !126
+  %119 = icmp eq i32 %118, 124, !dbg !126
+  br i1 %119, label %assert.exit.L63, label %assert.then.L63, !dbg !126, !prof !43
 
 assert.then.L63:                                  ; preds = %foreach.exit.L60
-  %120 = call i32 (ptr, ...) @printf(ptr @anon.string.22), !dbg !123
-  call void @exit(i32 1), !dbg !123
-  unreachable, !dbg !123
+  %120 = call i32 (ptr, ...) @printf(ptr @anon.string.22), !dbg !126
+  call void @exit(i32 1), !dbg !126
+  unreachable, !dbg !126
 
 assert.exit.L63:                                  ; preds = %foreach.exit.L60
-  %121 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 1), !dbg !124
-  %122 = load i32, ptr %121, align 4, !dbg !125
-  %123 = icmp eq i32 %122, 4323, !dbg !125
-  br i1 %123, label %assert.exit.L64, label %assert.then.L64, !dbg !125, !prof !43
+  %121 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 1), !dbg !127
+  %122 = load i32, ptr %121, align 4, !dbg !128
+  %123 = icmp eq i32 %122, 4323, !dbg !128
+  br i1 %123, label %assert.exit.L64, label %assert.then.L64, !dbg !128, !prof !43
 
 assert.then.L64:                                  ; preds = %assert.exit.L63
-  %124 = call i32 (ptr, ...) @printf(ptr @anon.string.23), !dbg !125
-  call void @exit(i32 1), !dbg !125
-  unreachable, !dbg !125
+  %124 = call i32 (ptr, ...) @printf(ptr @anon.string.23), !dbg !128
+  call void @exit(i32 1), !dbg !128
+  unreachable, !dbg !128
 
 assert.exit.L64:                                  ; preds = %assert.exit.L63
-  %125 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 2), !dbg !126
-  %126 = load i32, ptr %125, align 4, !dbg !127
-  %127 = icmp eq i32 %126, 9879, !dbg !127
-  br i1 %127, label %assert.exit.L65, label %assert.then.L65, !dbg !127, !prof !43
+  %125 = call ptr @_ZN6VectorIiE3getEj(ptr %vi, i32 2), !dbg !129
+  %126 = load i32, ptr %125, align 4, !dbg !130
+  %127 = icmp eq i32 %126, 9879, !dbg !130
+  br i1 %127, label %assert.exit.L65, label %assert.then.L65, !dbg !130, !prof !43
 
 assert.then.L65:                                  ; preds = %assert.exit.L64
-  %128 = call i32 (ptr, ...) @printf(ptr @anon.string.24), !dbg !127
-  call void @exit(i32 1), !dbg !127
-  unreachable, !dbg !127
+  %128 = call i32 (ptr, ...) @printf(ptr @anon.string.24), !dbg !130
+  call void @exit(i32 1), !dbg !130
+  unreachable, !dbg !130
 
 assert.exit.L65:                                  ; preds = %assert.exit.L64
-  %129 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !128
-  call void @_ZN6VectorIiE4dtorEv(ptr %vi), !dbg !128
-  %130 = load i32, ptr %result, align 4, !dbg !128
-  ret i32 %130, !dbg !128
+  %129 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !131
+  call void @_ZN6VectorIiE4dtorEv(ptr %vi), !dbg !131
+  %130 = load i32, ptr %result, align 4, !dbg !131
+  ret i32 %130, !dbg !131
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
@@ -498,7 +498,7 @@ attributes #3 = { cold noreturn nounwind }
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "printf.str.0", linkageName: "printf.str.0", scope: !2, file: !5, line: 67, type: !6, isLocal: true, isDefinition: true)
-!2 = distinct !DICompileUnit(language: 32768, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
+!2 = distinct !DICompileUnit(language: DW_LANG_C17, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
 !3 = !DIFile(filename: "C:\\Users\\I516467\\Documents\\JustForFunGitHubClones\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dgb-info-complex\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dgb-info-complex")
 !4 = !{!0}
 !5 = !DIFile(filename: "source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dgb-info-complex")
@@ -591,37 +591,40 @@ attributes #3 = { cold noreturn nounwind }
 !92 = !DILocation(line: 40, column: 24, scope: !15)
 !93 = !DILocation(line: 41, column: 5, scope: !15)
 !94 = !DILocation(line: 42, column: 13, scope: !15)
-!95 = !DILocation(line: 45, column: 32, scope: !15)
-!96 = !DILocalVariable(name: "item", scope: !15, file: !5, line: 45, type: !18)
-!97 = !DILocation(line: 45, column: 13, scope: !15)
-!98 = !DILocation(line: 46, column: 9, scope: !15)
-!99 = !DILocation(line: 48, column: 19, scope: !15)
-!100 = !DILocation(line: 48, column: 25, scope: !15)
-!101 = !DILocation(line: 49, column: 19, scope: !15)
-!102 = !DILocation(line: 49, column: 25, scope: !15)
-!103 = !DILocation(line: 50, column: 19, scope: !15)
-!104 = !DILocation(line: 50, column: 25, scope: !15)
-!105 = !DILocation(line: 53, column: 33, scope: !15)
-!106 = !DILocalVariable(name: "item", scope: !15, file: !5, line: 53, type: !32)
-!107 = !DILocation(line: 53, column: 13, scope: !15)
-!108 = !DILocation(line: 54, column: 9, scope: !15)
-!109 = !DILocation(line: 56, column: 19, scope: !15)
-!110 = !DILocation(line: 56, column: 25, scope: !15)
-!111 = !DILocation(line: 57, column: 19, scope: !15)
-!112 = !DILocation(line: 57, column: 25, scope: !15)
-!113 = !DILocation(line: 58, column: 19, scope: !15)
-!114 = !DILocation(line: 58, column: 25, scope: !15)
-!115 = !DILocation(line: 60, column: 43, scope: !15)
-!116 = !DILocalVariable(name: "idx", scope: !15, file: !5, line: 60, type: !117)
-!117 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
-!118 = !DILocation(line: 60, column: 13, scope: !15)
-!119 = !DILocalVariable(name: "item", scope: !15, file: !5, line: 60, type: !32)
-!120 = !DILocation(line: 60, column: 23, scope: !15)
-!121 = !DILocation(line: 61, column: 9, scope: !15)
-!122 = !DILocation(line: 63, column: 19, scope: !15)
-!123 = !DILocation(line: 63, column: 25, scope: !15)
-!124 = !DILocation(line: 64, column: 19, scope: !15)
-!125 = !DILocation(line: 64, column: 25, scope: !15)
-!126 = !DILocation(line: 65, column: 19, scope: !15)
-!127 = !DILocation(line: 65, column: 25, scope: !15)
-!128 = !DILocation(line: 67, column: 5, scope: !15)
+!95 = !DILocation(line: 45, column: 32, scope: !96)
+!96 = distinct !DILexicalBlock(scope: !15, file: !5, line: 45, column: 5)
+!97 = !DILocalVariable(name: "item", scope: !96, file: !5, line: 45, type: !18)
+!98 = !DILocation(line: 45, column: 13, scope: !96)
+!99 = !DILocation(line: 46, column: 9, scope: !96)
+!100 = !DILocation(line: 48, column: 19, scope: !15)
+!101 = !DILocation(line: 48, column: 25, scope: !15)
+!102 = !DILocation(line: 49, column: 19, scope: !15)
+!103 = !DILocation(line: 49, column: 25, scope: !15)
+!104 = !DILocation(line: 50, column: 19, scope: !15)
+!105 = !DILocation(line: 50, column: 25, scope: !15)
+!106 = !DILocation(line: 53, column: 33, scope: !107)
+!107 = distinct !DILexicalBlock(scope: !15, file: !5, line: 53, column: 5)
+!108 = !DILocalVariable(name: "item", scope: !107, file: !5, line: 53, type: !32)
+!109 = !DILocation(line: 53, column: 13, scope: !107)
+!110 = !DILocation(line: 54, column: 9, scope: !107)
+!111 = !DILocation(line: 56, column: 19, scope: !15)
+!112 = !DILocation(line: 56, column: 25, scope: !15)
+!113 = !DILocation(line: 57, column: 19, scope: !15)
+!114 = !DILocation(line: 57, column: 25, scope: !15)
+!115 = !DILocation(line: 58, column: 19, scope: !15)
+!116 = !DILocation(line: 58, column: 25, scope: !15)
+!117 = !DILocation(line: 60, column: 43, scope: !118)
+!118 = distinct !DILexicalBlock(scope: !15, file: !5, line: 60, column: 5)
+!119 = !DILocalVariable(name: "idx", scope: !118, file: !5, line: 60, type: !120)
+!120 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
+!121 = !DILocation(line: 60, column: 13, scope: !118)
+!122 = !DILocalVariable(name: "item", scope: !118, file: !5, line: 60, type: !32)
+!123 = !DILocation(line: 60, column: 23, scope: !118)
+!124 = !DILocation(line: 61, column: 9, scope: !118)
+!125 = !DILocation(line: 63, column: 19, scope: !15)
+!126 = !DILocation(line: 63, column: 25, scope: !15)
+!127 = !DILocation(line: 64, column: 19, scope: !15)
+!128 = !DILocation(line: 64, column: 25, scope: !15)
+!129 = !DILocation(line: 65, column: 19, scope: !15)
+!130 = !DILocation(line: 65, column: 25, scope: !15)
+!131 = !DILocation(line: 67, column: 5, scope: !15)
