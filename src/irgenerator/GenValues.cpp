@@ -381,8 +381,8 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
-  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
-  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
+  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
 
   // If there are captures, we pass them in a struct as the first function argument
   const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
@@ -539,7 +539,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   verifyFunction(lambda, node->codeLoc);
 
   // Change back to original scope
-  currentScope = bodyScope->parent;
+  changeToParentScope();
 
   // Captures, create a struct { <fct-ptr>, <capture struct ptr> }
   llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);
@@ -553,8 +553,8 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
-  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
-  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
+  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
 
   // If there are captures, we pass them in a struct as the first function argument
   const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
@@ -698,7 +698,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   verifyFunction(lambda, node->codeLoc);
 
   // Change back to original scope
-  currentScope = bodyScope->parent;
+  changeToParentScope();
 
   // Create a struct { <fct-ptr>, <capture struct ptr> }
   llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);
@@ -712,8 +712,8 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
-  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
-  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
+  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
 
   // If there are captures, we pass them in a struct as the first function argument
   const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
@@ -858,7 +858,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   verifyFunction(lambda, node->codeLoc);
 
   // Change back to original scope
-  currentScope = bodyScope->parent;
+  changeToParentScope();
 
   // Create a struct { <fct-ptr>, <capture struct ptr> }
   llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);

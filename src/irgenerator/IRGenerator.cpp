@@ -602,6 +602,25 @@ void IRGenerator::changeToScope(Scope *scope, const ScopeType scopeType) {
 }
 
 /**
+ * Change to the scope with the given name.
+ *
+ * @param scopeName Name of the scope to change to
+ * @param scopeType Expected type of the given scope
+ */
+void IRGenerator::changeToScope(const std::string &scopeName, const ScopeType scopeType) {
+  assert(!scopeName.empty());
+  changeToScope(currentScope->getChildScope(scopeName), scopeType);
+}
+
+/**
+ * Change to the parent scope of the current.
+ */
+void IRGenerator::changeToParentScope() {
+  assert(currentScope->parent != nullptr);
+  currentScope = currentScope->parent;
+}
+
+/**
  * Returns the operator function list for the current manifestation and the given node
  *
  * @param node Node to retrieve the op fct pointer list from

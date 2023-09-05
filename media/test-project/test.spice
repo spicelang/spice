@@ -1,37 +1,4 @@
-import "std/iterator/iterable";
-
-type T short|int|long;
-
-type MockIterator<T> struct : Iterable<T> {
-    T item
-    unsigned long cursor
-}
-
-p MockIterator.ctor() {
-    this.cursor = 0l;
-}
-
-f<T&> MockIterator.get() {
-    return this.item;
-}
-
-f<Pair<unsigned long, T&>> MockIterator.getIdx() {
-    return Pair<unsigned long, T&>(0l, this.item);
-}
-
-f<bool> MockIterator.isValid() {
-    return true;
-}
-
-p MockIterator.next() {}
-
-f<int> main() {
-    foreach dyn item : MockIterator<short>() {
-        printf("Demo item: %d\n", item);
-    }
-}
-
-/*import "std/io/cli-parser";
+import "std/io/cli-parser";
 
 type CliOptions struct {
     bool sayHi = false
@@ -59,7 +26,7 @@ f<int> main(int argc, string[] argv) {
     if options.sayHi {
         printf("Hi!\n");
     }
-}*/
+}
 
 /*import "std/os/thread-pool";
 import "std/time/delay";
