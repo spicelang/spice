@@ -564,7 +564,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
                                                             const std::array<SymbolType, N> &op, size_t opIdx) {
   Scope *calleeParentScope = nullptr;
   Function *callee = nullptr;
-  for (auto &[_, sourceFile] : typeChecker->resourceManager.sourceFiles) {
+  for (const auto &[_, sourceFile] : typeChecker->resourceManager.sourceFiles) {
     // Check if there is a registered operator function
     if (!sourceFile->getNameRegistryEntry(fctName))
       continue;
@@ -592,7 +592,8 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   opFctPointers.at(opIdx) = callee;
 
   // Check if we need to request a re-visit, because the function body was not type-checked yet
-  if (!callee->alreadyTypeChecked)
+  const bool isCallToImportedSourceFile = callee->entry->scope->isImportedBy(typeChecker->rootScope);
+  if (!callee->alreadyTypeChecked && !isCallToImportedSourceFile)
     typeChecker->reVisitRequested = true;
 
   // Check if the called function has sufficient visibility

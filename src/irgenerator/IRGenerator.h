@@ -135,6 +135,8 @@ private:
   void materializeConstant(LLVMExprResult &exprResult);
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
   void changeToScope(Scope *scope, ScopeType scopeType);
+  void changeToScope(const std::string &scopeName, ScopeType scopeType);
+  void changeToParentScope();
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
   llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Value *lambda);
 

@@ -131,15 +131,9 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
   for (const Function *manifestation : node->fctManifestations) {
     assert(manifestation->entry != nullptr);
 
-    // Check if the manifestation is substantiated
-    if (!manifestation->isFullySubstantiated()) {
-      manIdx++; // Increment symbolTypeIndex
-      continue;
-    }
-
-    // Do not generate this manifestation if it is private and used by nobody
+    // Check if the manifestation is substantiated or not public and not used by anybody
     const bool isPublic = manifestation->entry->getType().isPublic();
-    if (!isPublic && !manifestation->used) {
+    if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
     }
@@ -180,9 +174,9 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         const SymbolType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
-          SymbolType paramSymbolType = paramSymbol->getType();
-          paramSymbolType.setHasLambdaCaptures(true);
-          paramSymbol->updateType(paramSymbolType, true);
+          SymbolType paramSymbolSymbolType = paramSymbol->getType();
+          paramSymbolSymbolType.setHasLambdaCaptures(true);
+          paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
         llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
@@ -297,18 +291,13 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
   for (const Function *manifestation : node->procManifestations) {
     assert(manifestation->entry != nullptr);
 
-    // Check if the manifestation is substantiated
-    if (!manifestation->isFullySubstantiated()) {
-      manIdx++; // Increment symbolTypeIndex
-      continue;
-    }
-
-    // Do not generate this manifestation if it is private and used by nobody
+    // Check if the manifestation is substantiated or not public and not used by anybody
     const bool isPublic = manifestation->entry->getType().isPublic();
-    if (!isPublic && !manifestation->used) {
+    if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
     }
+    assert(manifestation->alreadyTypeChecked);
 
     // Change to struct scope
     if (manifestation->isMethod()) {
@@ -347,9 +336,9 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         const SymbolType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
-          SymbolType paramSymbolType = paramSymbol->getType();
-          paramSymbolType.setHasLambdaCaptures(true);
-          paramSymbol->updateType(paramSymbolType, true);
+          SymbolType paramSymbolSymbolType = paramSymbol->getType();
+          paramSymbolSymbolType.setHasLambdaCaptures(true);
+          paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
         llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);

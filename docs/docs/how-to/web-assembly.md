@@ -1,5 +1,5 @@
 ---
-title: Leveraging Spice WebAssembly capabilities
+title: Compile to WebAssembly
 ---
 
 Due to the fact, that Spice uses LLVM as compiler backbone, it is capable of cross-compiling to many different target
@@ -77,7 +77,7 @@ WebAssembly.instantiateStreaming(fetch('main.wasm'))
     const stopWasm = window.performance.now();
     console.log("Fibonacci Spice wasm: " + result);
     console.log("Duration (millis): " + (stopWasm - startWasm));
-    // JS
+    // JavaScript
     const startJS = window.performance.now();
     result = fibo(fiboBase);
     const stopJS = window.performance.now();

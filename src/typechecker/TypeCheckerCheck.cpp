@@ -17,16 +17,13 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
 
   // Change to function body scope
   currentScope = node->fctScope;
-
   // Visit statements in new scope
   visit(node->body());
-
   // Leave main function body scope
   currentScope = rootScope;
 
   // Set to type-checked
   typeCheckedMainFct = true;
-
   return nullptr;
 }
 
@@ -44,15 +41,12 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const std::string structSignature =
-          Struct::getSignature(node->fctName->structName, manifestation->thisType.getTemplateTypes());
-      currentScope = rootScope->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
-      assert(currentScope != nullptr && currentScope->type == SCOPE_STRUCT);
+      const auto structSignature = Struct::getSignature(node->fctName->structName, manifestation->thisType.getTemplateTypes());
+      changeToScope(STRUCT_SCOPE_PREFIX + structSignature, SCOPE_STRUCT);
     }
 
     // Change to function scope
-    currentScope = currentScope->getChildScope(manifestation->getSignature(false));
-    assert(currentScope != nullptr && currentScope->type == SCOPE_FUNC_PROC_BODY);
+    changeToScope(manifestation->getSignature(false), SCOPE_FUNC_PROC_BODY);
 
     // Mount type mapping for this manifestation
     assert(typeMapping.empty());
@@ -103,15 +97,12 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const std::string structSignature =
-          Struct::getSignature(node->procName->structName, manifestation->thisType.getTemplateTypes());
-      currentScope = rootScope->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
-      assert(currentScope != nullptr && currentScope->type == SCOPE_STRUCT);
+      const auto structSignature = Struct::getSignature(node->procName->structName, manifestation->thisType.getTemplateTypes());
+      changeToScope(STRUCT_SCOPE_PREFIX + structSignature, SCOPE_STRUCT);
     }
 
     // Change to procedure scope
-    currentScope = currentScope->getChildScope(manifestation->getSignature(false));
-    assert(currentScope != nullptr && currentScope->type == SCOPE_FUNC_PROC_BODY);
+    changeToScope(manifestation->getSignature(false), SCOPE_FUNC_PROC_BODY);
 
     // Mount type mapping for this manifestation
     assert(typeMapping.empty());

@@ -267,7 +267,7 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
 
 void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   // Skip if restored from cache, this stage has already been done or not all dependants finished type checking
-  if (restoredFromCache || previousStage >= TYPE_CHECKER_POST || !haveAllDependantsBeenTypeChecked())
+  if (restoredFromCache || !haveAllDependantsBeenTypeChecked())
     return;
 
   Timer timer(&compilerOutput.times.typeCheckerPost);
@@ -275,8 +275,10 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
 
   // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
   TypeChecker typeChecker(resourceManager, this, TC_MODE_CHECK);
+  unsigned short typeCheckerRuns = 0;
   do {
     typeCheckerRuns++;
+    totalTypeCheckerRuns++;
 
     // Type-check the current file first. Multiple times, if requested
     timer.resume();
@@ -288,7 +290,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
       sourceFile.first->runTypeCheckerPost();
 
     // GCOV_EXCL_START
-    if (typeCheckerRuns >= 10)
+    if (typeCheckerRuns >= 10 || totalTypeCheckerRuns >= 50)
       throw CompilerError(TYPE_CHECKER_RUNS_EXCEEDED, "Number of type checker runs for one source file exceeded. Please report "
                                                       "this as a bug on GitHub.");
     // GCOV_EXCL_STOP
@@ -680,8 +682,7 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
 }
 
 bool SourceFile::haveAllDependantsBeenTypeChecked() const {
-  return std::all_of(dependants.begin(), dependants.end(),
-                     [=](const SourceFile *dependant) { return dependant->typeCheckerRuns >= 1; });
+  return std::ranges::all_of(dependants, [](const SourceFile *dependant) { return dependant->totalTypeCheckerRuns >= 1; });
 }
 
 /**

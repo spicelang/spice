@@ -105,7 +105,7 @@ std::string Function::getSignature(const std::string &name, const SymbolType &th
  * @return Substantiated params or not
  */
 bool Function::hasSubstantiatedParams() const {
-  return std::none_of(paramList.begin(), paramList.end(), [](auto t) { return t.isOptional; });
+  return std::ranges::none_of(paramList, [](const Param &param) { return param.isOptional; });
 }
 
 /**

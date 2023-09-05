@@ -1,35 +1,34 @@
 import "std/io/cli-option";
 import "std/text/print";
 import "std/runtime/iterator_rt";
+import "std/type/string";
 
 // Generic types
-type T bool|string|int|long|short;
+type T bool|string|int;
 
 public type CliSubcommand struct {
     string name
     string description
     CliSubcommand* parent
+    string versionString
     string footer = ""
     p() callback
     Vector<CliSubcommand> subcommands
     Vector<CliOption<bool>> boolOptions
     Vector<CliOption<string>> stringOptions
     Vector<CliOption<int>> intOptions
-    Vector<CliOption<long>> longOptions
-    Vector<CliOption<short>> shortOptions
     bool allowUnknownOptions = false
 }
 
-public p CliSubcommand.ctor(CliSubcommand* parent, string name, string description = "") {
+public p CliSubcommand.ctor(CliSubcommand* parent, string versionString, string name, string description = "") {
     this.name = name;
     this.description = description;
+    this.versionString = versionString;
     this.parent = parent;
     this.subcommands = Vector<CliSubcommand>();
     this.boolOptions = Vector<CliOption<bool>>();
     this.stringOptions = Vector<CliOption<string>>();
     this.intOptions = Vector<CliOption<int>>();
-    this.longOptions = Vector<CliOption<long>>();
-    this.shortOptions = Vector<CliOption<short>>();
 }
 
 public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 1) {
@@ -45,7 +44,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
     }
 
     for unsigned int argNo = layer; argNo < argc; argNo++ {
-        const string arg = argv[argNo];
+        string arg = argv[argNo];
 
         // Check for subcommands
         foreach const CliSubcommand& subcommand : iterate(this.subcommands) {
@@ -59,12 +58,40 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             this.printHelp(argv, layer);
             return EXIT_CODE_SUCCESS;
         }
+        if (arg == "-v" || arg == "--version") { // Version
+            printf("%s\n", this.versionString);
+            return EXIT_CODE_SUCCESS;
+        }
 
         // Check for flags
-        foreach const CliOption<bool>& flag : iterate(this.boolOptions) {
-            if arg == flag.getName() {
-                flag.setToTrue();
-                flag.callCallback(true);
+        foreach const CliOption<bool>& boolOption : iterate(this.boolOptions) {
+            if arg == boolOption.getName() {
+                bool value = true;
+                boolOption.setTargetValue(value);
+                boolOption.callCallback(value);
+                continue 2; // Continue with next argument
+            }
+        }
+
+        // Check for other options
+        foreach const CliOption<string>& stringOption : iterate(this.stringOptions) {
+            if arg == stringOption.getName() {
+                // get the argument value
+                arg = argv[++argNo];
+
+                stringOption.setTargetValue(arg);
+                stringOption.callCallback(arg);
+                continue 2; // Continue with next argument
+            }
+        }
+        foreach const CliOption<int>& intOption : iterate(this.intOptions) {
+            if arg == intOption.getName() {
+                // get the argument value
+                arg = argv[++argNo];
+                int parsedArg = toInt(arg);
+
+                intOption.setTargetValue(parsedArg);
+                intOption.callCallback(parsedArg);
                 continue 2; // Continue with next argument
             }
         }
@@ -79,17 +106,16 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
     return EXIT_CODE_SUCCESS; // Parsing was successful, return success exit code
 }
 
-public f<CliSubcommand&> CliSubcommand.addSubcommand(string name, string description) {
-    this.subcommands.pushBack(CliSubcommand(this, name, description));
-    return this.subcommands.back();
-}
-
 public f<string> CliSubcommand.getName() {
     return this.name;
 }
 
 public f<string> CliSubcommand.getDescription() {
     return this.description;
+}
+
+public p CliSubcommand.setVersion(string versionString) {
+    this.versionString = versionString;
 }
 
 public p CliSubcommand.setFooter(string footer) {
@@ -107,8 +133,25 @@ public p CliSubcommand.allowUnknownOptions() {
     }
 }
 
-public p CliSubcommand.addOption<T>(string name, T& targetVariable, string description) {
-    this.options.pushBack(CliOption<T>(name, targetVariable, description));
+public f<CliSubcommand&> CliSubcommand.addSubcommand(string name, string description) {
+    this.subcommands.pushBack(CliSubcommand(this, this.versionString, name, description));
+    return this.subcommands.back();
+}
+
+public p CliSubcommand.addOption(string name, string& targetVariable, string description) {
+    this.stringOptions.pushBack(CliOption<string>(name, targetVariable, description));
+}
+
+public p CliSubcommand.addOption(string name, p(string&) callback, string description) {
+    this.stringOptions.pushBack(CliOption<string>(name, callback, description));
+}
+
+public p CliSubcommand.addOption(string name, int& targetVariable, string description) {
+    this.intOptions.pushBack(CliOption<int>(name, targetVariable, description));
+}
+
+public p CliSubcommand.addOption(string name, p(int&) callback, string description) {
+    this.intOptions.pushBack(CliOption<int>(name, callback, description));
 }
 
 public p CliSubcommand.addFlag(string name, bool& targetVariable, string description) {
@@ -119,33 +162,51 @@ public p CliSubcommand.addFlag(string name, p(bool&) callback, string descriptio
     this.boolOptions.pushBack(CliOption<bool>(name, callback, description));
 }
 
+p printHelpItem(string name, string description) {
+    printFixedWidth(name, 25, true);
+    printFixedWidth(description, 85, true);
+    lineBreak();
+}
+
+p printHelpItemWithValue(string name, string description) {
+    String str = String(name) + " <value>";
+    printHelpItem(str.getRaw(), description);
+}
+
 p CliSubcommand.printHelp(string[] argv, int layer) {
     // Build subcommand string
     String subcommand = String(argv[0]);
     for int i = 1; i < layer; i++ {
         subcommand += " " + argv[i];
     }
+
     // Print usage
     printf("%s\n\nUsage: %s [options]\n", this.description, subcommand);
     // Print subcommands
     if !this.subcommands.isEmpty() {
         printf("\nSubcommands:\n");
         foreach const CliSubcommand& subCommand : iterate(this.subcommands) {
-            printFixedWidth(subCommand.getName(), 25, true);
-            printFixedWidth(subCommand.getDescription(), 85, true);
-            lineBreak();
+            printHelpItem(subCommand.getName(), subCommand.getDescription());
         }
     }
+
+    // Print options
+    printf("\nOptions:\n");
+    foreach const CliOption<string>& option : iterate(this.stringOptions) {
+        printHelpItemWithValue(option.getName(), option.getDescription());
+    }
+    foreach const CliOption<int>& option : iterate(this.intOptions) {
+        printHelpItemWithValue(option.getName(), option.getDescription());
+    }
+
     // Print flags
     printf("\nFlags:\n");
     foreach const CliOption<bool>& flag : iterate(this.boolOptions) {
-        printFixedWidth(flag.getName(), 25, true);
-        printFixedWidth(flag.getDescription(), 85, true);
-        lineBreak();
+        printHelpItem(flag.getName(), flag.getDescription());
     }
-    printFixedWidth("--help,-h", 25, true);
-    printFixedWidth("Print this help message", 85, true);
-    printf("\n");
+    printHelpItem("--help,-h", "Print this help message");
+    printHelpItem("--version,-v", "Print the version of the application");
+
     // Print footer
     if this.footer != "" {
         printf("\n%s\n", this.footer);

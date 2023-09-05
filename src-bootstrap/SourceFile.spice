@@ -96,7 +96,7 @@ public type SourceFile struct {
 
     GlobalResourceManager& resourceManager
     unsigned short importedRuntimeModules = 0
-    unsigned short typeCheckerRuns = 0
+    unsigned short totalTypeCheckerRuns = 0
 }
 
 public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* parent, string name, string filePath, bool stdFile) {

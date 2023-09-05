@@ -133,6 +133,8 @@ private:
   [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;
   [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
   void changeToScope(Scope *scope, ScopeType scopeType);
+  void changeToScope(const std::string &scopeName, ScopeType scopeType);
+  void changeToParentScope();
   static void autoDeReference(SymbolType &symbolType);
   void doScopeCleanup(StmtLstNode *node);
   void callStructDtor(SymbolTableEntry *entry, StmtLstNode *node);

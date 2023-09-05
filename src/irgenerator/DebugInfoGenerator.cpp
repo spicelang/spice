@@ -26,7 +26,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   absolutePath.make_preferred();
   sourceFileDir.make_preferred();
   llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
-  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_lo_user, cuDiFile, producerString,
+  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C17, cuDiFile, producerString,
                                              irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
                                              false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
@@ -47,7 +47,6 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   pointerWidth = irGenerator->module->getDataLayout().getPointerSizeInBits();
 
   // Initialize primitive debug types
-  const unsigned int pointerWidth = irGenerator->module->getDataLayout().getPointerSizeInBits();
   doubleTy = diBuilder->createBasicType("double", 64, llvm::dwarf::DW_ATE_float);
   intTy = diBuilder->createBasicType("int", 32, llvm::dwarf::DW_ATE_signed);
   uIntTy = diBuilder->createBasicType("unsigned int", 32, llvm::dwarf::DW_ATE_unsigned);
@@ -58,7 +57,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   byteTy = diBuilder->createBasicType("byte", 8, llvm::dwarf::DW_ATE_unsigned);
   charTy = diBuilder->createBasicType("char", 8, llvm::dwarf::DW_ATE_unsigned_char);
   stringTy = diBuilder->createPointerType(charTy, pointerWidth);
-  boolTy = diBuilder->createBasicType("bool", 1, llvm::dwarf::DW_ATE_boolean);
+  boolTy = diBuilder->createBasicType("bool", 8, llvm::dwarf::DW_ATE_boolean);
   voidTy = diBuilder->createBasicType("void", 0, llvm::dwarf::DW_ATE_unsigned);
 
   // Initialize fat ptr type
@@ -131,6 +130,32 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
   llvmFunction->setSubprogram(subprogram);
   // Add scope to lexicalBlocks
   lexicalBlocks.push(subprogram);
+}
+
+void DebugInfoGenerator::concludeFunctionDebugInfo() {
+  if (!irGenerator->cliOptions.generateDebugInfo)
+    return;
+
+  assert(!lexicalBlocks.empty());
+  lexicalBlocks.pop();
+}
+
+void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
+  if (!irGenerator->cliOptions.generateDebugInfo)
+    return;
+
+  const size_t line = node->codeLoc.line;
+  const size_t col = node->codeLoc.col;
+  llvm::DILexicalBlock* lexicalBlock = diBuilder->createLexicalBlock(lexicalBlocks.top(), diFile, line, col);
+  lexicalBlocks.push(lexicalBlock);
+}
+
+void DebugInfoGenerator::popLexicalBlock() {
+  if (!irGenerator->cliOptions.generateDebugInfo)
+    return;
+
+  assert(!lexicalBlocks.empty());
+  lexicalBlocks.pop();
 }
 
 llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const Function *spiceFunc) {
@@ -234,14 +259,6 @@ void DebugInfoGenerator::setSourceLocation(const ASTNode *node) {
   llvm::DIScope *scope = lexicalBlocks.top();
   llvm::DILocation *codeLoc = llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope);
   irGenerator->builder.SetCurrentDebugLocation(codeLoc);
-}
-
-void DebugInfoGenerator::concludeFunctionDebugInfo() {
-  if (!irGenerator->cliOptions.generateDebugInfo)
-    return;
-
-  assert(!lexicalBlocks.empty());
-  lexicalBlocks.pop();
 }
 
 void DebugInfoGenerator::finalize() {

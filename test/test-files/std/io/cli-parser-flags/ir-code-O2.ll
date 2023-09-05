@@ -3,14 +3,12 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%struct.CliParser = type { ptr, %struct.CliSubcommand.15 }
-%struct.CliSubcommand.15 = type { ptr, ptr, ptr, ptr, { ptr, ptr }, %struct.Vector, %struct.Vector.0, %struct.Vector.1, %struct.Vector.2, %struct.Vector.3, %struct.Vector.4, i1 }
+%struct.CliParser = type { %struct.CliSubcommand.11 }
+%struct.CliSubcommand.11 = type { ptr, ptr, ptr, ptr, ptr, { ptr, ptr }, %struct.Vector, %struct.Vector.0, %struct.Vector.1, %struct.Vector.2, i1 }
 %struct.Vector = type { ptr, i64, i64 }
 %struct.Vector.0 = type { ptr, i64, i64 }
 %struct.Vector.1 = type { ptr, i64, i64 }
 %struct.Vector.2 = type { ptr, i64, i64 }
-%struct.Vector.3 = type { ptr, i64, i64 }
-%struct.Vector.4 = type { ptr, i64, i64 }
 %struct.CliOptions = type { i1 }
 
 @printf.str.0 = private unnamed_addr constant [31 x i8] c"Callback called with value %d\0A\00", align 1

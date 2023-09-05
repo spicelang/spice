@@ -93,20 +93,20 @@ std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
 
 std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Change to unsafe block body scope
-  changeToScope(node->bodyScope, SCOPE_UNSAFE_BODY);
+  changeToScope(node->getScopeId(), SCOPE_UNSAFE_BODY);
 
   // Visit body
   visit(node->body());
 
   // Leave unsafe block body scope
-  currentScope = node->bodyScope->parent;
+  changeToParentScope();
 
   return nullptr;
 }
 
 std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   // Change to for body scope
-  changeToScope(node->bodyScope, SCOPE_FOR_BODY);
+  changeToScope(node->getScopeId(), SCOPE_FOR_BODY);
 
   // Visit loop variable declaration
   visit(node->initDecl());
@@ -125,14 +125,14 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   visit(node->body());
 
   // Leave body scope
-  currentScope = node->bodyScope->parent;
+  changeToParentScope();
 
   return nullptr;
 }
 
 std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Change to foreach body scope
-  changeToScope(node->bodyScope, SCOPE_FOREACH_BODY);
+  changeToScope(node->getScopeId(), SCOPE_FOREACH_BODY);
 
   // Check iterator type
   SymbolType iteratorType = std::any_cast<ExprResult>(visit(node->iteratorAssign())).type;
@@ -197,14 +197,14 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   visit(node->body());
 
   // Leave foreach body scope
-  currentScope = node->bodyScope->parent;
+  changeToParentScope();
 
   return nullptr;
 }
 
 std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   // Change to while body scope
-  changeToScope(node->bodyScope, SCOPE_WHILE_BODY);
+  changeToScope(node->getScopeId(), SCOPE_WHILE_BODY);
 
   // Visit condition
   SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
@@ -217,14 +217,14 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   visit(node->body());
 
   // Leave while body scope
-  currentScope = node->bodyScope->parent;
+  changeToParentScope();
 
   return nullptr;
 }
 
 std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
   // Change to while body scope
-  changeToScope(node->bodyScope, SCOPE_WHILE_BODY);
+  changeToScope(node->getScopeId(), SCOPE_WHILE_BODY);
 
   // Visit body
   visit(node->body());
@@ -237,14 +237,14 @@ std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
     SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "Do-While loop condition must be of type bool")
 
   // Leave while body scope
-  currentScope = node->bodyScope->parent;
+  changeToParentScope();
 
   return nullptr;
 }
 
 std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   // Change to then body scope
-  changeToScope(node->thenBodyScope, SCOPE_IF_ELSE_BODY);
+  changeToScope(node->getScopeId(), SCOPE_IF_ELSE_BODY);
 
   // Visit condition
   AssignExprNode *condition = node->condition();
@@ -263,7 +263,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   visit(node->thenBody());
 
   // Leave then body scope
-  currentScope = node->thenBodyScope->parent;
+  changeToParentScope();
 
   // Visit else statement if existing
   if (node->elseStmt())
@@ -280,29 +280,26 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   }
 
   // Change to else body scope
-  changeToScope(node->elseBodyScope, SCOPE_IF_ELSE_BODY);
+  changeToScope(node->getScopeId(), SCOPE_IF_ELSE_BODY);
 
   // Visit body
   visit(node->body());
 
   // Leave else body scope
-  currentScope = node->elseBodyScope->parent;
+  changeToParentScope();
 
   return nullptr;
 }
 
 std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Change to anonymous scope body scope
-  node->bodyScope->parent = currentScope;                           // Needed for nested scopes in generic functions
-  node->bodyScope->symbolTable.parent = &currentScope->symbolTable; // Needed for nested scopes in generic functions
-  currentScope = node->bodyScope;
-  assert(currentScope->type == SCOPE_ANONYMOUS_BLOCK_BODY);
+  changeToScope(node->getScopeId(), SCOPE_ANONYMOUS_BLOCK_BODY);
 
   // Visit body
   visit(node->body());
 
   // Leave anonymous scope body scope
-  currentScope = node->bodyScope->parent;
+  changeToParentScope();
 
   return nullptr;
 }
@@ -1326,7 +1323,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here")
 
   // Check if is an imported variable
-  if (accessScope->isImportedBy(currentScope)) {
+  if (accessScope->isImportedBy(rootScope)) {
     // Check if the entry is public
     if (varEntry->scope->type != SCOPE_ENUM && !varEntry->getType().isPublic())
       SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility")
@@ -1515,7 +1512,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     }
 
     // Check if we need to request a re-visit, because the function body was not type-checked yet
-    if (!data.callee->alreadyTypeChecked && !data.callee->external)
+    const bool isCallToImportedSourceFile = data.callee->entry->scope->isImportedBy(rootScope);
+    if (!data.callee->alreadyTypeChecked && !isCallToImportedSourceFile)
       reVisitRequested = true;
 
     // Get function entry from function object
@@ -1892,14 +1890,14 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
     SOFT_ERROR_ER(node, MISSING_RETURN_STMT, "Not all control paths of this lambda function have a return statement")
 
   // Change to function scope
-  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
-  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
+  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
 
   // Visit return type
   auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
   HANDLE_UNRESOLVED_TYPE_ST(returnType)
   if (returnType.is(TY_DYN)) {
-    currentScope = bodyScope->parent;
+    changeToParentScope();
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
   }
 
@@ -1928,7 +1926,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   visit(node->body());
 
   // Leave function body scope
-  currentScope = bodyScope->parent;
+  changeToParentScope();
 
   // Prepare type of function
   SymbolType functionType(TY_FUNCTION);
@@ -1947,8 +1945,8 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
 
 std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   // Change to function scope
-  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
-  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
+  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
 
   // Visit parameters
   std::vector<SymbolType> paramTypes;
@@ -1969,7 +1967,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   visit(node->body());
 
   // Leave function body scope
-  currentScope = bodyScope->parent;
+  changeToParentScope();
 
   // Prepare type of function
   SymbolType functionType(TY_PROCEDURE);
@@ -1988,8 +1986,8 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
 
 std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   // Change to function scope
-  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
-  assert(bodyScope != nullptr && bodyScope->type == SCOPE_LAMBDA_BODY);
+  Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
+  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
 
   // Visit parameters
   std::vector<SymbolType> paramTypes;
@@ -2010,12 +2008,12 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   SymbolType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(returnType)
   if (returnType.is(TY_DYN)) {
-    currentScope = bodyScope->parent;
+    changeToParentScope();
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
   }
 
   // Leave function body scope
-  currentScope = bodyScope->parent;
+  changeToParentScope();
 
   // Prepare type of function
   const bool isFunction = !returnType.is(TY_DYN);
@@ -2361,6 +2359,25 @@ void TypeChecker::changeToScope(Scope *scope, const ScopeType scopeType) {
   scope->symbolTable.parent = &currentScope->symbolTable;
   // Set the scope
   currentScope = scope;
+}
+
+/**
+ * Change to the scope with the given name.
+ *
+ * @param scopeName Name of the scope to change to
+ * @param scopeType Expected type of the given scope
+ */
+void TypeChecker::changeToScope(const std::string &scopeName, const ScopeType scopeType) {
+  assert(!scopeName.empty());
+  changeToScope(currentScope->getChildScope(scopeName), scopeType);
+}
+
+/**
+ * Change to the parent scope of the current.
+ */
+void TypeChecker::changeToParentScope() {
+  assert(currentScope->parent != nullptr);
+  currentScope = currentScope->parent;
 }
 
 /**

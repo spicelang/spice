@@ -36,15 +36,9 @@ public f<string> CliOption.getDescription() {
     return this.description;
 }
 
-public p CliOption.setTargetValue(T& value) {
+public p CliOption.setTargetValue(T value) {
     if this.mode == CliOptionMode::SET_VALUE {
         this.targetVariable = value;
-    }
-}
-
-public p CliOption.setToTrue() {
-    if this.mode == CliOptionMode::SET_VALUE {
-        this.targetVariable = true;
     }
 }
 

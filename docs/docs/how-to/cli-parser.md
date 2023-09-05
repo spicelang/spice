@@ -87,6 +87,45 @@ $ ./app-name --hi
 Hi!
 ```
 
-## Add sub-commands
+## Add subcommands
 
-ToDo
+To build more advanced CLI interfaces, you can add subcommands. Let's add a `greet` subcommand to our CLI interface:
+
+```spice
+// app-name.spice
+
+import "std/io/cli-parser";
+
+f<int> main(int argc, string[] argv) {
+    CliParser cli = CliParser("app-name", "Short description of the app");
+    cli.setVersion("v1.0.0");
+    cli.setFooter("(c) 2023 by John Doe");
+    
+    CliSubcommand& greet = cli.addSubcommand("greet", "Greet someone");
+    CliSubcommand& walk = cli.addSubcommand("walk", "Walk somewhere");
+    
+    cli.parse(argc, argv);
+}
+```
+
+Each subcommand comes with its own `--help` flag out of the box, that prints the help text for that specific subcommand.
+Subcommands can also have their own sub-commands. In other words, they can be nested:
+
+```spice
+// app-name.spice
+
+import "std/io/cli-parser";
+
+f<int> main(int argc, string[] argv) {
+    CliParser cli = CliParser("app-name", "Short description of the app");
+    cli.setVersion("v1.0.0");
+    cli.setFooter("(c) 2023 by John Doe");
+    
+    CliSubcommand& greet = cli.addSubcommand("greet", "Greet someone");
+    CliSubcommand& greetFriendly = greet.addSubcommand("friendly", "Greet someone in a friendly way");
+    CliSubcommand& greetFormal = greet.addSubcommand("formal", "Greet someone in a formal way");
+    CliSubcommand& walk = cli.addSubcommand("walk", "Walk somewhere");
+    
+    cli.parse(argc, argv);
+}
+```

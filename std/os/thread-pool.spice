@@ -10,10 +10,11 @@ import "std/runtime/iterator_rt";
 public type ThreadPool struct {
     Vector<Thread> workerThreads
     Queue<p()> queuedJobs
-    unsigned short runningJobs
+    unsigned short runningJobs = 0s
     unsigned short workerThreadCount
     bool stopRequested = false
-    bool paused = false
+    bool stopOnEmptyQueueRequested = false
+    bool pauseRequested = false
 }
 
 /**
@@ -25,14 +26,13 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
     this.workerThreads = Vector<Thread>();
     this.queuedJobs = Queue<p()>();
     this.workerThreadCount = workerThreadCount > 0s ? workerThreadCount : (unsigned short) getCPUCoreCount();
-    this.runningJobs = 0s;
 }
 
 /**
  * Destroy the thread pool.
  */
 public p ThreadPool.dtor() {
-    this.join();
+    this.stop();
 }
 
 /**
@@ -41,7 +41,11 @@ public p ThreadPool.dtor() {
 public p ThreadPool.start() {
     p() workerRoutine = p() {
         do {
-            if !this.paused & !this.queuedJobs.isEmpty() {
+            bool hasQueuedJobs = !this.queuedJobs.isEmpty();
+            if (this.stopOnEmptyQueueRequested & !hasQueuedJobs) {
+                break;
+            }
+            if !this.pauseRequested & hasQueuedJobs {
                 p() task = this.queuedJobs.pop();
                 printf("Worker %d took job\n", getThreadId());
                 this.runningJobs++;
@@ -50,6 +54,7 @@ public p ThreadPool.start() {
             }
             yield();
         } while (!this.stopRequested);
+        printf("Worker %d terminated\n", getThreadId());
     };
 
     // Create worker threads
@@ -61,15 +66,27 @@ public p ThreadPool.start() {
 }
 
 /**
- * Stop the thread pool. This will wait for all running jobs to finish.
+ * Finish the running jobs and stop the thread pool.
  */
-public p ThreadPool.join() {
+public p ThreadPool.stop() {
     // Stop worker threads
     this.stopRequested = true;
     // Wait for all worker threads to terminate
-    foreach (const Thread& workerThread : iterate(this.workerThreads)) {
-        workerThread.join();
-    }
+    this.joinWorkerThreads();
+    // Reset the stop flag
+    this.stopRequested = false;
+}
+
+/**
+ * Wait for all queued jobs to finish and stop the thread pool.
+ */
+public p ThreadPool.join() {
+    // Stop worker threads
+    this.stopOnEmptyQueueRequested = true;
+    // Wait for all worker threads to terminate
+    this.joinWorkerThreads();
+    // Reset the stop flag
+    this.stopOnEmptyQueueRequested = false;
 }
 
 /**
@@ -85,21 +102,21 @@ public p ThreadPool.enqueue(p() job) {
  * Pause the thread pool. The worker threads will finish their current job and then wait for the pool to be resumed.
  */
 public p ThreadPool.pause() {
-    this.paused = true;
+    this.pauseRequested = true;
 }
 
 /**
  * Resume the thread pool.
  */
 public p ThreadPool.resume() {
-    this.paused = false;
+    this.pauseRequested = false;
 }
 
 /**
  * Check if the thread pool is paused.
  */
 public f<bool> ThreadPool.isPaused() {
-    return this.paused;
+    return this.pauseRequested;
 }
 
 /**
@@ -121,4 +138,10 @@ public f<unsigned short> ThreadPool.getQueuedJobCount() {
  */
 public f<unsigned short> ThreadPool.getWorkerThreadCount() {
     return this.workerThreadCount;
+}
+
+p ThreadPool.joinWorkerThreads() {
+    foreach (const Thread& workerThread : iterate(this.workerThreads)) {
+        workerThread.join();
+    }
 }
