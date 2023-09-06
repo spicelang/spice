@@ -63,7 +63,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             return EXIT_CODE_SUCCESS;
         }
 
-        // Check for flags
+        // Check for options
         foreach const CliOption<bool>& boolOption : iterate(this.boolOptions) {
             if arg == boolOption.getName() {
                 bool value = true;
@@ -72,8 +72,6 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
                 continue 2; // Continue with next argument
             }
         }
-
-        // Check for other options
         foreach const CliOption<string>& stringOption : iterate(this.stringOptions) {
             if arg == stringOption.getName() {
                 // get the argument value

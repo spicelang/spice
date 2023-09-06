@@ -136,10 +136,12 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   if (node->hasArgs) {
     argValues.reserve(node->argLst()->args().size());
     const std::vector<AssignExprNode *> args = node->argLst()->args();
+    const std::vector<SymbolType> paramSTypes =
+        data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes() : spiceFunc->getParamTypes();
+    assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
       AssignExprNode *argNode = args.at(i);
-      SymbolType expectedSTy = data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes().at(i)
-                                                   : spiceFunc->paramList.at(i).type;
+      const SymbolType& expectedSTy = paramSTypes.at(i);
       const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
       // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
