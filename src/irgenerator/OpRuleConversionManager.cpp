@@ -1489,7 +1489,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *n
   case TY_INT:   // fallthrough
   case TY_SHORT: // fallthrough
   case TY_LONG:
-    return {.value = builder.CreateNeg(lhsV())};
+    return {.value = builder.CreateNot(lhsV())};
   default:
     break;
   }

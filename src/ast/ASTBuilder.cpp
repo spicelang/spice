@@ -791,7 +791,7 @@ std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
   auto castExprNode = createNode<CastExprNode>(ctx);
 
   // Enrich
-  castExprNode->isCasted = ctx->LPAREN();
+  castExprNode->isCast = ctx->LPAREN();
 
   // Visit children
   visitChildren(ctx);

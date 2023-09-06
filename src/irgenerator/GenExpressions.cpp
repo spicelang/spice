@@ -500,7 +500,7 @@ std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (!node->isCasted)
+  if (!node->isCast)
     return visit(node->prefixUnaryExpr());
 
   // It is a cast expression

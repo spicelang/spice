@@ -1051,7 +1051,7 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
 
 std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   // Check if cast is applied
-  if (!node->isCasted)
+  if (!node->isCast)
     return visit(node->prefixUnaryExpr());
 
   // Visit source type

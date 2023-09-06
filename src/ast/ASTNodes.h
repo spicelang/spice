@@ -1581,7 +1581,7 @@ public:
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
-  bool isCasted = false;
+  bool isCast = false;
 };
 
 // ==================================================== PrefixUnaryExprNode ======================================================

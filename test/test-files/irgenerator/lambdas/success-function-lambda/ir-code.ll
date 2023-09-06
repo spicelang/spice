@@ -118,7 +118,7 @@ define private i16 @_Z15lambda.L13C49.018__rt_string.Strings(%struct.String %0, 
   %7 = sext i16 %6 to i32
   %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, ptr %5, i32 %7)
   %9 = load i16, ptr %b, align 2
-  %10 = sub i16 0, %9
+  %10 = xor i16 %9, -1
   store i16 %10, ptr %3, align 2
   ret i16 %10
 }
