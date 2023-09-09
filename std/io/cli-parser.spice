@@ -1,7 +1,8 @@
 import "std/io/cli-subcommand";
+import "std/io/cli-option";
 
 // Generic types
-type T bool|string|int|long|short;
+type T bool|string|int;
 
 public type CliParser struct {
     CliSubcommand rootSubcommand
@@ -31,16 +32,20 @@ public f<CliSubcommand&> CliParser.addSubcommand(string name, string description
     return this.rootSubcommand.addSubcommand(name, description);
 }
 
-public p CliParser.addOption<T>(string name, T& targetVariable, string description) {
-    this.rootSubcommand.addOption(targetVariable, description);
+public f<CliOption<T>&> CliParser.addOption<T>(string name, T& targetVariable, string description) {
+    return this.rootSubcommand.addOption(targetVariable, description);
 }
 
-public p CliParser.addFlag(string name, bool& targetVariable, string description) {
-    this.rootSubcommand.addFlag(name, targetVariable, description);
+public f<CliOption<T>&> CliParser.addOption<T>(string name, p(T&) callback, string description) {
+    return this.rootSubcommand.addOption(callback, description);
 }
 
-public p CliParser.addFlag(string name, p(bool&) callback, string description) {
-    this.rootSubcommand.addFlag(name, callback, description);
+public f<CliOption<bool>&> CliParser.addFlag(string name, bool& targetVariable, string description) {
+   return  this.rootSubcommand.addFlag(name, targetVariable, description);
+}
+
+public f<CliOption<bool>&> CliParser.addFlag(string name, p(bool&) callback, string description) {
+    return this.rootSubcommand.addFlag(name, callback, description);
 }
 
 public f<int> CliParser.parse(unsigned int argc, string[] argv) {

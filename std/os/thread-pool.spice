@@ -1,4 +1,5 @@
 import "std/os/thread";
+import "std/data/vector";
 import "std/data/queue";
 import "std/os/system";
 import "std/os/cpu";
@@ -47,14 +48,12 @@ public p ThreadPool.start() {
             }
             if !this.pauseRequested & hasQueuedJobs {
                 p() task = this.queuedJobs.pop();
-                printf("Worker %d took job\n", getThreadId());
                 this.runningJobs++;
                 task();
                 this.runningJobs--;
             }
             yield();
         } while (!this.stopRequested);
-        printf("Worker %d terminated\n", getThreadId());
     };
 
     // Create worker threads

@@ -338,10 +338,23 @@ bool SymbolType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTyp
       return false;
     });
   }
-  auto &baseTemplateTypes = baseType.getTemplateTypes();
-  return std::ranges::all_of(baseTemplateTypes, [&](const SymbolType &templateType) {
+
+  // If the type is non-generic check template types
+  bool covered = true;
+  // Check template types
+  const std::vector<SymbolType> &baseTemplateTypes = baseType.getTemplateTypes();
+  covered &= std::ranges::all_of(baseTemplateTypes, [&](const SymbolType &templateType) {
     return templateType.isCoveredByGenericTypeList(genericTypeList);
   });
+
+  // If function/procedure, check param and return types
+  if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    const std::vector<SymbolType> &paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
+    covered &= std::ranges::all_of(
+        paramAndReturnTypes, [&](const SymbolType &paramType) { return paramType.isCoveredByGenericTypeList(genericTypeList); });
+  }
+
+  return covered;
 }
 
 /**

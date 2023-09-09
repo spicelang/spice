@@ -2,6 +2,7 @@
 import "std/text/print";
 import "std/data/pair";
 import "CliInterface";
+import "global/GlobalResourceManager";
 import "ast/AstNodes";
 
 type CompileStageType enum {
@@ -33,22 +34,22 @@ type CompileStageIOType enum {
 }
 
 type TimerOutput struct {
-  unsigned long lexer = 0
-  unsigned long parser = 0
-  unsigned long cstVisualizer = 0
-  unsigned long astBuilder = 0
-  unsigned long astOptimizer = 0
-  unsigned long astVisualizer = 0
-  unsigned long importCollector = 0
-  unsigned long symbolTableBuilder = 0
-  unsigned long typeCheckerPre = 0
-  unsigned long typeCheckerPost = 0
-  unsigned long borrowChecker = 0
-  unsigned long escapeAnalyzer = 0
-  unsigned long irGenerator = 0
-  unsigned long irOptimizer = 0
-  unsigned long objectEmitter = 0
-  unsigned long executionEngine = 0
+  unsigned long lexer = 0l
+  unsigned long parser = 0l
+  unsigned long cstVisualizer = 0l
+  unsigned long astBuilder = 0l
+  unsigned long astOptimizer = 0l
+  unsigned long astVisualizer = 0l
+  unsigned long importCollector = 0l
+  unsigned long symbolTableBuilder = 0l
+  unsigned long typeCheckerPre = 0l
+  unsigned long typeCheckerPost = 0l
+  unsigned long borrowChecker = 0l
+  unsigned long escapeAnalyzer = 0l
+  unsigned long irGenerator = 0l
+  unsigned long irOptimizer = 0l
+  unsigned long objectEmitter = 0l
+  unsigned long executionEngine = 0l
 }
 
 /**
@@ -95,11 +96,11 @@ public type SourceFile struct {
     public Map<String, NameRegistryEntry> exportedNameRegistry
 
     GlobalResourceManager& resourceManager
-    unsigned short importedRuntimeModules = 0
-    unsigned short totalTypeCheckerRuns = 0
+    unsigned short importedRuntimeModules = 0s
+    unsigned short totalTypeCheckerRuns = 0s
 }
 
-public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* parent, string name, string filePath, bool stdFile) {
+public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* parent, const String& name, const String& filePath, bool stdFile) {
     // Copy data
     this.resourceManager = resourceManager;
     this.parent = parent;
@@ -183,10 +184,6 @@ public p SourceFile.concludeCompilation() {
 
 }
 
-public f<int> SourceFile.execute() {
-
-}
-
 public p SourceFile.runFrontEnd() {
 
 }
@@ -199,9 +196,9 @@ public p SourceFile.runBackEnd() {
 
 }
 
-f<bool> SourceFile.isAlreadyImported(const string filePathSearch) {
+f<bool> SourceFile.isAlreadyImported(const String& filePathSearch) {
     // Check if the current source file corresponds to the path to search
-    if filePath == filePathSearch { return true; }
+    if this.filePath == filePathSearch { return true; }
     // Check parent recursively
-    return parent != nil<SourceFile*> && parent.isAlreadyImported(filePathSearch);
+    return this.parent != nil<SourceFile*> && this.parent.isAlreadyImported(filePathSearch);
 }

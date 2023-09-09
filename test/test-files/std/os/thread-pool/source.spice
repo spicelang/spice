@@ -1,0 +1,48 @@
+import "std/os/thread-pool";
+import "std/time/delay";
+
+f<int> main() {
+    ThreadPool tp = ThreadPool(3s);
+    tp.enqueue(p() {
+        delay(50);
+        printf("Hello from task 1\n");
+    });
+    tp.enqueue(p() {
+        delay(100);
+        printf("Hello from task 2\n");
+    });
+    tp.enqueue(p() {
+        delay(150);
+        printf("Hello from task 3\n");
+    });
+    tp.enqueue(p() {
+        delay(200);
+        printf("Hello from task 4\n");
+    });
+    tp.enqueue(p() {
+        delay(250);
+        printf("Hello from task 5\n");
+    });
+    tp.enqueue(p() {
+        delay(300);
+        printf("Hello from task 6\n");
+    });
+    tp.enqueue(p() {
+        delay(350);
+        printf("Hello from task 7\n");
+    });
+    tp.enqueue(p() {
+        delay(400);
+        printf("Hello from task 8\n");
+    });
+    tp.enqueue(p() {
+        delay(450);
+        printf("Hello from task 9\n");
+    });
+    tp.enqueue(p() {
+        delay(500);
+        printf("Hello from task 10\n");
+    });
+    tp.start();
+    tp.join();
+}

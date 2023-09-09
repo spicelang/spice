@@ -359,7 +359,8 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   SymbolType returnType(TY_DYN);
   if (isFunction)
     returnType = std::any_cast<SymbolType>(visit(node->returnType()));
-  HANDLE_UNRESOLVED_TYPE_PTR(returnType)
+  if (returnType.is(TY_UNRESOLVED))
+    return static_cast<std::vector<Function *> *>(nullptr);
 
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
@@ -367,7 +368,8 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
       auto templateType = std::any_cast<SymbolType>(visit(dataType));
-      HANDLE_UNRESOLVED_TYPE_PTR(templateType)
+      if (templateType.is(TY_UNRESOLVED))
+        return static_cast<std::vector<Function *> *>(nullptr);
       // Check if it is a generic type
       if (!templateType.is(TY_GENERIC)) {
         softError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
@@ -387,7 +389,8 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
     paramList.reserve(node->paramTypeLst()->dataTypes().size());
     for (DataTypeNode *param : node->paramTypeLst()->dataTypes()) {
       auto paramType = std::any_cast<SymbolType>(visit(param));
-      HANDLE_UNRESOLVED_TYPE_PTR(paramType)
+      if (paramType.is(TY_UNRESOLVED))
+        return static_cast<std::vector<Function *> *>(nullptr);
 
       // Check if the type is present in the template for generic types
       if (!paramType.isCoveredByGenericTypeList(usedGenericTypes)) {
@@ -2236,7 +2239,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
   const std::string errorMessage =
       entryType.is(TY_INVALID) ? "Used type before declared" : "Expected type, but got " + entryType.getName();
-  SOFT_ERROR_ER(node, EXPECTED_TYPE, errorMessage)
+  SOFT_ERROR_ST(node, EXPECTED_TYPE, errorMessage)
 }
 
 std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {

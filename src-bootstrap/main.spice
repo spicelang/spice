@@ -12,7 +12,7 @@ import "global/GlobalResourceManager";
  */
 f<int> compileProject(const CliOptions& options) {
     // Instantiate GlobalResourceManager
-    dyn resourceManager = GlobalResourceManager(cliOptions);
+    dyn resourceManager = GlobalResourceManager(options);
 
     // Create source file instance for main source file
     dyn mainSourceFile = SourceFile(options, nil<SourceFile*>, "root", options.mainSourceFile, false);
@@ -23,7 +23,7 @@ f<int> compileProject(const CliOptions& options) {
     mainSourceFile.runBackEnd();
 
     // Link the target executable (link object files to executable)
-    if !cliOptions.execute {
+    if !options.execute {
         resourceManager.linker.prepare();
         resourceManager.linker.link();
     }
@@ -31,7 +31,7 @@ f<int> compileProject(const CliOptions& options) {
     // Print compiler warnings
     mainSourceFile.collectAndPrintWarnings();
 
-    if cliOptions.execute {
+    if options.execute {
         return mainSourceFile.execute();
     }
 

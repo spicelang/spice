@@ -1,5 +1,4 @@
 import "../CliInterface";
-import "../util/ThreadFactory";
 
 /**
  * The GlobalResourceManager is instantiated at startup of the compiler and serves as distribution point for globally used assets.
@@ -7,7 +6,6 @@ import "../util/ThreadFactory";
  */
 public type GlobalResourceManager struct {
     const CliOptions& cliOptions
-    ThreadFactory threadFactory
     //ExternalLinkerInterface linker
     //CacheManager cacheManager
     //RuntimeModuleManager runtimeModuleManager
