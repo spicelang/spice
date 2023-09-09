@@ -469,8 +469,7 @@ void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor, cons
     llvm::Type *thisType = thisVar->getType().getContainedTy().toLLVMType(context, currentScope);
     llvm::Value *thisPtr = builder.CreateLoad(builder.getPtrTy(), thisVar->getAddress());
     // Add field offset
-    llvm::ArrayRef<llvm::Value *> indices = {builder.getInt32(0), builder.getInt32(entry->orderIndex)};
-    structPtr = builder.CreateInBoundsGEP(thisType, thisPtr, indices);
+    structPtr = builder.CreateInBoundsGEP(thisType, thisPtr, {builder.getInt32(0), builder.getInt32(entry->orderIndex)});
   } else {
     structPtr = entry->getAddress();
   }
