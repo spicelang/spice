@@ -1,4 +1,6 @@
 import "std/runtime/iterator_rt";
+import "std/iterator/array-iterator";
+import "std/data/pair";
 
 f<int> main() {
     // Create test array to iterate over

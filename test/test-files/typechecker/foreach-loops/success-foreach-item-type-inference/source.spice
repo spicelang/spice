@@ -1,4 +1,5 @@
 import "std/iterator/iterable";
+import "std/data/pair";
 
 type T short|int|long;
 

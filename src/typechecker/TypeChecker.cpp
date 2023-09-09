@@ -459,6 +459,13 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       localVarType = SymbolType(TY_UNRESOLVED);
     else
       localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0, true);
+
+    // If this is a struct type, check if the type is known. If not, error out
+    if (localVarType.isBaseType(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBaseType().getSubType())) {
+      const std::string structName = localVarType.getBaseType().getOriginalSubType();
+      softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
+      localVarType = SymbolType(TY_UNRESOLVED);
+    }
   } else {
     // Visit data type
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));

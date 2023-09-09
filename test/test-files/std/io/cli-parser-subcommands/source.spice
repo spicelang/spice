@@ -1,4 +1,5 @@
 import "std/io/cli-parser";
+import "std/io/cli-subcommand";
 
 type CliOptions struct {
     string greetName = ""
