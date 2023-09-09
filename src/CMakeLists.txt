@@ -151,7 +151,8 @@ set(SOURCES
         util/RawStringOStream.h
 )
 
-add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS}
+        util/DeferredLogic.h)
 
 # Include Antlr components
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)

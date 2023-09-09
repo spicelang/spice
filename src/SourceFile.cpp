@@ -648,6 +648,7 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName
   // Resolve the 'fullest-qualified' registry entry for the given name
   const NameRegistryEntry *registryEntry;
   do {
+    assert(exportedNameRegistry.contains(symbolName));
     registryEntry = &exportedNameRegistry.at(symbolName);
     if (registryEntry->importEntry)
       registryEntry->importEntry->used = true;
@@ -687,6 +688,7 @@ bool SourceFile::haveAllDependantsBeenTypeChecked() const {
 
 /**
  * Acquire all publicly visible symbols from the imported source file and put them in the name registry of the current one.
+ * But only do that for the symbols that are actually defined in the imported source file. Do not allow transitive dependencies.
  * Here, we also register privately visible symbols, to know that the symbol exist. The error handling regarding the visibility
  * is issued later in the pipeline.
  *
@@ -699,6 +701,9 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
   assert(importEntry != nullptr || importName.starts_with("__")); // Runtime imports start with two underscores
 
   for (const auto &[originalName, entry] : importedSourceFile.exportedNameRegistry) {
+    // Skip if we would introduce a transitive dependency
+    if (entry.targetScope->sourceFile->globalScope != importedSourceFile.globalScope)
+      continue;
     // Add fully qualified name
     const std::string newName = importName + SCOPE_ACCESS_TOKEN + originalName;
     exportedNameRegistry.insert({newName, {newName, entry.targetEntry, entry.targetScope, importEntry}});

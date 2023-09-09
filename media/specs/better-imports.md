@@ -19,7 +19,7 @@ this symbol gets removed and
 Source file A imports source file B as `sourceB`. B contains a struct with the name `TestStruct`. Formerly, you would
 have written `sourceB::TestStruct` to access the struct from source file A. Now you only need to write `TestStruct`.
 
-Registry:
+Registry of A:
 
 | Name                | Pointer to SymbolTableEntry | Pointer to scope of symbol | Import entry        | Predecessor name     |
 |---------------------|-----------------------------|----------------------------|---------------------|----------------------|
@@ -31,19 +31,9 @@ ambiguity between `sourceB::TestStruct` and `sourceC::TestStruct` when you just 
 such a collision is detected, the compiler only makes available `sourceB::TestStruct` and `sourceC::TestStruct` as is.
 Accessing `TestStruct` without a scope identifier, leads to a compile error.
 
-Registry:
+Registry of A:
 
 | Name                | Pointer to SymbolTableEntry | Pointer to scope of symbol   | Import entry        | Predecessor name |
 |---------------------|-----------------------------|------------------------------|---------------------|------------------|
 | sourceB::TestStruct | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |                  |
 | sourceC::TestStruct | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |                  |
-
-When source file C now imports source file D, which expose another struct `AnotherStruct` the registry looks like so:
-
-| Name                            | Pointer to SymbolTableEntry | Pointer to scope of symbol   | Import entry        | Predecessor name                |
-|---------------------------------|-----------------------------|------------------------------|---------------------|---------------------------------|
-| sourceB::TestStruct             | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |                                 |
-| sourceC::TestStruct             | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |                                 |
-| sourceC::sourceD::AnotherStruct | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |                                 |
-| sourceD::AnotherStruct          | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry | sourceC::sourceD::AnotherStruct |
-| AnotherStruct                   | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry | sourceD::AnotherStruct          |
