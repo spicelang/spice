@@ -1,17 +1,17 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "TypeChecker.h"
-#include "util/DeferredLogic.h"
 
 #include <SourceFile.h>
+#include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {
 
 TypeChecker::TypeChecker(GlobalResourceManager &resourceManager, SourceFile *sourceFile, TypeCheckerMode typeCheckerMode)
-    : CompilerPass(resourceManager, sourceFile), typeCheckerMode(typeCheckerMode), rootScope(sourceFile->globalScope.get()),
-      warnings(sourceFile->compilerOutput.warnings) {}
+    : CompilerPass(resourceManager, sourceFile), typeCheckerMode(typeCheckerMode), warnings(sourceFile->compilerOutput.warnings) {
+}
 
 std::any TypeChecker::visitEntry(EntryNode *node) {
   // Initialize
@@ -94,8 +94,7 @@ std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
 
 std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Change to unsafe block body scope
-  changeToScope(node->getScopeId(), SCOPE_UNSAFE_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_UNSAFE_BODY); });
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY);
 
   // Visit body
   visit(node->body());
@@ -105,8 +104,7 @@ std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
 
 std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   // Change to for body scope
-  changeToScope(node->getScopeId(), SCOPE_FOR_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_FOR_BODY); });
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY);
 
   // Visit loop variable declaration
   visit(node->initDecl());
@@ -129,8 +127,7 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
 
 std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Change to foreach body scope
-  changeToScope(node->getScopeId(), SCOPE_FOREACH_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_FOREACH_BODY); });
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
 
   // Check iterator type
   SymbolType iteratorType = std::any_cast<ExprResult>(visit(node->iteratorAssign())).type;
@@ -199,8 +196,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
 
 std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   // Change to while body scope
-  changeToScope(node->getScopeId(), SCOPE_WHILE_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_WHILE_BODY); });
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit condition
   SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
@@ -217,8 +213,7 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
 
 std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
   // Change to while body scope
-  changeToScope(node->getScopeId(), SCOPE_WHILE_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_WHILE_BODY); });
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit body
   visit(node->body());
@@ -235,8 +230,7 @@ std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
 
 std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   // Change to then body scope
-  changeToScope(node->getScopeId(), SCOPE_IF_ELSE_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_IF_ELSE_BODY); });
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY);
 
   // Visit condition
   AssignExprNode *condition = node->condition();
@@ -255,7 +249,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   visit(node->thenBody());
 
   // Leave then body scope
-  leaveScope.execute();
+  scopeHandle.leaveScopeEarly();
 
   // Visit else statement if existing
   if (node->elseStmt())
@@ -272,8 +266,7 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   }
 
   // Change to else body scope
-  changeToScope(node->getScopeId(), SCOPE_IF_ELSE_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_IF_ELSE_BODY); });
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY);
 
   // Visit body
   visit(node->body());
@@ -283,8 +276,7 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
 
 std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Change to anonymous scope body scope
-  changeToScope(node->getScopeId(), SCOPE_ANONYMOUS_BLOCK_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_ANONYMOUS_BLOCK_BODY); });
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY);
 
   // Visit body
   visit(node->body());
@@ -1320,12 +1312,12 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Check if is an imported variable
   if (accessScope->isImportedBy(rootScope)) {
     // Check if the entry is public
-    if (varEntry->scope->type != SCOPE_ENUM && !varEntry->getType().isPublic())
+    if (varEntry->scope->type != ScopeType::ENUM && !varEntry->getType().isPublic())
       SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access '" + varEntry->name + "' due to its private visibility")
   }
 
   // Check if we have seen a 'this.' prefix, because the generator needs that
-  if (varEntry->scope->type == SCOPE_STRUCT && node->identifierFragments.front() != THIS_VARIABLE_NAME)
+  if (varEntry->scope->type == ScopeType::STRUCT && node->identifierFragments.front() != THIS_VARIABLE_NAME)
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE,
                   "The symbol '" + node->fqIdentifier + "' could not be found. Missing 'this.' prefix?")
 
@@ -1454,8 +1446,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     const SymbolType &baseType = firstFragEntry->getType().getBaseType();
     HANDLE_UNRESOLVED_TYPE_ER(baseType)
     if (baseType.is(TY_STRUCT)) {
-      data.callType = firstFragEntry->scope->type == SCOPE_GLOBAL ? FctCallNode::TYPE_CTOR : FctCallNode::TYPE_METHOD;
-    } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != SCOPE_GLOBAL) {
+      data.callType = firstFragEntry->scope->type == ScopeType::GLOBAL ? FctCallNode::TYPE_CTOR : FctCallNode::TYPE_METHOD;
+    } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != ScopeType::GLOBAL) {
       data.callType = FctCallNode::TYPE_FCT_PTR;
     }
   }
@@ -1886,8 +1878,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
 
   // Change to function scope
   Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
-  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_LAMBDA_BODY); });
+  ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit return type
   auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
@@ -1920,7 +1911,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   visit(node->body());
 
   // Leave function body scope
-  leaveScope.execute();
+  scopeHandle.leaveScopeEarly();
 
   // Prepare type of function
   SymbolType functionType(TY_FUNCTION);
@@ -1940,8 +1931,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
 std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   // Change to function scope
   Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
-  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_LAMBDA_BODY); });
+  ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit parameters
   std::vector<SymbolType> paramTypes;
@@ -1962,7 +1952,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   visit(node->body());
 
   // Leave function body scope
-  leaveScope.execute();
+  scopeHandle.leaveScopeEarly();
 
   // Prepare type of function
   SymbolType functionType(TY_PROCEDURE);
@@ -1982,8 +1972,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
 std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   // Change to function scope
   Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
-  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
-  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_LAMBDA_BODY); });
+  ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit parameters
   std::vector<SymbolType> paramTypes;
@@ -2007,7 +1996,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
 
   // Leave function body scope
-  leaveScope.execute();
+  scopeHandle.leaveScopeEarly();
 
   // Prepare type of function
   const bool isFunction = !returnType.is(TY_DYN);
@@ -2338,46 +2327,6 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
 }
 
 /**
- * Change to the passed scope.
- * For nested scopes in generic functions/procedures it is important to have the right parent for symbol lookups
- * Therefore, changeToScope sets the children's parent to the old scope to always have the right parent
- *
- * @param scope Scope to change to
- * @param scopeType Expected type of the given scope
- */
-void TypeChecker::changeToScope(Scope *scope, ScopeType scopeType) {
-  assert(scope != nullptr);
-  assert(scope->type == scopeType);
-  // Adjust members of the new scope
-  scope->parent = currentScope;
-  scope->symbolTable.parent = &currentScope->symbolTable;
-  // Set the scope
-  currentScope = scope;
-}
-
-/**
- * Change to the scope with the given name.
- *
- * @param scopeName Name of the scope to change to
- * @param scopeType Expected type of the given scope
- */
-void TypeChecker::changeToScope(const std::string &scopeName, ScopeType scopeType) {
-  assert(!scopeName.empty());
-  changeToScope(currentScope->getChildScope(scopeName), scopeType);
-}
-
-/**
- * Change to the parent scope of the current.
- *
- * @param oldScopeType Expected type of the scope to leave
- */
-void TypeChecker::changeToParentScope(const ScopeType oldScopeType) {
-  assert(currentScope->type == oldScopeType);
-  assert(currentScope->parent != nullptr);
-  currentScope = currentScope->parent;
-}
-
-/**
  * Auto-dereference the given symbol type.
  * This process is NOT equivalent with getBaseType() because getBaseType() also removes e.g. array wrappers
  *
@@ -2401,7 +2350,7 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) {
     if (!var->getType().is(TY_STRUCT) || var->omitDtorCall)
       continue;
     // Variable must be either initialized or a struct field
-    if (!var->isInitialized() && var->scope->type != SCOPE_STRUCT)
+    if (!var->isInitialized() && var->scope->type != ScopeType::STRUCT)
       continue;
     // Call dtor
     callStructDtor(var, node);
@@ -2418,7 +2367,7 @@ void TypeChecker::callStructDtor(SymbolTableEntry *entry, StmtLstNode *node) {
   SymbolType thisType = entry->getType();
   assert(thisType.is(TY_STRUCT));
   Scope *matchScope = thisType.getBodyScope();
-  assert(matchScope->type == SCOPE_STRUCT);
+  assert(matchScope->type == ScopeType::STRUCT);
 
   // Search for dtor
   const bool isImported = matchScope->isImportedBy(rootScope);

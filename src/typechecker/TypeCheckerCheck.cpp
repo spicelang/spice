@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <exception/SemanticError.h>
+#include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
@@ -42,11 +43,11 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
       const auto structSignature = Struct::getSignature(node->fctName->structName, manifestation->thisType.getTemplateTypes());
-      changeToScope(STRUCT_SCOPE_PREFIX + structSignature, SCOPE_STRUCT);
+      changeToScope(STRUCT_SCOPE_PREFIX + structSignature, ScopeType::STRUCT);
     }
 
     // Change to function scope
-    changeToScope(manifestation->getSignature(false), SCOPE_FUNC_PROC_BODY);
+    changeToScope(manifestation->getSignature(false), ScopeType::FUNC_PROC_BODY);
 
     // Mount type mapping for this manifestation
     assert(typeMapping.empty());
@@ -71,7 +72,7 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 
     // Change to root scope
     currentScope = rootScope;
-    assert(currentScope->type == SCOPE_GLOBAL);
+    assert(currentScope->type == ScopeType::GLOBAL);
 
     // Do not type-check this manifestation again
     manifestation->alreadyTypeChecked = true;
@@ -98,11 +99,11 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
       const auto structSignature = Struct::getSignature(node->procName->structName, manifestation->thisType.getTemplateTypes());
-      changeToScope(STRUCT_SCOPE_PREFIX + structSignature, SCOPE_STRUCT);
+      changeToScope(STRUCT_SCOPE_PREFIX + structSignature, ScopeType::STRUCT);
     }
 
     // Change to procedure scope
-    changeToScope(manifestation->getSignature(false), SCOPE_FUNC_PROC_BODY);
+    changeToScope(manifestation->getSignature(false), ScopeType::FUNC_PROC_BODY);
 
     // Mount type mapping for this manifestation
     assert(typeMapping.empty());
@@ -121,7 +122,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 
     // Change to root scope
     currentScope = rootScope;
-    assert(currentScope != nullptr && currentScope->type == SCOPE_GLOBAL);
+    assert(currentScope != nullptr && currentScope->type == ScopeType::GLOBAL);
 
     // Do not type-check this manifestation again
     manifestation->alreadyTypeChecked = true;
@@ -136,7 +137,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
   // Change to generic struct scope
   currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->structName);
-  assert(currentScope != nullptr && currentScope->type == SCOPE_STRUCT);
+  assert(currentScope != nullptr && currentScope->type == ScopeType::STRUCT);
 
   // Check if the struct implements all methods of all attached interfaces
   for (const SymbolType &interfaceType : node->structManifestations.front()->interfaceTypes) {
@@ -161,7 +162,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
   // Return to the root scope
   currentScope = rootScope;
-  assert(currentScope != nullptr && currentScope->type == SCOPE_GLOBAL);
+  assert(currentScope != nullptr && currentScope->type == ScopeType::GLOBAL);
 
   return nullptr;
 }

@@ -59,7 +59,6 @@ public:
 private:
   // Private members
   Scope *rootScope;
-  Scope *currentScope = nullptr;
   bool hasMainFunction = false;
 };
 

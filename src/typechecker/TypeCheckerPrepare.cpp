@@ -59,7 +59,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Change to function scope
   currentScope = node->fctScope;
-  assert(currentScope->type == SCOPE_FUNC_PROC_BODY);
+  assert(currentScope->type == ScopeType::FUNC_PROC_BODY);
 
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
@@ -138,7 +138,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Leave function body scope
   currentScope = node->fctScope->parent;
-  assert(currentScope->type == SCOPE_GLOBAL || currentScope->type == SCOPE_STRUCT);
+  assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
 
   // Prepare type of function
   SymbolType functionType(TY_FUNCTION);
@@ -172,7 +172,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Change to the root scope
   currentScope = rootScope;
-  assert(currentScope->type == SCOPE_GLOBAL);
+  assert(currentScope->type == ScopeType::GLOBAL);
 
   return nullptr;
 }
@@ -187,7 +187,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Change to procedure scope
   currentScope = node->procScope;
-  assert(currentScope->type == SCOPE_FUNC_PROC_BODY);
+  assert(currentScope->type == ScopeType::FUNC_PROC_BODY);
 
   // Retrieve procedure template types
   std::vector<GenericType> usedGenericTypes;
@@ -257,7 +257,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Leave procedure body scope
   currentScope = node->procScope->parent;
-  assert(currentScope->type == SCOPE_GLOBAL || currentScope->type == SCOPE_STRUCT);
+  assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
 
   // Prepare type of procedure
   SymbolType procedureType(TY_PROCEDURE);
@@ -291,7 +291,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Change to the root scope
   currentScope = rootScope;
-  assert(currentScope->type == SCOPE_GLOBAL);
+  assert(currentScope->type == ScopeType::GLOBAL);
 
   return nullptr;
 }
@@ -345,7 +345,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Change to struct scope
   currentScope = node->structScope;
-  assert(currentScope->type == SCOPE_STRUCT);
+  assert(currentScope->type == ScopeType::STRUCT);
 
   // Retrieve field types
   std::vector<SymbolType> fieldTypes;
@@ -380,7 +380,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Change to the root scope
   currentScope = rootScope;
-  assert(currentScope->type == SCOPE_GLOBAL);
+  assert(currentScope->type == ScopeType::GLOBAL);
 
   // Build struct object
   Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, templateTypesGeneric, interfaceTypes, node);
@@ -423,7 +423,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
   // Change to interface scope
   currentScope = node->interfaceScope;
-  assert(currentScope->type == SCOPE_INTERFACE);
+  assert(currentScope->type == ScopeType::INTERFACE);
 
   // Visit signatures
   std::vector<Function *> signatures;
@@ -437,7 +437,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
   // Change to root scope
   currentScope = rootScope;
-  assert(currentScope->type == SCOPE_GLOBAL);
+  assert(currentScope->type == ScopeType::GLOBAL);
 
   // Build interface object
   Interface spiceInterface(node->interfaceName, node->entry, node->interfaceScope, signatures, templateTypesGeneric, node);
@@ -456,7 +456,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 
   // Change to enum scope
   currentScope = node->enumScope;
-  assert(currentScope->type == SCOPE_ENUM);
+  assert(currentScope->type == ScopeType::ENUM);
 
   // Loop through all items with values
   std::vector<std::string> names;
@@ -493,7 +493,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 
   // Change to root scope
   currentScope = rootScope;
-  assert(currentScope->type == SCOPE_GLOBAL);
+  assert(currentScope->type == ScopeType::GLOBAL);
 
   return nullptr;
 }

@@ -830,7 +830,7 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   }
 
   // Check if enum item
-  if (accessScope->type == SCOPE_ENUM) {
+  if (accessScope->type == ScopeType::ENUM) {
     auto itemNode = dynamic_cast<const EnumItemNode *>(varEntry->declNode);
     assert(itemNode != nullptr);
     llvm::Constant *constantItemValue = llvm::ConstantInt::get(varType, itemNode->itemValue);

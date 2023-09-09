@@ -8,11 +8,17 @@ namespace spice::compiler {
 
 // Forward declarations
 class Scope;
+enum class ScopeType : uint8_t;
 
 class CompilerPass {
 public:
   // Constructors
   explicit CompilerPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile = nullptr);
+
+  // Public methods
+  void changeToScope(Scope *scope, const ScopeType &scopeType);
+  void changeToScope(const std::string &scopeName, const ScopeType &scopeType);
+  void changeToParentScope(ScopeType oldScopeType);
 
 protected:
   // Protected members
@@ -20,6 +26,10 @@ protected:
   const CliOptions &cliOptions;
   SourceFile *sourceFile;
   Scope *rootScope;
+
+public:
+  // Public members
+  Scope *currentScope;
 };
 
 } // namespace spice::compiler
