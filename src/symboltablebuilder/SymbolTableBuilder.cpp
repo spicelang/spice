@@ -35,7 +35,7 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   mainFctEntry->used = true;
 
   // Create scope for main function body
-  node->fctScope = currentScope = rootScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
+  node->fctScope = currentScope = rootScope->createChildScope(node->getScopeId(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
   currentScope->isGenericScope = false;
 
   // Declare variable for the return value in the function scope
@@ -79,7 +79,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   }
 
   // Create scope for the function
-  node->fctScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
+  node->fctScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
   currentScope->isGenericScope = node->hasTemplateTypes || (node->structScope && node->structScope->isGenericScope);
 
   // Create symbol for 'this' variable
@@ -138,7 +138,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   }
 
   // Create scope for the procedure
-  node->procScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FUNC_PROC_BODY, &node->codeLoc);
+  node->procScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
   currentScope->isGenericScope = node->hasTemplateTypes || (node->structScope && node->structScope->isGenericScope);
   currentScope->isDtorScope = node->isMethod && node->procName->name == DTOR_FUNCTION_NAME;
 
@@ -182,7 +182,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 
   // Create scope for the struct
   node->structScope = currentScope =
-      rootScope->createChildScope(STRUCT_SCOPE_PREFIX + node->structName, SCOPE_STRUCT, &node->codeLoc);
+      rootScope->createChildScope(STRUCT_SCOPE_PREFIX + node->structName, ScopeType::STRUCT, &node->codeLoc);
   currentScope->isGenericScope = node->hasTemplateTypes;
 
   // Visit struct field list
@@ -216,7 +216,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
 
   // Create scope for the interface
   node->interfaceScope = currentScope =
-      rootScope->createChildScope(INTERFACE_SCOPE_PREFIX + node->interfaceName, SCOPE_INTERFACE, &node->codeLoc);
+      rootScope->createChildScope(INTERFACE_SCOPE_PREFIX + node->interfaceName, ScopeType::INTERFACE, &node->codeLoc);
 
   // Visit signatures
   for (SignatureNode *signature : node->signatures())
@@ -249,7 +249,8 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->enumName + "'");
 
   // Create scope for the enum
-  node->enumScope = currentScope = rootScope->createChildScope(ENUM_SCOPE_PREFIX + node->enumName, SCOPE_ENUM, &node->codeLoc);
+  node->enumScope = currentScope =
+      rootScope->createChildScope(ENUM_SCOPE_PREFIX + node->enumName, ScopeType::ENUM, &node->codeLoc);
 
   // Visit items
   visit(node->itemLst());
@@ -332,7 +333,8 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
 
 std::any SymbolTableBuilder::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
   // Create scope for the unsafe block body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_UNSAFE_BODY, &node->body()->codeLoc);
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), ScopeType::UNSAFE_BODY, &node->body()->codeLoc);
 
   // Visit body
   visit(node->body());
@@ -345,7 +347,8 @@ std::any SymbolTableBuilder::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
 
 std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
   // Create scope for the loop body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FOR_BODY, &node->body()->codeLoc);
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body()->codeLoc);
 
   // Visit loop variable declaration
   visit(node->initDecl());
@@ -361,7 +364,8 @@ std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
 
 std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
   // Create scope for the loop body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_FOREACH_BODY, &node->body()->codeLoc);
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), ScopeType::FOREACH_BODY, &node->body()->codeLoc);
 
   // Visit index variable declaration
   if (node->idxVarDecl())
@@ -381,7 +385,8 @@ std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
 
 std::any SymbolTableBuilder::visitWhileLoop(WhileLoopNode *node) {
   // Create scope for the loop body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_WHILE_BODY, &node->body()->codeLoc);
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body()->codeLoc);
 
   // Visit condition
   visit(node->condition());
@@ -397,7 +402,8 @@ std::any SymbolTableBuilder::visitWhileLoop(WhileLoopNode *node) {
 
 std::any SymbolTableBuilder::visitDoWhileLoop(DoWhileLoopNode *node) {
   // Create scope for the loop body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_WHILE_BODY, &node->body()->codeLoc);
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body()->codeLoc);
 
   // Visit condition
   visit(node->condition());
@@ -414,7 +420,7 @@ std::any SymbolTableBuilder::visitDoWhileLoop(DoWhileLoopNode *node) {
 std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
   // Create scope for the then body
   node->thenBodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), SCOPE_IF_ELSE_BODY, &node->thenBody()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->thenBody()->codeLoc);
 
   // Visit condition
   visit(node->condition());
@@ -441,7 +447,7 @@ std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
 
   // Create scope for the else body
   node->elseBodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), SCOPE_IF_ELSE_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->body()->codeLoc);
 
   // Visit else body
   visit(node->body());
@@ -455,7 +461,7 @@ std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
 std::any SymbolTableBuilder::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Create scope for the anonymous block body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), SCOPE_ANONYMOUS_BLOCK_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, &node->body()->codeLoc);
 
   // Visit body
   visit(node->body());
@@ -518,7 +524,8 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
   // Create scope for the lambda body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &node->body()->codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired(BY_VALUE);
 
@@ -540,7 +547,8 @@ std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
   // Create scope for the lambda body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->body()->codeLoc);
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &node->body()->codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired(BY_VALUE);
 
@@ -560,7 +568,7 @@ std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
 std::any SymbolTableBuilder::visitLambdaExpr(LambdaExprNode *node) {
   // Create scope for the anonymous block body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), SCOPE_LAMBDA_BODY, &node->lambdaExpr()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &node->lambdaExpr()->codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired(BY_VALUE);
 

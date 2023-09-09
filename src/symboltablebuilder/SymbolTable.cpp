@@ -79,7 +79,7 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-
     if (parent == nullptr)
       return nullptr;
     // If we search for the result variable, we want to stop the search when exiting a lambda body
-    if (name == RETURN_VARIABLE_NAME && scope->type == SCOPE_LAMBDA_BODY)
+    if (name == RETURN_VARIABLE_NAME && scope->type == ScopeType::LAMBDA_BODY)
       return nullptr;
     // If there is a parent scope, continue the search there
     entry = parent->lookup(name);

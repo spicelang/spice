@@ -94,7 +94,7 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
 
   // If this is the scope of a dtor, also return all fields of the struct
   if (isDtorScope) {
-    assert(parent != nullptr && parent->type == SCOPE_STRUCT);
+    assert(parent != nullptr && parent->type == ScopeType::STRUCT);
     // Get all fields of the struct
     for (const auto &[name, entry] : parent->symbolTable.symbols)
       if (!entry.getType().isOneOf({TY_FUNCTION, TY_PROCEDURE}))
@@ -133,7 +133,7 @@ GenericType *Scope::lookupGenericType(const std::string &typeName) { // NOLINT(m
  * @return Number of fields
  */
 size_t Scope::getFieldCount() const {
-  assert(type == SCOPE_STRUCT);
+  assert(type == ScopeType::STRUCT);
   size_t fieldCount = 0;
   for (const auto &symbol : symbolTable.symbols) {
     const SymbolType &symbolType = symbol.second.getType();
@@ -153,7 +153,7 @@ size_t Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
   if (parent->parent == nullptr)
     return 0;
   size_t loopCount = parent->getLoopNestingDepth();
-  if (type == SCOPE_WHILE_BODY || type == SCOPE_FOR_BODY || type == SCOPE_FOREACH_BODY)
+  if (type == ScopeType::WHILE_BODY || type == ScopeType::FOR_BODY || type == ScopeType::FOREACH_BODY)
     loopCount++;
   return loopCount;
 }
@@ -179,7 +179,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
       if (!entry.getType().getTemplateTypes().empty())
         continue;
 
-      if (type == SCOPE_GLOBAL) {
+      if (type == ScopeType::GLOBAL) {
         warningType = UNUSED_FUNCTION;
         warningMessage = "The function '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
       } else {
@@ -194,7 +194,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
       if (!entry.getType().getTemplateTypes().empty())
         continue;
 
-      if (type == SCOPE_GLOBAL) {
+      if (type == ScopeType::GLOBAL) {
         warningType = UNUSED_PROCEDURE;
         warningMessage = "The procedure '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
       } else {
@@ -205,7 +205,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
       break;
     }
     case TY_STRUCT: {
-      if (entry.scope->type == SCOPE_GLOBAL) {
+      if (entry.scope->type == ScopeType::GLOBAL) {
         // Skip generic struct entries
         if (!entry.getType().getTemplateTypes().empty())
           continue;
@@ -239,17 +239,17 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     default: {
       // Check parent scope type
       switch (type) {
-      case SCOPE_STRUCT: {
+      case ScopeType::STRUCT: {
         warningType = UNUSED_FIELD;
         warningMessage = "The field '" + entry.name + "' is unused";
         break;
       }
-      case SCOPE_ENUM: {
+      case ScopeType::ENUM: {
         warningType = UNUSED_ENUM_ITEM;
         warningMessage = "The enum item '" + entry.name + "' is unused";
         break;
       }
-      case SCOPE_FOREACH_BODY: {
+      case ScopeType::FOREACH_BODY: {
         // Skip idx variables, otherwise fall-through
         if (entry.name == FOREACH_DEFAULT_IDX_VARIABLE_NAME)
           continue;
@@ -297,12 +297,12 @@ void Scope::checkSuccessfulTypeInference() const {
 bool Scope::isImportedBy(const Scope *askingScope) const {
   // Get root scope of the source file where askingScope scope lives
   const Scope *askingRootScope = askingScope;
-  while (askingRootScope->type != SCOPE_GLOBAL && askingRootScope->parent)
+  while (askingRootScope->type != ScopeType::GLOBAL && askingRootScope->parent)
     askingRootScope = askingRootScope->parent;
 
   // Get root scope of the source file where the current scope lives
   const Scope *thisRootScope = this;
-  while (thisRootScope->type != SCOPE_GLOBAL && thisRootScope->parent)
+  while (thisRootScope->type != ScopeType::GLOBAL && thisRootScope->parent)
     thisRootScope = thisRootScope->parent;
 
   return askingRootScope != thisRootScope;
@@ -314,7 +314,7 @@ bool Scope::isImportedBy(const Scope *askingScope) const {
  * @return Allowed or not
  */
 bool Scope::doesAllowUnsafeOperations() const { // NOLINT(misc-no-recursion)
-  if (type == SCOPE_UNSAFE_BODY)
+  if (type == ScopeType::UNSAFE_BODY)
     return true;
   return parent != nullptr && parent->doesAllowUnsafeOperations();
 }

@@ -117,8 +117,6 @@ public:
 private:
   // Private members
   OpRuleManager opRuleManager = OpRuleManager(this);
-  Scope *rootScope;
-  Scope *currentScope = nullptr;
   Scope *accessScope = nullptr;
   const TypeCheckerMode typeCheckerMode;
   std::vector<CompilerWarning> &warnings;
@@ -132,9 +130,6 @@ private:
   bool visitMethodCall(FctCallNode *node, Scope *structScope) const;
   [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;
   [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
-  void changeToScope(Scope *scope, ScopeType scopeType);
-  void changeToScope(const std::string &scopeName, ScopeType scopeType);
-  void changeToParentScope(ScopeType oldScopeType);
   static void autoDeReference(SymbolType &symbolType);
   void doScopeCleanup(StmtLstNode *node);
   void callStructDtor(SymbolTableEntry *entry, StmtLstNode *node);

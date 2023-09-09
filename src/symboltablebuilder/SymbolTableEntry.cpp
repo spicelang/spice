@@ -91,7 +91,7 @@ llvm::Value *SymbolTableEntry::getAddress() const { return memAddress.empty() ? 
 void SymbolTableEntry::updateAddress(llvm::Value *address) {
   assert(address != nullptr);
   // Ensure that structs fields get no addresses assigned, as the addresses are meant for the struct instances
-  assert((scope->type != SCOPE_STRUCT && scope->type != SCOPE_INTERFACE) || type.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  assert((scope->type != ScopeType::STRUCT && scope->type != ScopeType::INTERFACE) || type.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   if (memAddress.empty())
     memAddress.push(address);
   else
@@ -121,7 +121,7 @@ void SymbolTableEntry::popAddress() {
  *
  * @return Struct field or not
  */
-bool SymbolTableEntry::isField() const { return scope->type == SCOPE_STRUCT && !type.isOneOf({TY_FUNCTION, TY_PROCEDURE}); }
+bool SymbolTableEntry::isField() const { return scope->type == ScopeType::STRUCT && !type.isOneOf({TY_FUNCTION, TY_PROCEDURE}); }
 
 /**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.

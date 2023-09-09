@@ -1,10 +1,11 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
-#include "symboltablebuilder/SymbolTableBuilder.h"
 
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
+#include <symboltablebuilder/ScopeHandle.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
 
@@ -384,7 +385,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // Change scope
   Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
-  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
+  ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY, node);
 
   // If there are captures, we pass them in a struct as the first function argument
   const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
@@ -537,11 +538,11 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   allocaInsertBlock = allocaInsertBlockOrig;
   allocaInsertInst = allocaInsertInstOrig;
 
+  // Change back to original scope
+  scopeHandle.leaveScopeEarly();
+
   // Verify function
   verifyFunction(lambda, node->codeLoc);
-
-  // Change back to original scope
-  changeToParentScope(SCOPE_LAMBDA_BODY);
 
   // Captures, create a struct { <fct-ptr>, <capture struct ptr> }
   llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);
@@ -556,7 +557,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
 
   // Change scope
   Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
-  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
+  ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY, node);
 
   // If there are captures, we pass them in a struct as the first function argument
   const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
@@ -696,11 +697,11 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   allocaInsertBlock = allocaInsertBlockOrig;
   allocaInsertInst = allocaInsertInstOrig;
 
+  // Change back to original scope
+  scopeHandle.leaveScopeEarly();
+
   // Verify function
   verifyFunction(lambda, node->codeLoc);
-
-  // Change back to original scope
-  changeToParentScope(SCOPE_LAMBDA_BODY);
 
   // Create a struct { <fct-ptr>, <capture struct ptr> }
   llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);
@@ -715,7 +716,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
 
   // Change scope
   Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
-  changeToScope(bodyScope, SCOPE_LAMBDA_BODY);
+  ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY, node);
 
   // If there are captures, we pass them in a struct as the first function argument
   const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
@@ -856,12 +857,11 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   allocaInsertBlock = allocaInsertBlockOrig;
   allocaInsertInst = allocaInsertInstOrig;
 
+  // Change back to original scope
+  scopeHandle.leaveScopeEarly();
+
   // Verify function
   verifyFunction(lambda, node->codeLoc);
-
-  // Change back to original scope
-  changeToParentScope(SCOPE_LAMBDA_BODY);
-
   // Create a struct { <fct-ptr>, <capture struct ptr> }
   llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);
 

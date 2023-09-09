@@ -146,7 +146,7 @@ void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
 
   const size_t line = node->codeLoc.line;
   const size_t col = node->codeLoc.col;
-  llvm::DILexicalBlock* lexicalBlock = diBuilder->createLexicalBlock(lexicalBlocks.top(), diFile, line, col);
+  llvm::DILexicalBlock *lexicalBlock = diBuilder->createLexicalBlock(lexicalBlocks.top(), diFile, line, col);
   lexicalBlocks.push(lexicalBlock);
 }
 

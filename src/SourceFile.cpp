@@ -141,7 +141,7 @@ void SourceFile::runASTBuilder() {
   antlrCtx.parser->reset();
 
   // Create global scope
-  globalScope = std::make_unique<Scope>(nullptr, this, SCOPE_GLOBAL, &ast->codeLoc);
+  globalScope = std::make_unique<Scope>(nullptr, this, ScopeType::GLOBAL, &ast->codeLoc);
 
   previousStage = AST_BUILDER;
   timer.stop();

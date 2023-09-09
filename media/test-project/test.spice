@@ -1,11 +1,7 @@
-import "test2" as s1;
-
-f<int> dummy() {
-    return s1::dummy();
-}
-
 f<int> main() {
-    dummy();
+    for int i = 0; "No bool"; i++ {
+        printf("Test");
+    }
 }
 
 /*import "std/os/thread-pool";

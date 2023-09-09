@@ -34,6 +34,7 @@ public:
   friend class StdFunctionManager;
   friend class OpRuleConversionManager;
   friend class DebugInfoGenerator;
+  friend class ScopeHandle;
 
   // Visitor methods
   // Top level definitions
@@ -134,9 +135,6 @@ private:
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   void materializeConstant(LLVMExprResult &exprResult);
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
-  void changeToScope(Scope *scope, ScopeType scopeType);
-  void changeToScope(const std::string &scopeName, ScopeType scopeType);
-  void changeToParentScope(ScopeType oldScopeType);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
   llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Value *lambda);
 
@@ -150,7 +148,6 @@ private:
   struct CommonLLVMTypes {
     llvm::StructType *fatPtrType = nullptr;
   } llvmTypes;
-  Scope *currentScope;
   std::vector<llvm::BasicBlock *> breakBlocks;
   std::vector<llvm::BasicBlock *> continueBlocks;
   llvm::BasicBlock *allocaInsertBlock = nullptr;

@@ -57,6 +57,8 @@ set(SOURCES
         symboltablebuilder/TypeChain.cpp
         symboltablebuilder/TypeSpecifiers.cpp
         symboltablebuilder/TypeSpecifiers.h
+        symboltablebuilder/ScopeHandle.cpp
+        symboltablebuilder/ScopeHandle.h
         # Type checker
         typechecker/TypeChecker.cpp
         typechecker/TypeChecker.h
@@ -146,13 +148,13 @@ set(SOURCES
         util/CompilerWarning.h
         util/GlobalDefinitions.h
         util/Timer.h
+        util/DeferredLogic.h
         #util/Memory.h
         util/RawStringOStream.cpp
         util/RawStringOStream.h
 )
 
-add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS}
-        util/DeferredLogic.h)
+add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 # Include Antlr components
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)

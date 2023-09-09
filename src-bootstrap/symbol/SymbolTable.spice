@@ -13,17 +13,17 @@ import "Function";
 import "Interface";
 
 public type ScopeType enum {
-    SCOPE_GLOBAL,
-    SCOPE_FUNC_PROC_BODY,
-    SCOPE_STRUCT,
-    SCOPE_INTERFACE,
-    SCOPE_ENUM,
-    SCOPE_IF_ELSE_BODY,
-    SCOPE_WHILE_BODY,
-    SCOPE_FOR_BODY,
-    SCOPE_FOREACH_BODY,
+    GLOBAL,
+    FUNC_PROC_BODY,
+    STRUCT,
+    INTERFACE,
+    ENUM,
+    IF_ELSE_BODY,
+    WHILE_BODY,
+    FOR_BODY,
+    FOREACH_BODY,
     SCOPE_THREAD_BODY,
-    SCOPE_UNSAFE_BODY
+    UNSAFE_BODY
 }
 
 /**
@@ -363,7 +363,7 @@ public f<Map<string, Capture>*> SymbolTable.getCaptures() {
  * @return Number of fields
  */
 public f<long> SymbolTable.getFieldCount() {
-    assert this.scopeType == ScopeType.SCOPE_STRUCT;
+    assert this.scopeType == ScopeType.STRUCT;
     unsigned long fieldCount = 0l;
     // ToDo
     return fieldCount;
