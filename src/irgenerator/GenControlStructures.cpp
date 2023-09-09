@@ -3,6 +3,7 @@
 #include "IRGenerator.h"
 
 #include <ast/ASTNodes.h>
+#include <util/DeferredLogic.h>
 
 #include <llvm/IR/Verifier.h>
 
@@ -13,14 +14,13 @@ std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockDefNode *node) {
 
   // Change scope
   changeToScope(node->getScopeId(), SCOPE_UNSAFE_BODY);
+  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_UNSAFE_BODY); });
   diGenerator.pushLexicalBlock(node);
 
   // Visit instructions in the block
   visit(node->body());
 
-  // Change scope back
-  changeToParentScope();
-  assert(currentScope != nullptr);
+  // Pop lexical block
   diGenerator.popLexicalBlock();
 
   return nullptr;
@@ -38,6 +38,7 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
 
   // Change scope
   changeToScope(node->getScopeId(), SCOPE_FOR_BODY);
+  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_FOR_BODY); });
   diGenerator.pushLexicalBlock(node);
 
   // Save the blocks for break and continue
@@ -79,9 +80,7 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   assert(continueBlocks.back() == bTail);
   continueBlocks.pop_back();
 
-  // Change scope back
-  changeToParentScope();
-  assert(currentScope != nullptr);
+  // Pop lexical block
   diGenerator.popLexicalBlock();
 
   return nullptr;
@@ -99,6 +98,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Change scope
   changeToScope(node->getScopeId(), SCOPE_FOREACH_BODY);
+  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_FOREACH_BODY); });
   diGenerator.pushLexicalBlock(node);
 
   // Save the blocks for break and continue
@@ -199,9 +199,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   assert(continueBlocks.back() == bTail);
   continueBlocks.pop_back();
 
-  // Change scope back
-  changeToParentScope();
-  assert(currentScope != nullptr);
+  // Pop lexical block
   diGenerator.popLexicalBlock();
 
   return nullptr;
@@ -218,6 +216,7 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
 
   // Change scope
   changeToScope(node->getScopeId(), SCOPE_WHILE_BODY);
+  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_WHILE_BODY); });
   diGenerator.pushLexicalBlock(node);
 
   // Save the blocks for break and continue
@@ -250,9 +249,7 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   assert(continueBlocks.back() == bHead);
   continueBlocks.pop_back();
 
-  // Change scope back
-  currentScope = node->bodyScope->parent;
-  assert(currentScope != nullptr);
+  // Pop lexical block
   diGenerator.popLexicalBlock();
 
   return nullptr;
@@ -269,6 +266,7 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
 
   // Change scope
   changeToScope(node->getScopeId(), SCOPE_WHILE_BODY);
+  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_WHILE_BODY); });
   diGenerator.pushLexicalBlock(node);
 
   // Save the blocks for break and continue
@@ -301,9 +299,7 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   assert(continueBlocks.back() == bFoot);
   continueBlocks.pop_back();
 
-  // Change scope back
-  changeToParentScope();
-  assert(currentScope != nullptr);
+  // Pop lexical block
   diGenerator.popLexicalBlock();
 
   return nullptr;
@@ -320,6 +316,7 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
 
   // Change scope
   changeToScope(node->getScopeId(), SCOPE_IF_ELSE_BODY);
+  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_IF_ELSE_BODY); });
   diGenerator.pushLexicalBlock(node);
 
   // Retrieve condition value
@@ -335,8 +332,7 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   insertJump(bExit);
 
   // Change scope back
-  changeToParentScope();
-  assert(currentScope != nullptr);
+  leaveScope.execute();
   diGenerator.popLexicalBlock();
 
   if (node->elseStmt()) {
@@ -363,14 +359,13 @@ std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
   } else { // It is an else branch
     // Change scope
     changeToScope(node->getScopeId(), SCOPE_IF_ELSE_BODY);
+    DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_IF_ELSE_BODY); });
     diGenerator.pushLexicalBlock(node);
 
     // Generate IR for nested statements
     visit(node->body());
 
-    // Change scope back
-    changeToParentScope();
-    assert(currentScope != nullptr);
+    // Pop lexical block
     diGenerator.popLexicalBlock();
   }
 
@@ -384,14 +379,13 @@ std::any IRGenerator::visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node
   node->bodyScope->parent = currentScope;                           // Needed for nested scopes in generic functions
   node->bodyScope->symbolTable.parent = &currentScope->symbolTable; // Needed for nested scopes in generic functions
   changeToScope(node->getScopeId(), SCOPE_ANONYMOUS_BLOCK_BODY);
-  assert(currentScope != nullptr);
+  DeferredLogic leaveScope([=, this]() { changeToParentScope(SCOPE_ANONYMOUS_BLOCK_BODY); });
+  diGenerator.pushLexicalBlock(node);
 
   // Visit instructions in the block
   visit(node->body());
 
-  // Change scope back
-  changeToParentScope();
-  assert(currentScope != nullptr);
+  // Pop lexical block
   diGenerator.popLexicalBlock();
 
   return nullptr;

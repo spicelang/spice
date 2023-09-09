@@ -590,7 +590,7 @@ std::string IRGenerator::getIRString() const {
  * @param scope Scope to change to
  * @param scopeType Expected type of the given scope
  */
-void IRGenerator::changeToScope(Scope *scope, const ScopeType scopeType) {
+void IRGenerator::changeToScope(Scope *scope, ScopeType scopeType) {
   assert(scope != nullptr);
   assert(scope->type == scopeType);
   assert(!scope->isGenericScope);
@@ -607,15 +607,18 @@ void IRGenerator::changeToScope(Scope *scope, const ScopeType scopeType) {
  * @param scopeName Name of the scope to change to
  * @param scopeType Expected type of the given scope
  */
-void IRGenerator::changeToScope(const std::string &scopeName, const ScopeType scopeType) {
+void IRGenerator::changeToScope(const std::string &scopeName, ScopeType scopeType) {
   assert(!scopeName.empty());
   changeToScope(currentScope->getChildScope(scopeName), scopeType);
 }
 
 /**
  * Change to the parent scope of the current.
+ *
+ * @param oldScopeType Expected type of the scope to leave
  */
-void IRGenerator::changeToParentScope() {
+void IRGenerator::changeToParentScope(ScopeType oldScopeType) {
+  assert(currentScope->type == oldScopeType);
   assert(currentScope->parent != nullptr);
   currentScope = currentScope->parent;
 }

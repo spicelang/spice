@@ -1,4 +1,5 @@
 import "std/iterator/iterable";
+import "std/data/pair";
 
 type MockIterator struct : Iterable<int> {
     int item

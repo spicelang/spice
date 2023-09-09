@@ -10,7 +10,7 @@
           "name": "bool isValid()",
           "symbols": [
             {
-              "codeLoc": "L22C1",
+              "codeLoc": "L23C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "result",
@@ -19,7 +19,7 @@
               "type": "bool"
             },
             {
-              "codeLoc": "L22C1",
+              "codeLoc": "L23C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -32,51 +32,10 @@
         {
           "captures": [],
           "children": [],
-          "name": "next<generic(T)>()",
-          "symbols": [
-            {
-              "codeLoc": "L26C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<generic(T)>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "bool isValid<generic(T)>()",
-          "symbols": [
-            {
-              "codeLoc": "L22C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "result",
-              "orderIndex": 1,
-              "state": "declared",
-              "type": "invalid"
-            },
-            {
-              "codeLoc": "L22C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<generic(T)>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
           "name": "next()",
           "symbols": [
             {
-              "codeLoc": "L26C1",
+              "codeLoc": "L27C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -92,7 +51,7 @@
           "name": "short& get()",
           "symbols": [
             {
-              "codeLoc": "L14C1",
+              "codeLoc": "L15C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "result",
@@ -101,7 +60,7 @@
               "type": "short&"
             },
             {
-              "codeLoc": "L14C1",
+              "codeLoc": "L15C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -114,10 +73,26 @@
         {
           "captures": [],
           "children": [],
-          "name": "std/iterator/iterable::Pair<unsigned long,generic(T)&> getIdx<generic(T)>()",
+          "name": "next<generic(T)>()",
           "symbols": [
             {
-              "codeLoc": "L18C1",
+              "codeLoc": "L27C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "bool isValid<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L23C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "result",
@@ -126,7 +101,32 @@
               "type": "invalid"
             },
             {
-              "codeLoc": "L18C1",
+              "codeLoc": "L23C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<generic(T)>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "std/data/pair::Pair<unsigned long,generic(T)&> getIdx<generic(T)>()",
+          "symbols": [
+            {
+              "codeLoc": "L19C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "declared",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L19C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -142,7 +142,7 @@
           "name": "ctor()",
           "symbols": [
             {
-              "codeLoc": "L10C1",
+              "codeLoc": "L11C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -158,7 +158,7 @@
           "name": "generic(T)& get<generic(T)>()",
           "symbols": [
             {
-              "codeLoc": "L14C1",
+              "codeLoc": "L15C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "result",
@@ -167,7 +167,7 @@
               "type": "invalid"
             },
             {
-              "codeLoc": "L14C1",
+              "codeLoc": "L15C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -183,7 +183,7 @@
           "name": "ctor<generic(T)>()",
           "symbols": [
             {
-              "codeLoc": "L10C1",
+              "codeLoc": "L11C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -197,61 +197,52 @@
       "name": "struct:MockIterator<short>",
       "symbols": [
         {
-          "codeLoc": "L10C1",
+          "codeLoc": "L23C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "ctor:L10C1",
-          "orderIndex": 2,
-          "state": "declared",
-          "type": "p()"
-        },
-        {
-          "codeLoc": "L22C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "isValid:L22C1",
+          "name": "isValid:L23C1",
           "orderIndex": 5,
           "state": "declared",
           "type": "f<bool>()"
         },
         {
-          "codeLoc": "L18C1",
+          "codeLoc": "L11C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "getIdx:L18C1",
-          "orderIndex": 4,
-          "state": "declared",
-          "type": "f<std/iterator/iterable::Pair<unsigned long,generic(T)&>>()"
-        },
-        {
-          "codeLoc": "L22C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "isValid:L22C1",
-          "orderIndex": 5,
-          "state": "declared",
-          "type": "f<bool>()"
-        },
-        {
-          "codeLoc": "L10C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "ctor:L10C1",
+          "name": "ctor:L11C1",
           "orderIndex": 2,
           "state": "declared",
           "type": "p()"
         },
         {
-          "codeLoc": "L26C1",
+          "codeLoc": "L27C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "next:L26C1",
+          "name": "next:L27C1",
           "orderIndex": 6,
           "state": "declared",
           "type": "p()"
         },
         {
-          "codeLoc": "L7C5",
+          "codeLoc": "L15C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "get:L15C1",
+          "orderIndex": 3,
+          "state": "declared",
+          "type": "f<generic(T)&>()"
+        },
+        {
+          "codeLoc": "L19C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "getIdx:L19C1",
+          "orderIndex": 4,
+          "state": "declared",
+          "type": "f<std/data/pair::Pair<unsigned long,generic(T)&>>()"
+        },
+        {
+          "codeLoc": "L8C5",
           "isGlobal": false,
           "isVolatile": false,
           "name": "cursor",
@@ -260,34 +251,43 @@
           "type": "unsigned long"
         },
         {
-          "codeLoc": "L26C1",
+          "codeLoc": "L27C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "next:L26C1",
+          "name": "next:L27C1",
           "orderIndex": 6,
           "state": "declared",
           "type": "p()"
         },
         {
-          "codeLoc": "L14C1",
+          "codeLoc": "L15C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "get:L14C1",
+          "name": "get:L15C1",
           "orderIndex": 3,
           "state": "declared",
           "type": "f<generic(T)&>()"
         },
         {
-          "codeLoc": "L14C1",
+          "codeLoc": "L23C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "get:L14C1",
-          "orderIndex": 3,
+          "name": "isValid:L23C1",
+          "orderIndex": 5,
           "state": "declared",
-          "type": "f<generic(T)&>()"
+          "type": "f<bool>()"
         },
         {
-          "codeLoc": "L6C5",
+          "codeLoc": "L11C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L11C1",
+          "orderIndex": 2,
+          "state": "declared",
+          "type": "p()"
+        },
+        {
+          "codeLoc": "L7C5",
           "isGlobal": false,
           "isVolatile": false,
           "name": "item",
@@ -303,19 +303,19 @@
         {
           "captures": [],
           "children": [],
-          "name": "foreach:L29C5",
+          "name": "foreach:L30C5",
           "symbols": [
             {
-              "codeLoc": "L29C24",
+              "codeLoc": "L30C24",
               "isGlobal": false,
               "isVolatile": false,
-              "name": "anon.L29C24",
+              "name": "anon.L30C24",
               "orderIndex": 1,
               "state": "initialized",
               "type": "MockIterator<short>"
             },
             {
-              "codeLoc": "L29C13",
+              "codeLoc": "L30C13",
               "isGlobal": false,
               "isVolatile": false,
               "name": "item",
@@ -329,7 +329,7 @@
       "name": "fct:main",
       "symbols": [
         {
-          "codeLoc": "L28C1",
+          "codeLoc": "L29C1",
           "isGlobal": false,
           "isVolatile": false,
           "name": "result",
@@ -348,7 +348,7 @@
           "name": "next<generic(T)>()",
           "symbols": [
             {
-              "codeLoc": "L26C1",
+              "codeLoc": "L27C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -364,7 +364,7 @@
           "name": "bool isValid<generic(T)>()",
           "symbols": [
             {
-              "codeLoc": "L22C1",
+              "codeLoc": "L23C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "result",
@@ -373,7 +373,7 @@
               "type": "invalid"
             },
             {
-              "codeLoc": "L22C1",
+              "codeLoc": "L23C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -386,10 +386,10 @@
         {
           "captures": [],
           "children": [],
-          "name": "std/iterator/iterable::Pair<unsigned long,generic(T)&> getIdx<generic(T)>()",
+          "name": "std/data/pair::Pair<unsigned long,generic(T)&> getIdx<generic(T)>()",
           "symbols": [
             {
-              "codeLoc": "L18C1",
+              "codeLoc": "L19C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "result",
@@ -398,7 +398,7 @@
               "type": "invalid"
             },
             {
-              "codeLoc": "L18C1",
+              "codeLoc": "L19C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -414,7 +414,7 @@
           "name": "generic(T)& get<generic(T)>()",
           "symbols": [
             {
-              "codeLoc": "L14C1",
+              "codeLoc": "L15C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "result",
@@ -423,7 +423,7 @@
               "type": "invalid"
             },
             {
-              "codeLoc": "L14C1",
+              "codeLoc": "L15C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -439,7 +439,7 @@
           "name": "ctor<generic(T)>()",
           "symbols": [
             {
-              "codeLoc": "L10C1",
+              "codeLoc": "L11C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -453,43 +453,34 @@
       "name": "struct:MockIterator",
       "symbols": [
         {
-          "codeLoc": "L22C1",
+          "codeLoc": "L27C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "isValid:L22C1",
-          "orderIndex": 5,
-          "state": "declared",
-          "type": "f<bool>()"
-        },
-        {
-          "codeLoc": "L18C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "getIdx:L18C1",
-          "orderIndex": 4,
-          "state": "declared",
-          "type": "f<std/iterator/iterable::Pair<unsigned long,generic(T)&>>()"
-        },
-        {
-          "codeLoc": "L10C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "ctor:L10C1",
-          "orderIndex": 2,
-          "state": "declared",
-          "type": "p()"
-        },
-        {
-          "codeLoc": "L26C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "next:L26C1",
+          "name": "next:L27C1",
           "orderIndex": 6,
           "state": "declared",
           "type": "p()"
         },
         {
-          "codeLoc": "L7C5",
+          "codeLoc": "L15C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "get:L15C1",
+          "orderIndex": 3,
+          "state": "declared",
+          "type": "f<generic(T)&>()"
+        },
+        {
+          "codeLoc": "L19C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "getIdx:L19C1",
+          "orderIndex": 4,
+          "state": "declared",
+          "type": "f<std/data/pair::Pair<unsigned long,generic(T)&>>()"
+        },
+        {
+          "codeLoc": "L8C5",
           "isGlobal": false,
           "isVolatile": false,
           "name": "cursor",
@@ -498,16 +489,25 @@
           "type": "unsigned long"
         },
         {
-          "codeLoc": "L14C1",
+          "codeLoc": "L23C1",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "get:L14C1",
-          "orderIndex": 3,
+          "name": "isValid:L23C1",
+          "orderIndex": 5,
           "state": "declared",
-          "type": "f<generic(T)&>()"
+          "type": "f<bool>()"
         },
         {
-          "codeLoc": "L6C5",
+          "codeLoc": "L11C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L11C1",
+          "orderIndex": 2,
+          "state": "declared",
+          "type": "p()"
+        },
+        {
+          "codeLoc": "L7C5",
           "isGlobal": false,
           "isVolatile": false,
           "name": "item",
@@ -520,31 +520,40 @@
   ],
   "symbols": [
     {
-      "codeLoc": "L5C1",
+      "codeLoc": "L6C1",
       "isGlobal": true,
       "isVolatile": false,
       "name": "MockIterator",
-      "orderIndex": 1,
+      "orderIndex": 2,
       "state": "declared",
       "type": "MockIterator<short>"
     },
     {
-      "codeLoc": "L28C1",
+      "codeLoc": "L29C1",
       "isGlobal": true,
       "isVolatile": false,
       "name": "main()",
-      "orderIndex": 2,
+      "orderIndex": 3,
       "state": "declared",
       "type": "f<int>()"
     },
     {
-      "codeLoc": "L5C1",
+      "codeLoc": "L6C1",
       "isGlobal": true,
       "isVolatile": false,
       "name": "MockIterator",
-      "orderIndex": 1,
+      "orderIndex": 2,
       "state": "declared",
       "type": "MockIterator<generic(T)>"
+    },
+    {
+      "codeLoc": "L2C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "std/data/pair",
+      "orderIndex": 1,
+      "state": "declared",
+      "type": "import"
     },
     {
       "codeLoc": "L1C1",

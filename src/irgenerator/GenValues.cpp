@@ -141,7 +141,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
       AssignExprNode *argNode = args.at(i);
-      const SymbolType& expectedSTy = paramSTypes.at(i);
+      const SymbolType &expectedSTy = paramSTypes.at(i);
       const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
       // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
@@ -541,7 +541,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   verifyFunction(lambda, node->codeLoc);
 
   // Change back to original scope
-  changeToParentScope();
+  changeToParentScope(SCOPE_LAMBDA_BODY);
 
   // Captures, create a struct { <fct-ptr>, <capture struct ptr> }
   llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);
@@ -700,7 +700,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   verifyFunction(lambda, node->codeLoc);
 
   // Change back to original scope
-  changeToParentScope();
+  changeToParentScope(SCOPE_LAMBDA_BODY);
 
   // Create a struct { <fct-ptr>, <capture struct ptr> }
   llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);
@@ -860,7 +860,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   verifyFunction(lambda, node->codeLoc);
 
   // Change back to original scope
-  changeToParentScope();
+  changeToParentScope(SCOPE_LAMBDA_BODY);
 
   // Create a struct { <fct-ptr>, <capture struct ptr> }
   llvm::Value *result = buildFatFctPtr(bodyScope, capturesStructType, lambda);

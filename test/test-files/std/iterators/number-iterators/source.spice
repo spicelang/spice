@@ -1,4 +1,5 @@
 import "std/iterator/number-iterator";
+import "std/data/pair";
 
 f<int> main() {
     // Create iterator with range convinience helper

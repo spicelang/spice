@@ -1,4 +1,5 @@
 import "std/iterator/iterable";
+import "std/data/pair";
 import "std/type/error";
 
 // Generic type definitions

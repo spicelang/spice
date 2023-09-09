@@ -1,5 +1,6 @@
 import "std/iterator/array-iterator";
 import "std/iterator/vector-iterator";
+import "std/data/vector";
 
 // Generic type definitions
 type I dyn; // Item type

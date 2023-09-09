@@ -35,14 +35,14 @@ define dso_local i32 @main(i32 %0, ptr %1) local_unnamed_addr #0 {
   %4 = call i32 @_ZN9CliParser5parseEjPPc(ptr nonnull %parser, i32 %0, ptr %1) #2
   %5 = load ptr, ptr %options, align 8
   %6 = call i1 @_Z10isRawEqualPcPc(ptr %5, ptr nonnull @anon.string.9) #2
-  br i1 %6, label %if.exit.L23, label %if.then.L23
+  br i1 %6, label %if.exit.L24, label %if.then.L24
 
-if.then.L23:                                      ; preds = %2
+if.then.L24:                                      ; preds = %2
   %7 = load ptr, ptr %options, align 8
   %8 = call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, ptr %7)
-  br label %if.exit.L23
+  br label %if.exit.L24
 
-if.exit.L23:                                      ; preds = %if.then.L23, %2
+if.exit.L24:                                      ; preds = %if.then.L24, %2
   ret i32 0
 }
 
