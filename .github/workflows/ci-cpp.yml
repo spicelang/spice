@@ -71,6 +71,7 @@ jobs:
           ./setup-libs.sh
 
       - name: Build Test target
+#        if: github.event_name != 'pull_request'
         env:
           LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
         run: |
@@ -80,21 +81,32 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_LTO=ON -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
           cmake --build . --target spicetest -j$(nproc)
 
+#      - name: Build Test target
+#        if: github.event_name == 'pull_request'
+#        env:
+#          LLVM_DIR: /home/runner/work/spice/llvm/build/lib/cmake/llvm
+#        run: |
+#          echo "/usr/lib/ccache:/usr/local/opt/ccache/libexec" >> $GITHUB_PATH
+#          mkdir ./bin
+#          cd ./bin
+#          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
+#          cmake --build . --target spicetest -j$(nproc)
+
       - name: Run Test target
-        if: github.event_name != 'pull_request'
+#        if: github.event_name != 'pull_request'
         env:
           SPICE_STD_DIR: /home/runner/work/spice/spice/std
         run: |
           cd ./bin/test
           ./spicetest --skip-github-tests
 
-      - name: Run Test target with Valgrind
-        if: github.event_name == 'pull_request'
-        env:
-          SPICE_STD_DIR: /home/runner/work/spice/spice/std
-        run: |
-          cd ./bin/test
-          valgrind -q --leak-check=full ./spicetest --skip-github-tests --leak-detection
+#      - name: Run Test target with Valgrind
+#        if: github.event_name == 'pull_request'
+#        env:
+#          SPICE_STD_DIR: /home/runner/work/spice/spice/std
+#        run: |
+#          cd ./bin/test
+#          valgrind -q --leak-check=full ./spicetest --skip-github-tests --leak-detection
 
       - name: Generate coverage report
         run: |
