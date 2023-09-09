@@ -1,48 +1,27 @@
-import "std/os/thread-pool";
-import "std/time/delay";
+import "std/io/cli-parser";
+import "std/io/cli-subcommand";
 
-f<int> main() {
-    ThreadPool tp = ThreadPool(3s);
-    tp.enqueue(p() {
-        delay(100);
-        printf("Hello from task 1\n");
-    });
-    tp.enqueue(p() {
-        delay(200);
-        printf("Hello from task 2\n");
-    });
-    tp.enqueue(p() {
-        delay(300);
-        printf("Hello from task 3\n");
-    });
-    tp.enqueue(p() {
-        delay(400);
-        printf("Hello from task 4\n");
-    });
-    tp.enqueue(p() {
-        delay(500);
-        printf("Hello from task 5\n");
-    });
-    tp.enqueue(p() {
-        delay(600);
-        printf("Hello from task 6\n");
-    });
-    tp.enqueue(p() {
-        delay(700);
-        printf("Hello from task 7\n");
-    });
-    tp.enqueue(p() {
-        delay(800);
-        printf("Hello from task 8\n");
-    });
-    tp.enqueue(p() {
-        delay(900);
-        printf("Hello from task 9\n");
-    });
-    tp.enqueue(p() {
-        delay(1000);
-        printf("Hello from task 10\n");
-    });
-    tp.start();
-    tp.join();
+type CliOptions struct {
+    string greetName = ""
+}
+
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
+}
+
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
+
+    CliOptions options;
+    CliSubcommand& greet = parser.addSubcommand("greet", "Greet someone");
+    greet.addOption("--name", options.greetName, "Name of the person to greet");
+
+    parser.parse(argc, argv);
+
+    // Greet persion if requested
+    if options.greetName != "" {
+        printf("Hello %s!\n", options.greetName);
+    }
 }
