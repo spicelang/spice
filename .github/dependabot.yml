@@ -16,7 +16,7 @@ updates:
 
   # GitHub Actions
   - package-ecosystem: github-actions
-    directory: /
+    directory: .github/workflows/
     schedule:
       interval: daily
       time: "04:00"
@@ -27,3 +27,17 @@ updates:
       - spicelang/compiler-team
     assignees:
       - spicelang/compiler-team
+
+  # Python
+  - package-ecosystem: pip
+    directory: docs/
+    schedule:
+      interval: weekly # Weekly, because material for mkdocs updates quite often
+      time: "04:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 15
+    target-branch: main
+    reviewers:
+      - spicelang/documentation-team
+    assignees:
+      - spicelang/documentation-team
