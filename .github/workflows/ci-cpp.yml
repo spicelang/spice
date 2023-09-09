@@ -81,20 +81,20 @@ jobs:
           cmake --build . --target spicetest -j$(nproc)
 
       - name: Run Test target
-#        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         env:
           SPICE_STD_DIR: /home/runner/work/spice/spice/std
         run: |
           cd ./bin/test
           ./spicetest --skip-github-tests
 
-#      - name: Run Test target with Valgrind
-#        if: github.event_name == 'pull_request'
-#        env:
-#          SPICE_STD_DIR: /home/runner/work/spice/spice/std
-#        run: |
-#          cd ./bin/test
-#          valgrind -q --leak-check=full ./spicetest --skip-github-tests --leak-detection
+      - name: Run Test target with Valgrind
+        if: github.event_name == 'pull_request'
+        env:
+          SPICE_STD_DIR: /home/runner/work/spice/spice/std
+        run: |
+          cd ./bin/test
+          valgrind -q --leak-check=full ./spicetest --skip-github-tests --leak-detection
 
       - name: Generate coverage report
         run: |
