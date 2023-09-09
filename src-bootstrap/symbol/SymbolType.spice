@@ -31,7 +31,7 @@ type TypeChainElement struct {
 }
 
 p TypeChainElement.ctor() {
-    this.superType = SymbolSuperType.TY_DYN;
+    this.superType = SymbolSuperType::TY_DYN;
 }
 
 f<bool> TypeChainElement.equalsIgnoreArraySize(const TypeChainElement* lhs, const TypeChainElement rhs) {

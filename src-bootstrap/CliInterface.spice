@@ -2,6 +2,8 @@
 import "std/text/print";
 import "std/os/cmd";
 import "std/io/cli-parser";
+import "std/io/cli-subcommand";
+import "std/io/cli-option";
 
 /**
  * Representation of the various cli options
@@ -17,7 +19,7 @@ public type CliOptions struct {
     public String cacheDir
     public String outputDir      // Where the object files go. Should always be a temp directory
     public String outputPath     // Where the output binary goes.
-    public unsigned short compileJobCount = 0 // O for auto
+    public unsigned short compileJobCount = 0s // O for auto
     public bool ignoreCache = false
     public bool printDebugOutput = false
     public bool dumpCST = false
@@ -87,24 +89,24 @@ p CliInterface.addBuildSubcommand() {
     addCompileSubcommandOptions(subCmd);
 
     // --target-triple
-    Option& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple, "Target triple for the emitted executable (for cross-compiling)");
+    CliOption<string>& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple, "Target triple for the emitted executable (for cross-compiling)");
     targetOption.addAlias("--target-triple");
     targetOption.addAlias("-t");
     // --target-arch
-    Option& targetArchOption = subCmd.addOption("--target-arch", this.cliOptions.targetArch, "Target arch for emitted executable (for cross-compiling)");
+    CliOption<string>& targetArchOption = subCmd.addOption("--target-arch", this.cliOptions.targetArch, "Target arch for emitted executable (for cross-compiling)");
     // --target-vendor
-    Option& targetVendorOption = subCmd.addOption("--target-vendor", this.cliOptions.targetVendor, "Target vendor for emitted executable (for cross-compiling)");
+    CliOption<string>& targetVendorOption = subCmd.addOption("--target-vendor", this.cliOptions.targetVendor, "Target vendor for emitted executable (for cross-compiling)");
     // --target-os
-    Option& targetOsOption = subCmd.addOption("--target-os", this.cliOptions.targetOs, "Target OS for emitted executable (for cross-compiling)");
+    CliOption<string>& targetOsOption = subCmd.addOption("--target-os", this.cliOptions.targetOs, "Target OS for emitted executable (for cross-compiling)");
 
     // --output
-    Option& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
+    CliOption<string>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
     outputOption.addAlias("-o");
     // --debug-info
-    Option& debugInfoOption = subCmd.addOption("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
+    CliOption<bool>& debugInfoOption = subCmd.addOption("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
     debugInfoOption.addAlias("-g");
     // --disable-verifier
-    Option& disableVerifierOption = subCmd.addOption("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
+    CliOption<bool>& disableVerifierOption = subCmd.addOption("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
 
 /**
@@ -118,13 +120,13 @@ p CliInterface.addRunSubcommand() {
     addCompileSubcommandOptions(subCmd);
 
     // --output
-    Option& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
+    CliOption<string>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
     outputOption.addAlias("-o");
     // --debug-info
-    Option& debugInfoOption = subCmd.addOption("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
+    CliOption<bool>& debugInfoOption = subCmd.addOption("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
     debugInfoOption.addAlias("-g");
     // --disable-verifier
-    Option& disableVerifierOption = subCmd.addOption("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
+    CliOption<bool>& disableVerifierOption = subCmd.addOption("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
 
 /**
@@ -151,27 +153,27 @@ p CliInterface.addUninstallSubcommand() {
 
 p CliInterface.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --debug-output
-    CliFlag& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
+    CliOption<bool>& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
     debugOutputFlag.addAlias("-d");
     // --dump-cst
-    CliFlag& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dumpCST, "Dump CSTs as serialized string and SVG image");
+    CliOption<bool>& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dumpCST, "Dump CSTs as serialized string and SVG image");
     dumpCstFlag.addAlias("-cst");
     // --dump-ast
-    CliFlag& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dumpAST, "Dump ASTs as serialized string and SVG image");
+    CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dumpAST, "Dump ASTs as serialized string and SVG image");
     dumpAstFlag.addAlias("-ast");
     // --dump-symtab
-    CliFlag& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+    CliOption<bool>& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
     dumpSymtabFlag.addAlias("-symtab");
     // --dump-ir
-    CliFlag& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dumpIR, "Dump LLVM-IR");
+    CliOption<bool>& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dumpIR, "Dump LLVM-IR");
     dumpIrFlag.addAlias("-ir");
     // --dump-assembly
-    CliFlag& dumpAsmFlag = subCmd.addFlag("--dump-assembly", this.cliOptions.dumpAssembly, "Dump assembly code");
+    CliOption<bool>& dumpAsmFlag = subCmd.addFlag("--dump-assembly", this.cliOptions.dumpAssembly, "Dump assembly code");
     dumpAsmFlag.addAlias("-asm");
     dumpAsmFlag.addAlias("-s");
 
     // --jobs
-    CliFlag& jobsFlag = subCmd.addFlag("--jobs", this.cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
+    CliOption<bool>& jobsFlag = subCmd.addFlag("--jobs", this.cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
     jobsFlag.addAlias("-j");
     // --ignore-cache
     subCmd.addFlag("--ignore-cache", this.cliOptions.ignoreCache, "Force re-compilation of all source files");
@@ -186,7 +188,7 @@ p CliInterface.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     //subCmd.addFlag("-Os", [&]() { this.cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
     //subCmd.addFlag("-Oz", [&]() { this.cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
 
-    CliOption& fileOption = subCmd.addOption("<main-source-file>", cliOptions.mainSourceFile, "MainSourceFile");
+    CliOption<string>& fileOption = subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "MainSourceFile");
     fileOption.setRequired();
     fileOption.check(CliOption::EXISTING_FILE);
 }

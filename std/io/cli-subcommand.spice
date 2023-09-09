@@ -138,28 +138,34 @@ public f<CliSubcommand&> CliSubcommand.addSubcommand(string name, string descrip
     return this.subcommands.back();
 }
 
-public p CliSubcommand.addOption(string name, string& targetVariable, string description) {
+public f<CliOption<string>&> CliSubcommand.addOption(string name, string& targetVariable, string description) {
     this.stringOptions.pushBack(CliOption<string>(name, targetVariable, description));
+    return this.stringOptions.back();
 }
 
-public p CliSubcommand.addOption(string name, p(string&) callback, string description) {
+public f<CliOption<string>&> CliSubcommand.addOption(string name, p(string&) callback, string description) {
     this.stringOptions.pushBack(CliOption<string>(name, callback, description));
+    return this.stringOptions.back();
 }
 
-public p CliSubcommand.addOption(string name, int& targetVariable, string description) {
+public f<CliOption<int>&> CliSubcommand.addOption(string name, int& targetVariable, string description) {
     this.intOptions.pushBack(CliOption<int>(name, targetVariable, description));
+    return this.intOptions.back();
 }
 
-public p CliSubcommand.addOption(string name, p(int&) callback, string description) {
+public f<CliOption<int>&> CliSubcommand.addOption(string name, p(int&) callback, string description) {
     this.intOptions.pushBack(CliOption<int>(name, callback, description));
+    return this.intOptions.back();
 }
 
-public p CliSubcommand.addFlag(string name, bool& targetVariable, string description) {
+public f<CliOption<bool>&> CliSubcommand.addFlag(string name, bool& targetVariable, string description) {
     this.boolOptions.pushBack(CliOption<bool>(name, targetVariable, description));
+    return this.boolOptions.back();
 }
 
-public p CliSubcommand.addFlag(string name, p(bool&) callback, string description) {
+public f<CliOption<bool>&> CliSubcommand.addFlag(string name, p(bool&) callback, string description) {
     this.boolOptions.pushBack(CliOption<bool>(name, callback, description));
+    return this.boolOptions.back();
 }
 
 p printHelpItem(string name, string description) {

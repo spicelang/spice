@@ -23,7 +23,7 @@ public type CompileTimeValue struct {
 }
 
 public type Visitable interface {
-    f<any::Any> accept(vis::AbstractAstVisitor*)
+    f<any::Any> accept(vis::AbstractAstVisitor*);
 }
 
 // =========================================================== AstNode ===========================================================
@@ -44,7 +44,7 @@ p AstNode.ctor(AstNode *parent, cl::CodeLoc codeLoc) {
     this.parent = parent;
     this.codeLoc = codeLoc;
     this.manIdx = longTy::MAX_VALUE;
-    hasDirectCompileTimeValue = false;
+    this.hasDirectCompileTimeValue = false;
 }
 
 public f<any::Any> AstNode.accept(vis::AbstractAstVisitor* _) {

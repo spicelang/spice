@@ -18,7 +18,7 @@ public p CodeLoc.ctor(unsigned long line, unsigned long col, string sourceFilePa
  *
  * @return Code location string
  */
-public f<string> CodeLoc.toString() {
+public f<String> CodeLoc.toString() {
     return "L" + toString(this.line) + "C" + toString(this.col);
 }
 
@@ -28,7 +28,7 @@ public f<string> CodeLoc.toString() {
  * @return Pretty code location
  */
 public f<String> CodeLoc.toPrettyString() {
-    String codeLocStr = String(intTy.toString(line));
+    String codeLocStr = String(intTy.toString(this.line));
     if this.sourceFilePath.empty() {
         return toString(line) + ":" + toString(this.col);
     }
@@ -40,6 +40,17 @@ public f<String> CodeLoc.toPrettyString() {
  *
  * @return Pretty line number
  */
-public f<string> CodeLoc.toPrettyLine() {
-    return "l" + toString(this.line);
+public f<String> CodeLoc.toPrettyLine() {
+    return "L" + toString(this.line);
+}
+
+/**
+ * Returns the line and column number in a pretty form
+ */
+public f<String> CodeLoc.toPrettyLineAndColumn() {
+    return this.toString();
+}
+
+public f<bool> operator==(const CodeLoc &lhs, const CodeLoc &rhs) {
+    return /*lhs.sourceFilePath == rhs.sourceFilePath && */lhs.line == rhs.line && lhs.col == rhs.col;
 }
