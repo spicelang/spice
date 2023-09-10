@@ -2,7 +2,7 @@
 
 ## Roadmap
 
-- [ ] Produce error when using `heap` specifier on non-pointer types
+- [x] Produce error when using `heap` specifier on non-pointer types
 - [ ] Add mechanism to generate functions and methods, that are not part of the AST
 - [ ] Generate default dtor
 - [ ] Generate default ctor

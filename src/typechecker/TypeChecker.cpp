@@ -2030,42 +2030,6 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
   auto type = std::any_cast<SymbolType>(visit(node->baseDataType()));
   HANDLE_UNRESOLVED_TYPE_ST(type)
 
-  // Attach the specifiers to the type
-  if (node->specifierLst()) {
-    const SymbolType baseType = type.getBaseType();
-    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
-      if (specifier->type == SpecifierNode::TY_CONST) {
-        type.specifiers.isConst = true;
-      } else if (specifier->type == SpecifierNode::TY_SIGNED) {
-        if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
-          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
-        type.specifiers.isSigned = true;
-        type.specifiers.isUnsigned = false;
-      } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
-        if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
-          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
-        type.specifiers.isSigned = false;
-        type.specifiers.isUnsigned = true;
-      } else if (specifier->type == SpecifierNode::TY_HEAP) {
-        type.specifiers.isHeap = true;
-      } else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
-        type.specifiers.isPublic = true;
-      } else {
-        const char *entryName = "local variable";
-        if (node->isGlobalType)
-          entryName = "global variable";
-        else if (node->isFieldType)
-          entryName = "field";
-        else if (node->isParamType)
-          entryName = "param";
-        else if (node->isReturnType)
-          entryName = "return variable";
-        SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                      "Cannot use this specifier on a " + std::string(entryName) + " definition")
-      }
-    }
-  }
-
   std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
   while (!tmQueue.empty()) {
     DataTypeNode::TypeModifier typeModifier = tmQueue.front();
@@ -2106,6 +2070,47 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       throw CompilerError(UNHANDLED_BRANCH, "Modifier type fall-through"); // GCOV_EXCL_LINE
     }
     tmQueue.pop();
+  }
+
+  // Attach the specifiers to the type
+  if (node->specifierLst()) {
+    const SymbolType baseType = type.getBaseType();
+    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_CONST) {
+        type.specifiers.isConst = true;
+      } else if (specifier->type == SpecifierNode::TY_SIGNED) {
+        if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
+          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
+        type.specifiers.isSigned = true;
+        type.specifiers.isUnsigned = false;
+      } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
+        if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
+          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
+        type.specifiers.isSigned = false;
+        type.specifiers.isUnsigned = true;
+      } else if (specifier->type == SpecifierNode::TY_HEAP) {
+        // Heap variables can only be pointers
+        if (!type.isPtr())
+          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                        "The heap specifier can only be applied to symbols of pointer type, you provided " + baseType.getName())
+
+        type.specifiers.isHeap = true;
+      } else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
+        type.specifiers.isPublic = true;
+      } else {
+        const char *entryName = "local variable";
+        if (node->isGlobalType)
+          entryName = "global variable";
+        else if (node->isFieldType)
+          entryName = "field";
+        else if (node->isParamType)
+          entryName = "param";
+        else if (node->isReturnType)
+          entryName = "return variable";
+        SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                      "Cannot use this specifier on a " + std::string(entryName) + " definition")
+      }
+    }
   }
 
   return node->setEvaluatedSymbolType(type, manIdx);
