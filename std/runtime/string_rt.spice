@@ -3,17 +3,17 @@ const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
 
 // Link external functions
-ext f<byte*> malloc(long);
-ext f<byte*> realloc(byte*, int);
-ext p free(byte*);
-ext p memcpy(char*, char*, long);
+ext f<heap char*> malloc(long);
+ext f<heap char*> realloc(heap char*, int);
+ext p free(heap char*);
+ext p memcpy(heap char*, heap char*, long);
 
 /**
  * Heap-allocated builtin String type to enable dynamic modification in contrast
  * to the primitive string type.
  */
 public type String struct {
-    char* contents         // Pointer to the first char
+    heap char* contents         // Pointer to the first char
     unsigned long capacity // Allocated number of chars (without null terminator)
     unsigned long length   // Used number of chars
 }
@@ -32,7 +32,7 @@ public p String.ctor(const string value = "") {
     // Allocate space for the initial number of elements
     unsafe {
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        this.contents = (char*) malloc(requiredBytes);
+        this.contents = malloc(requiredBytes);
     }
 
     // Save initial value
@@ -50,7 +50,7 @@ public p String.ctor(const char value) {
     // Allocate space for the initial number of elements
     unsafe {
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        this.contents = (char*) malloc(requiredBytes);
+        this.contents = malloc(requiredBytes);
     }
 
     // Save initial value
@@ -67,7 +67,7 @@ public p String.ctor(const String& value) {
     // Allocate space
     unsafe {
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        this.contents = (char*) malloc(requiredBytes);
+        this.contents = malloc(requiredBytes);
     }
 
     // Copy the contents from the other string
@@ -79,7 +79,7 @@ public p String.ctor(const String& value) {
 public p String.dtor() {
     // Free all the memory
     unsafe {
-        free((byte*) this.contents);
+        free(this.contents);
     }
 }
 
@@ -410,16 +410,16 @@ public f<bool> String.replace(
 
     unsafe {
         // Move the suffix to the left or right
-        const char* stringAddr = this.contents;
-        const char* startAddr = stringAddr + startIdx;
+        const heap char* stringAddr = this.contents;
+        const heap char* startAddr = stringAddr + startIdx;
         if needleLength != replacementLength {
-            const char* oldSuffixAddr = startAddr + needleLength;
-            const char* newSuffixAddr = startAddr + replacementLength;
+            const heap char* oldSuffixAddr = startAddr + needleLength;
+            const heap char* newSuffixAddr = startAddr + replacementLength;
             memcpy(newSuffixAddr, oldSuffixAddr, suffixLength + 1); // +1 because of null terminator
         }
 
         // Replace needle with replacement
-        memcpy(startAddr, (char*) replacement, replacementLength);
+        memcpy(startAddr, (heap char*) replacement, replacementLength);
     }
 
     // Update length
@@ -513,9 +513,9 @@ public p String.reserve<IntLongShort>(unsigned IntLongShort charCount) {
 p String.resize<IntLongShort>(unsigned IntLongShort newLength) {
     // Allocate the new memory
     unsafe {
-        byte* oldAddress = (byte*) this.contents;
+        heap char* oldAddress = this.contents;
         unsigned long requiredBytes = newLength + 1; // +1 because of null terminator
-        char* newMemory = (char*) realloc(oldAddress, (int) requiredBytes);
+        heap char* newMemory = realloc(oldAddress, (int) requiredBytes);
         this.contents = newMemory;
     }
     // Set new capacity
