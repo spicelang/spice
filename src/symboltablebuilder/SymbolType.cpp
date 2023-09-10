@@ -368,17 +368,17 @@ std::string SymbolType::getName(bool withSize) const { // NOLINT(misc-no-recursi
 
   // Append the specifiers
   const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
-  if (specifiers.isPublic() && !defaultForSuperType.isPublic())
+  if (specifiers.isPublic && !defaultForSuperType.isPublic)
     name << "public ";
-  if (specifiers.isInline() && !defaultForSuperType.isInline())
+  if (specifiers.isInline && !defaultForSuperType.isInline)
     name << "inline ";
-  if (specifiers.isConst() && !defaultForSuperType.isConst())
+  if (specifiers.isConst && !defaultForSuperType.isConst)
     name << "const ";
-  if (specifiers.isHeap() && !defaultForSuperType.isHeap())
+  if (specifiers.isHeap && !defaultForSuperType.isHeap)
     name << "heap ";
-  if (specifiers.isSigned() && !defaultForSuperType.isSigned())
+  if (specifiers.isSigned && !defaultForSuperType.isSigned)
     name << "signed ";
-  if (!specifiers.isSigned() && defaultForSuperType.isSigned())
+  if (!specifiers.isSigned && defaultForSuperType.isSigned)
     name << "unsigned ";
 
   // Loop through all chain elements

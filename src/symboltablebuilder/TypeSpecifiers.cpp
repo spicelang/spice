@@ -9,159 +9,42 @@ namespace spice::compiler {
 
 TypeSpecifiers TypeSpecifiers::of(uint16_t superType) {
   switch (superType) {
-  case TY_DOUBLE:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_DOUBLE);
-  case TY_INT:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_INT);
-  case TY_SHORT:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_SHORT);
+  case TY_DOUBLE: // fall-through
+  case TY_INT:    // fall-through
+  case TY_SHORT:  // fall-through
   case TY_LONG:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_LONG);
-  case TY_BYTE:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_BYTE);
-  case TY_CHAR:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_CHAR);
-  case TY_STRING:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_STRING);
-  case TY_BOOL:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_BOOL);
-  case TY_PTR:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_PTR);
-  case TY_REF:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_REF);
-  case TY_ARRAY:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_ARRAY);
+    return {/*const*/ false, /*signed*/ true, /*unsigned*/ false, /*inline*/ false, /*public*/ false, /*heap*/ false};
+  case TY_BYTE:   // fall-through
+  case TY_CHAR:   // fall-through
+  case TY_STRING: // fall-through
+  case TY_BOOL:   // fall-through
+  case TY_PTR:    // fall-through
+  case TY_REF:    // fall-through
+  case TY_ARRAY:  // fall-through
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true, /*inline*/ false, /*public*/ false, /*heap*/ false};
   case TY_GENERIC:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_GENERIC);
-  case TY_STRUCT:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_STRUCT);
+    // Generics must be non-signed and non-unsigned at the same time to ensure a proper function matching
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ false, /*inline*/ false, /*public*/ false, /*heap*/ false};
+  case TY_STRUCT: // fall-through
   case TY_INTERFACE:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_INTERFACE);
-  case TY_ENUM:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_ENUM);
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true, /*inline*/ false, /*public*/ false, /*heap*/ false};
+  case TY_ENUM: // fall-through
   case TY_ALIAS:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_ALIAS);
-  case TY_FUNCTION:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_FUNCTION);
+    return {/*const*/ true, /*signed*/ false, /*unsigned*/ true, /*inline*/ false, /*public*/ false, /*heap*/ false};
+  case TY_FUNCTION: // fall-through
   case TY_PROCEDURE:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_PROCEDURE);
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true, /*inline*/ false, /*public*/ false, /*heap*/ false};
   case TY_IMPORT:
-    return TypeSpecifiers(SPECIFIER_DEFAULTS_IMPORT);
+    return {/*const*/ true, /*signed*/ false, /*unsigned*/ true, /*inline*/ false, /*public*/ false, /*heap*/ false};
   case TY_DYN:
   case TY_INVALID:
   case TY_UNRESOLVED:
-    return {};
+    // Return all-false specifiers to not match anything
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ false, /*inline*/ false, /*public*/ false, /*heap*/ false};
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Symbol specifier fallthrough"); // GCOV_EXCL_LINE
   }
 }
-
-/**
- * Set or clear the const flag
- *
- * @param value True or false
- */
-void TypeSpecifiers::setConst(bool value) { writeBit(BIT_INDEX_CONST, value); }
-
-/**
- * Check if the const flag is set
- *
- * @return True or false
- */
-bool TypeSpecifiers::isConst() const { return getBit(BIT_INDEX_CONST); }
-
-/**
- * Set or clear the signed flag
- *
- * @param value True or false
- */
-void TypeSpecifiers::setSigned(bool value) {
-  writeBit(BIT_INDEX_SIGNED, value);
-  writeBit(BIT_INDEX_UNSIGNED, !value);
-}
-
-/**
- * Check if the signed flag is set
- *
- * @return True or false
- */
-bool TypeSpecifiers::isSigned() const { return getBit(BIT_INDEX_SIGNED); }
-
-/**
- * Set or clear the inline flag
- *
- * @param value True or false
- */
-void TypeSpecifiers::setInline(bool value) { writeBit(BIT_INDEX_INLINE, value); }
-
-/**
- * Check if the inline flag is set
- *
- * @return True or false
- */
-bool TypeSpecifiers::isInline() const { return getBit(BIT_INDEX_INLINE); }
-
-/**
- * Set or clear the public flag
- *
- * @param value True or false
- */
-void TypeSpecifiers::setPublic(bool value) { writeBit(BIT_INDEX_PUBLIC, value); }
-
-/**
- * Check if the public flag is set
- *
- * @return True or false
- */
-bool TypeSpecifiers::isPublic() const { return getBit(BIT_INDEX_PUBLIC); }
-
-/**
- * Set or clear the heap flag
- *
- * @param value True or false
- */
-void TypeSpecifiers::setHeap(bool value) { writeBit(BIT_INDEX_HEAP, value); }
-
-/**
- * Check if the heap flag is set
- *
- * @return True or false
- */
-bool TypeSpecifiers::isHeap() const { return getBit(BIT_INDEX_HEAP); }
-
-/**
- * Set bit in specifier value
- *
- * @param index Index of the bit to set
- */
-void TypeSpecifiers::setBit(uint8_t index) { specifierValue |= (1 << index); }
-
-/**
- * Write the specified boolean value to the bit at the specified index
- *
- * @param index Index of the bit to modify
- */
-void TypeSpecifiers::writeBit(uint8_t index, bool value) {
-  if (value)
-    setBit(index);
-  else
-    clearBit(index);
-}
-
-/**
- * Clear bit in specifier value
- *
- * @param index Index of the bit to clear
- */
-void TypeSpecifiers::clearBit(uint8_t index) { specifierValue &= ~(1 << index); }
-
-/**
- * Get the bit at a specific index
- *
- * @param index Index of the bit to get
- * @return True or false
- */
-bool TypeSpecifiers::getBit(uint8_t index) const { return ((specifierValue >> index) & 1) == 1; }
 
 /**
  * Merge two type specifiers. If possible, prefer the opposite of the default of the super type
@@ -171,15 +54,15 @@ bool TypeSpecifiers::getBit(uint8_t index) const { return ((specifierValue >> in
  */
 TypeSpecifiers TypeSpecifiers::merge(const TypeSpecifiers &other) const {
   TypeSpecifiers result;
-  bool isGeneric = !getBit(BIT_INDEX_SIGNED) && !getBit(BIT_INDEX_UNSIGNED);
-  for (short i = 0; i < BIT_INDEX_HEAP; i++) {
+  const bool isGeneric = !getBit(BIT_INDEX_SIGNED) && !getBit(BIT_INDEX_UNSIGNED);
+  for (uint8_t i = 0; i <= BIT_INDEX_MAX; i++) {
     const bool x = getBit(i);
     const bool y = other.getBit(i);
 
     if (i == BIT_INDEX_SIGNED || i == BIT_INDEX_UNSIGNED) {
-      result.writeBit(i, isGeneric ? y : x);
+      result.setBit(i, isGeneric ? y : x);
     } else {
-      result.writeBit(i, x | y);
+      result.setBit(i, x | y);
     }
   }
   return result;
@@ -192,27 +75,71 @@ TypeSpecifiers TypeSpecifiers::merge(const TypeSpecifiers &other) const {
  * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
  * @return Matching or not
  */
-bool TypeSpecifiers::match(const TypeSpecifiers &otherSpecifiers, bool allowConstify) const {
-  uint8_t thisSpecifierValue = specifierValue;
-  uint8_t otherSpecifierValue = otherSpecifiers.specifierValue;
+bool TypeSpecifiers::match(TypeSpecifiers otherSpecifiers, bool allowConstify) const {
+  TypeSpecifiers thisSpecifiers = *this;
 
-  // Zero out public specifier to not consider it when matching
-  thisSpecifierValue &= ~(1 << BIT_INDEX_PUBLIC);
-  otherSpecifierValue &= ~(1 << BIT_INDEX_PUBLIC);
+  // Zero out public specifier to ignore it while matching
+  thisSpecifiers.isPublic = false;
+  otherSpecifiers.isPublic = false;
 
-  // Zero out inline specifier to not consider it when matching
-  thisSpecifierValue &= ~(1 << BIT_INDEX_INLINE);
-  otherSpecifierValue &= ~(1 << BIT_INDEX_INLINE);
+  // Zero out inline specifier to ignore it while matching
+  thisSpecifiers.isInline = false;
+  otherSpecifiers.isInline = false;
 
-  if (allowConstify) {
-    const uint8_t clearConstMask = ~(1 << BIT_INDEX_CONST);
-    bool otherSpecifiersMatch = (thisSpecifierValue & clearConstMask) == (otherSpecifierValue & clearConstMask);
-    bool constMatches = getBit(BIT_INDEX_CONST) >= otherSpecifiers.getBit(BIT_INDEX_CONST);
-    return constMatches & otherSpecifiersMatch;
-  }
-  return thisSpecifierValue == otherSpecifierValue;
+  // If allowConstify is enabled, only allow to match lhs=const and rhs=non-const
+  if (allowConstify && thisSpecifiers.isConst && !otherSpecifiers.isConst)
+    otherSpecifiers.isConst = true;
+
+  // Check if specifiers are equal
+  return thisSpecifiers == otherSpecifiers;
 }
 
-bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) { return lhs.specifierValue == rhs.specifierValue; }
+bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) {
+  const bool isConst = lhs.isConst == rhs.isConst;
+  const bool isSigned = lhs.isSigned == rhs.isSigned;
+  const bool isUnsigned = lhs.isUnsigned == rhs.isUnsigned;
+  const bool isInline = lhs.isInline == rhs.isInline;
+  const bool isPublic = lhs.isPublic == rhs.isPublic;
+  const bool isHeap = lhs.isHeap == rhs.isHeap;
+  return isConst && isSigned && isUnsigned && isInline && isPublic && isHeap;
+}
+
+bool TypeSpecifiers::getBit(uint8_t index) const {
+  switch (index) {
+  case BIT_INDEX_CONST:
+    return isConst;
+  case BIT_INDEX_SIGNED:
+    return isSigned;
+  case BIT_INDEX_UNSIGNED:
+    return isUnsigned;
+  case BIT_INDEX_INLINE:
+    return isInline;
+  case BIT_INDEX_PUBLIC:
+    return isPublic;
+  case BIT_INDEX_HEAP:
+    return isHeap;
+  default:
+    throw CompilerError(UNHANDLED_BRANCH, "Bit index fallthrough"); // GCOV_EXCL_LINE
+  }
+}
+
+bool TypeSpecifiers::setBit(uint8_t index, bool value) {
+  switch (index) {
+  case BIT_INDEX_CONST:
+    return isConst = value;
+  case BIT_INDEX_SIGNED:
+    return isSigned = value;
+  case BIT_INDEX_UNSIGNED:
+    return isUnsigned = value;
+  case BIT_INDEX_INLINE:
+    return isInline = value;
+  case BIT_INDEX_PUBLIC:
+    return isPublic = value;
+  case BIT_INDEX_HEAP:
+    return isHeap = value;
+  default:
+    throw CompilerError(UNHANDLED_BRANCH, "Bit index fallthrough"); // GCOV_EXCL_LINE
+  }
+}
 
 } // namespace spice::compiler

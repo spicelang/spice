@@ -1,80 +1,57 @@
-// Inspired by offset allocator (https://github.com/sebbbi/OffsetAllocator)
+import "std/type/result";
 
-// Type defs
-type uint32 alias unsigned int;
-type uint8 alias byte;
+// Link external functions
+ext f<heap byte*> malloc(long);
+ext f<heap byte*> realloc(heap byte*, int);
+ext p free(heap byte*);
+ext p memcpy(heap byte*, heap byte*, long);
 
-// Constants
-const uint32 NO_SPACE = 0xffffffff;
-const uint32 UNUSED_NODE = 0xffffffff;
-const uint32 NUM_TOP_BINS = 32;
-const uint32 BINS_PER_LEAF = 8;
-const uint32 TOP_BINS_INDEX_SHIFT = 3;
-const uint32 LEAF_BINS_INDEX_MASK = 0x7;
-const uint32 NUM_LEAF_BINS = 256; // NUM_TOP_BINS * BINS_PER_LEAF
-
-// External functions
-ext f<byte*> malloc(long);
-ext p free(byte*);
-
-type Allocation struct {
-    uint32 offset
-    uint32 metadata
+/**
+  * Allocates a new block of memory of the given size.
+  *
+  * @param size The size of the block to allocate.
+  * @return A pointer to the allocated block, or an error if the allocation failed.
+  */
+public f<Result<heap byte*>> alloc(long size) {
+    heap byte* ptr = malloc(size);
+    return ptr != nil<heap byte*> ? ptr : err(nil<heap byte*>, "Out of memory occurred!");
 }
 
-type Region struct {
-    uint32 size
-    uint32 count
+/**
+  * Reallocates a block of memory to the given size.
+  *
+  * @param ptr The pointer to the block to reallocate.
+  * @param size The new size of the block.
+  * @return A pointer to the reallocated block, or an error if the reallocation failed.
+  */
+public f<Result<heap byte*>> realloc(heap byte* ptr, long size) {
+    heap byte* newPtr = realloc(ptr, size);
+    return newPtr != nil<heap byte*> ? newPtr : err(nil<heap byte*>, "Out of memory occurred!");
 }
 
-public type StorageReport struct {
-    uint32 totalFreeSpace
-    uint32 largestFreeRegion
+/**
+  * Copies a block of memory to a new block of memory.
+  *
+  * @param ptr The pointer to the block to copy.
+  * @param size The size of the block to copy.
+  * @return A pointer to the copied block, or an error if the copy failed.
+  */
+public f<Result<heap byte*>> copy(heap byte* ptr, long size) {
+    heap byte* newPtr = malloc(size);
+    if newPtr == nil<heap byte*> {
+        return err(nil<heap byte*>, "Out of memory occurred!");
+    }
+    memcpy(newPtr, ptr, size);
+    return newPtr;
 }
 
-public type StorageReportFull struct {
-    uint32[NUM_LEAF_BINS] freeRegions
-}
-
-type Node struct {
-    uint32 dataOffset
-    uint32 dataSize
-    uint32 binListPrev
-    uint32 heighborPrev
-    uint32 neighborNext
-    bool used
-}
-
-public type Allocator struct {
-    uint32 size
-    uint32 freeStorage
-    uint8[NUM_TOP_BINS] usedBins
-    uint32[NUM_LEAF_BINS] binIndices
-    Node* nodes
-    uint32* freeNodes
-    uint32 freeOffset
-}
-
-public p Allocator.ctor(uint32 size, uint32 maxAllocas = 128 * 1024) {
-    // ToDo
-}
-
-public p Allocator.dtor() {
-    // ToDo
-}
-
-public f<Allocation> Allocator.allocate(uint32 size) {
-    // ToDo
-}
-
-public p Allocator.free(Allocation allocation) {
-    // ToDo
-}
-
-public const f<StorageReport> getStorageReport() {
-    // ToDo
-}
-
-public const f<StorageReportFull> getStorageReportFull() {
-    // ToDo
+/**
+  * Frees a block of memory.
+  * The pointer is zeroed out after freeing the memory to prevent accidental double frees.
+  *
+  * @param ptr The pointer to the block to free.
+  */
+public p dealloc(heap byte*& ptr) {
+    free(ptr);
+    ptr = nil<heap byte*>; // Zero out to prevent accidental double frees
 }

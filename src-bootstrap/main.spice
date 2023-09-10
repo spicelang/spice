@@ -1,5 +1,4 @@
-// Imports
-import "std/io/cli-parser";
+import "std/os/os";
 
 import "SourceFile";
 import "CliInterface";
@@ -8,14 +7,15 @@ import "global/GlobalResourceManager";
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *
- * @param options Command line options
+ * @param cliOptions Command line options
+ * @return Successful or not
  */
-f<int> compileProject(const CliOptions& options) {
+f<bool> compileProject(const CliOptions& cliOptions) {
     // Instantiate GlobalResourceManager
     dyn resourceManager = GlobalResourceManager(options);
 
     // Create source file instance for main source file
-    dyn mainSourceFile = SourceFile(options, nil<SourceFile*>, "root", options.mainSourceFile, false);
+    SourceFile* mainSourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainFile, false);
 
     // Run compile pipeline for main source file. All dependent source files are triggered by their parents
     mainSourceFile.runFrontEnd();
@@ -23,19 +23,16 @@ f<int> compileProject(const CliOptions& options) {
     mainSourceFile.runBackEnd();
 
     // Link the target executable (link object files to executable)
-    if !options.execute {
-        resourceManager.linker.prepare();
-        resourceManager.linker.link();
-    }
+    resourceManager.linker.prepare();
+    resourceManager.linker.link();
 
     // Print compiler warnings
     mainSourceFile.collectAndPrintWarnings();
 
-    if options.execute {
-        return mainSourceFile.execute();
-    }
+    // Print compiler warnings
+    mainSourceFile.collectAndPrintWarnings();
 
-    return 0;
+    return true;
 }
 
 /**
@@ -49,14 +46,27 @@ f<int> main(int argc, string[] argv) {
     // Initialize command line parser
     CliInterface cli;
     cli.createInterface();
-    if (cli.parse(argc, argv) != 0) {
-        return 1;
+    const int exitCode = cli.parse(argc, argv);
+    if exitCode != EXIT_SUCCESS {
+        return exitCode;
     }
-    if (!cli.shouldCompile) {
-        return 0;
+
+    // Cancel here if we do not have to compile
+    if !cli.shouldCompile {
+        return EXIT_SUCCESS;
     }
-    cli.enrich();   // Prepare the cli options
+
+    cli.enrich(); // Prepare the cli options
 
     // Kick off the compiling process
-    return compileProject(cli.cliOptions);
+    if !compileProject(cli.cliOptions) {
+        return EXIT_FAILURE;
+    }
+
+    // Execute
+    if cli.cliOptions.execute {
+        cli.runBinary();
+    }
+
+    return EXIT_SUCCESS;
 }
