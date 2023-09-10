@@ -17,7 +17,6 @@ namespace spice::compiler {
 class Scope;
 class SymbolType;
 class SymbolTableEntry;
-class Function;
 class ASTNode;
 struct CodeLoc;
 

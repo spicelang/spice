@@ -1,4 +1,24 @@
+import "std/data/stack" as stc;
+
 f<int> main() {
-    int t = 123;
-    heap int test = t;
+    stc::Stack<int> s1 = stc::Stack<int>{};
+    s1.ctor();
+    s1.push(123);
+    s1.push(456);
+    s1.push(789);
+    printf("Stack size: %d\n", s1.getSize());
+    printf("Stack capacity: %d\n", s1.getCapacity());
+    printf("Stack item 3: %d\n", s1.pop());
+    printf("Stack item 2: %d\n", s1.pop());
+    printf("Stack item 1: %d\n", s1.pop());
 }
+
+/*type TestStruct struct {
+    int a = 123
+    short b = 1s
+}
+
+f<int> main() {
+    TestStruct ts;
+    printf("%d %d\n", ts.a, ts.b);
+}*/

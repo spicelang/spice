@@ -9,6 +9,9 @@
 
 namespace spice::compiler {
 
+OpRuleManager::OpRuleManager(TypeChecker *typeChecker)
+    : typeChecker(typeChecker), resourceManager(typeChecker->resourceManager) {}
+
 SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx,
                                               bool isDecl /*=false*/, const char *errorMessagePrefix /*=""*/) {
   // Check if we try to assign a constant value
@@ -544,6 +547,10 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
 
+  // Only allow to cast the 'heap' specifier away, if we are in unsafe mode
+  if (lhs.specifiers.isHeap != rhs.specifiers.isHeap)
+    ensureUnsafeAllowed(node, "(cast)", lhs, rhs);
+
   // Allow casts string -> char*  and string -> char[]
   if (lhs.isOneOf({TY_PTR, TY_ARRAY}) && lhs.getContainedTy().is(TY_CHAR) && rhs.is(TY_STRING))
     return lhs;
@@ -670,7 +677,7 @@ void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, c
   const std::string rhsName = rhs.getName(true);
   const std::string errorMsg = "Cannot apply '" + std::string(name) + "' operator on types " + lhsName + " and " + rhsName +
                                " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing.";
-  throw SemanticError(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg);
+  SOFT_ERROR_VOID(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg)
 }
 
 void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs) {

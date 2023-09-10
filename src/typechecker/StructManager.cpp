@@ -176,7 +176,7 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
     return false;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
-  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
+  TypeMatcher::ResolverFct genericTypeResolver = [&](const std::string &genericTypeName) {
     return getGenericTypeOfCandidateByName(candidate, genericTypeName);
   };
 

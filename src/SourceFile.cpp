@@ -566,6 +566,10 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
   sourceFile->dependants.push_back(this);
 }
 
+bool SourceFile::imports(const SourceFile *sourceFile) const {
+  return std::ranges::any_of(dependencies, [=](const auto &dependency) { return dependency.second.first == sourceFile; });
+}
+
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { // NOLINT(misc-no-recursion)
   // Check if the current source file corresponds to the path to search
   if (filePath == filePathSearch)

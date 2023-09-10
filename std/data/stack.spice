@@ -3,10 +3,10 @@ const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
 
 // Link external functions
-ext f<byte*> malloc(long);
-ext f<byte*> realloc(byte*, int);
-ext p free(byte*);
-ext f<byte*> memcpy(byte*, byte*, int);
+ext f<heap byte*> malloc(long);
+ext f<heap byte*> realloc(heap byte*, int);
+ext p free(heap byte*);
+ext f<heap byte*> memcpy(heap byte*, heap byte*, int);
 
 // Add generic type definition
 type T dyn;
@@ -23,7 +23,7 @@ type T dyn;
  * with every item pushed.
  */
 public type Stack<T> struct {
-    T* contents             // Pointer to the first data element
+    heap T* contents        // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
     unsigned long size      // Current number of items
 }
@@ -48,7 +48,7 @@ public p Stack.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
     const long itemSize = sizeof(type T) / 8l;
     unsafe {
-        this.contents = (T*) malloc(itemSize * initAllocItems);
+        this.contents = (heap T*) malloc(itemSize * initAllocItems);
     }
     this.size = 0l;
     this.capacity = initAllocItems;
@@ -57,7 +57,7 @@ public p Stack.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
 public p Stack.dtor() {
     // Free all the memory
     unsafe {
-        free((byte*) this.contents);
+        free((heap byte*) this.contents);
     }
 }
 
@@ -139,9 +139,9 @@ p Stack.resize(unsigned long itemCount) {
     // Allocate the new memory
     const long itemSize = sizeof(type T) / 8l;
     unsafe {
-        byte* oldAddress = (byte*) this.contents;
+        heap byte* oldAddress = (heap byte*) this.contents;
         int newSize = (int) (itemSize * itemCount);
-        T* newMemory = (T*) realloc(oldAddress, newSize);
+        heap T* newMemory = (heap T*) realloc(oldAddress, newSize);
         this.contents = newMemory;
     }
     // Set new capacity

@@ -1,6 +1,6 @@
 // Link external functions
-ext f<byte*> malloc(long);
-ext p free(byte*);
+ext f<heap byte*> malloc(long);
+ext p free(heap byte*);
 
 // Add generic type definitions
 type T dyn;
@@ -13,22 +13,22 @@ type NodeColor enum { RED, BLACK }
  */
 type Node<T> struct {
     T data
-    Node<T>* childLeft
-    Node<T>* childRight
+    heap Node<T>* childLeft
+    heap Node<T>* childRight
     NodeColor color
 }
 
 f<Node<T>*> createNode<T>(T data) {
-    Node<T>* newNode = malloc(sizeof(type Node<T>) / 8);
+    heap Node<T>* newNode = (heap Node<T>*) malloc(sizeof(type Node<T>) / 8);
     newNode.data = data;
-    newNode.childLeft = nil<Node<T>*>;
-    newNode.childRight = nil<Node<T>*>;
+    newNode.childLeft = nil<heap Node<T>*>;
+    newNode.childRight = nil<heap Node<T>*>;
     newNode.color = NodeColor::RED;
     return newNode;
 }
 
 inline f<bool> Node.isRoot() {
-    return this.parent == nil<Node<T>*>;
+    return this.parent == nil<heap Node<T>*>;
 }
 
 /**
@@ -39,11 +39,11 @@ inline f<bool> Node.isRoot() {
  * Deletion time: O(log n)
  */
 public type RedBlackTree<T> struct {
-    Node<T>* rootNode
+    heap Node<T>* rootNode
 }
 
 public p RedBlackTree.ctor() {
-    this.rootNode = nil<Node<T>*>;
+    this.rootNode = nil<heap Node<T>*>;
 }
 
 public p RedBlackTree.insert(T newItem) {

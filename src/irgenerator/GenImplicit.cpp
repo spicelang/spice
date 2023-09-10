@@ -43,10 +43,10 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
 
   // Call all dtor functions
   for (auto [entry, dtor] : node->dtorFunctions.at(manIdx))
-    generateDtorCall(entry, dtor, node);
+    generateDtorCall(entry, dtor);
 }
 
-void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor, const StmtLstNode *node) const {
+void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor) const {
   assert(dtor != nullptr);
 
   // Retrieve metadata for the function

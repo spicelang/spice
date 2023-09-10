@@ -30,6 +30,12 @@ const char *const UNRESOLVED_TYPE_NAME = "unresolved type";
     return UNRESOLVED_TYPE_NAME;                                                                                                 \
   }
 
+#define SOFT_ERROR_VOID(node, type, message)                                                                                     \
+  {                                                                                                                              \
+    resourceManager.errorManager.addSoftError(node, type, message);                                                              \
+    return;                                                                                                                      \
+  }
+
 #define HANDLE_UNRESOLVED_TYPE_ER(var)                                                                                           \
   {                                                                                                                              \
     if (var.is(TY_UNRESOLVED))                                                                                                   \

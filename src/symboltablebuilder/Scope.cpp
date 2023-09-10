@@ -2,6 +2,7 @@
 
 #include "Scope.h"
 
+#include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
@@ -294,19 +295,7 @@ void Scope::checkSuccessfulTypeInference() const {
  *
  * @return Imported / not imported
  */
-bool Scope::isImportedBy(const Scope *askingScope) const {
-  // Get root scope of the source file where askingScope scope lives
-  const Scope *askingRootScope = askingScope;
-  while (askingRootScope->type != ScopeType::GLOBAL && askingRootScope->parent)
-    askingRootScope = askingRootScope->parent;
-
-  // Get root scope of the source file where the current scope lives
-  const Scope *thisRootScope = this;
-  while (thisRootScope->type != ScopeType::GLOBAL && thisRootScope->parent)
-    thisRootScope = thisRootScope->parent;
-
-  return askingRootScope != thisRootScope;
-}
+bool Scope::isImportedBy(const Scope *askingScope) const { return askingScope->sourceFile->imports(sourceFile); }
 
 /**
  * Check if unsafe operations are allowed in this scope

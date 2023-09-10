@@ -95,7 +95,7 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std:
   ParamList paramList;
   for (const SymbolType &paramType : paramTypes)
     paramList.push_back({paramType, false});
-  return {MAIN_FUNCTION_NAME, entry, SymbolType(TY_DYN), SymbolType(TY_INT), paramList, {}, declNode, false};
+  return {MAIN_FUNCTION_NAME, entry, SymbolType(TY_DYN), SymbolType(TY_INT), paramList, {}, declNode};
 }
 
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
@@ -344,7 +344,7 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
   SymbolType &candidateThisType = candidate.thisType;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
-  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
+  TypeMatcher::ResolverFct genericTypeResolver = [&](const std::string &genericTypeName) {
     return getGenericTypeOfCandidateByName(candidate, genericTypeName);
   };
 
@@ -376,7 +376,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
     return false;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
-  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
+  TypeMatcher::ResolverFct genericTypeResolver = [&](const std::string &genericTypeName) {
     return getGenericTypeOfCandidateByName(candidate, genericTypeName);
   };
 
@@ -431,7 +431,7 @@ bool FunctionManager::matchReturnType(Function &candidate, const SymbolType &req
   SymbolType &candidateReturnType = candidate.returnType;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
-  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
+  TypeMatcher::ResolverFct genericTypeResolver = [&](const std::string &genericTypeName) {
     return getGenericTypeOfCandidateByName(candidate, genericTypeName);
   };
 

@@ -35,9 +35,9 @@ class Function {
 public:
   // Constructors
   Function(std::string name, SymbolTableEntry *entry, SymbolType thisType, SymbolType returnType, ParamList paramList,
-           std::vector<GenericType> templateTypes, ASTNode *declNode, bool external)
+           std::vector<GenericType> templateTypes, ASTNode *declNode)
       : name(std::move(name)), entry(entry), thisType(std::move(thisType)), returnType(std::move(returnType)),
-        paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode), external(external) {}
+        paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode) {}
   Function() = default;
 
   // Public methods
@@ -73,7 +73,6 @@ public:
   std::string mangleSuffix;
   bool genericSubstantiation = false;
   bool alreadyTypeChecked = false;
-  bool external = false;
   bool used = false;
 
   // Json serializer/deserializer
