@@ -4,8 +4,6 @@
 
 #include <ast/ASTBuilder.h>
 #include <astoptimizer/ASTOptimizer.h>
-#include <borrowchecker/BorrowChecker.h>
-#include <escapeanalyzer/EscapeAnalyzer.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/CompilerError.h>
 #include <global/GlobalResourceManager.h>
@@ -315,52 +313,6 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   } // GCOV_EXCL_STOP
 }
 
-void SourceFile::runBorrowChecker() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache or this stage has already been done
-  if (restoredFromCache || previousStage >= BORROW_CHECKER)
-    return;
-
-  // Check if this stage has already been done
-  if (previousStage >= BORROW_CHECKER)
-    return;
-
-  // Borrow-check all dependencies first
-  for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->runBorrowChecker();
-
-  Timer timer(&compilerOutput.times.borrowChecker);
-  timer.start();
-
-  // Then borrow-check current file
-  BorrowChecker borrowChecker(resourceManager, this);
-  borrowChecker.visit(ast);
-
-  previousStage = BORROW_CHECKER;
-  timer.stop();
-  printStatusMessage("Borrow Checker", IO_AST, IO_AST, compilerOutput.times.borrowChecker);
-}
-
-void SourceFile::runEscapeAnalyzer() { // NOLINT(misc-no-recursion)
-  // Skip if restored from cache or this stage has already been done
-  if (restoredFromCache || previousStage >= ESCAPE_ANALYZER)
-    return;
-
-  // Escape-analyze all dependencies first
-  for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->runEscapeAnalyzer();
-
-  Timer timer(&compilerOutput.times.escapeAnalyzer);
-  timer.start();
-
-  // Then escape-analyze current file
-  EscapeAnalyzer escapeAnalyzer(resourceManager, this);
-  escapeAnalyzer.visit(ast);
-
-  previousStage = ESCAPE_ANALYZER;
-  timer.stop();
-  printStatusMessage("Escape Analyzer", IO_AST, IO_AST, compilerOutput.times.escapeAnalyzer);
-}
-
 void SourceFile::runIRGenerator() {
   // Skip if restored from cache or this stage has already been done
   if (restoredFromCache || previousStage >= IR_GENERATOR)
@@ -570,8 +522,6 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
 void SourceFile::runMiddleEnd() {
   runTypeCheckerPre();
   runTypeCheckerPost();
-  runBorrowChecker();
-  runEscapeAnalyzer();
 }
 
 void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)

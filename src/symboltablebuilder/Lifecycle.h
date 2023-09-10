@@ -9,13 +9,7 @@ namespace spice::compiler {
 // Forward declarations
 class ASTNode;
 
-enum LifecycleState {
-  DECLARED,
-  INITIALIZED,
-  MOVED,
-  RETURNED,
-  DEAD
-};
+enum LifecycleState { DECLARED, INITIALIZED, MOVED, RETURNED, DEAD };
 
 /**
  * A lifecycle event represents one change of a symbol in time.
@@ -23,7 +17,7 @@ enum LifecycleState {
  */
 struct LifecycleEvent {
   LifecycleState state;
-  ASTNode* issuer;
+  ASTNode *issuer;
 };
 
 /**

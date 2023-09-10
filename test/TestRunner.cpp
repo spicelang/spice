@@ -95,10 +95,8 @@ void execTestCase(const TestCase &testCase) {
     mainSourceFile->runImportCollector();
     mainSourceFile->runSymbolTableBuilder();
     mainSourceFile->runTypeChecker();
-    mainSourceFile->runBorrowChecker();
-    mainSourceFile->runEscapeAnalyzer();
 
-    // Check symbol table output (check happens here, to include updates from type checker, borrow checker and escape analyzer)
+    // Check symbol table output (check happens here to include updates from type checker)
     TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYMBOL_TABLE,
                             [&]() { return mainSourceFile->globalScope->getSymbolTableJSON().dump(/*indent=*/2); });
 
@@ -251,16 +249,6 @@ class TypeCheckerTests : public testing::TestWithParam<TestCase> {};
 TEST_P(TypeCheckerTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, TypeCheckerTests, testing::ValuesIn(TestUtil::collectTestCases("typechecker", true)),
                          TestUtil::NameResolver());
-
-/*class BorrowCheckerTests : public testing::TestWithParam<TestCase> {};
-TEST_P(BorrowCheckerTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, BorrowCheckerTests, testing::ValuesIn(TestUtil::collectTestCases("borrowchecker", true)),
-                         TestUtil::NameResolver());*/
-
-/*class EscapeAnalyzerTests : public testing::TestWithParam<TestCase> {};
-TEST_P(EscapeAnalyzerTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, EscapeAnalyzerTests, testing::ValuesIn(TestUtil::collectTestCases("borrowchecker", true)),
-                         TestUtil::NameResolver());*/
 
 class IRGeneratorTests : public testing::TestWithParam<TestCase> {};
 TEST_P(IRGeneratorTests, ) { execTestCase(GetParam()); }

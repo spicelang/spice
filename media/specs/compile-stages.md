@@ -16,8 +16,6 @@ graph TD;
     ImportCollector-->
     SymbolTableBuilder-->
     TypeChecker-->
-    BorrowChecker-->
-    EscapeAnalyzer-->
     IRGenerator-->
     DefaultIROptimizer-->
     ObjectEmitter-->
@@ -69,26 +67,16 @@ graph TD;
     Input/Output: AST -> AST <br>
     Note: Checks if all types match, performs type inference, fill types in symbol table
 
-10. **Borrow Checker** (new component, maybe added in the future) <br>
-    Input/Output: AST -> AST <br>
-    Additional used resources: Symbol Table <br>
-    Note: Checks if all variable accesses are valid, escape analysis, fill lifetimes in symbol table
-
-11. **Escape Analyzer** <br>
-    Input/Output: AST -> AST <br>
-    Additional used resources: Symbol Table <br>
-    Note: Checks, which variables escape their scopes and check if these variables are marked as heap-allocated by the programmer.
-
-12. **IR Generator** <br>
+10. **IR Generator** <br>
     Input/Output: AST -> IR <br>
     Additional used resources: Symbol Table <br>
     Note: Uses several helper modules to generate IR from the information of AST and Symbol Table.
 
-13. **IR Optimizer** <br>
+11. **IR Optimizer** <br>
     Input/Output: IR -> IR <br>
     Note: Uses the stated optimization level to call the LLVM optimizer. In case of -O0, the IR Optimizer is not invoked.
 
-14. **Object Emitter** <br>
+12. **Object Emitter** <br>
     Input/Output: IR -> Object file <br>
     Note: Calls LLVM to emit an object file from the generated IR.
 
@@ -127,21 +115,15 @@ Source file A imports B and C.
 10. Type Checker for A (check)
 11. Type Checker for B (check)
 12. Type Checker for C (check)
-13. Borrow Checker for B
-14. Borrow Checker for C
-15. Borrow Checker for A
-16. Escape Analyzer for B
-17. Escape Analyzer for C
-18. Escape Analyzer for A
-19. IR Generator for B
-20. IR Optimizer for B
-21. Object Emitter for B
-22. IR Generator for C
-23. IR Optimizer for C
-24. Object Emitter for C
-25. IR Generator for A
-26. IR Optimizer for A
-27. Object Emitter for A
+13. IR Generator for B
+14. IR Optimizer for B
+15. Object Emitter for B
+16. IR Generator for C
+17. IR Optimizer for C
+18. Object Emitter for C
+19. IR Generator for A
+20. IR Optimizer for A
+21. Object Emitter for A
 
 ## Note for parallelization:
 

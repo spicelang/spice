@@ -5,7 +5,7 @@
 #include <string>
 #include <utility>
 
-#include <borrowchecker/Lifecycle.h>
+#include <symboltablebuilder/Lifecycle.h>
 #include <symboltablebuilder/SymbolType.h>
 
 #include <llvm/IR/DerivedTypes.h>
