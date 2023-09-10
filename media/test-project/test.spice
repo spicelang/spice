@@ -1,4 +1,11 @@
+import "std/data/vector";
+
 f<int> main() {
+    Vector<int> vi = Vector<int>();
+    vi.pushBack(123);
+}
+
+/*f<int> main() {
     int t = 123;
     heap int* test = &t;
-}
+}*/

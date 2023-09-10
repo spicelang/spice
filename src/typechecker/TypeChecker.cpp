@@ -1557,7 +1557,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Remove public specifier to not have public local variables
-  returnType.specifiers.setPublic(false);
+  returnType.specifiers.isPublic = false;
 
   // Check if the return value gets used
   if (isFct && !node->hasReturnValueReceiver())
@@ -1876,7 +1876,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   SymbolTableEntry *anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables
-  structType.specifiers.setPublic(false);
+  structType.specifiers.isPublic = false;
 
   return ExprResult{node->setEvaluatedSymbolType(structType, manIdx), anonymousEntry};
 }
@@ -2035,19 +2035,21 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
     const SymbolType baseType = type.getBaseType();
     for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
       if (specifier->type == SpecifierNode::TY_CONST) {
-        type.specifiers.setConst(true);
+        type.specifiers.isConst = true;
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
           SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
-        type.specifiers.setSigned(true);
+        type.specifiers.isSigned = true;
+        type.specifiers.isUnsigned = false;
       } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
           SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
-        type.specifiers.setSigned(false);
+        type.specifiers.isSigned = false;
+        type.specifiers.isUnsigned = true;
       } else if (specifier->type == SpecifierNode::TY_HEAP) {
-        type.specifiers.setHeap(true);
+        type.specifiers.isHeap = true;
       } else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
-        type.specifiers.setPublic(true);
+        type.specifiers.isPublic = true;
       } else {
         const char *entryName = "local variable";
         if (node->isGlobalType)
@@ -2239,7 +2241,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     }
 
     // Remove public specifier
-    entryType.specifiers.setPublic(false);
+    entryType.specifiers.isPublic = false;
 
     return node->setEvaluatedSymbolType(entryType, manIdx);
   }

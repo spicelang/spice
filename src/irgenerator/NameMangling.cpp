@@ -107,8 +107,9 @@ void NameMangling::mangleType(std::stringstream &out, const SymbolType &type) {
     mangleTypeChainElement(out, type.typeChain.at(i), false);
 
   // Specifiers
-  const bool signedness = type.specifiers.isSigned();
-  if (type.specifiers.isConst() && type.typeChain.size() > 1)
+  assert(type.specifiers.isSigned == !type.specifiers.isUnsigned);
+  const bool signedness = type.specifiers.isSigned;
+  if (type.specifiers.isConst && type.typeChain.size() > 1)
     out << "K";
 
   // Base chain element

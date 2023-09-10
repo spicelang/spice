@@ -61,11 +61,11 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
-        node->functionSpecifiers.setInline(true);
+        node->functionSpecifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
-        node->functionSpecifiers.setPublic(true);
+        node->functionSpecifiers.isPublic = true;
       else if (specifier->type == SpecifierNode::TY_CONST)
-        node->functionSpecifiers.setConst(true);
+        node->functionSpecifiers.isConst = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
     }
@@ -120,11 +120,11 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
-        node->procedureSpecifiers.setInline(true);
+        node->procedureSpecifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
-        node->procedureSpecifiers.setPublic(true);
+        node->procedureSpecifiers.isPublic = true;
       else if (specifier->type == SpecifierNode::TY_CONST)
-        node->procedureSpecifiers.setConst(true);
+        node->procedureSpecifiers.isConst = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
     }
@@ -195,7 +195,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
-        node->structSpecifiers.setPublic(true);
+        node->structSpecifiers.isPublic = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a struct definition");
     }
@@ -229,7 +229,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
-        node->interfaceSpecifiers.setPublic(true);
+        node->interfaceSpecifiers.isPublic = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an interface definition");
     }
@@ -262,7 +262,7 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   if (node->specifierLst()) {
     for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
-        node->enumSpecifiers.setPublic(true);
+        node->enumSpecifiers.isPublic = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an enum definition");
     }

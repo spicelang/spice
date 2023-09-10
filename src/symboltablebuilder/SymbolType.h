@@ -160,22 +160,22 @@ public:
     assert(getSuperType() == TY_ARRAY);
     return typeChain.back().data.arraySize;
   }
-  [[nodiscard]] inline bool isConst() const { return typeChain.size() == 1 && specifiers.isConst(); }
+  [[nodiscard]] inline bool isConst() const { return typeChain.size() == 1 && specifiers.isConst; }
   [[nodiscard]] inline bool isSigned() const {
     assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
-    return specifiers.isSigned();
+    return specifiers.isSigned;
   }
   [[nodiscard]] inline bool isInline() const {
     assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-    return specifiers.isInline();
+    return specifiers.isInline;
   }
   [[nodiscard]] inline bool isPublic() const {
     assert(isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
-    return specifiers.isPublic();
+    return specifiers.isPublic;
   }
   [[nodiscard]] inline bool isHeap() const {
     assert(isPrimitive() /* Local variables */ || is(TY_STRUCT));
-    return specifiers.isHeap();
+    return specifiers.isHeap;
   }
   inline void setBodyScope(Scope *bodyScope) {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
