@@ -57,6 +57,8 @@ set(SOURCES
         symboltablebuilder/TypeChain.cpp
         symboltablebuilder/TypeSpecifiers.cpp
         symboltablebuilder/TypeSpecifiers.h
+        symboltablebuilder/Lifecycle.cpp
+        symboltablebuilder/Lifecycle.h
         symboltablebuilder/ScopeHandle.cpp
         symboltablebuilder/ScopeHandle.h
         # Type checker
@@ -75,14 +77,6 @@ set(SOURCES
         typechecker/TypeMatcher.cpp
         typechecker/TypeMatcher.h
         typechecker/MacroDefs.h
-        # Borrow checker
-        borrowchecker/BorrowChecker.cpp
-        borrowchecker/BorrowChecker.h
-        borrowchecker/Lifecycle.cpp
-        borrowchecker/Lifecycle.h
-        # Escape analyzer
-        escapeanalyzer/EscapeAnalyzer.cpp
-        escapeanalyzer/EscapeAnalyzer.h
         # IR generator
         irgenerator/IRGenerator.cpp
         irgenerator/IRGenerator.h

@@ -17,8 +17,6 @@ type CompileStageType enum {
     SYMBOL_TABLE_BUILDER,
     TYPE_CHECKER_PRE,
     TYPE_CHECKER_POST,
-    BORROW_CHECKER,
-    ESCAPE_ANALYZER,
     IR_GENERATOR,
     IR_OPTIMIZER,
     OBJECT_EMITTER
@@ -44,8 +42,6 @@ type TimerOutput struct {
   unsigned long symbolTableBuilder = 0l
   unsigned long typeCheckerPre = 0l
   unsigned long typeCheckerPost = 0l
-  unsigned long borrowChecker = 0l
-  unsigned long escapeAnalyzer = 0l
   unsigned long irGenerator = 0l
   unsigned long irOptimizer = 0l
   unsigned long objectEmitter = 0l
@@ -157,14 +153,6 @@ p SourceFile.runTypeCheckerPre() {
 }
 
 p SourceFile.runTypeCheckerPost() {
-
-}
-
-public p SourceFile.runBorrowChecker() {
-
-}
-
-public p SourceFile.runEscapeAnalyzer() {
 
 }
 

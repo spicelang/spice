@@ -40,8 +40,6 @@ enum CompileStageType : uint8_t {
   SYMBOL_TABLE_BUILDER,
   TYPE_CHECKER_PRE,
   TYPE_CHECKER_POST,
-  BORROW_CHECKER,
-  ESCAPE_ANALYZER,
   IR_GENERATOR,
   IR_OPTIMIZER,
   OBJECT_EMITTER
@@ -70,8 +68,6 @@ struct TimerOutput {
   uint64_t symbolTableBuilder = 0;
   uint64_t typeCheckerPre = 0;
   uint64_t typeCheckerPost = 0;
-  uint64_t borrowChecker = 0;
-  uint64_t escapeAnalyzer = 0;
   uint64_t irGenerator = 0;
   uint64_t irOptimizer = 0;
   uint64_t objectEmitter = 0;
@@ -122,8 +118,6 @@ private:
   void runTypeCheckerPost();
 
 public:
-  void runBorrowChecker();
-  void runEscapeAnalyzer();
   void runIRGenerator();
   void runDefaultIROptimizer();
   void runPreLinkIROptimizer();
