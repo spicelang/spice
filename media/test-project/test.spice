@@ -1,4 +1,4 @@
 f<int> main() {
-    char* s = "abc";
-    printf("%s\n", (char*) s);
+    int t = 123;
+    heap int* test = &t;
 }

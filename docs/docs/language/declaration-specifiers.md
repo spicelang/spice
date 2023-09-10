@@ -133,3 +133,24 @@ f<int> main() {
     unsigned int unsignedInt = -0x567; // Will wrap around
 }
 ```
+
+## The `heap` specifier
+
+Marks a variable to be allocated on the heap. The compiler will generate code to free the memory of the variable, when it goes out
+of scope. For structs, the compiler will generate code to free all fields, that are marked with the `heap` keyword, in the dtor.
+
+*Note: The `heap` specifier only works for pointer types, the compiler will produce an error if you try using it in combination
+with a non-pointer type.*
+
+### Applicable for
+
+- Local variables
+- Struct fields
+
+### Example
+
+```spice
+type TestStruct struct {
+    heap int* ptr
+}
+```
