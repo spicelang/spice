@@ -552,7 +552,8 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
     return lhs;
   // Allow casts any* -> any*
   if (lhs.isPtr() && rhs.isPtr()) {
-    ensureUnsafeAllowed(node, "(cast)", lhs, rhs);
+    if (lhs != rhs)
+      ensureUnsafeAllowed(node, "(cast)", lhs, rhs);
     return lhs;
   }
   // Check primitive type combinations

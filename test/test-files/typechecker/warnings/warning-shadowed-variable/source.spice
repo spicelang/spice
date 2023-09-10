@@ -1,0 +1,8 @@
+f<int> main() {
+    string test;
+    if (false) {
+        int test = 12;
+        printf("%d", test);
+    }
+    printf("%s", test);
+}
