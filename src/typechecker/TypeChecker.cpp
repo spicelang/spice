@@ -1050,6 +1050,13 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   // Visit destination type
   auto dstType = std::any_cast<SymbolType>(visit(node->dataType()));
   HANDLE_UNRESOLVED_TYPE_ER(dstType)
+
+  // Check for identity cast
+  if (srcType == dstType) {
+    CompilerWarning warning(node->codeLoc, IDENTITY_CAST, "You cast from a type to itself. Thus, this can be simplified.");
+    sourceFile->compilerOutput.warnings.push_back(warning);
+  }
+
   // Get result type
   SymbolType resultType = opRuleManager.getCastResultType(node, dstType, srcType, 0);
 

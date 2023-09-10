@@ -62,12 +62,14 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused return value";
   case UNREACHABLE_CODE:
     return "Unreachable code detected";
+  case SHADOWED_VARIABLE:
+    return "Shadowed variable";
+  case IDENTITY_CAST:
+    return "Identity cast";
   case SINGLE_GENERIC_TYPE_CONDITION:
     return "Only one type condition";
   case BOOL_ASSIGN_AS_CONDITION:
     return "Bool assignment as condition";
-  case INDEX_EXCEEDS_ARRAY_SIZE:
-    return "Array index exceeds its size";
   case UNINSTALL_FAILED:
     return "Uninstall failed";
   case VERIFIER_DISABLED:

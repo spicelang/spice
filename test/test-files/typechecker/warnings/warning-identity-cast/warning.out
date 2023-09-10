@@ -1,0 +1,1 @@
+[Warning] ./test-files/typechecker/warnings/warning-identity-cast/source.spice:3:20: Identity cast: You cast from a type to itself. Thus, this can be simplified.

@@ -2,6 +2,7 @@
 
 #include "SymbolTable.h"
 
+#include "SourceFile.h"
 #include <ast/ASTNodes.h>
 #include <model/GenericType.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
@@ -25,6 +26,13 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
   // Set entry to declared
   SymbolTableEntry *entry = &symbols.at(name);
   entry->updateState(DECLARED, declNode);
+
+  // Check if shadowed
+  if (parent != nullptr && parent->lookup(name) != nullptr) {
+    CompilerWarning warning(declNode->codeLoc, SHADOWED_VARIABLE, "Variable '" + name + "' shadows a variable in a parent scope");
+    scope->sourceFile->compilerOutput.warnings.push_back(warning);
+  }
+
   return entry;
 }
 
