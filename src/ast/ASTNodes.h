@@ -288,11 +288,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getSymbolTableEntryName() const {
-    const FctNameNode *functionName = getChild<FctNameNode>();
-    assert(functionName != nullptr);
-    return functionName->name + ":" + codeLoc.toPrettyLineAndColumn();
-  }
+  [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(fctName->name, codeLoc); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations(const std::string &_) override { return &fctManifestations; }
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
@@ -329,11 +325,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getSymbolTableEntryName() const {
-    const FctNameNode *functionName = getChild<FctNameNode>();
-    assert(functionName != nullptr);
-    return functionName->name + ":" + codeLoc.toPrettyLineAndColumn();
-  }
+  [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(procName->name, codeLoc); }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
   std::vector<Function *> *getFctManifestations(const std::string &_) override { return &procManifestations; }
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }

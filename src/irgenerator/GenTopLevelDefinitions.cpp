@@ -489,9 +489,13 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     structType->setBody(fieldTypes);
 
     // Generate default ctor/dtor, etc.
-    Function *dtorFct = FunctionManager::matchFunction(currentScope, DTOR_FUNCTION_NAME, structEntry->getType(), {}, true, node);
-    if (dtorFct != nullptr && dtorFct->implicitDefault)
+    const auto &defFctManifestations = node->defaultFctManifestations;
+    const size_t manIdx = spiceStruct->manifestationIndex;
+    if (defFctManifestations.contains(DTOR_FUNCTION_NAME) && defFctManifestations.at(DTOR_FUNCTION_NAME).size() > manIdx) {
+      Function *dtorFct = node->defaultFctManifestations.at(DTOR_FUNCTION_NAME).at(manIdx);
+      assert(dtorFct->implicitDefault);
       generateDefaultDefaultDtor(dtorFct);
+    }
 
     // Return to root scope
     currentScope = rootScope;

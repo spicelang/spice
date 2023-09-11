@@ -21,13 +21,18 @@ void TypeChecker::createDefaultDtorIfRequired(Struct &spiceStruct, Scope *struct
   // Abort if the struct already has a user-defined destructor
   const SymbolTableEntry *structEntry = spiceStruct.entry;
   const SymbolType &thisType = structEntry->getType();
-  Function *dtorFunction = FunctionManager::matchFunction(structScope, DTOR_FUNCTION_NAME, thisType, {}, true, nullptr);
-  if (dtorFunction)
+  const std::string fqFctName = thisType.getOriginalSubType() + MEMBER_ACCESS_TOKEN + DTOR_FUNCTION_NAME;
+  if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
 
+  // Procedure type
+  SymbolType procedureType(TY_PROCEDURE);
+  procedureType.specifiers.isPublic = spiceStruct.entry->getType().specifiers.isPublic;
+
   // Insert symbol for function into the symbol table
-  const std::string fqFctName = thisType.getOriginalSubType() + MEMBER_ACCESS_TOKEN + DTOR_FUNCTION_NAME;
-  SymbolTableEntry *fctEntry = structScope->insert(DTOR_FUNCTION_NAME, structEntry->declNode);
+  const std::string entryName = Function::getSymbolTableEntryName(DTOR_FUNCTION_NAME, node->codeLoc);
+  SymbolTableEntry *fctEntry = structScope->insert(entryName, structEntry->declNode);
+  fctEntry->updateType(procedureType, true);
 
   // Add to external name registry
   assert(sourceFile->getNameRegistryEntry(fqFctName) == nullptr);
@@ -45,6 +50,7 @@ void TypeChecker::createDefaultDtorIfRequired(Struct &spiceStruct, Scope *struct
   // Create 'this' symbol in the function scope
   SymbolTableEntry *thisEntry = fctScope->insert(THIS_VARIABLE_NAME, node);
   thisEntry->updateType(thisType.toPointer(node), true);
+  thisEntry->used = true; // Always set to used to not print warnings for non-existing code
 
   // Hand it off to the function manager to register the function
   std::vector<Function *> manifestations;

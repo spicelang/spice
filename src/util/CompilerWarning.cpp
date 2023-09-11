@@ -44,6 +44,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Unused function";
   case UNUSED_PROCEDURE:
     return "Unused procedure";
+  case UNUSED_METHOD:
+    return "Unused method";
   case UNUSED_STRUCT:
     return "Unused struct";
   case UNUSED_INTERFACE:

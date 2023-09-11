@@ -1876,8 +1876,11 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Update type of struct entry
   structEntry->updateType(structType, true);
 
-  // Insert anonymous symbol to keep track of dtor calls for de-allocation
-  SymbolTableEntry *anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
+  // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
+  SymbolTableEntry *anonymousEntry = nullptr;
+  if (node->fieldLst() != nullptr)
+    if (std::ranges::any_of(node->fieldLst()->args(), [](AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
+      anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables
   structType.specifiers.isPublic = false;

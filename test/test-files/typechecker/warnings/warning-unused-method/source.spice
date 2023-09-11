@@ -1,0 +1,13 @@
+type TestStruct struct {}
+
+p TestStruct.unusedProcedure() {
+    print("Hello World");
+}
+
+p TestStruct.unusedFunction() {
+    return "Hello World";
+}
+
+f<int> main() {
+    TestStruct ts;
+}

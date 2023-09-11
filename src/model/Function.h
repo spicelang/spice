@@ -46,6 +46,7 @@ public:
   [[nodiscard]] static std::string getSignature(const std::string &name, const SymbolType &thisType, const SymbolType &returnType,
                                                 const ParamList &paramList, const std::vector<SymbolType> &concreteTemplateTypes,
                                                 bool withThisType = true);
+  [[nodiscard]] static std::string getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc);
   [[nodiscard]] inline bool isMethod() const { return !thisType.is(TY_DYN); }
   [[nodiscard]] inline bool isFunction() const { return !returnType.is(TY_DYN); }
   [[nodiscard]] inline bool isProcedure() const { return returnType.is(TY_DYN); }

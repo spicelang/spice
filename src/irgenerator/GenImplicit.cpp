@@ -91,6 +91,10 @@ void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
 }
 
 llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void()> &generateBody, Function *spiceFunc) {
+  // Only generate if used
+  if (!spiceFunc->used)
+    return nullptr;
+
   // Only focus on procedures and procedure methods without arguments for now
   assert(spiceFunc->isProcedure() && spiceFunc->getParamTypes().empty());
   const ASTNode *node = spiceFunc->entry->declNode;
@@ -130,6 +134,9 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   diGenerator.generateFunctionDebugInfo(fct, spiceFunc);
   diGenerator.setSourceLocation(node);
 
+  // Change to body scope
+  changeToScope(spiceFunc->getSignature(false), ScopeType::FUNC_PROC_BODY);
+
   // Create entry block
   llvm::BasicBlock *bEntry = createBlock();
   switchToBlock(bEntry, fct);
@@ -162,6 +169,9 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
 
   // Verify function
   verifyFunction(fct, node->codeLoc);
+
+  // Change to parent scope
+  changeToParentScope(ScopeType::FUNC_PROC_BODY);
 
   return fct;
 }

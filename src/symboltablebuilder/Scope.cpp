@@ -186,8 +186,13 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
         continue;
 
       if (type == ScopeType::GLOBAL) {
+        const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
         warningType = UNUSED_FUNCTION;
-        warningMessage = "The function '" + entry.declNode->getFctManifestations(name)->front()->getSignature() + "' is unused";
+        warningMessage = "The function '" + fctManifestations->front()->getSignature() + "' is unused";
+      } else if (type == ScopeType::STRUCT) {
+        const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
+        warningType = UNUSED_METHOD;
+        warningMessage = "The method '" + fctManifestations->front()->getSignature() + "' is unused";
       } else {
         warningType = UNUSED_VARIABLE;
         warningMessage = "The variable '" + entry.name + "' is unused";
@@ -201,8 +206,17 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
         continue;
 
       if (type == ScopeType::GLOBAL) {
+        const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
         warningType = UNUSED_PROCEDURE;
-        warningMessage = "The procedure '" + entry.declNode->getFctManifestations(name)->front()->getSignature() + "' is unused";
+        warningMessage = "The procedure '" + fctManifestations->front()->getSignature() + "' is unused";
+      } else if (type == ScopeType::STRUCT) {
+        // Check if this is a default instance method
+        const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
+        if (fctManifestations->empty() || fctManifestations->front()->implicitDefault)
+          continue;
+
+        warningType = UNUSED_METHOD;
+        warningMessage = "The method '" + fctManifestations->front()->getSignature() + "' is unused";
       } else {
         warningType = UNUSED_VARIABLE;
         warningMessage = "The variable '" + entry.name + "' is unused";
