@@ -8,6 +8,7 @@
 namespace spice::compiler {
 
 SemanticError::SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message) {
+  assert(node != nullptr);
   errorMessage = "[Error|Semantic] " + node->codeLoc.toPrettyString() + ":\n";
   errorMessage += getMessagePrefix(type) + ": " + message;
   if (!node->errorMessage.empty())

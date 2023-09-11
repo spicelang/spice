@@ -130,7 +130,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       for (size_t i = 0; i < substantiatedStruct->fieldTypes.size(); i++) {
         // Replace field type with concrete template type
         SymbolTableEntry *fieldEntry = substantiatedStruct->structScope->symbolTable.lookupStrictByIndex(i);
-        assert(fieldEntry != nullptr);
+        assert(fieldEntry != nullptr && fieldEntry->isField());
         fieldEntry->updateType(substantiatedStruct->fieldTypes.at(i), /*overwriteExistingType=*/true);
       }
 

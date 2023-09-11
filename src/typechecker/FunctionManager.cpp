@@ -214,7 +214,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       Function *substantiatedFunction = insertSubstantiation(matchScope, candidate, presetFunction.declNode);
       substantiatedFunction->genericSubstantiation = true;
       substantiatedFunction->alreadyTypeChecked = false;
-      substantiatedFunction->declNode->getFctManifestations()->push_back(substantiatedFunction);
+      substantiatedFunction->declNode->getFctManifestations(requestedName)->push_back(substantiatedFunction);
 
       // Copy function entry
       const std::string newSignature = substantiatedFunction->getSignature(false);

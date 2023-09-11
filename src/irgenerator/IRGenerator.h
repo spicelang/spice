@@ -139,8 +139,9 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
   void generateScopeCleanup(const StmtLstNode *node) const;
   void generateDtorCall(SymbolTableEntry *entry, Function *dtor) const;
-  void generateImplicitFunction();
-  void generateImplicitDefaultDtor();
+  void generateDeallocCall(llvm::Value *variableAddress) const;
+  llvm::Function *generateImplicitProcedure(const std::function<void()> &generateBody, Function *spiceFunc);
+  void generateDefaultDefaultDtor(Function *dtorFunction);
 
   // Private members
   llvm::LLVMContext &context;
@@ -157,7 +158,6 @@ private:
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
   bool blockAlreadyTerminated = false;
-  size_t manIdx = 0;
 };
 
 } // namespace spice::compiler

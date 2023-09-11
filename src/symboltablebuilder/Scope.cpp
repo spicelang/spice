@@ -138,8 +138,12 @@ size_t Scope::getFieldCount() const {
   size_t fieldCount = 0;
   for (const auto &symbol : symbolTable.symbols) {
     const SymbolType &symbolType = symbol.second.getType();
-    if (!symbolType.is(TY_IMPORT) && !symbol.second.declNode->isFctOrProcDef())
-      fieldCount++;
+    if (symbolType.is(TY_IMPORT))
+      continue;
+    const ASTNode *declNode = symbol.second.declNode;
+    if (declNode->isFctOrProcDef() || declNode->isStructDef())
+      continue;
+    fieldCount++;
   }
   return fieldCount;
 }
@@ -171,7 +175,8 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
   std::string warningMessage;
   for (const auto &[_, entry] : symbolTable.symbols) {
     // Do not produce a warning if the symbol is used or has a special name
-    if (entry.used || entry.name.starts_with(UNUSED_VARIABLE_NAME))
+    const std::string &name = entry.name;
+    if (entry.used || name.starts_with(UNUSED_VARIABLE_NAME))
       continue;
 
     switch (entry.getType().getSuperType()) {
@@ -182,7 +187,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 
       if (type == ScopeType::GLOBAL) {
         warningType = UNUSED_FUNCTION;
-        warningMessage = "The function '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+        warningMessage = "The function '" + entry.declNode->getFctManifestations(name)->front()->getSignature() + "' is unused";
       } else {
         warningType = UNUSED_VARIABLE;
         warningMessage = "The variable '" + entry.name + "' is unused";
@@ -197,7 +202,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 
       if (type == ScopeType::GLOBAL) {
         warningType = UNUSED_PROCEDURE;
-        warningMessage = "The procedure '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+        warningMessage = "The procedure '" + entry.declNode->getFctManifestations(name)->front()->getSignature() + "' is unused";
       } else {
         warningType = UNUSED_VARIABLE;
         warningMessage = "The variable '" + entry.name + "' is unused";

@@ -472,8 +472,9 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     llvm::StructType *structType = llvm::StructType::create(context, mangledName);
 
     // Set LLVM type to the struct entry
-    assert(spiceStruct->entry != nullptr);
-    spiceStruct->entry->setStructLLVMType(structType);
+    SymbolTableEntry *structEntry = spiceStruct->entry;
+    assert(structEntry != nullptr);
+    structEntry->setStructLLVMType(structType);
 
     // Collect concrete field types
     std::vector<llvm::Type *> fieldTypes;
@@ -486,6 +487,11 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
 
     // Set field types to struct type
     structType->setBody(fieldTypes);
+
+    // Generate default ctor/dtor, etc.
+    Function *dtorFct = FunctionManager::matchFunction(currentScope, DTOR_FUNCTION_NAME, structEntry->getType(), {}, true, node);
+    if (dtorFct != nullptr && dtorFct->implicitDefault)
+      generateDefaultDefaultDtor(dtorFct);
 
     // Return to root scope
     currentScope = rootScope;

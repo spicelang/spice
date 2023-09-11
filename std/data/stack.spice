@@ -54,12 +54,12 @@ public p Stack.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     this.capacity = initAllocItems;
 }
 
-public p Stack.dtor() {
+/*public p Stack.dtor() {
     // Free all the memory
     unsafe {
         free((heap byte*) this.contents);
     }
-}
+}*/
 
 /**
  * Add an item to the stack

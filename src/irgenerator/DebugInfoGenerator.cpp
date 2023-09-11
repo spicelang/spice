@@ -340,7 +340,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     for (size_t i = 0; i < spiceStruct->fieldTypes.size(); i++) {
       // Get field entry
       SymbolTableEntry *fieldEntry = spiceStruct->structScope->symbolTable.lookupStrictByIndex(i);
-      assert(fieldEntry != nullptr);
+      assert(fieldEntry != nullptr && fieldEntry->isField());
       const SymbolType fieldType = fieldEntry->getType();
       const size_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
       const size_t offsetInBits = structLayout->getElementOffsetInBits(i);

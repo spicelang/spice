@@ -12,7 +12,7 @@ ext p memcpy(heap byte*, heap byte*, long);
   * @param size The size of the block to allocate.
   * @return A pointer to the allocated block, or an error if the allocation failed.
   */
-public f<Result<heap byte*>> alloc(long size) {
+public f<Result<heap byte*>> spiceAlloc(long size) {
     heap byte* ptr = malloc(size);
     return ptr != nil<heap byte*> ? ptr : err(nil<heap byte*>, "Out of memory occurred!");
 }
@@ -24,9 +24,9 @@ public f<Result<heap byte*>> alloc(long size) {
   * @param size The new size of the block.
   * @return A pointer to the reallocated block, or an error if the reallocation failed.
   */
-public f<Result<heap byte*>> realloc(heap byte* ptr, long size) {
+public f<Result<heap byte*>> spiceRealloc(heap byte* ptr, long size) {
     heap byte* newPtr = realloc(ptr, size);
-    return newPtr != nil<heap byte*> ? newPtr : err(nil<heap byte*>, "Out of memory occurred!");
+    return newPtr != nil<heap byte*> ? ok(newPtr) : err(nil<heap byte*>, "Out of memory occurred!");
 }
 
 /**
@@ -36,13 +36,13 @@ public f<Result<heap byte*>> realloc(heap byte* ptr, long size) {
   * @param size The size of the block to copy.
   * @return A pointer to the copied block, or an error if the copy failed.
   */
-public f<Result<heap byte*>> copy(heap byte* ptr, long size) {
+public f<Result<heap byte*>> spiceCopy(heap byte* ptr, long size) {
     heap byte* newPtr = malloc(size);
     if newPtr == nil<heap byte*> {
         return err(nil<heap byte*>, "Out of memory occurred!");
     }
     memcpy(newPtr, ptr, size);
-    return newPtr;
+    return ok(newPtr);
 }
 
 /**
@@ -51,7 +51,7 @@ public f<Result<heap byte*>> copy(heap byte* ptr, long size) {
   *
   * @param ptr The pointer to the block to free.
   */
-public p dealloc(heap byte*& ptr) {
+public p spiceDealloc(heap byte*& ptr) {
     free(ptr);
     ptr = nil<heap byte*>; // Zero out to prevent accidental double frees
 }

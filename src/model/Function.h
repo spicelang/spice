@@ -74,6 +74,7 @@ public:
   bool genericSubstantiation = false;
   bool alreadyTypeChecked = false;
   bool used = false;
+  bool implicitDefault = false;
 
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, thisType, returnType, paramList, templateTypes)

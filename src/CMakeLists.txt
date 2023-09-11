@@ -66,6 +66,7 @@ set(SOURCES
         typechecker/TypeChecker.h
         typechecker/TypeCheckerPrepare.cpp
         typechecker/TypeCheckerCheck.cpp
+        typechecker/TypeCheckerImplicit.cpp
         typechecker/OpRuleManager.cpp
         typechecker/OpRuleManager.h
         typechecker/FunctionManager.cpp

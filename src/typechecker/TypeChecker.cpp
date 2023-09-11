@@ -1306,7 +1306,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
   if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->global) {
     // Check if overloaded function was referenced
-    const std::vector<Function *> *manifestations = varEntry->declNode->getFctManifestations();
+    const std::vector<Function *> *manifestations = varEntry->declNode->getFctManifestations(varEntry->name);
     if (manifestations->size() > 1)
       SOFT_ERROR_ER(node, REFERENCED_OVERLOADED_FCT,
                     "Overloaded functions or functions with optional parameters cannot be referenced")
@@ -2355,49 +2355,6 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
 void TypeChecker::autoDeReference(SymbolType &symbolType) {
   while (symbolType.isPtr() || symbolType.isRef())
     symbolType = symbolType.getContainedTy();
-}
-
-/**
- * Consider calls to destructors for the given scope
- *
- * @param node StmtLstNode for the current scope
- */
-void TypeChecker::doScopeCleanup(StmtLstNode *node) {
-  // Get all variables, that are approved for deallocation
-  std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
-  for (SymbolTableEntry *var : vars) {
-    // Only generate dtor call for structs and if not omitted
-    if (!var->getType().is(TY_STRUCT) || var->omitDtorCall)
-      continue;
-    // Variable must be either initialized or a struct field
-    if (!var->isInitialized() && var->scope->type != ScopeType::STRUCT)
-      continue;
-    // Call dtor
-    callStructDtor(var, node);
-  }
-}
-
-/**
- * Prepare the generation of a call to the dtor of a given struct
- *
- * @param entry Symbol entry to use as 'this' pointer for the dtor call
- * @param node StmtLstNode for the current scope
- */
-void TypeChecker::callStructDtor(SymbolTableEntry *entry, StmtLstNode *node) {
-  SymbolType thisType = entry->getType();
-  assert(thisType.is(TY_STRUCT));
-  Scope *matchScope = thisType.getBodyScope();
-  assert(matchScope->type == ScopeType::STRUCT);
-
-  // Search for dtor
-  const bool isImported = matchScope->isImportedBy(rootScope);
-  if (isImported)
-    thisType = mapLocalTypeToImportedScopeType(matchScope, thisType);
-  Function *spiceFunc = FunctionManager::matchFunction(matchScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
-
-  // Add the dtor to the stmt list node to call it later in codegen
-  if (spiceFunc != nullptr)
-    node->dtorFunctions.at(manIdx).emplace_back(entry, spiceFunc);
 }
 
 /**
