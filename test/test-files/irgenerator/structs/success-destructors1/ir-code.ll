@@ -10,7 +10,6 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.1 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
 @anon.string.2 = private unnamed_addr constant [72 x i8] c"Assertion failed: Condition 'this.field2 == \22Test\22' evaluated to false.\00", align 1
 @anon.string.3 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
-@anon.struct.0 = private unnamed_addr constant %struct.Vector { i1 true, ptr @anon.string.3 }
 @printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
 
 define private void @_ZN6Vector4dtorEv(ptr noundef nonnull %0) {
@@ -62,7 +61,6 @@ define dso_local i32 @main() #3 {
   %result = alloca i32, align 4
   %vec = alloca %struct.Vector, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %vec, ptr @anon.struct.0, i64 16, i1 false)
   store %struct.Vector { i1 true, ptr @anon.string.3 }, ptr %vec, align 8
   %field1_addr = getelementptr inbounds %struct.Vector, ptr %vec, i32 0, i32 0
   %1 = load i1, ptr %field1_addr, align 1
@@ -75,13 +73,9 @@ define dso_local i32 @main() #3 {
   ret i32 %5
 }
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #4
-
 attributes #0 = { nofree nounwind }
 attributes #1 = { nounwind }
 attributes #2 = { cold noreturn nounwind }
 attributes #3 = { noinline nounwind optnone uwtable }
-attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}

@@ -5,7 +5,6 @@ target triple = "x86_64-w64-windows-gnu"
 
 %struct.TreeNode = type { ptr, i32 }
 
-@anon.struct.0 = private unnamed_addr constant %struct.TreeNode zeroinitializer
 @printf.str.0 = private unnamed_addr constant [21 x i8] c"Root node number: %d\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -17,7 +16,6 @@ define dso_local i32 @main() #0 {
   %childNode21 = alloca %struct.TreeNode, align 8
   %curNode = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %rootNode, ptr @anon.struct.0, i64 16, i1 false)
   store %struct.TreeNode zeroinitializer, ptr %rootNode, align 8
   %1 = getelementptr inbounds %struct.TreeNode, ptr %_childNode1, i32 0, i32 0
   store ptr %rootNode, ptr %1, align 8
@@ -57,12 +55,8 @@ while.exit.L21:                                   ; preds = %while.head.L21
   ret i32 %15
 }
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
-
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { nofree nounwind }
+attributes #1 = { nofree nounwind }

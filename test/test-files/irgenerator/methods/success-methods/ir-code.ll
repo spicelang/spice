@@ -6,7 +6,6 @@ target triple = "x86_64-w64-windows-gnu"
 %struct.Letter = type { ptr }
 
 @anon.string.0 = private unnamed_addr constant [11 x i8] c"No content\00", align 1
-@anon.struct.0 = private unnamed_addr constant %struct.Letter { ptr @anon.string.0 }
 @anon.string.1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
 @printf.str.0 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 1
 
@@ -37,7 +36,6 @@ define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %letter = alloca %struct.Letter, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %letter, ptr @anon.struct.0, i64 8, i1 false)
   store %struct.Letter { ptr @anon.string.0 }, ptr %letter, align 8
   call void @_ZN6Letter10setContentEPc(ptr %letter, ptr @anon.string.1)
   %1 = call ptr @_ZN6Letter10getContentEv(ptr %letter)
@@ -46,12 +44,8 @@ define dso_local i32 @main() #0 {
   ret i32 %3
 }
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
-
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { nofree nounwind }
+attributes #1 = { nofree nounwind }

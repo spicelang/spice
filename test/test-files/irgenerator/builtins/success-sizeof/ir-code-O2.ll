@@ -13,7 +13,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.7 = private unnamed_addr constant [18 x i8] c"Size of bool: %d\0A\00", align 1
 @printf.str.8 = private unnamed_addr constant [19 x i8] c"Size of int[]: %d\0A\00", align 1
 @printf.str.9 = private unnamed_addr constant [18 x i8] c"Size of int*: %d\0A\00", align 1
-@printf.str.10 = private unnamed_addr constant [29 x i8] c"Size of struct instance: %d\0A\00", align 1
+@printf.str.10 = private unnamed_addr constant [25 x i8] c"Size of struct type: %d\0A\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
