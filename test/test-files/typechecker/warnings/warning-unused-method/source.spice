@@ -1,13 +1,16 @@
-type TestStruct struct {}
-
-p TestStruct.unusedProcedure() {
-    print("Hello World");
+type TestStruct struct {
+    int a
 }
 
-p TestStruct.unusedFunction() {
+p TestStruct.unusedProcedure() {
+    printf("Hello World: %d", this.a);
+}
+
+f<string> TestStruct.unusedFunction() {
+    printf("%d", this.a);
     return "Hello World";
 }
 
 f<int> main() {
-    TestStruct ts;
+    TestStruct _ts;
 }

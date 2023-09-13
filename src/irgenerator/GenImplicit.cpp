@@ -177,6 +177,8 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
 }
 
 void IRGenerator::generateDefaultDefaultDtor(Function *dtorFunction) {
+  assert(dtorFunction->implicitDefault && dtorFunction->name.starts_with(DTOR_FUNCTION_NAME));
+
   const ASTNode *node = dtorFunction->entry->declNode;
 
   const std::function<void()> generateBody = [&]() {

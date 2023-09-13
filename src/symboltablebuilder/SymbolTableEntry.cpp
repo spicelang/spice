@@ -121,7 +121,7 @@ void SymbolTableEntry::popAddress() {
  *
  * @return Struct field or not
  */
-bool SymbolTableEntry::isField() const { return scope->type == ScopeType::STRUCT && !type.isOneOf({TY_FUNCTION, TY_PROCEDURE}); }
+bool SymbolTableEntry::isField() const { return scope->type == ScopeType::STRUCT && orderIndex < scope->getFieldCount(); }
 
 /**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.

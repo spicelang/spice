@@ -14,7 +14,7 @@ ext p memcpy(heap byte*, heap byte*, long);
   */
 public f<Result<heap byte*>> spiceAlloc(long size) {
     heap byte* ptr = malloc(size);
-    return ptr != nil<heap byte*> ? ptr : err(nil<heap byte*>, "Out of memory occurred!");
+    return ptr != nil<heap byte*> ? ok(ptr) : err(nil<heap byte*>, "Out of memory occurred!");
 }
 
 /**

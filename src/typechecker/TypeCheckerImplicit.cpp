@@ -25,6 +25,24 @@ void TypeChecker::createDefaultDtorIfRequired(Struct &spiceStruct, Scope *struct
   if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
 
+  // Check we have field types, that require use to do anything in the destructor
+  const size_t fieldCount = structScope->getFieldCount();
+  bool hasHeapFields = false;
+  bool hasFieldsToDestruct = false;
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    hasHeapFields |= fieldSymbol->getType().isHeap();
+    if (fieldSymbol->getType().is(TY_STRUCT)) {
+      // Lookup dtor function
+      Function *dtorFct = FunctionManager::lookupFunction(structScope, DTOR_FUNCTION_NAME, fieldSymbol->getType(), {}, true);
+      hasFieldsToDestruct |= dtorFct != nullptr;
+    }
+  }
+
+  // If we don't have any fields, that require us to do anything in the dtor, we can skip it
+  if (!hasHeapFields && !hasFieldsToDestruct)
+    return;
+
   // Procedure type
   SymbolType procedureType(TY_PROCEDURE);
   procedureType.specifiers.isPublic = spiceStruct.entry->getType().specifiers.isPublic;
@@ -53,14 +71,9 @@ void TypeChecker::createDefaultDtorIfRequired(Struct &spiceStruct, Scope *struct
   thisEntry->used = true; // Always set to used to not print warnings for non-existing code
 
   // Hand it off to the function manager to register the function
-  std::vector<Function *> manifestations;
-  FunctionManager::insertFunction(structScope, defaultDtor, &manifestations);
+  FunctionManager::insertFunction(structScope, defaultDtor, structEntry->declNode->getFctManifestations(DTOR_FUNCTION_NAME));
 
   // Request memory runtime if we have fields, that are allocated on the heap
-  bool hasHeapFields = false;
-  const size_t fieldCount = structScope->getFieldCount();
-  for (size_t i = 0; i < fieldCount; i++)
-    hasHeapFields |= structScope->symbolTable.lookupStrictByIndex(i)->getType().isHeap();
   if (hasHeapFields)
     sourceFile->requestRuntimeModule(MEMORY_RT);
 }

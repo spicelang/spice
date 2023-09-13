@@ -2096,7 +2096,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
         type.specifiers.isUnsigned = true;
       } else if (specifier->type == SpecifierNode::TY_HEAP) {
         // Heap variables can only be pointers
-        if (!type.isOneOf({TY_PTR, TY_STRING}))
+        if (!type.removeReferenceWrapper().isOneOf({TY_PTR, TY_STRING}))
           SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
                         "The heap specifier can only be applied to symbols of pointer type, you provided " + baseType.getName())
 
