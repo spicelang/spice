@@ -182,7 +182,7 @@ Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &
  */
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
                                          const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
-                                         const ASTNode *callNode, bool setUsed) {
+                                         const ASTNode *callNode) {
   assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT}));
 
   // Copy the registry to prevent iterating over items, that are created within the loop

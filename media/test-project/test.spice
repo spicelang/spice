@@ -1,40 +1,4 @@
-type ShoppingItem struct {
-    string name
-    double _amount
-    string unit
-}
-
-type ShoppingCart struct {
-    string _label
-    ShoppingItem[3] items
-}
-
-f<ShoppingCart> newShoppingCart() {
-    ShoppingItem[3] items;
-    items[0] = ShoppingItem { "Spaghetti", 100.0, "g" };
-    items[1] = ShoppingItem { "Rice", 125.5, "g" };
-    items[2] = ShoppingItem { "Doughnut", 6.0, "pcs" };
-    return ShoppingCart { "Shopping Cart", items };
-}
-
-f<ShoppingCart> anotherShoppingCart() {
-    ShoppingItem[3] items = [
-        ShoppingItem { "Spaghetti", 100.0, "g" },
-        ShoppingItem { "Rice", 125.5, "g" },
-        ShoppingItem { "Doughnut", 6.0, "pcs" }
-    ];
-    return ShoppingCart { "Another Cart", items };
-}
-
-f<int> main() {
-    ShoppingCart shoppingCart = newShoppingCart();
-    printf("Shopping cart item 1: %s\n", shoppingCart.items[1].name);
-
-    shoppingCart = anotherShoppingCart();
-    printf("Another cart item 2 unit: %s\n", shoppingCart.items[2].unit);
-}
-
-/*import "std/data/stack";
+import "std/data/stack";
 
 f<int> main() {
     Stack<int> s1 = Stack<int>{};
@@ -47,7 +11,7 @@ f<int> main() {
     printf("Stack item 3: %d\n", s1.pop());
     printf("Stack item 2: %d\n", s1.pop());
     printf("Stack item 1: %d\n", s1.pop());
-}*/
+}
 
 /*type TestStruct struct {
     int a = 123

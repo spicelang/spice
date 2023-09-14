@@ -1,12 +1,8 @@
+import "std/type/result";
+
 // Constants
 const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
-
-// Link external functions
-ext f<heap byte*> malloc(long);
-ext f<heap byte*> realloc(heap byte*, int);
-ext p free(heap byte*);
-ext f<heap byte*> memcpy(heap byte*, heap byte*, int);
 
 // Add generic type definition
 type T dyn;
@@ -46,9 +42,10 @@ public p Stack.ctor(unsigned int initAllocItems) {
 
 public p Stack.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
-    const long itemSize = sizeof(type T) / 8l;
+    const unsigned long itemSize = sizeof(type T) / 8l;
     unsafe {
-        this.contents = (heap T*) malloc(itemSize * initAllocItems);
+        Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
+        this.contents = (heap T*) allocResult.unwrap();
     }
     this.size = 0l;
     this.capacity = initAllocItems;
@@ -137,11 +134,12 @@ public p Stack.pack() {
  */
 p Stack.resize(unsigned long itemCount) {
     // Allocate the new memory
-    const long itemSize = sizeof(type T) / 8l;
+    const unsigned long itemSize = sizeof(type T) / 8l;
     unsafe {
         heap byte* oldAddress = (heap byte*) this.contents;
-        int newSize = (int) (itemSize * itemCount);
-        heap T* newMemory = (heap T*) realloc(oldAddress, newSize);
+        unsigned long newSize = (unsigned long) (itemSize * itemCount);
+        Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
+        heap T* newMemory = (heap T*) allocResult.unwrap();
         this.contents = newMemory;
     }
     // Set new capacity

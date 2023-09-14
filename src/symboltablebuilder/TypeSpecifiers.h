@@ -27,7 +27,7 @@ public:
 
   // Public methods
   [[nodiscard]] TypeSpecifiers merge(const TypeSpecifiers &other) const;
-  [[nodiscard]] bool match(TypeSpecifiers other, bool allowConstify) const;
+  [[nodiscard]] bool match(TypeSpecifiers other, bool allowConstify, bool ignoreHeapMismatch) const;
 
   // Overloaded operators
   friend bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs);

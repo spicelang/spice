@@ -29,7 +29,7 @@ bool TypeMatcher::matchRequestedToCandidateTypes(const std::vector<SymbolType> &
 }
 
 bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
-                                                ResolverFct &resolverFct, bool strictSpecifiers) {
+                                                ResolverFct &resolverFct, bool strictSpecifierMatching) {
   // Unwrap both types as far as possible
   while (candidateType.isSameContainerTypeAs(requestedType)) {
     requestedType = requestedType.getContainedTy();
@@ -46,7 +46,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts())
-    return candidateType.matches(requestedType, true, !strictSpecifiers, true);
+    return candidateType.matches(requestedType, true, !strictSpecifierMatching, true);
 
   // Check if the candidate type itself is generic
   if (candidateType.isBaseType(TY_GENERIC)) { // The candidate type itself is generic
@@ -61,14 +61,14 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
         knownConcreteType = knownConcreteType.removeReferenceWrapper();
 
       // Check if the known concrete type matches the requested type
-      return knownConcreteType.matches(requestedType, true, !strictSpecifiers, true);
+      return knownConcreteType.matches(requestedType, true, !strictSpecifierMatching, true);
     } else {
       // Retrieve generic candidate type by its name
       const GenericType *genericCandidateType = resolverFct(genericTypeName);
       assert(genericCandidateType != nullptr);
 
       // Check if the requested type fulfills all conditions of the generic candidate type
-      if (!genericCandidateType->checkConditionsOf(requestedType, true, !strictSpecifiers))
+      if (!genericCandidateType->checkConditionsOf(requestedType, true, !strictSpecifierMatching))
         return false;
 
       // Add to type mapping
@@ -92,13 +92,13 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
       // Check param  and return types
       const std::vector<SymbolType> &candidatePRTypes = candidateType.getFunctionParamAndReturnTypes();
       const std::vector<SymbolType> &requestedPRTypes = requestedType.getFunctionParamAndReturnTypes();
-      if (!matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictSpecifiers))
+      if (!matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictSpecifierMatching))
         return false;
     } else {
       // Check template types
       const std::vector<SymbolType> &candidateTTypes = candidateType.getTemplateTypes();
       const std::vector<SymbolType> &requestedTTypes = requestedType.getTemplateTypes();
-      if (!matchRequestedToCandidateTypes(candidateTTypes, requestedTTypes, typeMapping, resolverFct, strictSpecifiers))
+      if (!matchRequestedToCandidateTypes(candidateTTypes, requestedTTypes, typeMapping, resolverFct, strictSpecifierMatching))
         return false;
     }
 
