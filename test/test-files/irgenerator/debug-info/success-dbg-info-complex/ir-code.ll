@@ -84,7 +84,6 @@ assert.then.L12:                                  ; preds = %2
 
 assert.exit.L12:                                  ; preds = %2
   %18 = call %struct.VectorIterator @"_Z7iterateR22std/data/vector.VectorIiE"(ptr %vi), !dbg !44
-  store %struct.VectorIterator %18, ptr %it, align 8, !dbg !44
   call void @llvm.dbg.declare(metadata ptr %it, metadata !45, metadata !DIExpression()), !dbg !52
   store %struct.VectorIterator %18, ptr %it, align 8, !dbg !44
   %19 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %it), !dbg !53
@@ -141,7 +140,6 @@ assert.then.L21:                                  ; preds = %assert.exit.L20
 assert.exit.L21:                                  ; preds = %assert.exit.L20
   call void @_ZN14VectorIteratorIiE4nextEv(ptr %it), !dbg !62
   %35 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr %it), !dbg !63
-  store %struct.Pair %35, ptr %pair, align 8, !dbg !63
   call void @llvm.dbg.declare(metadata ptr %pair, metadata !64, metadata !DIExpression()), !dbg !70
   store %struct.Pair %35, ptr %pair, align 8, !dbg !63
   %36 = call ptr @_ZN4PairImRiE8getFirstEv(ptr %pair), !dbg !71

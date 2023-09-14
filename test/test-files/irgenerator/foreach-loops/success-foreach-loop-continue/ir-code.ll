@@ -21,7 +21,6 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   %3 = call %struct.NumberIterator @_Z5rangess(i16 3, i16 8)
   store %struct.NumberIterator %3, ptr %shortIterator, align 2
-  store %struct.NumberIterator %3, ptr %shortIterator, align 2
   br label %foreach.head.L5
 
 foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0

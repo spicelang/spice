@@ -329,7 +329,8 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
                                          const SymbolType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
-  const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT);
+  const bool isRhsTemporary = rhs.entry == nullptr && rhs.ptr == nullptr && rhs.refPtr == nullptr;
+  const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !isRhsTemporary;
 
   if (isRefAssign) {
     if (isDecl) { // Reference gets initially assigned
@@ -380,15 +381,10 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     materializeConstant(rhs);
 
     // Directly set the address to the lhs entry
-    lhsEntry->updateAddress(resolveAddress(rhs, lhsEntry->isVolatile));
-
-    // If we have value, store it to the address
-    if (rhs.value) {
-      assert(rhs.ptr != nullptr);
-      builder.CreateStore(rhs.value, rhs.ptr);
-    }
-
+    llvm::Value *rhsAddress = resolveAddress(rhs);
+    lhsEntry->updateAddress(rhsAddress);
     rhs.entry = lhsEntry;
+
     return rhs;
   }
 
@@ -473,28 +469,8 @@ std::string IRGenerator::getUnusedGlobalName(const std::string &baseName) const 
 
 void IRGenerator::materializeConstant(LLVMExprResult &exprResult) {
   // Skip results, that do not contain a constant or already have a value
-  if (exprResult.constant == nullptr || exprResult.value != nullptr)
+  if (exprResult.value != nullptr || exprResult.constant == nullptr)
     return;
-
-  llvm::Type *constantType = exprResult.constant->getType();
-  if (constantType->isArrayTy() || constantType->isStructTy()) {
-    // Insert alloca for local variable
-    llvm::Value *localAddr = insertAlloca(constantType);
-
-    // If no address is given, we simply store the constant
-    if (exprResult.ptr != nullptr) {
-      // Get the size of the type in bytes
-      const size_t instanceSize = module->getDataLayout().getTypeAllocSize(constantType);
-
-      // Copy the constant to the local address via llvm.memcpy
-      llvm::Function *memcpyIntrinsic = stdFunctionManager.getMemcpyIntrinsic();
-      llvm::Value *args[4] = {localAddr, exprResult.ptr, builder.getInt64(instanceSize), builder.getFalse()};
-      builder.CreateCall(memcpyIntrinsic, args);
-    }
-
-    // Set the pointer to the newly created local variable
-    exprResult.ptr = localAddr;
-  }
 
   // Default case: the value to the constant
   exprResult.value = exprResult.constant;

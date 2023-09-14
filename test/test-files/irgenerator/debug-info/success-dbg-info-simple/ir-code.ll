@@ -49,7 +49,6 @@ define dso_local i32 @main() #1 !dbg !53 {
   call void @llvm.dbg.declare(metadata ptr %test, metadata !58, metadata !DIExpression()), !dbg !59
   store i32 987654, ptr %test, align 4, !dbg !60
   %1 = call %struct.TestStruct @_Z3fctRi(ptr %test), !dbg !61
-  store %struct.TestStruct %1, ptr %res, align 8, !dbg !61
   call void @llvm.dbg.declare(metadata ptr %res, metadata !62, metadata !DIExpression()), !dbg !63
   store %struct.TestStruct %1, ptr %res, align 8, !dbg !61
   %lng_addr = getelementptr inbounds %struct.TestStruct, ptr %res, i32 0, i32 0, !dbg !64

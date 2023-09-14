@@ -12,51 +12,46 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %1 = alloca [7 x i32], align 4
   %intArray = alloca [7 x i32], align 4
-  %2 = alloca %struct.ArrayIterator, align 8
+  %1 = alloca %struct.ArrayIterator, align 8
   %index = alloca i64, align 8
   %item = alloca i32, align 4
   %pair_addr = alloca %struct.Pair, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.array.0, i64 28, i1 false)
   store [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9], ptr %intArray, align 4
-  %3 = getelementptr inbounds [7 x i32], ptr %intArray, i32 0, i32 0
-  %4 = call %struct.ArrayIterator @_Z7iteratePim(ptr %3, i64 7)
-  store %struct.ArrayIterator %4, ptr %2, align 8
+  %2 = getelementptr inbounds [7 x i32], ptr %intArray, i32 0, i32 0
+  %3 = call %struct.ArrayIterator @_Z7iteratePim(ptr %2, i64 7)
+  store %struct.ArrayIterator %3, ptr %1, align 8
   store i64 0, ptr %index, align 8
   br label %foreach.head.L5
 
 foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
-  %5 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr %2)
-  br i1 %5, label %foreach.body.L5, label %foreach.exit.L5
+  %4 = call i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr %1)
+  br i1 %4, label %foreach.body.L5, label %foreach.exit.L5
 
 foreach.body.L5:                                  ; preds = %foreach.head.L5
-  %pair = call %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr %2)
+  %pair = call %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr %1)
   store %struct.Pair %pair, ptr %pair_addr, align 8
   %idx_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 0
-  %6 = load i64, ptr %idx_addr, align 8
-  store i64 %6, ptr %index, align 8
+  %5 = load i64, ptr %idx_addr, align 8
+  store i64 %5, ptr %index, align 8
   %item_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 1
-  %7 = load ptr, ptr %item_addr, align 8
-  %8 = load i32, ptr %7, align 4
-  store i32 %8, ptr %item, align 4
-  %9 = load i64, ptr %index, align 8
-  %10 = load i32, ptr %item, align 4
-  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %9, i32 %10)
+  %6 = load ptr, ptr %item_addr, align 8
+  %7 = load i32, ptr %6, align 4
+  store i32 %7, ptr %item, align 4
+  %8 = load i64, ptr %index, align 8
+  %9 = load i32, ptr %item, align 4
+  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %8, i32 %9)
   br label %foreach.tail.L5
 
 foreach.tail.L5:                                  ; preds = %foreach.body.L5
-  call void @_ZN13ArrayIteratorIiE4nextEv(ptr %2)
+  call void @_ZN13ArrayIteratorIiE4nextEv(ptr %1)
   br label %foreach.head.L5
 
 foreach.exit.L5:                                  ; preds = %foreach.head.L5
-  %12 = load i32, ptr %result, align 4
-  ret i32 %12
+  %11 = load i32, ptr %result, align 4
+  ret i32 %11
 }
-
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
 
 declare %struct.ArrayIterator @_Z7iteratePim(ptr, i64)
 
@@ -65,10 +60,9 @@ declare i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr)
 declare %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 declare void @_ZN13ArrayIteratorIiE4nextEv(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { nofree nounwind }
+attributes #1 = { nofree nounwind }

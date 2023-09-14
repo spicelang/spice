@@ -124,45 +124,37 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
-  %1 = alloca [7 x i16], align 2
   %numberList1 = alloca [7 x i16], align 2
   %result1 = alloca i32, align 4
-  %2 = alloca [4 x i64], align 8
   %numberList2 = alloca [4 x i64], align 8
   %result2 = alloca i32, align 4
-  %3 = alloca [2 x i32], align 4
+  %1 = alloca [2 x i32], align 4
   %resultList = alloca [2 x i32], align 4
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.array.0, i64 14, i1 false)
   store [7 x i16] [i16 1, i16 2, i16 3, i16 4, i16 5, i16 6, i16 7], ptr %numberList1, align 2
-  %4 = getelementptr inbounds [7 x i16], ptr %numberList1, i32 0, i32 0
-  %5 = call i32 @_Z10sumNumbersPsl(ptr %4, i64 7)
-  store i32 %5, ptr %result1, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %2, ptr @anon.array.1, i64 32, i1 false)
+  %2 = getelementptr inbounds [7 x i16], ptr %numberList1, i32 0, i32 0
+  %3 = call i32 @_Z10sumNumbersPsl(ptr %2, i64 7)
+  store i32 %3, ptr %result1, align 4
   store [4 x i64] [i64 10, i64 12, i64 14, i64 16], ptr %numberList2, align 8
-  %6 = getelementptr inbounds [4 x i64], ptr %numberList2, i32 0, i32 0
-  %7 = call i32 @_Z10sumNumbersPll(ptr %6, i64 4)
-  store i32 %7, ptr %result2, align 4
-  %8 = getelementptr inbounds [2 x i32], ptr %3, i32 0
-  %9 = load i32, ptr %result1, align 4
-  store i32 %9, ptr %8, align 4
-  %10 = load i32, ptr %result2, align 4
-  %11 = getelementptr inbounds i32, ptr %8, i32 1
-  store i32 %10, ptr %11, align 4
-  %12 = load [2 x i32], ptr %3, align 4
-  store [2 x i32] %12, ptr %resultList, align 4
-  %13 = load [2 x i32], ptr %resultList, align 4
-  call void @_Z9printDatalA2i(i64 2, [2 x i32] %13)
-  %14 = load i32, ptr %result1, align 4
-  %15 = load i32, ptr %result2, align 4
-  %16 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %14, i32 %15)
-  %17 = load i32, ptr %result, align 4
-  ret i32 %17
+  %4 = getelementptr inbounds [4 x i64], ptr %numberList2, i32 0, i32 0
+  %5 = call i32 @_Z10sumNumbersPll(ptr %4, i64 4)
+  store i32 %5, ptr %result2, align 4
+  %6 = getelementptr inbounds [2 x i32], ptr %1, i32 0
+  %7 = load i32, ptr %result1, align 4
+  store i32 %7, ptr %6, align 4
+  %8 = load i32, ptr %result2, align 4
+  %9 = getelementptr inbounds i32, ptr %6, i32 1
+  store i32 %8, ptr %9, align 4
+  %10 = load [2 x i32], ptr %1, align 4
+  store [2 x i32] %10, ptr %resultList, align 4
+  %11 = load [2 x i32], ptr %resultList, align 4
+  call void @_Z9printDatalA2i(i64 2, [2 x i32] %11)
+  %12 = load i32, ptr %result1, align 4
+  %13 = load i32, ptr %result2, align 4
+  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %12, i32 %13)
+  %15 = load i32, ptr %result, align 4
+  ret i32 %15
 }
-
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
 
 attributes #0 = { nofree nounwind }
 attributes #1 = { noinline nounwind optnone uwtable }
-attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

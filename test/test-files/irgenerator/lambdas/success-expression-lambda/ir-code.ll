@@ -107,23 +107,18 @@ for.exit.L8:                                      ; preds = %for.head.L8
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
-  %1 = alloca [10 x i32], align 4
   %array = alloca [10 x i32], align 4
   %fat.ptr = alloca { ptr, ptr }, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.array.0, i64 40, i1 false)
   store [10 x i32] [i32 10, i32 9, i32 8, i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1], ptr %array, align 4
-  %2 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
-  store ptr @_Z15lambda.L19C17.0ii, ptr %2, align 8
-  %3 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  call void @_Z4sortRA10iPFbiiE(ptr %array, { ptr, ptr } %3)
+  %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
+  store ptr @_Z15lambda.L19C17.0ii, ptr %1, align 8
+  %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  call void @_Z4sortRA10iPFbiiE(ptr %array, { ptr, ptr } %2)
   call void @_Z10printArrayRA10i(ptr %array)
-  %4 = load i32, ptr %result, align 4
-  ret i32 %4
+  %3 = load i32, ptr %result, align 4
+  ret i32 %3
 }
-
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
 
 define private i1 @_Z15lambda.L19C17.0ii(i32 %0, i32 %1) {
   %a = alloca i32, align 4
@@ -169,8 +164,7 @@ for.exit.L24:                                     ; preds = %for.head.L24
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { nofree nounwind }
+attributes #1 = { nofree nounwind }

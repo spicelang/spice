@@ -45,26 +45,20 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
-  %1 = alloca [4 x i32], align 4
   %intArray = alloca [4 x i32], align 4
   %intArray1 = alloca ptr, align 8
   %intArray2 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.array.0, i64 16, i1 false)
   store [4 x i32] [i32 1, i32 2, i32 3, i32 4], ptr %intArray, align 4
-  %2 = getelementptr inbounds [4 x i32], ptr %intArray, i32 0, i32 1
-  %3 = load i32, ptr %2, align 4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %3)
+  %1 = getelementptr inbounds [4 x i32], ptr %intArray, i32 0, i32 1
+  %2 = load i32, ptr %1, align 4
+  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %2)
   store ptr %intArray, ptr %intArray1, align 8
   store ptr %intArray1, ptr %intArray2, align 8
   call void @_Z8testProcPPPA4i(ptr %intArray2)
-  %5 = load i32, ptr %result, align 4
-  ret i32 %5
+  %4 = load i32, ptr %result, align 4
+  ret i32 %4
 }
-
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
 
 attributes #0 = { nofree nounwind }
 attributes #1 = { noinline nounwind optnone uwtable }
-attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
