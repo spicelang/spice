@@ -3,8 +3,8 @@
 ## Roadmap
 
 - [x] Produce error when using `heap` specifier on non-pointer types
-- [ ] Add mechanism to generate functions and methods, that are not part of the AST
-- [ ] Generate default dtor
+- [x] Add mechanism to generate functions and methods, that are not part of the AST
+- [x] Generate default dtor
 - [ ] Generate default ctor
 - [ ] Generate default copy ctor
 - [ ] (Generate default move ctor)
@@ -70,7 +70,6 @@ with the following signature:
 
 ```spice
 p TestStruct.dtor() {
-    // Code for dtor body
     // Call the dtor of all fields, that are of type struct and have a dtor
     // Free all fields, that are marked with the `heap` specifier
 }

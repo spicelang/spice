@@ -66,6 +66,7 @@ set(SOURCES
         typechecker/TypeChecker.h
         typechecker/TypeCheckerPrepare.cpp
         typechecker/TypeCheckerCheck.cpp
+        typechecker/TypeCheckerImplicit.cpp
         typechecker/OpRuleManager.cpp
         typechecker/OpRuleManager.h
         typechecker/FunctionManager.cpp
@@ -86,6 +87,7 @@ set(SOURCES
         irgenerator/GenBuiltinFunctions.cpp
         irgenerator/GenExpressions.cpp
         irgenerator/GenValues.cpp
+        irgenerator/GenImplicit.cpp
         irgenerator/StdFunctionManager.cpp
         irgenerator/StdFunctionManager.h
         irgenerator/OpRuleConversionManager.cpp

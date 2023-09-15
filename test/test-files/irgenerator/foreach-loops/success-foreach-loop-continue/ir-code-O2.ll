@@ -16,12 +16,12 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   %1 = alloca %struct.NumberIterator.0, align 8
   %2 = tail call %struct.NumberIterator @_Z5rangess(i16 3, i16 8) #2
   %.fca.0.extract2 = extractvalue %struct.NumberIterator %2, 0
+  store i16 %.fca.0.extract2, ptr %shortIterator, align 8
   %.fca.1.extract4 = extractvalue %struct.NumberIterator %2, 1
   %.fca.1.gep5 = getelementptr inbounds %struct.NumberIterator, ptr %shortIterator, i64 0, i32 1
+  store i16 %.fca.1.extract4, ptr %.fca.1.gep5, align 2
   %.fca.2.extract6 = extractvalue %struct.NumberIterator %2, 2
   %.fca.2.gep7 = getelementptr inbounds %struct.NumberIterator, ptr %shortIterator, i64 0, i32 2
-  store i16 %.fca.0.extract2, ptr %shortIterator, align 8
-  store i16 %.fca.1.extract4, ptr %.fca.1.gep5, align 2
   store i16 %.fca.2.extract6, ptr %.fca.2.gep7, align 4
   %3 = call i1 @_ZN14NumberIteratorIsE7isValidEv(ptr nonnull %shortIterator) #2
   br i1 %3, label %foreach.body.L5.lr.ph, label %foreach.exit.L5

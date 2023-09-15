@@ -127,16 +127,21 @@ private:
                               const SymbolType &rhsSType, bool isDecl);
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
                                  const std::string &name = "", bool isVolatile = false);
-  void generateScopeCleanup(const StmtLstNode *node) const;
-  void generateDtorCall(SymbolTableEntry *entry, Function *dtor, const StmtLstNode *node) const;
   void autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const;
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant);
   llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   void materializeConstant(LLVMExprResult &exprResult);
-  llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
   llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Value *lambda);
+
+  // Generate implicit
+  llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
+  void generateScopeCleanup(const StmtLstNode *node) const;
+  void generateDtorCall(SymbolTableEntry *entry, const Function *dtor) const;
+  void generateDeallocCall(llvm::Value *variableAddress) const;
+  llvm::Function *generateImplicitProcedure(const std::function<void()> &generateBody, const Function *spiceFunc);
+  void generateDefaultDefaultDtor(const Function *dtorFunction);
 
   // Private members
   llvm::LLVMContext &context;
@@ -153,7 +158,6 @@ private:
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
   bool blockAlreadyTerminated = false;
-  size_t manIdx = 0;
 };
 
 } // namespace spice::compiler

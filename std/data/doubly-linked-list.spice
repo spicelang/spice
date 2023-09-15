@@ -1,6 +1,6 @@
 // Link external functions
-ext f<byte*> malloc(long);
-ext p free(byte*);
+ext f<heap byte*> malloc(long);
+ext p free(heap byte*);
 
 // Add generic type definitions
 type T dyn;
@@ -9,9 +9,9 @@ type T dyn;
  * Node of a DoublyLinkedList
  */
 public type Node<T> struct {
-    Node<T>* prev
+    heap Node<T>* prev
     T value
-    Node<T>* next
+    heap Node<T>* next
 }
 
 /**
@@ -20,26 +20,26 @@ public type Node<T> struct {
  * to the previous one.
  */
 public type DoublyLinkedList<T> struct {
-    Node<T>* head
-    Node<T>* tail
+    heap Node<T>* head
+    heap Node<T>* tail
 }
 
 public p Node.dtor() {
-    if this.next != nil<Node<T>*> {
+    if this.next != nil<heap Node<T>*> {
         this.next.dtor();
-        free((byte*) this.next);
+        free((heap byte*) this.next);
     }
 }
 
 public p DoublyLinkedList.insert<T>(T newValue, Node<T>* prevNode = nil<Node<T>*>) {
     // Create new node
-    Node<T>* newNode;
+    heap Node<T>* newNode;
     unsafe {
-        newNode = (Node<T>*) malloc(sizeof(type Node<T>) / 8);
+        newNode = (heap Node<T>*) malloc(sizeof(type Node<T>) / 8);
     }
     newNode.value = newValue;
 
-    if prevNode != nil<Node<T>*> { // Previous node was passed -> insert after this node
+    if prevNode != nil<heap Node<T>*> { // Previous node was passed -> insert after this node
         // Link the previous to this one
         newNode.prev = prevNode;
         // Link the next node to this one
@@ -67,9 +67,9 @@ public inline p DoublyLinkedList.insertTail<T>(T newValue) {
     this.insert(newValue, this.tail);
 }
 
-/*public f<Node<T>*> DoublyLinkedList.find(T value) {
-    Node<T>* currentNode = this.head;
-    while currentNode != nil<Node<T>*> {
+/*public f<heap Node<T>*> DoublyLinkedList.find(T value) {
+    heap Node<T>* currentNode = this.head;
+    while currentNode != nil<heap Node<T>*> {
         // Check condition
         if currentNode.value == value {
             return currentNode;
@@ -77,5 +77,5 @@ public inline p DoublyLinkedList.insertTail<T>(T newValue) {
         // Move to next node
         currentNode = currentNode.next;
     }
-    return nil<Node<T>*>;
+    return nil<heap Node<T>*>;
 }*/

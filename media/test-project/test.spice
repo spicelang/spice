@@ -1,4 +1,25 @@
+import "std/data/vector" as vec;
+
 f<int> main() {
-    int t = 123;
-    heap int test = t;
+    vec::Vector<double> v1 = vec::Vector<double>(3);
+    v1.pushBack(1.2);
+    v1.pushBack(7.4964598);
+    v1.pushBack(5.3);
+    v1.pushBack(-238974.23);
+    v1.pushBack(23234.2);
+    v1.pushBack(-1234.9);
+    v1.pushBack(0.0);
+    printf("Vector size: %d\n", v1.getSize());
+    printf("Vector capacity: %d\n", v1.getCapacity());
+    printf("Vector item 5: %f\n", v1.get(5));
 }
+
+/*type TestStruct struct {
+    int a = 123
+    short b = 1s
+}
+
+f<int> main() {
+    TestStruct ts;
+    printf("%d %d\n", ts.a, ts.b);
+}*/

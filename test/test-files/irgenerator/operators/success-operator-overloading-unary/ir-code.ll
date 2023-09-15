@@ -5,7 +5,6 @@ target triple = "x86_64-w64-windows-gnu"
 
 %struct.TestStruct = type { i64 }
 
-@anon.struct.0 = private unnamed_addr constant %struct.TestStruct { i64 123 }
 @anon.string.0 = private unnamed_addr constant [70 x i8] c"Assertion failed: Condition 'output.test == 125l' evaluated to false.\00", align 1
 @anon.string.1 = private unnamed_addr constant [66 x i8] c"Assertion failed: Condition 'ts.test == 125l' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1
@@ -29,7 +28,6 @@ define dso_local i32 @main() #0 {
   %ts = alloca %struct.TestStruct, align 8
   %output = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %ts, ptr @anon.struct.0, i64 8, i1 false)
   store %struct.TestStruct { i64 123 }, ptr %ts, align 8
   %1 = load %struct.TestStruct, ptr %ts, align 8
   %2 = call ptr @_Z16op.plusplus.postR10TestStruct(ptr %ts)
@@ -66,18 +64,14 @@ assert.exit.L15:                                  ; preds = %assert.exit.L14
   ret i32 %13
 }
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
-
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #3
+declare void @exit(i32) #2
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { nofree nounwind }
-attributes #3 = { cold noreturn nounwind }
+attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}

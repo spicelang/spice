@@ -10,24 +10,18 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %intArray = alloca [2 x i32], align 4
-  %1 = alloca [2 x i32], align 4
   store i32 0, ptr %result, align 4
   store [2 x i32] zeroinitializer, ptr %intArray, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %1, ptr @anon.array.0, i64 8, i1 false)
   store [2 x i32] [i32 1, i32 2], ptr %intArray, align 4
-  %2 = getelementptr inbounds [2 x i32], ptr %intArray, i32 0, i32 1
-  %3 = load i32, ptr %2, align 4
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
-  %5 = load i32, ptr %result, align 4
-  ret i32 %5
+  %1 = getelementptr inbounds [2 x i32], ptr %intArray, i32 0, i32 1
+  %2 = load i32, ptr %1, align 4
+  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
+  %4 = load i32, ptr %result, align 4
+  ret i32 %4
 }
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
-
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { nofree nounwind }
+attributes #1 = { nofree nounwind }

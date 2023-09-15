@@ -26,6 +26,7 @@ protected:
   const CliOptions &cliOptions;
   SourceFile *sourceFile;
   Scope *rootScope;
+  size_t manIdx = 0;
 
 public:
   // Public members

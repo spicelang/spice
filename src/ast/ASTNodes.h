@@ -152,8 +152,8 @@ public:
     return children.size() == 1 && children.front()->returnsOnAllControlPaths(overrideUnreachable);
   }
 
-  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations() {
-    assert(false && "Must be called on a FctDefNode, ProcDefNode or ExtDeclNode");
+  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &fctName) {
+    assert(false && "Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode");
     return nullptr;
   }
 
@@ -168,6 +168,7 @@ public:
   }
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
+  [[nodiscard]] virtual bool isStructDef() const { return false; }
   [[nodiscard]] virtual bool isStmtNode() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
 
@@ -287,13 +288,9 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getSymbolTableEntryName() const {
-    const FctNameNode *functionName = getChild<FctNameNode>();
-    assert(functionName != nullptr);
-    return functionName->name + ":" + codeLoc.toPrettyLineAndColumn();
-  }
+  [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(fctName->name, codeLoc); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
-  std::vector<Function *> *getFctManifestations() override { return &fctManifestations; }
+  std::vector<Function *> *getFctManifestations(const std::string &_) override { return &fctManifestations; }
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
@@ -328,13 +325,9 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getSymbolTableEntryName() const {
-    const FctNameNode *functionName = getChild<FctNameNode>();
-    assert(functionName != nullptr);
-    return functionName->name + ":" + codeLoc.toPrettyLineAndColumn();
-  }
+  [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(procName->name, codeLoc); }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
-  std::vector<Function *> *getFctManifestations() override { return &procManifestations; }
+  std::vector<Function *> *getFctManifestations(const std::string &_) override { return &procManifestations; }
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
@@ -369,6 +362,12 @@ public:
 
   // Other methods
   std::vector<Struct *> *getStructManifestations() override { return &structManifestations; }
+  std::vector<Function *> *getFctManifestations(const std::string &fctName) override {
+    if (!defaultFctManifestations.contains(fctName))
+      defaultFctManifestations.insert({fctName, {}});
+    return &defaultFctManifestations.at(fctName);
+  }
+  [[nodiscard]] bool isStructDef() const override { return true; }
 
   // Public members
   std::string structName;
@@ -377,6 +376,7 @@ public:
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers structSpecifiers = TypeSpecifiers::of(TY_STRUCT);
   std::vector<Struct *> structManifestations;
+  std::map<const std::string, std::vector<Function *>> defaultFctManifestations;
   Scope *structScope = nullptr;
 };
 
@@ -511,7 +511,7 @@ public:
   [[nodiscard]] TypeLstNode *argTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Other methods
-  std::vector<Function *> *getFctManifestations() override { return &extFunctionManifestations; }
+  std::vector<Function *> *getFctManifestations(const std::string &_) override { return &extFunctionManifestations; }
 
   // Public members
   std::string extFunctionName;
@@ -903,7 +903,7 @@ public:
   [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(hasTemplateTypes ? 1 : 0); }
 
   // Other methods
-  std::vector<Function *> *getFctManifestations() override { return &signatureManifestations; }
+  std::vector<Function *> *getFctManifestations(const std::string &_) override { return &signatureManifestations; }
 
   // Public members
   Type signatureType = SignatureNode::TYPE_NONE;

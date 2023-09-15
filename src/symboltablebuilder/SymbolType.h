@@ -173,10 +173,7 @@ public:
     assert(isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
     return specifiers.isPublic;
   }
-  [[nodiscard]] inline bool isHeap() const {
-    assert(isPrimitive() /* Local variables */ || is(TY_STRUCT));
-    return specifiers.isHeap;
-  }
+  [[nodiscard]] inline bool isHeap() const { return specifiers.isHeap; }
   inline void setBodyScope(Scope *bodyScope) {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
     typeChain.back().data.bodyScope = bodyScope;

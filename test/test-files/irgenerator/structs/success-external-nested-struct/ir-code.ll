@@ -16,7 +16,6 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   %1 = call %struct.Socket @_Z16openServerSockett(i16 8080)
   store %struct.Socket %1, ptr %s, align 8
-  store %struct.Socket %1, ptr %s, align 8
   %n = getelementptr inbounds %struct.Socket, ptr %s, i32 0, i32 2
   %testString_addr = getelementptr inbounds %struct.NestedSocket, ptr %n, i32 0, i32 0
   %2 = load ptr, ptr %testString_addr, align 8

@@ -7,7 +7,6 @@ target triple = "x86_64-w64-windows-gnu"
 
 @anon.string.0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 1
 @anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 1
-@anon.struct.0 = private unnamed_addr constant %struct.Person { ptr @anon.string.0, ptr @anon.string.1, i32 43 }
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 
 define private i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull %0, ptr %1, ptr %2) {
@@ -51,7 +50,6 @@ define dso_local i32 @main() #0 {
   %2 = alloca i64, align 8
   %isEqual = alloca i1, align 1
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %mike, ptr @anon.struct.0, i64 24, i1 false)
   store %struct.Person { ptr @anon.string.0, ptr @anon.string.1, i32 43 }, ptr %mike, align 8
   store i64 22, ptr %1, align 8
   store i64 22, ptr %2, align 8
@@ -65,12 +63,8 @@ define dso_local i32 @main() #0 {
   ret i32 %8
 }
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
-
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { nofree nounwind }
+attributes #1 = { nofree nounwind }

@@ -1,6 +1,6 @@
 // Link external functions
-ext f<byte*> malloc(long);
-ext p free(byte*);
+ext f<heap byte*> malloc(long);
+ext p free(heap byte*);
 
 // Add generic type definitions
 type T dyn;
@@ -9,8 +9,8 @@ type T dyn;
  * Node of a BinaryTree
  */
 public type Node<T> struct {
-    Node<T>* childLeft
-    Node<T>* childRight
+    heap Node<T>* childLeft
+    heap Node<T>* childRight
     T value
 }
 
@@ -24,34 +24,34 @@ public type Node<T> struct {
  * Search: O(log n)
  */
 public type BinaryTree<T> struct {
-    Node<T>* rootNode
+    heap Node<T>* rootNode
     bool isBalanced
 }
 
 public p BinaryTree.ctor() {
-    this.rootNode = nil<Node<T>*>;
+    this.rootNode = nil<heap Node<T>*>;
     this.isBalanced = false;
 }
 
 public p BinaryTree.dtor() {
-    if this.rootNode != nil<Node<T>*> {
+    if this.rootNode != nil<heap Node<T>*> {
         this.rootNode.dtor();
-        free((byte*) this.rootNode);
+        free((heap byte*) this.rootNode);
     }
 }
 
 public p Node.dtor() {
-    if this.childLeft != nil<Node<T>*> {
+    if this.childLeft != nil<heap Node<T>*> {
         this.childLeft.dtor();
-        free((byte*) this.childLeft);
+        free((heap byte*) this.childLeft);
     }
-    if this.childRight != nil<Node<T>*> {
+    if this.childRight != nil<heap Node<T>*> {
         this.childRight.dtor();
-        free((byte*) this.childRight);
+        free((heap byte*) this.childRight);
     }
 }
 
-public p BinaryTree.insert<T>(T newValue, Node<T>* baseNode = nil<Node<T>*>) {
+public p BinaryTree.insert<T>(T newValue, heap Node<T>* baseNode = nil<heap Node<T>*>) {
     // Search position where to insert
     // ToDo
 }

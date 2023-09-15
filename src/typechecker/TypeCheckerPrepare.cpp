@@ -152,7 +152,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   functionEntry->updateType(functionType, false);
 
   // Build function object
-  Function spiceFunc(node->fctName->name, functionEntry, thisType, returnType, paramList, usedGenericTypes, node, false);
+  Function spiceFunc(node->fctName->name, functionEntry, thisType, returnType, paramList, usedGenericTypes, node);
   spiceFunc.bodyScope = node->fctScope;
   FunctionManager::insertFunction(currentScope, spiceFunc, &node->fctManifestations);
 
@@ -270,8 +270,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   procedureEntry->updateType(procedureType, false);
 
   // Build procedure object
-  Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramList, usedGenericTypes, node,
-                     false);
+  Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramList, usedGenericTypes, node);
   spiceProc.bodyScope = node->procScope;
   FunctionManager::insertFunction(currentScope, spiceProc, &node->procManifestations);
 
@@ -386,6 +385,9 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, templateTypesGeneric, interfaceTypes, node);
   StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
   spiceStruct.structScope = node->structScope;
+
+  // Check for default ctor/dtor, etc.
+  createDefaultDtorIfRequired(spiceStruct, node->structScope);
 
   return nullptr;
 }
@@ -605,7 +607,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Add function to current scope
-  Function spiceFunc = Function(node->extFunctionName, node->entry, SymbolType(TY_DYN), returnType, argList, {}, node, true);
+  Function spiceFunc = Function(node->extFunctionName, node->entry, SymbolType(TY_DYN), returnType, argList, {}, node);
   node->extFunction = FunctionManager::insertFunction(currentScope, spiceFunc, &node->extFunctionManifestations);
   node->extFunction->mangleFunctionName = false;
 

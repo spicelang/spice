@@ -1,6 +1,6 @@
 // Link external functions
-ext f<byte*> malloc(long);
-ext p free(byte*);
+ext f<heap byte*> malloc(long);
+ext p free(heap byte*);
 
 // Add generic type definitions
 type T dyn;
@@ -10,7 +10,7 @@ type T dyn;
  */
 public type Node<T> struct {
     T value
-    Node<T>* next
+    heap Node<T>* next
 }
 
 /**
@@ -29,18 +29,18 @@ public type Node<T> struct {
  * Beware that each add operation allocates memory and every remove operation frees memory.
  */
 public type LinkedList<T> struct {
-    Node<T>* tail
-    Node<T>* head
+    heap Node<T>* tail
+    heap Node<T>* head
 }
 
 public p LinkedList.ctor() {
-    this.tail = nil<Node<T>*>;
-    this.head = nil<Node<T>*>;
+    this.tail = nil<heap Node<T>*>;
+    this.head = nil<heap Node<T>*>;
 }
 
 public p LinkedList.dtor() {
     Node<T>* curr = this.tail;
-    while curr != nil<Node<T>*> {
+    while curr != nil<heap Node<T>*> {
         Node<T>* next = curr.next;
         free(curr);
         curr = next;
@@ -49,12 +49,12 @@ public p LinkedList.dtor() {
 
 public p LinkedList.insert(const T& value) {
     // Create new node
-    Node<T>* newNode;
+    heap Node<T>* newNode;
     unsafe {
-        newNode = (Node<T>*) malloc(sizeof(type Node<T>) / 8l);
+        newNode = (heap Node<T>*) malloc(sizeof(type Node<T>) / 8l);
     }
     newNode.value = value;
-    newNode.next = nil<Node<T>*>;
+    newNode.next = nil<heap Node<T>*>;
 
     // Insert at head
     this.head.next = newNode;
@@ -63,15 +63,15 @@ public p LinkedList.insert(const T& value) {
 
 public p LinkedList.insertAt(unsigned long idx, const T& value) {
     // Create new node
-    Node<T>* newNode;
+    heap Node<T>* newNode;
     unsafe {
-        newNode = (Node<T>*) malloc(sizeof(type Node<T>) / 8);
+        newNode = (heap Node<T>*) malloc(sizeof(type Node<T>) / 8);
     }
     newNode.value = value;
 
     // Search for item right before insert position
     Node<T>* prev = this.tail;
-    while curr != nil<Node<T>*> && idx > 1 {
+    while curr != nil<heap Node<T>*> && idx > 1 {
         prev = prev.next;
         idx--;
     }
@@ -92,14 +92,14 @@ public p LinkedList.insertAt(unsigned long idx, const T& value) {
 }
 
 public p LinkedList.remove(const T& valueToRemove) {
-    Node<T>* curr = this.tail;
-    Node<T>* prev = nil<T*>;
-    while curr != nil<Node<T>*> && curr.value != valueToRemove {
+    heap Node<T>* curr = this.tail;
+    heap Node<T>* prev = nil<heap T*>;
+    while curr != nil<heap Node<T>*> && curr.value != valueToRemove {
         prev = curr;
         curr = curr.next;
     }
     // Check if the item was found. If yes, delete its node
-    if curr != nil<Node<T>*> {
+    if curr != nil<heap Node<T>*> {
         // Set the next node of the previous node
         prev.next = curr.next;
         // Free the removed node

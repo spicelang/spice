@@ -5,7 +5,6 @@ target triple = "x86_64-w64-windows-gnu"
 
 %struct.TestStruct = type { i8, i32 }
 
-@anon.struct.0 = private unnamed_addr constant %struct.TestStruct { i8 97, i32 1 }
 @printf.str.0 = private unnamed_addr constant [10 x i8] c"Test: %d\0A\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -13,15 +12,11 @@ define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %s = alloca %struct.TestStruct, align 8
   store i32 0, ptr %result, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr %s, ptr @anon.struct.0, i64 8, i1 false)
   store %struct.TestStruct { i8 97, i32 1 }, ptr %s, align 4
   call void @_ZN10TestStructIhE9printTestEv(ptr %s)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }
-
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
 
 define private void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull %0) {
   %this = alloca ptr, align 8
@@ -33,7 +28,7 @@ define private void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull %0) {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 define private i32 @_ZN10TestStructIhE7getTestEv(ptr noundef nonnull %0) {
   %result = alloca i32, align 4
@@ -63,5 +58,4 @@ if.exit.L18:                                      ; preds = %if.then.L18, %1
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { nofree nounwind }
+attributes #1 = { nofree nounwind }

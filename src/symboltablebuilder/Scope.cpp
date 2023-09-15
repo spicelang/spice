@@ -2,6 +2,7 @@
 
 #include "Scope.h"
 
+#include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
@@ -137,8 +138,12 @@ size_t Scope::getFieldCount() const {
   size_t fieldCount = 0;
   for (const auto &symbol : symbolTable.symbols) {
     const SymbolType &symbolType = symbol.second.getType();
-    if (!symbolType.is(TY_IMPORT) && !symbol.second.declNode->isFctOrProcDef())
-      fieldCount++;
+    if (symbolType.is(TY_IMPORT))
+      continue;
+    const ASTNode *declNode = symbol.second.declNode;
+    if (declNode->isFctOrProcDef() || declNode->isStructDef())
+      continue;
+    fieldCount++;
   }
   return fieldCount;
 }
@@ -170,7 +175,8 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
   std::string warningMessage;
   for (const auto &[_, entry] : symbolTable.symbols) {
     // Do not produce a warning if the symbol is used or has a special name
-    if (entry.used || entry.name.starts_with(UNUSED_VARIABLE_NAME))
+    const std::string &name = entry.name;
+    if (entry.used || name.starts_with(UNUSED_VARIABLE_NAME))
       continue;
 
     switch (entry.getType().getSuperType()) {
@@ -180,8 +186,13 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
         continue;
 
       if (type == ScopeType::GLOBAL) {
+        const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
         warningType = UNUSED_FUNCTION;
-        warningMessage = "The function '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+        warningMessage = "The function '" + fctManifestations->front()->getSignature() + "' is unused";
+      } else if (type == ScopeType::STRUCT) {
+        const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
+        warningType = UNUSED_METHOD;
+        warningMessage = "The method '" + fctManifestations->front()->getSignature() + "' is unused";
       } else {
         warningType = UNUSED_VARIABLE;
         warningMessage = "The variable '" + entry.name + "' is unused";
@@ -195,8 +206,17 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
         continue;
 
       if (type == ScopeType::GLOBAL) {
+        const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
         warningType = UNUSED_PROCEDURE;
-        warningMessage = "The procedure '" + entry.declNode->getFctManifestations()->front()->getSignature() + "' is unused";
+        warningMessage = "The procedure '" + fctManifestations->front()->getSignature() + "' is unused";
+      } else if (type == ScopeType::STRUCT) {
+        // Check if this is a default instance method
+        const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
+        if (fctManifestations->empty() || fctManifestations->front()->implicitDefault)
+          continue;
+
+        warningType = UNUSED_METHOD;
+        warningMessage = "The method '" + fctManifestations->front()->getSignature() + "' is unused";
       } else {
         warningType = UNUSED_VARIABLE;
         warningMessage = "The variable '" + entry.name + "' is unused";
@@ -294,19 +314,7 @@ void Scope::checkSuccessfulTypeInference() const {
  *
  * @return Imported / not imported
  */
-bool Scope::isImportedBy(const Scope *askingScope) const {
-  // Get root scope of the source file where askingScope scope lives
-  const Scope *askingRootScope = askingScope;
-  while (askingRootScope->type != ScopeType::GLOBAL && askingRootScope->parent)
-    askingRootScope = askingRootScope->parent;
-
-  // Get root scope of the source file where the current scope lives
-  const Scope *thisRootScope = this;
-  while (thisRootScope->type != ScopeType::GLOBAL && thisRootScope->parent)
-    thisRootScope = thisRootScope->parent;
-
-  return askingRootScope != thisRootScope;
-}
+bool Scope::isImportedBy(const Scope *askingScope) const { return askingScope->sourceFile->imports(sourceFile); }
 
 /**
  * Check if unsafe operations are allowed in this scope

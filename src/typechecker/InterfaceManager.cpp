@@ -177,7 +177,7 @@ bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vecto
     return false;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
-  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
+  TypeMatcher::ResolverFct genericTypeResolver = [&](const std::string &genericTypeName) {
     return getGenericTypeOfCandidateByName(candidate, genericTypeName);
   };
 

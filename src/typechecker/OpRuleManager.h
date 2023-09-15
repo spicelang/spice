@@ -617,22 +617,22 @@ const BinaryOpRule CAST_OP_RULES[] = {
 class OpRuleManager {
 public:
   // Constructors
-  explicit OpRuleManager(TypeChecker *typeChecker) : typeChecker(typeChecker) {}
+  explicit OpRuleManager(TypeChecker *typeChecker);
 
   // Public methods
-  static SymbolType getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool isDecl = false,
-                                        const char *errorMessagePrefix = "");
-  static SymbolType getFieldAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool imm);
+  SymbolType getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool isDecl = false,
+                                 const char *errorMessagePrefix = "");
+  SymbolType getFieldAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool imm);
   ExprResult getPlusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   ExprResult getMinusEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   ExprResult getMulEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   ExprResult getDivEqualResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getRemEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getSHLEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getSHREqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getAndEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getOrEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
-  static SymbolType getXorEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getRemEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getSHLEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getSHREqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getAndEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getOrEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
+  SymbolType getXorEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getLogicalOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getBitwiseOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
@@ -652,8 +652,8 @@ public:
   ExprResult getDivResultType(ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static ExprResult getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx);
   static SymbolType getPrefixMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
-  static SymbolType getPrefixPlusPlusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
-  static SymbolType getPrefixMinusMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  SymbolType getPrefixPlusPlusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
+  SymbolType getPrefixMinusMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
   static SymbolType getPrefixNotResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
   static SymbolType getPrefixBitwiseNotResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
   static SymbolType getPrefixMulResultType(const ASTNode *node, SymbolType lhs, size_t opIdx);
@@ -665,6 +665,7 @@ public:
 private:
   // Members
   TypeChecker *typeChecker;
+  GlobalResourceManager &resourceManager;
 
   // Private methods
   template <size_t N>
@@ -679,7 +680,7 @@ private:
   static SemanticError getExceptionBinary(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs,
                                           const char *messagePrefix);
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs) const;
-  static void ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs);
+  void ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs);
 };
 
 } // namespace spice::compiler

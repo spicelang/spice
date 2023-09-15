@@ -49,16 +49,31 @@ llvm::Function *StdFunctionManager::getMemcmpIntrinsic() const {
 
 llvm::Function *StdFunctionManager::getStringGetRawLengthStringFct() const {
   const ParamList paramLst = {{SymbolType(TY_STRING), false}};
-  const Function function("getRawLength", nullptr, SymbolType(TY_DYN), SymbolType(TY_LONG), paramLst, {}, nullptr, false);
+  const Function function("getRawLength", nullptr, SymbolType(TY_DYN), SymbolType(TY_LONG), paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
   return getFunction(mangledName.c_str(), builder.getInt64Ty(), {builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   const ParamList paramLst = {{SymbolType(TY_STRING), false}, {SymbolType(TY_STRING), false}};
-  const Function function("isRawEqual", nullptr, SymbolType(TY_DYN), SymbolType(TY_BOOL), paramLst, {}, nullptr, false);
+  const Function function("isRawEqual", nullptr, SymbolType(TY_DYN), SymbolType(TY_BOOL), paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
   return getFunction(mangledName.c_str(), builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
+}
+
+llvm::Function *StdFunctionManager::getAllocLongFct() const {
+  const ParamList paramLst = {{SymbolType(TY_LONG), false}};
+  const SymbolType bytePtrSTy = SymbolType(TY_BYTE).toPointer(nullptr);
+  const Function function("sAlloc", nullptr, SymbolType(TY_DYN), bytePtrSTy, paramLst, {}, nullptr);
+  const std::string mangledName = NameMangling::mangleFunction(function);
+  return getFunction(mangledName.c_str(), builder.getPtrTy(), {builder.getInt64Ty()});
+}
+
+llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {
+  const ParamList paramLst = {{SymbolType(TY_BYTE).toPointer(nullptr).toReference(nullptr), false}};
+  const Function function("sDealloc", nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramLst, {}, nullptr);
+  const std::string mangledName = NameMangling::mangleFunction(function);
+  return getProcedure(mangledName.c_str(), {builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *spiceFunc) const {

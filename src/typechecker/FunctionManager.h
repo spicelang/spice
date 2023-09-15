@@ -23,6 +23,8 @@ struct CodeLoc;
 using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, /*structObject=*/Function>;
 using FunctionRegistry = std::unordered_map</*codeLoc=*/std::string, /*manifestations=*/FunctionManifestationList>;
 
+enum class MatchResult : uint8_t { MATCHED, SKIP_MANIFESTATION, SKIP_FUNCTION };
+
 class FunctionManager {
 public:
   // Friend classes
@@ -34,6 +36,10 @@ public:
   static void substantiateOptionalParams(const Function &baseFunction, std::vector<Function> &manifestations);
   [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const std::vector<SymbolType> &paramTypes,
                                                    ASTNode *declNode);
+  [[nodiscard]] static const Function *lookupFunction(Scope *matchScope, const std::string &requestedName,
+                                                      const SymbolType &requestedThisType,
+                                                      const std::vector<SymbolType> &requestedParamTypes,
+                                                      bool strictSpecifierMatching);
   [[nodiscard]] static Function *matchFunction(Scope *matchScope, const std::string &requestedName,
                                                const SymbolType &requestedThisType,
                                                const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
@@ -46,6 +52,10 @@ private:
   // Private methods
   [[nodiscard]] static Function *insertSubstantiation(Scope *insertScope, const Function &newManifestation,
                                                       const ASTNode *declNode);
+  [[nodiscard]] static MatchResult matchManifestation(Function &candidate, Scope *&matchScope, const std::string &requestedName,
+                                                      const SymbolType &requestedThisType,
+                                                      const std::vector<SymbolType> &requestedParamTypes,
+                                                      bool strictSpecifierMatching, bool &forceSubstantiation);
   [[nodiscard]] static bool matchName(const Function &candidate, const std::string &requestedName);
   [[nodiscard]] static bool matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping,
                                           bool strictSpecifierMatching);

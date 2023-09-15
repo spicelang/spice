@@ -180,7 +180,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     itemType = iteratorItemType;
   } else {
     // Check item type
-    OpRuleManager::getAssignResultType(node->itemVarDecl(), itemType, iteratorItemType, manIdx, true, ERROR_FOREACH_ITEM);
+    opRuleManager.getAssignResultType(node->itemVarDecl(), itemType, iteratorItemType, manIdx, true, ERROR_FOREACH_ITEM);
   }
 
   // Update type of item
@@ -411,7 +411,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Build signature object
-  Function signature(node->methodName, nullptr, SymbolType(TY_DYN), returnType, paramList, usedGenericTypes, node, false);
+  Function signature(node->methodName, nullptr, SymbolType(TY_DYN), returnType, paramList, usedGenericTypes, node);
 
   // Add signature to current scope
   Function *manifestation = FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
@@ -453,7 +453,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     if (localVarType.is(TY_UNRESOLVED) || rhsTy.is(TY_UNRESOLVED))
       localVarType = SymbolType(TY_UNRESOLVED);
     else
-      localVarType = OpRuleManager::getAssignResultType(node, localVarType, rhsTy, 0, true);
+      localVarType = opRuleManager.getAssignResultType(node, localVarType, rhsTy, 0, true);
 
     // If this is a struct type, check if the type is known. If not, error out
     if (localVarType.isBaseType(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBaseType().getSubType())) {
@@ -520,7 +520,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   HANDLE_UNRESOLVED_TYPE_ST(rhs.type)
 
   // Check if types match
-  OpRuleManager::getAssignResultType(node->assignExpr(), returnType, rhs.type, 0, false, ERROR_MSG_RETURN);
+  opRuleManager.getAssignResultType(node->assignExpr(), returnType, rhs.type, 0, false, ERROR_MSG_RETURN);
 
   // Manager dtor call
   if (rhs.entry != nullptr) {
@@ -717,7 +717,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
 
     // Take a look at the operator
     if (node->op == AssignExprNode::OP_ASSIGN) {
-      rhsType = OpRuleManager::getAssignResultType(node, lhsType, rhsType, 0);
+      rhsType = opRuleManager.getAssignResultType(node, lhsType, rhsType, 0);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
       if (rhsEntry != nullptr && rhsEntry->anonymous)
@@ -731,17 +731,17 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     } else if (node->op == AssignExprNode::OP_DIV_EQUAL) {
       rhsType = opRuleManager.getDivEqualResultType(node, lhsType, rhsType, 0).type;
     } else if (node->op == AssignExprNode::OP_REM_EQUAL) {
-      rhsType = OpRuleManager::getRemEqualResultType(node, lhsType, rhsType, 0);
+      rhsType = opRuleManager.getRemEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_SHL_EQUAL) {
-      rhsType = OpRuleManager::getSHLEqualResultType(node, lhsType, rhsType, 0);
+      rhsType = opRuleManager.getSHLEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_SHR_EQUAL) {
-      rhsType = OpRuleManager::getSHREqualResultType(node, lhsType, rhsType, 0);
+      rhsType = opRuleManager.getSHREqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_AND_EQUAL) {
-      rhsType = OpRuleManager::getAndEqualResultType(node, lhsType, rhsType, 0);
+      rhsType = opRuleManager.getAndEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_OR_EQUAL) {
-      rhsType = OpRuleManager::getOrEqualResultType(node, lhsType, rhsType, 0);
+      rhsType = opRuleManager.getOrEqualResultType(node, lhsType, rhsType, 0);
     } else if (node->op == AssignExprNode::OP_XOR_EQUAL) {
-      rhsType = OpRuleManager::getXorEqualResultType(node, lhsType, rhsType, 0);
+      rhsType = opRuleManager.getXorEqualResultType(node, lhsType, rhsType, 0);
     }
 
     if (lhsVar) { // Variable is involved on the left side
@@ -1081,7 +1081,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     operandType = OpRuleManager::getPrefixMinusResultType(node, operandType, 0);
     break;
   case PrefixUnaryExprNode::OP_PLUS_PLUS:
-    operandType = OpRuleManager::getPrefixPlusPlusResultType(node, operandType, 0);
+    operandType = opRuleManager.getPrefixPlusPlusResultType(node, operandType, 0);
 
     if (operandEntry) {
       // In case the lhs is captured, notify the capture about the write access
@@ -1094,7 +1094,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
     break;
   case PrefixUnaryExprNode::OP_MINUS_MINUS:
-    operandType = OpRuleManager::getPrefixMinusMinusResultType(node, operandType, 0);
+    operandType = opRuleManager.getPrefixMinusMinusResultType(node, operandType, 0);
 
     if (operandEntry) {
       // In case the lhs is captured, notify the capture about the write access
@@ -1173,6 +1173,10 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // Get item type
     lhsType = lhsType.getContainedTy();
+
+    // Remove heap specifier
+    lhsType.specifiers.isHeap = false;
+
     break;
   }
   case PostfixUnaryExprNode::OP_MEMBER_ACCESS: {
@@ -1302,7 +1306,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
   if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->global) {
     // Check if overloaded function was referenced
-    const std::vector<Function *> *manifestations = varEntry->declNode->getFctManifestations();
+    const std::vector<Function *> *manifestations = varEntry->declNode->getFctManifestations(varEntry->name);
     if (manifestations->size() > 1)
       SOFT_ERROR_ER(node, REFERENCED_OVERLOADED_FCT,
                     "Overloaded functions or functions with optional parameters cannot be referenced")
@@ -1347,7 +1351,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
     // Check if the entry is public if it is imported
     assert(nameRegistryEntry->targetEntry != nullptr);
-    if (!nameRegistryEntry->targetEntry->getType().isPublic() && accessScope->parent->isImportedBy(currentScope))
+    if (!nameRegistryEntry->targetEntry->getType().isPublic() && accessScope->parent->isImportedBy(rootScope))
       SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY,
                     "Cannot access struct '" + nameRegistryEntry->targetEntry->name + "' due to its private visibility")
   }
@@ -1688,7 +1692,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionT
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
 
   // Create resolver function, that always returns a nullptr
-  TypeMatcher::ResolverFct resolverFct = [=](const std::string &genericTypeName) { return nullptr; };
+  TypeMatcher::ResolverFct resolverFct = [](const std::string &genericTypeName) { return nullptr; };
 
   for (size_t i = 0; i < actualArgTypes.size(); i++) {
     const SymbolType &actualType = actualArgTypes.at(i);
@@ -1855,7 +1859,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
 
       // Check if actual type matches expected type
-      OpRuleManager::getFieldAssignResultType(assignExpr, expectedType, fieldResult.type, 0, rhsIsImmediate);
+      opRuleManager.getFieldAssignResultType(assignExpr, expectedType, fieldResult.type, 0, rhsIsImmediate);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
       if (fieldResult.entry != nullptr && fieldResult.entry->anonymous)
@@ -1872,8 +1876,11 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // Update type of struct entry
   structEntry->updateType(structType, true);
 
-  // Insert anonymous symbol to keep track of dtor calls for de-allocation
-  SymbolTableEntry *anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
+  // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
+  SymbolTableEntry *anonymousEntry = nullptr;
+  if (node->fieldLst() != nullptr)
+    if (std::ranges::any_of(node->fieldLst()->args(), [](AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
+      anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables
   structType.specifiers.isPublic = false;
@@ -1931,7 +1938,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaFunction.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+  node->lambdaFunction.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node);
   node->lambdaFunction.at(manIdx).bodyScope = bodyScope;
   node->lambdaFunction.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
@@ -1971,8 +1978,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaProcedure.at(manIdx) =
-      Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node, false);
+  node->lambdaProcedure.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node);
   node->lambdaProcedure.at(manIdx).bodyScope = bodyScope;
   node->lambdaProcedure.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
@@ -2018,7 +2024,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaFunction.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node, false);
+  node->lambdaFunction.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node);
   node->lambdaFunction.at(manIdx).bodyScope = bodyScope;
   node->lambdaFunction.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
@@ -2090,7 +2096,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
         type.specifiers.isUnsigned = true;
       } else if (specifier->type == SpecifierNode::TY_HEAP) {
         // Heap variables can only be pointers
-        if (!type.isPtr())
+        if (!type.removeReferenceWrapper().isOneOf({TY_PTR, TY_STRING}))
           SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
                         "The heap specifier can only be applied to symbols of pointer type, you provided " + baseType.getName())
 
@@ -2352,49 +2358,6 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
 void TypeChecker::autoDeReference(SymbolType &symbolType) {
   while (symbolType.isPtr() || symbolType.isRef())
     symbolType = symbolType.getContainedTy();
-}
-
-/**
- * Consider calls to destructors for the given scope
- *
- * @param node StmtLstNode for the current scope
- */
-void TypeChecker::doScopeCleanup(StmtLstNode *node) {
-  // Get all variables, that are approved for deallocation
-  std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
-  for (SymbolTableEntry *var : vars) {
-    // Only generate dtor call for structs and if not omitted
-    if (!var->getType().is(TY_STRUCT) || var->omitDtorCall)
-      continue;
-    // Variable must be either initialized or a struct field
-    if (!var->isInitialized() && var->scope->type != ScopeType::STRUCT)
-      continue;
-    // Call dtor
-    callStructDtor(var, node);
-  }
-}
-
-/**
- * Prepare the generation of a call to the dtor of a given struct
- *
- * @param entry Symbol entry to use as 'this' pointer for the dtor call
- * @param node StmtLstNode for the current scope
- */
-void TypeChecker::callStructDtor(SymbolTableEntry *entry, StmtLstNode *node) {
-  SymbolType thisType = entry->getType();
-  assert(thisType.is(TY_STRUCT));
-  Scope *matchScope = thisType.getBodyScope();
-  assert(matchScope->type == ScopeType::STRUCT);
-
-  // Search for dtor
-  const bool isImported = matchScope->isImportedBy(rootScope);
-  if (isImported)
-    thisType = mapLocalTypeToImportedScopeType(matchScope, thisType);
-  Function *spiceFunc = FunctionManager::matchFunction(matchScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
-
-  // Add the dtor to the stmt list node to call it later in codegen
-  if (spiceFunc != nullptr)
-    node->dtorFunctions.at(manIdx).emplace_back(entry, spiceFunc);
 }
 
 /**

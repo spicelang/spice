@@ -200,7 +200,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     for (size_t i = 0; i < fieldCount; i++) {
       // Get entry of the field
       SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupStrictByIndex(i);
-      assert(fieldEntry != nullptr);
+      assert(fieldEntry != nullptr && fieldEntry->isField());
 
       // Retrieve field node
       const auto fieldNode = dynamic_cast<FieldNode *>(fieldEntry->declNode);
@@ -329,7 +329,8 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
                                          const SymbolType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
-  const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT);
+  const bool isRhsTemporary = rhs.entry == nullptr && rhs.ptr == nullptr && rhs.refPtr == nullptr;
+  const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !isRhsTemporary;
 
   if (isRefAssign) {
     if (isDecl) { // Reference gets initially assigned
@@ -380,15 +381,10 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     materializeConstant(rhs);
 
     // Directly set the address to the lhs entry
-    lhsEntry->updateAddress(resolveAddress(rhs, lhsEntry->isVolatile));
-
-    // If we have value, store it to the address
-    if (rhs.value) {
-      assert(rhs.ptr != nullptr);
-      builder.CreateStore(rhs.value, rhs.ptr);
-    }
-
+    llvm::Value *rhsAddress = resolveAddress(rhs);
+    lhsEntry->updateAddress(rhsAddress);
     rhs.entry = lhsEntry;
+
     return rhs;
   }
 
@@ -433,52 +429,6 @@ void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, 
   }
 }
 
-void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
-  // Do not clean up if the block is already terminated
-  if (blockAlreadyTerminated)
-    return;
-
-  // Call all dtor functions
-  for (auto [entry, dtor] : node->dtorFunctions.at(manIdx))
-    generateDtorCall(entry, dtor, node);
-}
-
-void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor, const StmtLstNode *node) const {
-  assert(dtor != nullptr);
-
-  // Retrieve metadata for the function
-  const std::string mangledName = NameMangling::mangleFunction(*dtor);
-
-  // Function is not defined in the current module -> declare it
-  if (!module->getFunction(mangledName)) {
-    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), builder.getPtrTy(), false);
-    module->getOrInsertFunction(mangledName, fctType);
-  }
-
-  // Get callee function
-  llvm::Function *callee = module->getFunction(mangledName);
-  assert(callee != nullptr);
-
-  // Retrieve address of the struct variable. For fields this is the 'this' variable, otherwise use the normal address
-  llvm::Value *structPtr;
-  if (entry->isField()) {
-    // Take 'this' var as base pointer
-    const SymbolTableEntry *thisVar = currentScope->lookupStrict(THIS_VARIABLE_NAME);
-    assert(thisVar != nullptr);
-    assert(thisVar->getType().isPtr() && thisVar->getType().getContainedTy().is(TY_STRUCT));
-    llvm::Type *thisType = thisVar->getType().getContainedTy().toLLVMType(context, currentScope);
-    llvm::Value *thisPtr = builder.CreateLoad(builder.getPtrTy(), thisVar->getAddress());
-    // Add field offset
-    structPtr = builder.CreateInBoundsGEP(thisType, thisPtr, {builder.getInt32(0), builder.getInt32(entry->orderIndex)});
-  } else {
-    structPtr = entry->getAddress();
-  }
-  assert(structPtr != nullptr);
-
-  // Generate function call
-  builder.CreateCall(callee, structPtr);
-}
-
 llvm::GlobalVariable *IRGenerator::createGlobalConst(const std::string &baseName, llvm::Constant *constant) {
   // Get unused name
   const std::string globalName = getUnusedGlobalName(baseName);
@@ -517,58 +467,10 @@ std::string IRGenerator::getUnusedGlobalName(const std::string &baseName) const 
   return globalName;
 }
 
-llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy) {
-  assert(srcSTy != dstSTy); // We only need to cast implicitly, if the types do not match exactly
-
-  // Unpack the pointers until a pointer of another type is met
-  size_t loadCounter = 0;
-  while (srcSTy.isPtr()) {
-    src = builder.CreateLoad(srcSTy.toLLVMType(context, currentScope), src);
-    srcSTy = srcSTy.getContainedTy();
-    dstSTy = dstSTy.getContainedTy();
-    loadCounter++;
-  }
-  // GEP or bit-cast
-  if (dstSTy.isArray() && srcSTy.isArray()) { // Special case that is used for passing arrays as pointer to functions
-    llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
-    src = builder.CreateInBoundsGEP(srcSTy.toLLVMType(context, currentScope), src, indices);
-  } else {
-    src = builder.CreateLoad(srcSTy.toLLVMType(context, currentScope), src);
-    src = builder.CreateBitCast(src, dstSTy.toLLVMType(context, currentScope));
-  }
-  // Pack the pointers together again
-  for (; loadCounter > 0; loadCounter--) {
-    llvm::Value *newActualArg = insertAlloca(src->getType());
-    builder.CreateStore(src, newActualArg);
-    src = newActualArg;
-  }
-  return src;
-}
-
 void IRGenerator::materializeConstant(LLVMExprResult &exprResult) {
   // Skip results, that do not contain a constant or already have a value
-  if (exprResult.constant == nullptr || exprResult.value != nullptr)
+  if (exprResult.value != nullptr || exprResult.constant == nullptr)
     return;
-
-  llvm::Type *constantType = exprResult.constant->getType();
-  if (constantType->isArrayTy() || constantType->isStructTy()) {
-    // Insert alloca for local variable
-    llvm::Value *localAddr = insertAlloca(constantType);
-
-    // If no address is given, we simply store the constant
-    if (exprResult.ptr != nullptr) {
-      // Get the size of the type in bytes
-      const size_t instanceSize = module->getDataLayout().getTypeAllocSize(constantType);
-
-      // Copy the constant to the local address via llvm.memcpy
-      llvm::Function *memcpyIntrinsic = stdFunctionManager.getMemcpyIntrinsic();
-      llvm::Value *args[4] = {localAddr, exprResult.ptr, builder.getInt64(instanceSize), builder.getFalse()};
-      builder.CreateCall(memcpyIntrinsic, args);
-    }
-
-    // Set the pointer to the newly created local variable
-    exprResult.ptr = localAddr;
-  }
 
   // Default case: the value to the constant
   exprResult.value = exprResult.constant;

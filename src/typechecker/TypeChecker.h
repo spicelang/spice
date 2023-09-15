@@ -122,7 +122,6 @@ private:
   std::vector<CompilerWarning> &warnings;
   std::unordered_map<std::string, SymbolType> typeMapping;
   bool typeCheckedMainFct = false;
-  size_t manIdx = 0;
 
   // Private methods
   std::string visitOrdinaryFctCall(FctCallNode *node);
@@ -131,11 +130,14 @@ private:
   [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;
   [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
   static void autoDeReference(SymbolType &symbolType);
-  void doScopeCleanup(StmtLstNode *node);
-  void callStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   [[nodiscard]] bool isStringRT() const;
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
+
+  // Implicit code generation
+  void createDefaultDtorIfRequired(Struct &spiceStruct, Scope *structScope);
+  void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
+  void doScopeCleanup(StmtLstNode *node);
 };
 
 } // namespace spice::compiler

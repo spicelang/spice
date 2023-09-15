@@ -98,6 +98,10 @@ std::string Function::getSignature(const std::string &name, const SymbolType &th
   return returnTyStr + thisTyStr.str() + name + templateTyStr.str() + "(" + paramTyStr.str() + ")";
 }
 
+std::string Function::getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc) {
+  return functionName + ":" + codeLoc.toString();
+}
+
 /**
  * Checks if a function contains optional parameters.
  * This would imply that the function is not substantiated by its optional parameters yet.

@@ -35,6 +35,7 @@ public:
 
   // Public methods
   SourceFile *requestModule(SourceFile *parentSourceFile, RuntimeModule requestedModule);
+  [[nodiscard]] SourceFile *getModule(RuntimeModule requestedModule) const;
   [[nodiscard]] bool isModuleAvailable(RuntimeModule requestedModule) const;
 
 private:

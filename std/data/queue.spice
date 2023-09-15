@@ -1,14 +1,9 @@
+import "std/type/result";
 import "std/type/error";
 
 // Constants
 const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
-
-// Link external functions
-ext f<byte*> malloc(long);
-ext f<byte*> realloc(byte*, int);
-ext p free(byte*);
-ext f<byte*> memcpy(byte*, byte*, int);
 
 // Add generic type definition
 type T dyn;
@@ -25,7 +20,7 @@ type T dyn;
  * with every item pushed.
  */
 public type Queue<T> struct {
-    T* contents             // Pointer to the first data element
+    heap T* contents        // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
     unsigned long size      // Current number of items
     unsigned long idxFront  // Index for front access
@@ -53,19 +48,13 @@ public p Queue.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
     // Allocate space for the initial number of elements
     const long itemSize = sizeof(type T) / 8l;
     unsafe {
-        this.contents = (T*) malloc(itemSize * initAllocItems);
+        Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
+        this.contents = (heap T*) allocResult.unwrap();
     }
     this.size = 0l;
     this.capacity = initAllocItems;
     this.idxFront = 0l;
     this.idxBack = 0l;
-}
-
-public p Queue.dtor() {
-    // Free all the memory
-    unsafe {
-        free((byte*) this.contents);
-    }
 }
 
 /**
@@ -184,10 +173,10 @@ p Queue.resize(unsigned long itemCount) {
     // Allocate the new memory
     const long itemSize = sizeof(type T) / 8l;
     unsafe {
-        byte* oldAddress = (byte*) this.contents;
-        int newSize = (int) (itemSize * itemCount);
-        T* newMemory = (T*) realloc(oldAddress, newSize);
-        this.contents = newMemory;
+        heap byte* oldAddress = (heap byte*) this.contents;
+        unsigned long newSize = (unsigned long) (itemSize * itemCount);
+        Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
+        this.contents = (heap T*) allocResult.unwrap();
     }
     // Set new capacity
     this.capacity = itemCount;

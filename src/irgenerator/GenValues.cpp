@@ -336,22 +336,16 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     canBeConstant &= fieldValue.constant != nullptr;
   }
 
-  LLVMExprResult result;
   if (canBeConstant) { // All field values are constants, so we can create a global constant struct instantiation
     // Collect constants
     std::vector<llvm::Constant *> constants;
-    for (const LLVMExprResult &exprResult : fieldValueResults) {
-      // Delete potential constant globals, that were already created a layer below
-      if (exprResult.constant->getType()->isStructTy())
-        module->getNamedGlobal(exprResult.ptr->getName())->eraseFromParent();
+    for (const LLVMExprResult &exprResult : fieldValueResults)
       constants.push_back(exprResult.constant);
-    }
 
-    // Create global struct
+    // Create global constant struct
     llvm::Constant *constantStruct = llvm::ConstantStruct::get(structType, constants);
-    llvm::Value *constantAddr = createGlobalConst(ANON_GLOBAL_STRUCT_NAME, constantStruct);
 
-    result = {.constant = constantStruct, .ptr = constantAddr};
+    return LLVMExprResult{.constant = constantStruct};
   } else { // We have at least one non-immediate value, so we need to take normal struct instantiation as fallback
     llvm::Value *structAddr = insertAlloca(structType);
 
@@ -367,15 +361,13 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
       builder.CreateStore(itemValue, currentFieldAddress, storeVolatile);
     }
 
-    result = {.ptr = structAddr};
+    // Attach address to anonymous symbol to keep track of deallocation
+    SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
+    if (returnSymbol != nullptr)
+      returnSymbol->updateAddress(structAddr);
+
+    return LLVMExprResult{.ptr = structAddr};
   }
-
-  // Attach address to anonymous symbol to keep track of deallocation
-  SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
-  if (returnSymbol != nullptr)
-    returnSymbol->updateAddress(result.ptr);
-
-  return result;
 }
 
 std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {

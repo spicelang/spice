@@ -84,7 +84,6 @@ assert.then.L12:                                  ; preds = %2
 
 assert.exit.L12:                                  ; preds = %2
   %18 = call %struct.VectorIterator @"_Z7iterateR22std/data/vector.VectorIiE"(ptr %vi), !dbg !44
-  store %struct.VectorIterator %18, ptr %it, align 8, !dbg !44
   call void @llvm.dbg.declare(metadata ptr %it, metadata !45, metadata !DIExpression()), !dbg !52
   store %struct.VectorIterator %18, ptr %it, align 8, !dbg !44
   %19 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %it), !dbg !53
@@ -141,7 +140,6 @@ assert.then.L21:                                  ; preds = %assert.exit.L20
 assert.exit.L21:                                  ; preds = %assert.exit.L20
   call void @_ZN14VectorIteratorIiE4nextEv(ptr %it), !dbg !62
   %35 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr %it), !dbg !63
-  store %struct.Pair %35, ptr %pair, align 8, !dbg !63
   call void @llvm.dbg.declare(metadata ptr %pair, metadata !64, metadata !DIExpression()), !dbg !70
   store %struct.Pair %35, ptr %pair, align 8, !dbg !63
   %36 = call ptr @_ZN4PairImRiE8getFirstEv(ptr %pair), !dbg !71
@@ -499,9 +497,9 @@ attributes #3 = { cold noreturn nounwind }
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "printf.str.0", linkageName: "printf.str.0", scope: !2, file: !5, line: 70, type: !6, isLocal: true, isDefinition: true)
 !2 = distinct !DICompileUnit(language: DW_LANG_C17, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
-!3 = !DIFile(filename: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dgb-info-complex\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dgb-info-complex")
+!3 = !DIFile(filename: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
 !4 = !{!0}
-!5 = !DIFile(filename: "source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dgb-info-complex")
+!5 = !DIFile(filename: "source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
 !6 = !DIStringType(name: "printf.str.0", size: 184)
 !7 = !{i32 7, !"Dwarf Version", i32 4}
 !8 = !{i32 2, !"Debug Info Version", i32 3}
@@ -524,14 +522,14 @@ attributes #3 = { cold noreturn nounwind }
 !25 = !DILocalVariable(name: "argc", arg: 1, scope: !15, file: !5, line: 6, type: !18)
 !26 = !DILocalVariable(name: "argv", arg: 2, scope: !15, file: !5, line: 6, type: !19)
 !27 = !DILocalVariable(name: "vi", scope: !15, file: !5, line: 8, type: !28)
-!28 = !DICompositeType(tag: DW_TAG_structure_type, name: "Vector", scope: !29, file: !29, line: 27, size: 192, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !30, identifier: "struct.Vector")
+!28 = !DICompositeType(tag: DW_TAG_structure_type, name: "Vector", scope: !29, file: !29, line: 22, size: 192, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !30, identifier: "struct.Vector")
 !29 = !DIFile(filename: "vector.spice", directory: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\std\\data")
 !30 = !{!31, !33, !35}
-!31 = !DIDerivedType(tag: DW_TAG_member, name: "contents", scope: !28, file: !29, line: 28, baseType: !32, size: 64)
+!31 = !DIDerivedType(tag: DW_TAG_member, name: "contents", scope: !28, file: !29, line: 23, baseType: !32, size: 64)
 !32 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !18, size: 64)
-!33 = !DIDerivedType(tag: DW_TAG_member, name: "capacity", scope: !28, file: !29, line: 29, baseType: !34, size: 64, offset: 64)
+!33 = !DIDerivedType(tag: DW_TAG_member, name: "capacity", scope: !28, file: !29, line: 24, baseType: !34, size: 64, offset: 64)
 !34 = !DIBasicType(name: "unsigned long", size: 64, encoding: DW_ATE_unsigned)
-!35 = !DIDerivedType(tag: DW_TAG_member, name: "size", scope: !28, file: !29, line: 30, baseType: !34, size: 64, offset: 128)
+!35 = !DIDerivedType(tag: DW_TAG_member, name: "size", scope: !28, file: !29, line: 25, baseType: !34, size: 64, offset: 128)
 !36 = !DILocation(line: 8, column: 5, scope: !15)
 !37 = !DILocation(line: 8, column: 22, scope: !15)
 !38 = !DILocation(line: 9, column: 17, scope: !15)

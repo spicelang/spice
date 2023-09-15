@@ -66,7 +66,6 @@ define dso_local i32 @main() #0 {
   %6 = load %struct.Counter, ptr %counter2, align 8
   %7 = call %struct.Counter @_Z7op.plus7Counter7Counter(%struct.Counter %5, %struct.Counter %6)
   store %struct.Counter %7, ptr %counter3, align 8
-  store %struct.Counter %7, ptr %counter3, align 8
   %8 = call i64 @_ZN7Counter8getValueEv(ptr %counter3)
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i64 %8)
   %10 = load i32, ptr %result, align 4

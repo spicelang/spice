@@ -566,6 +566,10 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
   sourceFile->dependants.push_back(this);
 }
 
+bool SourceFile::imports(const SourceFile *sourceFile) const {
+  return std::ranges::any_of(dependencies, [=](const auto &dependency) { return dependency.second.first == sourceFile; });
+}
+
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { // NOLINT(misc-no-recursion)
   // Check if the current source file corresponds to the path to search
   if (filePath == filePathSearch)
@@ -574,12 +578,12 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { //
   return parent != nullptr && parent->isAlreadyImported(filePathSearch);
 }
 
-void SourceFile::requestRuntimeModule(RuntimeModule runtimeModule) {
+SourceFile *SourceFile::requestRuntimeModule(RuntimeModule runtimeModule) {
   // Check if the module was already imported
   if (importedRuntimeModules & runtimeModule)
-    return;
+    return resourceManager.runtimeModuleManager.getModule(runtimeModule);
 
-  resourceManager.runtimeModuleManager.requestModule(this, runtimeModule);
+  return resourceManager.runtimeModuleManager.requestModule(this, runtimeModule);
 }
 
 void SourceFile::addNameRegistryEntry(const std::string &symbolName, SymbolTableEntry *entry, Scope *scope,

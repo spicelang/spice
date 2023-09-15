@@ -1,8 +1,8 @@
-ext f<byte*> malloc(long);
-ext p free(byte*);
+ext f<heap byte*> malloc(long);
+ext p free(heap byte*);
 
 f<int> main() {
-    byte* address = malloc(1l);
+    heap byte* address = malloc(1l);
     *address = (byte) 12;
     free(address);
 }

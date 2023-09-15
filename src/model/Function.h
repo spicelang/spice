@@ -35,9 +35,9 @@ class Function {
 public:
   // Constructors
   Function(std::string name, SymbolTableEntry *entry, SymbolType thisType, SymbolType returnType, ParamList paramList,
-           std::vector<GenericType> templateTypes, ASTNode *declNode, bool external)
+           std::vector<GenericType> templateTypes, ASTNode *declNode)
       : name(std::move(name)), entry(entry), thisType(std::move(thisType)), returnType(std::move(returnType)),
-        paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode), external(external) {}
+        paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode) {}
   Function() = default;
 
   // Public methods
@@ -46,6 +46,7 @@ public:
   [[nodiscard]] static std::string getSignature(const std::string &name, const SymbolType &thisType, const SymbolType &returnType,
                                                 const ParamList &paramList, const std::vector<SymbolType> &concreteTemplateTypes,
                                                 bool withThisType = true);
+  [[nodiscard]] static std::string getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc);
   [[nodiscard]] inline bool isMethod() const { return !thisType.is(TY_DYN); }
   [[nodiscard]] inline bool isFunction() const { return !returnType.is(TY_DYN); }
   [[nodiscard]] inline bool isProcedure() const { return returnType.is(TY_DYN); }
@@ -73,8 +74,8 @@ public:
   std::string mangleSuffix;
   bool genericSubstantiation = false;
   bool alreadyTypeChecked = false;
-  bool external = false;
   bool used = false;
+  bool implicitDefault = false;
 
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, thisType, returnType, paramList, templateTypes)

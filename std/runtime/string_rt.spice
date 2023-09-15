@@ -255,7 +255,9 @@ public f<bool> operator!=(const String& a, const String& b) {
  * @return Raw immutable string
  */
 public inline f<string> String.getRaw() {
-    return (string) this.contents;
+    unsafe {
+        return (string) this.contents;
+    }
 }
 
 /**

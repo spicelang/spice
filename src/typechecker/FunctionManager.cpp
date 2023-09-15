@@ -95,7 +95,7 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std:
   ParamList paramList;
   for (const SymbolType &paramType : paramTypes)
     paramList.push_back({paramType, false});
-  return {MAIN_FUNCTION_NAME, entry, SymbolType(TY_DYN), SymbolType(TY_INT), paramList, {}, declNode, false};
+  return {MAIN_FUNCTION_NAME, entry, SymbolType(TY_DYN), SymbolType(TY_INT), paramList, {}, declNode};
 }
 
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
@@ -116,6 +116,59 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
   // Add substantiated function
   manifestationList.emplace(signature, newManifestation);
   return &manifestationList.at(signature);
+}
+
+/**
+ * Checks if a function exists by matching it, but not setting it to used
+ *
+ * @param matchScope Scope to match against
+ * @param requestedName Function name requirement
+ * @param requestedThisType This type requirement
+ * @param templateTypeHints Template types to substantiate generic types
+ * @param requestedParamTypes Argument types requirement
+ * @param strictSpecifierMatching Match argument and this type specifiers strictly
+ * @return Found function or nullptr
+ */
+const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &requestedName,
+                                                const SymbolType &requestedThisType,
+                                                const std::vector<SymbolType> &requestedParamTypes,
+                                                bool strictSpecifierMatching) {
+  assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT}));
+
+  // Copy the registry to prevent iterating over items, that are created within the loop
+  FunctionRegistry functionRegistry = matchScope->functions;
+  // Loop over function registry to find functions, that match the requirements of the call
+  std::vector<const Function *> matches;
+  for (const auto &[defCodeLocStr, m] : functionRegistry) {
+    // Copy the manifestation list to prevent iterating over items, that are created within the loop
+    const FunctionManifestationList manifestations = m;
+    for (const auto &[signature, presetFunction] : manifestations) {
+      assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
+
+      // Only match against fully substantiated versions to prevent double matching of a function
+      if (!presetFunction.genericSubstantiation)
+        continue;
+
+      // Copy the function to be able to substantiate types
+      Function candidate = presetFunction;
+
+      bool forceSubstantiation = false;
+      MatchResult matchResult = matchManifestation(candidate, matchScope, requestedName, requestedThisType, requestedParamTypes,
+                                                   strictSpecifierMatching, forceSubstantiation);
+      if (matchResult == MatchResult::SKIP_FUNCTION)
+        break; // Leave the whole function
+      if (matchResult == MatchResult::SKIP_MANIFESTATION)
+        continue; // Leave this manifestation and try the next one
+
+      // Add to matches
+      matches.push_back(&matchScope->functions.at(defCodeLocStr).at(signature));
+
+      break; // Leave the whole manifestation list to not double-match the manifestation
+    }
+  }
+
+  // Return the very match or a nullptr
+  return !matches.empty() ? matches.front() : nullptr;
 }
 
 /**
@@ -153,45 +206,17 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       // Copy the function to be able to substantiate types
       Function candidate = presetFunction;
 
-      // Check name requirement
-      if (!matchName(candidate, requestedName))
-        break; // Leave the whole manifestation list, because all manifestations in this list have the same name
-
-      // Prepare mapping table from generic type name to concrete type
-      TypeMapping &typeMapping = candidate.typeMapping;
-      typeMapping.clear();
-      typeMapping.reserve(candidate.templateTypes.size());
-
-      // Check 'this' type requirement
-      if (!matchThisType(candidate, requestedThisType, typeMapping, strictSpecifierMatching))
-        continue; // Leave this manifestation and try the next one
-
-      // Check arg types requirement
       bool forceSubstantiation = false;
-      if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching, forceSubstantiation))
+      MatchResult matchResult = matchManifestation(candidate, matchScope, requestedName, requestedThisType, requestedParamTypes,
+                                                   strictSpecifierMatching, forceSubstantiation);
+      if (matchResult == MatchResult::SKIP_FUNCTION)
+        break; // Leave the whole function
+      if (matchResult == MatchResult::SKIP_MANIFESTATION)
         continue; // Leave this manifestation and try the next one
-
-      // Substantiate return type
-      substantiateReturnType(candidate, typeMapping);
 
       // We found a match! -> Set the actual candidate and its entry to used
       candidate.used = true;
       candidate.entry->used = true;
-
-      const SymbolType &thisType = candidate.thisType;
-      if (!thisType.is(TY_DYN)) {
-        // Update struct scope of 'this' type to the substantiated struct scope
-        std::vector<SymbolType> concreteTemplateTypes;
-        if (!thisType.hasAnyGenericParts())
-          concreteTemplateTypes = thisType.getTemplateTypes();
-        const std::string structSignature = Struct::getSignature(thisType.getSubType(), concreteTemplateTypes);
-        Scope *substantiatedStructBodyScope = matchScope->parent->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
-        assert(substantiatedStructBodyScope != nullptr);
-        candidate.thisType.setBodyScope(substantiatedStructBodyScope);
-
-        // Set match scope to the substantiated struct scope
-        matchScope = substantiatedStructBodyScope;
-      }
 
       // Check if the function is generic needs to be substantiated
       if (presetFunction.templateTypes.empty() && !forceSubstantiation) {
@@ -200,9 +225,6 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
         matches.back()->used = true;
         continue; // Match was successful -> match the next function
       }
-
-      // Clear template types of candidate, since they are not needed anymore
-      candidate.templateTypes.clear();
 
       // Check if we already have this manifestation and can simply re-use it
       if (matchScope->functions.at(defCodeLocStr).contains(candidate.getSignature())) {
@@ -214,7 +236,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       Function *substantiatedFunction = insertSubstantiation(matchScope, candidate, presetFunction.declNode);
       substantiatedFunction->genericSubstantiation = true;
       substantiatedFunction->alreadyTypeChecked = false;
-      substantiatedFunction->declNode->getFctManifestations()->push_back(substantiatedFunction);
+      substantiatedFunction->declNode->getFctManifestations(requestedName)->push_back(substantiatedFunction);
 
       // Copy function entry
       const std::string newSignature = substantiatedFunction->getSignature(false);
@@ -319,6 +341,51 @@ bool FunctionManager::matchInterfaceMethod(Scope *matchScope, const std::string 
   return false;
 }
 
+MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&matchScope, const std::string &requestedName,
+                                                const SymbolType &requestedThisType,
+                                                const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
+                                                bool &forceSubstantiation) {
+  // Check name requirement
+  if (!matchName(candidate, requestedName))
+    return MatchResult::SKIP_FUNCTION; // Leave the whole manifestation list, because all have the same name
+
+  // Prepare mapping table from generic type name to concrete type
+  TypeMapping &typeMapping = candidate.typeMapping;
+  typeMapping.clear();
+  typeMapping.reserve(candidate.templateTypes.size());
+
+  // Check 'this' type requirement
+  if (!matchThisType(candidate, requestedThisType, typeMapping, strictSpecifierMatching))
+    return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
+
+  // Check arg types requirement
+  if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching, forceSubstantiation))
+    return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
+
+  // Substantiate return type
+  substantiateReturnType(candidate, typeMapping);
+
+  const SymbolType &thisType = candidate.thisType;
+  if (!thisType.is(TY_DYN)) {
+    // Update struct scope of 'this' type to the substantiated struct scope
+    std::vector<SymbolType> concreteTemplateTypes;
+    if (!thisType.hasAnyGenericParts())
+      concreteTemplateTypes = thisType.getTemplateTypes();
+    const std::string structSignature = Struct::getSignature(thisType.getSubType(), concreteTemplateTypes);
+    Scope *substantiatedStructBodyScope = matchScope->parent->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
+    assert(substantiatedStructBodyScope != nullptr);
+    candidate.thisType.setBodyScope(substantiatedStructBodyScope);
+
+    // Set match scope to the substantiated struct scope
+    matchScope = substantiatedStructBodyScope;
+  }
+
+  // Clear template types of candidate, since they are not needed anymore
+  candidate.templateTypes.clear();
+
+  return MatchResult::MATCHED;
+}
+
 /**
  * Checks if the matching candidate fulfills the name requirement
  *
@@ -344,7 +411,7 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
   SymbolType &candidateThisType = candidate.thisType;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
-  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
+  TypeMatcher::ResolverFct genericTypeResolver = [&](const std::string &genericTypeName) {
     return getGenericTypeOfCandidateByName(candidate, genericTypeName);
   };
 
@@ -376,7 +443,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
     return false;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
-  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
+  TypeMatcher::ResolverFct genericTypeResolver = [&](const std::string &genericTypeName) {
     return getGenericTypeOfCandidateByName(candidate, genericTypeName);
   };
 
@@ -431,7 +498,7 @@ bool FunctionManager::matchReturnType(Function &candidate, const SymbolType &req
   SymbolType &candidateReturnType = candidate.returnType;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
-  TypeMatcher::ResolverFct genericTypeResolver = [=](const std::string &genericTypeName) {
+  TypeMatcher::ResolverFct genericTypeResolver = [&](const std::string &genericTypeName) {
     return getGenericTypeOfCandidateByName(candidate, genericTypeName);
   };
 
