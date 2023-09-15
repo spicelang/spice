@@ -135,7 +135,7 @@ public:
   void addDependency(SourceFile *sourceFile, const ASTNode *declNode, const std::string &dependencyName, const std::string &path);
   [[nodiscard]] bool imports(const SourceFile *sourceFile) const;
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
-  void requestRuntimeModule(RuntimeModule runtimeModule);
+  SourceFile *requestRuntimeModule(RuntimeModule runtimeModule);
   void addNameRegistryEntry(const std::string &symbolName, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true,
                             SymbolTableEntry *importEntry = nullptr, const std::string &predecessorName = "");
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;

@@ -94,6 +94,19 @@ bool TypeSpecifiers::match(TypeSpecifiers otherSpecifiers, bool allowConstify) c
   return thisSpecifiers == otherSpecifiers;
 }
 
+/**
+ * Erase all specifiers that are set in the mask. This is used in type matching.
+ *
+ * @param mask Bitmask to erase with
+ */
+void TypeSpecifiers::eraseWithMask(const TypeSpecifiers &mask) {
+  // Zero out all bits that are set in the mask
+  for (uint8_t i = 0; i <= BIT_INDEX_MAX; i++) {
+    if (mask.getBit(i))
+      setBit(i, false);
+  }
+}
+
 bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) {
   const bool isConst = lhs.isConst == rhs.isConst;
   const bool isSigned = lhs.isSigned == rhs.isSigned;

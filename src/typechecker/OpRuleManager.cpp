@@ -30,11 +30,14 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
   if (lhs.isRef() && lhs.getContainedTy().matches(rhs, false, false, true))
     return lhs;
   // Allow ref type to type of the same contained type straight away
-  if (rhs.isRef() && rhs.getContainedTy().matches(rhs, false, false, true))
-    return lhs;
-  // Allow ref type to type of the same contained type straight away
-  if (rhs.isRef() && lhs.matches(rhs.getContainedTy(), false, !lhs.isRef(), true))
-    return lhs;
+  if (rhs.isRef()) {
+    // If this is const ref, remove both: the reference and the constness
+    SymbolType rhsModified = rhs.getContainedTy();
+    rhsModified.specifiers.isConst = false;
+
+    if (lhs.matches(rhsModified, false, !lhs.isRef(), true))
+      return lhs;
+  }
   // Allow arrays, structs, functions, procedures of the same type straight away
   if (lhs.isOneOf({TY_ARRAY, TY_STRUCT, TY_FUNCTION, TY_PROCEDURE}) && lhs.matches(rhs, false, true, true))
     return rhs;

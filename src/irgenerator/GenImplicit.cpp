@@ -48,7 +48,7 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
     generateDtorCall(entry, dtor);
 }
 
-void IRGenerator::generateDtorCall(SymbolTableEntry *entry, Function *dtor) const {
+void IRGenerator::generateDtorCall(SymbolTableEntry *entry, const Function *dtor) const {
   assert(dtor != nullptr);
 
   // Retrieve metadata for the function
@@ -90,14 +90,14 @@ void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
   builder.CreateCall(deallocFct, variableAddress);
 }
 
-llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void()> &generateBody, Function *spiceFunc) {
-  // Only generate if used
-  if (!spiceFunc->used)
-    return nullptr;
-
+llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void()> &generateBody, const Function *spiceFunc) {
   // Only focus on procedures and procedure methods without arguments for now
   assert(spiceFunc->isProcedure() && spiceFunc->getParamTypes().empty());
   const ASTNode *node = spiceFunc->entry->declNode;
+
+  // Only generate if used
+  if (!spiceFunc->used)
+    return nullptr;
 
   // Retrieve return type
   llvm::Type *returnType = builder.getVoidTy();
@@ -176,10 +176,8 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   return fct;
 }
 
-void IRGenerator::generateDefaultDefaultDtor(Function *dtorFunction) {
+void IRGenerator::generateDefaultDefaultDtor(const Function *dtorFunction) {
   assert(dtorFunction->implicitDefault && dtorFunction->name.starts_with(DTOR_FUNCTION_NAME));
-
-  const ASTNode *node = dtorFunction->entry->declNode;
 
   const std::function<void()> generateBody = [&]() {
     // Retrieve struct scope
@@ -204,7 +202,7 @@ void IRGenerator::generateDefaultDefaultDtor(Function *dtorFunction) {
       if (fieldType.is(TY_STRUCT)) {
         // Lookup dtor function
         Scope *matchScope = fieldType.getBodyScope();
-        Function *dtorFunction = FunctionManager::matchFunction(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, false, node);
+        const Function *dtorFunction = FunctionManager::lookupFunction(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, false);
 
         // Generate call to dtor
         generateDtorCall(field, dtorFunction);

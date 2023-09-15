@@ -64,14 +64,14 @@ llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
 llvm::Function *StdFunctionManager::getAllocLongFct() const {
   const ParamList paramLst = {{SymbolType(TY_LONG), false}};
   const SymbolType bytePtrSTy = SymbolType(TY_BYTE).toPointer(nullptr);
-  const Function function("spiceAlloc", nullptr, SymbolType(TY_DYN), bytePtrSTy, paramLst, {}, nullptr);
+  const Function function("sAlloc", nullptr, SymbolType(TY_DYN), bytePtrSTy, paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
   return getFunction(mangledName.c_str(), builder.getPtrTy(), {builder.getInt64Ty()});
 }
 
 llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {
   const ParamList paramLst = {{SymbolType(TY_BYTE).toPointer(nullptr).toReference(nullptr), false}};
-  const Function function("spiceDealloc", nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramLst, {}, nullptr);
+  const Function function("sDealloc", nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
   return getProcedure(mangledName.c_str(), {builder.getPtrTy()});
 }

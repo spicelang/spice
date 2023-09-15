@@ -489,8 +489,9 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     structType->setBody(fieldTypes);
 
     // Generate default ctor/dtor, etc.
-    Function *spiceFunc = FunctionManager::lookupFunction(currentScope, DTOR_FUNCTION_NAME, structEntry->getType(), {}, true);
-    if (spiceFunc != nullptr)
+    const SymbolType &thisType = structEntry->getType();
+    const Function *spiceFunc = FunctionManager::lookupFunction(currentScope, DTOR_FUNCTION_NAME, thisType, {}, true);
+    if (spiceFunc != nullptr && spiceFunc->implicitDefault)
       generateDefaultDefaultDtor(spiceFunc);
 
     // Return to root scope

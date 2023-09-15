@@ -1,16 +1,73 @@
-import "std/data/stack";
+import "std/runtime/iterator_rt";
+import "std/data/vector";
+import "std/iterator/vector-iterator";
+import "std/data/pair";
 
-f<int> main() {
-    Stack<int> s1 = Stack<int>{};
-    s1.ctor();
-    s1.push(123);
-    s1.push(456);
-    s1.push(789);
-    printf("Stack size: %d\n", s1.getSize());
-    printf("Stack capacity: %d\n", s1.getCapacity());
-    printf("Stack item 3: %d\n", s1.pop());
-    printf("Stack item 2: %d\n", s1.pop());
-    printf("Stack item 1: %d\n", s1.pop());
+f<int> main(int argc, string[] argv) {
+    // Create test vector to iterate over
+    Vector<int> vi = Vector<int>();
+    vi.pushBack(123);
+    vi.pushBack(4321);
+    vi.pushBack(9876);
+    assert vi.getSize() == 3;
+
+    // Test base functionality
+    dyn it = iterate(vi);
+    assert it.isValid();
+    assert it.get() == 123;
+    assert it.get() == 123;
+    it.next();
+    assert it.get() == 4321;
+    assert it.isValid();
+    it.next();
+    dyn pair = it.getIdx();
+    assert pair.getFirst() == 2;
+    assert pair.getSecond() == 9876;
+    it.next();
+    assert !it.isValid();
+
+    // Add new items to the vector
+    vi.pushBack(321);
+    vi.pushBack(-99);
+    assert it.isValid();
+
+    // Test overloaded operators
+    it -= 3;
+    assert it.get() == 123;
+    assert it.isValid();
+    it++;
+    assert it.get() == 4321;
+    it--;
+    assert it.get() == 123;
+    it += 4;
+    assert it.get() == -99;
+    it.next();
+    assert !it.isValid();
+
+    // Test foreach value
+    foreach int item : iterate(vi) {
+        item++;
+    }
+    assert vi.get(0) == 123;
+    assert vi.get(1) == 4321;
+    assert vi.get(2) == 9876;
+
+    // Test foreach ref
+    foreach int& item : iterate(vi) {
+        item++;
+    }
+    assert vi.get(0) == 124;
+    assert vi.get(1) == 4322;
+    assert vi.get(2) == 9877;
+
+    foreach long idx, int& item : iterate(vi) {
+        item += idx;
+    }
+    assert vi.get(0) == 124;
+    assert vi.get(1) == 4323;
+    assert vi.get(2) == 9879;
+
+    printf("All assertions passed!");
 }
 
 /*type TestStruct struct {

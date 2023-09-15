@@ -8,6 +8,8 @@
 
 namespace spice::compiler {
 
+static const char *const FCT_NAME_DEALLOC = "sDealloc";
+
 /**
  * Checks if the given struct scope already has a default constructor and creates a default one if not
  *
@@ -34,7 +36,8 @@ void TypeChecker::createDefaultDtorIfRequired(Struct &spiceStruct, Scope *struct
     hasHeapFields |= fieldSymbol->getType().isHeap();
     if (fieldSymbol->getType().is(TY_STRUCT)) {
       // Lookup dtor function
-      Function *dtorFct = FunctionManager::lookupFunction(structScope, DTOR_FUNCTION_NAME, fieldSymbol->getType(), {}, true);
+      const SymbolType &thisType = fieldSymbol->getType();
+      const Function *dtorFct = FunctionManager::matchFunction(structScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
       hasFieldsToDestruct |= dtorFct != nullptr;
     }
   }
@@ -74,8 +77,18 @@ void TypeChecker::createDefaultDtorIfRequired(Struct &spiceStruct, Scope *struct
   FunctionManager::insertFunction(structScope, defaultDtor, structEntry->declNode->getFctManifestations(DTOR_FUNCTION_NAME));
 
   // Request memory runtime if we have fields, that are allocated on the heap
-  if (hasHeapFields)
-    sourceFile->requestRuntimeModule(MEMORY_RT);
+  if (hasHeapFields) {
+    SourceFile *memoryRT = sourceFile->requestRuntimeModule(MEMORY_RT);
+    assert(memoryRT != nullptr);
+    Scope *matchScope = memoryRT->globalScope.get();
+    // Set dealloc function to used
+    const SymbolType thisType(TY_DYN);
+    SymbolType bytePtrRefType = SymbolType(TY_BYTE).toPointer(node).toReference(node);
+    bytePtrRefType.specifiers.isHeap = true;
+    const std::vector<SymbolType> paramTypes = {bytePtrRefType};
+    Function *deallocFct = FunctionManager::matchFunction(matchScope, FCT_NAME_DEALLOC, thisType, paramTypes, true, node);
+    assert(deallocFct != nullptr);
+  }
 }
 
 /**

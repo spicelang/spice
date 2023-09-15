@@ -53,8 +53,11 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
     const std::string genericTypeName = candidateType.getBaseType().getSubType();
 
     // Check if we know the concrete type for that generic type name already
-    if (typeMapping.contains(genericTypeName)) {
+    if (typeMapping.contains(genericTypeName)) { // This is a known generic type
       SymbolType knownConcreteType = typeMapping.at(genericTypeName);
+
+      // Merge specifiers of candidate type and known concrete type together
+      knownConcreteType.specifiers = knownConcreteType.specifiers.merge(candidateType.specifiers);
 
       // Remove reference wrapper of candidate type if required
       if (!requestedType.isRef())
@@ -62,7 +65,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
       // Check if the known concrete type matches the requested type
       return knownConcreteType.matches(requestedType, true, !strictSpecifierMatching, true);
-    } else {
+    } else { // This is an unknown generic type
       // Retrieve generic candidate type by its name
       const GenericType *genericCandidateType = resolverFct(genericTypeName);
       assert(genericCandidateType != nullptr);
@@ -70,6 +73,10 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
       // Check if the requested type fulfills all conditions of the generic candidate type
       if (!genericCandidateType->checkConditionsOf(requestedType, true, !strictSpecifierMatching))
         return false;
+
+      // Zero out all specifiers in the requested type, that are present in the candidate type
+      // This is to set all specifiers that are not present in the candidate type to the generic type replacement
+      requestedType.specifiers.eraseWithMask(candidateType.specifiers);
 
       // Add to type mapping
       const SymbolType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : requestedType;
@@ -81,20 +88,20 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
     // Check if supertype and subtype are equal
     if (requestedType.getSuperType() != candidateType.getSuperType())
       return false;
-    const bool isFctType = candidateType.isOneOf({TY_FUNCTION, TY_PROCEDURE});
-    if (!isFctType && requestedType.getOriginalSubType() != candidateType.getOriginalSubType())
-      return false;
-    if (!isFctType && requestedType.getBodyScope()->parent != candidateType.getBodyScope()->parent)
-      return false;
 
     // If we have a function/procedure type, check the param and return types. Otherwise, check the template types
-    if (isFctType) {
+    if (candidateType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
       // Check param  and return types
       const std::vector<SymbolType> &candidatePRTypes = candidateType.getFunctionParamAndReturnTypes();
       const std::vector<SymbolType> &requestedPRTypes = requestedType.getFunctionParamAndReturnTypes();
       if (!matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictSpecifierMatching))
         return false;
     } else {
+      if (requestedType.getOriginalSubType() != candidateType.getOriginalSubType())
+        return false;
+      if (requestedType.getBodyScope()->parent != candidateType.getBodyScope()->parent)
+        return false;
+
       // Check template types
       const std::vector<SymbolType> &candidateTTypes = candidateType.getTemplateTypes();
       const std::vector<SymbolType> &requestedTTypes = requestedType.getTemplateTypes();

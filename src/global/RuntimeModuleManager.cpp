@@ -29,6 +29,11 @@ SourceFile *RuntimeModuleManager::requestModule(SourceFile *parentSourceFile, Ru
   return rtFile;
 }
 
+SourceFile *RuntimeModuleManager::getModule(RuntimeModule requestedModule) const {
+  assert(isModuleAvailable(requestedModule));
+  return modules.at(requestedModule);
+}
+
 bool RuntimeModuleManager::isModuleAvailable(RuntimeModule requestedModule) const { return modules.contains(requestedModule); }
 
 SourceFile *RuntimeModuleManager::loadModule(SourceFile *parentSourceFile, RuntimeModule requestedModule) {

@@ -127,25 +127,26 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  * @param templateTypeHints Template types to substantiate generic types
  * @param requestedParamTypes Argument types requirement
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
- * @return Function or nullptr
+ * @return Found function or nullptr
  */
-Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &requestedName,
-                                          const SymbolType &requestedThisType, const std::vector<SymbolType> &requestedParamTypes,
-                                          bool strictSpecifierMatching) {
+const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &requestedName,
+                                                const SymbolType &requestedThisType,
+                                                const std::vector<SymbolType> &requestedParamTypes,
+                                                bool strictSpecifierMatching) {
   assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT}));
 
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
-  std::vector<Function *> matches;
+  std::vector<const Function *> matches;
   for (const auto &[defCodeLocStr, m] : functionRegistry) {
     // Copy the manifestation list to prevent iterating over items, that are created within the loop
     const FunctionManifestationList manifestations = m;
     for (const auto &[signature, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
-      // Skip generic substantiations to prevent double matching of a function
-      if (presetFunction.genericSubstantiation)
+      // Only match against fully substantiated versions to prevent double matching of a function
+      if (!presetFunction.genericSubstantiation)
         continue;
 
       // Copy the function to be able to substantiate types
@@ -158,6 +159,9 @@ Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &
         break; // Leave the whole function
       if (matchResult == MatchResult::SKIP_MANIFESTATION)
         continue; // Leave this manifestation and try the next one
+
+      // Add to matches
+      matches.push_back(&matchScope->functions.at(defCodeLocStr).at(signature));
 
       break; // Leave the whole manifestation list to not double-match the manifestation
     }
