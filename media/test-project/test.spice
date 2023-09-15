@@ -1,73 +1,17 @@
-import "std/runtime/iterator_rt";
-import "std/data/vector";
-import "std/iterator/vector-iterator";
-import "std/data/pair";
+import "std/data/vector" as vec;
 
-f<int> main(int argc, string[] argv) {
-    // Create test vector to iterate over
-    Vector<int> vi = Vector<int>();
-    vi.pushBack(123);
-    vi.pushBack(4321);
-    vi.pushBack(9876);
-    assert vi.getSize() == 3;
-
-    // Test base functionality
-    dyn it = iterate(vi);
-    assert it.isValid();
-    assert it.get() == 123;
-    assert it.get() == 123;
-    it.next();
-    assert it.get() == 4321;
-    assert it.isValid();
-    it.next();
-    dyn pair = it.getIdx();
-    assert pair.getFirst() == 2;
-    assert pair.getSecond() == 9876;
-    it.next();
-    assert !it.isValid();
-
-    // Add new items to the vector
-    vi.pushBack(321);
-    vi.pushBack(-99);
-    assert it.isValid();
-
-    // Test overloaded operators
-    it -= 3;
-    assert it.get() == 123;
-    assert it.isValid();
-    it++;
-    assert it.get() == 4321;
-    it--;
-    assert it.get() == 123;
-    it += 4;
-    assert it.get() == -99;
-    it.next();
-    assert !it.isValid();
-
-    // Test foreach value
-    foreach int item : iterate(vi) {
-        item++;
-    }
-    assert vi.get(0) == 123;
-    assert vi.get(1) == 4321;
-    assert vi.get(2) == 9876;
-
-    // Test foreach ref
-    foreach int& item : iterate(vi) {
-        item++;
-    }
-    assert vi.get(0) == 124;
-    assert vi.get(1) == 4322;
-    assert vi.get(2) == 9877;
-
-    foreach long idx, int& item : iterate(vi) {
-        item += idx;
-    }
-    assert vi.get(0) == 124;
-    assert vi.get(1) == 4323;
-    assert vi.get(2) == 9879;
-
-    printf("All assertions passed!");
+f<int> main() {
+    vec::Vector<double> v1 = vec::Vector<double>(3);
+    v1.pushBack(1.2);
+    v1.pushBack(7.4964598);
+    v1.pushBack(5.3);
+    v1.pushBack(-238974.23);
+    v1.pushBack(23234.2);
+    v1.pushBack(-1234.9);
+    v1.pushBack(0.0);
+    printf("Vector size: %d\n", v1.getSize());
+    printf("Vector capacity: %d\n", v1.getCapacity());
+    printf("Vector item 5: %f\n", v1.get(5));
 }
 
 /*type TestStruct struct {

@@ -1,4 +1,5 @@
 import "std/type/result";
+import "std/type/error";
 
 // Constants
 const unsigned long INITIAL_ALLOC_COUNT = 5l;
@@ -70,6 +71,7 @@ public p Stack.push(const T& item) {
  * Retrieve item and remove it from the stack
  */
 public f<T&> Stack.pop() {
+    if this.isEmpty() { panic(Error("The stack is empty")); }
     // Pop the element from the stack
     unsafe {
         return this.contents[(int) --this.size];
@@ -132,8 +134,7 @@ p Stack.resize(unsigned long itemCount) {
         heap byte* oldAddress = (heap byte*) this.contents;
         unsigned long newSize = (unsigned long) (itemSize * itemCount);
         Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
-        heap T* newMemory = (heap T*) allocResult.unwrap();
-        this.contents = newMemory;
+        this.contents = (heap T*) allocResult.unwrap();
     }
     // Set new capacity
     this.capacity = itemCount;
