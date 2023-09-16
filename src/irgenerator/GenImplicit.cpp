@@ -45,14 +45,14 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
 
   // Call all dtor functions
   for (auto [entry, dtor] : node->dtorFunctions.at(manIdx))
-    generateDtorCall(entry, dtor);
+    generateCtorOrDtorCall(entry, dtor);
 }
 
-void IRGenerator::generateDtorCall(SymbolTableEntry *entry, const Function *dtor) const {
-  assert(dtor != nullptr);
+void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor) const {
+  assert(ctorOrDtor != nullptr);
 
   // Retrieve metadata for the function
-  const std::string mangledName = NameMangling::mangleFunction(*dtor);
+  const std::string mangledName = NameMangling::mangleFunction(*ctorOrDtor);
 
   // Function is not defined in the current module -> declare it
   if (!module->getFunction(mangledName)) {
@@ -176,8 +176,62 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   return fct;
 }
 
+void IRGenerator::generateDefaultDefaultCtor(const Function *ctorFunction) {
+  assert(ctorFunction->implicitDefault && ctorFunction->name == CTOR_FUNCTION_NAME);
+
+  const std::function<void()> generateBody = [&]() {
+    // Retrieve struct scope
+    Scope *structScope = ctorFunction->bodyScope->parent;
+    assert(structScope != nullptr);
+
+    // Get struct address
+    SymbolTableEntry *thisEntry = ctorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+    assert(thisEntry != nullptr);
+    llvm::Value *thisAddress = thisEntry->getAddress();
+    assert(thisAddress != nullptr);
+    llvm::Value *thisAddressLoaded = nullptr;
+    llvm::Type *structType = thisEntry->getType().getBaseType().toLLVMType(context, structScope);
+
+    const size_t fieldCount = structScope->getFieldCount();
+    for (size_t i = 0; i < fieldCount; i++) {
+      SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+      assert(fieldSymbol != nullptr && fieldSymbol->isField());
+      const SymbolType &fieldType = fieldSymbol->getType();
+      auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
+
+      // Call ctor for struct fields
+      if (fieldType.is(TY_STRUCT)) {
+        // Lookup ctor function
+        Scope *matchScope = fieldType.getBodyScope();
+        const Function *ctorFunction = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false);
+
+        // Generate call to ctor
+        if (ctorFunction)
+          generateCtorOrDtorCall(fieldSymbol, ctorFunction);
+
+        continue;
+      }
+
+      // Deallocate fields, that are stored on the heap
+      if (fieldNode->defaultValue() != nullptr) {
+        assert(fieldNode->defaultValue()->hasCompileTimeValue());
+        // Retrieve field address
+        if (!thisAddressLoaded)
+          thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
+        llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
+        llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
+        // Store default value
+        const CompileTimeValue compileTimeValue = fieldNode->defaultValue()->getCompileTimeValue();
+        llvm::Value *value = getConst(compileTimeValue, fieldType, fieldNode->defaultValue());
+        builder.CreateStore(value, fieldAddress);
+      }
+    }
+  };
+  generateImplicitProcedure(generateBody, ctorFunction);
+}
+
 void IRGenerator::generateDefaultDefaultDtor(const Function *dtorFunction) {
-  assert(dtorFunction->implicitDefault && dtorFunction->name.starts_with(DTOR_FUNCTION_NAME));
+  assert(dtorFunction->implicitDefault && dtorFunction->name == DTOR_FUNCTION_NAME);
 
   const std::function<void()> generateBody = [&]() {
     // Retrieve struct scope
@@ -194,9 +248,9 @@ void IRGenerator::generateDefaultDefaultDtor(const Function *dtorFunction) {
 
     const size_t fieldCount = structScope->getFieldCount();
     for (size_t i = 0; i < fieldCount; i++) {
-      SymbolTableEntry *field = structScope->symbolTable.lookupStrictByIndex(i);
-      assert(field != nullptr && field->isField());
-      const SymbolType &fieldType = field->getType();
+      SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+      assert(fieldSymbol != nullptr && fieldSymbol->isField());
+      const SymbolType &fieldType = fieldSymbol->getType();
 
       // Call dtor for struct fields
       if (fieldType.is(TY_STRUCT)) {
@@ -205,7 +259,10 @@ void IRGenerator::generateDefaultDefaultDtor(const Function *dtorFunction) {
         const Function *dtorFunction = FunctionManager::lookupFunction(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, false);
 
         // Generate call to dtor
-        generateDtorCall(field, dtorFunction);
+        if (dtorFunction)
+          generateCtorOrDtorCall(fieldSymbol, dtorFunction);
+
+        continue;
       }
 
       // Deallocate fields, that are stored on the heap

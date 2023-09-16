@@ -16,6 +16,74 @@ static const char *const FCT_NAME_DEALLOC = "sDealloc";
  * @param entry SymbolTableEntry of the struct
  * @param structScope Scope of the struct
  */
+void TypeChecker::createDefaultCtorIfRequired(Struct &spiceStruct, Scope *structScope) {
+  ASTNode *node = spiceStruct.declNode;
+  assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
+
+  // Abort if the struct already has a user-defined constructor
+  const SymbolTableEntry *structEntry = spiceStruct.entry;
+  const SymbolType &thisType = structEntry->getType();
+  const std::string fqFctName = thisType.getOriginalSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
+  if (sourceFile->getNameRegistryEntry(fqFctName))
+    return;
+
+  // Check if we have fields, that require us to do anything in the ctor
+  const size_t fieldCount = structScope->getFieldCount();
+  bool hasFieldsWithDefaultValue = false;
+  bool hasFieldsToConstruct = false;
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
+    hasFieldsWithDefaultValue |= fieldNode->defaultValue() != nullptr;
+    if (fieldSymbol->getType().is(TY_STRUCT)) {
+      // Lookup ctor function
+      const SymbolType &thisType = fieldSymbol->getType();
+      const Function *ctorFct = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, thisType, {}, true, node);
+      hasFieldsToConstruct |= ctorFct != nullptr;
+    }
+  }
+
+  // If we don't have any fields, that require us to do anything in the dtor, we can skip it
+  if (!hasFieldsWithDefaultValue && !hasFieldsToConstruct)
+    return;
+
+  // Procedure type
+  SymbolType procedureType(TY_PROCEDURE);
+  procedureType.specifiers.isPublic = spiceStruct.entry->getType().specifiers.isPublic;
+
+  // Insert symbol for function into the symbol table
+  const std::string entryName = Function::getSymbolTableEntryName(CTOR_FUNCTION_NAME, node->codeLoc);
+  SymbolTableEntry *fctEntry = structScope->insert(entryName, structEntry->declNode);
+  fctEntry->updateType(procedureType, true);
+
+  // Add to external name registry
+  assert(sourceFile->getNameRegistryEntry(fqFctName) == nullptr);
+  sourceFile->addNameRegistryEntry(fqFctName, fctEntry, structScope, /*keepNewOnCollision=*/true);
+
+  // Create the default destructor function
+  const std::vector<GenericType> templateTypes = spiceStruct.templateTypes;
+  Function defaultDtor(CTOR_FUNCTION_NAME, fctEntry, thisType, SymbolType(TY_DYN), {}, templateTypes, structEntry->declNode);
+  defaultDtor.implicitDefault = true;
+
+  // Create function scope
+  Scope *fctScope = structScope->createChildScope(defaultDtor.getSignature(false), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
+  defaultDtor.bodyScope = fctScope;
+
+  // Create 'this' symbol in the function scope
+  SymbolTableEntry *thisEntry = fctScope->insert(THIS_VARIABLE_NAME, node);
+  thisEntry->updateType(thisType.toPointer(node), true);
+  thisEntry->used = true; // Always set to used to not print warnings for non-existing code
+
+  // Hand it off to the function manager to register the function
+  FunctionManager::insertFunction(structScope, defaultDtor, structEntry->declNode->getFctManifestations(CTOR_FUNCTION_NAME));
+}
+
+/**
+ * Checks if the given struct scope already has a default destructor and creates a default one if not
+ *
+ * @param entry SymbolTableEntry of the struct
+ * @param structScope Scope of the struct
+ */
 void TypeChecker::createDefaultDtorIfRequired(Struct &spiceStruct, Scope *structScope) {
   ASTNode *node = spiceStruct.declNode;
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);

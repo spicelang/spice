@@ -53,26 +53,20 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
     LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
     assert(assignResult.entry == varEntry);
     varAddress = varEntry->getAddress();
+    varEntry->updateAddress(varAddress);
   } else { // Default value
     // Allocate memory
     varAddress = insertAlloca(varTy);
+    varEntry->updateAddress(varAddress);
 
     if (node->defaultCtor) {
       // Call default constructor
-      const std::string mangledName = NameMangling::mangleFunction(*node->defaultCtor);
-      llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), builder.getPtrTy(), false);
-      module->getOrInsertFunction(mangledName, fctType);
-      llvm::Function *fct = module->getFunction(mangledName);
-      assert(fct != nullptr);
-      builder.CreateCall({fctType, fct}, varAddress);
+      generateCtorOrDtorCall(varEntry, node->defaultCtor);
     } else if (!node->isForEachItem) {
       // Retrieve default value for lhs symbol type and store it
       llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);
       builder.CreateStore(defaultValue, varAddress);
     }
-
-    // Update address in symbol table
-    varEntry->updateAddress(varAddress);
   }
   assert(varAddress != nullptr);
 

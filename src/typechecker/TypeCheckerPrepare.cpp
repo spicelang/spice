@@ -386,7 +386,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
   spiceStruct.structScope = node->structScope;
 
-  // Check for default ctor/dtor, etc.
+  // Check if we need a default ctor/dtor, etc.
+  createDefaultCtorIfRequired(spiceStruct, node->structScope);
   createDefaultDtorIfRequired(spiceStruct, node->structScope);
 
   return nullptr;

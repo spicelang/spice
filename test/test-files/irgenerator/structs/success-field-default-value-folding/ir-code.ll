@@ -26,15 +26,61 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.18 = private unnamed_addr constant [62 x i8] c"Assertion failed: Condition 't.f19 == 12' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 1
 
+; Function Attrs: norecurse
+define private void @_ZN4Test4ctorEv(ptr noundef nonnull %0) #0 {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %2 = load ptr, ptr %this, align 8
+  %3 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 0
+  store i32 2, ptr %3, align 4
+  %4 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 1
+  store i1 true, ptr %4, align 1
+  %5 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 2
+  store i1 false, ptr %5, align 1
+  %6 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 3
+  store i32 11, ptr %6, align 4
+  %7 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 4
+  store i16 10, ptr %7, align 2
+  %8 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 5
+  store i64 2, ptr %8, align 8
+  %9 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 6
+  store i1 true, ptr %9, align 1
+  %10 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 7
+  store i1 true, ptr %10, align 1
+  %11 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 8
+  store i1 true, ptr %11, align 1
+  %12 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 9
+  store i1 false, ptr %12, align 1
+  %13 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 10
+  store i1 true, ptr %13, align 1
+  %14 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 11
+  store i1 false, ptr %14, align 1
+  %15 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 12
+  store i32 333, ptr %15, align 4
+  %16 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 13
+  store i64 11, ptr %16, align 8
+  %17 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 14
+  store i8 63, ptr %17, align 1
+  %18 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 15
+  store i32 13, ptr %18, align 4
+  %19 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 16
+  store i32 13, ptr %19, align 4
+  %20 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 17
+  store i32 14, ptr %20, align 4
+  %21 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 18
+  store i32 12, ptr %21, align 4
+  ret void
+}
+
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+define dso_local i32 @main() #1 {
   %result = alloca i32, align 4
   %t = alloca %struct.Test, align 8
   %1 = alloca i1, align 1
   %2 = alloca i1, align 1
   %3 = alloca i1, align 1
   store i32 0, ptr %result, align 4
-  store %struct.Test { i32 2, i1 true, i1 false, i32 11, i16 10, i64 2, i1 true, i1 true, i1 true, i1 false, i1 true, i1 false, i32 333, i64 11, i8 63, i32 13, i32 13, i32 14, i32 12 }, ptr %t, align 8
+  call void @_ZN4Test4ctorEv(ptr %t)
   %f1_addr = getelementptr inbounds %struct.Test, ptr %t, i32 0, i32 0
   %4 = load i32, ptr %f1_addr, align 4
   %5 = icmp eq i32 %4, 2
@@ -248,13 +294,14 @@ assert.exit.L43:                                  ; preds = %assert.exit.L42
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #2
+declare void @exit(i32) #3
 
-attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nofree nounwind }
-attributes #2 = { cold noreturn nounwind }
+attributes #0 = { norecurse }
+attributes #1 = { noinline nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
+attributes #3 = { cold noreturn nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}
