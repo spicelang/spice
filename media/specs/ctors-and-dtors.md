@@ -5,7 +5,7 @@
 - [x] Produce error when using `heap` specifier on non-pointer types
 - [x] Add mechanism to generate functions and methods, that are not part of the AST
 - [x] Generate default dtor
-- [ ] Generate default ctor
+- [x] Generate default ctor
 - [ ] Generate default copy ctor
 - [ ] (Generate default move ctor)
 - [ ] Make the compiler error out when reference fields do not get initialized by all ctors

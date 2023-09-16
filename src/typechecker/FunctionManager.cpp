@@ -146,7 +146,7 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
       // Only match against fully substantiated versions to prevent double matching of a function
-      if (!presetFunction.genericSubstantiation)
+      if (!presetFunction.isFullySubstantiated())
         continue;
 
       // Copy the function to be able to substantiate types

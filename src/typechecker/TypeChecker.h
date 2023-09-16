@@ -135,6 +135,7 @@ private:
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
 
   // Implicit code generation
+  void createDefaultCtorIfRequired(Struct &spiceStruct, Scope *structScope);
   void createDefaultDtorIfRequired(Struct &spiceStruct, Scope *structScope);
   void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
   void doScopeCleanup(StmtLstNode *node);

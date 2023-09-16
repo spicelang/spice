@@ -1,17 +1,12 @@
-import "std/data/vector" as vec;
+type Test struct {
+    int i = 12
+    string s = "test"
+}
 
 f<int> main() {
-    vec::Vector<double> v1 = vec::Vector<double>(3);
-    v1.pushBack(1.2);
-    v1.pushBack(7.4964598);
-    v1.pushBack(5.3);
-    v1.pushBack(-238974.23);
-    v1.pushBack(23234.2);
-    v1.pushBack(-1234.9);
-    v1.pushBack(0.0);
-    printf("Vector size: %d\n", v1.getSize());
-    printf("Vector capacity: %d\n", v1.getCapacity());
-    printf("Vector item 5: %f\n", v1.get(5));
+    Test t;
+    printf("Int: %d\n", t.i);
+    printf("String: %s\n", t.s);
 }
 
 /*type TestStruct struct {
