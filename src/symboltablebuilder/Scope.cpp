@@ -149,6 +149,22 @@ size_t Scope::getFieldCount() const {
 }
 
 /**
+ * Check if this struct has any reference fields
+ *
+ * @return Has reference fields or not
+ */
+bool Scope::hasRefFields() {
+  assert(type == ScopeType::STRUCT);
+  const size_t fieldCount = getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    const SymbolTableEntry *fieldEntry = symbolTable.lookupStrictByIndex(i);
+    if (fieldEntry->getType().isRef())
+      return true;
+  }
+  return false;
+}
+
+/**
  * Get the current number of nested loops
  *
  * @return Number of loops

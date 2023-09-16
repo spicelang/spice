@@ -77,6 +77,7 @@ public:
   void collectWarnings(std::vector<CompilerWarning> &warnings) const;
   void checkSuccessfulTypeInference() const;
   [[nodiscard]] size_t getFieldCount() const;
+  [[nodiscard]] bool hasRefFields();
   [[nodiscard]] size_t getLoopNestingDepth() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
   [[nodiscard]] bool isImportedBy(const Scope *askingScope) const;

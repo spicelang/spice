@@ -33,11 +33,16 @@ void TypeChecker::createDefaultCtorIfRequired(Struct &spiceStruct, Scope *struct
   bool hasFieldsToConstruct = false;
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    const SymbolType &thisType = fieldSymbol->getType();
+
+    // Abort if we have a field, that is a reference
+    if (thisType.isRef())
+      return;
+
     auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
     hasFieldsWithDefaultValue |= fieldNode->defaultValue() != nullptr;
     if (fieldSymbol->getType().is(TY_STRUCT)) {
       // Lookup ctor function
-      const SymbolType &thisType = fieldSymbol->getType();
       const Function *ctorFct = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, thisType, {}, true, node);
       hasFieldsToConstruct |= ctorFct != nullptr;
     }
