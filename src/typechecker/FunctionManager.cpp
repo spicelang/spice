@@ -124,7 +124,6 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  * @param matchScope Scope to match against
  * @param requestedName Function name requirement
  * @param requestedThisType This type requirement
- * @param templateTypeHints Template types to substantiate generic types
  * @param requestedParamTypes Argument types requirement
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @return Found function or nullptr
@@ -178,7 +177,6 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * @param matchScope Scope to match against
  * @param requestedName Function name requirement
  * @param requestedThisType This type requirement
- * @param templateTypeHints Template types to substantiate generic types
  * @param requestedParamTypes Argument types requirement
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @param callNode Call AST node for printing error messages

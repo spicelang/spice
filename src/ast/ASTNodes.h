@@ -954,7 +954,8 @@ public:
   std::vector<SymbolTableEntry *> entries;
   bool isParam = false;
   bool isForEachItem = false;
-  Function *defaultCtor = nullptr;
+  bool isCtorCallRequired = false; // For struct, in case there are reference fields, we need to call a user-defined ctor
+  Function *initCtor = nullptr;
 };
 
 // ======================================================= SpecifierLstNode ======================================================

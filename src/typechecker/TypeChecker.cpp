@@ -473,8 +473,13 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     if (localVarType.is(TY_STRUCT) && !node->isParam && !node->isForEachItem) {
       Scope *matchScope = localVarType.getBodyScope();
       assert(matchScope != nullptr);
+      // Check if we need to call a ctor
+      node->isCtorCallRequired = matchScope->hasRefFields();
+      // Check if we have a no-args ctor to call
       const std::string structName = localVarType.getOriginalSubType();
-      node->defaultCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, localVarType, {}, false, node);
+      node->initCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, localVarType, {}, false, node);
+      if (!node->initCtor && node->isCtorCallRequired)
+        SOFT_ERROR_ST(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
     }
   }
 

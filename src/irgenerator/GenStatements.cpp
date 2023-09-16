@@ -59,10 +59,11 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
     varAddress = insertAlloca(varTy);
     varEntry->updateAddress(varAddress);
 
-    if (node->defaultCtor) {
+    if (node->initCtor) {
       // Call default constructor
-      generateCtorOrDtorCall(varEntry, node->defaultCtor);
+      generateCtorOrDtorCall(varEntry, node->initCtor);
     } else if (!node->isForEachItem) {
+      assert(!node->isCtorCallRequired);
       // Retrieve default value for lhs symbol type and store it
       llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);
       builder.CreateStore(defaultValue, varAddress);

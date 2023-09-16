@@ -62,6 +62,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Struct with infinite size";
   case STRUCT_DECLARED_TWICE:
     return "Multiple declarations of a struct with the same name";
+  case MISSING_NO_ARGS_CTOR:
+    return "No matching ctor found";
   case INTERFACE_DECLARED_TWICE:
     return "Multiple declarations of an interface with the same name";
   case INTERFACE_METHOD_NOT_IMPLEMENTED:
