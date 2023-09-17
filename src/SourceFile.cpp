@@ -485,6 +485,10 @@ void SourceFile::runObjectEmitter() {
 }
 
 void SourceFile::concludeCompilation() {
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= FINISHED)
+    return;
+
   // Cache the source file
   if (!resourceManager.cliOptions.ignoreCache)
     resourceManager.cacheManager.cacheSourceFile(this);
@@ -499,6 +503,8 @@ void SourceFile::concludeCompilation() {
 
   if (resourceManager.cliOptions.printDebugOutput)
     tout.println("Finished compiling " + fileName);
+
+  previousStage = FINISHED;
 }
 
 void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
