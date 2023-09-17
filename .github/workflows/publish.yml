@@ -110,10 +110,14 @@ jobs:
         with:
           distro: ubuntu22.04
           arch: ${{ matrix.config.arch }}
-          shell: /bin/sh
+          githubToken: ${{ github.token }}
+          install: |
+            sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+            sudo apt update
+            sudo apt-get install -y cmake make ninja-build binutils
           run: |
             cd ./llvm/build
-            cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm
+            cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm
             cmake --build . -j$(nproc)
 
       - name: Download Libs
@@ -127,7 +131,11 @@ jobs:
         with:
           distro: ubuntu22.04
           arch: ${{ matrix.config.arch }}
-          shell: /bin/sh
+          githubToken: ${{ github.token }}
+          install: |
+            sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+            sudo apt update
+            sudo apt-get install -y cmake make ninja-build binutils valgrind uuid-dev pkg-config openjdk-11-jre-headless
           run: |
             cd ./bin
             cmake cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
