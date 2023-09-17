@@ -33,18 +33,14 @@ jobs:
           path: /home/runner/work/spice/spice/llvm
           key: llvm-17.0.0-rc4-linux-${{ matrix.arch }}
 
-      - name: Checkout LLVM
+      - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           git clone --depth 1 --branch llvmorg-17.0.0-rc4 https://github.com/llvm/llvm-project.git llvm
           mkdir ./llvm/build
-
-      - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        working-directory: llvm
-        run: |
-          ../dockcross cmake -Bbuild -H./llvm -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes
-          ../dockcross cmake --build ./build
+          cd ./llvm
+          ../dockcross bash -c "cd ./build && -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=\"-O2\" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm"
+          ../dockcross bash -c "cd ./build && cmake --build ."
 
       - name: Download Libs
         run: |
@@ -55,8 +51,8 @@ jobs:
         env:
           LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
         run: |
-          ./dockcross cmake -Bbin -H. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions"
-          ./dockcross cmake --build ./bin --target spice
+          ./dockcross bash -c "cd ./bin && cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE=\"-O2\" -DSPICE_VERSION=\"${{ github.ref_name }}\" -DSPICE_BUILT_BY=\"ghactions\""
+          ./dockcross bash -c "cd ./bin && cmake --build . --target spice"
 
       - name: Process build output
         working-directory: bin
