@@ -55,8 +55,8 @@ void ExternalLinkerInterface::link() const {
     linkerCommandBuilder << " " + objectFilePath;
 
   // Print status message
-  if (cliOptions.printDebugOutput)                                        // GCOV_EXCL_LINE
-    std::cout << "\nEmitting executable to path: " << outputPath << "\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput)                                                 // GCOV_EXCL_LINE
+    std::cout << "\nEmitting executable to path: " << outputPath.string() << "\n"; // GCOV_EXCL_LINE
 
   // Call the linker
   const std::string linkerCommand = linkerCommandBuilder.str();
@@ -69,6 +69,11 @@ void ExternalLinkerInterface::link() const {
   // Print linker result if appropriate
   if (cliOptions.printDebugOutput && !result.output.empty())  // GCOV_EXCL_LINE
     std::cout << "Linking result: " << result.output << "\n"; // GCOV_EXCL_LINE
+
+  // Delete object files if required
+  if (!cliOptions.dumpSettings.dumpObjectFile)
+    for (const std::string &objectFilePath : objectFilePaths)
+      std::filesystem::remove(objectFilePath);
 }
 
 /**

@@ -21,6 +21,11 @@ enum OptLevel : uint8_t {
   Oz = 5, // Aggressively optimize for code size
 };
 
+enum BuildMode : uint8_t {
+  DEBUG = 0,   // Default build mode, uses -O0 per default
+  RELEASE = 1, // Build without debug information and with -O2 per default
+};
+
 /**
  * Representation of the various cli options
  */
@@ -36,18 +41,22 @@ struct CliOptions {
   std::filesystem::path cacheDir;         // Where the cache files go. Should always be a temp directory
   std::filesystem::path outputDir = "./"; // Where the object files go. Should always be a temp directory
   std::filesystem::path outputPath;       // Where the output binary goes.
+  BuildMode buildMode = BuildMode::DEBUG; // Default build mode is debug
   unsigned short compileJobCount = 0;     // 0 for auto
   bool ignoreCache = false;
+  std::string llvmArgs;
   bool printDebugOutput = false;
   struct DumpSettings {
     bool dumpCST = false;
     bool dumpAST = false;
+    bool dumpSymbolTable = false;
     bool dumpIR = false;
     bool dumpAssembly = false;
-    bool dumpSymbolTables = false;
+    bool dumpObjectFile = false;
+    bool dumpToFiles = false;
   } dumpSettings;
   bool disableAstOpt = false;
-  OptLevel optLevel = O2;
+  OptLevel optLevel = OptLevel::O0; // Default optimization level for debug build mode is O0
   bool useLTO = false;
   bool noEntryFct = false;
   bool staticLinking = false;

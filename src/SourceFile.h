@@ -42,7 +42,8 @@ enum CompileStageType : uint8_t {
   TYPE_CHECKER_POST,
   IR_GENERATOR,
   IR_OPTIMIZER,
-  OBJECT_EMITTER
+  OBJECT_EMITTER,
+  FINISHED
 };
 
 enum CompileStageIOType { IO_CODE, IO_TOKENS, IO_CST, IO_AST, IO_IR, IO_OBJECT_FILE };
@@ -173,6 +174,7 @@ private:
   // Private methods
   bool haveAllDependantsBeenTypeChecked() const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
+  void dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const;
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
   void printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out, uint64_t stageRuntime,

@@ -144,8 +144,8 @@ std::any IRGenerator::visitContinueStmt(const ContinueStmtNode *node) {
 }
 
 std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
-  // Only generate assertions with -O0 or in test mode
-  if (cliOptions.optLevel != O0 && !cliOptions.testMode)
+  // Only generate assertions in debug build mode or in test mode
+  if (cliOptions.buildMode != BuildMode::DEBUG && !cliOptions.testMode)
     return nullptr;
 
   diGenerator.setSourceLocation(node);

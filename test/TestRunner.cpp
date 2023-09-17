@@ -42,20 +42,24 @@ void execTestCase(const TestCase &testCase) {
       /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
       /* execute= */ false,      // If we set this to 'true', the compiler will not emit object files
       /* cacheDir= */ "./cache",
-      /* outputDir= */ ".",
-      /* outputPath= */ ".",
+      /* outputDir= */ "./",
+      /* outputPath= */ "",
+      /* buildMode= */ BuildMode::DEBUG,
       /* compileJobCount= */ 0,
       /* ignoreCache */ true,
+      /* llvmArgs= */ "",
       /* printDebugOutput= */ false,
       CliOptions::DumpSettings{
           /* dumpCST= */ false,
           /* dumpAST= */ false,
+          /* dumpSymbolTables= */ false,
           /* dumpIR= */ false,
           /* dumpAssembly= */ false,
-          /* dumpSymbolTables= */ false,
+          /* dumpObjectFile= */ false,
+          /* dumpToFiles= */ false,
       },
       /* disableAstOpt= */ false,
-      /* optLevel= */ O0,
+      /* optLevel= */ OptLevel::O0,
       /* useLTO= */ std::filesystem::exists(testCase.testPath / CTL_LTO),
       /* noEntryFct= */ false,
       /* staticLinking= */ false,
@@ -149,7 +153,7 @@ void execTestCase(const TestCase &testCase) {
     }
 
     // Link the bitcode if not happened yet
-    if (cliOptions.useLTO && cliOptions.optLevel == O0)
+    if (cliOptions.useLTO && cliOptions.optLevel == OptLevel::O0)
       mainSourceFile->runBitcodeLinker();
 
     // Check assembly code

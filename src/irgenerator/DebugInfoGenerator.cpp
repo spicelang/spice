@@ -26,9 +26,9 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   absolutePath.make_preferred();
   sourceFileDir.make_preferred();
   llvm::DIFile *cuDiFile = diBuilder->createFile(absolutePath.string(), sourceFileDir.string());
-  compileUnit = diBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C17, cuDiFile, producerString,
-                                             irGenerator->cliOptions.optLevel > O0, "", 0, "", llvm::DICompileUnit::FullDebug, 0,
-                                             false, false, llvm::DICompileUnit::DebugNameTableKind::None);
+  compileUnit = diBuilder->createCompileUnit(
+      llvm::dwarf::DW_LANG_C17, cuDiFile, producerString, irGenerator->cliOptions.optLevel > OptLevel::O0, "", 0, "",
+      llvm::DICompileUnit::FullDebug, 0, false, false, llvm::DICompileUnit::DebugNameTableKind::None);
 
   module->addModuleFlag(llvm::Module::Max, "Dwarf Version", llvm::dwarf::DWARF_VERSION);
   module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);

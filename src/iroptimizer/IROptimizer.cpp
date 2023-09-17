@@ -22,7 +22,7 @@ void IROptimizer::prepare() {
 }
 
 void IROptimizer::optimizeDefault() {
-  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR)
+  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR && !cliOptions.dumpSettings.dumpToFiles)
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " ...\n"; // GCOV_EXCL_LINE
 
   // Run passes
@@ -33,8 +33,8 @@ void IROptimizer::optimizeDefault() {
 }
 
 void IROptimizer::optimizePreLink() {
-  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR)                                    // GCOV_EXCL_LINE
-    std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (pre-link) ...\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR && !cliOptions.dumpSettings.dumpToFiles) // GCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (pre-link) ...\n";      // GCOV_EXCL_LINE
 
   // Run passes
   llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
@@ -48,8 +48,8 @@ void IROptimizer::optimizePreLink() {
 }
 
 void IROptimizer::optimizePostLink(llvm::Module &ltoModule) {
-  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR)                                     // GCOV_EXCL_LINE
-    std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (post-link) ...\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR && !cliOptions.dumpSettings.dumpToFiles) // GCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (post-link) ...\n";     // GCOV_EXCL_LINE
 
   // Compute module summary index
   llvm::ModuleSummaryIndexAnalysis moduleSummaryIndexAnalysis;
@@ -75,15 +75,15 @@ std::string IROptimizer::getOptimizedIRString(llvm::Module *module) const {
 
 llvm::OptimizationLevel IROptimizer::getLLVMOptLevelFromSpiceOptLevel() const {
   switch (cliOptions.optLevel) {
-  case O1:
+  case OptLevel::O1:
     return llvm::OptimizationLevel::O1;
-  case O2:
+  case OptLevel::O2:
     return llvm::OptimizationLevel::O2;
-  case O3:
+  case OptLevel::O3:
     return llvm::OptimizationLevel::O3;
-  case Os:
+  case OptLevel::Os:
     return llvm::OptimizationLevel::Os;
-  case Oz:
+  case OptLevel::Oz:
     return llvm::OptimizationLevel::Oz;
   default:
     return llvm::OptimizationLevel::O0;

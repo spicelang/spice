@@ -27,10 +27,13 @@ You can apply following options to the `build` command:
 | `-symtab`    | `--dump-symtab`      | Dump serialized symbol tables                                                                                   |
 | `-ir`        | `--dump-ir`          | Dump LLVM-IR                                                                                                    |
 | `-s`, `-asm` | `--dump-assembly`    | Dump Assembly code                                                                                              |
+| `-b`, `-obj` | `--dump-object-file` | Dump object files                                                                                               |
+| -            | `--dump-to-files`    | Redirect all dumps to files instead of printing them to the screen                                              |
 | `-j <n>`     | `--jobs <n>`         | Set number of jobs to parallelize compilation (default is auto)                                                 |
 | `-t`         | `--target`           | Target triple for the emitted executable (for cross-compiling). <br> Format: `<arch><sub>-<vendor>-<sys>-<abi>` |
 | `-o`         | `--output`           | Set path for executable output.                                                                                 |
 | `-O<n>`      | -                    | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz`                            |
+| `-m`         | `--build-mode`       | Controls the build mode. Valid values are `debug` and `release`                                                 |
 | `-lto`       | -                    | Enable link-time-optimization                                                                                   |
 | `-g`         | `--debug-info`       | Generate debug info to debug the executable in GDB, etc.                                                        |
 | -            | `--static`           | Produce stand-alone executable by linking statically                                                            |

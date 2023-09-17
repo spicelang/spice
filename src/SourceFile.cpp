@@ -113,12 +113,10 @@ void SourceFile::runCSTVisualizer() {
   dotCode << std::any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry())) << "}";
   antlrCtx.parser->reset();
 
-  // If this is the root source file, output the serialized string and the SVG file
-  if (parent == nullptr) {
-    compilerOutput.cstString = dotCode.str();
-    if (resourceManager.cliOptions.dumpSettings.dumpCST)
-      visualizerOutput("CST", compilerOutput.cstString);
-  }
+  // Dump the serialized CST string and the SVG file
+  compilerOutput.cstString = dotCode.str();
+  if (resourceManager.cliOptions.dumpSettings.dumpCST)
+    visualizerOutput("CST", compilerOutput.cstString);
 
   previousStage = CST_VISUALIZER;
   timer.stop();
@@ -179,12 +177,10 @@ void SourceFile::runASTVisualizer() {
   ASTVisualizer astVisualizer(resourceManager, this, ast);
   dotCode << std::any_cast<std::string>(astVisualizer.visit(ast)) << "}";
 
-  // If this is the root source file, output the serialized string and the SVG file
-  if (parent == nullptr) {
-    compilerOutput.astString = dotCode.str();
-    if (resourceManager.cliOptions.dumpSettings.dumpAST)
-      visualizerOutput("AST", compilerOutput.astString);
-  }
+  // Dump the serialized AST string and the SVG file
+  compilerOutput.astString = dotCode.str();
+  if (resourceManager.cliOptions.dumpSettings.dumpAST)
+    visualizerOutput("AST", compilerOutput.astString);
 
   previousStage = AST_VISUALIZER;
   timer.stop();
@@ -307,10 +303,8 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   compilerOutput.symbolTableString = globalScope->getSymbolTableJSON().dump(/*indent=*/2);
 
   // Dump symbol table
-  if (resourceManager.cliOptions.dumpSettings.dumpSymbolTables) { // GCOV_EXCL_START
-    std::cout << "\nSymbol table of file " << filePath << ":\n\n";
-    std::cout << compilerOutput.symbolTableString << "\n\n";
-  } // GCOV_EXCL_STOP
+  if (resourceManager.cliOptions.dumpSettings.dumpSymbolTable)
+    dumpOutput(compilerOutput.symbolTableString, "Symbol Table", "symbol-table.json");
 }
 
 void SourceFile::runIRGenerator() {
@@ -332,8 +326,8 @@ void SourceFile::runIRGenerator() {
   compilerOutput.irString = irGenerator.getIRString();
 
   // Dump unoptimized IR code
-  if (resourceManager.cliOptions.dumpSettings.dumpIR)                     // GCOV_EXCL_LINE
-    tout.println("\nUnoptimized IR code:\n" + irGenerator.getIRString()); // GCOV_EXCL_LINE
+  if (resourceManager.cliOptions.dumpSettings.dumpIR)
+    dumpOutput(compilerOutput.irString, "Unoptimized IR Code", "ir-code.ll");
 
   previousStage = IR_GENERATOR;
   timer.stop();
@@ -348,7 +342,8 @@ void SourceFile::runDefaultIROptimizer() {
     return;
 
   // Skip this stage if optimization is disabled
-  if (resourceManager.cliOptions.optLevel < O1 || resourceManager.cliOptions.optLevel > Oz)
+  OptLevel optLevel = resourceManager.cliOptions.optLevel;
+  if (optLevel < OptLevel::O1 || optLevel > OptLevel::Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);
@@ -363,8 +358,8 @@ void SourceFile::runDefaultIROptimizer() {
   compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
 
   // Dump optimized IR code
-  if (resourceManager.cliOptions.dumpSettings.dumpIR)                            // GCOV_EXCL_LINE
-    tout.println("\nOptimized IR code:\n" + irOptimizer.getOptimizedIRString()); // GCOV_EXCL_LINE
+  if (resourceManager.cliOptions.dumpSettings.dumpIR)
+    dumpOutput(compilerOutput.irOptString, "Optimized IR Code", "ir-code-O" + std::to_string(optLevel) + ".ll");
 
   previousStage = IR_OPTIMIZER;
   timer.stop();
@@ -379,7 +374,7 @@ void SourceFile::runPreLinkIROptimizer() {
     return;
 
   // Skip this stage if optimization is disabled
-  if (resourceManager.cliOptions.optLevel < O1 || resourceManager.cliOptions.optLevel > Oz)
+  if (resourceManager.cliOptions.optLevel < OptLevel::O1 || resourceManager.cliOptions.optLevel > OptLevel::Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);
@@ -394,8 +389,8 @@ void SourceFile::runPreLinkIROptimizer() {
   compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
 
   // Dump optimized IR code
-  if (resourceManager.cliOptions.dumpSettings.dumpIR)                            // GCOV_EXCL_LINE
-    tout.println("\nOptimized IR code:\n" + irOptimizer.getOptimizedIRString()); // GCOV_EXCL_LINE
+  if (resourceManager.cliOptions.dumpSettings.dumpIR)
+    dumpOutput(compilerOutput.irOptString, "Optimized IR Code (pre-link)", "ir-code-lto-pre-link.ll");
 
   timer.pause();
 }
@@ -433,7 +428,7 @@ void SourceFile::runPostLinkIROptimizer() {
     return;
 
   // Skip this stage if optimization is disabled
-  if (resourceManager.cliOptions.optLevel < O1 || resourceManager.cliOptions.optLevel > Oz)
+  if (resourceManager.cliOptions.optLevel < OptLevel::O1 || resourceManager.cliOptions.optLevel > OptLevel::Oz)
     return;
 
   Timer timer(&compilerOutput.times.irOptimizer);
@@ -449,8 +444,8 @@ void SourceFile::runPostLinkIROptimizer() {
   compilerOutput.irOptString = irOptimizer.getOptimizedIRString(module);
 
   // Dump optimized IR code
-  if (resourceManager.cliOptions.dumpSettings.dumpIR)                                              // GCOV_EXCL_LINE
-    tout.println("\nOptimized IR code (post-link):\n" + irOptimizer.getOptimizedIRString(module)); // GCOV_EXCL_LINE
+  if (resourceManager.cliOptions.dumpSettings.dumpIR)
+    dumpOutput(compilerOutput.irOptString, "Optimized IR Code (post-Link)", "ir-code-lto-post-link.ll");
 
   previousStage = IR_OPTIMIZER;
   timer.stop();
@@ -478,10 +473,8 @@ void SourceFile::runObjectEmitter() {
     objectEmitter.getASMString(compilerOutput.asmString);
 
   // Dump assembly code
-  if (resourceManager.cliOptions.dumpSettings.dumpAssembly) { // GCOV_EXCL_START
-    tout.println("\nAssembly code:\n");
-    objectEmitter.dumpAsm();
-  } // GCOV_EXCL_STOP
+  if (resourceManager.cliOptions.dumpSettings.dumpAssembly)
+    dumpOutput(compilerOutput.asmString, "Assembly code", "assembly-code.s");
 
   // Add object file to linker objects
   resourceManager.linker.addObjectFilePath(objectFilePath.string());
@@ -492,6 +485,10 @@ void SourceFile::runObjectEmitter() {
 }
 
 void SourceFile::concludeCompilation() {
+  // Skip if restored from cache or this stage has already been done
+  if (restoredFromCache || previousStage >= FINISHED)
+    return;
+
   // Cache the source file
   if (!resourceManager.cliOptions.ignoreCache)
     resourceManager.cacheManager.cacheSourceFile(this);
@@ -506,6 +503,8 @@ void SourceFile::concludeCompilation() {
 
   if (resourceManager.cliOptions.printDebugOutput)
     tout.println("Finished compiling " + fileName);
+
+  previousStage = FINISHED;
 }
 
 void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
@@ -666,6 +665,19 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
   }
 }
 
+void SourceFile::dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const {
+  if (resourceManager.cliOptions.dumpSettings.dumpToFiles) {
+    // Dump to file
+    const std::string dumpFileName = filePath.stem().string() + "-" + fileSuffix;
+    std::filesystem::path filePath = resourceManager.cliOptions.outputDir / dumpFileName;
+    filePath.make_preferred();
+    FileUtil::writeToFile(filePath, content);
+  } else {
+    // Dump to console
+    tout.println("\n" + caption + ":\n" + content);
+  }
+}
+
 void SourceFile::visualizerPreamble(std::stringstream &output) const {
   if (parent == nullptr)
     output << "digraph {\n rankdir=\"TB\";\n";
@@ -675,29 +687,33 @@ void SourceFile::visualizerPreamble(std::stringstream &output) const {
 }
 
 void SourceFile::visualizerOutput(std::string outputName, const std::string &output) const {
-  // Dump to console
-  std::cout << "\nSerialized " << outputName << ":\n\n" << output << "\n";
+  if (resourceManager.cliOptions.dumpSettings.dumpToFiles) {
+    // Check if the dot command exists
+    // GCOV_EXCL_START
+    if (FileUtil::isCommandAvailable("dot"))
+      throw CompilerError(IO_ERROR, "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable");
+    // GCOV_EXCL_STOP
 
-  // Check if the dot command exists
-  // GCOV_EXCL_START
-  if (FileUtil::isCommandAvailable("dot"))
-    throw CompilerError(IO_ERROR, "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable");
-  // GCOV_EXCL_STOP
+    // Write to dot file
+    std::transform(outputName.begin(), outputName.end(), outputName.begin(), ::tolower);
+    dumpOutput(output, outputName, outputName + ".dot");
 
-  // Prepare file paths
-  std::transform(outputName.begin(), outputName.end(), outputName.begin(), ::tolower);
-  std::filesystem::path dotFilePath = resourceManager.cliOptions.outputDir / outputName;
-  dotFilePath.replace_extension("dot");
-  dotFilePath.make_preferred();
-  std::filesystem::path svgFilePath = resourceManager.cliOptions.outputDir / outputName;
-  svgFilePath.replace_extension("svg");
-  svgFilePath.make_preferred();
-
-  // Generate SVG
-  std::cout << "\nGenerating SVG file ... ";
-  FileUtil::writeToFile(dotFilePath.string(), output);
-  FileUtil::exec("dot -Tsvg -o" + svgFilePath.string() + " " + dotFilePath.string());
-  std::cout << "done.\nSVG file can be found at: " << svgFilePath << "\n";
+    // Generate SVG. This only works if the dot code was dumped into a file
+    if (resourceManager.cliOptions.dumpSettings.dumpToFiles) {
+      std::cout << "\nGenerating SVG file ... ";
+      const std::string dotFileName = filePath.stem().string() + "-" + outputName + ".dot";
+      std::filesystem::path dotFilePath = resourceManager.cliOptions.outputDir / dotFileName;
+      std::filesystem::path svgFilePath = dotFilePath;
+      svgFilePath.replace_extension("svg");
+      dotFilePath.make_preferred();
+      svgFilePath.make_preferred();
+      FileUtil::exec("dot -Tsvg -o" + svgFilePath.string() + " " + dotFilePath.string());
+      std::cout << "done.\nSVG file can be found at: " << svgFilePath << "\n";
+    }
+  } else {
+    // Dump to console
+    std::cout << "\nSerialized " << outputName << ":\n\n" << output << "\n";
+  }
 }
 
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,
