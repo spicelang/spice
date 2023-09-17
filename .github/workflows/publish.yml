@@ -114,7 +114,7 @@ jobs:
           shell: /bin/sh
           install: |
             apt update
-            apt-get install software-properties-common
+            apt-get install -q -y software-properties-common
             add-apt-repository -q -y ppa:ubuntu-toolchain-r/test
             apt-get install -q -y cmake make ninja-build binutils
           run: |
@@ -137,7 +137,7 @@ jobs:
           shell: /bin/sh
           install: |
             apt update
-            apt-get install software-properties-common
+            apt-get install -q -y software-properties-common
             add-apt-repository -q -y ppa:ubuntu-toolchain-r/test
             apt-get install -q -y cmake make ninja-build binutils valgrind uuid-dev pkg-config openjdk-11-jre-headless
           run: |
