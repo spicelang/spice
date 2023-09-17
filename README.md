@@ -72,7 +72,8 @@ You can find the build output in the `bin` subdirectory.
 The Spice grammar can be found [here](./src/Spice.g4) as a ANTLR grammar configuration file.
 
 ## Available target platforms
-Currently, Spice only offers stable support for x86_64/windows and x86_64/linux. But you can try to compile to the following architectures without any stability promises:
+Currently, Spice only offers stable support for linux/x86_64, linux/aarch64 and windows/x86_64.
+But you can try to compile to the following architectures without any stability promises:
 
 - `aarch64`
 - `amdgpu`
