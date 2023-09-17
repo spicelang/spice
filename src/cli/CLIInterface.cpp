@@ -7,6 +7,8 @@
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
 
+#include "../../lib/cli11/CLI11.hpp"
+
 #include <llvm/Support/CommandLine.h>
 #include <llvm/TargetParser/Host.h>
 #include <llvm/TargetParser/Triple.h>
@@ -292,9 +294,11 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
   subCmd->add_flag<bool>("--dump-to-files", cliOptions.dumpSettings.dumpToFiles, "Redirect dumps to files instead of printing");
 
   // Source file
-  subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
-      ->check(CLI::ExistingFile)
-      ->required();
+  std::function<bool(const CLI::results_t &)> setMainSourceFile = [&](const CLI::results_t &results) {
+    cliOptions.mainSourceFile = std::filesystem::path(results.front()).make_preferred();
+    return true;
+  };
+  subCmd->add_option("<main-source-file>", setMainSourceFile, "Main source file")->check(CLI::ExistingFile)->required();
 }
 
 /**

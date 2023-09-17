@@ -1251,6 +1251,7 @@ int32_t ASTBuilder::parseInt(ConstantNode *constantNode, TerminalNode *terminal)
   };
   return parseNumeric(constantNode, terminal, cb);
 }
+
 int16_t ASTBuilder::parseShort(ConstantNode *constantNode, TerminalNode *terminal) {
   std::function<int16_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
     return (int16_t)std::stoi(substr, nullptr, base);
