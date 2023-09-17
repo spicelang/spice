@@ -44,7 +44,7 @@ jobs:
         working-directory: llvm
         run: |
           ../dockcross cmake -Bbuild -H./llvm -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes
-          ../dockcross ninja -Cbuild
+          ../dockcross cmake --build ./build
 
       - name: Download Libs
         run: |
@@ -56,7 +56,7 @@ jobs:
           LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
         run: |
           ./dockcross cmake -Bbin -H. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions"
-          ./dockcross cmake -Bbin --build . --target spice
+          ./dockcross cmake --build ./bin --target spice
 
       - name: Process build output
         working-directory: bin
