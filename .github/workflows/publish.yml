@@ -33,13 +33,18 @@ jobs:
           path: /home/runner/work/spice/spice/llvm
           key: llvm-17.0.0-rc4-linux-${{ matrix.arch }}
 
-      - name: Setup LLVM
+      - name: Checkout LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           git clone --depth 1 --branch llvmorg-17.0.0-rc4 https://github.com/llvm/llvm-project.git llvm
           mkdir ./llvm/build
-          ./dockcross cmake -Bllvm/build -H./llvm -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes
-          ./dockcross ninja -Cllvm/build
+
+      - name: Build LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        working-directory: llvm
+        run: |
+          ./dockcross cmake -Bbuild -H. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes
+          ./dockcross ninja -Cuild
 
       - name: Download Libs
         run: |
@@ -47,7 +52,6 @@ jobs:
           ./setup-libs.sh
 
       - name: Configure & compile project
-        working-directory: bin
         env:
           LLVM_DIR: /home/runner/work/spice/spice/llvm/build/lib/cmake/llvm
         run: |
