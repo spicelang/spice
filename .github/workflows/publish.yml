@@ -116,7 +116,7 @@ jobs:
             apt update
             apt-get install -q -y software-properties-common
             add-apt-repository -y ppa:ubuntu-toolchain-r/test
-            apt-get install -q -y cmake make ninja-build binutils
+            apt-get install -q -y cmake make ninja-build binutils gcc-13 g++-13
           run: |
             cd ./llvm/build
             cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm
@@ -139,7 +139,7 @@ jobs:
             apt update
             apt-get install -q -y software-properties-common
             add-apt-repository -y ppa:ubuntu-toolchain-r/test
-            apt-get install -q -y cmake make ninja-build binutils valgrind uuid-dev pkg-config openjdk-11-jre-headless
+            apt-get install -q -y cmake make ninja-build binutils gcc-13 g++-13 valgrind uuid-dev pkg-config openjdk-11-jre-headless
           run: |
             cd ./bin
             cmake cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
