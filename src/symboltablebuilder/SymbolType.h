@@ -104,6 +104,7 @@ public:
   // Public methods
   [[nodiscard]] SymbolType toPointer(const ASTNode *node) const;
   [[nodiscard]] SymbolType toReference(const ASTNode *node) const;
+  [[nodiscard]] SymbolType toConstReference(const ASTNode *node) const;
   [[nodiscard]] SymbolType toArray(const ASTNode *node, size_t size = 0, bool skipDynCheck = false) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;

@@ -138,10 +138,11 @@ private:
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
   void generateScopeCleanup(const StmtLstNode *node) const;
-  void generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor) const;
+  void generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor, std::vector<llvm::Value *> args) const;
   void generateDeallocCall(llvm::Value *variableAddress) const;
   llvm::Function *generateImplicitProcedure(const std::function<void()> &generateBody, const Function *spiceFunc);
   void generateDefaultDefaultCtor(const Function *ctorFunction);
+  void generateDefaultDefaultCopyCtor(const Function *copyCtorFunction);
   void generateDefaultDefaultDtor(const Function *dtorFunction);
 
   // Private members

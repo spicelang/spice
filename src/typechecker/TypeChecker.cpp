@@ -450,15 +450,27 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       rhsTy = localVarType;
 
     // Check if type has to be inferred or both types are fixed
-    if (localVarType.is(TY_UNRESOLVED) || rhsTy.is(TY_UNRESOLVED))
-      localVarType = SymbolType(TY_UNRESOLVED);
-    else
+    if (!localVarType.is(TY_UNRESOLVED) && !rhsTy.is(TY_UNRESOLVED)) {
       localVarType = opRuleManager.getAssignResultType(node, localVarType, rhsTy, 0, true);
 
-    // If this is a struct type, check if the type is known. If not, error out
-    if (localVarType.isBaseType(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBaseType().getSubType())) {
-      const std::string structName = localVarType.getBaseType().getOriginalSubType();
-      softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
+      // Call copy ctor if required
+      if (localVarType.is(TY_STRUCT) && !node->isParam) {
+        Scope *matchScope = localVarType.getBodyScope();
+        assert(matchScope != nullptr);
+        // Check if we have a no-args ctor to call
+        const std::string structName = localVarType.getOriginalSubType();
+        const SymbolType &thisType = localVarType;
+        const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
+        node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, paramTypes, false, node);
+      }
+
+      // If this is a struct type, check if the type is known. If not, error out
+      if (localVarType.isBaseType(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBaseType().getSubType())) {
+        const std::string structName = localVarType.getBaseType().getOriginalSubType();
+        softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
+        localVarType = SymbolType(TY_UNRESOLVED);
+      }
+    } else {
       localVarType = SymbolType(TY_UNRESOLVED);
     }
   } else {
@@ -477,8 +489,9 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       node->isCtorCallRequired = matchScope->hasRefFields();
       // Check if we have a no-args ctor to call
       const std::string structName = localVarType.getOriginalSubType();
-      node->initCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, localVarType, {}, false, node);
-      if (!node->initCtor && node->isCtorCallRequired)
+      const SymbolType &thisType = localVarType;
+      node->calledInitCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, {}, false, node);
+      if (!node->calledInitCtor && node->isCtorCallRequired)
         SOFT_ERROR_ST(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
     }
   }

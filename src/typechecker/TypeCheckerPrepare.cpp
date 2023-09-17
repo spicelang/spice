@@ -388,6 +388,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Check if we need a default ctor/dtor, etc.
   createDefaultCtorIfRequired(spiceStruct, node->structScope);
+  createDefaultCopyCtorIfRequired(spiceStruct, node->structScope);
   createDefaultDtorIfRequired(spiceStruct, node->structScope);
 
   return nullptr;

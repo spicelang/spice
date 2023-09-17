@@ -50,18 +50,26 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   // Check if the declaration is with an assignment or the default value
   llvm::Value *varAddress = nullptr;
   if (node->hasAssignment && !rhsIsDynArray) { // Assignment
-    LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
-    assert(assignResult.entry == varEntry);
-    varAddress = varEntry->getAddress();
-    varEntry->updateAddress(varAddress);
+    if (node->calledCopyCtor) {
+      // Call copy ctor
+      llvm::Value *rhsAddress = resolveAddress(node->assignExpr());
+      assert(rhsAddress != nullptr);
+      generateCtorOrDtorCall(varEntry, node->calledCopyCtor, {rhsAddress});
+    } else {
+      // Assign rhs to lhs
+      LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
+      assert(assignResult.entry == varEntry);
+      varAddress = varEntry->getAddress();
+      varEntry->updateAddress(varAddress);
+    }
   } else { // Default value
     // Allocate memory
     varAddress = insertAlloca(varTy);
     varEntry->updateAddress(varAddress);
 
-    if (node->initCtor) {
-      // Call default constructor
-      generateCtorOrDtorCall(varEntry, node->initCtor);
+    if (node->calledInitCtor) {
+      // Call no-args constructor
+      generateCtorOrDtorCall(varEntry, node->calledInitCtor, {});
     } else if (!node->isForEachItem) {
       assert(!node->isCtorCallRequired);
       // Retrieve default value for lhs symbol type and store it

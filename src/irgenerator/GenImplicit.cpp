@@ -45,10 +45,11 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
 
   // Call all dtor functions
   for (auto [entry, dtor] : node->dtorFunctions.at(manIdx))
-    generateCtorOrDtorCall(entry, dtor);
+    generateCtorOrDtorCall(entry, dtor, {});
 }
 
-void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor) const {
+void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor,
+                                         std::vector<llvm::Value *> args) const {
   assert(ctorOrDtor != nullptr);
 
   // Retrieve metadata for the function
@@ -56,7 +57,10 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
 
   // Function is not defined in the current module -> declare it
   if (!module->getFunction(mangledName)) {
-    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), builder.getPtrTy(), false);
+    std::vector<llvm::Type *> paramTypes = {builder.getPtrTy()};
+    for (llvm::Value *argValue : args)
+      paramTypes.push_back(argValue->getType());
+    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
     module->getOrInsertFunction(mangledName, fctType);
   }
 
@@ -80,8 +84,12 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
   }
   assert(structPtr != nullptr);
 
+  // Build parameter list
+  std::vector<llvm::Value *> argValues = {structPtr};
+  argValues.insert(argValues.end(), argValues.begin(), argValues.end());
+
   // Generate function call
-  builder.CreateCall(callee, structPtr);
+  builder.CreateCall(callee, argValues);
 }
 
 void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
@@ -201,18 +209,16 @@ void IRGenerator::generateDefaultDefaultCtor(const Function *ctorFunction) {
 
       // Call ctor for struct fields
       if (fieldType.is(TY_STRUCT)) {
-        // Lookup ctor function
+        // Lookup ctor function and call if available
         Scope *matchScope = fieldType.getBodyScope();
         const Function *ctorFunction = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false);
-
-        // Generate call to ctor
         if (ctorFunction)
-          generateCtorOrDtorCall(fieldSymbol, ctorFunction);
+          generateCtorOrDtorCall(fieldSymbol, ctorFunction, {});
 
         continue;
       }
 
-      // Deallocate fields, that are stored on the heap
+      // Store default field values
       if (fieldNode->defaultValue() != nullptr) {
         assert(fieldNode->defaultValue()->hasCompileTimeValue());
         // Retrieve field address
@@ -228,6 +234,37 @@ void IRGenerator::generateDefaultDefaultCtor(const Function *ctorFunction) {
     }
   };
   generateImplicitProcedure(generateBody, ctorFunction);
+}
+
+void IRGenerator::generateDefaultDefaultCopyCtor(const Function *copyCtorFunction) {
+  assert(copyCtorFunction->implicitDefault && copyCtorFunction->name == CTOR_FUNCTION_NAME);
+
+  const std::function<void()> generateBody = [&]() {
+    // Retrieve struct scope
+    Scope *structScope = copyCtorFunction->bodyScope->parent;
+    assert(structScope != nullptr);
+
+    const size_t fieldCount = structScope->getFieldCount();
+    for (size_t i = 0; i < fieldCount; i++) {
+      SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+      assert(fieldSymbol != nullptr && fieldSymbol->isField());
+      const SymbolType &fieldType = fieldSymbol->getType();
+
+      // Call copy ctor for struct fields
+      if (fieldType.is(TY_STRUCT)) {
+        // Lookup copy ctor function and call if available
+        Scope *matchScope = fieldType.getBodyScope();
+        std::vector<SymbolType> paramTypes = {fieldType.toConstReference(nullptr)};
+        const Function *ctorFct = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, paramTypes, false);
+        if (ctorFct) {
+          llvm::Value *fieldAddress = fieldSymbol->getAddress();
+          assert(fieldAddress != nullptr);
+          generateCtorOrDtorCall(fieldSymbol, ctorFct, {fieldAddress});
+        }
+      }
+    }
+  };
+  generateImplicitProcedure(generateBody, copyCtorFunction);
 }
 
 void IRGenerator::generateDefaultDefaultDtor(const Function *dtorFunction) {
@@ -260,7 +297,7 @@ void IRGenerator::generateDefaultDefaultDtor(const Function *dtorFunction) {
 
         // Generate call to dtor
         if (dtorFunction)
-          generateCtorOrDtorCall(fieldSymbol, dtorFunction);
+          generateCtorOrDtorCall(fieldSymbol, dtorFunction, {});
 
         continue;
       }

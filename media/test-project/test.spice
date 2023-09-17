@@ -1,4 +1,8 @@
-type Inner struct {
+import "std/type/int" as unused;
+
+f<int> main() {}
+
+/*type Inner struct {
     int i = 123
 }
 
@@ -6,9 +10,13 @@ type Outer struct {
     Inner i
 }
 
+p Inner.ctor(const Inner& other) {
+   printf("Inner copy ctor\n");
+}
+
 f<int> main() {
     Outer o;
     printf("%d\n", o.i.i);
     Outer o1 = o;
     printf("%d, %d\n", o.i.i, o1.i.i);
-}
+}*/

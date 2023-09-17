@@ -955,7 +955,8 @@ public:
   bool isParam = false;
   bool isForEachItem = false;
   bool isCtorCallRequired = false; // For struct, in case there are reference fields, we need to call a user-defined ctor
-  Function *initCtor = nullptr;
+  Function *calledInitCtor = nullptr;
+  Function *calledCopyCtor = nullptr;
 };
 
 // ======================================================= SpecifierLstNode ======================================================
