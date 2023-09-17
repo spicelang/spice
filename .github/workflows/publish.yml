@@ -113,8 +113,9 @@ jobs:
           githubToken: ${{ github.token }}
           shell: /bin/sh
           install: |
-            add-apt-repository -q -y ppa:ubuntu-toolchain-r/test
             apt update
+            apt-get install software-properties-common
+            add-apt-repository -q -y ppa:ubuntu-toolchain-r/test
             apt-get install -q -y cmake make ninja-build binutils
           run: |
             cd ./llvm/build
@@ -135,8 +136,9 @@ jobs:
           githubToken: ${{ github.token }}
           shell: /bin/sh
           install: |
-            add-apt-repository -q -y ppa:ubuntu-toolchain-r/test
             apt update
+            apt-get install software-properties-common
+            add-apt-repository -q -y ppa:ubuntu-toolchain-r/test
             apt-get install -q -y cmake make ninja-build binutils valgrind uuid-dev pkg-config openjdk-11-jre-headless
           run: |
             cd ./bin
