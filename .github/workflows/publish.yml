@@ -221,8 +221,7 @@ jobs:
       matrix:
         arch:
           - amd64
-          #- 386
-          #- arm64
+          - arm64
     steps:
       - name: Download dist output
         uses: actions/download-artifact@v3
