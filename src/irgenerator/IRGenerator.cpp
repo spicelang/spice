@@ -329,7 +329,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
                                          const SymbolType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
-  const bool isRhsTemporary = rhs.entry == nullptr && rhs.ptr == nullptr && rhs.refPtr == nullptr;
+  const bool isRhsTemporary = rhs.entry == nullptr;
   const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !isRhsTemporary;
 
   if (isRefAssign) {
@@ -377,9 +377,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     return LLVMExprResult{.ptr = newAddress, .entry = lhsEntry};
   }
 
-  if (isDecl && rhsSType.is(TY_STRUCT)) {
-    materializeConstant(rhs);
-
+  if (isDecl && rhsSType.is(TY_STRUCT) && isRhsTemporary) {
     // Directly set the address to the lhs entry
     llvm::Value *rhsAddress = resolveAddress(rhs);
     lhsEntry->updateAddress(rhsAddress);

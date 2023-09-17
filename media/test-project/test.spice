@@ -1,37 +1,14 @@
-import "std/io/cli-parser";
-import "std/io/cli-subcommand";
-
-type CliOptions struct {
-    string greetName = ""
+type Inner struct {
+    int i = 123
 }
 
-p callback(bool& value) {
-    printf("Callback called with value %d\n", value);
-}
-
-f<int> main(int argc, string[] argv) {
-    CliParser parser = CliParser("Test Program", "This is a simple test program");
-    parser.setVersion("v0.1.0");
-    parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
-
-    CliOptions options;
-    CliSubcommand& greet = parser.addSubcommand("greet", "Greet someone");
-    greet.addOption("--name", options.greetName, "Name of the person to greet");
-
-    parser.parse(argc, argv);
-
-    // Greet persion if requested
-    if options.greetName != "" {
-        printf("Hello %s!\n", options.greetName);
-    }
-}
-
-/*type TestStruct struct {
-    int a = 123
-    short b = 1s
+type Outer struct {
+    Inner i
 }
 
 f<int> main() {
-    TestStruct ts;
-    printf("%d %d\n", ts.a, ts.b);
-}*/
+    Outer o;
+    printf("%d\n", o.i.i);
+    Outer o1 = o;
+    printf("%d, %d\n", o.i.i, o1.i.i);
+}

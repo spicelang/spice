@@ -67,25 +67,22 @@ define dso_local i32 @main() #0 {
   %4 = load ptr, ptr %field2_addr, align 8
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3, ptr %4)
   call void @_ZN6Vector4ctorEPc(ptr %1, ptr @anon.string.2)
-  call void @llvm.memcpy.p0.p0.i64(ptr %vec, ptr %1, i64 16, i1 false)
+  %6 = load %struct.Vector, ptr %1, align 8
+  store %struct.Vector %6, ptr %vec, align 8
   %field1_addr1 = getelementptr inbounds %struct.Vector, ptr %vec, i32 0, i32 0
-  %6 = load i1, ptr %field1_addr1, align 1
-  %7 = zext i1 %6 to i32
+  %7 = load i1, ptr %field1_addr1, align 1
+  %8 = zext i1 %7 to i32
   %field2_addr2 = getelementptr inbounds %struct.Vector, ptr %vec, i32 0, i32 1
-  %8 = load ptr, ptr %field2_addr2, align 8
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %7, ptr %8)
-  %10 = call ptr @_ZN6Vector4testEv(ptr %vec)
-  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %10)
-  %12 = load i32, ptr %result, align 4
-  ret i32 %12
+  %9 = load ptr, ptr %field2_addr2, align 8
+  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %8, ptr %9)
+  %11 = call ptr @_ZN6Vector4testEv(ptr %vec)
+  %12 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %11)
+  %13 = load i32, ptr %result, align 4
+  ret i32 %13
 }
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
-
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
-attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

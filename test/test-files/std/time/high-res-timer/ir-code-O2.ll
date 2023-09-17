@@ -33,8 +33,8 @@ define dso_local i32 @main() local_unnamed_addr #1 {
   %t = alloca %struct.Timer, align 8
   %duration = alloca i64, align 8
   %1 = alloca %struct.Timer, align 8
-  call void @_ZN5Timer4ctorEv(ptr nonnull %t) #4
-  %2 = call i64 @_ZN5Timer11getDurationEv(ptr nonnull %t) #4
+  call void @_ZN5Timer4ctorEv(ptr nonnull %t) #3
+  %2 = call i64 @_ZN5Timer11getDurationEv(ptr nonnull %t) #3
   %3 = icmp eq i64 %2, 0
   br i1 %3, label %assert.exit.L12, label %assert.then.L12, !prof !0
 
@@ -44,11 +44,11 @@ assert.then.L12:                                  ; preds = %0
   unreachable
 
 assert.exit.L12:                                  ; preds = %0
-  call void @_ZN5Timer5startEv(ptr nonnull %t) #4
-  call void @_Z5delayi(i32 10) #4
-  call void @_ZN5Timer4stopEv(ptr nonnull %t) #4
-  %5 = call i64 @_ZN5Timer11getDurationEv(ptr nonnull %t) #4
-  %6 = call fastcc i1 @_Z9isInRangemmj(i64 %5, i64 10, i32 3) #4
+  call void @_ZN5Timer5startEv(ptr nonnull %t) #3
+  call void @_Z5delayi(i32 10) #3
+  call void @_ZN5Timer4stopEv(ptr nonnull %t) #3
+  %5 = call i64 @_ZN5Timer11getDurationEv(ptr nonnull %t) #3
+  %6 = call fastcc i1 @_Z9isInRangemmj(i64 %5, i64 10, i32 3) #3
   br i1 %6, label %assert.exit.L16, label %assert.then.L16, !prof !0
 
 assert.then.L16:                                  ; preds = %assert.exit.L12
@@ -58,9 +58,22 @@ assert.then.L16:                                  ; preds = %assert.exit.L12
 
 assert.exit.L16:                                  ; preds = %assert.exit.L12
   store i64 0, ptr %duration, align 8
-  call void @_ZN5Timer4ctorEiPm(ptr nonnull %1, i32 0, ptr nonnull %duration) #4
-  call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %t, ptr noundef nonnull align 8 dereferenceable(32) %1, i64 32, i1 false)
-  %8 = call i64 @_ZN5Timer11getDurationEv(ptr nonnull %t) #4
+  call void @_ZN5Timer4ctorEiPm(ptr nonnull %1, i32 0, ptr nonnull %duration) #3
+  %.fca.0.load = load i64, ptr %1, align 8
+  %.fca.1.gep = getelementptr inbounds %struct.Timer, ptr %1, i64 0, i32 1
+  %.fca.1.load = load i64, ptr %.fca.1.gep, align 8
+  %.fca.2.gep = getelementptr inbounds %struct.Timer, ptr %1, i64 0, i32 2
+  %.fca.2.load = load i32, ptr %.fca.2.gep, align 8
+  %.fca.3.gep = getelementptr inbounds %struct.Timer, ptr %1, i64 0, i32 3
+  %.fca.3.load = load ptr, ptr %.fca.3.gep, align 8
+  store i64 %.fca.0.load, ptr %t, align 8
+  %.fca.3.insert.fca.1.gep = getelementptr inbounds %struct.Timer, ptr %t, i64 0, i32 1
+  store i64 %.fca.1.load, ptr %.fca.3.insert.fca.1.gep, align 8
+  %.fca.3.insert.fca.2.gep = getelementptr inbounds %struct.Timer, ptr %t, i64 0, i32 2
+  store i32 %.fca.2.load, ptr %.fca.3.insert.fca.2.gep, align 8
+  %.fca.3.insert.fca.3.gep = getelementptr inbounds %struct.Timer, ptr %t, i64 0, i32 3
+  store ptr %.fca.3.load, ptr %.fca.3.insert.fca.3.gep, align 8
+  %8 = call i64 @_ZN5Timer11getDurationEv(ptr nonnull %t) #3
   %9 = icmp eq i64 %8, 0
   br i1 %9, label %assert.exit.L21, label %assert.then.L21, !prof !0
 
@@ -80,15 +93,15 @@ assert.then.L22:                                  ; preds = %assert.exit.L21
   unreachable
 
 assert.exit.L22:                                  ; preds = %assert.exit.L21
-  call void @_ZN5Timer5startEv(ptr nonnull %t) #4
-  call void @_Z5delayi(i32 10) #4
-  call void @_ZN5Timer5pauseEv(ptr nonnull %t) #4
-  call void @_Z5delayi(i32 100) #4
-  call void @_ZN5Timer6resumeEv(ptr nonnull %t) #4
-  call void @_Z5delayi(i32 10) #4
-  call void @_ZN5Timer4stopEv(ptr nonnull %t) #4
+  call void @_ZN5Timer5startEv(ptr nonnull %t) #3
+  call void @_Z5delayi(i32 10) #3
+  call void @_ZN5Timer5pauseEv(ptr nonnull %t) #3
+  call void @_Z5delayi(i32 100) #3
+  call void @_ZN5Timer6resumeEv(ptr nonnull %t) #3
+  call void @_Z5delayi(i32 10) #3
+  call void @_ZN5Timer4stopEv(ptr nonnull %t) #3
   %14 = load i64, ptr %duration, align 8
-  %15 = call fastcc i1 @_Z9isInRangemmj(i64 %14, i64 20000, i32 5000) #4
+  %15 = call fastcc i1 @_Z9isInRangemmj(i64 %14, i64 20000, i32 5000) #3
   br i1 %15, label %assert.exit.L30, label %assert.then.L30, !prof !0
 
 assert.then.L30:                                  ; preds = %assert.exit.L22
@@ -116,9 +129,6 @@ declare void @_ZN5Timer4stopEv(ptr) local_unnamed_addr
 
 declare void @_ZN5Timer4ctorEiPm(ptr, i32, ptr) local_unnamed_addr
 
-; Function Attrs: mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #3
-
 declare void @_ZN5Timer5pauseEv(ptr) local_unnamed_addr
 
 declare void @_ZN5Timer6resumeEv(ptr) local_unnamed_addr
@@ -126,7 +136,6 @@ declare void @_ZN5Timer6resumeEv(ptr) local_unnamed_addr
 attributes #0 = { nofree nounwind }
 attributes #1 = { noinline nounwind optnone uwtable }
 attributes #2 = { cold noreturn nounwind }
-attributes #3 = { mustprogress nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #4 = { nounwind }
+attributes #3 = { nounwind }
 
 !0 = !{!"branch_weights", i32 2000, i32 1}
