@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         arch:
-          - amd64
+          - x86
           - arm64
 
     steps:
