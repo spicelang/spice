@@ -191,7 +191,6 @@ COLON: ':';
 COMMA: ',';
 DOT: '.';
 ARROW: '->';
-DOUBLE_ARROW: '=>';
 SCOPE_ACCESS: '::';
 ELLIPSIS: '...';
 FCT_ATTR_PREAMBLE: '#';
