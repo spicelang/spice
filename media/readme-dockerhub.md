@@ -1,12 +1,11 @@
 <p align="center">
-  <img alt="Spice Logo" src="./docs/docs/static/avatar.png" height="220" />
+  <img alt="Spice Logo" src="https://raw.githubusercontent.com/spicelang/spice/main/docs/docs/static/avatar.png" height="220" />
   <h3 align="center">Spice Programming Language</h3>
   <p align="center">Compiler and standard library for the Spice programming language.</p>
   <p align="center">
     <a target="_blank" href="https://github.com/spicelang/spice/releases/latest"><img src="https://img.shields.io/github/v/release/chillibits/spice?include_prereleases"></a>
     <a target="_blank" href="https://hub.docker.com/r/chillibits/spice"><img src="https://img.shields.io/docker/pulls/chillibits/spice"></a>
-    <a target="_blank" href="https://github.com/spicelang/spice/blob/main/.github/workflows/ci-go.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-go.yml/badge.svg"></a>
-	<a target="_blank" href="https://github.com/spicelang/spice/blob/main/.github/workflows/ci-cpp.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
+    <a target="_blank" href="https://github.com/spicelang/spice/blob/main/.github/workflows/ci-cpp.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
 	<a target="_blank" href="https://github.com/spicelang/spice/blob/main/.github/workflows/codeql-analysis.yml"><img src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
     <a target="_blank" href="https://goreportcard.com/report/github.com/spicelang/spice"><img src="https://goreportcard.com/badge/github.com/spicelang/spice"></a>
     <a target="_blank" href="https://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
@@ -31,7 +30,7 @@ For installation instructions for Linux, Windows, etc., please visit the [instal
 *Note for Windows users: This command does not work with Windows CMD command line. Please use Windows PowerShell instead.*
 
 ```sh
-$ docker run --rm -it -v ${pwd}:/spice/out chillibits/spice
+$ docker run --rm -it -v ${pwd}:/spice/out chillibits/spice <command>
 ```
 
 ## Contribute otherwise to the project

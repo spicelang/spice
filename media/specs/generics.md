@@ -2,15 +2,15 @@
 
 ## Implementation steps:
 
-- [x] 1. Re-write the function choosing mechanism
-- [x] 2. Implement Generics for functions/procedures/methods
-- [x] 3. Support basic type conditions for generic types
-- [x] 3. Add tests for this feature
-- [x] 4. Implement Generics for structs
-- [x] 5. Add tests for this feature
-- [x] 6. Add documentation for generics
-- [ ] 7. Complex conditions
-- [ ] 8. Add tests for complex conditions
+- [x] Re-write the function choosing mechanism
+- [x] Implement Generics for functions/procedures/methods
+- [x] Support basic type conditions for generic types
+- [x] Add tests for this feature
+- [x] Implement Generics for structs
+- [x] Add tests for this feature
+- [x] Add documentation for generics
+- [ ] Complex conditions
+- [ ] Add tests for complex conditions
 
 ## Syntax
 

@@ -28,7 +28,6 @@ dockers:
       - --label=org.opencontainers.image.revision={{.FullCommit}}
       - --label=org.opencontainers.image.version={{.Version}}
       - --label=org.opencontainers.image.source={{.GitURL}}
-      - --build-arg=COMPILER_PATH=linux-amd64
       - --platform=linux/amd64
 docker_manifests:
   - name_template: chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}

@@ -2,12 +2,12 @@
 
 ## Implementation steps:
 
-- [x] 1. Adjust grammar
-- [x] 2. Update IntelliJ plugin
-- [x] 3. Add semantic checks
-- [x] 4. Add tests for semantic checks
-- [x] 5. Allow template types for interface methods
-- [ ] 6. Allow optional args for interface methods
+- [x] Adjust grammar
+- [x] Update IntelliJ plugin
+- [x] Add semantic checks
+- [x] Add tests for semantic checks
+- [x] Allow template types for interface methods
+- [ ] Allow optional args for interface methods
 
 ## Syntax
 

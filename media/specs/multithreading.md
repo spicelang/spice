@@ -2,21 +2,21 @@
 
 ## Implementation steps:
 
-- [x] 1. Support creating threads
-- [x] 2. Add tests for the feature
-- [x] 3. Support running those threads
-- [x] 4. Add tests for the feature
-- [x] 5. Support the `tid()` call
-- [x] 6. Add tests for the feature
-- [x] 7. Support thread joining
-- [x] 8. Add tests for the feature
-- [x] 9. Add arbitrary benchmark test (`generator/arbitrary/success-fibonacci-threaded` test case)
-- [ ] 10. Add mutexes and `sync` specifier
-- [ ] 11. Add tests for the feature
-- [ ] 12. Implement variable volatility
-- [ ] 13. Add support for pipes (paused due to the work on generics)
-- [ ] 14. Add `stash` and `pick` builtin
-- [ ] 15. Add documentation
+- [x] Support creating threads
+- [x] Add tests for the feature
+- [x] Support running those threads
+- [x] Add tests for the feature
+- [x] Support the `tid()` call
+- [x] Add tests for the feature
+- [x] Support thread joining
+- [x] Add tests for the feature
+- [x] Add arbitrary benchmark test (`generator/arbitrary/success-fibonacci-threaded` test case)
+- [ ] Add mutexes and `sync` specifier
+- [ ] Add tests for the feature
+- [ ] Implement variable volatility
+- [ ] Add support for pipes (paused due to the work on generics)
+- [ ] Add `stash` and `pick` builtin
+- [ ] Add documentation
 
 ## Syntax
 
@@ -119,7 +119,7 @@ f<int> main() {
 }
 ```
 
-### Thread pools (long way off, not finalized, may change)
+### Thread pools
 To support thread pools in Spice, a std module called `std/os/threadpool` is planned. <br>
 We probably need Spice support for function pointers to realize thread pools efficiently. Furthermore, it would be useful to have
 the `Queue` data structure to manage the tasks to execute. And for realizing Queues, we probably first need to support generics.
