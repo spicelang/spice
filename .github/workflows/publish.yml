@@ -116,12 +116,12 @@ jobs:
             apt update
             apt-get install -q -y software-properties-common
             add-apt-repository -y ppa:ubuntu-toolchain-r/test
-            apt-get install -q -y cmake make ninja-build binutils gcc-13 g++-13
+            apt-get install -q -y cmake make ninja-build binutils gcc-13 g++-13 git
             update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 110 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-13 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-13
           run: |
             cd ./llvm/build
             cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm
-            cmake --build . -j$(nproc)
+            cmake --build .
 
       - name: Download Libs
         run: |
@@ -145,7 +145,7 @@ jobs:
           run: |
             cd ./bin
             cmake cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
-            cmake --build . --target spice -j$(nproc)
+            cmake --build . --target spice
 
       - name: Process build output
         working-directory: bin
