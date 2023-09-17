@@ -221,6 +221,7 @@ void CLIInterface::addInstallSubcommand() {
   subCmd->callback([&]() {
     shouldCompile = true;
     shouldInstall = true;
+    ensureNotDockerized();
   });
 
   addCompileSubcommandOptions(subCmd);
@@ -234,7 +235,10 @@ void CLIInterface::addUninstallSubcommand() {
   CLI::App *subCmd = app.add_subcommand("uninstall", "Builds your Spice program and runs it immediately");
   subCmd->alias("u");
   subCmd->ignore_case();
-  subCmd->callback([&]() { shouldUninstall = true; });
+  subCmd->callback([&]() {
+    shouldUninstall = true;
+    ensureNotDockerized();
+  });
 
   // Source file
   subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
@@ -291,6 +295,16 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
   subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
       ->check(CLI::ExistingFile)
       ->required();
+}
+
+/**
+ * Ensure that the compiler is not running in a Docker container
+ */
+void CLIInterface::ensureNotDockerized() {
+  const char *envValue = std::getenv(ENV_VAR_DOCKERIZED);
+  if (envValue != nullptr && std::strcmp(envValue, "true") == 0)
+    throw CliError(FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED,
+                   "This feature is not supported in a containerized environment. Please use the standalone version of Spice.");
 }
 
 /**

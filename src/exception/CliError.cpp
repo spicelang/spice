@@ -39,6 +39,8 @@ std::string CliError::getMessagePrefix(CliErrorType type) {
     return "Cannot emit debug info with optimization enabled";
   case NON_ZERO_EXIT_CODE:
     return "Non-zero exit code";
+  case FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED:
+    return "Feature not supported when dockerized";
   case COMING_SOON_CLI:
     return "Coming soon";
   }

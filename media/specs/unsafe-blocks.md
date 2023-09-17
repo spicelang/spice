@@ -2,8 +2,8 @@
 
 ## Implementation steps:
 
-- [x] 1. Support unsafe blocks in the code
-- [x] 2. Decide for each operator/type combination if unsafe
+- [x] Support unsafe blocks in the code
+- [x] Decide for each operator/type combination if unsafe
 
 ## Syntax
 

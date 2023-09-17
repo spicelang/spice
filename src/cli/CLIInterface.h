@@ -11,6 +11,7 @@ namespace spice::compiler {
 const char *const TARGET_UNKNOWN = "unknown";
 const char *const TARGET_WASM32 = "wasm32";
 const char *const TARGET_WASM64 = "wasm64";
+const char *const ENV_VAR_DOCKERIZED = "SPICE_DOCKERIZED";
 
 enum OptLevel : uint8_t {
   O0 = 0, // No optimization
@@ -93,6 +94,7 @@ private:
   void addInstallSubcommand();
   void addUninstallSubcommand();
   void addCompileSubcommandOptions(CLI::App *subCmd);
+  static void ensureNotDockerized();
 
   // Members
   CLI::App app = CLI::App{"Spice Programming Language", "spice"};

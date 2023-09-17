@@ -8,7 +8,7 @@
 - [x] Generate default ctor
 - [ ] Generate default copy ctor
 - [ ] (Generate default move ctor)
-- [ ] Make the compiler error out when reference fields do not get initialized by all ctors
+- [x] Make the compiler error out when reference fields do not get initialized by all ctors
 
 ## Overview
 
