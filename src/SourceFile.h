@@ -173,6 +173,7 @@ private:
   // Private methods
   bool haveAllDependantsBeenTypeChecked() const;
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
+  void dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const;
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
   void printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out, uint64_t stageRuntime,

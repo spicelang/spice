@@ -16,7 +16,6 @@ public:
   // Public methods
   void emit() const;
   void getASMString(std::string &output) const;
-  void dumpAsm() const;
 
 private:
   // Private members

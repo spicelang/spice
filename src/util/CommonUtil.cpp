@@ -31,4 +31,35 @@ std::string CommonUtil::getLastFragment(const std::string &haystack, const std::
   return index == std::string::npos ? haystack : haystack.substr(index + needle.length());
 }
 
+/**
+ * Trim the given input string
+ *
+ * @param input Input string
+ * @return Trimmed string
+ */
+std::string CommonUtil::trim(const std::string &input) {
+  size_t first = input.find_first_not_of(' ');
+  if (std::string::npos == first)
+    return input;
+  size_t last = input.find_last_not_of(' ');
+  return input.substr(first, (last - first + 1));
+}
+
+/**
+ * Split the given input string by spaces
+ *
+ * @param input Input string
+ * @return Vector of fragments
+ */
+std::vector<std::string> CommonUtil::split(const std::string &input) {
+  std::vector<std::string> result;
+  std::istringstream stream(input);
+
+  std::string token;
+  while (std::getline(stream, token, ' '))
+    result.push_back(trim(token));
+
+  return result;
+}
+
 } // namespace spice::compiler

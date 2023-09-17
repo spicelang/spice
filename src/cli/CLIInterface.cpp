@@ -3,9 +3,11 @@
 #include "CLIInterface.h"
 
 #include <exception/CliError.h>
+#include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
 
+#include <llvm/Support/CommandLine.h>
 #include <llvm/TargetParser/Host.h>
 #include <llvm/TargetParser/Triple.h>
 
@@ -53,31 +55,41 @@ void CLIInterface::createInterface() {
       }
     }
 
+    // Abort here if we do not need to compile
     if (!shouldCompile)
       return;
 
-    if (shouldExecute)
+    // Set output path and dir
+    if (shouldExecute) {
       cliOptions.execute = true;
-
-    // Ensure that both, the output path and the output dir have valid values
-    if (cliOptions.outputPath.empty()) {
-      cliOptions.outputPath = cliOptions.mainSourceFile;
-      if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
-        cliOptions.outputPath.replace_extension("wasm");
+      auto millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+      cliOptions.outputDir = std::filesystem::temp_directory_path() / "spice" / "output" / std::to_string(millis);
+      cliOptions.outputPath = cliOptions.outputDir / cliOptions.mainSourceFile.filename();
+    } else if (!cliOptions.outputPath.empty()) {
+      if (std::filesystem::is_directory(cliOptions.outputPath)) {
+        cliOptions.outputDir = cliOptions.outputPath;
+        cliOptions.outputPath = cliOptions.outputDir / cliOptions.mainSourceFile.filename();
       } else {
-#if OS_WINDOWS
-        cliOptions.outputPath.replace_extension("exe");
-#else
-        cliOptions.outputPath.replace_extension("");
-#endif
+        cliOptions.outputDir = cliOptions.outputPath.parent_path();
       }
+    } else {
+      cliOptions.outputDir = "./";
+      cliOptions.outputPath = cliOptions.outputDir / cliOptions.mainSourceFile.filename();
     }
 
-    // Get temporary directory of system
-    std::filesystem::path tmpDir = std::filesystem::temp_directory_path();
-    cliOptions.cacheDir = tmpDir / "spice" / "cache";
-    uint64_t millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    cliOptions.outputDir = tmpDir / "spice" / "output" / std::to_string(millis);
+    // Set output file extension
+    if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
+      cliOptions.outputPath.replace_extension("wasm");
+    } else {
+#if OS_WINDOWS
+      cliOptions.outputPath.replace_extension("exe");
+#else
+      cliOptions.outputPath.replace_extension("");
+#endif
+    }
+
+    // Set cache dir
+    cliOptions.cacheDir = std::filesystem::temp_directory_path() / "spice" / "cache";
 
     // Create directories in case they not exist yet
     std::filesystem::create_directories(cliOptions.cacheDir);
@@ -89,6 +101,16 @@ void CLIInterface::createInterface() {
  * Initialize the cli options based on the input of the user
  */
 void CLIInterface::enrich() {
+  // Propagate llvm args to llvm
+  if (!cliOptions.llvmArgs.empty()) {
+    const std::vector<std::string> result = CommonUtil::split("llvm " + cliOptions.llvmArgs);
+    std::vector<const char *> resultCStr;
+    resultCStr.reserve(result.size());
+    for (const std::string &str : result)
+      resultCStr.push_back(str.c_str());
+    llvm::cl::ParseCommandLineOptions(static_cast<int>(result.size()), resultCStr.data());
+  }
+
   // Propagate target information
   llvm::Triple defaultTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
   if (cliOptions.targetTriple.empty()) {
@@ -181,8 +203,6 @@ void CLIInterface::addRunSubcommand() {
 
   addCompileSubcommandOptions(subCmd);
 
-  // --output
-  subCmd->add_option<std::filesystem::path>("--output,-o", cliOptions.outputPath, "Set the output file path");
   // --debug-info
   subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
   // --disable-verifier
@@ -223,19 +243,10 @@ void CLIInterface::addUninstallSubcommand() {
 }
 
 void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
-  // --debug-output
-  subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
-  // --dump-cst
-  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dumpSettings.dumpCST, "Dump CST as serialized string and SVG image");
-  // --dump-ast
-  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpSettings.dumpAST, "Dump AST as serialized string and SVG image");
-  // --dump-symtab
-  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSettings.dumpSymbolTables, "Dump serialized symbol tables");
-  // --dump-ir
-  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
-  // --dump-assembly
-  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpSettings.dumpAssembly, "Dump Assembly code");
-
+  // --build-mode
+  subCmd->add_option<BuildMode>("--build-mode,-m", cliOptions.buildMode, "Build mode (debug, release)");
+  // --llvm-args
+  subCmd->add_option<std::string>("--llvm-args,-llvm", cliOptions.llvmArgs, "Additional arguments for LLVM");
   // --jobs
   subCmd->add_option<unsigned short>("--jobs,-j", cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
   // --ignore-cache
@@ -245,19 +256,36 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
 
   // Opt levels
   subCmd->add_flag_callback(
-      "-O0", [&]() { cliOptions.optLevel = O0; }, "Disable optimization for the output executable.");
+      "-O0", [&]() { cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
   subCmd->add_flag_callback(
-      "-O1", [&]() { cliOptions.optLevel = O1; }, "Optimization level 1. Only basic optimization is executed.");
+      "-O1", [&]() { cliOptions.optLevel = OptLevel::O1; }, "Only basic optimization is executed.");
   subCmd->add_flag_callback(
-      "-O2", [&]() { cliOptions.optLevel = O2; }, "Optimization level 2. More advanced optimization is applied.");
+      "-O2", [&]() { cliOptions.optLevel = OptLevel::O2; }, "More advanced optimization is applied.");
   subCmd->add_flag_callback(
-      "-O3", [&]() { cliOptions.optLevel = O3; }, "Optimization level 3. Aggressive optimization for best performance.");
+      "-O3", [&]() { cliOptions.optLevel = OptLevel::O3; }, "Aggressive optimization for best performance.");
   subCmd->add_flag_callback(
-      "-Os", [&]() { cliOptions.optLevel = Os; }, "Optimization level s. Size optimization for output executable.");
+      "-Os", [&]() { cliOptions.optLevel = OptLevel::Os; }, "Size optimization for output executable.");
   subCmd->add_flag_callback(
-      "-Oz", [&]() { cliOptions.optLevel = Oz; }, "Optimization level z. Aggressive optimization for best size.");
+      "-Oz", [&]() { cliOptions.optLevel = OptLevel::Oz; }, "Aggressive optimization for best size.");
   subCmd->add_flag_callback(
       "-lto", [&]() { cliOptions.useLTO = true; }, "Enable link time optimization (LTO)");
+
+  // --debug-output
+  subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
+  // --dump-cst
+  subCmd->add_flag<bool>("--dump-cst,-cst", cliOptions.dumpSettings.dumpCST, "Dump CST as serialized string and SVG image");
+  // --dump-ast
+  subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpSettings.dumpAST, "Dump AST as serialized string and SVG image");
+  // --dump-symtab
+  subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSettings.dumpSymbolTable, "Dump serialized symbol tables");
+  // --dump-ir
+  subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
+  // --dump-assembly
+  subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpSettings.dumpAssembly, "Dump Assembly code");
+  // --dump-object-file
+  subCmd->add_flag<bool>("--dump-object-file,-obj", cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
+  // --dump-to-files
+  subCmd->add_flag<bool>("--dump-to-files", cliOptions.dumpSettings.dumpToFiles, "Redirect dumps to files instead of printing");
 
   // Source file
   subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")

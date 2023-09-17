@@ -26,7 +26,7 @@ public type CliOptions struct {
     public bool dumpAST = false
     public bool dumpIR = false
     public bool dumpAssembly = false
-    public bool dumpSymbolTables = false
+    public bool dumpSymbolTable = false
     public bool disableAstOpt = false
     public short optLevel = 2s // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
     public bool generateDebugInfo = false
@@ -74,7 +74,7 @@ public p CliInterface.enrich() {
     if this.cliOptions.printDebugOutput {
         this.cliOptions.dumpAST = true;
         this.cliOptions.dumpIR = true;
-        this.cliOptions.dumpSymbolTables = true;
+        this.cliOptions.dumpSymbolTable = true;
     }
 }
 
@@ -162,7 +162,7 @@ p CliInterface.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dumpAST, "Dump ASTs as serialized string and SVG image");
     dumpAstFlag.addAlias("-ast");
     // --dump-symtab
-    CliOption<bool>& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dumpSymbolTables, "Dump serialized symbol tables");
+    CliOption<bool>& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dumpSymbolTable, "Dump serialized symbol tables");
     dumpSymtabFlag.addAlias("-symtab");
     // --dump-ir
     CliOption<bool>& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dumpIR, "Dump LLVM-IR");

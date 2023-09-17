@@ -13,9 +13,9 @@ namespace spice::compiler {
 void ObjectEmitter::emit() const {
   const std::filesystem::path &objectFile = sourceFile->objectFilePath;
 
-  if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpAssembly)                                // GCOV_EXCL_LINE
-    resourceManager.tout.println("\nEmitting object file for target triple '" + cliOptions.targetTriple + // GCOV_EXCL_LINE
-                                 "' to path: " + objectFile.string());                                    // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput)                                                                 // GCOV_EXCL_LINE
+    resourceManager.tout.println("\nEmitting object file for target '" + cliOptions.targetTriple + // GCOV_EXCL_LINE
+                                 "' to '" + objectFile.string() + "'");                            // GCOV_EXCL_LINE
 
   // Lock the mutex
   resourceManager.objectEmitLock.lock();
@@ -51,19 +51,6 @@ void ObjectEmitter::getASMString(std::string &output) const {
   // Emit object file
   passManager.run(module);
   ostream.flush();
-}
-
-void ObjectEmitter::dumpAsm() const {
-  llvm::legacy::PassManager passManager;
-  // GCOV_EXCL_START
-  if (resourceManager.targetMachine->addPassesToEmitFile(passManager, llvm::outs(), nullptr, llvm::CGFT_AssemblyFile,
-                                                         cliOptions.disableVerifier))
-    throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type");
-  // GCOV_EXCL_STOP
-
-  // Emit object file
-  passManager.run(module);
-  llvm::outs().flush();
 }
 
 } // namespace spice::compiler

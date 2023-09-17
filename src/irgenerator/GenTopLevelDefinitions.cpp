@@ -53,9 +53,9 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   // Add function attributes
   fct->addFnAttr(llvm::Attribute::NoInline);
   fct->addFnAttr(llvm::Attribute::NoUnwind);
-  if (cliOptions.optLevel == O0)
+  if (cliOptions.optLevel == OptLevel::O0)
     fct->addFnAttr(llvm::Attribute::OptimizeNone);
-  else if (cliOptions.optLevel >= Os)
+  else if (cliOptions.optLevel >= OptLevel::Os)
     fct->addFnAttr(llvm::Attribute::OptimizeForSize);
   fct->addFnAttr(llvm::Attribute::getWithUWTableKind(context, llvm::UWTableKind::Default));
 
