@@ -2,17 +2,18 @@ type Inner struct {
     int i = 123
 }
 
-type Outer struct {
-    Inner i
-}
-
 p Inner.ctor(const Inner& other) {
    printf("Inner copy ctor\n");
+   this.i = other.i + 1;
+}
+
+type Outer struct {
+    Inner inner
 }
 
 f<int> main() {
     Outer o;
-    printf("%d\n", o.i.i);
+    printf("%d\n", o.inner.i);
     Outer o1 = o;
-    printf("%d, %d\n", o.i.i, o1.i.i);
+    printf("%d, %d\n", o.inner.i, o1.inner.i);
 }

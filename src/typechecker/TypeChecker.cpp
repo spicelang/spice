@@ -464,7 +464,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
         const std::string structName = localVarType.getOriginalSubType();
         const SymbolType &thisType = localVarType;
         const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
-        node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, paramTypes, false, node);
+        node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true, node);
       }
 
       // If this is a struct type, check if the type is known. If not, error out

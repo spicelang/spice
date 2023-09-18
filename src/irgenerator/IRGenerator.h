@@ -131,7 +131,7 @@ private:
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant);
   llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
-  void materializeConstant(LLVMExprResult &exprResult);
+  static void materializeConstant(LLVMExprResult &exprResult);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
   llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Value *lambda);
 

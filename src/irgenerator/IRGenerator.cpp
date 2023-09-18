@@ -329,7 +329,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
                                          const SymbolType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
-  const bool needsShallowCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !rhs.isTemporary();
+  const bool needsCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !rhs.isTemporary();
 
   if (isRefAssign) {
     if (isDecl) { // Reference gets initially assigned
@@ -362,18 +362,29 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   }
 
   // Check if we need to copy the rhs to the lhs. This happens for structs
-  if (needsShallowCopy) {
+  if (needsCopy) {
     // Get address of right side
     llvm::Value *rhsAddress = resolveAddress(rhs);
     assert(rhsAddress != nullptr);
-    // Create shallow copy
-    llvm::Type *rhsType = rhsSType.toLLVMType(context, currentScope);
-    const std::string copyName = lhsEntry ? lhsEntry->name : "";
-    llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
-    // Set address of lhs to the copy
-    if (lhsEntry && lhsEntry->scope->type != ScopeType::STRUCT && lhsEntry->scope->type != ScopeType::INTERFACE)
-      lhsEntry->updateAddress(newAddress);
-    return LLVMExprResult{.ptr = newAddress, .entry = lhsEntry};
+
+    // Check if we have a copy ctor
+    Scope *structScope = rhsSType.getBodyScope();
+    const std::vector<SymbolType> paramTypes = {rhsSType.toConstReference(nullptr)};
+    auto copyCtor = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, rhsSType, paramTypes, true, nullptr);
+    if (copyCtor != nullptr) {
+      // Call copy ctor
+      generateCtorOrDtorCall(lhsEntry, copyCtor, {rhsAddress});
+      return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
+    } else {
+      // Create shallow copy
+      llvm::Type *rhsType = rhsSType.toLLVMType(context, currentScope);
+      const std::string copyName = lhsEntry ? lhsEntry->name : "";
+      llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
+      // Set address of lhs to the copy
+      if (lhsEntry && lhsEntry->scope->type != ScopeType::STRUCT && lhsEntry->scope->type != ScopeType::INTERFACE)
+        lhsEntry->updateAddress(newAddress);
+      return LLVMExprResult{.ptr = newAddress, .entry = lhsEntry};
+    }
   }
 
   if (isDecl && rhsSType.is(TY_STRUCT) && rhs.isTemporary()) {

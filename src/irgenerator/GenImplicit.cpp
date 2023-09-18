@@ -99,9 +99,9 @@ void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
 }
 
 llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void()> &generateBody, const Function *spiceFunc) {
-  // Only focus on procedures and procedure methods without arguments for now
-  assert(spiceFunc->isProcedure() && spiceFunc->getParamTypes().empty());
+  // Only focus on method procedures
   const ASTNode *node = spiceFunc->entry->declNode;
+  assert(spiceFunc->isMethodProcedure());
 
   // Only generate if used
   if (!spiceFunc->used)
@@ -119,6 +119,12 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
     assert(thisEntry != nullptr);
     paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
     paramTypes.push_back(builder.getPtrTy());
+  }
+
+  // Get parameter types
+  for (const Param &param : spiceFunc->paramList) {
+    assert(!param.isOptional);
+    paramTypes.push_back(param.type.toLLVMType(context, currentScope));
   }
 
   // Get function linkage
@@ -249,6 +255,14 @@ void IRGenerator::generateDefaultDefaultCopyCtor(const Function *copyCtorFunctio
     Scope *structScope = copyCtorFunction->bodyScope->parent;
     assert(structScope != nullptr);
 
+    // Get struct address
+    SymbolTableEntry *thisEntry = copyCtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+    assert(thisEntry != nullptr);
+    llvm::Value *thisAddress = thisEntry->getAddress();
+    assert(thisAddress != nullptr);
+    llvm::Value *thisAddressLoaded = nullptr;
+    llvm::Type *structType = thisEntry->getType().getBaseType().toLLVMType(context, structScope);
+
     const size_t fieldCount = structScope->getFieldCount();
     for (size_t i = 0; i < fieldCount; i++) {
       SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
@@ -262,8 +276,11 @@ void IRGenerator::generateDefaultDefaultCopyCtor(const Function *copyCtorFunctio
         std::vector<SymbolType> paramTypes = {fieldType.toConstReference(nullptr)};
         const Function *ctorFct = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, paramTypes, false);
         if (ctorFct) {
-          llvm::Value *fieldAddress = fieldSymbol->getAddress();
-          assert(fieldAddress != nullptr);
+          // Retrieve field address
+          if (!thisAddressLoaded)
+            thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
+          llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
+          llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
           generateCtorOrDtorCall(fieldSymbol, ctorFct, {fieldAddress});
         }
       }
