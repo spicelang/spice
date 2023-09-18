@@ -42,8 +42,9 @@ void TypeChecker::createDefaultCtorIfRequired(Struct &spiceStruct, Scope *struct
     auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
     hasFieldsWithDefaultValue |= fieldNode->defaultValue() != nullptr;
     if (fieldSymbol->getType().is(TY_STRUCT)) {
+      Scope *fieldScope = fieldSymbol->getType().getBodyScope();
       // Lookup ctor function
-      const Function *ctorFct = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, thisType, {}, true, node);
+      const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, true, node);
       hasFieldsToConstruct |= ctorFct != nullptr;
     }
   }
@@ -112,9 +113,10 @@ void TypeChecker::createDefaultCopyCtorIfRequired(Struct &spiceStruct, Scope *st
       return;
 
     if (fieldSymbol->getType().is(TY_STRUCT)) {
+      Scope *fieldScope = fieldSymbol->getType().getBodyScope();
       // Lookup ctor function
       const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
-      const Function *ctorFct = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true, node);
+      const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true, node);
       hasFieldsToCopyConstruct |= ctorFct != nullptr;
     }
   }
@@ -180,9 +182,10 @@ void TypeChecker::createDefaultDtorIfRequired(Struct &spiceStruct, Scope *struct
     SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
     hasHeapFields |= fieldSymbol->getType().isHeap();
     if (fieldSymbol->getType().is(TY_STRUCT)) {
+      Scope *fieldScope = fieldSymbol->getType().getBodyScope();
       // Lookup dtor function
       const SymbolType &thisType = fieldSymbol->getType();
-      const Function *dtorFct = FunctionManager::matchFunction(structScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
+      const Function *dtorFct = FunctionManager::matchFunction(fieldScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
       hasFieldsToDestruct |= dtorFct != nullptr;
     }
   }
