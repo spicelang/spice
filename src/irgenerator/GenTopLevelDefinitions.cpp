@@ -153,8 +153,9 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Get 'this' entry
     std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
     std::vector<llvm::Type *> paramTypes;
+    SymbolTableEntry *thisEntry = nullptr;
     if (manifestation->isMethod()) {
-      SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
+      thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
       assert(thisEntry != nullptr);
       paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
       paramTypes.push_back(builder.getPtrTy());
@@ -211,6 +212,11 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     if (manifestation->isMethod()) {
       func->addParamAttr(0, llvm::Attribute::NoUndef);
       func->addParamAttr(0, llvm::Attribute::NonNull);
+      assert(thisEntry != nullptr);
+      llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+      assert(structType != nullptr);
+      func->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
+      func->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
     }
 
     // Add debug info
@@ -373,6 +379,11 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     if (manifestation->isMethod()) {
       proc->addParamAttr(0, llvm::Attribute::NoUndef);
       proc->addParamAttr(0, llvm::Attribute::NonNull);
+      assert(thisEntry != nullptr);
+      llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+      assert(structType != nullptr);
+      proc->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
+      proc->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
     }
 
     // Add debug info

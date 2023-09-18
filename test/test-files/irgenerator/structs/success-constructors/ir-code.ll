@@ -14,7 +14,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
 @printf.str.2 = private unnamed_addr constant [13 x i8] c"Message: %s\0A\00", align 1
 
-define private void @_ZN6Vector4ctorEv(ptr noundef nonnull %0) {
+define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -30,7 +30,7 @@ define private void @_ZN6Vector4ctorEv(ptr noundef nonnull %0) {
   ret void
 }
 
-define private void @_ZN6Vector4ctorEPc(ptr noundef nonnull %0, ptr %1) {
+define private void @_ZN6Vector4ctorEPc(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) {
   %this = alloca ptr, align 8
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -46,7 +46,7 @@ define private void @_ZN6Vector4ctorEPc(ptr noundef nonnull %0, ptr %1) {
   ret void
 }
 
-define private ptr @_ZN6Vector4testEv(ptr noundef nonnull %0) {
+define private ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

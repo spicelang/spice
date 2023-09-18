@@ -49,7 +49,7 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
 }
 
 void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor,
-                                         std::vector<llvm::Value *> args) const {
+                                         const std::vector<llvm::Value *> &args) const {
   assert(ctorOrDtor != nullptr);
 
   // Retrieve metadata for the function
@@ -86,7 +86,7 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
 
   // Build parameter list
   std::vector<llvm::Value *> argValues = {structPtr};
-  argValues.insert(argValues.end(), argValues.begin(), argValues.end());
+  argValues.insert(argValues.end(), args.begin(), args.end());
 
   // Generate function call
   builder.CreateCall(callee, argValues);
@@ -136,6 +136,11 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   if (spiceFunc->isMethod()) {
     fct->addParamAttr(0, llvm::Attribute::NoUndef);
     fct->addParamAttr(0, llvm::Attribute::NonNull);
+    assert(thisEntry != nullptr);
+    llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+    assert(structType != nullptr);
+    fct->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
+    fct->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
   }
 
   // Add debug info

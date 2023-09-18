@@ -436,11 +436,14 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   SymbolType localVarType;
   if (node->hasAssignment) {
     // Visit the right side
-    auto [rhsTy, rhsEntry] = std::any_cast<ExprResult>(visit(node->assignExpr()));
+    auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
+    auto [rhsTy, rhsEntry] = rhs;
 
     // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
-    if (rhsEntry != nullptr && rhsEntry->anonymous)
+    if (rhsEntry != nullptr && rhsEntry->anonymous) {
       currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
+      rhs.entry = rhsEntry = nullptr;
+    }
 
     // Visit data type
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
@@ -454,7 +457,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       localVarType = opRuleManager.getAssignResultType(node, localVarType, rhsTy, 0, true);
 
       // Call copy ctor if required
-      if (localVarType.is(TY_STRUCT) && !node->isParam) {
+      if (localVarType.is(TY_STRUCT) && !node->isParam && !rhs.isTemporary()) {
         Scope *matchScope = localVarType.getBodyScope();
         assert(matchScope != nullptr);
         // Check if we have a no-args ctor to call
@@ -542,12 +545,14 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
 
   // Manager dtor call
   if (rhs.entry != nullptr) {
-    if (rhs.entry->anonymous)
+    if (rhs.entry->anonymous) {
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
       currentScope->symbolTable.deleteAnonymous(rhs.entry->name);
-    else
+      rhs.entry = nullptr;
+    } else {
       // Otherwise omit the destructor call, because the caller destructs the value
       rhs.entry->omitDtorCall = true;
+    }
   }
 
   return node->setEvaluatedSymbolType(returnType, manIdx);
@@ -738,8 +743,10 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
       rhsType = opRuleManager.getAssignResultType(node, lhsType, rhsType, 0);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
-      if (rhsEntry != nullptr && rhsEntry->anonymous)
+      if (rhsEntry != nullptr && rhsEntry->anonymous) {
         currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
+        rhsEntry = nullptr;
+      }
     } else if (node->op == AssignExprNode::OP_PLUS_EQUAL) {
       rhsType = opRuleManager.getPlusEqualResultType(node, lhsType, rhsType, 0).type;
     } else if (node->op == AssignExprNode::OP_MINUS_EQUAL) {
@@ -1880,8 +1887,10 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       opRuleManager.getFieldAssignResultType(assignExpr, expectedType, fieldResult.type, 0, rhsIsImmediate);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
-      if (fieldResult.entry != nullptr && fieldResult.entry->anonymous)
+      if (fieldResult.entry != nullptr && fieldResult.entry->anonymous) {
         currentScope->symbolTable.deleteAnonymous(fieldResult.entry->name);
+        fieldResult.entry = nullptr;
+      }
     }
   } else {
     for (SymbolType &fieldType : spiceStruct->fieldTypes) {

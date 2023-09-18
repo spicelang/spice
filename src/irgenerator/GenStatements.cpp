@@ -51,6 +51,9 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   llvm::Value *varAddress = nullptr;
   if (node->hasAssignment && !rhsIsDynArray) { // Assignment
     if (node->calledCopyCtor) {
+      // Allocate memory
+      varAddress = insertAlloca(varTy);
+      varEntry->updateAddress(varAddress);
       // Call copy ctor
       llvm::Value *rhsAddress = resolveAddress(node->assignExpr());
       assert(rhsAddress != nullptr);

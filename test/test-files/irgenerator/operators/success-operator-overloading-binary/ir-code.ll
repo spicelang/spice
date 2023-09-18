@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.1 = private unnamed_addr constant [20 x i8] c"Counter2 value: %d\0A\00", align 1
 @printf.str.2 = private unnamed_addr constant [20 x i8] c"Counter3 value: %d\0A\00", align 1
 
-define private void @_ZN7Counter4ctorEl(ptr noundef nonnull %0, i64 %1) {
+define private void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %0, i64 %1) {
   %this = alloca ptr, align 8
   %initialValue = alloca i64, align 8
   store ptr %0, ptr %this, align 8
@@ -22,7 +22,7 @@ define private void @_ZN7Counter4ctorEl(ptr noundef nonnull %0, i64 %1) {
   ret void
 }
 
-define private i64 @_ZN7Counter8getValueEv(ptr noundef nonnull %0) {
+define private i64 @_ZN7Counter8getValueEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
   %result = alloca i64, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

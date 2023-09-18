@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.1 = private unnamed_addr constant [13 x i8] c"Hello World!\00", align 1
 @printf.str.0 = private unnamed_addr constant [13 x i8] c"Content: %s\0A\00", align 1
 
-define private ptr @_ZN6Letter10getContentEv(ptr noundef nonnull %0) {
+define private ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %0) {
   %result = alloca ptr, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
@@ -19,7 +19,7 @@ define private ptr @_ZN6Letter10getContentEv(ptr noundef nonnull %0) {
   ret ptr %3
 }
 
-define private void @_ZN6Letter10setContentEPc(ptr noundef nonnull %0, ptr %1) {
+define private void @_ZN6Letter10setContentEPc(ptr noundef nonnull align 8 dereferenceable(8) %0, ptr %1) {
   %this = alloca ptr, align 8
   %text = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

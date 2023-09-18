@@ -10,7 +10,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.0 = private unnamed_addr constant [17 x i8] c"This is a letter\00", align 1
 @printf.str.1 = private unnamed_addr constant [17 x i8] c"Stamp glued: %d\0A\00", align 1
 
-define private void @_ZN5Stamp5printEv(ptr noundef nonnull %0) {
+define private void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -27,7 +27,7 @@ define private void @_ZN5Stamp5printEv(ptr noundef nonnull %0) {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
 
-define private %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull %0) {
+define private %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %0) {
   %result = alloca %struct.Stamp, align 8
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

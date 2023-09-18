@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 1
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 
-define private i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull %0, ptr %1, ptr %2) {
+define private i32 @_ZN6Person7compareERKlRKl(ptr noundef nonnull align 8 dereferenceable(24) %0, ptr %1, ptr %2) {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   %a = alloca ptr, align 8
