@@ -45,10 +45,11 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
 
   // Call all dtor functions
   for (auto [entry, dtor] : node->dtorFunctions.at(manIdx))
-    generateCtorOrDtorCall(entry, dtor);
+    generateCtorOrDtorCall(entry, dtor, {});
 }
 
-void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor) const {
+void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor,
+                                         const std::vector<llvm::Value *> &args) const {
   assert(ctorOrDtor != nullptr);
 
   // Retrieve metadata for the function
@@ -56,7 +57,10 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
 
   // Function is not defined in the current module -> declare it
   if (!module->getFunction(mangledName)) {
-    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), builder.getPtrTy(), false);
+    std::vector<llvm::Type *> paramTypes = {builder.getPtrTy()};
+    for (llvm::Value *argValue : args)
+      paramTypes.push_back(argValue->getType());
+    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
     module->getOrInsertFunction(mangledName, fctType);
   }
 
@@ -80,8 +84,12 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
   }
   assert(structPtr != nullptr);
 
+  // Build parameter list
+  std::vector<llvm::Value *> argValues = {structPtr};
+  argValues.insert(argValues.end(), args.begin(), args.end());
+
   // Generate function call
-  builder.CreateCall(callee, structPtr);
+  builder.CreateCall(callee, argValues);
 }
 
 void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
@@ -91,9 +99,9 @@ void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
 }
 
 llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void()> &generateBody, const Function *spiceFunc) {
-  // Only focus on procedures and procedure methods without arguments for now
-  assert(spiceFunc->isProcedure() && spiceFunc->getParamTypes().empty());
+  // Only focus on method procedures
   const ASTNode *node = spiceFunc->entry->declNode;
+  assert(spiceFunc->isMethodProcedure());
 
   // Only generate if used
   if (!spiceFunc->used)
@@ -113,6 +121,12 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
     paramTypes.push_back(builder.getPtrTy());
   }
 
+  // Get parameter types
+  for (const Param &param : spiceFunc->paramList) {
+    assert(!param.isOptional);
+    paramTypes.push_back(param.type.toLLVMType(context, currentScope));
+  }
+
   // Get function linkage
   const bool isPublic = spiceFunc->entry->getType().specifiers.isPublic;
   llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
@@ -128,6 +142,11 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   if (spiceFunc->isMethod()) {
     fct->addParamAttr(0, llvm::Attribute::NoUndef);
     fct->addParamAttr(0, llvm::Attribute::NonNull);
+    assert(thisEntry != nullptr);
+    llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+    assert(structType != nullptr);
+    fct->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
+    fct->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
   }
 
   // Add debug info
@@ -201,18 +220,16 @@ void IRGenerator::generateDefaultDefaultCtor(const Function *ctorFunction) {
 
       // Call ctor for struct fields
       if (fieldType.is(TY_STRUCT)) {
-        // Lookup ctor function
+        // Lookup ctor function and call if available
         Scope *matchScope = fieldType.getBodyScope();
         const Function *ctorFunction = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false);
-
-        // Generate call to ctor
         if (ctorFunction)
-          generateCtorOrDtorCall(fieldSymbol, ctorFunction);
+          generateCtorOrDtorCall(fieldSymbol, ctorFunction, {});
 
         continue;
       }
 
-      // Deallocate fields, that are stored on the heap
+      // Store default field values
       if (fieldNode->defaultValue() != nullptr) {
         assert(fieldNode->defaultValue()->hasCompileTimeValue());
         // Retrieve field address
@@ -228,6 +245,48 @@ void IRGenerator::generateDefaultDefaultCtor(const Function *ctorFunction) {
     }
   };
   generateImplicitProcedure(generateBody, ctorFunction);
+}
+
+void IRGenerator::generateDefaultDefaultCopyCtor(const Function *copyCtorFunction) {
+  assert(copyCtorFunction->implicitDefault && copyCtorFunction->name == CTOR_FUNCTION_NAME);
+
+  const std::function<void()> generateBody = [&]() {
+    // Retrieve struct scope
+    Scope *structScope = copyCtorFunction->bodyScope->parent;
+    assert(structScope != nullptr);
+
+    // Get struct address
+    SymbolTableEntry *thisEntry = copyCtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+    assert(thisEntry != nullptr);
+    llvm::Value *thisAddress = thisEntry->getAddress();
+    assert(thisAddress != nullptr);
+    llvm::Value *thisAddressLoaded = nullptr;
+    llvm::Type *structType = thisEntry->getType().getBaseType().toLLVMType(context, structScope);
+
+    const size_t fieldCount = structScope->getFieldCount();
+    for (size_t i = 0; i < fieldCount; i++) {
+      SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+      assert(fieldSymbol != nullptr && fieldSymbol->isField());
+      const SymbolType &fieldType = fieldSymbol->getType();
+
+      // Call copy ctor for struct fields
+      if (fieldType.is(TY_STRUCT)) {
+        // Lookup copy ctor function and call if available
+        Scope *matchScope = fieldType.getBodyScope();
+        std::vector<SymbolType> paramTypes = {fieldType.toConstReference(nullptr)};
+        const Function *ctorFct = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, paramTypes, false);
+        if (ctorFct) {
+          // Retrieve field address
+          if (!thisAddressLoaded)
+            thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
+          llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
+          llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
+          generateCtorOrDtorCall(fieldSymbol, ctorFct, {fieldAddress});
+        }
+      }
+    }
+  };
+  generateImplicitProcedure(generateBody, copyCtorFunction);
 }
 
 void IRGenerator::generateDefaultDefaultDtor(const Function *dtorFunction) {
@@ -260,7 +319,7 @@ void IRGenerator::generateDefaultDefaultDtor(const Function *dtorFunction) {
 
         // Generate call to dtor
         if (dtorFunction)
-          generateCtorOrDtorCall(fieldSymbol, dtorFunction);
+          generateCtorOrDtorCall(fieldSymbol, dtorFunction, {});
 
         continue;
       }

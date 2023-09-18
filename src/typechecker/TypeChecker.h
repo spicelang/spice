@@ -136,7 +136,9 @@ private:
 
   // Implicit code generation
   void createDefaultCtorIfRequired(Struct &spiceStruct, Scope *structScope);
+  void createDefaultCopyCtorIfRequired(Struct &spiceStruct, Scope *structScope);
   void createDefaultDtorIfRequired(Struct &spiceStruct, Scope *structScope);
+  void implicitlyCallStructCopyCtor(SymbolTableEntry *entry, const ASTNode *node);
   void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
   void doScopeCleanup(StmtLstNode *node);
 };

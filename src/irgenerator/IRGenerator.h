@@ -131,17 +131,18 @@ private:
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant);
   llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
-  void materializeConstant(LLVMExprResult &exprResult);
+  static void materializeConstant(LLVMExprResult &exprResult);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
   llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Value *lambda);
 
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
   void generateScopeCleanup(const StmtLstNode *node) const;
-  void generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor) const;
+  void generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
   void generateDeallocCall(llvm::Value *variableAddress) const;
   llvm::Function *generateImplicitProcedure(const std::function<void()> &generateBody, const Function *spiceFunc);
   void generateDefaultDefaultCtor(const Function *ctorFunction);
+  void generateDefaultDefaultCopyCtor(const Function *copyCtorFunction);
   void generateDefaultDefaultDtor(const Function *dtorFunction);
 
   // Private members

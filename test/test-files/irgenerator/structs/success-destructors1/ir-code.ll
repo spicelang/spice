@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.3 = private unnamed_addr constant [5 x i8] c"Test\00", align 1
 @printf.str.1 = private unnamed_addr constant [16 x i8] c"Fields: %d, %s\0A\00", align 1
 
-define private void @_ZN6Vector4dtorEv(ptr noundef nonnull %0) {
+define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
   %2 = alloca i1, align 1
   store ptr %0, ptr %this, align 8

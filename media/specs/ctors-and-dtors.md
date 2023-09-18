@@ -6,7 +6,7 @@
 - [x] Add mechanism to generate functions and methods, that are not part of the AST
 - [x] Generate default dtor
 - [x] Generate default ctor
-- [ ] Generate default copy ctor
+- [x] Generate default copy ctor
 - [ ] (Generate default move ctor)
 - [x] Make the compiler error out when reference fields do not get initialized by all ctors
 
@@ -41,11 +41,27 @@ p TestStruct.ctor() {
 }
 ```
 
-### Default copy ctor
+## Copy constructors
 
-ToDo
+A constructor is a copy constructor, if it has exactly one parameter of a const reference to the type of the struct.
+The default copy constructor is generated for a struct if it has no user-defined copy constructor. The default copy constructor
+is generated with the following signature:
 
-### Default move ctor
+### Implicit copy ctor actions
+
+The copy constructor of a struct must initialize all fields of the struct. For that, the compiler automatically generates code in
+the following order:
+
+- Copy all fields from the other struct by value
+- If a field is of type struct that has a copy constructor, call the copy constructor on the field
+
+```spice
+p TestStruct.ctor(const TestStruct& other) {
+    // Copy all fields from the other struct by value or call the copy ctor on the field if available
+}
+```
+
+## Move constructors
 
 ToDo
 

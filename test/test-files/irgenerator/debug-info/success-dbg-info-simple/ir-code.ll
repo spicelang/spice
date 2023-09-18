@@ -11,67 +11,82 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 1, !dbg !9
 @printf.str.2 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 1, !dbg !12
 
-define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !24 {
+; Function Attrs: norecurse
+define private void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %0) #0 !dbg !24 {
+  %this = alloca ptr, align 8
+  call void @llvm.dbg.declare(metadata ptr %this, metadata !45, metadata !DIExpression()), !dbg !47
+  store ptr %0, ptr %this, align 8, !dbg !47
+  %2 = load ptr, ptr %this, align 8, !dbg !47
+  %3 = getelementptr inbounds %struct.TestStruct, ptr %2, i32 0, i32 1, !dbg !47
+  call void @_ZN6String4dtorEv(ptr %3), !dbg !47
+  ret void, !dbg !47
+}
+
+; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
+
+declare void @_ZN6String4dtorEv(ptr)
+
+define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !48 {
   %result = alloca %struct.TestStruct, align 8
   %ref = alloca ptr, align 8
   %2 = alloca %struct.String, align 8
   %ts = alloca %struct.TestStruct, align 8
-  call void @llvm.dbg.declare(metadata ptr %result, metadata !45, metadata !DIExpression()), !dbg !46
-  call void @llvm.dbg.declare(metadata ptr %ref, metadata !47, metadata !DIExpression()), !dbg !46
-  store ptr %0, ptr %ref, align 8, !dbg !46
-  call void @_ZN6String4ctorEPc(ptr %2, ptr @anon.string.0), !dbg !48
-  %3 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 0, !dbg !49
-  store i64 6, ptr %3, align 8, !dbg !49
-  %4 = load %struct.String, ptr %2, align 8, !dbg !49
-  %5 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !49
-  store %struct.String %4, ptr %5, align 8, !dbg !49
-  %6 = load ptr, ptr %ref, align 8, !dbg !49
-  %7 = load i32, ptr %6, align 4, !dbg !49
-  %8 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 2, !dbg !49
-  call void @llvm.dbg.declare(metadata ptr %ts, metadata !50, metadata !DIExpression()), !dbg !51
-  store i32 %7, ptr %8, align 4, !dbg !49
-  %9 = load %struct.TestStruct, ptr %ts, align 8, !dbg !52
-  ret %struct.TestStruct %9, !dbg !52
+  call void @llvm.dbg.declare(metadata ptr %result, metadata !52, metadata !DIExpression()), !dbg !53
+  call void @llvm.dbg.declare(metadata ptr %ref, metadata !54, metadata !DIExpression()), !dbg !53
+  store ptr %0, ptr %ref, align 8, !dbg !53
+  call void @_ZN6String4ctorEPc(ptr %2, ptr @anon.string.0), !dbg !55
+  %3 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 0, !dbg !56
+  store i64 6, ptr %3, align 8, !dbg !56
+  %4 = load %struct.String, ptr %2, align 8, !dbg !56
+  %5 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !56
+  store %struct.String %4, ptr %5, align 8, !dbg !56
+  %6 = load ptr, ptr %ref, align 8, !dbg !56
+  %7 = load i32, ptr %6, align 4, !dbg !56
+  %8 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 2, !dbg !56
+  call void @llvm.dbg.declare(metadata ptr %ts, metadata !57, metadata !DIExpression()), !dbg !58
+  store i32 %7, ptr %8, align 4, !dbg !56
+  %9 = load %struct.TestStruct, ptr %ts, align 8, !dbg !59
+  ret %struct.TestStruct %9, !dbg !59
 }
-
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare void @llvm.dbg.declare(metadata, metadata, metadata) #0
 
 declare void @_ZN6String4ctorEPc(ptr, ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #1 !dbg !53 {
+define dso_local i32 @main() #2 !dbg !60 {
   %result = alloca i32, align 4
   %test = alloca i32, align 4
   %res = alloca %struct.TestStruct, align 8
-  call void @llvm.dbg.declare(metadata ptr %result, metadata !56, metadata !DIExpression()), !dbg !57
-  store i32 0, ptr %result, align 4, !dbg !57
-  call void @llvm.dbg.declare(metadata ptr %test, metadata !58, metadata !DIExpression()), !dbg !59
-  store i32 987654, ptr %test, align 4, !dbg !60
-  %1 = call %struct.TestStruct @_Z3fctRi(ptr %test), !dbg !61
-  call void @llvm.dbg.declare(metadata ptr %res, metadata !62, metadata !DIExpression()), !dbg !63
-  store %struct.TestStruct %1, ptr %res, align 8, !dbg !61
-  %lng_addr = getelementptr inbounds %struct.TestStruct, ptr %res, i32 0, i32 0, !dbg !64
-  %2 = load i64, ptr %lng_addr, align 8, !dbg !64
-  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %2), !dbg !64
-  %4 = getelementptr inbounds %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !65
-  %5 = call ptr @_ZN6String6getRawEv(ptr %4), !dbg !65
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %5), !dbg !65
-  %i_addr = getelementptr inbounds %struct.TestStruct, ptr %res, i32 0, i32 2, !dbg !66
-  %7 = load i32, ptr %i_addr, align 4, !dbg !66
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %7), !dbg !66
-  %9 = load i32, ptr %result, align 4, !dbg !66
-  ret i32 %9, !dbg !66
+  call void @llvm.dbg.declare(metadata ptr %result, metadata !63, metadata !DIExpression()), !dbg !64
+  store i32 0, ptr %result, align 4, !dbg !64
+  call void @llvm.dbg.declare(metadata ptr %test, metadata !65, metadata !DIExpression()), !dbg !66
+  store i32 987654, ptr %test, align 4, !dbg !67
+  %1 = call %struct.TestStruct @_Z3fctRi(ptr %test), !dbg !68
+  call void @llvm.dbg.declare(metadata ptr %res, metadata !69, metadata !DIExpression()), !dbg !70
+  store %struct.TestStruct %1, ptr %res, align 8, !dbg !68
+  %lng_addr = getelementptr inbounds %struct.TestStruct, ptr %res, i32 0, i32 0, !dbg !71
+  %2 = load i64, ptr %lng_addr, align 8, !dbg !71
+  %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %2), !dbg !71
+  %4 = getelementptr inbounds %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !72
+  %5 = call ptr @_ZN6String6getRawEv(ptr %4), !dbg !72
+  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %5), !dbg !72
+  %i_addr = getelementptr inbounds %struct.TestStruct, ptr %res, i32 0, i32 2, !dbg !73
+  %7 = load i32, ptr %i_addr, align 4, !dbg !73
+  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %7), !dbg !73
+  call void @_ZN10TestStruct4dtorEv(ptr %res), !dbg !73
+  %9 = load i32, ptr %result, align 4, !dbg !73
+  ret i32 %9, !dbg !73
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #3
 
 declare ptr @_ZN6String6getRawEv(ptr)
 
-attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #1 = { noinline nounwind optnone uwtable }
-attributes #2 = { nofree nounwind }
+attributes #0 = { norecurse }
+attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { noinline nounwind optnone uwtable }
+attributes #3 = { nofree nounwind }
 
 !llvm.dbg.cu = !{!2}
 !llvm.module.flags = !{!16, !17, !18, !19, !20, !21, !22}
@@ -101,46 +116,53 @@ attributes #2 = { nofree nounwind }
 !21 = !{i32 7, !"uwtable", i32 2}
 !22 = !{i32 7, !"frame-pointer", i32 2}
 !23 = !{!"spice version dev (https://github.com/spicelang/spice)"}
-!24 = distinct !DISubprogram(name: "fct", linkageName: "_Z3fctRi", scope: !7, file: !7, line: 7, type: !25, scopeLine: 7, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !44)
+!24 = distinct !DISubprogram(name: "dtor", linkageName: "_ZN10TestStruct4dtorEv", scope: !7, file: !7, line: 1, type: !25, scopeLine: 1, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !44)
 !25 = !DISubroutineType(types: !26)
-!26 = !{!27, !43}
-!27 = !DICompositeType(tag: DW_TAG_structure_type, name: "TestStruct", scope: !7, file: !7, line: 1, size: 320, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !28, identifier: "struct.TestStruct")
-!28 = !{!29, !31, !41}
-!29 = !DIDerivedType(tag: DW_TAG_member, name: "lng", scope: !27, file: !7, line: 2, baseType: !30, size: 64)
-!30 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
-!31 = !DIDerivedType(tag: DW_TAG_member, name: "str", scope: !27, file: !7, line: 3, baseType: !32, size: 192, align: 8, offset: 64)
-!32 = !DICompositeType(tag: DW_TAG_structure_type, name: "String", scope: !33, file: !33, line: 15, size: 192, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !34, identifier: "struct.String")
-!33 = !DIFile(filename: "string_rt.spice", directory: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\std\\runtime")
-!34 = !{!35, !38, !40}
-!35 = !DIDerivedType(tag: DW_TAG_member, name: "contents", scope: !32, file: !33, line: 16, baseType: !36, size: 64)
-!36 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !37, size: 64)
-!37 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_unsigned_char)
-!38 = !DIDerivedType(tag: DW_TAG_member, name: "capacity", scope: !32, file: !33, line: 17, baseType: !39, size: 64, offset: 64)
-!39 = !DIBasicType(name: "unsigned long", size: 64, encoding: DW_ATE_unsigned)
-!40 = !DIDerivedType(tag: DW_TAG_member, name: "length", scope: !32, file: !33, line: 18, baseType: !39, size: 64, offset: 128)
-!41 = !DIDerivedType(tag: DW_TAG_member, name: "i", scope: !27, file: !7, line: 4, baseType: !42, size: 32, offset: 256)
-!42 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
-!43 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !42, size: 64)
+!26 = !{!27, !28}
+!27 = !DIBasicType(name: "void", encoding: DW_ATE_unsigned)
+!28 = !DICompositeType(tag: DW_TAG_structure_type, name: "TestStruct", scope: !7, file: !7, line: 1, size: 320, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !29, identifier: "struct.TestStruct")
+!29 = !{!30, !32, !42}
+!30 = !DIDerivedType(tag: DW_TAG_member, name: "lng", scope: !28, file: !7, line: 2, baseType: !31, size: 64)
+!31 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
+!32 = !DIDerivedType(tag: DW_TAG_member, name: "str", scope: !28, file: !7, line: 3, baseType: !33, size: 192, align: 8, offset: 64)
+!33 = !DICompositeType(tag: DW_TAG_structure_type, name: "String", scope: !34, file: !34, line: 15, size: 192, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !35, identifier: "struct.String")
+!34 = !DIFile(filename: "string_rt.spice", directory: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\std\\runtime")
+!35 = !{!36, !39, !41}
+!36 = !DIDerivedType(tag: DW_TAG_member, name: "contents", scope: !33, file: !34, line: 16, baseType: !37, size: 64)
+!37 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !38, size: 64)
+!38 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_unsigned_char)
+!39 = !DIDerivedType(tag: DW_TAG_member, name: "capacity", scope: !33, file: !34, line: 17, baseType: !40, size: 64, offset: 64)
+!40 = !DIBasicType(name: "unsigned long", size: 64, encoding: DW_ATE_unsigned)
+!41 = !DIDerivedType(tag: DW_TAG_member, name: "length", scope: !33, file: !34, line: 18, baseType: !40, size: 64, offset: 128)
+!42 = !DIDerivedType(tag: DW_TAG_member, name: "i", scope: !28, file: !7, line: 4, baseType: !43, size: 32, offset: 256)
+!43 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !44 = !{}
-!45 = !DILocalVariable(name: "result", scope: !24, file: !7, line: 7, type: !27)
-!46 = !DILocation(line: 7, column: 1, scope: !24)
-!47 = !DILocalVariable(name: "ref", arg: 1, scope: !24, file: !7, line: 7, type: !43)
-!48 = !DILocation(line: 8, column: 44, scope: !24)
-!49 = !DILocation(line: 8, column: 60, scope: !24)
-!50 = !DILocalVariable(name: "ts", scope: !24, file: !7, line: 8, type: !27)
-!51 = !DILocation(line: 8, column: 5, scope: !24)
-!52 = !DILocation(line: 9, column: 12, scope: !24)
-!53 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !7, file: !7, line: 12, type: !54, scopeLine: 12, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !44)
-!54 = !DISubroutineType(types: !55)
-!55 = !{!42}
-!56 = !DILocalVariable(name: "result", scope: !53, file: !7, line: 12, type: !42)
-!57 = !DILocation(line: 12, column: 1, scope: !53)
-!58 = !DILocalVariable(name: "test", scope: !53, file: !7, line: 13, type: !42)
-!59 = !DILocation(line: 13, column: 5, scope: !53)
-!60 = !DILocation(line: 13, column: 16, scope: !53)
-!61 = !DILocation(line: 14, column: 32, scope: !53)
-!62 = !DILocalVariable(name: "res", scope: !53, file: !7, line: 14, type: !27)
-!63 = !DILocation(line: 14, column: 5, scope: !53)
-!64 = !DILocation(line: 15, column: 26, scope: !53)
-!65 = !DILocation(line: 16, column: 28, scope: !53)
-!66 = !DILocation(line: 17, column: 25, scope: !53)
+!45 = !DILocalVariable(name: "this", arg: 1, scope: !24, file: !7, line: 1, type: !46)
+!46 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !28, size: 64)
+!47 = !DILocation(line: 1, column: 1, scope: !24)
+!48 = distinct !DISubprogram(name: "fct", linkageName: "_Z3fctRi", scope: !7, file: !7, line: 7, type: !49, scopeLine: 7, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !44)
+!49 = !DISubroutineType(types: !50)
+!50 = !{!28, !51}
+!51 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !43, size: 64)
+!52 = !DILocalVariable(name: "result", scope: !48, file: !7, line: 7, type: !28)
+!53 = !DILocation(line: 7, column: 1, scope: !48)
+!54 = !DILocalVariable(name: "ref", arg: 1, scope: !48, file: !7, line: 7, type: !51)
+!55 = !DILocation(line: 8, column: 44, scope: !48)
+!56 = !DILocation(line: 8, column: 60, scope: !48)
+!57 = !DILocalVariable(name: "ts", scope: !48, file: !7, line: 8, type: !28)
+!58 = !DILocation(line: 8, column: 5, scope: !48)
+!59 = !DILocation(line: 9, column: 12, scope: !48)
+!60 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !7, file: !7, line: 12, type: !61, scopeLine: 12, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !44)
+!61 = !DISubroutineType(types: !62)
+!62 = !{!43}
+!63 = !DILocalVariable(name: "result", scope: !60, file: !7, line: 12, type: !43)
+!64 = !DILocation(line: 12, column: 1, scope: !60)
+!65 = !DILocalVariable(name: "test", scope: !60, file: !7, line: 13, type: !43)
+!66 = !DILocation(line: 13, column: 5, scope: !60)
+!67 = !DILocation(line: 13, column: 16, scope: !60)
+!68 = !DILocation(line: 14, column: 32, scope: !60)
+!69 = !DILocalVariable(name: "res", scope: !60, file: !7, line: 14, type: !28)
+!70 = !DILocation(line: 14, column: 5, scope: !60)
+!71 = !DILocation(line: 15, column: 26, scope: !60)
+!72 = !DILocation(line: 16, column: 28, scope: !60)
+!73 = !DILocation(line: 17, column: 25, scope: !60)
