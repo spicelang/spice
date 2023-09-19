@@ -19,11 +19,23 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
   reVisitRequested = false;
 
   // Initialize AST nodes with size of 1
-  if (typeCheckerMode == TC_MODE_PREPARE)
+  const bool isPrepare = typeCheckerMode == TC_MODE_PREPARE;
+  if (isPrepare)
     node->resizeToNumberOfManifestations(1);
 
   // Visit children
   visitChildren(node);
+
+  // Check which implicit structures we need for each struct, defined in this source file
+  if (isPrepare) {
+    for (const auto &[structName, manifestations] : rootScope->getStructs()) {
+      for (const auto &[manifestationName, manifestation] : manifestations) {
+        createDefaultCtorIfRequired(manifestation, manifestation.structScope);
+        createDefaultCopyCtorIfRequired(manifestation, manifestation.structScope);
+        createDefaultDtorIfRequired(manifestation, manifestation.structScope);
+      }
+    }
+  }
 
   return nullptr;
 }

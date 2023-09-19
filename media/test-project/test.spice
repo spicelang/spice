@@ -2,13 +2,13 @@ type Inner struct {
     int i = 123
 }
 
-type Outer struct {
-    Inner inner
-}
-
 p Inner.ctor(const Inner& other) {
    printf("Inner copy ctor\n");
    this.i = other.i + 1;
+}
+
+type Outer struct {
+    Inner inner
 }
 
 f<int> main() {
