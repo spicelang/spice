@@ -16,7 +16,7 @@ static const char *const FCT_NAME_DEALLOC = "sDealloc";
  * @param entry SymbolTableEntry of the struct
  * @param structScope Scope of the struct
  */
-void TypeChecker::createDefaultCtorIfRequired(Struct &spiceStruct, Scope *structScope) {
+void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
   ASTNode *node = spiceStruct.declNode;
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
@@ -46,6 +46,7 @@ void TypeChecker::createDefaultCtorIfRequired(Struct &spiceStruct, Scope *struct
       // Lookup ctor function
       const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, true, node);
       hasFieldsToConstruct |= ctorFct != nullptr;
+      requestRevisitIfRequired(ctorFct);
     }
   }
 
@@ -90,7 +91,7 @@ void TypeChecker::createDefaultCtorIfRequired(Struct &spiceStruct, Scope *struct
  * @param entry SymbolTableEntry of the struct
  * @param structScope Scope of the struct
  */
-void TypeChecker::createDefaultCopyCtorIfRequired(Struct &spiceStruct, Scope *structScope) {
+void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
   ASTNode *node = spiceStruct.declNode;
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
@@ -118,6 +119,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(Struct &spiceStruct, Scope *st
       const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
       const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true, node);
       hasFieldsToCopyConstruct |= ctorFct != nullptr;
+      requestRevisitIfRequired(ctorFct);
     }
   }
 
@@ -163,7 +165,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(Struct &spiceStruct, Scope *st
  * @param entry SymbolTableEntry of the struct
  * @param structScope Scope of the struct
  */
-void TypeChecker::createDefaultDtorIfRequired(Struct &spiceStruct, Scope *structScope) {
+void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
   ASTNode *node = spiceStruct.declNode;
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
@@ -187,6 +189,7 @@ void TypeChecker::createDefaultDtorIfRequired(Struct &spiceStruct, Scope *struct
       const SymbolType &thisType = fieldSymbol->getType();
       const Function *dtorFct = FunctionManager::matchFunction(fieldScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
       hasFieldsToDestruct |= dtorFct != nullptr;
+      requestRevisitIfRequired(dtorFct);
     }
   }
 
