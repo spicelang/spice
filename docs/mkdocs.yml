@@ -22,23 +22,23 @@ theme:
     - content.action.edit
     - announce.dismiss
   palette:
-    - media: "(prefers-color-scheme)"
+    - media: "(prefers-color-scheme)"  # System preference
       primary: red
-      accent: light blue
+      accent: deep orange
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
     - media: "(prefers-color-scheme: light)"  # Light mode
       scheme: default
       primary: red
-      accent: light blue
+      accent: deep orange
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"  # Dark mode
       scheme: slate
       primary: red
-      accent: light blue
+      accent: deep orange
       toggle:
         icon: material/brightness-4
         name: Switch to system preference
