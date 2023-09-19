@@ -12,6 +12,7 @@ static const char *const FCT_NAME_DEALLOC = "sDealloc";
 
 /**
  * Create a default struct method
+ * Checks if the given struct scope already has an user-defined constructor and creates a default one if not.
  *
  * @param entry SymbolTableEntry of the struct
  * @param structScope Scope of the struct
