@@ -8,6 +8,8 @@
 
 #include <Token.h>
 
+#include <util/GlobalDefinitions.h>
+
 namespace spice::compiler {
 
 struct CodeLoc {
@@ -30,11 +32,15 @@ public:
   [[nodiscard]] std::string toPrettyLineAndColumn() const;
 
   // Operators
-  friend bool operator==(const CodeLoc &a, const CodeLoc &b) {
+  ALWAYS_INLINE friend bool operator==(const CodeLoc &a, const CodeLoc &b) {
     return a.sourceFilePath == b.sourceFilePath && a.line == b.line && a.col == b.col;
   }
-  friend bool operator<(const CodeLoc &a, const CodeLoc &b) { return a.line == b.line ? a.col < b.col : a.line < b.line; }
-  friend bool operator>(const CodeLoc &a, const CodeLoc &b) { return a.line == b.line ? a.col > b.col : a.line > b.line; }
+  ALWAYS_INLINE friend bool operator<(const CodeLoc &a, const CodeLoc &b) {
+    return a.line == b.line ? a.col < b.col : a.line < b.line;
+  }
+  ALWAYS_INLINE friend bool operator>(const CodeLoc &a, const CodeLoc &b) {
+    return a.line == b.line ? a.col > b.col : a.line > b.line;
+  }
 };
 
 } // namespace spice::compiler

@@ -20,8 +20,8 @@ class GenericType;
 struct CodeLoc;
 
 // Typedefs
-using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, /*structObject=*/Function>;
-using FunctionRegistry = std::unordered_map</*codeLoc=*/std::string, /*manifestations=*/FunctionManifestationList>;
+using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, Function>;
+using FunctionRegistry = std::map<CodeLoc, FunctionManifestationList>;
 
 enum class MatchResult : uint8_t { MATCHED, SKIP_MANIFESTATION, SKIP_FUNCTION };
 

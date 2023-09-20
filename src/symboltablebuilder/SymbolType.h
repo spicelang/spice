@@ -110,18 +110,22 @@ public:
   [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
-  [[nodiscard]] inline bool isPtr() const { return getSuperType() == TY_PTR; }
-  [[nodiscard]] inline bool isPtrOf(SymbolSuperType superType) const { return isPtr() && getContainedTy().is(superType); }
-  [[nodiscard]] inline bool isRef() const { return getSuperType() == TY_REF; }
-  [[nodiscard]] inline bool isRefOf(SymbolSuperType superType) const { return isRef() && getContainedTy().is(superType); }
-  [[nodiscard]] inline bool isArray() const { return getSuperType() == TY_ARRAY; }
-  [[nodiscard]] inline bool isArrayOf(SymbolSuperType superType) const { return isArray() && getContainedTy().is(superType); }
-  [[nodiscard]] inline bool isArrayOf(const SymbolType &symbolType) const { return isArray() && getContainedTy() == symbolType; }
-  [[nodiscard]] inline bool is(SymbolSuperType superType) const { return getSuperType() == superType; }
-  [[nodiscard]] inline bool is(SymbolSuperType superType, const std::string &subType) const {
+  [[nodiscard]] ALWAYS_INLINE bool isPtr() const { return getSuperType() == TY_PTR; }
+  [[nodiscard]] ALWAYS_INLINE bool isPtrOf(SymbolSuperType superType) const { return isPtr() && getContainedTy().is(superType); }
+  [[nodiscard]] ALWAYS_INLINE bool isRef() const { return getSuperType() == TY_REF; }
+  [[nodiscard]] ALWAYS_INLINE bool isRefOf(SymbolSuperType superType) const { return isRef() && getContainedTy().is(superType); }
+  [[nodiscard]] ALWAYS_INLINE bool isArray() const { return getSuperType() == TY_ARRAY; }
+  [[nodiscard]] ALWAYS_INLINE bool isArrayOf(SymbolSuperType superType) const {
+    return isArray() && getContainedTy().is(superType);
+  }
+  [[nodiscard]] ALWAYS_INLINE bool isArrayOf(const SymbolType &symbolType) const {
+    return isArray() && getContainedTy() == symbolType;
+  }
+  [[nodiscard]] ALWAYS_INLINE bool is(SymbolSuperType superType) const { return getSuperType() == superType; }
+  [[nodiscard]] ALWAYS_INLINE bool is(SymbolSuperType superType, const std::string &subType) const {
     return getSuperType() == superType && getSubType() == subType;
   }
-  [[nodiscard]] inline bool isPrimitive() const {
+  [[nodiscard]] ALWAYS_INLINE bool isPrimitive() const {
     return isOneOf({TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL});
   }
   [[nodiscard]] bool isIterator(const ASTNode *node) const;
@@ -129,24 +133,24 @@ public:
   [[nodiscard]] bool isErrorObj() const;
   [[nodiscard]] bool implements(const SymbolType &symbolType, const ASTNode *node) const;
   [[nodiscard]] bool isBaseType(SymbolSuperType superType) const;
-  [[nodiscard]] inline bool isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
+  [[nodiscard]] ALWAYS_INLINE bool isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
     const SymbolSuperType superType = getSuperType();
     return std::ranges::any_of(superTypes, [&superType](int type) { return type == superType; });
   }
   [[nodiscard]] bool isSameContainerTypeAs(const SymbolType &otherType) const;
-  [[nodiscard]] inline SymbolSuperType getSuperType() const {
+  [[nodiscard]] ALWAYS_INLINE SymbolSuperType getSuperType() const {
     assert(!typeChain.empty());
     return typeChain.back().superType;
   }
-  [[nodiscard]] inline const std::string &getSubType() const {
+  [[nodiscard]] ALWAYS_INLINE const std::string &getSubType() const {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
     return typeChain.back().subType;
   }
-  [[nodiscard]] inline std::string getOriginalSubType() const {
+  [[nodiscard]] ALWAYS_INLINE std::string getOriginalSubType() const {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
     return CommonUtil::getLastFragment(typeChain.back().subType, SCOPE_ACCESS_TOKEN);
   }
-  [[nodiscard]] inline SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
+  [[nodiscard]] ALWAYS_INLINE SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
   [[nodiscard]] SymbolType getBaseType() const {
     assert(!typeChain.empty());
     return SymbolType({typeChain.front()});
@@ -157,29 +161,29 @@ public:
   [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
   [[nodiscard]] std::string getName(bool withSize = false) const;
-  [[nodiscard]] inline size_t getArraySize() const {
+  [[nodiscard]] ALWAYS_INLINE size_t getArraySize() const {
     assert(getSuperType() == TY_ARRAY);
     return typeChain.back().data.arraySize;
   }
-  [[nodiscard]] inline bool isConst() const { return typeChain.size() == 1 && specifiers.isConst; }
-  [[nodiscard]] inline bool isSigned() const {
+  [[nodiscard]] ALWAYS_INLINE bool isConst() const { return typeChain.size() == 1 && specifiers.isConst; }
+  [[nodiscard]] ALWAYS_INLINE bool isSigned() const {
     assert(isOneOf({TY_INT, TY_SHORT, TY_LONG}));
     return specifiers.isSigned;
   }
-  [[nodiscard]] inline bool isInline() const {
+  [[nodiscard]] ALWAYS_INLINE bool isInline() const {
     assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
     return specifiers.isInline;
   }
-  [[nodiscard]] inline bool isPublic() const {
+  [[nodiscard]] ALWAYS_INLINE bool isPublic() const {
     assert(isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
     return specifiers.isPublic;
   }
-  [[nodiscard]] inline bool isHeap() const { return specifiers.isHeap; }
-  inline void setBodyScope(Scope *bodyScope) {
+  [[nodiscard]] ALWAYS_INLINE bool isHeap() const { return specifiers.isHeap; }
+  ALWAYS_INLINE void setBodyScope(Scope *bodyScope) {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
     typeChain.back().data.bodyScope = bodyScope;
   }
-  [[nodiscard]] inline Scope *getBodyScope() const {
+  [[nodiscard]] ALWAYS_INLINE Scope *getBodyScope() const {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
     return typeChain.back().data.bodyScope;
   }

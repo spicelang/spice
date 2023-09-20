@@ -12,7 +12,7 @@ namespace spice::compiler {
 Function *FunctionManager::insertFunction(Scope *insertScope, const Function &baseFunction,
                                           std::vector<Function *> *nodeFunctionList) {
   // Open a new manifestation list for the function definition
-  insertScope->functions.insert({baseFunction.declNode->codeLoc.toString(), std::unordered_map<std::string, Function>()});
+  insertScope->functions.insert({baseFunction.declNode->codeLoc, std::unordered_map<std::string, Function>()});
 
   // Collect substantiations
   std::vector<Function> manifestations;
@@ -101,7 +101,6 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std:
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
   assert(newManifestation.hasSubstantiatedParams());
 
-  const std::string codeLocStr = declNode->codeLoc.toString();
   const std::string signature = newManifestation.getSignature();
 
   // Check if the function exists already
@@ -110,8 +109,8 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
       throw SemanticError(declNode, FUNCTION_DECLARED_TWICE, "The function/procedure '" + signature + "' is declared twice");
 
   // Retrieve the matching manifestation list of the scope
-  assert(insertScope->functions.contains(codeLocStr));
-  FunctionManifestationList &manifestationList = insertScope->functions.at(codeLocStr);
+  assert(insertScope->functions.contains(declNode->codeLoc));
+  FunctionManifestationList &manifestationList = insertScope->functions.at(declNode->codeLoc);
 
   // Add substantiated function
   manifestationList.emplace(signature, newManifestation);
