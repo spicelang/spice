@@ -15,7 +15,10 @@
 
 ---
 
-This is the home repo of the Spice programming language. Spice is a compiled language which sets a focus on performance and practicality. It is considered as a systems language, which means it is especially useful to write cli tools or device drivers. Spice supports cross-compilation to all target platforms, listed below.
+This is the home repo of the Spice programming language.
+Spice is a compiled language which sets a focus on performance and practicality. It is considered as a systems language, which
+means it is especially useful to write cli tools or device drivers.
+Spice supports cross-compilation to all target platforms, listed [below](#available-target-platforms).
 
 If you like Spice, please consider a GitHub star! ⭐
 
@@ -24,7 +27,23 @@ If you like Spice, please consider a GitHub star! ⭐
 
 ## Documentation
 Please visit the documentation at [spicelang.com](https://www.spicelang.com). <br>
+We also have a Spice playground where you can try things: [play.spicelang.com](https://play.spicelang.com) <br>
 Code coverage can be found at [coverage.spicelang.com](http://coverage.spicelang.com).
+
+## Supported host systems & file downloads
+There are downloadable packages available for all supported platforms:
+
+| **Platform**                | **amd64**                                                                                         |
+|-----------------------------|---------------------------------------------------------------------------------------------------|
+| **Alpine (apk)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.apk)           |
+| **CentOS (rpm)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.rpm)           |
+| **Debian (deb)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.deb)           |
+| **Fedora (rpm)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.rpm)           |
+| **Raspbian (deb)**          | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.deb)           |
+| **Ubuntu (deb)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.deb)           |
+| **Windows Installer (msi)** | [download](https://github.com/spicelang/spice/releases/latest/download/spice_x64_setup.msi)       |
+| **Windows Portable (zip)**  | [download](https://github.com/spicelang/spice/releases/latest/download/spice_windows_amd64.zip)   |
+| **MacOS / Darwin (tar.gz)** | [download](https://github.com/spicelang/spice/releases/latest/download/spice_darwin_amd64.tar.gz) |
 
 ## Setup guide for contributors
 #### Clone the project
@@ -43,57 +62,31 @@ There is a batch/shell script called `dev-setup` to help you with that. It will 
 
 Use this command to run it:
 
-**Linux:** <br>
 ```sh
+# Linux
 ./dev-setup.sh
-```
-
-**Windows:** <br>
-```bat
+# Windows
 .\dev-setup.bat
 ```
 
 #### Re-build Spice
 There is also a batch/shell script to rebuild Spice. Use the following command to run it:
 
-**Linux:** <br>
 ```sh
+# Linux
 ./build.sh
-```
-
-**Windows:** <br>
-```bat
+# Windows
 .\build.bat
 ```
 
 You can find the build output in the `bin` subdirectory.
 
-## Grammar
-The Spice grammar can be found [here](./src/Spice.g4) as a ANTLR grammar configuration file.
-
 ## Available target platforms
-Currently, Spice only offers stable support for x86_64/windows and x86_64/linux. But you can try to compile to the following architectures without any stability promises:
+Currently, Spice only offers stable support for linux/x86_64, linux/aarch64 and windows/x86_64.
+But you can try to compile to the following architectures without any stability promises:
 
-- `aarch64`
-- `amdgpu`
-- `armv5`, `armv6`, `armv7`
-- `avr`
-- `bpf`
-- `hexagon`
-- `lanai`
-- `loongarch`
-- `mips`
-- `msp430`
-- `nvptx`
-- `powerpc`
-- `riscv`
-- `sparc`
-- `systemz`
-- `ve`
-- `webassembly`
-- `x86`
-- `x86_64`
-- `xcore`
+`aarch64`, `amdgpu`, `armv5`, `armv6`, `armv7`, `avr`, `bpf`, `hexagon`, `lanai`, `loongarch`, `mips`, `msp430`, `nvptx`,
+`powerpc`, `riscv`, `sparc`, `systemz`, `ve`, `webassembly`, `x86`, `x86_64`, `xcore`
 
 ## Contribute to the project
 If you want to contribute to this project, please ensure you comply with the [contribution guidelines](./CONTRIBUTING.md).
