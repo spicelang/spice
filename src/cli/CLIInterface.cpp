@@ -18,9 +18,9 @@ namespace spice::compiler {
 void CLIInterface::createInterface() {
   // Allow positional args
   app.positionals_at_end();
-  app.footer("(c) Marc Auberer 2021-2023");
   app.require_subcommand(1);
   app.allow_extras(false);
+  app.footer("(c) Marc Auberer 2021-2023");
 
   // Add version flag
   const std::string versionName(SPICE_VERSION);

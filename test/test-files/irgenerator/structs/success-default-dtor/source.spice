@@ -1,0 +1,22 @@
+import "std/type/result";
+
+type StructWithHeapFields struct {
+    heap int* data
+}
+
+p StructWithHeapFields.ctor() {
+    dyn res = sAlloc(10l);
+    unsafe {
+        this.data = (heap int*) res.unwrap();
+    }
+}
+
+f<int> main() {
+    StructWithHeapFields* sPtr = nil<StructWithHeapFields*>;
+    {
+        StructWithHeapFields s = StructWithHeapFields();
+        sPtr = &s;
+        printf("Is nullptr: %d\n", s.data == nil<heap int*>);
+    }
+    printf("Is nullptr: %d\n", sPtr.data == nil<heap int*>);
+}
