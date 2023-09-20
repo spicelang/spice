@@ -52,6 +52,18 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
 }
 
 /**
+ * Get the const reference type of the current type as a new type
+ *
+ * @param node AST node for error messages
+ * @return Const reference type of the current type
+ */
+SymbolType SymbolType::toConstReference(const ASTNode *node) const {
+  SymbolType constRefType = toReference(node);
+  constRefType.specifiers.isConst = true;
+  return constRefType;
+}
+
+/**
  * Get the array type of the current type as a new type
  *
  * @param node AST node for error messages

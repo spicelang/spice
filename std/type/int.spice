@@ -31,7 +31,7 @@ public f<char> toChar(int input) {
 public f<String> toString(const int input) {
     if input == 0 { return String("0"); }
 
-    String str = String();
+    String str;
     bool isNeg = input < 0;
     unsigned int uInput = isNeg ? -input : input;
 

@@ -81,12 +81,15 @@ public:
   [[nodiscard]] size_t getLoopNestingDepth() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
   [[nodiscard]] bool isImportedBy(const Scope *askingScope) const;
+  const StructRegistry &getStructs() const { return structs; }
   [[nodiscard]] nlohmann::json getSymbolTableJSON() const;
 
   // Wrapper methods for symbol table
-  inline SymbolTableEntry *insert(const std::string &name, ASTNode *declNode) { return symbolTable.insert(name, declNode); }
-  inline SymbolTableEntry *lookup(const std::string &symbolName) { return symbolTable.lookup(symbolName); }
-  inline SymbolTableEntry *lookupStrict(const std::string &symbolName) { return symbolTable.lookupStrict(symbolName); }
+  ALWAYS_INLINE SymbolTableEntry *insert(const std::string &name, ASTNode *declNode) {
+    return symbolTable.insert(name, declNode);
+  }
+  ALWAYS_INLINE SymbolTableEntry *lookup(const std::string &symbolName) { return symbolTable.lookup(symbolName); }
+  ALWAYS_INLINE SymbolTableEntry *lookupStrict(const std::string &symbolName) { return symbolTable.lookupStrict(symbolName); }
 
   // Public members
   Scope *parent;

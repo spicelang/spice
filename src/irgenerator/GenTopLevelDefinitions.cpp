@@ -153,8 +153,9 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Get 'this' entry
     std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
     std::vector<llvm::Type *> paramTypes;
+    SymbolTableEntry *thisEntry = nullptr;
     if (manifestation->isMethod()) {
-      SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
+      thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
       assert(thisEntry != nullptr);
       paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
       paramTypes.push_back(builder.getPtrTy());
@@ -211,6 +212,11 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     if (manifestation->isMethod()) {
       func->addParamAttr(0, llvm::Attribute::NoUndef);
       func->addParamAttr(0, llvm::Attribute::NonNull);
+      assert(thisEntry != nullptr);
+      llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+      assert(structType != nullptr);
+      func->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
+      func->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
     }
 
     // Add debug info
@@ -373,6 +379,11 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     if (manifestation->isMethod()) {
       proc->addParamAttr(0, llvm::Attribute::NoUndef);
       proc->addParamAttr(0, llvm::Attribute::NonNull);
+      assert(thisEntry != nullptr);
+      llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+      assert(structType != nullptr);
+      proc->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
+      proc->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
     }
 
     // Add debug info
@@ -488,11 +499,19 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     // Set field types to struct type
     structType->setBody(fieldTypes);
 
-    // Generate default ctor/dtor, etc.
+    // Generate default ctor if required
     const SymbolType &thisType = structEntry->getType();
     const Function *ctorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, {}, true);
     if (ctorFunc != nullptr && ctorFunc->implicitDefault)
       generateDefaultDefaultCtor(ctorFunc);
+
+    // Generate default copy ctor if required
+    const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
+    const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true);
+    if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
+      generateDefaultDefaultCopyCtor(copyCtorFunc);
+
+    // Generate default dtor if required
     const Function *dtorFunc = FunctionManager::lookupFunction(currentScope, DTOR_FUNCTION_NAME, thisType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
       generateDefaultDefaultDtor(dtorFunc);

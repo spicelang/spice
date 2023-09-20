@@ -30,6 +30,8 @@ struct LLVMExprResult {
   llvm::Value *refPtr = nullptr;
   SymbolTableEntry *entry = nullptr;
   const ASTNode *node = nullptr;
+
+  [[nodiscard]] bool isTemporary() const { return entry == nullptr; }
 };
 
 /**

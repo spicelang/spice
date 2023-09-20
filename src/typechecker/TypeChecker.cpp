@@ -19,11 +19,23 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
   reVisitRequested = false;
 
   // Initialize AST nodes with size of 1
-  if (typeCheckerMode == TC_MODE_PREPARE)
+  const bool isPrepare = typeCheckerMode == TC_MODE_PREPARE;
+  if (isPrepare)
     node->resizeToNumberOfManifestations(1);
 
   // Visit children
   visitChildren(node);
+
+  // Check which implicit structures we need for each struct, defined in this source file
+  if (isPrepare) {
+    for (const auto &[structName, manifestations] : rootScope->getStructs()) {
+      for (const auto &[manifestationName, manifestation] : manifestations) {
+        createDefaultCtorIfRequired(manifestation, manifestation.structScope);
+        createDefaultCopyCtorIfRequired(manifestation, manifestation.structScope);
+        createDefaultDtorIfRequired(manifestation, manifestation.structScope);
+      }
+    }
+  }
 
   return nullptr;
 }
@@ -436,11 +448,14 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   SymbolType localVarType;
   if (node->hasAssignment) {
     // Visit the right side
-    auto [rhsTy, rhsEntry] = std::any_cast<ExprResult>(visit(node->assignExpr()));
+    auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
+    auto [rhsTy, rhsEntry] = rhs;
 
     // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
-    if (rhsEntry != nullptr && rhsEntry->anonymous)
+    if (rhsEntry != nullptr && rhsEntry->anonymous) {
       currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
+      rhs.entry = rhsEntry = nullptr;
+    }
 
     // Visit data type
     localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
@@ -450,15 +465,27 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       rhsTy = localVarType;
 
     // Check if type has to be inferred or both types are fixed
-    if (localVarType.is(TY_UNRESOLVED) || rhsTy.is(TY_UNRESOLVED))
-      localVarType = SymbolType(TY_UNRESOLVED);
-    else
+    if (!localVarType.is(TY_UNRESOLVED) && !rhsTy.is(TY_UNRESOLVED)) {
       localVarType = opRuleManager.getAssignResultType(node, localVarType, rhsTy, 0, true);
 
-    // If this is a struct type, check if the type is known. If not, error out
-    if (localVarType.isBaseType(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBaseType().getSubType())) {
-      const std::string structName = localVarType.getBaseType().getOriginalSubType();
-      softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
+      // Call copy ctor if required
+      if (localVarType.is(TY_STRUCT) && !node->isParam && !rhs.isTemporary()) {
+        Scope *matchScope = localVarType.getBodyScope();
+        assert(matchScope != nullptr);
+        // Check if we have a no-args ctor to call
+        const std::string structName = localVarType.getOriginalSubType();
+        const SymbolType &thisType = localVarType;
+        const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
+        node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true, node);
+      }
+
+      // If this is a struct type, check if the type is known. If not, error out
+      if (localVarType.isBaseType(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBaseType().getSubType())) {
+        const std::string structName = localVarType.getBaseType().getOriginalSubType();
+        softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
+        localVarType = SymbolType(TY_UNRESOLVED);
+      }
+    } else {
       localVarType = SymbolType(TY_UNRESOLVED);
     }
   } else {
@@ -477,8 +504,9 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       node->isCtorCallRequired = matchScope->hasRefFields();
       // Check if we have a no-args ctor to call
       const std::string structName = localVarType.getOriginalSubType();
-      node->initCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, localVarType, {}, false, node);
-      if (!node->initCtor && node->isCtorCallRequired)
+      const SymbolType &thisType = localVarType;
+      node->calledInitCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, {}, false, node);
+      if (!node->calledInitCtor && node->isCtorCallRequired)
         SOFT_ERROR_ST(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
     }
   }
@@ -529,12 +557,14 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
 
   // Manager dtor call
   if (rhs.entry != nullptr) {
-    if (rhs.entry->anonymous)
+    if (rhs.entry->anonymous) {
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
       currentScope->symbolTable.deleteAnonymous(rhs.entry->name);
-    else
+      rhs.entry = nullptr;
+    } else {
       // Otherwise omit the destructor call, because the caller destructs the value
       rhs.entry->omitDtorCall = true;
+    }
   }
 
   return node->setEvaluatedSymbolType(returnType, manIdx);
@@ -725,8 +755,10 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
       rhsType = opRuleManager.getAssignResultType(node, lhsType, rhsType, 0);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
-      if (rhsEntry != nullptr && rhsEntry->anonymous)
+      if (rhsEntry != nullptr && rhsEntry->anonymous) {
         currentScope->symbolTable.deleteAnonymous(rhsEntry->name);
+        rhsEntry = nullptr;
+      }
     } else if (node->op == AssignExprNode::OP_PLUS_EQUAL) {
       rhsType = opRuleManager.getPlusEqualResultType(node, lhsType, rhsType, 0).type;
     } else if (node->op == AssignExprNode::OP_MINUS_EQUAL) {
@@ -1518,9 +1550,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     }
 
     // Check if we need to request a re-visit, because the function body was not type-checked yet
-    const bool isCallToImportedSourceFile = data.callee->entry->scope->isImportedBy(rootScope);
-    if (!data.callee->alreadyTypeChecked && !isCallToImportedSourceFile)
-      reVisitRequested = true;
+    requestRevisitIfRequired(data.callee);
 
     // Get function entry from function object
     SymbolTableEntry *functionEntry = data.callee->entry;
@@ -1867,8 +1897,10 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       opRuleManager.getFieldAssignResultType(assignExpr, expectedType, fieldResult.type, 0, rhsIsImmediate);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
-      if (fieldResult.entry != nullptr && fieldResult.entry->anonymous)
+      if (fieldResult.entry != nullptr && fieldResult.entry->anonymous) {
         currentScope->symbolTable.deleteAnonymous(fieldResult.entry->name);
+        fieldResult.entry = nullptr;
+      }
     }
   } else {
     for (SymbolType &fieldType : spiceStruct->fieldTypes) {
@@ -2374,6 +2406,16 @@ void TypeChecker::autoDeReference(SymbolType &symbolType) {
 std::vector<const Function *> &TypeChecker::getOpFctPointers(ASTNode *node) const {
   assert(node->opFct.size() > manIdx);
   return node->opFct.at(manIdx);
+}
+
+/**
+ * Check if a function has been type-checked already. If not, request a revisit
+ *
+ * @param function Function to check
+ */
+void TypeChecker::requestRevisitIfRequired(const Function *fct) {
+  if (fct && !fct->alreadyTypeChecked && !fct->entry->scope->isImportedBy(rootScope))
+    reVisitRequested = true;
 }
 
 /**

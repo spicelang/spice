@@ -63,7 +63,7 @@ public:
     static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
     size_t j = 0;
     for (ASTNode *child : children) {
-      if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr) {
+      if (auto *typedChild = dynamic_cast<T *>(child)) [[unlikely]] {
         if (j++ == i)
           return typedChild;
       }
@@ -75,13 +75,14 @@ public:
     static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
     std::vector<T *> nodes;
     for (ASTNode *child : children) {
-      if (auto *typedChild = dynamic_cast<T *>(child); typedChild != nullptr)
+      if (auto *typedChild = dynamic_cast<T *>(child)) [[unlikely]] {
         nodes.push_back(typedChild);
+      }
     }
     return nodes;
   }
 
-  inline void reserveChildren(size_t numberOfChildren) { children.reserve(numberOfChildren); }
+  ALWAYS_INLINE void reserveChildren(size_t numberOfChildren) { children.reserve(numberOfChildren); }
 
   void replaceInParent(ASTNode *replacementNode) {
     assert(parent != nullptr);
@@ -955,7 +956,8 @@ public:
   bool isParam = false;
   bool isForEachItem = false;
   bool isCtorCallRequired = false; // For struct, in case there are reference fields, we need to call a user-defined ctor
-  Function *initCtor = nullptr;
+  Function *calledInitCtor = nullptr;
+  Function *calledCopyCtor = nullptr;
 };
 
 // ======================================================= SpecifierLstNode ======================================================

@@ -92,88 +92,88 @@ main:
 	leaq	96(%rbp), %rcx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	96(%rbp), %rax
+	movq	104(%rbp), %rcx
+	movq	112(%rbp), %rdx
 	movq	%rax, -96(%rbp)
-	movq	104(%rbp), %rax
-	movq	%rax, -88(%rbp)
-	movq	112(%rbp), %rax
-	movq	%rax, -80(%rbp)
+	movq	%rcx, -88(%rbp)
+	movq	%rdx, -80(%rbp)
 	leaq	-96(%rbp), %rcx
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	96(%rbp), %rax
+	movq	104(%rbp), %rcx
+	movq	112(%rbp), %rdx
 	movq	%rax, -72(%rbp)
-	movq	104(%rbp), %rax
-	movq	%rax, -64(%rbp)
-	movq	112(%rbp), %rax
-	movq	%rax, -56(%rbp)
+	movq	%rcx, -64(%rbp)
+	movq	%rdx, -56(%rbp)
 	movq	%r13, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	96(%rbp), %rax
+	movq	104(%rbp), %rcx
+	movq	112(%rbp), %rdx
 	movq	%rax, -48(%rbp)
-	movq	104(%rbp), %rax
-	movq	%rax, -40(%rbp)
-	movq	112(%rbp), %rax
-	movq	%rax, -32(%rbp)
+	movq	%rcx, -40(%rbp)
+	movq	%rdx, -32(%rbp)
 	movq	%r12, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	96(%rbp), %rax
+	movq	104(%rbp), %rcx
+	movq	112(%rbp), %rdx
 	movq	%rax, -24(%rbp)
-	movq	104(%rbp), %rax
-	movq	%rax, -16(%rbp)
-	movq	112(%rbp), %rax
-	movq	%rax, -8(%rbp)
+	movq	%rcx, -16(%rbp)
+	movq	%rdx, -8(%rbp)
 	movq	%r15, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	96(%rbp), %rax
+	movq	104(%rbp), %rcx
+	movq	112(%rbp), %rdx
 	movq	%rax, (%rbp)
-	movq	104(%rbp), %rax
-	movq	%rax, 8(%rbp)
-	movq	112(%rbp), %rax
-	movq	%rax, 16(%rbp)
+	movq	%rcx, 8(%rbp)
+	movq	%rdx, 16(%rbp)
 	movq	%r14, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	96(%rbp), %rax
+	movq	104(%rbp), %rcx
+	movq	112(%rbp), %rdx
 	movq	%rax, 24(%rbp)
-	movq	104(%rbp), %rax
-	movq	%rax, 32(%rbp)
-	movq	112(%rbp), %rax
-	movq	%rax, 40(%rbp)
+	movq	%rcx, 32(%rbp)
+	movq	%rdx, 40(%rbp)
 	movq	%rbx, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	96(%rbp), %rax
+	movq	104(%rbp), %rcx
+	movq	112(%rbp), %rdx
 	movq	%rax, 48(%rbp)
-	movq	104(%rbp), %rax
-	movq	%rax, 56(%rbp)
-	movq	112(%rbp), %rax
-	movq	%rax, 64(%rbp)
+	movq	%rcx, 56(%rbp)
+	movq	%rdx, 64(%rbp)
 	movq	%rdi, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
 	callq	_ZN6Thread4ctorEPFvE
 	movq	96(%rbp), %rax
+	movq	104(%rbp), %rcx
+	movq	112(%rbp), %rdx
 	movq	%rax, 72(%rbp)
-	movq	104(%rbp), %rax
-	movq	%rax, 80(%rbp)
-	movq	112(%rbp), %rax
-	movq	%rax, 88(%rbp)
+	movq	%rcx, 80(%rbp)
+	movq	%rdx, 88(%rbp)
 	movq	%rsi, %rcx
 	callq	_ZN6Thread3runEv
 	leaq	.Lstr(%rip), %rcx

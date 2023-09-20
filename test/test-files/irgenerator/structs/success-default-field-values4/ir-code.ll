@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.0 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [12 x i8] c"String: %s\0A\00", align 1
 
-define private void @_ZN4Test4ctorEv(ptr noundef nonnull %0) {
+define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   store %struct.Test { i32 12, ptr @0 }, ptr %0, align 8

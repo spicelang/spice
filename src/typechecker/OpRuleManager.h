@@ -20,6 +20,8 @@ class TypeChecker;
 struct ExprResult {
   SymbolType type;
   SymbolTableEntry *entry = nullptr;
+
+  [[nodiscard]] bool isTemporary() const { return entry == nullptr; }
 };
 
 // Helper macro to get the length of an array

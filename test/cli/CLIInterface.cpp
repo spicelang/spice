@@ -6,9 +6,9 @@
 
 void CLIInterface::createInterface() {
   // Allow positional args
-  app.allow_windows_style_options();
-  app.allow_extras();
   app.positionals_at_end();
+  app.require_subcommand(0);
+  app.allow_extras(false);
   app.footer("(c) Marc Auberer 2021-2023");
 
   // Add version flag

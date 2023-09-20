@@ -1,0 +1,16 @@
+type Inner struct {
+    string message = "Hello World"
+}
+
+type Middle struct {
+    Inner inner
+}
+
+type Outer struct {
+    Middle middle
+}
+
+f<int> main() {
+    Outer outer;
+    printf("Message: %s\n", outer.middle.inner.message);
+}

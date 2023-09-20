@@ -18,7 +18,7 @@ define dso_local i32 @main() #0 {
   ret i32 %1
 }
 
-define private void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull %0) {
+define private void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -30,7 +30,7 @@ define private void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull %0) {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-define private i32 @_ZN10TestStructIhE7getTestEv(ptr noundef nonnull %0) {
+define private i32 @_ZN10TestStructIhE7getTestEv(ptr noundef nonnull align 4 dereferenceable(8) %0) {
   %result = alloca i32, align 4
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8

@@ -20,8 +20,8 @@ class GenericType;
 struct CodeLoc;
 
 // Typedefs
-using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, /*structObject=*/Function>;
-using FunctionRegistry = std::unordered_map</*codeLoc=*/std::string, /*manifestations=*/FunctionManifestationList>;
+using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, Function>;
+using FunctionRegistry = std::map<CodeLoc, FunctionManifestationList>;
 
 enum class MatchResult : uint8_t { MATCHED, SKIP_MANIFESTATION, SKIP_FUNCTION };
 
@@ -40,10 +40,9 @@ public:
                                                       const SymbolType &requestedThisType,
                                                       const std::vector<SymbolType> &requestedParamTypes,
                                                       bool strictSpecifierMatching);
-  [[nodiscard]] static Function *matchFunction(Scope *matchScope, const std::string &requestedName,
-                                               const SymbolType &requestedThisType,
-                                               const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
-                                               const ASTNode *callNode);
+  static Function *matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
+                                 const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
+                                 const ASTNode *callNode);
   [[nodiscard]] static bool matchInterfaceMethod(Scope *matchScope, const std::string &requestedName,
                                                  const std::vector<SymbolType> &requestedParamTypes,
                                                  const SymbolType &requestedReturnType, bool strictSpecifierMatching);

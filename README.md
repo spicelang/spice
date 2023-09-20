@@ -45,6 +45,7 @@ There are downloadable packages available for all supported platforms:
 | **Windows Portable (zip)**  | [download](https://github.com/spicelang/spice/releases/latest/download/spice_windows_amd64.zip)   | -                                                                                                 |
 | **MacOS / Darwin (tar.gz)** | [download](https://github.com/spicelang/spice/releases/latest/download/spice_darwin_amd64.tar.gz) | [download](https://github.com/spicelang/spice/releases/latest/download/spice_darwin_arm64.tar.gz) |
 
+
 ## Setup guide for contributors
 #### Clone the project
 ```sh

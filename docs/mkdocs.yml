@@ -20,21 +20,28 @@ theme:
     - navigation.tabs
     - content.code.copy
     - content.action.edit
+    - announce.dismiss
   palette:
+    - media: "(prefers-color-scheme)"  # System preference
+      primary: red
+      accent: deep orange
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
     - media: "(prefers-color-scheme: light)"  # Light mode
       scheme: default
-      primary: blue grey
-      accent: red
+      primary: red
+      accent: deep orange
       toggle:
-        icon: material/weather-sunny
-        name: Switch to light mode
+        icon: material/brightness-7
+        name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"  # Dark mode
       scheme: slate
-      primary: blue grey
-      accent: red
+      primary: red
+      accent: deep orange
       toggle:
-        icon: material/weather-night
-        name: Switch to dark mode
+        icon: material/brightness-4
+        name: Switch to system preference
 
 extra_css:
   - stylesheets/styles.css
@@ -45,6 +52,9 @@ plugins:
       - en
   - minify:
       minify_html: true
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - offline
 
 extra:
   social:
