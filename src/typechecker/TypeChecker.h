@@ -131,13 +131,17 @@ private:
   [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
   static void autoDeReference(SymbolType &symbolType);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
+  void requestRevisitIfRequired(const Function *fct);
   [[nodiscard]] bool isStringRT() const;
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
 
   // Implicit code generation
-  void createDefaultCtorIfRequired(Struct &spiceStruct, Scope *structScope);
-  void createDefaultCopyCtorIfRequired(Struct &spiceStruct, Scope *structScope);
-  void createDefaultDtorIfRequired(Struct &spiceStruct, Scope *structScope);
+  void createDefaultStructMethod(const Struct &spiceStruct, const std::string &methodName, const ParamList &params);
+  void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
+  void createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
+  void createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope);
+  Function *implicitlyCallStructMethod(SymbolTableEntry *entry, const std::string &methodName,
+                                       const std::vector<SymbolType> &paramTypes, const ASTNode *node);
   void implicitlyCallStructCopyCtor(SymbolTableEntry *entry, const ASTNode *node);
   void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
   void doScopeCleanup(StmtLstNode *node);

@@ -13,7 +13,7 @@ ext p memcpy(heap char*, heap char*, long);
  * to the primitive string type.
  */
 public type String struct {
-    heap char* contents         // Pointer to the first char
+    heap char* contents    // Pointer to the first char
     unsigned long capacity // Allocated number of chars (without null terminator)
     unsigned long length   // Used number of chars
 }
