@@ -27,7 +27,7 @@ public type CliOptions struct {
     public bool dumpIR = false
     public bool dumpAssembly = false
     public bool dumpSymbolTable = false
-    public bool disableAstOpt = false
+    public bool enableAstOpt = false
     public short optLevel = 2s // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
     public bool generateDebugInfo = false
     public bool disableVerifier = false
@@ -177,8 +177,8 @@ p CliInterface.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     jobsFlag.addAlias("-j");
     // --ignore-cache
     subCmd.addFlag("--ignore-cache", this.cliOptions.ignoreCache, "Force re-compilation of all source files");
-    // --disable-ast-opt
-    subCmd.addFlag("--disable-ast-opt", this.cliOptions.disableAstOpt, "Disable first order optimizations on the AST");
+    // --enable-ast-opt
+    subCmd.addFlag("--enable-ast-opt", this.cliOptions.enableAstOpt, "Enable first order optimizations on the AST");
 
     // Opt levels
     //subCmd.addFlag("-O0", [&]() { this.cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
