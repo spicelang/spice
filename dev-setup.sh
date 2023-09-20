@@ -9,7 +9,7 @@ colored_echo() {
 # Install Linux dependencies
 colored_echo "[Step 1] Installing dependencies via Linux packages (Could take a while) ... "
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-sudo apt update -y
+sudo apt update
 sudo apt-get install -y cmake make ninja-build valgrind ccache uuid-dev pkg-config openjdk-11-jre-headless
 colored_echo "done."
 
