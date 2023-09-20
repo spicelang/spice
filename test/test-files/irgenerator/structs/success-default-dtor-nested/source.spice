@@ -1,0 +1,28 @@
+ext f<heap byte*> malloc(unsigned long);
+ext p free(heap byte*);
+
+type Inner struct {
+    string message = "Hello World"
+    heap byte* data
+}
+
+p Inner.ctor() {
+    this.data = malloc(10l);
+}
+
+p Inner.dtor() {
+    free(this.data);
+    printf("Inner dtor called\n");
+}
+
+type Middle struct {
+    Inner inner
+}
+
+type Outer struct {
+    Middle middle
+}
+
+f<int> main() {
+    Outer outer;
+}

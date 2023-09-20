@@ -15,8 +15,8 @@ class Interface;
 class Scope;
 
 // Typedefs
-using InterfaceManifestationList = std::unordered_map</*mangledName=*/std::string, /*interfaceObject=*/Interface>;
-using InterfaceRegistry = std::unordered_map</*codeLoc=*/std::string, /*manifestations=*/InterfaceManifestationList>;
+using InterfaceManifestationList = std::unordered_map</*mangledName=*/std::string, Interface>;
+using InterfaceRegistry = std::map<CodeLoc, InterfaceManifestationList>;
 
 class InterfaceManager {
 public:

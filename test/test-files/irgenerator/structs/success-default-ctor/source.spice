@@ -1,0 +1,14 @@
+type TestStruct struct {
+    int i = 123
+    string s = "abc"
+    double d = 1.23
+    bool b = true
+}
+
+f<int> main() {
+    TestStruct ts;
+    printf("Default value of int: %d\n", ts.i);
+    printf("Default value of string: %s\n", ts.s);
+    printf("Default value of double: %f\n", ts.d);
+    printf("Default value of bool: %d\n", ts.b);
+}

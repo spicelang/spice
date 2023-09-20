@@ -13,7 +13,7 @@ namespace spice::compiler {
 Interface *InterfaceManager::insertInterface(Scope *insertScope, Interface &spiceInterface,
                                              std::vector<Interface *> *nodeInterfaceList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
-  insertScope->interfaces.insert({spiceInterface.declNode->codeLoc.toString(), std::unordered_map<std::string, Interface>()});
+  insertScope->interfaces.insert({spiceInterface.declNode->codeLoc, std::unordered_map<std::string, Interface>()});
 
   // Save substantiation in declaration node
   Interface *substantiation = insertSubstantiation(insertScope, spiceInterface, spiceInterface.declNode);
@@ -23,7 +23,6 @@ Interface *InterfaceManager::insertInterface(Scope *insertScope, Interface &spic
 }
 
 Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface &newManifestation, const ASTNode *declNode) {
-  const std::string codeLocStr = declNode->codeLoc.toString();
   const std::string signature = newManifestation.getSignature();
 
   // Make sure that the manifestation does not exist already
@@ -31,8 +30,8 @@ Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface 
     assert(!manifestations.second.contains(newManifestation.getSignature()));
 
   // Retrieve the matching manifestation list of the scope
-  assert(insertScope->interfaces.contains(codeLocStr));
-  InterfaceManifestationList &manifestationList = insertScope->interfaces.at(codeLocStr);
+  assert(insertScope->interfaces.contains(declNode->codeLoc));
+  InterfaceManifestationList &manifestationList = insertScope->interfaces.at(declNode->codeLoc);
 
   // Add substantiated interface
   newManifestation.manifestationIndex = manifestationList.size();

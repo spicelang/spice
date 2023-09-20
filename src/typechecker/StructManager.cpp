@@ -12,7 +12,7 @@ namespace spice::compiler {
 
 Struct *StructManager::insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
-  insertScope->structs.insert({spiceStruct.declNode->codeLoc.toString(), std::unordered_map<std::string, Struct>()});
+  insertScope->structs.insert({spiceStruct.declNode->codeLoc, std::unordered_map<std::string, Struct>()});
 
   // Save substantiation in declaration node
   Struct *substantiation = insertSubstantiation(insertScope, spiceStruct, spiceStruct.declNode);
@@ -22,7 +22,6 @@ Struct *StructManager::insertStruct(Scope *insertScope, Struct &spiceStruct, std
 }
 
 Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManifestation, const ASTNode *declNode) {
-  const std::string codeLocStr = declNode->codeLoc.toString();
   const std::string signature = newManifestation.getSignature();
 
   // Make sure that the manifestation does not exist already
@@ -30,8 +29,8 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
     assert(!manifestations.second.contains(signature));
 
   // Retrieve the matching manifestation list of the scope
-  assert(insertScope->structs.contains(codeLocStr));
-  StructManifestationList &manifestationList = insertScope->structs.at(codeLocStr);
+  assert(insertScope->structs.contains(declNode->codeLoc));
+  StructManifestationList &manifestationList = insertScope->structs.at(declNode->codeLoc);
 
   // Add substantiated struct
   newManifestation.manifestationIndex = manifestationList.size();
