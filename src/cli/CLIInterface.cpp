@@ -17,10 +17,10 @@ namespace spice::compiler {
 
 void CLIInterface::createInterface() {
   // Allow positional args
-  app.allow_windows_style_options();
   app.positionals_at_end();
   app.footer("(c) Marc Auberer 2021-2023");
   app.require_subcommand(1);
+  app.allow_extras(false);
 
   // Add version flag
   const std::string versionName(SPICE_VERSION);
@@ -294,11 +294,9 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
   subCmd->add_flag<bool>("--dump-to-files", cliOptions.dumpSettings.dumpToFiles, "Redirect dumps to files instead of printing");
 
   // Source file
-  std::function<bool(const CLI::results_t &)> setMainSourceFile = [&](const CLI::results_t &results) {
-    cliOptions.mainSourceFile = std::filesystem::path(results.front()).make_preferred();
-    return true;
-  };
-  subCmd->add_option("<main-source-file>", setMainSourceFile, "Main source file")->check(CLI::ExistingFile)->required();
+  subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
+      ->check(CLI::ExistingFile)
+      ->required();
 }
 
 /**
