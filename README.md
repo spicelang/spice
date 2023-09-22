@@ -33,17 +33,18 @@ Code coverage can be found at [coverage.spicelang.com](http://coverage.spicelang
 ## Supported host systems & file downloads
 There are downloadable packages available for all supported platforms:
 
-| **Platform**                | **amd64**                                                                                         |
-|-----------------------------|---------------------------------------------------------------------------------------------------|
-| **Alpine (apk)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.apk)           |
-| **CentOS (rpm)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.rpm)           |
-| **Debian (deb)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.deb)           |
-| **Fedora (rpm)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.rpm)           |
-| **Raspbian (deb)**          | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.deb)           |
-| **Ubuntu (deb)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.deb)           |
-| **Windows Installer (msi)** | [download](https://github.com/spicelang/spice/releases/latest/download/spice_x64_setup.msi)       |
-| **Windows Portable (zip)**  | [download](https://github.com/spicelang/spice/releases/latest/download/spice_windows_amd64.zip)   |
-| **MacOS / Darwin (tar.gz)** | [download](https://github.com/spicelang/spice/releases/latest/download/spice_darwin_amd64.tar.gz) |
+| **Platform**                | **amd64**                                                                                         | **arm64**                                                                                         |
+|-----------------------------|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| **Alpine (apk)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.apk)           | [download](https://github.com/spicelang/spice/releases/latest/download/spice_arm64.apk)           |
+| **CentOS (rpm)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.rpm)           | [download](https://github.com/spicelang/spice/releases/latest/download/spice_arm64.rpm)           |
+| **Debian (deb)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.deb)           | [download](https://github.com/spicelang/spice/releases/latest/download/spice_arm64.deb)           |
+| **Fedora (rpm)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.rpm)           | [download](https://github.com/spicelang/spice/releases/latest/download/spice_arm64.rpm)           |
+| **Raspbian (deb)**          | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.deb)           | [download](https://github.com/spicelang/spice/releases/latest/download/spice_arm64.deb)           |
+| **Ubuntu (deb)**            | [download](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.deb)           | [download](https://github.com/spicelang/spice/releases/latest/download/spice_arm64.deb)           |
+| **Windows Installer (msi)** | [download](https://github.com/spicelang/spice/releases/latest/download/spice_x64_setup.msi)       | -                                                                                                 |
+| **Windows Portable (zip)**  | [download](https://github.com/spicelang/spice/releases/latest/download/spice_windows_amd64.zip)   | -                                                                                                 |
+| **MacOS / Darwin (tar.gz)** | [download](https://github.com/spicelang/spice/releases/latest/download/spice_darwin_amd64.tar.gz) | [download](https://github.com/spicelang/spice/releases/latest/download/spice_darwin_arm64.tar.gz) |
+
 
 ## Setup guide for contributors
 #### Clone the project

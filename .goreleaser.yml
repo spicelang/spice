@@ -4,8 +4,10 @@ builds:
     goos:
       - linux
       - windows
+      - darwin
     goarch:
       - amd64
+      - arm64
     hooks:
       post:
         - mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}
@@ -29,23 +31,46 @@ dockers:
       - --label=org.opencontainers.image.version={{.Version}}
       - --label=org.opencontainers.image.source={{.GitURL}}
       - --platform=linux/amd64
+  - image_templates:
+      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
+      - ghcr.io/spicelang/spice:latest-aarch64
+      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
+      - chillibits/spice:latest-aarch64
+    dockerfile: Dockerfile
+    skip_push: auto
+    use: buildx
+    goarch: arm64
+    extra_files:
+      - bin
+      - std
+    build_flag_templates:
+      - --label=org.opencontainers.image.created={{.Date}}
+      - --label=org.opencontainers.image.name={{.ProjectName}}
+      - --label=org.opencontainers.image.revision={{.FullCommit}}
+      - --label=org.opencontainers.image.version={{.Version}}
+      - --label=org.opencontainers.image.source={{.GitURL}}
+      - --platform=linux/arm64
 docker_manifests:
   - name_template: chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
     image_templates:
       - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
     skip_push: auto
   - name_template: chillibits/spice:latest
     image_templates:
       - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - chillibits/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
     skip_push: auto
 
   - name_template: ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}
     image_templates:
       - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
     skip_push: auto
   - name_template: ghcr.io/spicelang/spice:latest
     image_templates:
       - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64
+      - ghcr.io/spicelang/spice:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-aarch64
     skip_push: auto
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
