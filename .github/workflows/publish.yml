@@ -225,7 +225,7 @@ jobs:
 
   build-artifacts:
     name: Build artifacts
-    needs: [ build-compiler-linux-x86, build-compiler-linux-aarch64, build-compiler-windows ]
+    needs: [ build-compiler-linux-x86, build-compiler-linux-aarch64, build-compiler-windows-x86 ]
     runs-on: ubuntu-latest
     env:
       DOCKER_CLI_EXPERIMENTAL: enabled
