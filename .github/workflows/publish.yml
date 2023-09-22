@@ -130,6 +130,7 @@ jobs:
 
       - name: Configure & compile project
         run: |
+          mkdir ./bin
           cd ./bin
           cmake cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
           cmake --build . --target spice
