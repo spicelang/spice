@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-compiler-linux-x86:
-    name: Build compiler binaries - Linux/x86_64
+    name: Build compiler - Linux/x86_64
     runs-on: ubuntu-22.04
 
     steps:
@@ -80,7 +80,7 @@ jobs:
           path: ./bin/spice**
 
   build-compiler-linux-aarch64:
-    name: Build compiler binaries - Linux/AArch64
+    name: Build compiler - Linux/AArch64
     runs-on: ubuntu-22.04
 
     steps:
@@ -97,7 +97,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/ppa
           sudo apt update
-          sudo apt install gcc-13-aarch64-linux-gnu g++-13-aarch64-linux-gnu qemu-user-static
+          sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu qemu-user-static
           sudo update-binfmts --enable qemu-aarch64
 
       - name: Setup Ninja
