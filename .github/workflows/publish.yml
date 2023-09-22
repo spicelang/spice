@@ -7,8 +7,8 @@ on:
       - '*'
 
 jobs:
-  build-compiler-linux-native:
-    name: Build compiler binaries - Linux native
+  build-compiler-linux-x86:
+    name: Build compiler binaries - x86_64
     runs-on: ubuntu-22.04
 
     steps:
@@ -79,24 +79,30 @@ jobs:
           name: spice-linux-x64
           path: ./bin/spice**
 
-  build-compiler-linux-cross:
-    name: Build compiler binaries - Linux cross
+  build-compiler-linux-aarch64:
+    name: Build compiler binaries - AArch64
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        config:
-          - { arch: aarch64, label: arm64 }
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup QEMU
+        run: |
+          apt-get install -y qemu-user-static g++-aarch64-linux-gnu
+          update-binfmts --enable qemu-aarch64
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y g++-aarch64-linux-gnu
 
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v3
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-17.0.0-rc4-linux-${{ matrix.config.arch }}
+          key: llvm-17.0.0-rc4-linux-aarch64
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -106,22 +112,10 @@ jobs:
 
       - name: Setup LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        uses: uraimo/run-on-arch-action@v2
-        with:
-          distro: ubuntu22.04
-          arch: ${{ matrix.config.arch }}
-          githubToken: ${{ github.token }}
-          shell: /bin/sh
-          install: |
-            apt update
-            apt-get install -q -y software-properties-common
-            add-apt-repository -y ppa:ubuntu-toolchain-r/test
-            apt-get install -q -y cmake make ninja-build binutils gcc-13 g++-13 git
-            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 110 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-13 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-13
-          run: |
-            cd ./llvm/build
-            cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm
-            cmake --build .
+        run: |
+          cd ./llvm/build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm
+          cmake --build .
 
       - name: Download Libs
         run: |
@@ -129,23 +123,10 @@ jobs:
           ./setup-libs.sh
 
       - name: Configure & compile project
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        uses: uraimo/run-on-arch-action@v2
-        with:
-          distro: ubuntu22.04
-          arch: ${{ matrix.config.arch }}
-          githubToken: ${{ github.token }}
-          shell: /bin/sh
-          install: |
-            apt update
-            apt-get install -q -y software-properties-common
-            add-apt-repository -y ppa:ubuntu-toolchain-r/test
-            apt-get install -q -y cmake make ninja-build binutils gcc-13 g++-13 valgrind uuid-dev pkg-config openjdk-11-jre-headless
-            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 110 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-13 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-13
-          run: |
-            cd ./bin
-            cmake cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
-            cmake --build . --target spice
+        run: |
+          cd ./bin
+          cmake cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
+          cmake --build . --target spice
 
       - name: Process build output
         working-directory: bin
@@ -156,7 +137,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: spice-linux-${{ matrix.config.label }}
+          name: spice-linux-arm64
           path: ./bin/spice**
 
   build-compiler-windows:
@@ -237,7 +218,7 @@ jobs:
 
   build-artifacts:
     name: Build artifacts
-    needs: [ build-compiler-linux-native, build-compiler-linux-cross, build-compiler-windows ]
+    needs: [ build-compiler-linux-x86, build-compiler-linux-aarch64, build-compiler-windows ]
     runs-on: ubuntu-latest
     env:
       DOCKER_CLI_EXPERIMENTAL: enabled
