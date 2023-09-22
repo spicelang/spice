@@ -15,7 +15,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     return nullptr;
 
   // Do not generate main function if it is explicitly specified
-  if (resourceManager.cliOptions.noEntryFct)
+  if (cliOptions.noEntryFct)
     return nullptr;
 
   // Change scope to function scope
@@ -423,7 +423,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     }
 
     // If this is a constructor, store the default field values
-    if (node->isCtor) {
+    if (node->isCtor && cliOptions.buildMode == BuildMode::DEBUG) {
       assert(node->isMethod && thisEntry != nullptr);
       assert(thisEntry->getType().isPtrOf(TY_STRUCT));
       const SymbolType structType = thisEntry->getType().getContainedTy();
@@ -562,7 +562,7 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   llvm::Constant *constantValue;
   if (node->hasValue) { // Set the constant value as variable initializer
     constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
-  } else { // Set the default value as variable initializer
+  } else if (cliOptions.buildMode == BuildMode::DEBUG) { // Set the default value as variable initializer
     constantValue = getDefaultValueForSymbolType(node->entry->getType());
   }
   var->setInitializer(constantValue);

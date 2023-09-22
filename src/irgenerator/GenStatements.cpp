@@ -73,7 +73,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
     if (node->calledInitCtor) {
       // Call no-args constructor
       generateCtorOrDtorCall(varEntry, node->calledInitCtor, {});
-    } else if (!node->isForEachItem) {
+    } else if (!node->isForEachItem && cliOptions.buildMode == BuildMode::DEBUG) {
       assert(!node->isCtorCallRequired);
       // Retrieve default value for lhs symbol type and store it
       llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);

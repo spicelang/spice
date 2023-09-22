@@ -1,22 +1,8 @@
-type Inner struct {
-    short x = -43s
-}
-
-p Inner.ctor(const Inner& other) {
-    this.x = other.x + 5s;
-}
-
-type Middle struct {
-    Inner inner
-}
-
-type Outer struct {
-    Middle middle
+type Struct struct {
+    heap int* heapInt
 }
 
 f<int> main() {
-    Outer outer;
-    printf("x = %d\n", outer.middle.inner.x);
-    Outer outer2 = outer;
-    printf("x = %d\n", outer2.middle.inner.x);
+    int a;
+    printf("%d", a);
 }
