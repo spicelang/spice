@@ -15,17 +15,12 @@ namespace spice::compiler {
 class ImportCollector : private CompilerPass, public ASTVisitor {
 public:
   // Constructors
-  ImportCollector(GlobalResourceManager &resourceManager, SourceFile *sourcefile)
-      : CompilerPass(resourceManager, sourcefile), cliOptions(resourceManager.cliOptions) {}
+  ImportCollector(GlobalResourceManager &resourceManager, SourceFile *sourcefile) : CompilerPass(resourceManager, sourcefile) {}
 
   // Public methods
   std::any visitEntry(EntryNode *node) override;
   std::any visitImportStmt(ImportStmtNode *node) override;
   std::any visitModAttr(ModAttrNode *node) override;
-
-private:
-  // Private members
-  const CliOptions &cliOptions;
 };
 
 } // namespace spice::compiler

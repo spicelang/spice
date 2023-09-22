@@ -230,7 +230,7 @@ void IRGenerator::generateDefaultDefaultCtor(const Function *ctorFunction) {
       }
 
       // Store default field values
-      if (fieldNode->defaultValue() != nullptr) {
+      if (cliOptions.buildMode == BuildMode::DEBUG && fieldNode->defaultValue() != nullptr) {
         assert(fieldNode->defaultValue()->hasCompileTimeValue());
         // Retrieve field address
         if (!thisAddressLoaded)

@@ -249,8 +249,22 @@ void CLIInterface::addUninstallSubcommand() {
 }
 
 void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
+  const std::function<bool(const CLI::results_t &)> buildModeCallback = [&](const CLI::results_t &results) {
+    std::string inputString = results.front();
+    std::transform(inputString.begin(), inputString.end(), inputString.begin(), ::tolower);
+
+    if (inputString == BUILD_MODE_DEBUG)
+      cliOptions.buildMode = BuildMode::DEBUG;
+    else if (inputString == BUILD_MODE_RELEASE)
+      cliOptions.buildMode = BuildMode::RELEASE;
+    else
+      throw CliError(INVALID_BUILD_MODE, "Invalid build mode: " + inputString);
+
+    return true;
+  };
+
   // --build-mode
-  subCmd->add_option<BuildMode>("--build-mode,-m", cliOptions.buildMode, "Build mode (debug, release)");
+  subCmd->add_option("--build-mode,-m", buildModeCallback, "Build mode (debug, release)");
   // --llvm-args
   subCmd->add_option<std::string>("--llvm-args,-llvm", cliOptions.llvmArgs, "Additional arguments for LLVM");
   // --jobs

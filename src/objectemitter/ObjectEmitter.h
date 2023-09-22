@@ -19,7 +19,7 @@ public:
 
 private:
   // Private members
-  llvm::Module &module = resourceManager.cliOptions.useLTO ? *resourceManager.ltoModule : *sourceFile->llvmModule;
+  llvm::Module &module = cliOptions.useLTO ? *resourceManager.ltoModule : *sourceFile->llvmModule;
 };
 
 } // namespace spice::compiler

@@ -41,6 +41,8 @@ std::string CliError::getMessagePrefix(CliErrorType type) {
     return "Non-zero exit code";
   case FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED:
     return "Feature not supported when dockerized";
+  case INVALID_BUILD_MODE:
+    return "Invalid build mode";
   case COMING_SOON_CLI:
     return "Coming soon";
   }

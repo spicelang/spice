@@ -26,6 +26,8 @@ enum BuildMode : uint8_t {
   DEBUG = 0,   // Default build mode, uses -O0 per default
   RELEASE = 1, // Build without debug information and with -O2 per default
 };
+const char *const BUILD_MODE_DEBUG = "debug";
+const char *const BUILD_MODE_RELEASE = "release";
 
 /**
  * Representation of the various cli options

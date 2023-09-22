@@ -16,7 +16,7 @@ IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sou
       module(sourceFile->llvmModule.get()),
       stdFunctionManager(StdFunctionManager(resourceManager, sourceFile->llvmModule.get())) {
   // Attach information to the module
-  module->setTargetTriple(resourceManager.cliOptions.targetTriple);
+  module->setTargetTriple(cliOptions.targetTriple);
   module->setDataLayout(resourceManager.targetMachine->createDataLayout());
 
   // Initialize debug info generator
