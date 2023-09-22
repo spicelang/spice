@@ -146,8 +146,8 @@ jobs:
           name: spice-linux-arm64
           path: ./bin/spice**
 
-  build-compiler-windows:
-    name: Build compiler binaries - Windows
+  build-compiler-windows-x86:
+    name: Build compiler binaries - Windows/x86_64
     runs-on: windows-latest
     steps:
       - name: Checkout
