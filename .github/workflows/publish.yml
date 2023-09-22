@@ -87,27 +87,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup QEMU
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 11
+
+      - name: Setup latest GCC and build dependencies
         run: |
-          sudo apt-get install -y qemu-user-static g++-aarch64-linux-gnu
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/ppa
+          sudo apt update
+          sudo apt install gcc-13-aarch64-linux-gnu g++-13-aarch64-linux-gnu qemu-user-static
           sudo update-binfmts --enable qemu-aarch64
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y g++-aarch64-linux-gnu
+      - name: Setup Ninja
+        run: sudo apt-get install ninja-build
+
+      - name: Setup Mold
+        uses: rui314/setup-mold@v1
+
+      - name: Setup CCache
+        uses: hendrikmuhs/ccache-action@v1
 
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v3
         with:
           path: /home/runner/work/spice/spice/llvm
-          key: llvm-17.0.0-rc4-linux-aarch64
+          key: llvm-17.0.1-linux-aarch64
 
       - name: Clone LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
-          git clone --depth 1 --branch llvmorg-17.0.0-rc4 https://github.com/llvm/llvm-project.git llvm
+          git clone --depth 1 --branch llvmorg-17.0.1 https://github.com/llvm/llvm-project.git llvm
           mkdir ./llvm/build
 
       - name: Setup LLVM
