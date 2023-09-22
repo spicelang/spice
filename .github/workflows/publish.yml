@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-compiler-linux-x86:
-    name: Build compiler binaries - x86_64
+    name: Build compiler binaries - Linux/x86_64
     runs-on: ubuntu-22.04
 
     steps:
@@ -80,7 +80,7 @@ jobs:
           path: ./bin/spice**
 
   build-compiler-linux-aarch64:
-    name: Build compiler binaries - AArch64
+    name: Build compiler binaries - Linux/AArch64
     runs-on: ubuntu-22.04
 
     steps:
@@ -89,13 +89,13 @@ jobs:
 
       - name: Setup QEMU
         run: |
-          apt-get install -y qemu-user-static g++-aarch64-linux-gnu
-          update-binfmts --enable qemu-aarch64
+          sudo apt-get install -y qemu-user-static g++-aarch64-linux-gnu
+          sudo update-binfmts --enable qemu-aarch64
 
       - name: Install dependencies
         run: |
-          apt-get update
-          apt-get install -y g++-aarch64-linux-gnu
+          sudo apt-get update
+          sudo apt-get install -y g++-aarch64-linux-gnu
 
       - name: Cache LLVM
         id: cache-llvm
