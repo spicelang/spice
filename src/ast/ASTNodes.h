@@ -39,21 +39,11 @@ public:
   ASTNode(ASTNode *parent, CodeLoc codeLoc) : parent(parent), codeLoc(std::move(codeLoc)) {}
   ASTNode(const ASTNode &) = delete;
 
-  // Destructors
-  virtual ~ASTNode() = default;
-
   // Virtual methods
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
   virtual std::any accept(ParallelizableASTVisitor *visitor) const = 0;
 
   // Public methods
-  template <typename T> T *createChild(const CodeLoc &loc) {
-    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
-    T *node = new T(this, loc);
-    children.push_back(node);
-    return node;
-  }
-
   template <typename T> void addChild(T *node) {
     static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
     children.push_back(node);

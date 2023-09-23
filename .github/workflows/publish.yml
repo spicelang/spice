@@ -50,7 +50,7 @@ jobs:
           git clone --depth 1 --branch llvmorg-17.0.1 https://github.com/llvm/llvm-project.git llvm
           mkdir ./llvm/build
           cd ./llvm/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -Wno-dev -Wattributes ../llvm
           cmake --build . -j$(nproc)
 
       - name: Download Libs
@@ -94,8 +94,7 @@ jobs:
           java-version: 11
 
       - name: Setup latest GCC and build dependencies
-        run: |
-          sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        run: sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Setup Ninja
         run: sudo apt-get install ninja-build
@@ -120,7 +119,7 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           cd ./llvm/build
-          cmake -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DLLVM_HOST_TRIPLE=x86_64-linux-gnu -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm
+          cmake -GNinja -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DLLVM_HOST_TRIPLE=x86_64-linux-gnu -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -Wno-dev -Wattributes ../llvm
           cmake --build .
 
       - name: Download Libs
@@ -134,7 +133,7 @@ jobs:
         run: |
           mkdir ./bin
           cd ./bin
-          cmake cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
+          cmake cmake -GNinja -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
           cmake --build . --target spice -j$(nproc)
 
       - name: Process build output

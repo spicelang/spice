@@ -78,42 +78,91 @@ if (NOT DEFINED ANTLR4_WITH_STATIC_CRT)
 endif ()
 
 if (ANTLR4_ZIP_REPOSITORY)
-    ExternalProject_Add(
-            antlr4_runtime
-            PREFIX antlr4_runtime
-            URL ${ANTLR4_ZIP_REPOSITORY}
-            DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
-            BUILD_COMMAND ""
-            BUILD_IN_SOURCE 1
-            SOURCE_DIR ${ANTLR4_ROOT}
-            SOURCE_SUBDIR runtime/Cpp
-            CMAKE_CACHE_ARGS
-            -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-            -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
-            # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
-            # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
-            INSTALL_COMMAND ""
-            EXCLUDE_FROM_ALL 1
-            DOWNLOAD_EXTRACT_TIMESTAMP 0)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        ExternalProject_Add(
+                antlr4_runtime
+                PREFIX antlr4_runtime
+                URL ${ANTLR4_ZIP_REPOSITORY}
+                DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
+                BUILD_COMMAND ""
+                BUILD_IN_SOURCE 1
+                SOURCE_DIR ${ANTLR4_ROOT}
+                SOURCE_SUBDIR runtime/Cpp
+                CMAKE_CACHE_ARGS
+                -DCMAKE_SYSTEM_NAME:STRING=${CMAKE_SYSTEM_NAME}
+                -DCMAKE_SYSTEM_PROCESSOR:STRING=${CMAKE_SYSTEM_PROCESSOR}
+                -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
+                -DCMAKE_CXX_COMPILER:STRING=${CMAKE_CXX_COMPILER}
+                -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
+                # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
+                # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
+                INSTALL_COMMAND ""
+                EXCLUDE_FROM_ALL 1
+                DOWNLOAD_EXTRACT_TIMESTAMP 0)
+    else()
+        ExternalProject_Add(
+                antlr4_runtime
+                PREFIX antlr4_runtime
+                URL ${ANTLR4_ZIP_REPOSITORY}
+                DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
+                BUILD_COMMAND ""
+                BUILD_IN_SOURCE 1
+                SOURCE_DIR ${ANTLR4_ROOT}
+                SOURCE_SUBDIR runtime/Cpp
+                CMAKE_CACHE_ARGS
+                -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
+                # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
+                # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
+                INSTALL_COMMAND ""
+                EXCLUDE_FROM_ALL 1
+                DOWNLOAD_EXTRACT_TIMESTAMP 0)
+    endif()
 else ()
-    ExternalProject_Add(
-            antlr4_runtime
-            PREFIX antlr4_runtime
-            GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
-            GIT_TAG ${ANTLR4_TAG}
-            DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
-            BUILD_COMMAND ""
-            BUILD_IN_SOURCE 1
-            SOURCE_DIR ${ANTLR4_ROOT}
-            SOURCE_SUBDIR runtime/Cpp
-            CMAKE_CACHE_ARGS
-            -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-            -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
-            # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
-            # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
-            INSTALL_COMMAND ""
-            EXCLUDE_FROM_ALL 1
-            DOWNLOAD_EXTRACT_TIMESTAMP 0)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        ExternalProject_Add(
+                antlr4_runtime
+                PREFIX antlr4_runtime
+                GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
+                GIT_TAG ${ANTLR4_TAG}
+                DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
+                BUILD_COMMAND ""
+                BUILD_IN_SOURCE 1
+                SOURCE_DIR ${ANTLR4_ROOT}
+                SOURCE_SUBDIR runtime/Cpp
+                CMAKE_CACHE_ARGS
+                -DCMAKE_SYSTEM_NAME:STRING=${CMAKE_SYSTEM_NAME}
+                -DCMAKE_SYSTEM_PROCESSOR:STRING=${CMAKE_SYSTEM_PROCESSOR}
+                -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
+                -DCMAKE_CXX_COMPILER:STRING=${CMAKE_CXX_COMPILER}
+                -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
+                # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
+                # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
+                INSTALL_COMMAND ""
+                EXCLUDE_FROM_ALL 1
+                DOWNLOAD_EXTRACT_TIMESTAMP 0)
+    else()
+        ExternalProject_Add(
+                antlr4_runtime
+                PREFIX antlr4_runtime
+                GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
+                GIT_TAG ${ANTLR4_TAG}
+                DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
+                BUILD_COMMAND ""
+                BUILD_IN_SOURCE 1
+                SOURCE_DIR ${ANTLR4_ROOT}
+                SOURCE_SUBDIR runtime/Cpp
+                CMAKE_CACHE_ARGS
+                -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
+                # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
+                # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
+                INSTALL_COMMAND ""
+                EXCLUDE_FROM_ALL 1
+                DOWNLOAD_EXTRACT_TIMESTAMP 0)
+    endif()
 endif ()
 
 # Separate build step as rarely people want both

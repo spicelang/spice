@@ -8,6 +8,13 @@ builds:
     goarch:
       - amd64
       - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+      - goos: darwin
+        goarch: amd64
+      - goos: darwin
+        goarch: arm64
     hooks:
       post:
         - mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}

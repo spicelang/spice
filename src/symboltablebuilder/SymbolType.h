@@ -133,9 +133,9 @@ public:
   [[nodiscard]] bool isErrorObj() const;
   [[nodiscard]] bool implements(const SymbolType &symbolType, const ASTNode *node) const;
   [[nodiscard]] bool isBaseType(SymbolSuperType superType) const;
-  [[nodiscard]] ALWAYS_INLINE bool isOneOf(const std::vector<SymbolSuperType> &superTypes) const {
+  [[nodiscard]] ALWAYS_INLINE bool isOneOf(const std::initializer_list<SymbolSuperType> &superTypes) const {
     const SymbolSuperType superType = getSuperType();
-    return std::ranges::any_of(superTypes, [&superType](int type) { return type == superType; });
+    return std::ranges::any_of(superTypes, [&superType](SymbolSuperType type) { return type == superType; });
   }
   [[nodiscard]] bool isSameContainerTypeAs(const SymbolType &otherType) const;
   [[nodiscard]] ALWAYS_INLINE SymbolSuperType getSuperType() const {
