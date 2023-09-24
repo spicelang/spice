@@ -46,7 +46,9 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
   }
 
   // Create target machine
-  targetMachine = target->createTargetMachine(cliOptions.targetTriple, cpuName, featureString.str(), opt, llvm::Reloc::PIC_);
+  llvm::TargetMachine *targetMachineRaw =
+      target->createTargetMachine(cliOptions.targetTriple, cpuName, featureString.str(), opt, llvm::Reloc::PIC_);
+  targetMachine = std::unique_ptr<llvm::TargetMachine>(targetMachineRaw);
 
   // Create lto module
   if (cliOptions.useLTO)
@@ -57,9 +59,6 @@ GlobalResourceManager::~GlobalResourceManager() {
   // Delete all source files
   for (const std::pair<const std::string, SourceFile *> &sourceFile : sourceFiles)
     delete sourceFile.second;
-
-  // Delete target machine
-  delete targetMachine;
 }
 
 SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const std::string &dependencyName,

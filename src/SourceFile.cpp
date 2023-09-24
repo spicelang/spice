@@ -547,7 +547,8 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
 
   if (mainFile) {
     resourceManager.totalTimer.stop();
-    std::cout << "Total compile time: " << std::to_string(resourceManager.totalTimer.getDurationMilliseconds()) << " ms\n";
+    if (resourceManager.cliOptions.printDebugOutput)
+      std::cout << "Total compile time: " << std::to_string(resourceManager.totalTimer.getDurationMilliseconds()) << " ms\n";
   }
 }
 

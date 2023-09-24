@@ -7,8 +7,6 @@
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
 
-#include "../../lib/cli11/CLI11.hpp"
-
 #include <llvm/Support/CommandLine.h>
 #include <llvm/TargetParser/Host.h>
 #include <llvm/TargetParser/Triple.h>
