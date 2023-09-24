@@ -52,7 +52,7 @@ public:
   llvm::LLVMContext context;
   llvm::IRBuilder<> builder = llvm::IRBuilder<>(context);
   std::unique_ptr<llvm::Module> ltoModule;
-  llvm::TargetMachine *targetMachine;
+  std::unique_ptr<llvm::TargetMachine> targetMachine;
   Timer totalTimer;
   BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
   BS::synced_stream tout;
