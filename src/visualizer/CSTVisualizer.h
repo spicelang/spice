@@ -37,7 +37,7 @@ public:
   std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override { return buildRule(ctx); }
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override { return buildRule(ctx); }
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override { return buildRule(ctx); }
-  std::any visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) override { return buildRule(ctx); }
+  std::any visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) override { return buildRule(ctx); }
   std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override { return buildRule(ctx); }
   std::any visitForHead(SpiceParser::ForHeadContext *ctx) override { return buildRule(ctx); }
   std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override { return buildRule(ctx); }

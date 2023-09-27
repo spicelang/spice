@@ -1,0 +1,14 @@
+import "../CompilerPass";
+import "../SourceFile";
+import "SpiceVisitor";
+
+type ASTBuilder struct : ICompilerPass, SpiceVisitor {
+    CompilerPass compilerPass
+    const FilePath& filePath
+    Stack<ASTNode*> parentStack
+}
+
+p ASTBuilder.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile = nil<SourceFile*>) {
+    this.compilerPass = CompilerPass(resourceManager, sourceFile);
+    this.resourceManager = resourceManager;
+}

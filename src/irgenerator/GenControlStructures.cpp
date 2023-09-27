@@ -9,7 +9,7 @@
 
 namespace spice::compiler {
 
-std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockDefNode *node) {
+std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Change scope

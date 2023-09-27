@@ -36,7 +36,7 @@ public:
   std::any visitAliasDef(AliasDefNode *ctx) override { return buildNode(ctx); }
   std::any visitGlobalVarDef(GlobalVarDefNode *ctx) override { return buildNode(ctx); }
   std::any visitExtDecl(ExtDeclNode *ctx) override { return buildNode(ctx); }
-  std::any visitUnsafeBlockDef(UnsafeBlockDefNode *ctx) override { return buildNode(ctx); }
+  std::any visitUnsafeBlock(UnsafeBlockNode *ctx) override { return buildNode(ctx); }
   std::any visitForLoop(ForLoopNode *ctx) override { return buildNode(ctx); }
   std::any visitForeachLoop(ForeachLoopNode *ctx) override { return buildNode(ctx); }
   std::any visitWhileLoop(WhileLoopNode *ctx) override { return buildNode(ctx); }

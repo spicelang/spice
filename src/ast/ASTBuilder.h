@@ -43,7 +43,7 @@ public:
   std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override;
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override;
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
-  std::any visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) override;
+  std::any visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) override;
   std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
   std::any visitForHead(SpiceParser::ForHeadContext *ctx) override;
   std::any visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) override;

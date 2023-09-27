@@ -194,8 +194,8 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   return concludeNode(ctx, extDeclNode);
 }
 
-std::any ASTBuilder::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
-  auto unsafeBlockDefNode = createNode<UnsafeBlockDefNode>(ctx);
+std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
+  auto unsafeBlockDefNode = createNode<UnsafeBlockNode>(ctx);
 
   // Visit children
   visitChildren(ctx);

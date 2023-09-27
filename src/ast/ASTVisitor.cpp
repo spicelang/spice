@@ -30,7 +30,7 @@ std::any ASTVisitor::visitGlobalVarDef(GlobalVarDefNode *node) { return visitChi
 
 std::any ASTVisitor::visitExtDecl(ExtDeclNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitUnsafeBlockDef(UnsafeBlockDefNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitUnsafeBlock(UnsafeBlockNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitForLoop(ForLoopNode *node) { return visitChildren(node); }
 

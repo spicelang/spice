@@ -21,7 +21,7 @@ public:
   std::any visitAliasDef(AliasDefNode *node) override;
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
   std::any visitExtDecl(ExtDeclNode *node) override;
-  std::any visitUnsafeBlockDef(UnsafeBlockDefNode *node) override;
+  std::any visitUnsafeBlock(UnsafeBlockNode *node) override;
   std::any visitForLoop(ForLoopNode *node) override;
   std::any visitForeachLoop(ForeachLoopNode *node) override;
   std::any visitWhileLoop(WhileLoopNode *node) override;

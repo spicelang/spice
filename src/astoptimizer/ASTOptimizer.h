@@ -22,7 +22,7 @@ public:
   ASTOptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile) : CompilerPass(resourceManager, sourceFile) {}
 
   // Public methods
-  std::any visitUnsafeBlockDef(UnsafeBlockDefNode *node) override;
+  std::any visitUnsafeBlock(UnsafeBlockNode *node) override;
   std::any visitForLoop(ForLoopNode *node) override;
   std::any visitForeachLoop(ForeachLoopNode *node) override;
   std::any visitWhileLoop(WhileLoopNode *node) override;

@@ -50,7 +50,7 @@ public:
   std::any visitGlobalVarDef(const GlobalVarDefNode *node) override;
   std::any visitExtDecl(const ExtDeclNode *node) override;
   // Control structures
-  std::any visitUnsafeBlockDef(const UnsafeBlockDefNode *node) override;
+  std::any visitUnsafeBlockDef(const UnsafeBlockNode *node) override;
   std::any visitForLoop(const ForLoopNode *node) override;
   std::any visitForeachLoop(const ForeachLoopNode *node) override;
   std::any visitWhileLoop(const WhileLoopNode *node) override;

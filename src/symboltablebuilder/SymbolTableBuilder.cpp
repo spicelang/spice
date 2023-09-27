@@ -331,7 +331,7 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   return nullptr;
 }
 
-std::any SymbolTableBuilder::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
+std::any SymbolTableBuilder::visitUnsafeBlock(UnsafeBlockNode *node) {
   // Create scope for the unsafe block body
   node->bodyScope = currentScope =
       currentScope->createChildScope(node->getScopeId(), ScopeType::UNSAFE_BODY, &node->body()->codeLoc);

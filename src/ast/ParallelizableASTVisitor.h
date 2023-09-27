@@ -20,7 +20,7 @@ class GenericTypeDefNode;
 class AliasDefNode;
 class GlobalVarDefNode;
 class ExtDeclNode;
-class UnsafeBlockDefNode;
+class UnsafeBlockNode;
 class ForLoopNode;
 class ForeachLoopNode;
 class WhileLoopNode;
@@ -104,7 +104,7 @@ public:
   virtual std::any visitAliasDef(const AliasDefNode *node);
   virtual std::any visitGlobalVarDef(const GlobalVarDefNode *node);
   virtual std::any visitExtDecl(const ExtDeclNode *node);
-  virtual std::any visitUnsafeBlockDef(const UnsafeBlockDefNode *node);
+  virtual std::any visitUnsafeBlockDef(const UnsafeBlockNode *node);
   virtual std::any visitForLoop(const ForLoopNode *node);
   virtual std::any visitForeachLoop(const ForeachLoopNode *node);
   virtual std::any visitWhileLoop(const WhileLoopNode *node);

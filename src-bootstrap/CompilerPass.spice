@@ -1,0 +1,20 @@
+import "global/GlobalResourceManager";
+
+type ICompilerPass interface {
+    p changeToScope(Scope*, const ScopeType&);
+    p changeToScope(const String&, const ScopeType&);
+    p changeToParentScope(ScopeType);
+}
+
+type CompilerPass struct : ICompilerPass {
+    GlobalResourceManager& globalResourceManager
+    const CliOptions& cliOptions
+    SourceFile* sourceFile
+    Scope* rootScope
+    unsigned long manIdx = 0
+    Scope* currentScope
+}
+
+p CompilerPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
+
+}

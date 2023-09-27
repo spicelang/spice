@@ -513,15 +513,15 @@ public:
   std::vector<Function *> extFunctionManifestations;
 };
 
-// ====================================================== UnsafeBlockDefNode =====================================================
+// ======================================================== UnsafeBlockNode ======================================================
 
-class UnsafeBlockDefNode : public ASTNode {
+class UnsafeBlockNode : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitUnsafeBlockDef(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitUnsafeBlock(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitUnsafeBlockDef(this); }
 
   // Public get methods
@@ -684,7 +684,7 @@ public:
   Scope *elseBodyScope = nullptr;
 };
 
-// ========================================================== ScopeNode ==========================================================
+// ==================================================== AnonymousBlockStmtNode ===================================================
 
 class AnonymousBlockStmtNode : public ASTNode {
 public:

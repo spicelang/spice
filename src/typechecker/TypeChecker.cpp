@@ -104,7 +104,7 @@ std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
   return nullptr;
 }
 
-std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
+std::any TypeChecker::visitUnsafeBlock(UnsafeBlockNode *node) {
   // Change to unsafe block body scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY);
 
@@ -1280,7 +1280,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     break;
   }
   default:
-    throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE;
+    throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   if (lhsType.is(TY_INVALID)) {

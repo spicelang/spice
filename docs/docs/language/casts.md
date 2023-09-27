@@ -10,7 +10,8 @@ destination type.
 
 Casting an int to the short data type:
 ```spice
-short shortVar = (short) 12;
+int intVar = 12;
+short shortVar = (short) intVar;
 ```
 
 Example for casting for a function call:
