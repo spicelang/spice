@@ -782,92 +782,92 @@ digraph {
  L13C12_dataType -> L13C12_baseDataType;
  L13C12 [color="lightblue",label="TYPE_INT: int"];
  L13C12_baseDataType -> L13C12
- L13C16 [color="lightblue",label="IDENTIFIER: result"];
+ L13C16 [color="lightblue",label="IDENTIFIER: res"];
  L13C12_declStmt -> L13C16
- L13C23 [color="lightblue",label="ASSIGN: ="];
- L13C12_declStmt -> L13C23
- L13C25_assignExpr [color="lightgreen",label="assignExpr"];
- L13C12_declStmt -> L13C25_assignExpr;
- L13C25_ternaryExpr [color="lightgreen",label="ternaryExpr"];
- L13C25_assignExpr -> L13C25_ternaryExpr;
- L13C25_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
- L13C25_ternaryExpr -> L13C25_logicalOrExpr;
- L13C25_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
- L13C25_logicalOrExpr -> L13C25_logicalAndExpr;
- L13C25_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
- L13C25_logicalAndExpr -> L13C25_bitwiseOrExpr;
- L13C25_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
- L13C25_bitwiseOrExpr -> L13C25_bitwiseXorExpr;
- L13C25_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
- L13C25_bitwiseXorExpr -> L13C25_bitwiseAndExpr;
- L13C25_equalityExpr [color="lightgreen",label="equalityExpr"];
- L13C25_bitwiseAndExpr -> L13C25_equalityExpr;
- L13C25_relationalExpr [color="lightgreen",label="relationalExpr"];
- L13C25_equalityExpr -> L13C25_relationalExpr;
- L13C25_shiftExpr [color="lightgreen",label="shiftExpr"];
- L13C25_relationalExpr -> L13C25_shiftExpr;
- L13C25_additiveExpr [color="lightgreen",label="additiveExpr"];
- L13C25_shiftExpr -> L13C25_additiveExpr;
- L13C25_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
- L13C25_additiveExpr -> L13C25_multiplicativeExpr;
- L13C25_castExpr [color="lightgreen",label="castExpr"];
- L13C25_multiplicativeExpr -> L13C25_castExpr;
- L13C25_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
- L13C25_castExpr -> L13C25_prefixUnaryExpr;
- L13C25_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
- L13C25_prefixUnaryExpr -> L13C25_postfixUnaryExpr;
- L13C25_atomicExpr [color="lightgreen",label="atomicExpr"];
- L13C25_postfixUnaryExpr -> L13C25_atomicExpr;
- L13C25_value [color="lightgreen",label="value"];
- L13C25_atomicExpr -> L13C25_value;
- L13C25_fctCall [color="lightgreen",label="fctCall"];
- L13C25_value -> L13C25_fctCall;
- L13C25 [color="lightblue",label="IDENTIFIER: fib"];
- L13C25_fctCall -> L13C25
- L13C28 [color="lightblue",label="LPAREN: ("];
- L13C25_fctCall -> L13C28
- L13C29_argLst [color="lightgreen",label="argLst"];
- L13C25_fctCall -> L13C29_argLst;
- L13C29_assignExpr [color="lightgreen",label="assignExpr"];
- L13C29_argLst -> L13C29_assignExpr;
- L13C29_ternaryExpr [color="lightgreen",label="ternaryExpr"];
- L13C29_assignExpr -> L13C29_ternaryExpr;
- L13C29_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
- L13C29_ternaryExpr -> L13C29_logicalOrExpr;
- L13C29_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
- L13C29_logicalOrExpr -> L13C29_logicalAndExpr;
- L13C29_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
- L13C29_logicalAndExpr -> L13C29_bitwiseOrExpr;
- L13C29_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
- L13C29_bitwiseOrExpr -> L13C29_bitwiseXorExpr;
- L13C29_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
- L13C29_bitwiseXorExpr -> L13C29_bitwiseAndExpr;
- L13C29_equalityExpr [color="lightgreen",label="equalityExpr"];
- L13C29_bitwiseAndExpr -> L13C29_equalityExpr;
- L13C29_relationalExpr [color="lightgreen",label="relationalExpr"];
- L13C29_equalityExpr -> L13C29_relationalExpr;
- L13C29_shiftExpr [color="lightgreen",label="shiftExpr"];
- L13C29_relationalExpr -> L13C29_shiftExpr;
- L13C29_additiveExpr [color="lightgreen",label="additiveExpr"];
- L13C29_shiftExpr -> L13C29_additiveExpr;
- L13C29_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
- L13C29_additiveExpr -> L13C29_multiplicativeExpr;
- L13C29_castExpr [color="lightgreen",label="castExpr"];
- L13C29_multiplicativeExpr -> L13C29_castExpr;
- L13C29_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
- L13C29_castExpr -> L13C29_prefixUnaryExpr;
- L13C29_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
- L13C29_prefixUnaryExpr -> L13C29_postfixUnaryExpr;
- L13C29_atomicExpr [color="lightgreen",label="atomicExpr"];
- L13C29_postfixUnaryExpr -> L13C29_atomicExpr;
- L13C29_constant [color="lightgreen",label="constant"];
- L13C29_atomicExpr -> L13C29_constant;
- L13C29 [color="lightblue",label="INT_LIT: 30"];
- L13C29_constant -> L13C29
- L13C31 [color="lightblue",label="RPAREN: )"];
- L13C25_fctCall -> L13C31
- L13C32 [color="lightblue",label="SEMICOLON: ;"];
- L13C12_stmt -> L13C32
+ L13C20 [color="lightblue",label="ASSIGN: ="];
+ L13C12_declStmt -> L13C20
+ L13C22_assignExpr [color="lightgreen",label="assignExpr"];
+ L13C12_declStmt -> L13C22_assignExpr;
+ L13C22_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L13C22_assignExpr -> L13C22_ternaryExpr;
+ L13C22_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L13C22_ternaryExpr -> L13C22_logicalOrExpr;
+ L13C22_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L13C22_logicalOrExpr -> L13C22_logicalAndExpr;
+ L13C22_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L13C22_logicalAndExpr -> L13C22_bitwiseOrExpr;
+ L13C22_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L13C22_bitwiseOrExpr -> L13C22_bitwiseXorExpr;
+ L13C22_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L13C22_bitwiseXorExpr -> L13C22_bitwiseAndExpr;
+ L13C22_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L13C22_bitwiseAndExpr -> L13C22_equalityExpr;
+ L13C22_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L13C22_equalityExpr -> L13C22_relationalExpr;
+ L13C22_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L13C22_relationalExpr -> L13C22_shiftExpr;
+ L13C22_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L13C22_shiftExpr -> L13C22_additiveExpr;
+ L13C22_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L13C22_additiveExpr -> L13C22_multiplicativeExpr;
+ L13C22_castExpr [color="lightgreen",label="castExpr"];
+ L13C22_multiplicativeExpr -> L13C22_castExpr;
+ L13C22_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L13C22_castExpr -> L13C22_prefixUnaryExpr;
+ L13C22_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L13C22_prefixUnaryExpr -> L13C22_postfixUnaryExpr;
+ L13C22_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L13C22_postfixUnaryExpr -> L13C22_atomicExpr;
+ L13C22_value [color="lightgreen",label="value"];
+ L13C22_atomicExpr -> L13C22_value;
+ L13C22_fctCall [color="lightgreen",label="fctCall"];
+ L13C22_value -> L13C22_fctCall;
+ L13C22 [color="lightblue",label="IDENTIFIER: fib"];
+ L13C22_fctCall -> L13C22
+ L13C25 [color="lightblue",label="LPAREN: ("];
+ L13C22_fctCall -> L13C25
+ L13C26_argLst [color="lightgreen",label="argLst"];
+ L13C22_fctCall -> L13C26_argLst;
+ L13C26_assignExpr [color="lightgreen",label="assignExpr"];
+ L13C26_argLst -> L13C26_assignExpr;
+ L13C26_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L13C26_assignExpr -> L13C26_ternaryExpr;
+ L13C26_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L13C26_ternaryExpr -> L13C26_logicalOrExpr;
+ L13C26_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L13C26_logicalOrExpr -> L13C26_logicalAndExpr;
+ L13C26_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L13C26_logicalAndExpr -> L13C26_bitwiseOrExpr;
+ L13C26_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L13C26_bitwiseOrExpr -> L13C26_bitwiseXorExpr;
+ L13C26_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L13C26_bitwiseXorExpr -> L13C26_bitwiseAndExpr;
+ L13C26_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L13C26_bitwiseAndExpr -> L13C26_equalityExpr;
+ L13C26_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L13C26_equalityExpr -> L13C26_relationalExpr;
+ L13C26_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L13C26_relationalExpr -> L13C26_shiftExpr;
+ L13C26_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L13C26_shiftExpr -> L13C26_additiveExpr;
+ L13C26_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L13C26_additiveExpr -> L13C26_multiplicativeExpr;
+ L13C26_castExpr [color="lightgreen",label="castExpr"];
+ L13C26_multiplicativeExpr -> L13C26_castExpr;
+ L13C26_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L13C26_castExpr -> L13C26_prefixUnaryExpr;
+ L13C26_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L13C26_prefixUnaryExpr -> L13C26_postfixUnaryExpr;
+ L13C26_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L13C26_postfixUnaryExpr -> L13C26_atomicExpr;
+ L13C26_constant [color="lightgreen",label="constant"];
+ L13C26_atomicExpr -> L13C26_constant;
+ L13C26 [color="lightblue",label="INT_LIT: 30"];
+ L13C26_constant -> L13C26
+ L13C28 [color="lightblue",label="RPAREN: )"];
+ L13C22_fctCall -> L13C28
+ L13C29 [color="lightblue",label="SEMICOLON: ;"];
+ L13C12_stmt -> L13C29
  L14C12_stmt [color="lightgreen",label="stmt"];
  L13C12_stmtLst -> L14C12_stmt;
  L14C12_assignExpr [color="lightgreen",label="assignExpr"];
@@ -946,12 +946,12 @@ digraph {
  L14C56_prefixUnaryExpr -> L14C56_postfixUnaryExpr;
  L14C56_atomicExpr [color="lightgreen",label="atomicExpr"];
  L14C56_postfixUnaryExpr -> L14C56_atomicExpr;
- L14C56 [color="lightblue",label="IDENTIFIER: result"];
+ L14C56 [color="lightblue",label="IDENTIFIER: res"];
  L14C56_atomicExpr -> L14C56
- L14C62 [color="lightblue",label="RPAREN: )"];
- L14C12_printfCall -> L14C62
- L14C63 [color="lightblue",label="SEMICOLON: ;"];
- L14C12_stmt -> L14C63
+ L14C59 [color="lightblue",label="RPAREN: )"];
+ L14C12_printfCall -> L14C59
+ L14C60 [color="lightblue",label="SEMICOLON: ;"];
+ L14C12_stmt -> L14C60
  L15C8 [color="lightblue",label="RBRACE: }"];
  L12C28_lambdaProc -> L15C8
  L15C9 [color="lightblue",label="RPAREN: )"];

@@ -18,8 +18,9 @@ namespace spice::compiler {
  * @param fileContent String to write into the file
  */
 void FileUtil::writeToFile(const std::filesystem::path &filePath, const std::string &fileContent) {
-  std::ofstream file;
-  file.open(filePath);
+  std::ofstream file(filePath);
+  if (!file)
+    throw CompilerError(IO_ERROR, "Failed to open file: " + filePath.string());
   file << fileContent;
   file.close();
 }
@@ -31,10 +32,12 @@ void FileUtil::writeToFile(const std::filesystem::path &filePath, const std::str
  * @return File contents as a string
  */
 std::string FileUtil::getFileContent(const std::filesystem::path &filePath) {
-  std::ifstream inputFileStream;
-  inputFileStream.open(filePath);
-  std::ostringstream stringStream;
-  stringStream << inputFileStream.rdbuf();
+  std::ifstream file(filePath);
+  if (!file)
+    throw CompilerError(IO_ERROR, "Failed to open file: " + filePath.string());
+  std::stringstream stringStream;
+  stringStream << file.rdbuf();
+  file.close();
   return stringStream.str();
 }
 

@@ -10,11 +10,7 @@ bool MainFctDefNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   return body()->returnsOnAllControlPaths(overrideUnreachable);
 }
 
-bool FctDefNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body()->returnsOnAllControlPaths(overrideUnreachable);
-}
-
-bool ProcDefNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+bool FctDefBaseNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   return body()->returnsOnAllControlPaths(overrideUnreachable);
 }
 

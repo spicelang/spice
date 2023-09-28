@@ -8,8 +8,8 @@ target triple = "x86_64-w64-windows-gnu"
 
 define private i32 @_Z4testPc(ptr %0) {
   %result = alloca i32, align 4
-  %input = alloca ptr, align 8
-  store ptr %0, ptr %input, align 8
+  %_input = alloca ptr, align 8
+  store ptr %0, ptr %_input, align 8
   ret i32 12
 }
 

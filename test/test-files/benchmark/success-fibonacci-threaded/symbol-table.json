@@ -73,7 +73,7 @@
                   "codeLoc": "L13C13",
                   "isGlobal": false,
                   "isVolatile": false,
-                  "name": "result",
+                  "name": "res",
                   "orderIndex": 0,
                   "state": "initialized",
                   "type": "int"
