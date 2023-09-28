@@ -5,7 +5,7 @@
 #include <llvm/Analysis/ModuleSummaryAnalysis.h>
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
-#include <cli/CLIInterface.h>
+#include <driver/Driver.h>
 
 namespace spice::compiler {
 

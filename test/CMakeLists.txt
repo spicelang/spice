@@ -3,9 +3,11 @@ antlr_target(Spice ${CMAKE_CURRENT_SOURCE_DIR}/../src/Spice.g4 VISITOR)
 
 set(SOURCES
         main.cpp
+        driver/Driver.cpp
+        driver/Driver.h
         TestRunner.cpp
         util/TestUtil.cpp
-        util/TestUtil.h cli/CLIInterface.cpp cli/CLIInterface.h)
+        util/TestUtil.h)
 
 add_executable(spicetest ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 

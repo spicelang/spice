@@ -10,8 +10,9 @@
 	.scl	3;
 	.type	32;
 	.endef
-	.p2align	4, 0x90
-.L_Z4fiboi:
+	.p2align	4, 0x90                         # -- Begin function _Z4fiboi
+.L_Z4fiboi:                             # @_Z4fiboi
+# %bb.0:
 	pushq	%rsi
 	pushq	%rdi
 	subq	$40, %rsp
@@ -19,12 +20,14 @@
 	xorl	%esi, %esi
 	cmpl	$2, %ecx
 	jge	.LBB0_3
+# %bb.1:
 	movl	%edi, %ecx
 	jmp	.LBB0_2
-.LBB0_3:
+.LBB0_3:                                # %if.exit.L2.preheader
 	xorl	%esi, %esi
 	.p2align	4, 0x90
-.LBB0_4:
+.LBB0_4:                                # %if.exit.L2
+                                        # =>This Inner Loop Header: Depth=1
 	leal	-1(%rdi), %ecx
 	callq	.L_Z4fiboi
 	leal	-2(%rdi), %ecx
@@ -32,22 +35,23 @@
 	cmpl	$4, %edi
 	movl	%ecx, %edi
 	jae	.LBB0_4
-.LBB0_2:
+.LBB0_2:                                # %common.ret
 	addl	%ecx, %esi
 	movl	%esi, %eax
 	addq	$40, %rsp
 	popq	%rdi
 	popq	%rsi
 	retq
-
+                                        # -- End function
 	.def	main;
 	.scl	2;
 	.type	32;
 	.endef
-	.globl	main
+	.globl	main                            # -- Begin function main
 	.p2align	4, 0x90
-main:
+main:                                   # @main
 .seh_proc main
+# %bb.0:
 	pushq	%rbp
 	.seh_pushreg %rbp
 	subq	$32, %rsp
@@ -66,8 +70,8 @@ main:
 	popq	%rbp
 	retq
 	.seh_endproc
-
+                                        # -- End function
 	.section	.rdata,"dr"
-.Lprintf.str.0:
+.Lprintf.str.0:                         # @printf.str.0
 	.asciz	"Result: %d"
 

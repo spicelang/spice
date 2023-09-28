@@ -2,10 +2,11 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
-#include <cli/CLIInterface.h>
+#include <driver/Driver.h>
 
 namespace spice::compiler {
 

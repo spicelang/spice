@@ -45,7 +45,7 @@ public type CliInterface struct {
     public bool shouldExecute = false
 }
 
-public p CliInterface.createInterface() {
+public p CliInterface.create() {
     this.cliParser = CliParser("Spice", "Spice programming language");
     this.cliParser.setFooter("(c) Marc Auberer 2021-2023");
 

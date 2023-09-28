@@ -22,6 +22,7 @@ void FileUtil::writeToFile(const std::filesystem::path &filePath, const std::str
   if (!file)
     throw CompilerError(IO_ERROR, "Failed to open file: " + filePath.string());
   file << fileContent;
+  file.flush();
   file.close();
 }
 

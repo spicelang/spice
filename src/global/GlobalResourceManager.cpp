@@ -31,6 +31,8 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
 
   // Create target machine for LLVM
   llvm::TargetOptions opt;
+  opt.MCOptions.AsmVerbose = true;
+  opt.MCOptions.PreserveAsmComments = true;
   std::string cpuName = "generic";
   std::stringstream featureString;
   if (cliOptions.isNativeTarget && cliOptions.useCPUFeatures) {

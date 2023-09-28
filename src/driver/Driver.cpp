@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
-#include "CLIInterface.h"
+#include "Driver.h"
 
 #include <exception/CliError.h>
 #include <util/CommonUtil.h>
@@ -13,7 +13,7 @@
 
 namespace spice::compiler {
 
-void CLIInterface::createInterface() {
+void Driver::init() {
   // Allow positional args
   app.positionals_at_end();
   app.require_subcommand(1);
@@ -100,7 +100,7 @@ void CLIInterface::createInterface() {
 /**
  * Initialize the cli options based on the input of the user
  */
-void CLIInterface::enrich() {
+void Driver::enrich() {
   // Propagate llvm args to llvm
   if (!cliOptions.llvmArgs.empty()) {
     const std::vector<std::string> result = CommonUtil::split("llvm " + cliOptions.llvmArgs);
@@ -137,7 +137,7 @@ void CLIInterface::enrich() {
 /**
  * Executes the built executable
  */
-void CLIInterface::runBinary() const {
+void Driver::runBinary() const {
   // Print status message
   if (cliOptions.printDebugOutput)
     std::cout << "Running executable ...\n\n";
@@ -153,7 +153,7 @@ void CLIInterface::runBinary() const {
 /**
  * Add build subcommand to cli interface
  */
-void CLIInterface::addBuildSubcommand() {
+void Driver::addBuildSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("build", "Builds your Spice program and emits an executable");
   subCmd->alias("b");
@@ -192,7 +192,7 @@ void CLIInterface::addBuildSubcommand() {
 /**
  * Add run subcommand to cli interface
  */
-void CLIInterface::addRunSubcommand() {
+void Driver::addRunSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("run", "Builds your Spice program and runs it immediately");
   subCmd->alias("r");
@@ -212,7 +212,7 @@ void CLIInterface::addRunSubcommand() {
 /**
  * Add install subcommand to cli interface
  */
-void CLIInterface::addInstallSubcommand() {
+void Driver::addInstallSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd =
       app.add_subcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
@@ -230,7 +230,7 @@ void CLIInterface::addInstallSubcommand() {
 /**
  * Add uninstall subcommand to cli interface
  */
-void CLIInterface::addUninstallSubcommand() {
+void Driver::addUninstallSubcommand() {
   // Create sub-command itself
   CLI::App *subCmd = app.add_subcommand("uninstall", "Builds your Spice program and runs it immediately");
   subCmd->alias("u");
@@ -246,7 +246,7 @@ void CLIInterface::addUninstallSubcommand() {
       ->required();
 }
 
-void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
+void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   const std::function<bool(const CLI::results_t &)> buildModeCallback = [&](const CLI::results_t &results) {
     std::string inputString = results.front();
     std::transform(inputString.begin(), inputString.end(), inputString.begin(), ::tolower);
@@ -314,7 +314,7 @@ void CLIInterface::addCompileSubcommandOptions(CLI::App *subCmd) {
 /**
  * Ensure that the compiler is not running in a Docker container
  */
-void CLIInterface::ensureNotDockerized() {
+void Driver::ensureNotDockerized() {
   const char *envValue = std::getenv(ENV_VAR_DOCKERIZED);
   if (envValue != nullptr && std::strcmp(envValue, "true") == 0)
     throw CliError(FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED,
@@ -328,7 +328,7 @@ void CLIInterface::ensureNotDockerized() {
  * @param argv Argument vector
  * @return Return code
  */
-int CLIInterface::parse(int argc, char **argv) {
+int Driver::parse(int argc, char **argv) {
   try {
     app.parse(argc, argv);
     return EXIT_SUCCESS;

@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
-#include "cli/CLIInterface.h"
+#include "driver/Driver.h"
 
 #include <gtest/gtest.h>
 
@@ -21,11 +21,11 @@ bool skipNonGitHubTests = false;
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   // Initialize command line parser
-  CLIInterface cli;
-  cli.createInterface();
-  cli.addOptions(updateRefs, runBenchmarks, enableLeakDetection, skipNonGitHubTests);
+  Driver driver;
+  driver.createInterface();
+  driver.addOptions(updateRefs, runBenchmarks, enableLeakDetection, skipNonGitHubTests);
   // Parse command line args
-  cli.parse(argc, argv);
+  driver.parse(argc, argv);
   // Run tests
   return RUN_ALL_TESTS();
 }

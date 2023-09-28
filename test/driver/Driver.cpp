@@ -1,10 +1,10 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
-#include "CLIInterface.h"
+#include "Driver.h"
 
 // GCOV_EXCL_START
 
-void CLIInterface::createInterface() {
+void Driver::createInterface() {
   // Allow positional args
   app.positionals_at_end();
   app.require_subcommand(0);
@@ -18,7 +18,7 @@ void CLIInterface::createInterface() {
   app.set_version_flag("--version,-v", versionString);
 }
 
-void CLIInterface::addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &skipNonGitHubTests) {
+void Driver::addOptions(bool &updateRefs, bool &runBenchmarks, bool &enableLeakDetection, bool &skipNonGitHubTests) {
   // --update-refs
   app.add_flag<bool>("--update-refs,-u", updateRefs, "Update test reference files");
   // --run-benchmarks
@@ -36,7 +36,7 @@ void CLIInterface::addOptions(bool &updateRefs, bool &runBenchmarks, bool &enabl
  * @param argv Argument vector
  * @return Return code
  */
-int CLIInterface::parse(int argc, char **argv) {
+int Driver::parse(int argc, char **argv) {
   try {
     app.parse(argc, argv);
   } catch (const CLI::ParseError &parseError) {

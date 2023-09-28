@@ -1,7 +1,7 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include <SourceFile.h>
-#include <cli/CLIInterface.h>
+#include <driver/Driver.h>
 #include <exception/CliError.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>
@@ -59,25 +59,25 @@ bool compileProject(CliOptions &cliOptions) {
  */
 int main(int argc, char **argv) {
   // Initialize command line parser
-  CLIInterface cli;
-  cli.createInterface();
+  Driver driver;
+  driver.init();
   try {
-    if (const int exitCode = cli.parse(argc, argv); exitCode != EXIT_SUCCESS)
+    if (const int exitCode = driver.parse(argc, argv); exitCode != EXIT_SUCCESS)
       return exitCode;
 
     // Cancel here if we do not have to compile
-    if (!cli.shouldCompile)
+    if (!driver.shouldCompile)
       return EXIT_SUCCESS;
 
-    cli.enrich(); // Prepare the cli options
+    driver.enrich(); // Prepare the cli options
 
     // Kick off the compilation process
-    if (!compileProject(cli.cliOptions))
+    if (!compileProject(driver.cliOptions))
       return EXIT_FAILURE;
 
     // Execute
-    if (cli.cliOptions.execute)
-      cli.runBinary();
+    if (driver.cliOptions.execute)
+      driver.runBinary();
 
     return EXIT_SUCCESS;
   } catch (CliError &e) {
