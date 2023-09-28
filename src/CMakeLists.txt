@@ -15,9 +15,9 @@ set(SOURCES
         global/CacheManager.h
         global/RuntimeModuleManager.cpp
         global/RuntimeModuleManager.h
-        # CLI
-        cli/CLIInterface.cpp
-        cli/CLIInterface.h
+        # Driver
+        driver/Driver.cpp
+        driver/Driver.h
         # CST visualizer
         visualizer/CSTVisualizer.cpp
         visualizer/CSTVisualizer.h

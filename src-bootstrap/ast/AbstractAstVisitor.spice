@@ -1,6 +1,6 @@
 import "std/type/any";
 
-public type AbstractAstVisitor interface {
+public type IAbstractAstVisitor interface {
     f<Any> visitEntry(EntryNode*);
     f<Any> visitMainFctDef(EntryNode*);
     f<Any> visitFctDef(EntryNode*);

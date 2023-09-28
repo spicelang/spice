@@ -1,12 +1,11 @@
 // Std imports
-import "std/type/Any" as any;
-import "std/data/Vector" as vec;
-import "std/type/long" as longTy;
+import "std/type/Any";
+import "std/data/Vector";
 
 // Own imports
-import "AbstractAstVisitor" as vis;
-import "../util/CodeLoc" as codeclLoc;
-import "../symbol/SymbolType" as st;
+import "AbstractAstVisitor";
+import "../util/CodeLoc";
+import "../symbol/SymbolType";
 
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
@@ -18,45 +17,490 @@ public type CompileTimeValue struct {
     long longValue
     byte byteValue
     char charValue
-    char *stringValue
+    string stringValue
     bool boolValue
 }
 
 public type Visitable interface {
-    f<any::Any> accept(vis::AbstractAstVisitor*);
+    f<Any> accept(IAbstractAstVisitor*);
 }
 
-// =========================================================== AstNode ===========================================================
+// =========================================================== ASTNode ===========================================================
 
-public type AstNode struct : Visitable {
+public type ASTNode struct : IVisitable {
     AstNode* parent
-    vec::Vector<AstNode*> children
-    const cl::CodeLoc codeLoc
+    Vector<AstNode*> children
+    const CodeLoc codeLoc
     string errorMessage
-    unsigned long manIdx
-    vec::Vector<symbolType::SymbolType> symbolTypes
+    Vector<SymbolType> symbolTypes
     CompileTimeValue compileTimeValue
     string compileTimeStringValue
-    bool hasDirectCompileTimeValue
+    bool hasDirectCompileTimeValue = false
+    bool unreachable = false
+    Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
-p AstNode.ctor(AstNode *parent, cl::CodeLoc codeLoc) {
+p AstNode.ctor(AstNode *parent, CodeLoc codeLoc) {
     this.parent = parent;
     this.codeLoc = codeLoc;
-    this.manIdx = longTy::MAX_VALUE;
-    this.hasDirectCompileTimeValue = false;
 }
 
-public f<any::Any> AstNode.accept(vis::AbstractAstVisitor* _) {
+public f<Any> AstNode.accept(AbstractAstVisitor* _) {
     assert false; // Please override at child level
 }
 
 // ========================================================== EntryNode ==========================================================
 
-public type AstEntryNode struct : Visitable {
-    AstNode astNode
+public type ASTEntryNode struct : ASTNode {
+
 }
 
-public p AstEntryNode.ctor() {
+// ======================================================== MainFctDefNode =======================================================
+
+public type ASTMainFctDefNode struct : ASTNode {
+
+}
+
+// ========================================================= FctNameNode =========================================================
+
+public type ASTFctNameNode struct : ASTNode {
+
+}
+
+// ========================================================== FctDefNode =========================================================
+
+public type ASTFctDefNode struct : ASTNode {
+
+}
+
+// ========================================================== ProcDefNode ========================================================
+
+public type ASTProcDefNode struct : ASTNode {
+
+}
+
+// ========================================================= StructDefNode =======================================================
+
+public type ASTStructDefNode struct : ASTNode {
+
+}
+
+// ======================================================== InterfaceDefNode =====================================================
+
+public type ASTInterfaceDefNode struct : ASTNode {
+
+}
+
+// ========================================================== EnumDefNode ========================================================
+
+public type ASTEnumDefNode struct : ASTNode {
+
+}
+
+// ======================================================= GenericTypeDefNode ====================================================
+
+public type ASTGenericTypeDefNode struct : ASTNode {
+
+}
+
+// ========================================================== AliasDefNode =======================================================
+
+public type ASTAliasDefNode struct : ASTNode {
+
+}
+
+// ======================================================== GlobalVarDefNode =====================================================
+
+public type ASTGlobalVarDefNode struct : ASTNode {
+
+}
+
+// ========================================================== ExtDeclNode ========================================================
+
+public type ASTExtDeclNode struct : ASTNode {
+
+}
+
+// ========================================================== UnsafeBlockNode ========================================================
+
+public type ASTUnsafeBlockNode struct : ASTNode {
+
+}
+
+// ========================================================== ForLoopNode ========================================================
+
+public type ASTForLoopNode struct : ASTNode {
+
+}
+
+// ======================================================== ForeachLoopNode ======================================================
+
+public type ASTForeachLoopNode struct : ASTNode {
+
+}
+
+// ========================================================= WhileLoopNode =======================================================
+
+public type ASTWhileLoopNode struct : ASTNode {
+
+}
+
+// ======================================================== DoWhileLoopNode ======================================================
+
+public type ASTDoWhileLoopNode struct : ASTNode {
+
+}
+
+// ========================================================== IfStmtNode ========================================================
+
+public type ASTIfStmtNode struct : ASTNode {
+
+}
+
+// ========================================================== ElseStmtNode =======================================================
+
+public type ASTElseStmtNode struct : ASTNode {
+
+}
+
+// ===================================================== AnonymousBlockStmtNode ==================================================
+
+public type ASTAnonymousBlockStmtNode struct : ASTNode {
+
+}
+
+// ========================================================== StmtLstNode ========================================================
+
+public type ASTStmtLstNode struct : ASTNode {
+
+}
+
+// ========================================================== TypeLstNode ========================================================
+
+public type ASTTypeLstNode struct : ASTNode {
+
+}
+
+// ======================================================== TypeAltsLstNode ======================================================
+
+public type ASTTypeAltsLstNode struct : ASTNode {
+
+}
+
+// ========================================================== ParamLstNode =======================================================
+
+public type ASTParamLstNode struct : ASTNode {
+
+}
+
+// =========================================================== ArgLstNode ========================================================
+
+public type ASTArgLstNode struct : ASTNode {
+
+}
+
+// ======================================================== EnumItemLstNode ======================================================
+
+public type ASTEnumItemLstNode struct : ASTNode {
+
+}
+
+// ========================================================== EnumItemNode =======================================================
+
+public type ASTEnumItemNode struct : ASTNode {
+
+}
+
+// ========================================================== FieldLstNode =======================================================
+
+public type ASTFieldLstNode struct : ASTNode {
+
+}
+
+// =========================================================== FieldNode =========================================================
+
+public type ASTFieldNode struct : ASTNode {
+
+}
+
+// ========================================================= SignatureNode =======================================================
+
+public type ASTSignatureNode struct : ASTNode {
+
+}
+
+// ============================================================ StmtNode =========================================================
+
+public type ASTStmtNode struct : ASTNode {
+
+}
+
+// ========================================================== DeclStmtNode =======================================================
+
+public type ASTDeclStmtNode struct : ASTNode {
+
+}
+
+// ======================================================== SpecifierLstNode =====================================================
+
+public type ASTSpecifierLstNode struct : ASTNode {
+
+}
+
+// ========================================================= SpecifierNode =======================================================
+
+public type ASTSpecifierNode struct : ASTNode {
+
+}
+
+// ========================================================== ModAttrNode ========================================================
+
+public type ASTModAttrNode struct : ASTNode {
+
+}
+
+// ========================================================== FctAttrNode ========================================================
+
+public type ASTFctAttrNode struct : ASTNode {
+
+}
+
+// ========================================================== AttrLstNode ========================================================
+
+public type ASTAttrLstNode struct : ASTNode {
+
+}
+
+// ============================================================ AttrNode =========================================================
+
+public type ASTAttrNode struct : ASTNode {
+
+}
+
+// ========================================================= ImportStmtNode ======================================================
+
+public type ASTImportStmtNode struct : ASTNode {
+
+}
+
+// ========================================================= ReturnStmtNode ======================================================
+
+public type ASTReturnStmtNode struct : ASTNode {
+
+}
+
+// ========================================================= BreakStmtNode =======================================================
+
+public type ASTBreakStmtNode struct : ASTNode {
+
+}
+
+// ======================================================== ContinueStmtNode =====================================================
+
+public type ASTContinueStmtNode struct : ASTNode {
+
+}
+
+// ========================================================= AssertStmtNode ======================================================
+
+public type ASTAssertStmtNode struct : ASTNode {
+
+}
+
+// ========================================================= PrintfCallNode =======================================================
+
+public type ASTPrintfCallNode struct : ASTNode {
+
+}
+
+// ========================================================= SizeofCallNode ======================================================
+
+public type ASTSizeofCallNode struct : ASTNode {
+
+}
+
+// ======================================================== AlignofCallNode ======================================================
+
+public type ASTAlignofCallNode struct : ASTNode {
+
+}
+
+// ========================================================== LenCallNode ========================================================
+
+public type ASTLenCallNode struct : ASTNode {
+
+}
+
+// ========================================================= PanicCallNode =======================================================
+
+public type ASTPanicCallNode struct : ASTNode {
+
+}
+
+// ========================================================= AssignExprNode =======================================================
+
+public type ASTAssignExprNode struct : ASTNode {
+
+}
+
+// ======================================================== TernaryExprNode ======================================================
+
+public type ASTTernaryExprNode struct : ASTNode {
+
+}
+
+// ======================================================= LogicalOrExprNode =====================================================
+
+public type ASTLogicalOrExprNode struct : ASTNode {
+
+}
+
+// ======================================================= LogicalAndExprNode ====================================================
+
+public type ASTLogicalAndExprNode struct : ASTNode {
+
+}
+
+// ======================================================= BitwiseOrExprNode =====================================================
+
+public type ASTBitwiseOrExprNode struct : ASTNode {
+
+}
+
+// ======================================================= BitwiseXorExprNode ====================================================
+
+public type ASTBitwiseXorExprNode struct : ASTNode {
+
+}
+
+// ======================================================= BitwiseAndExprNode ====================================================
+
+public type ASTBitwiseAndExprNode struct : ASTNode {
+
+}
+
+// ======================================================== EqualityExprNode =====================================================
+
+public type ASTEqualityExprNode struct : ASTNode {
+
+}
+
+// ======================================================= RelationalExprNode ====================================================
+
+public type ASTRelationalExprNode struct : ASTNode {
+
+}
+
+// ========================================================= ShiftExprNode =======================================================
+
+public type ASTShiftExprNode struct : ASTNode {
+
+}
+
+// ======================================================== AdditiveExprNode =====================================================
+
+public type ASTAdditiveExprNode struct : ASTNode {
+
+}
+
+// ===================================================== MultiplicativeExprNode ==================================================
+
+public type ASTMultiplicativeExprNode struct : ASTNode {
+
+}
+
+// ========================================================== CastExprNode =======================================================
+
+public type ASTCastExprNode struct : ASTNode {
+
+}
+
+// ====================================================== PrefixUnaryExprNode ====================================================
+
+public type ASTPrefixUnaryExprNode struct : ASTNode {
+
+}
+
+// ====================================================== PostfixUnaryExprNode ===================================================
+
+public type ASTPostfixUnaryExprNode struct : ASTNode {
+
+}
+
+// ========================================================= AtomicExprNode ======================================================
+
+public type ASTAtomicExprNode struct : ASTNode {
+
+}
+
+// =========================================================== ValueNode =========================================================
+
+public type ASTValueNode struct : ASTNode {
+
+}
+
+// ======================================================= PrimitiveValueNode ====================================================
+
+public type ASTPrimitiveValueNode struct : ASTNode {
+
+}
+
+// ========================================================== FctCallNode ========================================================
+
+public type ASTFctCallNode struct : ASTNode {
+
+}
+
+// ==================================================== ArrayInitializationNode ==================================================
+
+public type ASTArrayInitializationNode struct : ASTNode {
+
+}
+
+// ==================================================== StructInstantiationNode ==================================================
+
+public type ASTStructInstantiationNode struct : ASTNode {
+
+}
+
+// ========================================================= LambdaFuncNode ======================================================
+
+public type ASTLambdaFuncNode struct : ASTNode {
+
+}
+
+// ========================================================= LambdaProcNode ======================================================
+
+public type ASTLambdaProcNode struct : ASTNode {
+
+}
+
+// ========================================================= LambdaExprNode =======================================================
+
+public type ASTLambdaExprNode struct : ASTNode {
+
+}
+
+// ========================================================== DataTypeNode =======================================================
+
+public type ASTDataTypeNode struct : ASTNode {
+
+}
+
+// ======================================================== BaseDataTypeNode =====================================================
+
+public type ASTBaseDataTypeNode struct : ASTNode {
+
+}
+
+// ======================================================= CustomDataTypeNode ====================================================
+
+public type ASTCustomDataTypeNode struct : ASTNode {
+
+}
+
+// ====================================================== FunctionDataTypeNode ===================================================
+
+public type ASTFunctionDataTypeNode struct : ASTNode {
 
 }

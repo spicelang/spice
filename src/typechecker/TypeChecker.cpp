@@ -104,7 +104,7 @@ std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
   return nullptr;
 }
 
-std::any TypeChecker::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
+std::any TypeChecker::visitUnsafeBlock(UnsafeBlockNode *node) {
   // Change to unsafe block body scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY);
 
@@ -1280,7 +1280,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     break;
   }
   default:
-    throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE;
+    throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }
 
   if (lhsType.is(TY_INVALID)) {
@@ -1975,9 +1975,9 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaFunction.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node);
-  node->lambdaFunction.at(manIdx).bodyScope = bodyScope;
-  node->lambdaFunction.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
+  node->manifestations.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node);
+  node->manifestations.at(manIdx).bodyScope = bodyScope;
+  node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2015,9 +2015,9 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaProcedure.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node);
-  node->lambdaProcedure.at(manIdx).bodyScope = bodyScope;
-  node->lambdaProcedure.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
+  node->manifestations.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node);
+  node->manifestations.at(manIdx).bodyScope = bodyScope;
+  node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2061,9 +2061,9 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->lambdaFunction.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node);
-  node->lambdaFunction.at(manIdx).bodyScope = bodyScope;
-  node->lambdaFunction.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
+  node->manifestations.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node);
+  node->manifestations.at(manIdx).bodyScope = bodyScope;
+  node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }

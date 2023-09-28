@@ -37,8 +37,8 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !15 {
   %result = alloca i32, align 4
-  %argc = alloca i32, align 4
-  %argv = alloca ptr, align 8
+  %_argc = alloca i32, align 4
+  %_argv = alloca ptr, align 8
   %vi = alloca %struct.Vector, align 8
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
@@ -61,10 +61,10 @@ define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !15 {
   %14 = alloca ptr, align 8
   call void @llvm.dbg.declare(metadata ptr %result, metadata !23, metadata !DIExpression()), !dbg !24
   store i32 0, ptr %result, align 4, !dbg !24
-  call void @llvm.dbg.declare(metadata ptr %argc, metadata !25, metadata !DIExpression()), !dbg !24
-  store i32 %0, ptr %argc, align 4, !dbg !24
-  call void @llvm.dbg.declare(metadata ptr %argv, metadata !26, metadata !DIExpression()), !dbg !24
-  store ptr %1, ptr %argv, align 8, !dbg !24
+  call void @llvm.dbg.declare(metadata ptr %_argc, metadata !25, metadata !DIExpression()), !dbg !24
+  store i32 %0, ptr %_argc, align 4, !dbg !24
+  call void @llvm.dbg.declare(metadata ptr %_argv, metadata !26, metadata !DIExpression()), !dbg !24
+  store ptr %1, ptr %_argv, align 8, !dbg !24
   call void @llvm.dbg.declare(metadata ptr %vi, metadata !27, metadata !DIExpression()), !dbg !36
   call void @_ZN6VectorIiE4ctorEv(ptr %vi), !dbg !37
   store i32 123, ptr %3, align 4, !dbg !38
@@ -519,8 +519,8 @@ attributes #3 = { cold noreturn nounwind }
 !22 = !{}
 !23 = !DILocalVariable(name: "result", scope: !15, file: !5, line: 6, type: !18)
 !24 = !DILocation(line: 6, column: 1, scope: !15)
-!25 = !DILocalVariable(name: "argc", arg: 1, scope: !15, file: !5, line: 6, type: !18)
-!26 = !DILocalVariable(name: "argv", arg: 2, scope: !15, file: !5, line: 6, type: !19)
+!25 = !DILocalVariable(name: "_argc", arg: 1, scope: !15, file: !5, line: 6, type: !18)
+!26 = !DILocalVariable(name: "_argv", arg: 2, scope: !15, file: !5, line: 6, type: !19)
 !27 = !DILocalVariable(name: "vi", scope: !15, file: !5, line: 8, type: !28)
 !28 = !DICompositeType(tag: DW_TAG_structure_type, name: "Vector", scope: !29, file: !29, line: 22, size: 192, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !30, identifier: "struct.Vector")
 !29 = !DIFile(filename: "vector.spice", directory: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\std\\data")

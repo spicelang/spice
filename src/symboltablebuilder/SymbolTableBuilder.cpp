@@ -61,11 +61,11 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
-        node->functionSpecifiers.isInline = true;
+        node->specifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
-        node->functionSpecifiers.isPublic = true;
+        node->specifiers.isPublic = true;
       else if (specifier->type == SpecifierNode::TY_CONST)
-        node->functionSpecifiers.isConst = true;
+        node->specifiers.isConst = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a function definition");
     }
@@ -73,13 +73,13 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Change to struct scope if this function is a method
   if (node->isMethod) {
-    node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->fctName->structName);
+    node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->name->structName);
     if (!currentScope)
-      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->fctName->structName + "' could not be found");
+      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->name->structName + "' could not be found");
   }
 
   // Create scope for the function
-  node->fctScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
+  node->scope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
   currentScope->isGenericScope = node->hasTemplateTypes || (node->structScope && node->structScope->isGenericScope);
 
   // Create symbol for 'this' variable
@@ -97,16 +97,16 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   visit(node->body());
 
   // Leave function body scope
-  currentScope = node->fctScope->parent;
+  currentScope = node->scope->parent;
 
   // Insert symbol for function into the symbol table
   node->entry = currentScope->insert(node->getSymbolTableEntryName(), node);
 
   // Add to external name registry
   // if a function has overloads, they both refer to the same entry in the registry. So we only register the name once
-  const NameRegistryEntry *existingRegistryEntry = sourceFile->getNameRegistryEntry(node->fctName->fqName);
+  const NameRegistryEntry *existingRegistryEntry = sourceFile->getNameRegistryEntry(node->name->fqName);
   if (!existingRegistryEntry || existingRegistryEntry->targetEntry != node->entry)
-    sourceFile->addNameRegistryEntry(node->fctName->fqName, node->entry, currentScope, /*keepNewOnCollision=*/true);
+    sourceFile->addNameRegistryEntry(node->name->fqName, node->entry, currentScope, /*keepNewOnCollision=*/true);
 
   // Leave the struct scope
   if (node->isMethod)
@@ -120,11 +120,11 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
-        node->procedureSpecifiers.isInline = true;
+        node->specifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
-        node->procedureSpecifiers.isPublic = true;
+        node->specifiers.isPublic = true;
       else if (specifier->type == SpecifierNode::TY_CONST)
-        node->procedureSpecifiers.isConst = true;
+        node->specifiers.isConst = true;
       else
         throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a procedure definition");
     }
@@ -132,15 +132,15 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Change to struct scope if this procedure is a method
   if (node->isMethod) {
-    node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->procName->structName);
+    node->structScope = currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->name->structName);
     if (!currentScope)
-      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->procName->structName + "' could not be found");
+      throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->name->structName + "' could not be found");
   }
 
   // Create scope for the procedure
-  node->procScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
+  node->scope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
   currentScope->isGenericScope = node->hasTemplateTypes || (node->structScope && node->structScope->isGenericScope);
-  currentScope->isDtorScope = node->isMethod && node->procName->name == DTOR_FUNCTION_NAME;
+  currentScope->isDtorScope = node->isMethod && node->name->name == DTOR_FUNCTION_NAME;
 
   // Create symbol for 'this' variable
   if (node->isMethod)
@@ -154,23 +154,23 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   visit(node->body());
 
   // Leave procedure body scope
-  currentScope = node->procScope->parent;
+  currentScope = node->scope->parent;
 
   // Insert symbol for procedure into the symbol table
   node->entry = currentScope->insert(node->getSymbolTableEntryName(), node);
 
   // Add to external name registry
   // if a procedure has overloads, they both refer to the same entry in the registry. So we only register the name once
-  const NameRegistryEntry *existingRegistryEntry = sourceFile->getNameRegistryEntry(node->procName->fqName);
+  const NameRegistryEntry *existingRegistryEntry = sourceFile->getNameRegistryEntry(node->name->fqName);
   if (!existingRegistryEntry || existingRegistryEntry->targetEntry != node->entry)
-    sourceFile->addNameRegistryEntry(node->procName->fqName, node->entry, currentScope, /*keepNewOnCollision=*/true);
+    sourceFile->addNameRegistryEntry(node->name->fqName, node->entry, currentScope, /*keepNewOnCollision=*/true);
 
   // Leave the struct scope
   if (node->isMethod)
     currentScope = node->structScope->parent;
 
   // Check if this is a constructor
-  node->isCtor = node->procName->nameFragments.back() == CTOR_FUNCTION_NAME;
+  node->isCtor = node->name->nameFragments.back() == CTOR_FUNCTION_NAME;
 
   return nullptr;
 }
@@ -331,7 +331,7 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   return nullptr;
 }
 
-std::any SymbolTableBuilder::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
+std::any SymbolTableBuilder::visitUnsafeBlock(UnsafeBlockNode *node) {
   // Create scope for the unsafe block body
   node->bodyScope = currentScope =
       currentScope->createChildScope(node->getScopeId(), ScopeType::UNSAFE_BODY, &node->body()->codeLoc);

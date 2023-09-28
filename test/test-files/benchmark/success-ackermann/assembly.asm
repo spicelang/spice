@@ -10,43 +10,49 @@
 	.scl	3;
 	.type	32;
 	.endef
-	.p2align	4, 0x90
-.L_Z3ackii:
+	.p2align	4, 0x90                         # -- Begin function _Z3ackii
+.L_Z3ackii:                             # @_Z3ackii
+# %bb.0:
 	pushq	%rsi
 	subq	$32, %rsp
 	movl	%edx, %eax
 	testl	%ecx, %ecx
 	je	.LBB0_5
+# %bb.1:
 	movl	%ecx, %esi
 	jmp	.LBB0_2
 	.p2align	4, 0x90
-.LBB0_3:
+.LBB0_3:                                #   in Loop: Header=BB0_2 Depth=1
 	movl	$1, %eax
 	decl	%esi
 	je	.LBB0_5
-.LBB0_2:
+.LBB0_2:                                # %if.exit.L2
+                                        # =>This Inner Loop Header: Depth=1
 	testl	%eax, %eax
 	je	.LBB0_3
+# %bb.6:                                # %if.exit.L3
+                                        #   in Loop: Header=BB0_2 Depth=1
 	decl	%eax
 	movl	%esi, %ecx
 	movl	%eax, %edx
 	callq	.L_Z3ackii
 	decl	%esi
 	jne	.LBB0_2
-.LBB0_5:
+.LBB0_5:                                # %if.then.L2
 	incl	%eax
 	addq	$32, %rsp
 	popq	%rsi
 	retq
-
+                                        # -- End function
 	.def	main;
 	.scl	2;
 	.type	32;
 	.endef
-	.globl	main
+	.globl	main                            # -- Begin function main
 	.p2align	4, 0x90
-main:
+main:                                   # @main
 .seh_proc main
+# %bb.0:
 	pushq	%rbp
 	.seh_pushreg %rbp
 	subq	$32, %rsp
@@ -68,8 +74,8 @@ main:
 	popq	%rbp
 	retq
 	.seh_endproc
-
+                                        # -- End function
 	.section	.rdata,"dr"
-.Lprintf.str.0:
+.Lprintf.str.0:                         # @printf.str.0
 	.asciz	"Ackermann of base m=%d and n=%d: %d"
 

@@ -9,10 +9,10 @@
 /**
  * Helper class to setup the cli interface and command line parser
  */
-class CLIInterface {
+class Driver {
 public:
   // Constructors
-  explicit CLIInterface() = default;
+  explicit Driver() = default;
 
   // Public methods
   void createInterface();

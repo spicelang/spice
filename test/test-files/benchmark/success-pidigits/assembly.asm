@@ -10,10 +10,11 @@
 	.scl	2;
 	.type	32;
 	.endef
-	.globl	main
+	.globl	main                            # -- Begin function main
 	.p2align	4, 0x90
-main:
+main:                                   # @main
 .seh_proc main
+# %bb.0:
 	pushq	%rbp
 	.seh_pushreg %rbp
 	pushq	%r15
@@ -45,7 +46,8 @@ main:
 	movl	$1, %edx
 	movl	$1, %r12d
 	jmp	.LBB0_1
-.LBB0_1:
+.LBB0_1:                                # %for.body.L19
+                                        # =>This Inner Loop Header: Depth=1
 	movq	%rsi, %rax
 	shlq	$2, %rax
 	movq	%r13, %rcx
@@ -55,8 +57,10 @@ main:
 	imulq	%r12, %rdi
 	cmpq	%rdi, %rcx
 	jge	.LBB0_5
-	movq	%rdx, (%rbp)
-	movq	%r11, -8(%rbp)
+# %bb.2:                                # %if.then.L20
+                                        #   in Loop: Header=BB0_1 Depth=1
+	movq	%rdx, (%rbp)                    # 8-byte Spill
+	movq	%r11, -8(%rbp)                  # 8-byte Spill
 	leaq	.Lprintf.str.0(%rip), %rcx
 	movq	%r15, %rdx
 	movl	%r10d, %r14d
@@ -64,10 +68,13 @@ main:
 	movl	%r14d, %r10d
 	cmpl	$0, %r10d
 	jne	.LBB0_4
+# %bb.3:                                # %if.then.L22
+                                        #   in Loop: Header=BB0_1 Depth=1
 	movl	$46, %ecx
 	callq	putchar
 	movl	%r14d, %r10d
-.LBB0_4:
+.LBB0_4:                                # %if.exit.L22
+                                        #   in Loop: Header=BB0_1 Depth=1
 	addl	$1, %r10d
 	imulq	$10, %rsi, %rcx
 	movq	%r13, %rax
@@ -83,10 +90,11 @@ main:
 	movq	%r8, %r13
 	movq	%rax, %r15
 	movq	%rcx, %rsi
-	movq	-8(%rbp), %r11
-	movq	(%rbp), %rdx
+	movq	-8(%rbp), %r11                  # 8-byte Reload
+	movq	(%rbp), %rdx                    # 8-byte Reload
 	jmp	.LBB0_6
-.LBB0_5:
+.LBB0_5:                                # %if.else.L20
+                                        #   in Loop: Header=BB0_1 Depth=1
 	movq	%rsi, %rcx
 	imulq	%rdx, %rcx
 	movq	%rsi, %r8
@@ -110,10 +118,12 @@ main:
 	movq	%r8, %r13
 	movq	%r9, %rdx
 	movq	%rcx, %rsi
-.LBB0_6:
+.LBB0_6:                                # %for.tail.L19
+                                        #   in Loop: Header=BB0_1 Depth=1
 	addl	$1, %ebx
 	cmpl	$20, %ebx
 	jne	.LBB0_1
+# %bb.7:                                # %for.exit.L19
 	xorl	%eax, %eax
 	addq	$56, %rsp
 	popq	%rbx
@@ -126,8 +136,8 @@ main:
 	popq	%rbp
 	retq
 	.seh_endproc
-
+                                        # -- End function
 	.section	.rdata,"dr"
-.Lprintf.str.0:
+.Lprintf.str.0:                         # @printf.str.0
 	.asciz	"%d"
 

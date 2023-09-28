@@ -10,19 +10,22 @@
 	.scl	3;
 	.type	32;
 	.endef
-	.p2align	4, 0x90
-.L_Z3fibi:
+	.p2align	4, 0x90                         # -- Begin function _Z3fibi
+.L_Z3fibi:                              # @_Z3fibi
+# %bb.0:
 	pushq	%rsi
 	pushq	%rdi
 	subq	$40, %rsp
 	movl	$1, %esi
 	cmpl	$3, %ecx
 	jl	.LBB0_4
+# %bb.1:                                # %if.exit.L4.preheader
 	movl	%ecx, %edi
 	decl	%edi
 	xorl	%esi, %esi
 	.p2align	4, 0x90
-.LBB0_2:
+.LBB0_2:                                # %if.exit.L4
+                                        # =>This Inner Loop Header: Depth=1
 	movl	%edi, %ecx
 	callq	.L_Z3fibi
 	addl	%eax, %esi
@@ -31,22 +34,24 @@
 	cmpl	$5, %edi
 	movl	%eax, %edi
 	jae	.LBB0_2
+# %bb.3:                                # %common.ret.loopexit
 	incl	%esi
-.LBB0_4:
+.LBB0_4:                                # %common.ret
 	movl	%esi, %eax
 	addq	$40, %rsp
 	popq	%rdi
 	popq	%rsi
 	retq
-
+                                        # -- End function
 	.def	main;
 	.scl	2;
 	.type	32;
 	.endef
-	.globl	main
+	.globl	main                            # -- Begin function main
 	.p2align	4, 0x90
-main:
+main:                                   # @main
 .seh_proc main
+# %bb.0:                                # %for.body.L11
 	pushq	%rbp
 	.seh_pushreg %rbp
 	pushq	%r15
@@ -208,13 +213,14 @@ main:
 	popq	%rbp
 	retq
 	.seh_endproc
-
+                                        # -- End function
 	.def	.L_Z15lambda.L12C29.0v;
 	.scl	3;
 	.type	32;
 	.endef
-	.p2align	4, 0x90
-.L_Z15lambda.L12C29.0v:
+	.p2align	4, 0x90                         # -- Begin function _Z15lambda.L12C29.0v
+.L_Z15lambda.L12C29.0v:                 # @_Z15lambda.L12C29.0v
+# %bb.0:
 	subq	$40, %rsp
 	movl	$30, %ecx
 	callq	.L_Z3fibi
@@ -223,14 +229,14 @@ main:
 	callq	printf
 	addq	$40, %rsp
 	retq
-
+                                        # -- End function
 	.section	.rdata,"dr"
-.Lprintf.str.0:
+.Lprintf.str.0:                         # @printf.str.0
 	.asciz	"Thread returned with result: %d\n"
 
-.Lprintf.str.2:
+.Lprintf.str.2:                         # @printf.str.2
 	.asciz	"Program finished"
 
-.Lstr:
+.Lstr:                                  # @str
 	.asciz	"Started all threads. Waiting for results ..."
 

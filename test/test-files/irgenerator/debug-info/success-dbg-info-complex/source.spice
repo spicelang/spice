@@ -3,7 +3,7 @@ import "std/data/vector";
 import "std/iterator/vector-iterator";
 import "std/data/pair";
 
-f<int> main(int argc, string[] argv) {
+f<int> main(int _argc, string[] _argv) {
     // Create test vector to iterate over
     Vector<int> vi = Vector<int>();
     vi.pushBack(123);

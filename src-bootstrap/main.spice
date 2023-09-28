@@ -45,7 +45,7 @@ f<bool> compileProject(const CliOptions& cliOptions) {
 f<int> main(int argc, string[] argv) {
     // Initialize command line parser
     CliInterface cli;
-    cli.createInterface();
+    cli.create();
     const int exitCode = cli.parse(argc, argv);
     if exitCode != EXIT_SUCCESS {
         return exitCode;

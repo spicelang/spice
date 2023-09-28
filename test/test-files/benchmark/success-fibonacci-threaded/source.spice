@@ -10,8 +10,8 @@ f<int> main() {
     Thread[8] threads = [];
     for unsigned int i = 0; i < threadCount; i++ {
         threads[i] = Thread(p() {
-            int result = fib(30);
-            printf("Thread returned with result: %d\n", result);
+            int res = fib(30);
+            printf("Thread returned with result: %d\n", res);
         });
         Thread& thread = threads[i];
         thread.run();

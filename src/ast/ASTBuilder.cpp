@@ -48,8 +48,8 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   visitChildren(ctx);
 
   // Retrieve information from the function name
-  fctDefNode->fctName = fctDefNode->getChild<FctNameNode>();
-  fctDefNode->isMethod = fctDefNode->fctName->nameFragments.size() > 1;
+  fctDefNode->name = fctDefNode->getChild<FctNameNode>();
+  fctDefNode->isMethod = fctDefNode->name->nameFragments.size() > 1;
 
   // Tell the return type that it is one
   fctDefNode->returnType()->isReturnType = true;
@@ -68,8 +68,8 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   visitChildren(ctx);
 
   // Retrieve information from the procedure name
-  procDefNode->procName = procDefNode->getChild<FctNameNode>();
-  procDefNode->isMethod = procDefNode->procName->nameFragments.size() > 1;
+  procDefNode->name = procDefNode->getChild<FctNameNode>();
+  procDefNode->isMethod = procDefNode->name->nameFragments.size() > 1;
 
   return concludeNode(ctx, procDefNode);
 }
@@ -194,8 +194,8 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   return concludeNode(ctx, extDeclNode);
 }
 
-std::any ASTBuilder::visitUnsafeBlockDef(SpiceParser::UnsafeBlockDefContext *ctx) {
-  auto unsafeBlockDefNode = createNode<UnsafeBlockDefNode>(ctx);
+std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
+  auto unsafeBlockDefNode = createNode<UnsafeBlockNode>(ctx);
 
   // Visit children
   visitChildren(ctx);

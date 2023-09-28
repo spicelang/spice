@@ -69,15 +69,16 @@ struct CliOptions {
 };
 
 /**
- * Helper class to setup the cli interface and command line parser
+ * Helper class to setup the driver and command line parser
  */
-class CLIInterface {
+class Driver {
 public:
   // Constructors
-  explicit CLIInterface() = default;
+  explicit Driver() = default;
+  Driver(const Driver &) = delete;
 
   // Public methods
-  void createInterface();
+  void init();
   int parse(int argc, char **argv);
   void enrich();
   void runBinary() const;

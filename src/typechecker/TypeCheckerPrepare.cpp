@@ -50,7 +50,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
 
 std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Check if name is dtor
-  if (node->fctName->name == DTOR_FUNCTION_NAME)
+  if (node->name->name == DTOR_FUNCTION_NAME)
     SOFT_ERROR_BOOL(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function")
 
   // Check if all control paths in the function return
@@ -58,7 +58,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     SOFT_ERROR_BOOL(node, MISSING_RETURN_STMT, "Not all control paths of this function have a return statement")
 
   // Change to function scope
-  currentScope = node->fctScope;
+  currentScope = node->scope;
   assert(currentScope->type == ScopeType::FUNC_PROC_BODY);
 
   // Retrieve function template types
@@ -73,7 +73,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      GenericType *genericType = node->fctScope->lookupGenericType(templateType.getSubType());
+      GenericType *genericType = node->scope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -84,7 +84,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   SymbolType thisPtrType = thisType;
   if (node->isMethod) {
     Scope *structParentScope = node->structScope->parent;
-    SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->fctName->structName);
+    SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->name->structName);
     assert(structEntry != nullptr);
     // Set struct to used
     structEntry->used = true;
@@ -137,12 +137,12 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
                     "Generic return type not included in the template type list of the function")
 
   // Leave function body scope
-  currentScope = node->fctScope->parent;
+  currentScope = node->scope->parent;
   assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
 
   // Prepare type of function
   SymbolType functionType(TY_FUNCTION);
-  functionType.specifiers = node->functionSpecifiers;
+  functionType.specifiers = node->specifiers;
   functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
 
@@ -152,23 +152,23 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   functionEntry->updateType(functionType, false);
 
   // Build function object
-  Function spiceFunc(node->fctName->name, functionEntry, thisType, returnType, paramList, usedGenericTypes, node);
-  spiceFunc.bodyScope = node->fctScope;
-  FunctionManager::insertFunction(currentScope, spiceFunc, &node->fctManifestations);
+  Function spiceFunc(node->name->name, functionEntry, thisType, returnType, paramList, usedGenericTypes, node);
+  spiceFunc.bodyScope = node->scope;
+  FunctionManager::insertFunction(currentScope, spiceFunc, &node->manifestations);
 
   // Check function attributes
   if (node->attrs()) {
     if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLE); attr != nullptr)
-      node->fctManifestations.front()->mangleFunctionName = attr->value()->compileTimeValue.boolValue;
+      node->manifestations.front()->mangleFunctionName = attr->value()->compileTimeValue.boolValue;
     if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLED_NAME); attr != nullptr)
-      node->fctManifestations.front()->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
+      node->manifestations.front()->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
   }
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the function
-  currentScope->renameChildScope(node->getScopeId(), node->fctManifestations.front()->getSignature(false));
-  for (size_t i = 1; i < node->fctManifestations.size(); i++)
-    currentScope->copyChildScope(node->fctManifestations.front()->getSignature(false),
-                                 node->fctManifestations.at(i)->getSignature(false));
+  currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getSignature(false));
+  for (size_t i = 1; i < node->manifestations.size(); i++)
+    currentScope->copyChildScope(node->manifestations.front()->getSignature(false),
+                                 node->manifestations.at(i)->getSignature(false));
 
   // Change to the root scope
   currentScope = rootScope;
@@ -182,11 +182,11 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   node->returnsOnAllControlPaths(nullptr);
 
   // Check if dtor and has params
-  if (node->hasParams && node->procName->name == DTOR_FUNCTION_NAME)
+  if (node->hasParams && node->name->name == DTOR_FUNCTION_NAME)
     throw SemanticError(node, DTOR_WITH_PARAMS, "It is not allowed to specify parameters for destructors");
 
   // Change to procedure scope
-  currentScope = node->procScope;
+  currentScope = node->scope;
   assert(currentScope->type == ScopeType::FUNC_PROC_BODY);
 
   // Retrieve procedure template types
@@ -201,7 +201,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      GenericType *genericType = node->procScope->lookupGenericType(templateType.getSubType());
+      GenericType *genericType = node->scope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -212,7 +212,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   SymbolType thisPtrType = thisType;
   if (node->isMethod) {
     Scope *structParentScope = node->structScope->parent;
-    SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->procName->structName);
+    SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->name->structName);
     assert(structEntry != nullptr);
     // Set struct to used
     structEntry->used = true;
@@ -256,12 +256,12 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     SOFT_ERROR_BOOL(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters")
 
   // Leave procedure body scope
-  currentScope = node->procScope->parent;
+  currentScope = node->scope->parent;
   assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
 
   // Prepare type of procedure
   SymbolType procedureType(TY_PROCEDURE);
-  procedureType.specifiers = node->procedureSpecifiers;
+  procedureType.specifiers = node->specifiers;
   procedureType.setFunctionParamTypes(paramTypes);
 
   // Update type of procedure entry
@@ -270,23 +270,23 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   procedureEntry->updateType(procedureType, false);
 
   // Build procedure object
-  Function spiceProc(node->procName->name, procedureEntry, thisType, SymbolType(TY_DYN), paramList, usedGenericTypes, node);
-  spiceProc.bodyScope = node->procScope;
-  FunctionManager::insertFunction(currentScope, spiceProc, &node->procManifestations);
+  Function spiceProc(node->name->name, procedureEntry, thisType, SymbolType(TY_DYN), paramList, usedGenericTypes, node);
+  spiceProc.bodyScope = node->scope;
+  FunctionManager::insertFunction(currentScope, spiceProc, &node->manifestations);
 
   // Check procedure attributes
   if (node->attrs()) {
     if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLE); attr != nullptr)
-      node->procManifestations.front()->mangleFunctionName = attr->value()->compileTimeValue.boolValue;
+      node->manifestations.front()->mangleFunctionName = attr->value()->compileTimeValue.boolValue;
     if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLED_NAME); attr != nullptr)
-      node->procManifestations.front()->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
+      node->manifestations.front()->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
   }
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the procedure
-  currentScope->renameChildScope(node->getScopeId(), node->procManifestations.front()->getSignature(false));
-  for (size_t i = 1; i < node->procManifestations.size(); i++)
-    currentScope->copyChildScope(node->procManifestations.front()->getSignature(false),
-                                 node->procManifestations.at(i)->getSignature(false));
+  currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getSignature(false));
+  for (size_t i = 1; i < node->manifestations.size(); i++)
+    currentScope->copyChildScope(node->manifestations.front()->getSignature(false),
+                                 node->manifestations.at(i)->getSignature(false));
 
   // Change to the root scope
   currentScope = rootScope;

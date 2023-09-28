@@ -371,7 +371,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 }
 
 std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
-  Function spiceFunc = node->lambdaFunction.at(manIdx);
+  Function spiceFunc = node->manifestations.at(manIdx);
   ParamInfoList paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 
@@ -543,7 +543,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 }
 
 std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
-  Function spiceFunc = node->lambdaProcedure.at(manIdx);
+  Function spiceFunc = node->manifestations.at(manIdx);
   ParamInfoList paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 
@@ -702,7 +702,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
 }
 
 std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
-  const Function &spiceFunc = node->lambdaFunction.at(manIdx);
+  const Function &spiceFunc = node->manifestations.at(manIdx);
   ParamInfoList paramInfoList;
   std::vector<llvm::Type *> paramTypes;
 

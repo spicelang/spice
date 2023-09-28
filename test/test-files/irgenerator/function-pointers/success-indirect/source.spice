@@ -1,4 +1,4 @@
-f<int> test(string input) {
+f<int> test(string _input) {
     return 12;
 }
 

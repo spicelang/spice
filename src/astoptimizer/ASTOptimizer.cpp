@@ -6,7 +6,7 @@
 
 namespace spice::compiler {
 
-std::any ASTOptimizer::visitUnsafeBlockDef(UnsafeBlockDefNode *node) {
+std::any ASTOptimizer::visitUnsafeBlock(UnsafeBlockNode *node) {
   // Optimize all children first
   visitChildren(node);
 

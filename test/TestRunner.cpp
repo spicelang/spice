@@ -11,7 +11,7 @@
 #include <llvm/TargetParser/Triple.h>
 
 #include <SourceFile.h>
-#include <cli/CLIInterface.h>
+#include <driver/Driver.h>
 #include <exception/CompilerError.h>
 #include <exception/LexerError.h>
 #include <exception/ParserError.h>

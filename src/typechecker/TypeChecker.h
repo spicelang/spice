@@ -58,7 +58,7 @@ public:
   std::any visitGlobalVarDefPrepare(GlobalVarDefNode *node);
   std::any visitExtDecl(ExtDeclNode *node) override;
   std::any visitExtDeclPrepare(ExtDeclNode *node);
-  std::any visitUnsafeBlockDef(UnsafeBlockDefNode *node) override;
+  std::any visitUnsafeBlock(UnsafeBlockNode *node) override;
   std::any visitForLoop(ForLoopNode *node) override;
   std::any visitForeachLoop(ForeachLoopNode *node) override;
   std::any visitWhileLoop(WhileLoopNode *node) override;
