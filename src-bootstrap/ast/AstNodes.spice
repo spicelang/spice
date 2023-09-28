@@ -17,7 +17,7 @@ public type CompileTimeValue struct {
     long longValue
     byte byteValue
     char charValue
-    char *stringValue
+    string stringValue
     bool boolValue
 }
 
@@ -32,7 +32,7 @@ public type ASTNode struct : IVisitable {
     Vector<AstNode*> children
     const CodeLoc codeLoc
     string errorMessage
-    vec::Vector<SymbolType> symbolTypes
+    Vector<SymbolType> symbolTypes
     CompileTimeValue compileTimeValue
     string compileTimeStringValue
     bool hasDirectCompileTimeValue = false

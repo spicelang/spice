@@ -258,80 +258,73 @@ public:
   OverloadedOperator overloadedOperator = OP_NONE;
 };
 
-// ========================================================== FctDefNode =========================================================
+// ======================================================== FctDefBaseNode =======================================================
 
-class FctDefNode : public ASTNode {
+class FctDefBaseNode : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
+
+  // Public get methods
+  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
+  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
+  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
+  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(name->name, codeLoc); }
+  std::vector<Function *> *getFctManifestations(const std::string &_) override { return &manifestations; }
+  [[nodiscard]] bool isFctOrProcDef() const override { return true; }
+
+  // Public members
+  FctNameNode *name;
+  bool isMethod = false;
+  bool hasTemplateTypes = false;
+  bool hasParams = false;
+  SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers specifiers = TypeSpecifiers::of(TY_FUNCTION);
+  Scope *structScope = nullptr;
+  Scope *scope = nullptr;
+  std::vector<Function *> manifestations;
+};
+
+// ========================================================== FctDefNode =========================================================
+
+class FctDefNode : public FctDefBaseNode {
+public:
+  // Constructors
+  using FctDefBaseNode::FctDefBaseNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctDef(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctDef(this); }
 
   // Public get methods
-  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(fctName->name, codeLoc); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
-  std::vector<Function *> *getFctManifestations(const std::string &_) override { return &fctManifestations; }
-  [[nodiscard]] bool isFctOrProcDef() const override { return true; }
-
-  // Public members
-  FctNameNode *fctName;
-  bool isMethod = false;
-  bool hasTemplateTypes = false;
-  bool hasParams = false;
-  SymbolTableEntry *entry = nullptr;
-  TypeSpecifiers functionSpecifiers = TypeSpecifiers::of(TY_FUNCTION);
-  Scope *structScope = nullptr;
-  Scope *fctScope = nullptr;
-  std::vector<Function *> fctManifestations;
 };
 
 // ========================================================== ProcDefNode ========================================================
 
-class ProcDefNode : public ASTNode {
+class ProcDefNode : public FctDefBaseNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using FctDefBaseNode::FctDefBaseNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitProcDef(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitProcDef(this); }
 
-  // Public get methods
-  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "proc:" + codeLoc.toString(); }
-  [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(procName->name, codeLoc); }
   bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
-  std::vector<Function *> *getFctManifestations(const std::string &_) override { return &procManifestations; }
-  [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
-  FctNameNode *procName;
-  bool isMethod = false;
-  bool hasTemplateTypes = false;
-  bool hasParams = false;
   bool isCtor = false;
-  SymbolTableEntry *entry = nullptr;
-  TypeSpecifiers procedureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
-  Scope *structScope = nullptr;
-  Scope *procScope = nullptr;
-  std::vector<Function *> procManifestations;
 };
 
 // ========================================================= StructDefNode =======================================================

@@ -29,11 +29,11 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
 }
 
 std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
-  node->resizeToNumberOfManifestations(node->fctManifestations.size());
+  node->resizeToNumberOfManifestations(node->manifestations.size());
   manIdx = 0; // Reset the manifestation index
 
   // Get all manifestations for this function definition
-  for (Function *manifestation : node->fctManifestations) {
+  for (Function *manifestation : node->manifestations) {
     // Skip non-substantiated or already checked functions
     if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked) {
       manIdx++; // Increase the manifestation index
@@ -42,7 +42,7 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const auto structSignature = Struct::getSignature(node->fctName->structName, manifestation->thisType.getTemplateTypes());
+      const auto structSignature = Struct::getSignature(node->name->structName, manifestation->thisType.getTemplateTypes());
       changeToScope(STRUCT_SCOPE_PREFIX + structSignature, ScopeType::STRUCT);
     }
 
@@ -85,11 +85,11 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 }
 
 std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
-  node->resizeToNumberOfManifestations(node->procManifestations.size());
+  node->resizeToNumberOfManifestations(node->manifestations.size());
   manIdx = 0; // Reset the manifestation index
 
   // Get all manifestations for this procedure definition
-  for (auto &manifestation : node->procManifestations) {
+  for (auto &manifestation : node->manifestations) {
     // Skip non-substantiated or already checked procedures
     if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked) {
       manIdx++; // Increase the manifestation index
@@ -98,7 +98,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const auto structSignature = Struct::getSignature(node->procName->structName, manifestation->thisType.getTemplateTypes());
+      const auto structSignature = Struct::getSignature(node->name->structName, manifestation->thisType.getTemplateTypes());
       changeToScope(STRUCT_SCOPE_PREFIX + structSignature, ScopeType::STRUCT);
     }
 
