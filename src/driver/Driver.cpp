@@ -264,7 +264,7 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   // --build-mode
   subCmd->add_option("--build-mode,-m", buildModeCallback, "Build mode (debug, release)");
   // --llvm-args
-  subCmd->add_option<std::string>("--llvm-args,-llvm", cliOptions.llvmArgs, "Additional arguments for LLVM");
+  subCmd->add_option<std::string>("--llvm-args,-llvm", cliOptions.llvmArgs, "Additional arguments for LLVM")->join(' ');
   // --jobs
   subCmd->add_option<unsigned short>("--jobs,-j", cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
   // --ignore-cache
