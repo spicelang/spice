@@ -554,14 +554,14 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs,
   if (lhs.specifiers.isHeap != rhs.specifiers.isHeap)
     ensureUnsafeAllowed(node, "(cast)", lhs, rhs);
 
-  // Allow casts string -> char*  and string -> char[]
+  // Allow casts string -> char* and string -> char[]
   if (lhs.isOneOf({TY_PTR, TY_ARRAY}) && lhs.getContainedTy().is(TY_CHAR) && rhs.is(TY_STRING))
     return lhs;
   // Allow casts char* -> string and char[] -> string
   if (lhs.is(TY_STRING) && rhs.isOneOf({TY_PTR, TY_ARRAY}) && rhs.getContainedTy().is(TY_CHAR))
     return lhs;
   // Allow casts any* -> any*
-  if (lhs.isPtr() && rhs.isPtr()) {
+  if (lhs.isOneOf({TY_PTR, TY_STRING}) && rhs.isOneOf({TY_PTR, TY_STRING})) {
     if (lhs != rhs)
       ensureUnsafeAllowed(node, "(cast)", lhs, rhs);
     return lhs;

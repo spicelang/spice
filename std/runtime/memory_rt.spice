@@ -32,16 +32,13 @@ public f<Result<heap byte*>> sRealloc(heap byte* ptr, unsigned long size) {
 /**
   * Copies a block of memory to a new block of memory.
   *
-  * @param ptr The pointer to the block to copy.
+  * @param oldPtr The pointer to the block to copy.
+  * @param newPtr The pointer to the new block to copy to.
   * @param size The size of the block to copy.
   * @return A pointer to the copied block, or an error if the copy failed.
   */
-public f<Result<heap byte*>> sCopy(heap byte* ptr, unsigned long size) {
-    heap byte* newPtr = malloc(size);
-    if newPtr == nil<heap byte*> {
-        return err(nil<heap byte*>, "Out of memory occurred!");
-    }
-    memcpy(newPtr, ptr, size);
+public f<Result<heap byte*>> sCopy(heap byte* oldPtr, heap byte* newPtr, unsigned long size) {
+    memcpy(newPtr, oldPtr, size);
     return ok(newPtr);
 }
 
