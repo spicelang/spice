@@ -1,42 +1,9 @@
-f<int> main() {
-    String s = String("Hello ");
-    assert s.getRaw() == "Hello ";
-    assert s.getLength() == 6;
-    assert s.getCapacity() == 12;
-    s.append("World!");
-    assert s.getRaw() == "Hello World!";
-    assert s.getLength() == 12;
-    assert s.getCapacity() == 12;
-    s.append('?');
-    assert s.getRaw() == "Hello World!?";
-    assert s.getLength() == 13;
-    assert s.getCapacity() == 24;
-    s.append('!');
-    assert s.getRaw() == "Hello World!?!";
-    assert s.getLength() == 14;
-    assert s.getCapacity() == 24;
-    s.clear();
-    assert s.getRaw() == "";
-    assert s.getLength() == 0;
-    assert s.getCapacity() == 24;
-    s.reserve(100l);
-    assert s.getRaw() == "";
-    assert s.getLength() == 0;
-    assert s.getCapacity() == 100;
-    s = String("");
-    assert s.isEmpty();
-    s.append('a');
-    assert !s.isEmpty();
-    s = String("This is a test. And because this is a test, it is a test.");
-    assert !s.replace("foo", "demo");
-    assert s.replace("test", "demo");
-    assert s.getRaw() == "This is a demo. And because this is a test, it is a test.";
-    assert s.replace("test", "demonstration", 45l);
-    assert s.getRaw() == "This is a demo. And because this is a test, it is a demonstration.";
-    assert s.replace("test", "d");
-    assert s.getRaw() == "This is a demo. And because this is a d, it is a demonstration.";
-    assert s.replaceAll(" is ", " was ") == 3;
-    assert s.getRaw() == "This was a demo. And because this was a d, it was a demonstration.";
+//import "../../src-bootstrap/util/CodeLoc";
+//import "../../src-bootstrap/ast/ASTNodes";
 
-    printf("All assertions passed!");
+f<int> main() {
+    //CodeLoc cl = CodeLoc(1l, 2l, "File path");
+    //ASTNode node = ASTNode(nil<ASTNode*>, cl);
+    dyn s4 = String("Hello World!");
+    printf("%d", s4.rfind("o", 6l));
 }

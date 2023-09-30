@@ -2138,6 +2138,8 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
                         "The heap specifier can only be applied to symbols of pointer type, you provided " + baseType.getName())
 
         type.specifiers.isHeap = true;
+      } else if (specifier->type == SpecifierNode::TY_COMPOSITION && node->isFieldType) {
+        type.specifiers.isComposition = true;
       } else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
         type.specifiers.isPublic = true;
       } else {

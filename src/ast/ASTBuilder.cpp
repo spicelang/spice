@@ -359,15 +359,6 @@ std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
   return concludeNode(ctx, enumItemNode);
 }
 
-std::any ASTBuilder::visitFieldLst(SpiceParser::FieldLstContext *ctx) {
-  auto fieldLstNode = createNode<FieldLstNode>(ctx);
-
-  // Visit children
-  visitChildren(ctx);
-
-  return concludeNode(ctx, fieldLstNode);
-}
-
 std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
   auto fieldNode = createNode<FieldNode>(ctx);
 
@@ -460,6 +451,8 @@ std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
       specifierNode->type = SpecifierNode::TY_PUBLIC;
     else if (symbolType == SpiceParser::HEAP)
       specifierNode->type = SpecifierNode::TY_HEAP;
+    else if (symbolType == SpiceParser::COMPOSE)
+      specifierNode->type = SpecifierNode::TY_COMPOSITION;
     else
       assert(false && "Unknown specifier type");
   }

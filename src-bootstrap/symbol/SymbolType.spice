@@ -1,45 +1,78 @@
 // Std imports
-import "std/data/vector" as vec;
+import "std/data/vector";
+import "../util/
 
 public type SymbolSuperType enum {
     TY_INVALID,
+    TY_UNRESOLVED,
     TY_DOUBLE,
     TY_INT,
     TY_SHORT,
     TY_LONG,
     TY_BYTE,
     TY_CHAR,
-    TY_STRING,
+    TY_STRING, // Alias for 'const char*'
     TY_BOOL,
-    TY_GENERIC,
     TY_STRUCT,
     TY_INTERFACE,
     TY_ENUM,
+    TY_GENERIC,
+    TY_ALIAS,
     TY_DYN,
     TY_PTR,
+    TY_REF,
     TY_ARRAY,
-    TYPE_FUNCTION,
+    TY_FUNCTION,
     TY_PROCEDURE,
     TY_IMPORT
 }
 
 type TypeChainElement struct {
-    SuperSymbolType superType
-    string subType
+    SymbolSuperType superType = TY_DYN
+    String subType
     TypeChainElementData data
-    vec::Vector<SymbolType> templateTypes
+    Vector<SymbolType> templateTypes
+    Vector<SymbolType> paramTypes // First type is the return type
 }
 
-p TypeChainElement.ctor() {
-    this.superType = SymbolSuperType::TY_DYN;
+f<bool> operator==(const TypeChainElement* lhs, const TypeChainElement rhs) {
+    // Check super type
+    if lhs.superType != rhs.superType { return false; }
+
+    // Check data
+    if lhs.superType == TY_ARRAY {
+        return lhs.data.arraySize == rhs.data.arraySize;
+    } else if lhs.superType == TY_STRUCT || lhs.superType == TY_INTERFACE || lhs.superType == TY_ENUM {
+        const String& lhsSubTypeSuffix = ;
+        const String& rhsSubTypeSuffix = ;
+        if lhs.superType == TY_STRUCT {
+            assert lhs.data.bodyScope != nil<Scope*> && rhs.data.bodyScope != nil<Scope*>;
+            return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.templateTypes == rhs.templateTypes;
+        } else if lhs.superType == TY_INTERFACE {
+            return lhsSubTypeSuffix == rhsSubTypeSuffix;
+        } else {
+            assert lhs.data.bodyScope != nil<Scope*>; && rhs.data.bodyScope != nil<Scope*>;;
+          return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
+        }
+    } else if lhs.superType == TY_INTERFACE {
+
+    } else {
+        return true;
+    }
 }
+
+f<bool> operator!=(const TypeChainElement* lhs, const TypeChainElement rhs) {
+    return !(lhs == rhs);
+}
+
+type TypeChain alias Vector<TypeChainElement>;
 
 f<bool> TypeChainElement.equalsIgnoreArraySize(const TypeChainElement* lhs, const TypeChainElement rhs) {
     return lhs.superType == rhs.superType && lhs.subType == rhs.subType /*&& lhs.templateTypes == rhs.templateTypes*/;
 }
 
 public type SymbolType struct {
-    vec::Vector<TypeChainElement> typeChain
+    Vector<TypeChainElement> typeChain
     bool isBaseTypeSigned
 }
 

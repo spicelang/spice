@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <queue>
 #include <string>
 
 #include <Token.h>

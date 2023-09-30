@@ -7,20 +7,21 @@
 namespace spice::compiler {
 
 // Bit indices from right to left
-const uint8_t BIT_INDEX_HEAP = 0;
-const uint8_t BIT_INDEX_PUBLIC = 1;
-const uint8_t BIT_INDEX_INLINE = 2;
-const uint8_t BIT_INDEX_UNSIGNED = 3;
-const uint8_t BIT_INDEX_SIGNED = 4;
-const uint8_t BIT_INDEX_CONST = 5;
+const uint8_t BIT_INDEX_COMPOSITION = 0;
+const uint8_t BIT_INDEX_INLINE = 1;
+const uint8_t BIT_INDEX_PUBLIC = 2;
+const uint8_t BIT_INDEX_HEAP = 3;
+const uint8_t BIT_INDEX_UNSIGNED = 4;
+const uint8_t BIT_INDEX_SIGNED = 5;
+const uint8_t BIT_INDEX_CONST = 6;
 const uint8_t BIT_INDEX_MAX = BIT_INDEX_CONST; // Please adjust if something changes above
 
 class TypeSpecifiers {
 public:
   // Constructors
   TypeSpecifiers() = default;
-  TypeSpecifiers(bool isConst, bool isSigned, bool isUnsigned, bool isInline, bool isPublic, bool isHeap)
-      : isConst(isConst), isSigned(isSigned), isUnsigned(isUnsigned), isInline(isInline), isPublic(isPublic), isHeap(isHeap) {}
+  TypeSpecifiers(bool isConst, bool isSigned, bool isUnsigned, bool isHeap)
+      : isConst(isConst), isSigned(isSigned), isUnsigned(isUnsigned), isHeap(isHeap) {}
 
   // Public static methods
   static TypeSpecifiers of(uint16_t superType);
@@ -38,9 +39,10 @@ public:
   bool isConst : 1 = false;
   bool isSigned : 1 = false;
   bool isUnsigned : 1 = false;
-  bool isInline : 1 = false;
-  bool isPublic : 1 = false;
   bool isHeap : 1 = false;
+  bool isPublic : 1 = false;
+  bool isInline : 1 = false;
+  bool isComposition : 1 = false;
 
 private:
   // Private methods

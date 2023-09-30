@@ -339,7 +339,7 @@ public:
 
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] FieldLstNode *fieldLst() const { return getChild<FieldLstNode>(); }
+  [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
   [[nodiscard]] TypeLstNode *interfaceTypeLst() const { return getChild<TypeLstNode>(hasTemplateTypes ? 1 : 0); }
 
@@ -816,29 +816,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEnumItem(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEnumItem(this); }
 
-  // Public get methods
-
   // Public members
   std::string itemName;
   uint32_t itemValue;
   bool hasValue = false;
   SymbolTableEntry *entry = nullptr;
   EnumDefNode *enumDef = nullptr;
-};
-
-// ========================================================= FieldLstNode ========================================================
-
-class FieldLstNode : public ASTNode {
-public:
-  // Constructors
-  using ASTNode::ASTNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFieldLst(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFieldLst(this); }
-
-  // Public get methods
-  [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
 };
 
 // ========================================================== FieldNode ==========================================================
@@ -962,7 +945,16 @@ public:
 class SpecifierNode : public ASTNode {
 public:
   // Enums
-  enum SpecifierType { TY_NONE, TY_CONST, TY_SIGNED, TY_UNSIGNED, TY_INLINE, TY_PUBLIC, TY_HEAP };
+  enum SpecifierType {
+    TY_NONE,
+    TY_CONST,
+    TY_SIGNED,
+    TY_UNSIGNED,
+    TY_INLINE,
+    TY_PUBLIC,
+    TY_HEAP,
+    TY_COMPOSITION,
+  };
 
   // Constructors
   using ASTNode::ASTNode;

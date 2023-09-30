@@ -348,8 +348,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Retrieve field types
   std::vector<SymbolType> fieldTypes;
-  fieldTypes.reserve(node->fieldLst()->fields().size());
-  for (FieldNode *field : node->fieldLst()->fields()) {
+  fieldTypes.reserve(node->fields().size());
+  for (FieldNode *field : node->fields()) {
     // Visit field type
     auto fieldType = std::any_cast<SymbolType>(visit(field));
     if (fieldType.is(TY_UNRESOLVED))

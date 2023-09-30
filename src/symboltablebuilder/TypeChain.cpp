@@ -14,22 +14,20 @@ bool operator==(const SymbolType::TypeChainElement &lhs, const SymbolType::TypeC
   switch (lhs.superType) {
   case TY_ARRAY:
     return lhs.data.arraySize == rhs.data.arraySize;
-  case TY_STRUCT: {
-    assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
-    const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
-    const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
-    return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.templateTypes == rhs.templateTypes;
-  }
-  case TY_INTERFACE: {
-    const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
-    const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
-    return lhsSubTypeSuffix == rhsSubTypeSuffix;
-  }
+  case TY_STRUCT:
+  case TY_INTERFACE:
   case TY_ENUM: {
-    assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
     const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
     const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
-    return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
+    if (lhs.superType == TY_STRUCT) {
+      assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
+      return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.templateTypes == rhs.templateTypes;
+    } else if (lhs.superType == TY_INTERFACE) {
+      return lhsSubTypeSuffix == rhsSubTypeSuffix;
+    } else {
+      assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
+      return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
+    }
   }
   case TY_FUNCTION:
   case TY_PROCEDURE:

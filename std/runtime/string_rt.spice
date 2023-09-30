@@ -337,6 +337,48 @@ public f<unsigned long> String.find(string needle, unsigned int startIndex) {
 }
 
 /**
+ * Searches for a substring in a string from the back. Returns -1 if the string was not found.
+ *
+ * @param startIndex Index where to start the search
+ * @return Index, where the substring was found / -1
+ */
+public f<unsigned long> String.rfind(string needle, unsigned long startIndex = 0l) {
+    // Return -1 if the startIndex is out of bounds
+    if startIndex >= this.length { return (unsigned long) -1l; }
+
+    const unsigned long needleLength = getRawLength(needle);
+    // Return false if the needle is longer than the haystack
+    if this.length < needleLength { return (unsigned long) -1l; }
+
+    if startIndex == 0l { startIndex = this.length - needleLength; }
+
+    // Search needle in haystack
+    for unsigned long idx = startIndex; idx >= 0; idx-- {
+        // Start matching at startIdx
+        for unsigned long charIdx = 0l; charIdx < needleLength; charIdx++ {
+            unsafe {
+                if this.contents[idx + charIdx] != needle[charIdx] {
+                    continue 2;
+                }
+            }
+        }
+        // Whole string was matched
+        return idx;
+    }
+    return (unsigned long) -1l;
+}
+
+/**
+ * Searches for a substring in a string from the back. Returns -1 if the string was not found.
+ *
+ * @param startIndex Index where to start the search
+ * @return Index, where the substring was found / -1
+ */
+public f<unsigned long> String.rfind(string needle, unsigned int startIndex) {
+    return this.rfind(needle, (unsigned long) startIndex);
+}
+
+/**
  * Searches for a substring in a string. Returns -1 if the string was not found.
  *
  * @param startIndex Index where to start the search
