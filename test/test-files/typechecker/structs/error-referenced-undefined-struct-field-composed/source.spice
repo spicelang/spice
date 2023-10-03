@@ -1,0 +1,21 @@
+type A struct {
+    int f1
+}
+
+type B struct {
+    int f3
+}
+
+type C struct {
+    compose A _1
+    compose B _2
+    int f2
+}
+
+f<int> main() {
+    C c;
+    c.f1 = 1;
+    c.f2 = 2;
+    c.f1 = 3;
+    printf("%d, %d, %d, %d\n", c.f1, c.f2, c.f3, c.f4);
+}

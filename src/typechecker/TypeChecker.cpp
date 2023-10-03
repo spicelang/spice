@@ -2151,6 +2151,8 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
 
         type.specifiers.isHeap = true;
       } else if (specifier->type == SpecifierNode::TY_COMPOSITION && node->isFieldType) {
+        if (!type.is(TY_STRUCT))
+          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "The compose specifier can only be used on plain struct fields")
         type.specifiers.isComposition = true;
       } else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
         type.specifiers.isPublic = true;
