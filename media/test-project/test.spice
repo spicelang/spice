@@ -1,37 +1,28 @@
-import "std/data/doubly-linked-list";
+import "std/type/result";
 
 f<int> main() {
-    DoublyLinkedList<String> list;
-    assert list.getSize() == 0;
-    assert list.isEmpty();
-    list.pushBack(String("Hello"));
-    assert list.getSize() == 1;
-    assert !list.isEmpty();
-    String var = String("World");
-    list.pushBack(var);
-    assert list.getSize() == 2;
-    list.pushFront(String("Hi"));
-    assert list.getSize() == 3;
-    assert list.getFront() == String("Hi");
-    assert list.getBack() == String("World");
-    list.removeFront();
-    assert list.getSize() == 2;
-    assert list.getFront() == String("Hello");
-    list.removeBack();
-    assert list.getSize() == 1;
-    assert list.getBack() == String("Hello");
-    list.pushBack(String("World"));
-    list.pushFront(String("Hi"));
-    list.pushBack(String("Programmers"));
-    assert list.getSize() == 4;
-    list.remove(String("World"));
-    assert list.getSize() == 3;
-    assert list.get(0) == String("Hi");
-    assert list.get(1) == String("Hello");
-    assert list.get(2) == String("Programmers");
-    list.removeAt(1);
-    assert list.getSize() == 2;
-    assert list.get(0) == String("Hi");
-    assert list.get(1) == String("Programmers");
-    printf("All assertions passed!\n");
+    Result<int> r = ok(1);
+    printf("%d", r.unwrap());
 }
+
+/*type A struct {
+    int f1
+}
+
+type B struct {
+    int f3
+}
+
+type C struct {
+    compose A _1
+    compose B _2
+    int f2
+}
+
+f<int> main() {
+    C c;
+    c.f1 = 1;
+    c.f2 = 2;
+    c.f3 = 3;
+    printf("%d, %d, %d\n", c.f1, c.f2, c.f3);
+}*/

@@ -343,7 +343,7 @@ bool SymbolType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTyp
   // Check if the symbol type itself is generic
   if (baseType.is(TY_GENERIC)) {
     return std::ranges::any_of(genericTypeList, [&](GenericType &t) {
-      if (t == baseType) {
+      if (baseType.matches(t, true, true, true)) {
         t.used = true;
         return true;
       }

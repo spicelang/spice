@@ -118,6 +118,19 @@ SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
   // Check if a capture with this name exists in this scope
   if (captures.contains(name))
     return captures.at(name).capturedEntry;
+  // If this is a struct scope. If we have composed types, check if the symbol exists in the respective scopes
+  if (scope->type == ScopeType::STRUCT && scope->getFieldCount() > 0) {
+    // Loop through all fields in this scope to find all composed types
+    for (size_t i = 0; i < scope->getFieldCount(); i++) {
+      const SymbolTableEntry *fieldEntry = lookupStrictByIndex(i);
+      if (fieldEntry->getType().specifiers.isComposition) {
+        Scope *searchScope = fieldEntry->getType().getBodyScope();
+        assert(searchScope != nullptr && searchScope->type == ScopeType::STRUCT);
+        if (SymbolTableEntry *result = searchScope->lookupStrict(name))
+          return result;
+      }
+    }
+  }
   // Otherwise, return a nullptr
   return nullptr;
 }
