@@ -1891,6 +1891,9 @@ public:
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
 
+  // Other methods
+  void setFieldTypeRecursive();
+
   // Public members
   std::queue<TypeModifier> tmQueue;
   bool isParamType = false;

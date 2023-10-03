@@ -1,6 +1,6 @@
 import "std/data/vector";
 import "std/data/linked-list";
-import "std/iterator/iterator_rt";
+import "std/runtime/iterator_rt";
 import "std/data/pair";
 import "std/math/hash";
 
@@ -10,16 +10,16 @@ type V dyn;
 
 public type HashTable<K, V> struct {
     Vector<LinkedList<Pair<K, V>>> table
-    Size bucketCount
+    unsigned long bucketCount
 }
 
-public p HashTable.ctor(Size bucketCount = 1000l) {
+public p HashTable.ctor(unsigned long bucketCount = 1000l) {
     this.bucketCount = bucketCount;
 }
 
 public p HashTable.insert(const K& key, const V& value) {
     const unsigned long index = hash(key);
-    foreach dyn& bucket : iterate(this.table) {
+    foreach dyn bucket : iterate(this.table) {
         if bucket.getFirst() == key {
             bucket.add(Pair<K, V>(key, value));
             return;
