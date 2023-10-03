@@ -1,11 +1,4 @@
-import "std/type/result";
-
-f<int> main() {
-    Result<int> r = ok(1);
-    printf("%d", r.unwrap());
-}
-
-/*type A struct {
+type A struct {
     int f1
 }
 
@@ -25,4 +18,4 @@ f<int> main() {
     c.f2 = 2;
     c.f3 = 3;
     printf("%d, %d, %d\n", c.f1, c.f2, c.f3);
-}*/
+}

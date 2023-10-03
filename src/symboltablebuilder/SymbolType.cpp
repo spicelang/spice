@@ -384,6 +384,8 @@ std::string SymbolType::getName(bool withSize) const { // NOLINT(misc-no-recursi
     name << "public ";
   if (specifiers.isInline && !defaultForSuperType.isInline)
     name << "inline ";
+  if (specifiers.isComposition && !defaultForSuperType.isComposition)
+    name << "compose ";
   if (specifiers.isConst && !defaultForSuperType.isConst)
     name << "const ";
   if (specifiers.isHeap && !defaultForSuperType.isHeap)

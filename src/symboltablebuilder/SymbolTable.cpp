@@ -118,20 +118,49 @@ SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
   // Check if a capture with this name exists in this scope
   if (captures.contains(name))
     return captures.at(name).capturedEntry;
-  // If this is a struct scope. If we have composed types, check if the symbol exists in the respective scopes
-  if (scope->type == ScopeType::STRUCT && scope->getFieldCount() > 0) {
-    // Loop through all fields in this scope to find all composed types
-    for (size_t i = 0; i < scope->getFieldCount(); i++) {
-      const SymbolTableEntry *fieldEntry = lookupStrictByIndex(i);
-      if (fieldEntry->getType().specifiers.isComposition) {
-        Scope *searchScope = fieldEntry->getType().getBodyScope();
-        assert(searchScope != nullptr && searchScope->type == ScopeType::STRUCT);
-        if (SymbolTableEntry *result = searchScope->lookupStrict(name))
-          return result;
-      }
-    }
-  }
   // Otherwise, return a nullptr
+  return nullptr;
+}
+
+/**
+ * Check if a symbol exists in one of the composed field scopes of the current scope and return it if possible.
+ * This only works if the current scope is a struct scope.
+ *
+ * @param name Name of the desired symbol
+ * @param indexPath How to index the found symbol using order indices (e.g. for GEP)
+ * @return Desired symbol / nullptr if the symbol was not found
+ */
+SymbolTableEntry *SymbolTable::lookupInComposedFields(const std::string &name, std::vector<size_t> &indexPath) {
+  assert(scope->type == ScopeType::STRUCT);
+
+  // Check if we have a symbol with this name in the current scope
+  if (SymbolTableEntry *result = lookupStrict(name)) {
+    indexPath.push_back(result->orderIndex);
+    return result;
+  }
+
+  // If it was not found in the current scope, loop through all composed fields in this scope
+  for (size_t i = 0; i < scope->getFieldCount(); i++) {
+    const SymbolTableEntry *fieldEntry = lookupStrictByIndex(i);
+
+    // Skip all fields that are not composition fields
+    if (!fieldEntry->getType().specifiers.isComposition)
+      continue;
+
+    // Add the current field's order index to the index path
+    indexPath.push_back(fieldEntry->orderIndex);
+
+    // Search in the composed field's body scope
+    Scope *searchScope = fieldEntry->getType().getBodyScope();
+    assert(searchScope != nullptr);
+    if (SymbolTableEntry *result = searchScope->symbolTable.lookupInComposedFields(name, indexPath))
+      return result;
+
+    // Remove the current field's order index from the index path
+    indexPath.pop_back();
+  }
+
+  // Symbol was not found in current scope, return nullptr
   return nullptr;
 }
 

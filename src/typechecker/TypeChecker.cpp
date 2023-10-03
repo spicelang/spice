@@ -1241,7 +1241,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     assert(!structScope->isGenericScope); // At this point we always expect a substantiation scope
 
     // Get accessed field
-    SymbolTableEntry *memberEntry = structScope->lookupStrict(fieldName);
+    std::vector<size_t> indexPath;
+    SymbolTableEntry *memberEntry = structScope->symbolTable.lookupInComposedFields(fieldName, indexPath);
     if (!memberEntry)
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Field '" + node->identifier + "' not found in struct " + structName)
     SymbolType memberType = memberEntry->getType();
