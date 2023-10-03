@@ -176,8 +176,10 @@ void execTestCase(const TestCase &testCase) {
       return actualWarningString.str();
     });
 
-    // Check if the execution output matches the expected output
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, [&]() {
+    // Do linking and conclude compilation
+    const bool needsNormalRun = std::filesystem::exists(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
+    const bool needsDebuggerRun = std::filesystem::exists(testCase.testPath / REF_NAME_GDB_OUTPUT);
+    if (needsNormalRun || needsDebuggerRun) {
       // Prepare linker
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
 
@@ -197,16 +199,19 @@ void execTestCase(const TestCase &testCase) {
       // Prepare and run linker
       resourceManager.linker.prepare();
       resourceManager.linker.link();
+    }
 
-      // Execute binary
-      std::string cmd;
-      if (enableLeakDetection)
-        cmd += "valgrind -q --leak-check=full --num-callers=100 --error-exitcode=1 ";
-      cmd += TestUtil::getDefaultExecutableName();
+    // Check if the execution output matches the expected output
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, [&]() {
       const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
+      // Execute binary
+      std::stringstream cmd;
+      if (enableLeakDetection)
+        cmd << "valgrind -q --leak-check=full --num-callers=100 --error-exitcode=1 ";
+      cmd << TestUtil::getDefaultExecutableName();
       if (std::filesystem::exists(cliFlagsFile))
-        cmd += " " + TestUtil::getFileContentLinesVector(cliFlagsFile)[0];
-      const ExecResult result = FileUtil::exec(cmd);
+        cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
+      const ExecResult result = FileUtil::exec(cmd.str());
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
       // Check if the exit code matches the expected one
@@ -214,11 +219,34 @@ void execTestCase(const TestCase &testCase) {
           TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE, [&]() { return std::to_string(result.exitCode); });
       // If no exit code ref file exists, check against 0
       if (!exitRefFileFound)
-        EXPECT_EQ(0, result.exitCode);
+        EXPECT_EQ(0, result.exitCode) << "Program exited with non-zero exit code";
 #endif
 
       return result.output;
     });
+
+    // Check if the debugger output matches the expected output
+    TestUtil::checkRefMatch(
+        testCase.testPath / REF_NAME_GDB_OUTPUT,
+        [&]() {
+          // Execute debugger script
+          std::filesystem::path gdbScriptPath = testCase.testPath / CTL_DEBUG_SCRIPT;
+          EXPECT_TRUE(std::filesystem::exists(gdbScriptPath)) << "Debug output requested, but debug script not found";
+          gdbScriptPath.make_preferred();
+          const std::string cmd = "gdb -x " + gdbScriptPath.string() + " " + TestUtil::getDefaultExecutableName();
+          const ExecResult result = FileUtil::exec(cmd);
+
+#if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
+          EXPECT_EQ(0, result.exitCode) << "GDB exited with non-zero exit code when running debug script";
+#endif
+
+          return result.output;
+        },
+        [&](std::string &expectedOutput, std::string &actualOutput) {
+          // Do not compare against the GDB header
+          TestUtil::eraseGDBHeader(expectedOutput);
+          TestUtil::eraseGDBHeader(actualOutput);
+        });
   } catch (LexerError &error) {
     TestUtil::handleError(testCase, error);
   } catch (ParserError &error) {
