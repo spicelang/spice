@@ -1,9 +1,9 @@
-//import "../../src-bootstrap/util/CodeLoc";
-//import "../../src-bootstrap/ast/ASTNodes";
+import "std/data/linked-list";
 
 f<int> main() {
-    //CodeLoc cl = CodeLoc(1l, 2l, "File path");
-    //ASTNode node = ASTNode(nil<ASTNode*>, cl);
-    dyn s4 = String("Hello World!");
-    printf("%d", s4.rfind("o", 6l));
+    LinkedList<int> ll;
+    ll.insert(1);
+    ll.insert(2);
+    ll.insert(3);
+    ll.insertAt(3, 1);
 }

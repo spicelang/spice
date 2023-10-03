@@ -1669,6 +1669,9 @@ public:
   [[nodiscard]] LambdaExprNode *lambdaExpr() const { return getChild<LambdaExprNode>(); }
   [[nodiscard]] DataTypeNode *nilType() const { return getChild<DataTypeNode>(); }
 
+  // Other methods
+  [[nodiscard]] bool hasCompileTimeValue() const override { return isNil; }
+
   // Public members
   bool isNil = false;
 };

@@ -17,7 +17,7 @@ namespace spice::compiler {
  * @param codeLoc Code location of the scope
  * @return Child scope (heap allocated)
  */
-Scope *Scope::createChildScope(const std::string &scopeName, const ScopeType &scopeType, const CodeLoc *codeLoc) {
+Scope *Scope::createChildScope(const std::string &scopeName, ScopeType scopeType, const CodeLoc *codeLoc) {
   children.insert({scopeName, std::make_shared<Scope>(this, sourceFile, scopeType, codeLoc)});
   return children.at(scopeName).get();
 }

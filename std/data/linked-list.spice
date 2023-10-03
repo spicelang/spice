@@ -1,6 +1,4 @@
-// Link external functions
-ext f<heap byte*> malloc(long);
-ext p free(heap byte*);
+import "std/type/result";
 
 // Add generic type definitions
 type T dyn;
@@ -8,9 +6,14 @@ type T dyn;
 /**
  * Node of a LinkedList
  */
-public type Node<T> struct {
+type Node<T> struct {
     T value
     heap Node<T>* next
+}
+
+p Node.ctor(const T& value) {
+    this.value = value;
+    this.next = nil<heap Node<T>*>;
 }
 
 /**
@@ -38,20 +41,12 @@ public p LinkedList.ctor() {
     this.head = nil<heap Node<T>*>;
 }
 
-public p LinkedList.dtor() {
-    Node<T>* curr = this.tail;
-    while curr != nil<heap Node<T>*> {
-        Node<T>* next = curr.next;
-        free(curr);
-        curr = next;
-    }
-}
-
 public p LinkedList.insert(const T& value) {
     // Create new node
     heap Node<T>* newNode;
     unsafe {
-        newNode = (heap Node<T>*) malloc(sizeof(type Node<T>) / 8l);
+        Result<heap byte*> allocResult = sAlloc(sizeof(type Node<T>));
+        newNode = (heap Node<T>*) allocResult.unwrap();
     }
     newNode.value = value;
     newNode.next = nil<heap Node<T>*>;
@@ -65,7 +60,8 @@ public p LinkedList.insertAt(unsigned long idx, const T& value) {
     // Create new node
     heap Node<T>* newNode;
     unsafe {
-        newNode = (heap Node<T>*) malloc(sizeof(type Node<T>) / 8);
+        Result<heap byte*> allocResult = sAlloc(sizeof(type Node<T>));
+        newNode = (heap Node<T>*) allocResult.unwrap();
     }
     newNode.value = value;
 
@@ -99,12 +95,28 @@ public p LinkedList.remove(const T& valueToRemove) {
         curr = curr.next;
     }
     // Check if the item was found. If yes, delete its node
-    if curr != nil<heap Node<T>*> {
-        // Set the next node of the previous node
-        prev.next = curr.next;
-        // Free the removed node
-        free(curr);
+    if curr != nil<heap Node<T>*> { this.delete(curr, prev); }
+}
+
+public p LinkedList.removeAt(unsigned long index) {
+    heap Node<T>* curr = this.tail;
+    heap Node<T>* prev = nil<heap T*>;
+    for unsigned long i = 0l; i < index; i++ {
+        // Return, if we reached the end of the list
+        if curr == nil<heap Node<T>*> { return; }
+        // Otherwise iterate futher
+        prev = curr;
+        curr = curr.next;
     }
+    // Check if the item was found. If yes, delete its node
+    if curr != nil<heap Node<T>*> { this.delete(curr, prev); }
+}
+
+p LinkedList.delete(heap Node<T>* node, heap Node<T>* prev) {
+    // Set the next node of the previous node
+    prev.next = node.next;
+    // Free the removed node
+    sDealloc(node);
 }
 
 public inline f<T&> LinkedList.getFirst() {

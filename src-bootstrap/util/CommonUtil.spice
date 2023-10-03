@@ -1,4 +1,7 @@
-f<String> getLastFragment(String &haystack, const string needle, const string replacement) {
+public f<String> getLastFragment(String &haystack, const string needle) {
     const unsigned long index = haystack.rfind(needle);
-    return index == -1 ? haystack : haystack.substring(index + needle.length());
+    if index == -1l {
+        return haystack;
+    }
+    return haystack.getSubstring(index + getRawLength(needle));
 }

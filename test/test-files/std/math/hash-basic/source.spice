@@ -1,0 +1,13 @@
+import "std/math/hash";
+
+f<int> main() {
+    // Trivial hashes
+    printf("Hash (int): %d\n", hash(123));
+    printf("Hash (long): %d\n", hash(123l));
+    printf("Hash (short): %d\n", hash(123s));
+    printf("Hash (char): %d\n", hash(123.0));
+    printf("Hash (byte): %d\n", hash(123.0));
+    printf("Hash (string): %d\n", hash("Hello, World!"));
+    // Complex hashes
+    printf("Hash (double): %d\n", hash(123.0));
+}

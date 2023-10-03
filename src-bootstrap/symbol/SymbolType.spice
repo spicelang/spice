@@ -1,6 +1,7 @@
 // Std imports
 import "std/data/vector";
-import "../util/
+import "../util/CommonUtil";
+import "../symbol/Scope";
 
 public type SymbolSuperType enum {
     TY_INVALID,
@@ -27,15 +28,21 @@ public type SymbolSuperType enum {
     TY_IMPORT
 }
 
+type TypeChainElementData struct {
+    unsigned long arraySize = 0l   // TY_ARRAY
+    Scope* bodyScope = nil<Scope*> // TY_STRUCT, TY_INTERFACE, TY_ENUM
+    bool hasCaptures = false       // TY_FUNCTION, TY_PROCEDURE (lambdas)
+}
+
 type TypeChainElement struct {
-    SymbolSuperType superType = TY_DYN
+    SymbolSuperType superType = SymbolSuperType::TY_DYN
     String subType
     TypeChainElementData data
     Vector<SymbolType> templateTypes
     Vector<SymbolType> paramTypes // First type is the return type
 }
 
-f<bool> operator==(const TypeChainElement* lhs, const TypeChainElement rhs) {
+f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& rhs) {
     // Check super type
     if lhs.superType != rhs.superType { return false; }
 
@@ -43,33 +50,27 @@ f<bool> operator==(const TypeChainElement* lhs, const TypeChainElement rhs) {
     if lhs.superType == TY_ARRAY {
         return lhs.data.arraySize == rhs.data.arraySize;
     } else if lhs.superType == TY_STRUCT || lhs.superType == TY_INTERFACE || lhs.superType == TY_ENUM {
-        const String& lhsSubTypeSuffix = ;
-        const String& rhsSubTypeSuffix = ;
+        const String& lhsSubTypeSuffix = getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
+        const String& rhsSubTypeSuffix = getLastFragment(rhs.subType, SCOPE_ACCESS_TOKE);
         if lhs.superType == TY_STRUCT {
             assert lhs.data.bodyScope != nil<Scope*> && rhs.data.bodyScope != nil<Scope*>;
             return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.templateTypes == rhs.templateTypes;
         } else if lhs.superType == TY_INTERFACE {
             return lhsSubTypeSuffix == rhsSubTypeSuffix;
         } else {
-            assert lhs.data.bodyScope != nil<Scope*>; && rhs.data.bodyScope != nil<Scope*>;;
-          return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
+            assert lhs.data.bodyScope != nil<Scope*> && rhs.data.bodyScope != nil<Scope*>;
+            return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
         }
-    } else if lhs.superType == TY_INTERFACE {
-
     } else {
         return true;
     }
 }
 
-f<bool> operator!=(const TypeChainElement* lhs, const TypeChainElement rhs) {
+/*f<bool> operator!=(const TypeChainElement& lhs, const TypeChainElement& rhs) {
     return !(lhs == rhs);
-}
+}*/
 
 type TypeChain alias Vector<TypeChainElement>;
-
-f<bool> TypeChainElement.equalsIgnoreArraySize(const TypeChainElement* lhs, const TypeChainElement rhs) {
-    return lhs.superType == rhs.superType && lhs.subType == rhs.subType /*&& lhs.templateTypes == rhs.templateTypes*/;
-}
 
 public type SymbolType struct {
     Vector<TypeChainElement> typeChain

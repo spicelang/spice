@@ -375,7 +375,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Check if all template types were used by at least one field
   if (std::ranges::any_of(templateTypesGeneric, [&](const GenericType &genericType) { return !genericType.used; }))
-    throw SemanticError(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the struct fields");
+    softError(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the struct fields");
 
   // Change to the root scope
   currentScope = rootScope;

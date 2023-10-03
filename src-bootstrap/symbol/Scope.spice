@@ -1,0 +1,106 @@
+import "std/data/map";
+
+
+type ScopeType enum {
+    GLOBAL,
+    FUNC_PROC_BODY,
+    LAMBDA_BODY,
+    STRUCT,
+    INTERFACE,
+    ENUM,
+    IF_ELSE_BODY,
+    WHILE_BODY,
+    FOR_BODY,
+    FOREACH_BODY,
+    UNSAFE_BODY,
+    ANONYMOUS_BLOCK_BODY
+}
+
+/**
+ * Represents an enclosed group of instructions, which are semantically separated from other scopes.
+ * In the source code, scopes usually are written as curly braces.
+ *
+ * Following language structures use scopes:
+ * - global scope
+ * - functions/procedures
+ * - structs
+ * - enums
+ * - interfaces
+ * - thread blocks
+ * - unsafe blocks
+ * - for loops
+ * - foreach loops
+ * - while loops
+ * - if statements
+ * - anonymous scopes
+ */
+type Scope struct {
+    // Public members
+    public Scope* parent
+    public SourceFile* sourceFile
+    public Map<String, Scope> children
+    public ScopeType scopeType
+    public SymbolTable symbolTable
+    public CodeLoc* codeLoc = nil<CodeLoc*>
+    public bool isGenericScope = false
+    public bool isDtorScope = false
+    // Private members
+    FunctionRegistry functions
+    StructRegistry structs
+    InterfaceRegistry interfaces
+    Map<String, GenericType> genericTypes
+}
+
+p Scope.ctor(Scope* parent, SourceFile* sourceFile, ScopeType scopeType, const CodeLoc *codeLoc) {
+    this.parent = parent;
+    this.sourceFile = sourceFile;
+    this.scopeType = scopeType;
+    this.symbolTable = SymbolTable(parent == nil<Scope*> ? nil<SymbolTable*> : &parent.symbolTable, this);
+    this.codeLoc = codeLoc;
+}
+
+/**
+ * Create a child scope and return it
+ *
+ * @param scopeName Name of the child scope
+ * @param scopeType Type of the child scope
+ * @param codeLoc Code location of the scope
+ * @return Child scope (heap allocated)
+ */
+f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc *codeLoc) {
+    children[scopeName] = Scope(this, sourceFile, scopeType, codeLoc);
+    return &children[scopeName];
+}
+
+/**
+ * Rename the child scope. This is useful for realizing function overloading by storing a function with not
+ * only its name, but also its signature
+ *
+ * @param oldName Old name of the child table
+ * @param newName New name of the child table
+ */
+p Scope.renameChildScope(const String& oldName, const String& newName) {
+    assert children.constains(oldName) && !children.contains(newName);
+    children[newName] = children[oldName];
+    children.erase(oldName);
+}
+
+/**
+ * Duplicates the child scope by copying it. The duplicated symbols point to the original ones.
+ *
+ * @param oldName Old name of the child block
+ * @param newName New block name
+ */
+p Scope.copyChildScope(const String& oldName, const String& newName) {
+    assert children.constains(oldName) && !children.contains(newName);
+    // Create copy
+    Scope* child = children.at(oldName);
+    const heap Scope* newScope = child.deepCopyScope();
+    // Save copy under new name
+    children[newName] = newScope;
+}
+
+f<heap Scope*> Scope.deepCopyScope() {
+    const heap Scope* newScope; // ToDo: Extend
+    return newScope;
+}

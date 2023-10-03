@@ -379,16 +379,6 @@ public f<unsigned long> String.rfind(string needle, unsigned int startIndex) {
 }
 
 /**
- * Searches for a substring in a string. Returns -1 if the string was not found.
- *
- * @param startIndex Index where to start the search
- * @return Index, where the substring was found / -1
- */
-public f<unsigned long> String.find(string needle, unsigned short startIndex) {
-    return this.find(needle, (unsigned long) startIndex);
-}
-
-/**
  * Checks if the string contains a substring
  *
  * @param needle Substring to search for

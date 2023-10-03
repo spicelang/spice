@@ -1221,13 +1221,14 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // Check if lhs is enum or strobj
     SymbolType lhsBaseTy = lhsType;
-    TypeChecker::autoDeReference(lhsBaseTy);
+    autoDeReference(lhsBaseTy);
     if (!lhsBaseTy.is(TY_STRUCT))
       SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName())
 
     // Retrieve registry entry
     const std::string &structName = lhsBaseTy.getSubType();
     Scope *structScope = lhsBaseTy.getBodyScope();
+    assert(!structScope->isGenericScope); // At this point we always expect a substantiation scope
 
     // Get accessed field
     SymbolTableEntry *memberEntry = structScope->lookupStrict(fieldName);
@@ -1774,7 +1775,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
     localArgType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localArgType);
   // 'this' type
   SymbolType localThisType = data.thisType;
-  TypeChecker::autoDeReference(localThisType);
+  autoDeReference(localThisType);
   localThisType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localThisType);
 
   // Retrieve function object
