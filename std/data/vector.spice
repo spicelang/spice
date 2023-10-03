@@ -178,6 +178,20 @@ public p Vector.pack() {
     this.resize(this.size);
 }
 
+public f<bool> operator==<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
+    // Compare the sizes
+    if lhs.size != rhs.size { return false; }
+    // Compare the contents
+    for int index = 0; index < lhs.size; index++ {
+        if lhs.contents[index] != rhs.contents[index] { return false; }
+    }
+    return true;
+}
+
+public f<bool> operator!=<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
+    return !(lhs == rhs);
+}
+
 /**
  * Re-allocates heap space for the queue contents
  */

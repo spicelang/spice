@@ -45,13 +45,7 @@ public p LinkedList.ctor() {
 
 public p LinkedList.pushBack(const T& value) {
     // Create new node
-    heap Node<T>* newNode;
-    unsafe {
-        Result<heap byte*> allocResult = sAlloc(sizeof(type Node<T>));
-        newNode = (heap Node<T>*) allocResult.unwrap();
-    }
-    newNode.value = value;
-    newNode.next = nil<heap Node<T>*>;
+    heap Node<T>* newNode = this.createNode(value);
 
     // Insert at head
     if this.isEmpty() {
@@ -65,13 +59,7 @@ public p LinkedList.pushBack(const T& value) {
 
 public p LinkedList.pushFront(const T& value) {
     // Create new node
-    heap Node<T>* newNode;
-    unsafe {
-        Result<heap byte*> allocResult = sAlloc(sizeof(type Node<T>));
-        newNode = (heap Node<T>*) allocResult.unwrap();
-    }
-    newNode.value = value;
-    newNode.next = nil<heap Node<T>*>;
+    heap Node<T>* newNode = this.createNode(value);
 
     // Insert at tail
     if this.isEmpty() {
@@ -88,12 +76,7 @@ public p LinkedList.insertAt(unsigned long idx, const T& value) {
     if idx < 0l || idx >= this.size { return; }
 
     // Create new node
-    heap Node<T>* newNode;
-    unsafe {
-        Result<heap byte*> allocResult = sAlloc(sizeof(type Node<T>));
-        newNode = (heap Node<T>*) allocResult.unwrap();
-    }
-    newNode.value = value;
+    heap Node<T>* newNode = this.createNode(value);
 
     if this.isEmpty() {
         this.head = this.tail = newNode;
@@ -219,4 +202,15 @@ public inline f<T&> LinkedList.getFront() {
 public inline f<T&> LinkedList.getBack() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.head.value;
+}
+
+f<heap Node<T>*> LinkedList.createNode(const T& value) {
+    heap Node<T>* newNode;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof(type Node<T>));
+        newNode = (heap Node<T>*) allocResult.unwrap();
+    }
+    newNode.value = value;
+    newNode.next = nil<heap Node<T>*>;
+    return newNode;
 }
