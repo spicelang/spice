@@ -1228,6 +1228,16 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     // Retrieve registry entry
     const std::string &structName = lhsBaseTy.getSubType();
     Scope *structScope = lhsBaseTy.getBodyScope();
+
+    // If we only have the generic struct scope, lookup the concrete manifestation scope
+    if (structScope->isGenericScope) {
+      const std::string structName = lhsBaseTy.getOriginalSubType();
+      const std::string signature = Struct::getSignature(structName, lhsBaseTy.getTemplateTypes());
+      Scope *matchScope = lhsBaseTy.getBodyScope()->parent;
+      Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
+      assert(spiceStruct != nullptr);
+      structScope = spiceStruct->structScope;
+    }
     assert(!structScope->isGenericScope); // At this point we always expect a substantiation scope
 
     // Get accessed field

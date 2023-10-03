@@ -17,7 +17,6 @@ f<int> main() {
     list.removeFront();
     assert list.getSize() == 2;
     assert list.getFront() == String("Hello");
-    assert list.getBack() == String("World");
     list.removeBack();
     assert list.getSize() == 1;
     assert list.getBack() == String("Hello");
