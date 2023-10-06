@@ -662,7 +662,8 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
     const std::string newName = importName + SCOPE_ACCESS_TOKEN + originalName;
     exportedNameRegistry.insert({newName, {newName, entry.targetEntry, entry.targetScope, importEntry}});
     // Add the shortened name, considering the name collision
-    addNameRegistryEntry(originalName, entry.targetEntry, entry.targetScope, /*keepNewOnCollision=*/false, importEntry, newName);
+    const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
+    addNameRegistryEntry(originalName, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry, newName);
   }
 }
 

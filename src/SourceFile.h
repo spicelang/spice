@@ -151,6 +151,7 @@ public:
   std::filesystem::path objectFilePath;
   bool stdFile = false;
   bool mainFile = true;
+  bool alwaysKeepSymbolsOnNameCollision = false;
   CompileStageType previousStage = NONE;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;

@@ -85,6 +85,10 @@ std::any ImportCollector::visitModAttr(ModAttrNode *node) {
     resourceManager.linker.addLinkerFlag(value);
   }
 
+  // core.compiler.keep-on-name-collision
+  if (const AttrNode *attr = attrs->getAttrByName(AttrNode::ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION))
+    sourceFile->alwaysKeepSymbolsOnNameCollision = attr->getValue().boolValue;
+
   return nullptr;
 }
 

@@ -1025,6 +1025,7 @@ public:
   static constexpr const char *const ATTR_CORE_LINKER_DLL = "core.linker.dll";
   static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
   static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
+  static constexpr const char *const ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
 
   // Constructors
   using ASTNode::ASTNode;
