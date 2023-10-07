@@ -659,7 +659,9 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
     if (entry.targetScope->sourceFile->globalScope != importedSourceFile.globalScope)
       continue;
     // Add fully qualified name
-    const std::string newName = importName + SCOPE_ACCESS_TOKEN + originalName;
+    std::string newName = importName;
+    newName += SCOPE_ACCESS_TOKEN;
+    newName += originalName;
     exportedNameRegistry.insert({newName, {newName, entry.targetEntry, entry.targetScope, importEntry}});
     // Add the shortened name, considering the name collision
     const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
@@ -671,9 +673,9 @@ void SourceFile::dumpOutput(const std::string &content, const std::string &capti
   if (resourceManager.cliOptions.dumpSettings.dumpToFiles) {
     // Dump to file
     const std::string dumpFileName = filePath.stem().string() + "-" + fileSuffix;
-    std::filesystem::path filePath = resourceManager.cliOptions.outputDir / dumpFileName;
-    filePath.make_preferred();
-    FileUtil::writeToFile(filePath, content);
+    std::filesystem::path dumpFilePath = resourceManager.cliOptions.outputDir / dumpFileName;
+    dumpFilePath.make_preferred();
+    FileUtil::writeToFile(dumpFilePath, content);
   } else {
     // Dump to console
     tout.println("\n" + caption + ":\n" + content);

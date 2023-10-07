@@ -3,6 +3,8 @@
 import "std/iterator/array-iterator";
 import "std/iterator/vector-iterator";
 import "std/data/vector";
+import "std/iterator/linked-list-iterator";
+import "std/data/linked-list";
 
 // Generic type definitions
 type I dyn; // Item type
@@ -19,4 +21,11 @@ public inline f<ArrayIterator<I>> iterate<I>(I[] array, unsigned long size) {
  */
 public inline f<VectorIterator<I>> iterate<I>(Vector<I>& container) {
     return VectorIterator<I>(container);
+}
+
+/**
+ * Convenience wrapper for creating a simple linked list iterator
+ */
+public inline f<LinkedListIterator<I>> iterate<I>(LinkedList<I>& container) {
+    return LinkedListIterator<I>(container);
 }
