@@ -22,3 +22,11 @@ public f<V1&> Pair.getFirst() {
 public f<V2&> Pair.getSecond() {
     return this.second;
 }
+
+public f<bool> operator==<V1, V2>(const Pair<V1, V2>& lhs, const Pair<V1, V2>& rhs) {
+    return lhs.first == rhs.first && lhs.second == rhs.second;
+}
+
+public f<bool> operator!=<V1, V2>(const Pair<V1, V2>& lhs, const Pair<V1, V2>& rhs) {
+    return !(lhs == rhs);
+}

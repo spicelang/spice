@@ -60,8 +60,6 @@ std::any ASTVisitor::visitEnumItemLst(EnumItemLstNode *node) { return visitChild
 
 std::any ASTVisitor::visitEnumItem(EnumItemNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitFieldLst(FieldLstNode *node) { return visitChildren(node); }
-
 std::any ASTVisitor::visitField(FieldNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitSignature(SignatureNode *node) { return visitChildren(node); }

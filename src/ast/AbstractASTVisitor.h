@@ -35,7 +35,6 @@ class ParamLstNode;
 class ArgLstNode;
 class EnumItemLstNode;
 class EnumItemNode;
-class FieldLstNode;
 class FieldNode;
 class SignatureNode;
 class StmtNode;
@@ -119,7 +118,6 @@ public:
   virtual std::any visitArgLst(ArgLstNode *node) = 0;
   virtual std::any visitEnumItemLst(EnumItemLstNode *node) = 0;
   virtual std::any visitEnumItem(EnumItemNode *node) = 0;
-  virtual std::any visitFieldLst(FieldLstNode *node) = 0;
   virtual std::any visitField(FieldNode *node) = 0;
   virtual std::any visitSignature(SignatureNode *node) = 0;
   virtual std::any visitStmt(StmtNode *node) = 0;

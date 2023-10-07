@@ -82,3 +82,11 @@ public inline p Optional.clear() {
 public inline f<bool> Optional.isPresent() {
     return this.isPresent;
 }
+
+public f<bool> operator==<T>(const Optional<T>& lhs, const Optional<T>& rhs) {
+    return lhs.isPresent == rhs.isPresent && lhs.data == rhs.data;
+}
+
+public f<bool> operator!=<T>(const Optional<T>& lhs, const Optional<T>& rhs) {
+    return !(lhs == rhs);
+}

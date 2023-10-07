@@ -1221,7 +1221,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // Check if lhs is enum or strobj
     SymbolType lhsBaseTy = lhsType;
-    TypeChecker::autoDeReference(lhsBaseTy);
+    autoDeReference(lhsBaseTy);
     if (!lhsBaseTy.is(TY_STRUCT))
       SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName())
 
@@ -1229,8 +1229,19 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     const std::string &structName = lhsBaseTy.getSubType();
     Scope *structScope = lhsBaseTy.getBodyScope();
 
+    // If we only have the generic struct scope, lookup the concrete manifestation scope
+    if (structScope->isGenericScope) {
+      const std::string structName = lhsBaseTy.getOriginalSubType();
+      Scope *matchScope = lhsBaseTy.getBodyScope()->parent;
+      Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
+      assert(spiceStruct != nullptr);
+      structScope = spiceStruct->structScope;
+    }
+    assert(!structScope->isGenericScope); // At this point we always expect a substantiation scope
+
     // Get accessed field
-    SymbolTableEntry *memberEntry = structScope->lookupStrict(fieldName);
+    std::vector<size_t> indexPath;
+    SymbolTableEntry *memberEntry = structScope->symbolTable.lookupInComposedFields(fieldName, indexPath);
     if (!memberEntry)
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Field '" + node->identifier + "' not found in struct " + structName)
     SymbolType memberType = memberEntry->getType();
@@ -1774,7 +1785,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
     localArgType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localArgType);
   // 'this' type
   SymbolType localThisType = data.thisType;
-  TypeChecker::autoDeReference(localThisType);
+  autoDeReference(localThisType);
   localThisType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localThisType);
 
   // Retrieve function object
@@ -2138,6 +2149,10 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
                         "The heap specifier can only be applied to symbols of pointer type, you provided " + baseType.getName())
 
         type.specifiers.isHeap = true;
+      } else if (specifier->type == SpecifierNode::TY_COMPOSITION && node->isFieldType) {
+        if (!type.is(TY_STRUCT))
+          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "The compose specifier can only be used on plain struct fields")
+        type.specifiers.isComposition = true;
       } else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
         type.specifiers.isPublic = true;
       } else {

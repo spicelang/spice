@@ -52,7 +52,7 @@ enum class ScopeType : uint8_t {
 class Scope {
 public:
   // Constructors
-  Scope(Scope *parent, SourceFile *sourceFile, const ScopeType &scopeType, const CodeLoc *codeLoc)
+  Scope(Scope *parent, SourceFile *sourceFile, ScopeType scopeType, const CodeLoc *codeLoc)
       : parent(parent), sourceFile(sourceFile), type(scopeType), codeLoc(codeLoc) {}
 
   // Friend classes
@@ -62,7 +62,7 @@ public:
 
   // Public methods
   // Scope management
-  Scope *createChildScope(const std::string &scopeName, const ScopeType &scopeType, const CodeLoc *codeLoc);
+  Scope *createChildScope(const std::string &scopeName, ScopeType scopeType, const CodeLoc *codeLoc);
   void renameChildScope(const std::string &oldName, const std::string &newName);
   void copyChildScope(const std::string &oldName, const std::string &newName);
   std::shared_ptr<Scope> deepCopyScope();

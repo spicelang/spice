@@ -489,8 +489,8 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
 
     // Collect concrete field types
     std::vector<llvm::Type *> fieldTypes;
-    fieldTypes.reserve(node->fieldLst()->fields().size());
-    for (const FieldNode *field : node->fieldLst()->fields()) {
+    fieldTypes.reserve(node->fields().size());
+    for (const FieldNode *field : node->fields()) {
       SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
       assert(fieldEntry && !fieldEntry->getType().hasAnyGenericParts());
       fieldTypes.push_back(fieldEntry->getType().toLLVMType(context, currentScope));

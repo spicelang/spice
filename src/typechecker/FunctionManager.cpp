@@ -364,17 +364,15 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
 
   const SymbolType &thisType = candidate.thisType;
   if (!thisType.is(TY_DYN)) {
-    // Update struct scope of 'this' type to the substantiated struct scope
-    std::vector<SymbolType> concreteTemplateTypes;
-    if (!thisType.hasAnyGenericParts())
-      concreteTemplateTypes = thisType.getTemplateTypes();
-    const std::string structSignature = Struct::getSignature(thisType.getSubType(), concreteTemplateTypes);
-    Scope *substantiatedStructBodyScope = matchScope->parent->getChildScope(STRUCT_SCOPE_PREFIX + structSignature);
-    assert(substantiatedStructBodyScope != nullptr);
-    candidate.thisType.setBodyScope(substantiatedStructBodyScope);
-
-    // Set match scope to the substantiated struct scope
-    matchScope = substantiatedStructBodyScope;
+    // If we only have the generic struct scope, lookup the concrete manifestation scope
+    if (matchScope->isGenericScope) {
+      const std::string structName = thisType.getOriginalSubType();
+      Scope *scope = thisType.getBodyScope()->parent;
+      Struct *spiceStruct = StructManager::matchStruct(scope, structName, thisType.getTemplateTypes(), candidate.declNode);
+      assert(spiceStruct != nullptr);
+      matchScope = spiceStruct->structScope;
+    }
+    candidate.thisType.setBodyScope(matchScope);
   }
 
   // Clear template types of candidate, since they are not needed anymore

@@ -1,0 +1,11 @@
+type A struct {
+    int f1
+    compose A* f2
+}
+
+f<int> main() {
+    A a;
+    a.f1 = 1;
+    a.f2 = &a;
+    a.f3 = 1;
+}

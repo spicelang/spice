@@ -13,22 +13,33 @@ type NodeColor enum { RED, BLACK }
  */
 type Node<T> struct {
     T data
+    heap Node<T>* parent
     heap Node<T>* childLeft
     heap Node<T>* childRight
     NodeColor color
 }
 
-f<Node<T>*> createNode<T>(T data) {
-    heap Node<T>* newNode = (heap Node<T>*) malloc(sizeof(type Node<T>) / 8);
+inline f<bool> Node.isRoot() {
+    return this.parent == nil<heap Node<T>*>;
+}
+
+p Node.dump(unsigned int indent = 0) {
+    // Dump right child
+    if this.childRight != nil<heap Node<T>*> { this.childRight.dump(indent + 4); }
+    // Dump node itself
+    printf("%s%d %s", String(' ') * indent, this.data, this.color == NodeColor::RED ? "R" : "B");
+    // Dump left child
+    if this.childLeft != nil<heap Node<T>*> { this.childLeft.dump(indent + 4); }
+}
+
+f<heap Node<T>*> createNode<T>(T data) {
+    Result<heap Node<T>*> allocResult = sAlloc(sizeof(type Node<T>));
+    heap Node<T>* newNode = allocResult.unwrap();
     newNode.data = data;
     newNode.childLeft = nil<heap Node<T>*>;
     newNode.childRight = nil<heap Node<T>*>;
     newNode.color = NodeColor::RED;
     return newNode;
-}
-
-inline f<bool> Node.isRoot() {
-    return this.parent == nil<heap Node<T>*>;
 }
 
 /**
@@ -47,14 +58,14 @@ public p RedBlackTree.ctor() {
 }
 
 public p RedBlackTree.insert(T newItem) {
-    this.insertAdd(newItem);
-    this.insertRebalance(newItem);
-}
-
-p RedBlackTree.insertAdd(T newItem) {
+    heap Node<T>* newNode = createNode<T>(newItem);
 
 }
 
-p RedBlackTree.insertRebalance(T newItem) {
+public p RedBlackTree.insertFixup(heap Node<T>* node) {
 
+}
+
+public p RedBlackTree.dump() {
+    if this.rootNode != nil<heap Node<T>*> { this.rootNode.dump(); }
 }

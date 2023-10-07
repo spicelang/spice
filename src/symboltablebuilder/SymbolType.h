@@ -153,7 +153,7 @@ public:
   [[nodiscard]] ALWAYS_INLINE SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
   [[nodiscard]] SymbolType getBaseType() const {
     assert(!typeChain.empty());
-    return SymbolType({typeChain.front()});
+    return SymbolType({typeChain.front()}, specifiers);
   }
   [[nodiscard]] bool hasAnyGenericParts() const;
   void setTemplateTypes(const std::vector<SymbolType> &templateTypes);

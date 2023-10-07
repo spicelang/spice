@@ -60,7 +60,6 @@ public:
   std::any visitArgLst(SpiceParser::ArgLstContext *ctx) override;
   std::any visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) override;
   std::any visitEnumItem(SpiceParser::EnumItemContext *ctx) override;
-  std::any visitFieldLst(SpiceParser::FieldLstContext *ctx) override;
   std::any visitField(SpiceParser::FieldContext *ctx) override;
   std::any visitSignature(SpiceParser::SignatureContext *ctx) override;
   std::any visitStmt(SpiceParser::StmtContext *ctx) override;

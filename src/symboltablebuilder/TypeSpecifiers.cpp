@@ -13,7 +13,7 @@ TypeSpecifiers TypeSpecifiers::of(uint16_t superType) {
   case TY_INT:    // fall-through
   case TY_SHORT:  // fall-through
   case TY_LONG:
-    return {/*const*/ false, /*signed*/ true, /*unsigned*/ false, /*inline*/ false, /*public*/ false, /*heap*/ false};
+    return {/*const*/ false, /*signed*/ true, /*unsigned*/ false, /*heap*/ false};
   case TY_BYTE:   // fall-through
   case TY_CHAR:   // fall-through
   case TY_STRING: // fall-through
@@ -21,26 +21,26 @@ TypeSpecifiers TypeSpecifiers::of(uint16_t superType) {
   case TY_PTR:    // fall-through
   case TY_REF:    // fall-through
   case TY_ARRAY:  // fall-through
-    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true, /*inline*/ false, /*public*/ false, /*heap*/ false};
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true, /*heap*/ false};
   case TY_GENERIC:
     // Generics must be non-signed and non-unsigned at the same time to ensure a proper function matching
-    return {/*const*/ false, /*signed*/ false, /*unsigned*/ false, /*inline*/ false, /*public*/ false, /*heap*/ false};
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ false, /*heap*/ false};
   case TY_STRUCT: // fall-through
   case TY_INTERFACE:
-    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true, /*inline*/ false, /*public*/ false, /*heap*/ false};
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true, /*heap*/ false};
   case TY_ENUM: // fall-through
   case TY_ALIAS:
-    return {/*const*/ true, /*signed*/ false, /*unsigned*/ true, /*inline*/ false, /*public*/ false, /*heap*/ false};
+    return {/*const*/ true, /*signed*/ false, /*unsigned*/ true, /*heap*/ false};
   case TY_FUNCTION: // fall-through
   case TY_PROCEDURE:
-    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true, /*inline*/ false, /*public*/ false, /*heap*/ false};
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ true, /*heap*/ false};
   case TY_IMPORT:
-    return {/*const*/ true, /*signed*/ false, /*unsigned*/ true, /*inline*/ false, /*public*/ false, /*heap*/ false};
+    return {/*const*/ true, /*signed*/ false, /*unsigned*/ true, /*heap*/ false};
   case TY_DYN:
   case TY_INVALID:
   case TY_UNRESOLVED:
     // Return all-false specifiers to not match anything
-    return {/*const*/ false, /*signed*/ false, /*unsigned*/ false, /*inline*/ false, /*public*/ false, /*heap*/ false};
+    return {/*const*/ false, /*signed*/ false, /*unsigned*/ false, /*heap*/ false};
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Symbol specifier fallthrough"); // GCOV_EXCL_LINE
   }
@@ -78,14 +78,6 @@ TypeSpecifiers TypeSpecifiers::merge(const TypeSpecifiers &other) const {
 bool TypeSpecifiers::match(TypeSpecifiers otherSpecifiers, bool allowConstify) const {
   TypeSpecifiers thisSpecifiers = *this;
 
-  // Zero out public specifier to ignore it while matching
-  thisSpecifiers.isPublic = false;
-  otherSpecifiers.isPublic = false;
-
-  // Zero out inline specifier to ignore it while matching
-  thisSpecifiers.isInline = false;
-  otherSpecifiers.isInline = false;
-
   // If allowConstify is enabled, only allow to match lhs=const and rhs=non-const
   if (allowConstify && thisSpecifiers.isConst && !otherSpecifiers.isConst)
     otherSpecifiers.isConst = true;
@@ -111,10 +103,8 @@ bool operator==(const TypeSpecifiers &lhs, const TypeSpecifiers &rhs) {
   const bool isConst = lhs.isConst == rhs.isConst;
   const bool isSigned = lhs.isSigned == rhs.isSigned;
   const bool isUnsigned = lhs.isUnsigned == rhs.isUnsigned;
-  const bool isInline = lhs.isInline == rhs.isInline;
-  const bool isPublic = lhs.isPublic == rhs.isPublic;
   const bool isHeap = lhs.isHeap == rhs.isHeap;
-  return isConst && isSigned && isUnsigned && isInline && isPublic && isHeap;
+  return isConst && isSigned && isUnsigned && isHeap;
 }
 
 bool TypeSpecifiers::getBit(uint8_t index) const {
@@ -125,12 +115,14 @@ bool TypeSpecifiers::getBit(uint8_t index) const {
     return isSigned;
   case BIT_INDEX_UNSIGNED:
     return isUnsigned;
-  case BIT_INDEX_INLINE:
-    return isInline;
-  case BIT_INDEX_PUBLIC:
-    return isPublic;
   case BIT_INDEX_HEAP:
     return isHeap;
+  case BIT_INDEX_PUBLIC:
+    return isPublic;
+  case BIT_INDEX_INLINE:
+    return isInline;
+  case BIT_INDEX_COMPOSITION:
+    return isComposition;
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Bit index fallthrough"); // GCOV_EXCL_LINE
   }
@@ -144,12 +136,14 @@ bool TypeSpecifiers::setBit(uint8_t index, bool value) {
     return isSigned = value;
   case BIT_INDEX_UNSIGNED:
     return isUnsigned = value;
-  case BIT_INDEX_INLINE:
-    return isInline = value;
-  case BIT_INDEX_PUBLIC:
-    return isPublic = value;
   case BIT_INDEX_HEAP:
     return isHeap = value;
+  case BIT_INDEX_PUBLIC:
+    return isPublic = value;
+  case BIT_INDEX_INLINE:
+    return isInline = value;
+  case BIT_INDEX_COMPOSITION:
+    return isComposition = value;
   default:
     throw CompilerError(UNHANDLED_BRANCH, "Bit index fallthrough"); // GCOV_EXCL_LINE
   }

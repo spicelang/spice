@@ -40,6 +40,7 @@ public:
   void copySymbol(const std::string &originalName, const std::string &newName);
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);
+  SymbolTableEntry *lookupInComposedFields(const std::string &name, std::vector<size_t> &indexPath);
   SymbolTableEntry *lookupStrictByIndex(unsigned int orderIndex);
   SymbolTableEntry *lookupAnonymous(const CodeLoc &codeLoc, size_t numericSuffix = 0);
   Capture *lookupCapture(const std::string &symbolName);

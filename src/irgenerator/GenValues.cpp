@@ -376,8 +376,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
-  Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
-  ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY, node);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
   // If there are captures, we pass them in a struct as the first function argument
   const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
@@ -531,7 +530,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   allocaInsertInst = allocaInsertInstOrig;
 
   // Change back to original scope
-  scopeHandle.leaveScopeEarly();
+  currentScope = currentScope->parent;
 
   // Verify function
   verifyFunction(lambda, node->codeLoc);
@@ -548,8 +547,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
-  Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
-  ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY, node);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
   // If there are captures, we pass them in a struct as the first function argument
   const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
@@ -690,7 +688,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   allocaInsertInst = allocaInsertInstOrig;
 
   // Change back to original scope
-  scopeHandle.leaveScopeEarly();
+  currentScope = currentScope->parent;
 
   // Verify function
   verifyFunction(lambda, node->codeLoc);
@@ -707,8 +705,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   std::vector<llvm::Type *> paramTypes;
 
   // Change scope
-  Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
-  ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY, node);
+  Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
   // If there are captures, we pass them in a struct as the first function argument
   const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
@@ -850,7 +847,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   allocaInsertInst = allocaInsertInstOrig;
 
   // Change back to original scope
-  scopeHandle.leaveScopeEarly();
+  currentScope = currentScope->parent;
 
   // Verify function
   verifyFunction(lambda, node->codeLoc);

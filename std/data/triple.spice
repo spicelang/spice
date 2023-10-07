@@ -29,3 +29,11 @@ public f<V2&> Triple.getSecond() {
 public f<V3&> Triple.getThird() {
     return this.third;
 }
+
+public f<bool> operator==<V1, V2, V3>(const Triple<V1, V2, V3>& lhs, const Triple<V1, V2, V3>& rhs) {
+    return lhs.first == rhs.first && lhs.second == rhs.second && lhs.third == rhs.third;
+}
+
+public f<bool> operator!=<V1, V2, V3>(const Triple<V1, V2, V3>& lhs, const Triple<V1, V2, V3>& rhs) {
+    return !(lhs == rhs);
+}

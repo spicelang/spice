@@ -22,6 +22,7 @@ ScopeHandle::ScopeHandle(IRGenerator *generator, Scope *childScope, const ScopeT
         generator->changeToParentScope(scopeType);
         generator->diGenerator.popLexicalBlock();
       }) {
+  assert(scopeType != ScopeType::FUNC_PROC_BODY); // Functions/procedures manage scopes manually
   generator->changeToScope(childScope, scopeType);
   generator->diGenerator.pushLexicalBlock(node);
 }

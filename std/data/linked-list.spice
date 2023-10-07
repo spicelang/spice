@@ -1,6 +1,5 @@
-// Link external functions
-ext f<heap byte*> malloc(long);
-ext p free(heap byte*);
+import "std/type/result";
+import "std/type/error";
 
 // Add generic type definitions
 type T dyn;
@@ -8,9 +7,14 @@ type T dyn;
 /**
  * Node of a LinkedList
  */
-public type Node<T> struct {
+type Node<T> struct {
     T value
     heap Node<T>* next
+}
+
+p Node.ctor(const T& value) {
+    this.value = value;
+    this.next = nil<heap Node<T>*>;
 }
 
 /**
@@ -31,6 +35,7 @@ public type Node<T> struct {
 public type LinkedList<T> struct {
     heap Node<T>* tail
     heap Node<T>* head
+    unsigned long size = 0l
 }
 
 public p LinkedList.ctor() {
@@ -38,79 +43,174 @@ public p LinkedList.ctor() {
     this.head = nil<heap Node<T>*>;
 }
 
-public p LinkedList.dtor() {
-    Node<T>* curr = this.tail;
-    while curr != nil<heap Node<T>*> {
-        Node<T>* next = curr.next;
-        free(curr);
-        curr = next;
-    }
-}
-
-public p LinkedList.insert(const T& value) {
+public p LinkedList.pushBack(const T& value) {
     // Create new node
-    heap Node<T>* newNode;
-    unsafe {
-        newNode = (heap Node<T>*) malloc(sizeof(type Node<T>) / 8l);
-    }
-    newNode.value = value;
-    newNode.next = nil<heap Node<T>*>;
+    heap Node<T>* newNode = this.createNode(value);
 
     // Insert at head
-    this.head.next = newNode;
-    this.head = newNode;
+    if this.isEmpty() {
+        this.head = this.tail = newNode;
+    } else {
+        this.head.next = newNode; // Link the new node to the previous one
+        this.head = newNode; // Set the head to the new node
+    }
+    this.size++;
+}
+
+public p LinkedList.pushFront(const T& value) {
+    // Create new node
+    heap Node<T>* newNode = this.createNode(value);
+
+    // Insert at tail
+    if this.isEmpty() {
+        this.head = this.tail = newNode;
+    } else {
+        newNode.next = this.tail; // Link the next node to the new one
+        this.tail = newNode; // Set the tail to the new node
+    }
+    this.size++;
 }
 
 public p LinkedList.insertAt(unsigned long idx, const T& value) {
+    // Abort if the index is out of bounds
+    if idx < 0l || idx >= this.size { return; }
+
     // Create new node
-    heap Node<T>* newNode;
-    unsafe {
-        newNode = (heap Node<T>*) malloc(sizeof(type Node<T>) / 8);
-    }
-    newNode.value = value;
+    heap Node<T>* newNode = this.createNode(value);
 
-    // Search for item right before insert position
-    Node<T>* prev = this.tail;
-    while curr != nil<heap Node<T>*> && idx > 1 {
-        prev = prev.next;
-        idx--;
+    if this.isEmpty() {
+        this.head = this.tail = newNode;
+    } else if idx == 0l {
+        newNode.next = this.tail; // Link the next node to the new one
+        this.tail = newNode; // Set the tail to the new node
+    } else {
+        heap Node<T>* curr = this.tail;
+        for unsigned long i = 0l; i < idx - 1l; i++ {
+            curr = curr.next;
+        }
+        newNode.next = curr.next; // Link the next node to the new one
+        curr.next = newNode; // Link the new node to the previous one
     }
+    this.size++;
+}
 
-    // Link the next node to the new one
-    newNode.next = prev.next;
-    // Link the new node to the previous one
-    prev.next = newNode;
-
-    // Check if we have a new tail
-    if idx == 0l {
-        this.tail = newNode;
-    }
-    // Check if the previous node was the last node
-    if this.head == prev {
-        this.head = newNode;
-    }
+public p LinkedList.insertAt(unsigned int idx, const T& value) {
+    this.insertAt((unsigned long) idx, value);
 }
 
 public p LinkedList.remove(const T& valueToRemove) {
+    // Abort if the list is already empty
+    if this.isEmpty() { return; }
+
+    if this.tail.value == valueToRemove {
+        heap Node<T>* temp = this.tail;
+        this.tail = this.tail.next;
+        unsafe {
+            sDealloc((heap byte*) temp);
+        }
+        this.size--;
+        return;
+    }
+
     heap Node<T>* curr = this.tail;
-    heap Node<T>* prev = nil<heap T*>;
-    while curr != nil<heap Node<T>*> && curr.value != valueToRemove {
-        prev = curr;
+    while curr.next != nil<heap Node<T>*> && curr.next.value != valueToRemove {
         curr = curr.next;
     }
-    // Check if the item was found. If yes, delete its node
-    if curr != nil<heap Node<T>*> {
-        // Set the next node of the previous node
-        prev.next = curr.next;
-        // Free the removed node
-        free(curr);
+    if curr.next == nil<heap Node<T>*> { return; }
+
+    heap Node<T>* temp = curr.next;
+    curr.next = curr.next.next;
+    unsafe {
+        sDealloc((heap byte*) temp);
     }
+
+    this.size--;
 }
 
-public inline f<T&> LinkedList.getFirst() {
+public p LinkedList.removeAt(unsigned long idx) {
+    // Abort if the index is out of bounds
+    if idx < 0l || idx >= this.size { return; }
+
+    if idx == 0l {
+        heap Node<T>* temp = this.tail;
+        this.tail = this.tail.next;
+        unsafe {
+            sDealloc((heap byte*) temp);
+        }
+        this.size--;
+        return;
+    }
+
+    heap Node<T>* curr = this.tail;
+    for unsigned long i = 0l; i < idx - 1l; i++ {
+        curr = curr.next;
+    }
+
+    heap Node<T>* temp = curr.next;
+    curr.next = curr.next.next;
+    unsafe {
+        sDealloc((heap byte*) temp);
+    }
+
+    if idx == this.size - 1l {
+        this.head = curr;
+    }
+
+    this.size--;
+}
+
+public p LinkedList.removeAt(unsigned int index) {
+    this.removeAt((unsigned long) index);
+}
+
+public p LinkedList.removeFront() {
+    this.removeAt(0l);
+}
+
+public p LinkedList.removeBack() {
+    this.removeAt(this.size - 1l);
+}
+
+public inline f<unsigned long> LinkedList.getSize() {
+    return this.size;
+}
+
+public inline f<bool> LinkedList.isEmpty() {
+    return this.size == 0l;
+}
+
+public f<T&> LinkedList.get(unsigned long idx) {
+    // Abort if the index is out of bounds
+    if idx < 0 || idx >= this.size { panic(Error("Access index out of bound")); }
+
+    heap Node<T>* curr = this.tail;
+    for unsigned long i = 0l; i < idx; i++ {
+        curr = curr.next;
+    }
+    return curr.value;
+}
+
+public f<T&> LinkedList.get(unsigned int idx) {
+    return this.get((unsigned long) idx);
+}
+
+public inline f<T&> LinkedList.getFront() {
+    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    return this.tail.value;
+}
+
+public inline f<T&> LinkedList.getBack() {
+    if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.head.value;
 }
 
-public inline f<T&> LinkedList.getLast() {
-    return this.tail.value;
+f<heap Node<T>*> LinkedList.createNode(const T& value) {
+    heap Node<T>* newNode;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof(type Node<T>));
+        newNode = (heap Node<T>*) allocResult.unwrap();
+    }
+    newNode.value = value;
+    newNode.next = nil<heap Node<T>*>;
+    return newNode;
 }

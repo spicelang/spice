@@ -1,0 +1,36 @@
+// Generic type defs
+type TT int|long|short|bool; // Trivially hashable types
+type TC byte|char; // Trivially hashable types with one additional cast
+type T dyn; // Any type
+
+public type IHashable interface {
+    public f<unsigned long> hash<T>(const T&);
+}
+
+public f<unsigned long> hash<TT>(TT input) {
+    return (unsigned long) input;
+}
+
+public f<unsigned long> hash<TC>(TC input) {
+    return (unsigned long) ((unsigned int) input);
+}
+
+public f<unsigned long> hash(double input) {
+    unsafe {
+        return *((unsigned long*) &input);
+    }
+}
+
+// djb2 hash
+public f<unsigned long> hash(string input) {
+    unsigned long hash = 5381l;
+    for unsigned long i = 0l; i < len(input); i++ {
+        unsigned long c = (unsigned long) ((unsigned int) input[i]);
+        hash = ((hash << 5l) + hash) + c; // hash * 33 + c
+    }
+    return hash;
+}
+
+/*public f<unsigned long> hash<T>(const T& input) {
+    return input.hash();
+}*/

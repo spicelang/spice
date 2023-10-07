@@ -36,7 +36,6 @@ public:
   std::any visitArgLst(ArgLstNode *node) override;
   std::any visitEnumItemLst(EnumItemLstNode *node) override;
   std::any visitEnumItem(EnumItemNode *node) override;
-  std::any visitFieldLst(FieldLstNode *node) override;
   std::any visitField(FieldNode *node) override;
   std::any visitSignature(SignatureNode *node) override;
   std::any visitStmt(StmtNode *node) override;

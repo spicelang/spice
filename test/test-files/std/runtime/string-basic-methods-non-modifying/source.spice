@@ -18,6 +18,10 @@ f<int> main() {
     assert s4.find("H") == 0;
     assert s4.find("!") == 11;
     assert s4.find(" ", 12) == -1;
+    assert s4.rfind("ell") == 1;
+    assert s4.rfind("o") == 7;
+    assert s4.rfind("!") == 11;
+    assert s4.rfind("o", 6) == 4;
     assert !s4.contains("abc");
     assert s4.contains("Hello");
     assert s4.contains("World!");

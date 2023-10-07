@@ -185,8 +185,8 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
       rootScope->createChildScope(STRUCT_SCOPE_PREFIX + node->structName, ScopeType::STRUCT, &node->codeLoc);
   currentScope->isGenericScope = node->hasTemplateTypes;
 
-  // Visit struct field list
-  visit(node->fieldLst());
+  // Visit children
+  visitChildren(node);
 
   // Leave the struct scope
   currentScope = node->structScope->parent;

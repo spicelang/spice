@@ -707,12 +707,15 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     Scope *structScope = lhsSTy.getBodyScope();
 
     // Retrieve field entry
-    lhs.entry = structScope->lookupStrict(fieldName);
+    std::vector<size_t> indexPath;
+    lhs.entry = structScope->symbolTable.lookupInComposedFields(fieldName, indexPath);
     assert(lhs.entry != nullptr);
     SymbolType fieldSymbolType = lhs.entry->getType();
 
     // Get address of the field in the struct instance
-    llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(lhs.entry->orderIndex)};
+    std::vector<llvm::Value *> indices = {builder.getInt32(0)};
+    for (size_t index : indexPath)
+      indices.push_back(builder.getInt32(index));
     llvm::Value *memberAddress = builder.CreateInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices);
     memberAddress->setName(fieldName + "_addr");
 

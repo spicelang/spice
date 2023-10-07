@@ -421,4 +421,15 @@ bool LambdaProcNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   return body()->returnsOnAllControlPaths(overrideUnreachable);
 }
 
+void DataTypeNode::setFieldTypeRecursive() {
+  // Set the current node to field type
+  isFieldType = true;
+  // Do the same for all template nodes
+  BaseDataTypeNode *baseType = baseDataType();
+  CustomDataTypeNode *customType = baseType->customDataType();
+  if (customType != nullptr && customType->templateTypeLst())
+    for (DataTypeNode *templateNode : customType->templateTypeLst()->dataTypes())
+      templateNode->setFieldTypeRecursive();
+}
+
 } // namespace spice::compiler
