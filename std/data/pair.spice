@@ -10,17 +10,25 @@ public type Pair<V1, V2> struct {
     V2 second
 }
 
-public p Pair.ctor(V1& first, V2& second) {
+public inline p Pair.ctor(V1& first, V2& second) {
     this.first = first;
     this.second = second;
 }
 
-public f<V1&> Pair.getFirst() {
+public inline f<V1&> Pair.getFirst() {
     return this.first;
 }
 
-public f<V2&> Pair.getSecond() {
+public inline f<V2&> Pair.getSecond() {
     return this.second;
+}
+
+public inline p Pair.setFirst(const V1& first) {
+    this.first = first;
+}
+
+public inline p Pair.setSecond(const V2& second) {
+    this.second = second;
 }
 
 public f<bool> operator==<V1, V2>(const Pair<V1, V2>& lhs, const Pair<V1, V2>& rhs) {
