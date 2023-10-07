@@ -226,27 +226,29 @@ void execTestCase(const TestCase &testCase) {
     });
 
     // Check if the debugger output matches the expected output
-    TestUtil::checkRefMatch(
-        testCase.testPath / REF_NAME_GDB_OUTPUT,
-        [&]() {
-          // Execute debugger script
-          std::filesystem::path gdbScriptPath = testCase.testPath / CTL_DEBUG_SCRIPT;
-          EXPECT_TRUE(std::filesystem::exists(gdbScriptPath)) << "Debug output requested, but debug script not found";
-          gdbScriptPath.make_preferred();
-          const std::string cmd = "gdb -x " + gdbScriptPath.string() + " " + TestUtil::getDefaultExecutableName();
-          const ExecResult result = FileUtil::exec(cmd);
+    if (!skipNonGitHubTests) { // GDB tests are currently not support on GH actions
+      TestUtil::checkRefMatch(
+          testCase.testPath / REF_NAME_GDB_OUTPUT,
+          [&]() {
+            // Execute debugger script
+            std::filesystem::path gdbScriptPath = testCase.testPath / CTL_DEBUG_SCRIPT;
+            EXPECT_TRUE(std::filesystem::exists(gdbScriptPath)) << "Debug output requested, but debug script not found";
+            gdbScriptPath.make_preferred();
+            const std::string cmd = "gdb -x " + gdbScriptPath.string() + " " + TestUtil::getDefaultExecutableName();
+            const ExecResult result = FileUtil::exec(cmd);
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
-          EXPECT_EQ(0, result.exitCode) << "GDB exited with non-zero exit code when running debug script";
+            EXPECT_EQ(0, result.exitCode) << "GDB exited with non-zero exit code when running debug script";
 #endif
 
-          return result.output;
-        },
-        [&](std::string &expectedOutput, std::string &actualOutput) {
-          // Do not compare against the GDB header
-          TestUtil::eraseGDBHeader(expectedOutput);
-          TestUtil::eraseGDBHeader(actualOutput);
-        });
+            return result.output;
+          },
+          [&](std::string &expectedOutput, std::string &actualOutput) {
+            // Do not compare against the GDB header
+            TestUtil::eraseGDBHeader(expectedOutput);
+            TestUtil::eraseGDBHeader(actualOutput);
+          });
+    }
   } catch (LexerError &error) {
     TestUtil::handleError(testCase, error);
   } catch (ParserError &error) {
