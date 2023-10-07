@@ -32,7 +32,7 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.22 = private unnamed_addr constant [67 x i8] c"Assertion failed: Condition 'vi.get(0) == 124' evaluated to false.\00", align 1
 @anon.string.23 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'vi.get(1) == 4323' evaluated to false.\00", align 1
 @anon.string.24 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'vi.get(2) == 9879' evaluated to false.\00", align 1
-@printf.str.0 = private unnamed_addr constant [23 x i8] c"All assertions passed!\00", align 1, !dbg !0
+@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 1, !dbg !0
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !15 {
@@ -500,7 +500,7 @@ attributes #3 = { cold noreturn nounwind }
 !3 = !DIFile(filename: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
 !4 = !{!0}
 !5 = !DIFile(filename: "source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
-!6 = !DIStringType(name: "printf.str.0", size: 184)
+!6 = !DIStringType(name: "printf.str.0", size: 192)
 !7 = !{i32 7, !"Dwarf Version", i32 4}
 !8 = !{i32 2, !"Debug Info Version", i32 3}
 !9 = !{i32 1, !"wchar_size", i32 4}

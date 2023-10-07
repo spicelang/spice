@@ -75,7 +75,7 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &refPath, GetOutputFct 
   } else { // Check refs
     std::string expectedOutput = FileUtil::getFileContent(refPath);
     modifyOutputFct(expectedOutput, actualOutput);
-    EXPECT_EQ(expectedOutput, actualOutput);
+    EXPECT_EQ(expectedOutput, actualOutput) << "Output does not match the reference file: " << refPath;
   }
 
   return true;
@@ -175,6 +175,26 @@ bool TestUtil::isDisabled(const TestCase &testCase, bool isGHActions) {
 void TestUtil::eraseIRModuleHeader(std::string &irCode) {
   for (unsigned int i = 0; i < IR_FILE_SKIP_LINES; i++)
     irCode.erase(0, irCode.find('\n') + 1);
+}
+
+/**
+ * Removes the first n lines of the GDB output to not compare target dependent code
+ *
+ * @param gdbOutput GDB output to modify
+ */
+void TestUtil::eraseGDBHeader(std::string &gdbOutput) {
+  // Remove header
+  size_t pos = gdbOutput.find(GDB_READING_SYMBOLS_MESSAGE);
+  if (pos != std::string::npos) {
+    const size_t lineStart = gdbOutput.rfind('\n', pos);
+    if (lineStart != std::string::npos)
+      gdbOutput.erase(0, lineStart + 1);
+  }
+
+  // Remove inferior message
+  pos = gdbOutput.find(GDB_INFERIOR_MESSAGE);
+  if (pos != std::string::npos)
+    gdbOutput.erase(pos);
 }
 
 /**

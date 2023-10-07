@@ -15,6 +15,8 @@
 const char *const PATH_TEST_FILES = "./test-files/";
 const unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
 const unsigned int IR_FILE_SKIP_LINES = 5; // Skip the first couple of lines, because they contain target dependent information
+const char *const GDB_READING_SYMBOLS_MESSAGE = "Reading symbols from ";
+const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 extern bool updateRefs;
 extern bool runBenchmarks;
 extern bool enableLeakDetection;
@@ -31,6 +33,7 @@ const char *const REF_NAME_IR = "ir-code.ll";
 const char *const REF_NAME_ASM = "assembly.asm";
 const char *const REF_NAME_OPT_IR[5] = {"ir-code-O1.ll", "ir-code-O2.ll", "ir-code-O3.ll", "ir-code-Os.ll", "ir-code-Oz.ll"};
 const char *const REF_NAME_EXECUTION_OUTPUT = "cout.out";
+const char *const REF_NAME_GDB_OUTPUT = "debug.out";
 const char *const REF_NAME_ERROR_OUTPUT = "exception.out";
 const char *const REF_NAME_WARNING_OUTPUT = "warning.out";
 const char *const REF_NAME_EXIT_CODE = "exit-code.out";
@@ -38,6 +41,7 @@ const char *const REF_NAME_EXIT_CODE = "exit-code.out";
 const char *const CTL_SKIP_DISABLED = "disabled";
 const char *const CTL_SKIP_GH = "skip-gh-actions";
 const char *const CTL_DEBUG_INFO = "with-debug-info";
+const char *const CTL_DEBUG_SCRIPT = "debug.gdb";
 const char *const CTL_LTO = "with-lto";
 
 struct TestCase {
@@ -78,6 +82,7 @@ public:
   }
   static bool isDisabled(const TestCase &testCase, bool isGHActions);
   static void eraseIRModuleHeader(std::string &irCode);
+  static void eraseGDBHeader(std::string &gdbOutput);
   static void eraseLinesBySubstring(std::string &irCode, const char *needle);
 };
 
