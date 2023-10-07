@@ -1,6 +1,6 @@
 import "std/data/vector";
 import "std/data/linked-list";
-import "std/iterator/iterator_rt";
+import "std/runtime/iterator_rt";
 import "std/data/pair";
 import "std/math/hash";
 
@@ -10,28 +10,28 @@ type V dyn;
 
 public type HashTable<K, V> struct {
     Vector<LinkedList<Pair<K, V>>> table
-    Size bucketCount
+    unsigned long size = 0l
 }
 
-public p HashTable.ctor(Size bucketCount = 1000l) {
-    this.bucketCount = bucketCount;
+public p HashTable.ctor(unsigned long initialBucketCount = 10l) {
+    this.table = Vector<LinkedList<Pair<K, V>>>(initialBucketCount);
 }
 
 public p HashTable.insert(const K& key, const V& value) {
-    const unsigned long index = hash(key);
-    foreach dyn& bucket : iterate(this.table) {
-        if bucket.getFirst() == key {
-            bucket.add(Pair<K, V>(key, value));
+    const unsigned long index = this.hash(key);
+    foreach Pair<K, V>& pair : iterate(this.table.get(index)) {
+        if pair.getFirst() == key {
+            pair.setSecond(value);
             return;
         }
     }
     this.table.pushBack(LinkedList<Pair<K, V>>());
     LinkedList<Pair<K, V>>& bucket = this.table.back();
-    bucket.add(Pair<K, V>(key, value));
+    bucket.pushBack(Pair<K, V>(key, value));
 }
 
 public p HashTable.delete(const K& key) {
-    const unsigned long index = hash(key);
+    const unsigned long index = this.hash(key);
     const LinkedList<Pair<K, V>>& bucket = this.table.at(index);
 
     for unsigned long i = 0l; i < bucket.getSize(); i++ {
@@ -43,8 +43,8 @@ public p HashTable.delete(const K& key) {
     }
 }
 
-public f<V*> HashTable.search(const K& key) {
-    unsigned long index = hash(key);
+public f<V*> HashTable.get(const K& key) {
+    unsigned long index = this.hash(key);
     const LinkedList<Pair<K, V>>& bucket = this.table.at(index);
 
     for unsigned long i = 0l; i < bucket.getSize(); i++ {
@@ -54,4 +54,8 @@ public f<V*> HashTable.search(const K& key) {
         }
     }
     return nil<V*>;
+}
+
+inline f<unsigned long> HashTable.hash(const K& key) {
+    return hash(key);
 }

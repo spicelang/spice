@@ -14,8 +14,10 @@ define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 1
-  store ptr @anon.string.0, ptr %3, align 8
+  %3 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 0
+  store i32 0, ptr %3, align 4
+  %4 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 1
+  store ptr @anon.string.0, ptr %4, align 8
   ret void
 }
 

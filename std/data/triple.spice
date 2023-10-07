@@ -12,22 +12,34 @@ public type Triple<V1, V2, V3> struct {
     V3 third
 }
 
-public p Triple.ctor(V1& first, V2& second, V3& third) {
+public inline p Triple.ctor(V1& first, V2& second, V3& third) {
     this.first = first;
     this.second = second;
     this.third = third;
 }
 
-public f<V1&> Triple.getFirst() {
+public inline f<V1&> Triple.getFirst() {
     return this.first;
 }
 
-public f<V2&> Triple.getSecond() {
+public inline f<V2&> Triple.getSecond() {
     return this.second;
 }
 
-public f<V3&> Triple.getThird() {
+public inline f<V3&> Triple.getThird() {
     return this.third;
+}
+
+public inline p Triple.setFirst(V1& first) {
+    this.first = first;
+}
+
+public inline p Triple.setSecond(V2& second) {
+    this.second = second;
+}
+
+public inline p Triple.setThird(V3& third) {
+    this.third = third;
 }
 
 public f<bool> operator==<V1, V2, V3>(const Triple<V1, V2, V3>& lhs, const Triple<V1, V2, V3>& rhs) {

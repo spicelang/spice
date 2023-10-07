@@ -230,16 +230,23 @@ void IRGenerator::generateDefaultDefaultCtor(const Function *ctorFunction) {
       }
 
       // Store default field values
-      if (cliOptions.buildMode == BuildMode::DEBUG && fieldNode->defaultValue() != nullptr) {
-        assert(fieldNode->defaultValue()->hasCompileTimeValue());
+      if (fieldNode->defaultValue() != nullptr || cliOptions.buildMode == BuildMode::DEBUG) {
         // Retrieve field address
         if (!thisAddressLoaded)
           thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
         llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
         llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
+        // Retrieve default value
+        llvm::Value *value;
+        if (fieldNode->defaultValue() != nullptr) {
+          assert(fieldNode->defaultValue()->hasCompileTimeValue());
+          const CompileTimeValue compileTimeValue = fieldNode->defaultValue()->getCompileTimeValue();
+          value = getConst(compileTimeValue, fieldType, fieldNode->defaultValue());
+        } else {
+          assert(cliOptions.buildMode == BuildMode::DEBUG);
+          value = getDefaultValueForSymbolType(fieldType);
+        }
         // Store default value
-        const CompileTimeValue compileTimeValue = fieldNode->defaultValue()->getCompileTimeValue();
-        llvm::Value *value = getConst(compileTimeValue, fieldType, fieldNode->defaultValue());
         builder.CreateStore(value, fieldAddress);
       }
     }

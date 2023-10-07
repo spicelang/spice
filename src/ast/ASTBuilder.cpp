@@ -369,7 +369,7 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
   visitChildren(ctx);
 
   // Tell the data type that it is a field type
-  fieldNode->dataType()->isFieldType = true;
+  fieldNode->dataType()->setFieldTypeRecursive();
 
   return concludeNode(ctx, fieldNode);
 }

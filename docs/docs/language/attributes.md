@@ -16,6 +16,7 @@ Spice offers the option to annotate single function or whole modules via attribu
 ### Available attributes
 
 - `core.linker.flag: string`: Append linker flag
+- `core.compiler.alwaysKeepOnNameCollision: bool`: Always keep the symbols of this source files when merging the name registries of multiple source files
 
 ## Function attributes
 

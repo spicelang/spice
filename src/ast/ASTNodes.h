@@ -1025,6 +1025,7 @@ public:
   static constexpr const char *const ATTR_CORE_LINKER_DLL = "core.linker.dll";
   static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
   static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
+  static constexpr const char *const ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1890,6 +1891,9 @@ public:
   // Public get methods
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
+
+  // Other methods
+  void setFieldTypeRecursive();
 
   // Public members
   std::queue<TypeModifier> tmQueue;
