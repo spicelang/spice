@@ -139,8 +139,7 @@ f<int> main() {
 Marks a variable to be allocated on the heap. The compiler will generate code to free the memory of the variable, when it goes out
 of scope. For structs, the compiler will generate code to free all fields, that are marked with the `heap` keyword, in the dtor.
 
-*Note: The `heap` specifier only works for pointer types, the compiler will produce an error if you try using it in combination
-with a non-pointer type.*
+*Note: The `heap` specifier only works for pointer types. This is enforced by the compiler.*
 
 ### Applicable for
 
@@ -152,5 +151,28 @@ with a non-pointer type.*
 ```spice
 type TestStruct struct {
     heap int* ptr
+}
+```
+
+## The `compose` specifier
+
+Includes a struct info the current strut. This is useful for composing structs from other structs.
+
+*Note: The `compose` specifiers only works for by-value struct types. This is enforced by the compiler.*
+
+### Applicable for
+
+- Struct fields
+
+### Example
+
+```spice
+type A struct {
+    int f1
+}
+
+type B struct {
+    compose A a
+    int f2
 }
 ```

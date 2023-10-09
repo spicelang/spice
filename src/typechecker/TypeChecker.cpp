@@ -30,9 +30,9 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
   if (isPrepare) {
     for (const auto &[structName, manifestations] : rootScope->getStructs()) {
       for (const auto &[manifestationName, manifestation] : manifestations) {
-        createDefaultCtorIfRequired(manifestation, manifestation.structScope);
-        createDefaultCopyCtorIfRequired(manifestation, manifestation.structScope);
-        createDefaultDtorIfRequired(manifestation, manifestation.structScope);
+        createDefaultCtorIfRequired(manifestation, manifestation.scope);
+        createDefaultCopyCtorIfRequired(manifestation, manifestation.scope);
+        createDefaultDtorIfRequired(manifestation, manifestation.scope);
       }
     }
   }
@@ -1235,7 +1235,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       Scope *matchScope = lhsBaseTy.getBodyScope()->parent;
       Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
       assert(spiceStruct != nullptr);
-      structScope = spiceStruct->structScope;
+      structScope = spiceStruct->scope;
     }
     assert(!structScope->isGenericScope); // At this point we always expect a substantiation scope
 
@@ -1598,7 +1598,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     assert(matchScope != nullptr);
     Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
     assert(spiceStruct != nullptr);
-    returnBaseType.setBodyScope(spiceStruct->structScope);
+    returnBaseType.setBodyScope(spiceStruct->scope);
     returnType = returnType.replaceBaseType(returnBaseType);
 
     // Add anonymous symbol to keep track of deallocation
@@ -1706,7 +1706,7 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
 
     // Set the 'this' type of the function to the struct type
     data.thisType = structEntry->getType();
-    data.thisType.setBodyScope(thisStruct->structScope);
+    data.thisType.setBodyScope(thisStruct->scope);
 
     // Get the fully qualified name, that can be used in the current source file to identify the struct
     knownStructName = structRegistryEntry->name;
@@ -1877,7 +1877,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   node->instantiatedStructs.at(manIdx) = spiceStruct;
 
   // Use scope of concrete substantiation and not the scope of the generic type
-  structScope = spiceStruct->structScope;
+  structScope = spiceStruct->scope;
   structType.setBodyScope(structScope);
 
   // Set template types to the struct
@@ -2290,7 +2290,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
         const std::string structName = node->typeNameFragments.back();
         Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
         if (spiceStruct)
-          entryType.setBodyScope(spiceStruct->structScope);
+          entryType.setBodyScope(spiceStruct->scope);
       }
     }
 
@@ -2300,7 +2300,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       Interface *spiceInterface = InterfaceManager::matchInterface(localAccessScope, interfaceName, templateTypes, node);
       if (!spiceInterface)
         SOFT_ERROR_ST(node, UNKNOWN_DATATYPE, "Unknown interface " + Interface::getSignature(interfaceName, templateTypes))
-      entryType.setBodyScope(spiceInterface->interfaceScope);
+      entryType.setBodyScope(spiceInterface->scope);
     }
 
     // Remove public specifier
@@ -2357,7 +2357,7 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
   for (const auto &[_, entry] : targetSourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->structScope == symbolType.getBaseType().getBodyScope())
+        if (manifestation->scope == symbolType.getBaseType().getBodyScope())
           return symbolType.replaceBaseSubType(manifestation->name);
 
   // The target source file does not know about the struct at all
@@ -2384,7 +2384,7 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
   for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->structScope == symbolType.getBaseType().getBodyScope()) {
+        if (manifestation->scope == symbolType.getBaseType().getBodyScope()) {
           // Get the 'fullest-qualified' registry entry
           const NameRegistryEntry *mostQualifiedEntry = sourceFile->getNameRegistryEntry(entry.name);
           assert(mostQualifiedEntry != nullptr);

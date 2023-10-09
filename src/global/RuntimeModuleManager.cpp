@@ -58,6 +58,8 @@ ModuleNamePair RuntimeModuleManager::resolveNamePair(spice::compiler::RuntimeMod
     return {STRING_RT_IMPORT_NAME, "string_rt"};
   case MEMORY_RT:
     return {MEMORY_RT_IMPORT_NAME, "memory_rt"};
+  case RTTI_RT:
+    return {RTTI_RT_IMPORT_NAME, "rtti_rt"};
   case ITERATOR_RT:
     return {ITERATOR_RT_IMPORT_NAME, "iterator_rt"};
   default:

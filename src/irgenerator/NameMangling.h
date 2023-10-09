@@ -46,7 +46,10 @@ public:
   // Public methods
   [[nodiscard]] static std::string mangleFunction(const Function &spiceFunc);
   [[nodiscard]] static std::string mangleStruct(const Struct &spiceStruct);
-  [[nodiscard]] static std::string mangleType(const SymbolType &type);
+  [[nodiscard]] static std::string mangleInterface(const Interface &spiceInterface);
+  [[nodiscard]] static std::string mangleTypeInfoName(std::string &typeName);
+  [[nodiscard]] static std::string mangleTypeInfo(const std::string &typeName);
+  [[nodiscard]] static std::string mangleVTable(const std::string &typeName);
 
 private:
   // Typedefs

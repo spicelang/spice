@@ -1,0 +1,25 @@
+#![core.compiler.alwaysKeepOnNameCollision = true]
+
+/**
+ * TypeInfo is a type that contains the name of a type.
+ * It is used to identify types at runtime and is part of the RTTI.
+ */
+public type TypeInfo struct {
+    string name
+}
+
+public p TypeInfo.ctor(string name) {
+    this.name = name;
+}
+
+public f<const char*> TypeInfo.getName() {
+    return this.name;
+}
+
+public f<bool> operator==(const TypeInfo& a, const TypeInfo& b) {
+    return a.name == b.name;
+}
+
+public f<bool> operator!=() {
+    return !(a == b);
+}

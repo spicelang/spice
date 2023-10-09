@@ -7,49 +7,26 @@
 #include <vector>
 
 #include <model/GenericType.h>
-#include <symboltablebuilder/TypeSpecifiers.h>
+#include <model/StructBase.h>
 
 #include "../../lib/json/json.hpp"
 
 namespace spice::compiler {
 
-// Forward declaration
-class Scope;
-class SymbolType;
-class SymbolTableEntry;
-class ASTNode;
-struct CodeLoc;
-
-class Struct {
+class Struct : public StructBase {
 public:
   // Constructors
-  Struct(std::string name, SymbolTableEntry *entry, Scope *structScope, std::vector<SymbolType> fieldTypes,
+  Struct(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<SymbolType> fieldTypes,
          std::vector<GenericType> templateTypes, std::vector<SymbolType> interfaceTypes, ASTNode *declNode)
-      : name(std::move(name)), entry(entry), structScope(structScope), fieldTypes(std::move(fieldTypes)),
-        templateTypes(std::move(templateTypes)), interfaceTypes(std::move(interfaceTypes)), declNode(declNode) {}
+      : StructBase(name, entry, scope, templateTypes, declNode), fieldTypes(std::move(fieldTypes)),
+        interfaceTypes(std::move(interfaceTypes)) {}
 
   // Public methods
-  [[nodiscard]] std::string getSignature() const;
-  static std::string getSignature(const std::string &name, const std::vector<SymbolType> &concreteTemplateTypes);
-  [[nodiscard]] bool hasSubstantiatedGenerics() const;
-  [[nodiscard]] bool isFullySubstantiated() const;
-  [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
   [[nodiscard]] bool hasReferenceFields() const;
-  [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
   // Public members
-  std::string name;
   std::vector<SymbolType> fieldTypes;
-  std::vector<GenericType> templateTypes;
-  std::unordered_map<std::string, SymbolType> typeMapping;
   std::vector<SymbolType> interfaceTypes;
-  SymbolTableEntry *entry = nullptr;
-  Scope *structScope = nullptr;
-  ASTNode *declNode;
-  size_t manifestationIndex = 0;
-  bool genericSubstantiation = false;
-  bool used = false;
-  llvm::DICompositeType *structDIType = nullptr;
 
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, fieldTypes, templateTypes, interfaceTypes, genericSubstantiation, used)

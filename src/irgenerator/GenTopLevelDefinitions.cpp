@@ -475,7 +475,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
       continue;
 
     // Change scope to struct scope, specific to substantiation
-    currentScope = spiceStruct->structScope;
+    currentScope = spiceStruct->scope;
     assert(currentScope);
 
     // Create struct definition
@@ -525,7 +525,20 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
 }
 
 std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
-  return nullptr; // Noop (interfaces are high-level semantic-only structures)
+  const Interface *spiceInterface = node->interfaceManifestations.front();
+
+  // Generate empty struct
+  const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
+  llvm::StructType *structType = llvm::StructType::create(context, mangledName);
+  structType->setBody(builder.getPtrTy());
+
+  // Set LLVM type to the interface entry
+  node->entry->setStructLLVMType(structType);
+
+  // Generate VTable information
+  generateVTable(spiceInterface);
+
+  return nullptr;
 }
 
 std::any IRGenerator::visitEnumDef(const EnumDefNode *node) {

@@ -384,7 +384,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   // Build struct object
   Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, templateTypesGeneric, interfaceTypes, node);
   StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
-  spiceStruct.structScope = node->structScope;
+  spiceStruct.scope = node->structScope;
 
   return nullptr;
 }
@@ -441,7 +441,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   // Build interface object
   Interface spiceInterface(node->interfaceName, node->entry, node->interfaceScope, signatures, templateTypesGeneric, node);
   InterfaceManager::insertInterface(currentScope, spiceInterface, &node->interfaceManifestations);
-  spiceInterface.interfaceScope = node->interfaceScope;
+  spiceInterface.scope = node->interfaceScope;
 
   return nullptr;
 }

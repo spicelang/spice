@@ -114,21 +114,21 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       // Copy struct scope
       const std::string newScopeName = STRUCT_SCOPE_PREFIX + newSignature;
       matchScope->copyChildScope(STRUCT_SCOPE_PREFIX + presetStruct.name, newScopeName);
-      substantiatedStruct->structScope = matchScope->getChildScope(newScopeName);
-      assert(substantiatedStruct->structScope != nullptr);
-      substantiatedStruct->structScope->isGenericScope = false;
+      substantiatedStruct->scope = matchScope->getChildScope(newScopeName);
+      assert(substantiatedStruct->scope != nullptr);
+      substantiatedStruct->scope->isGenericScope = false;
 
       // Attach the template types to the new struct entry
       SymbolType entryType = substantiatedStruct->entry->getType();
       entryType.setTemplateTypes(substantiatedStruct->getTemplateTypes());
-      entryType.setBodyScope(substantiatedStruct->structScope);
+      entryType.setBodyScope(substantiatedStruct->scope);
       substantiatedStruct->entry->updateType(entryType, true);
 
       // Replace symbol types of field entries with concrete types
-      assert(substantiatedStruct->structScope != nullptr);
+      assert(substantiatedStruct->scope != nullptr);
       for (size_t i = 0; i < substantiatedStruct->fieldTypes.size(); i++) {
         // Replace field type with concrete template type
-        SymbolTableEntry *fieldEntry = substantiatedStruct->structScope->symbolTable.lookupStrictByIndex(i);
+        SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(i);
         assert(fieldEntry != nullptr && fieldEntry->isField());
         fieldEntry->updateType(substantiatedStruct->fieldTypes.at(i), /*overwriteExistingType=*/true);
       }

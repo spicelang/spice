@@ -4,6 +4,7 @@
 
 #include <exception/CompilerError.h>
 #include <model/Function.h>
+#include <model/Interface.h>
 #include <model/Struct.h>
 
 namespace spice::compiler {
@@ -80,17 +81,12 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
 std::string NameMangling::mangleStruct(const Struct &spiceStruct) { return "struct." + spiceStruct.name; }
 
 /**
- * Mangle a symbol type
- * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
+ * Mangle an interface
  *
- * @param type Input symbol type
+ * @param spiceInterface Input interface
  * @return Mangled name
  */
-std::string NameMangling::mangleType(const SymbolType &type) {
-  std::stringstream mangledName;
-  mangleType(mangledName, type);
-  return mangledName.str();
-}
+std::string NameMangling::mangleInterface(const Interface &spiceInterface) { return "interface." + spiceInterface.name; }
 
 /**
  * Mangle a symbol type
@@ -199,5 +195,14 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     throw CompilerError(INTERNAL_ERROR, "Type " + chainElement.getName(false) + " cannot be mangled");
   }
 }
+
+std::string NameMangling::mangleTypeInfoName(std::string &typeName) {
+  typeName.insert(0, std::to_string(typeName.size()));
+  return "_ZTS" + typeName;
+}
+
+std::string NameMangling::mangleTypeInfo(const std::string &typeName) { return "_ZTI" + typeName; }
+
+std::string NameMangling::mangleVTable(const std::string &typeName) { return "_ZTV" + typeName; }
 
 } // namespace spice::compiler

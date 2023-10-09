@@ -1,10 +1,16 @@
-import "std/data/hash-table";
+type Iterable interface {
+    p print();
+}
+
+type A struct : Iterable {
+    int a
+}
+
+p A.print() {
+    printf("A: %d\n", this.a);
+}
 
 f<int> main() {
-    HashTable<int, int> ht;
-    ht.insert(1, 2);
-    ht.insert(2, 3);
-    ht.insert(3, 4);
-    ht.insert(4, 5);
-    ht.insert(5, 6);
+    Iterable a = A{5};
+    //a.print();
 }

@@ -370,7 +370,7 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
       Scope *scope = thisType.getBodyScope()->parent;
       Struct *spiceStruct = StructManager::matchStruct(scope, structName, thisType.getTemplateTypes(), candidate.declNode);
       assert(spiceStruct != nullptr);
-      matchScope = spiceStruct->structScope;
+      matchScope = spiceStruct->scope;
     }
     candidate.thisType.setBodyScope(matchScope);
   }

@@ -72,7 +72,7 @@ llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
  * @param newStructType New struct LLVM type
  */
 void SymbolTableEntry::setStructLLVMType(llvm::StructType *newStructType) {
-  assert(type.is(TY_STRUCT));
+  assert(type.isOneOf({TY_STRUCT, TY_INTERFACE}));
   llvmStructType = newStructType;
 }
 
