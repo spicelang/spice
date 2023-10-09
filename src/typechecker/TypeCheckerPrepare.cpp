@@ -443,6 +443,9 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   InterfaceManager::insertInterface(currentScope, spiceInterface, &node->interfaceManifestations);
   spiceInterface.scope = node->interfaceScope;
 
+  // Request RTTI runtime, that is always required when dealing with interfaces due to polymorphism
+  sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
+
   return nullptr;
 }
 

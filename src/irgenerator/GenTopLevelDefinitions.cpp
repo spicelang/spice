@@ -499,6 +499,10 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     // Set field types to struct type
     structType->setBody(fieldTypes);
 
+    // Generate VTable if the struct implement interfaces
+    if (!spiceStruct->interfaceTypes.empty())
+      generateVTable(spiceStruct);
+
     // Generate default ctor if required
     const SymbolType &thisType = structEntry->getType();
     const Function *ctorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, {}, true);
@@ -525,7 +529,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
 }
 
 std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
-  const Interface *spiceInterface = node->interfaceManifestations.front();
+  Interface *spiceInterface = node->interfaceManifestations.front();
 
   // Generate empty struct
   const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);

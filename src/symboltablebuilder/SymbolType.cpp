@@ -164,7 +164,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
   if (is(TY_BOOL))
     return llvm::Type::getInt1Ty(context);
 
-  if (is(TY_STRUCT)) {
+  if (isOneOf({TY_STRUCT, TY_INTERFACE})) {
     Scope *structBodyScope = getBodyScope();
     const std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
     SymbolTableEntry *structSymbol = structBodyScope->parent->lookupStrict(structSignature);
@@ -172,7 +172,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
     llvm::StructType *structType = structSymbol->getStructLLVMType();
 
     // If the type is not known yet, build the LLVM type
-    if (structType == nullptr) {
+    if (!structType) {
       Struct *spiceStruct = structSymbol->getType().getStruct(structSymbol->declNode);
       assert(spiceStruct != nullptr);
       const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
@@ -181,9 +181,13 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
 
       // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
-      fieldTypes.reserve(spiceStruct->fieldTypes.size());
-      for (const SymbolType &fieldType : spiceStruct->fieldTypes)
-        fieldTypes.push_back(fieldType.toLLVMType(context, accessScope));
+      if (is(TY_STRUCT)) { // Struct
+        fieldTypes.reserve(spiceStruct->fieldTypes.size());
+        for (const SymbolType &fieldType : spiceStruct->fieldTypes)
+          fieldTypes.push_back(fieldType.toLLVMType(context, accessScope));
+      } else { // Interface
+        fieldTypes.push_back(llvm::PointerType::get(context, 0));
+      }
 
       // Set field types to struct type
       structType->setBody(fieldTypes);

@@ -147,9 +147,9 @@ private:
 
   // Generate VTable
   void ensureRTTIRuntime();
-  llvm::Constant *generateTypeInfoName(const StructBase *spiceStruct);
-  llvm::Constant *generateTypeInfo(const StructBase *spiceStruct);
-  llvm::Constant *generateVTable(const StructBase *spiceStruct);
+  llvm::Constant *generateTypeInfoName(StructBase *spiceStruct);
+  llvm::Constant *generateTypeInfo(StructBase *spiceStruct);
+  llvm::Constant *generateVTable(StructBase *spiceStruct);
 
   // Private members
   llvm::LLVMContext &context;

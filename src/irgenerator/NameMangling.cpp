@@ -201,8 +201,8 @@ std::string NameMangling::mangleTypeInfoName(std::string &typeName) {
   return "_ZTS" + typeName;
 }
 
-std::string NameMangling::mangleTypeInfo(const std::string &typeName) { return "_ZTI" + typeName; }
+std::string NameMangling::mangleTypeInfo(const std::string &typeName) { return "_ZTI" + std::to_string(typeName.size()) + typeName; }
 
-std::string NameMangling::mangleVTable(const std::string &typeName) { return "_ZTV" + typeName; }
+std::string NameMangling::mangleVTable(const std::string &typeName) { return "_ZTV" + std::to_string(typeName.size()) + typeName; }
 
 } // namespace spice::compiler

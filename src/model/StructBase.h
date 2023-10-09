@@ -43,6 +43,9 @@ public:
   bool genericSubstantiation = false;
   bool used = false;
   llvm::DICompositeType *structDIType = nullptr;
+  llvm::Constant *typeInfoName = nullptr;
+  llvm::Constant *typeInfo = nullptr;
+  llvm::Constant *vtable = nullptr;
 };
 
 } // namespace spice::compiler

@@ -580,11 +580,12 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { //
 
 SourceFile *SourceFile::requestRuntimeModule(RuntimeModule runtimeModule) {
   // Check if the module was already imported
-  if (importedRuntimeModules & runtimeModule)
+  if (isRuntimeModuleAvailable(runtimeModule))
     return resourceManager.runtimeModuleManager.getModule(runtimeModule);
-
   return resourceManager.runtimeModuleManager.requestModule(this, runtimeModule);
 }
+
+bool SourceFile::isRuntimeModuleAvailable(RuntimeModule runtimeModule) const { return importedRuntimeModules & runtimeModule; }
 
 void SourceFile::addNameRegistryEntry(const std::string &symbolName, SymbolTableEntry *entry, Scope *scope,
                                       bool keepNewOnCollision /*=true*/, SymbolTableEntry *importEntry /*=nullptr*/,
