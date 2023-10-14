@@ -32,3 +32,17 @@ f<int> test(long input) {
 - `core.compiler.mangle: bool`: Disable name mangling for the annotated function
 - `core.compiler.mangledName: string`: Set the mangled name for the annotated function
 - `core.linker.dll: bool`: Enable linkage as dll (only relevant for Windows)
+
+## Struct attributes
+
+```spice
+#[core.compiler.alwaysEmitVTable = true]
+public type A struct {
+    // ...
+}
+```
+
+### Available attributes
+
+- `core.compiler.alwaysEmitVTable: bool`: Always emit a vtable for the annotated struct
+- 

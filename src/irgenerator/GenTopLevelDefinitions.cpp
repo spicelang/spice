@@ -499,8 +499,8 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     // Set field types to struct type
     structType->setBody(fieldTypes);
 
-    // Generate VTable if the struct implement interfaces
-    if (!spiceStruct->interfaceTypes.empty())
+    // Generate VTable if required
+    if (node->emitVTable)
       generateVTable(spiceStruct);
 
     // Generate default ctor if required
@@ -529,18 +529,33 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
 }
 
 std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
-  Interface *spiceInterface = node->interfaceManifestations.front();
+  // Get all substantiated structs which result from this struct def
+  std::vector<Interface *> manifestations = node->interfaceManifestations;
 
-  // Generate empty struct
-  const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
-  llvm::StructType *structType = llvm::StructType::create(context, mangledName);
-  structType->setBody(builder.getPtrTy());
+  // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
+  auto comp = [](const Interface *lhs, Interface *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
+  std::sort(manifestations.begin(), manifestations.end(), comp);
 
-  // Set LLVM type to the interface entry
-  node->entry->setStructLLVMType(structType);
+  for (Interface *spiceInterface : manifestations) {
+    // Skip interfaces, that are not fully substantiated
+    if (!spiceInterface->isFullySubstantiated())
+      continue;
 
-  // Generate VTable information
-  generateVTable(spiceInterface);
+    // Do not generate this interface if it is private and used by nobody
+    if (!spiceInterface->used && !spiceInterface->entry->getType().isPublic())
+      continue;
+
+    // Generate empty struct
+    const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
+    llvm::StructType *structType = llvm::StructType::create(context, mangledName);
+    structType->setBody(builder.getPtrTy());
+
+    // Set LLVM type to the interface entry
+    node->entry->setStructLLVMType(structType);
+
+    // Generate VTable information
+    generateVTable(spiceInterface);
+  }
 
   return nullptr;
 }

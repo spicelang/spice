@@ -132,7 +132,6 @@ private:
   static void autoDeReference(SymbolType &symbolType);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   void requestRevisitIfRequired(const Function *fct);
-  [[nodiscard]] bool isStringRT() const;
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
 
   // Implicit code generation

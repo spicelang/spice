@@ -23,7 +23,7 @@ colored_echo "[Step 3] Building LLVM (Could take a whole while, please be patien
 mkdir ./llvm/build-release 2>/dev/null
 (
   cd ./llvm/build-release || exit
-  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -fuse-ld=lld" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DLLVM_ENABLE_PROJECTS=clang -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -fuse-ld=lld" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
   cmake --build .
 )
 colored_echo "done."

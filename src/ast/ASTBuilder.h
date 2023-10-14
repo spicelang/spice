@@ -66,7 +66,7 @@ public:
   std::any visitDeclStmt(SpiceParser::DeclStmtContext *ctx) override;
   std::any visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) override;
   std::any visitSpecifier(SpiceParser::SpecifierContext *ctx) override;
-  std::any visitFctAttr(SpiceParser::FctAttrContext *ctx) override;
+  std::any visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *ctx) override;
   std::any visitModAttr(SpiceParser::ModAttrContext *ctx) override;
   std::any visitAttrLst(SpiceParser::AttrLstContext *ctx) override;
   std::any visitAttr(SpiceParser::AttrContext *ctx) override;

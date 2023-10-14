@@ -23,7 +23,7 @@ std::any ImportCollector::visitEntry(EntryNode *node) {
 }
 
 std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
-  bool isStd = node->importPath.starts_with("std/");
+  const bool isStd = node->importPath.starts_with("std/");
 
   std::filesystem::path basePath;
   if (isStd) { // Include source file from standard library

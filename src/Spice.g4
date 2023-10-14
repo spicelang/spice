@@ -4,17 +4,17 @@ grammar Spice;
 
 // Top level definitions and declarations
 entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importStmt | extDecl | modAttr)*;
-mainFunctionDef: fctAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-functionDef: fctAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-procedureDef: fctAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+mainFunctionDef: topLevelDefAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+functionDef: topLevelDefAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+procedureDef: topLevelDefAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
 fctName: (TYPE_IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
-structDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
+structDef: topLevelDefAttr? specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
 interfaceDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE TYPE_IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON;
 globalVarDef: dataType TYPE_IDENTIFIER (ASSIGN constant)? SEMICOLON;
-extDecl: fctAttr? EXT (F LESS dataType GREATER | P) (IDENTIFIER | TYPE_IDENTIFIER) LPAREN (typeLst ELLIPSIS?)? RPAREN SEMICOLON;
+extDecl: topLevelDefAttr? EXT (F LESS dataType GREATER | P) (IDENTIFIER | TYPE_IDENTIFIER) LPAREN (typeLst ELLIPSIS?)? RPAREN SEMICOLON;
 
 // Control structures
 unsafeBlock: UNSAFE LBRACE stmtLst RBRACE;
@@ -43,7 +43,7 @@ declStmt: dataType IDENTIFIER (ASSIGN assignExpr)?;
 specifierLst: specifier+;
 specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC | HEAP | COMPOSE;
 modAttr: MOD_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
-fctAttr: FCT_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
+topLevelDefAttr: FCT_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
 attrLst: attr (COMMA attr)*;
 attr: IDENTIFIER (DOT IDENTIFIER)* ASSIGN constant;
 importStmt: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;

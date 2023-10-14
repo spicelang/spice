@@ -386,6 +386,14 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
   spiceStruct.scope = node->structScope;
 
+  // Request RTTI runtime if the struct is polymorphic
+  AttrNode *attr = node->attrs() ? node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_EMIT_VTABLE) : nullptr;
+  if (node->hasInterfaces || (attr && attr->value()->compileTimeValue.boolValue)) {
+    if (!sourceFile->isRttiRT())
+      sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
+    node->emitVTable = true;
+  }
+
   return nullptr;
 }
 
@@ -444,7 +452,8 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   spiceInterface.scope = node->interfaceScope;
 
   // Request RTTI runtime, that is always required when dealing with interfaces due to polymorphism
-  sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
+  if (!sourceFile->isRttiRT())
+    sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
 
   return nullptr;
 }

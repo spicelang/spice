@@ -143,6 +143,8 @@ public:
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
   void checkForSoftErrors();
   void collectAndPrintWarnings();
+  bool isStringRT() const;
+  bool isRttiRT() const;
 
   // Public fields
   std::string name;

@@ -28,7 +28,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
     throw SemanticError(node, REF_POINTERS_ARE_NOT_ALLOWED, "Pointers to references are not allowed. Use pointer instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push_back({TY_PTR, "", {}, {}});
+  newTypeChain.emplace_back(TY_PTR);
   return {newTypeChain, specifiers};
 }
 
@@ -47,7 +47,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
     return *this;
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push_back({TY_REF, "", {}, {}});
+  newTypeChain.emplace_back(TY_REF);
   return {newTypeChain, specifiers};
 }
 
@@ -76,7 +76,7 @@ SymbolType SymbolType::toArray(const ASTNode *node, size_t size, bool skipDynChe
     throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push_back({TY_ARRAY, "", {.arraySize = size}, {}});
+  newTypeChain.emplace_back(TY_ARRAY, TypeChainElementData{.arraySize = size});
   return {newTypeChain, specifiers};
 }
 

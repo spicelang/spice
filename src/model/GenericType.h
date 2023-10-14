@@ -17,9 +17,10 @@ using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=
 class GenericType : public SymbolType {
 public:
   // Constructors
-  explicit GenericType(const SymbolType &type);
-  explicit GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions);
-  explicit GenericType(const std::string &name);
+  explicit GenericType(const SymbolType &type) : SymbolType(type){};
+  explicit GenericType(const std::string &name) : SymbolType(TY_GENERIC, name) {}
+  GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions)
+      : SymbolType(TY_GENERIC, name), typeConditions(typeConditions) {}
   GenericType() = default;
 
   // Public methods
