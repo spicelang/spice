@@ -566,4 +566,27 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
   return specifiers.match(otherType.specifiers, allowConstify);
 }
 
+/**
+ * Remove pointers / arrays / references if both types have them as far as possible.
+ * Furthermore, remove reference wrappers if possible.
+ *
+ * @param typeA Candidate type
+ * @param typeB Requested type
+ */
+void SymbolType::unwrapBoth(SymbolType &typeA, SymbolType &typeB) {
+  // Unwrap both types as far as possible
+  while (typeA.isSameContainerTypeAs(typeB)) {
+    typeB = typeB.getContainedTy();
+    typeA = typeA.getContainedTy();
+  }
+
+  // Remove reference wrapper of front type if required
+  if (typeA.isRef() && !typeB.isRef())
+    typeA = typeA.removeReferenceWrapper();
+
+  // Remove reference wrapper of requested type if required
+  if (!typeA.isRef() && typeB.isRef() && !typeA.getBaseType().is(TY_GENERIC))
+    typeB = typeB.removeReferenceWrapper();
+}
+
 } // namespace spice::compiler

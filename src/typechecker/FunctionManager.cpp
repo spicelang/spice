@@ -184,7 +184,7 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
                                          const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
                                          const ASTNode *callNode) {
-  assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT}));
+  assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
 
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;

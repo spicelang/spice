@@ -2,8 +2,6 @@
 
 #include "NameMangling.h"
 
-#include <cxxabi.h>
-
 #include <exception/CompilerError.h>
 #include <model/Function.h>
 #include <model/Interface.h>

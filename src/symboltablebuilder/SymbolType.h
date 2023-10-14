@@ -211,6 +211,9 @@ public:
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
   [[nodiscard]] bool matches(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
 
+  // Static util methods
+  static void unwrapBoth(SymbolType &typeA, SymbolType &typeB);
+
   // Public members
   TypeChain typeChain;
   TypeSpecifiers specifiers;
