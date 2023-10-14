@@ -30,9 +30,9 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
   if (isPrepare) {
     for (const auto &[structName, manifestations] : rootScope->getStructs()) {
       for (const auto &[manifestationName, manifestation] : manifestations) {
-        createDefaultCtorIfRequired(manifestation, manifestation.structScope);
-        createDefaultCopyCtorIfRequired(manifestation, manifestation.structScope);
-        createDefaultDtorIfRequired(manifestation, manifestation.structScope);
+        createDefaultCtorIfRequired(manifestation, manifestation.scope);
+        createDefaultCopyCtorIfRequired(manifestation, manifestation.scope);
+        createDefaultDtorIfRequired(manifestation, manifestation.scope);
       }
     }
   }
@@ -715,7 +715,7 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
     SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
 
   // If we want to use the len builtin on a string, we need to import the string runtime module
-  if (argType.is(TY_STRING) && !isStringRT())
+  if (argType.is(TY_STRING) && !sourceFile->isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
@@ -940,7 +940,7 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   HANDLE_UNRESOLVED_TYPE_ER(lhsTy)
 
   // Check if we need the string runtime to perform a string comparison
-  if (lhsTy.is(TY_STRING) && rhsTy.is(TY_STRING) && !isStringRT())
+  if (lhsTy.is(TY_STRING) && rhsTy.is(TY_STRING) && !sourceFile->isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
 
   // Check operator
@@ -1235,7 +1235,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       Scope *matchScope = lhsBaseTy.getBodyScope()->parent;
       Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
       assert(spiceStruct != nullptr);
-      structScope = spiceStruct->structScope;
+      structScope = spiceStruct->scope;
     }
     assert(!structScope->isGenericScope); // At this point we always expect a substantiation scope
 
@@ -1507,7 +1507,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     // Decide of which type the function call is
     const SymbolType &baseType = firstFragEntry->getType().getBaseType();
     HANDLE_UNRESOLVED_TYPE_ER(baseType)
-    if (baseType.is(TY_STRUCT)) {
+    if (baseType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
       data.callType = firstFragEntry->scope->type == ScopeType::GLOBAL ? FctCallNode::TYPE_CTOR : FctCallNode::TYPE_METHOD;
     } else if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && firstFragEntry->scope->type != ScopeType::GLOBAL) {
       data.callType = FctCallNode::TYPE_FCT_PTR;
@@ -1598,7 +1598,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     assert(matchScope != nullptr);
     Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
     assert(spiceStruct != nullptr);
-    returnBaseType.setBodyScope(spiceStruct->structScope);
+    returnBaseType.setBodyScope(spiceStruct->scope);
     returnType = returnType.replaceBaseType(returnBaseType);
 
     // Add anonymous symbol to keep track of deallocation
@@ -1620,7 +1620,7 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if this is a ctor call to the String type
-  if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !isStringRT())
+  if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !sourceFile->isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
 
   // Get struct name. Retrieve it from alias if required
@@ -1706,7 +1706,7 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
 
     // Set the 'this' type of the function to the struct type
     data.thisType = structEntry->getType();
-    data.thisType.setBodyScope(thisStruct->structScope);
+    data.thisType.setBodyScope(thisStruct->scope);
 
     // Get the fully qualified name, that can be used in the current source file to identify the struct
     knownStructName = structRegistryEntry->name;
@@ -1787,6 +1787,9 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
   SymbolType localThisType = data.thisType;
   autoDeReference(localThisType);
   localThisType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localThisType);
+
+  if (data.thisType.is(TY_INTERFACE))
+    SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS, "Cannot call a method on an interface")
 
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
@@ -1877,7 +1880,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   node->instantiatedStructs.at(manIdx) = spiceStruct;
 
   // Use scope of concrete substantiation and not the scope of the generic type
-  structScope = spiceStruct->structScope;
+  structScope = spiceStruct->scope;
   structType.setBodyScope(structScope);
 
   // Set template types to the struct
@@ -2215,7 +2218,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   const std::string firstFragment = node->typeNameFragments.front();
 
   // Check if it is a String type
-  if (!isImported && firstFragment == STROBJ_NAME && !isStringRT())
+  if (!isImported && firstFragment == STROBJ_NAME && !sourceFile->isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
 
   // Check if it is a generic type
@@ -2290,7 +2293,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
         const std::string structName = node->typeNameFragments.back();
         Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
         if (spiceStruct)
-          entryType.setBodyScope(spiceStruct->structScope);
+          entryType.setBodyScope(spiceStruct->scope);
       }
     }
 
@@ -2300,7 +2303,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       Interface *spiceInterface = InterfaceManager::matchInterface(localAccessScope, interfaceName, templateTypes, node);
       if (!spiceInterface)
         SOFT_ERROR_ST(node, UNKNOWN_DATATYPE, "Unknown interface " + Interface::getSignature(interfaceName, templateTypes))
-      entryType.setBodyScope(spiceInterface->interfaceScope);
+      entryType.setBodyScope(spiceInterface->scope);
     }
 
     // Remove public specifier
@@ -2357,7 +2360,7 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
   for (const auto &[_, entry] : targetSourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->structScope == symbolType.getBaseType().getBodyScope())
+        if (manifestation->scope == symbolType.getBaseType().getBodyScope())
           return symbolType.replaceBaseSubType(manifestation->name);
 
   // The target source file does not know about the struct at all
@@ -2384,7 +2387,7 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
   for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->structScope == symbolType.getBaseType().getBodyScope()) {
+        if (manifestation->scope == symbolType.getBaseType().getBodyScope()) {
           // Get the 'fullest-qualified' registry entry
           const NameRegistryEntry *mostQualifiedEntry = sourceFile->getNameRegistryEntry(entry.name);
           assert(mostQualifiedEntry != nullptr);
@@ -2432,13 +2435,6 @@ void TypeChecker::requestRevisitIfRequired(const Function *fct) {
   if (fct && !fct->alreadyTypeChecked && !fct->entry->scope->isImportedBy(rootScope))
     reVisitRequested = true;
 }
-
-/**
- * Check if the current source file is the String runtime source file
- *
- * @return String runtime or not
- */
-bool TypeChecker::isStringRT() const { return rootScope->lookupStrict(STROBJ_NAME) != nullptr; }
 
 /**
  * Add a soft error to the error list

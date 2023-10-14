@@ -4,46 +4,28 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <model/Function.h>
-#include <symboltablebuilder/TypeSpecifiers.h>
+#include <model/GenericType.h>
+#include <model/StructBase.h>
 
 #include "../../lib/json/json.hpp"
 
 namespace spice::compiler {
 
-// Forward declaration
-class Scope;
-class SymbolType;
-class ASTNode;
-struct CodeLoc;
-
-class Interface {
+class Interface : public StructBase {
 public:
   // Constructors
-  Interface(std::string name, SymbolTableEntry *entry, Scope *interfaceScope, std::vector<Function *> methods,
+  Interface(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<Function *> methods,
             std::vector<GenericType> templateTypes, ASTNode *declNode)
-      : name(std::move(name)), methods(std::move(methods)), templateTypes(std::move(templateTypes)), entry(entry),
-        interfaceScope(interfaceScope), declNode(declNode) {}
-
-  // Public methods
-  [[nodiscard]] std::string getSignature() const;
-  static std::string getSignature(const std::string &name, const std::vector<SymbolType> &concreteTemplateTypes);
-  [[nodiscard]] bool hasSubstantiatedGenerics() const;
-  [[nodiscard]] bool isFullySubstantiated() const;
-  [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
+      : StructBase(name, entry, scope, templateTypes, declNode), methods(std::move(methods)) {}
 
   // Public members
-  std::string name;
   std::vector<Function *> methods;
-  std::vector<GenericType> templateTypes;
-  std::unordered_map<std::string, SymbolType> typeMapping;
-  SymbolTableEntry *entry = nullptr;
-  Scope *interfaceScope = nullptr;
-  ASTNode *declNode;
-  size_t manifestationIndex = 0;
-  bool genericSubstantiation = false;
-  bool used = false;
+
+  // Json serializer/deserializer
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Interface, name, templateTypes, genericSubstantiation, used)
 };
 
 } // namespace spice::compiler

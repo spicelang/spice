@@ -19,7 +19,7 @@ static const char *const FCT_NAME_DEALLOC = "sDealloc";
  * @param params Parameter types of the method
  */
 void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std::string &methodName, const ParamList &params) {
-  Scope *structScope = spiceStruct.structScope;
+  Scope *structScope = spiceStruct.scope;
   ASTNode *node = spiceStruct.declNode;
   const SymbolTableEntry *structEntry = spiceStruct.entry;
   const SymbolType &thisType = structEntry->getType();

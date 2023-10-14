@@ -74,7 +74,7 @@ std::any ASTVisitor::visitSpecifier(SpecifierNode *node) { return visitChildren(
 
 std::any ASTVisitor::visitModAttr(ModAttrNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitFctAttr(FctAttrNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitTopLevelDefinitionAttr(TopLevelDefinitionAttrNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitAttrLst(AttrLstNode *node) { return visitChildren(node); }
 

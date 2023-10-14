@@ -5,6 +5,25 @@ target triple = "x86_64-w64-windows-gnu"
 
 %struct.Person = type { ptr, ptr, i32 }
 
+$_ZTS11CompareableIlE = comdat any
+
+$_ZTI11CompareableIlE = comdat any
+
+$_ZTV11CompareableIlE = comdat any
+
+$_ZTS6Person = comdat any
+
+$_ZTI6Person = comdat any
+
+$_ZTV6Person = comdat any
+
+@_ZTV8TypeInfo = external global ptr
+@_ZTS11CompareableIlE = linkonce_odr dso_local constant [12 x i8] c"Compareable\00", comdat, align 1
+@_ZTI11CompareableIlE = linkonce_odr dso_local constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i32 2), ptr @_ZTS11CompareableIlE }, comdat
+@_ZTV11CompareableIlE = linkonce_odr dso_local constant { [2 x ptr] } { [2 x ptr] [ptr null, ptr @_ZTI11CompareableIlE] }, comdat
+@_ZTS6Person = linkonce_odr dso_local constant [7 x i8] c"Person\00", comdat, align 1
+@_ZTI6Person = linkonce_odr dso_local constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i32 2), ptr @_ZTS6Person }, comdat
+@_ZTV6Person = linkonce_odr dso_local constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI6Person, ptr null] }, comdat
 @anon.string.0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 1
 @anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 1
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1

@@ -83,7 +83,7 @@ assert.then.L12:                                  ; preds = %2
   unreachable, !dbg !42
 
 assert.exit.L12:                                  ; preds = %2
-  %18 = call %struct.VectorIterator @"_Z7iterateR22std/data/vector.VectorIiE"(ptr %vi), !dbg !44
+  %18 = call %struct.VectorIterator @_Z7iterateRN3std4data6vector6VectorIiEE(ptr %vi), !dbg !44
   call void @llvm.dbg.declare(metadata ptr %it, metadata !45, metadata !DIExpression()), !dbg !52
   store %struct.VectorIterator %18, ptr %it, align 8, !dbg !44
   %19 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %it), !dbg !53
@@ -260,7 +260,7 @@ assert.then.L45:                                  ; preds = %assert.exit.L43
   unreachable, !dbg !94
 
 assert.exit.L45:                                  ; preds = %assert.exit.L43
-  %72 = call %struct.VectorIterator @"_Z7iterateR22std/data/vector.VectorIiE"(ptr %vi), !dbg !95
+  %72 = call %struct.VectorIterator @_Z7iterateRN3std4data6vector6VectorIiEE(ptr %vi), !dbg !95
   call void @llvm.dbg.declare(metadata ptr %item, metadata !97, metadata !DIExpression()), !dbg !98
   store %struct.VectorIterator %72, ptr %10, align 8, !dbg !95
   br label %foreach.head.L48, !dbg !98
@@ -316,7 +316,7 @@ assert.then.L53:                                  ; preds = %assert.exit.L52
   unreachable, !dbg !105
 
 assert.exit.L53:                                  ; preds = %assert.exit.L52
-  %90 = call %struct.VectorIterator @"_Z7iterateR22std/data/vector.VectorIiE"(ptr %vi), !dbg !106
+  %90 = call %struct.VectorIterator @_Z7iterateRN3std4data6vector6VectorIiEE(ptr %vi), !dbg !106
   call void @llvm.dbg.declare(metadata ptr %item1, metadata !108, metadata !DIExpression()), !dbg !109
   store %struct.VectorIterator %90, ptr %11, align 8, !dbg !106
   br label %foreach.head.L56, !dbg !109
@@ -372,7 +372,7 @@ assert.then.L61:                                  ; preds = %assert.exit.L60
   unreachable, !dbg !116
 
 assert.exit.L61:                                  ; preds = %assert.exit.L60
-  %108 = call %struct.VectorIterator @"_Z7iterateR22std/data/vector.VectorIiE"(ptr %vi), !dbg !117
+  %108 = call %struct.VectorIterator @_Z7iterateRN3std4data6vector6VectorIiEE(ptr %vi), !dbg !117
   store %struct.VectorIterator %108, ptr %13, align 8, !dbg !117
   call void @llvm.dbg.declare(metadata ptr %idx, metadata !119, metadata !DIExpression()), !dbg !121
   call void @llvm.dbg.declare(metadata ptr %item2, metadata !122, metadata !DIExpression()), !dbg !123
@@ -459,7 +459,7 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #3
 
-declare %struct.VectorIterator @"_Z7iterateR22std/data/vector.VectorIiE"(ptr)
+declare %struct.VectorIterator @_Z7iterateRN3std4data6vector6VectorIiEE(ptr)
 
 declare i1 @_ZN14VectorIteratorIiE7isValidEv(ptr)
 
@@ -497,7 +497,7 @@ attributes #3 = { cold noreturn nounwind }
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "printf.str.0", linkageName: "printf.str.0", scope: !2, file: !5, line: 70, type: !6, isLocal: true, isDefinition: true)
 !2 = distinct !DICompileUnit(language: DW_LANG_C17, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
-!3 = !DIFile(filename: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
+!3 = !DIFile(filename: "C:\\Users\\I516467\\Documents\\JustForFunGitHubClones\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
 !4 = !{!0}
 !5 = !DIFile(filename: "source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
 !6 = !DIStringType(name: "printf.str.0", size: 192)
@@ -523,7 +523,7 @@ attributes #3 = { cold noreturn nounwind }
 !26 = !DILocalVariable(name: "_argv", arg: 2, scope: !15, file: !5, line: 6, type: !19)
 !27 = !DILocalVariable(name: "vi", scope: !15, file: !5, line: 8, type: !28)
 !28 = !DICompositeType(tag: DW_TAG_structure_type, name: "Vector", scope: !29, file: !29, line: 22, size: 192, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !30, identifier: "struct.Vector")
-!29 = !DIFile(filename: "vector.spice", directory: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\std\\data")
+!29 = !DIFile(filename: "vector.spice", directory: "C:\\Users\\I516467\\Documents\\JustForFunGitHubClones\\spice\\std\\data")
 !30 = !{!31, !33, !35}
 !31 = !DIDerivedType(tag: DW_TAG_member, name: "contents", scope: !28, file: !29, line: 23, baseType: !32, size: 64)
 !32 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !18, size: 64)
@@ -541,7 +541,7 @@ attributes #3 = { cold noreturn nounwind }
 !44 = !DILocation(line: 15, column: 22, scope: !15)
 !45 = !DILocalVariable(name: "it", scope: !15, file: !5, line: 15, type: !46)
 !46 = !DICompositeType(tag: DW_TAG_structure_type, name: "VectorIterator", scope: !47, file: !47, line: 13, size: 128, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !48, identifier: "struct.VectorIterator")
-!47 = !DIFile(filename: "vector-iterator.spice", directory: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\std\\iterator")
+!47 = !DIFile(filename: "vector-iterator.spice", directory: "C:\\Users\\I516467\\Documents\\JustForFunGitHubClones\\spice\\std\\iterator")
 !48 = !{!49, !51}
 !49 = !DIDerivedType(tag: DW_TAG_member, name: "vector", scope: !46, file: !47, line: 14, baseType: !50, size: 64)
 !50 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !28, size: 64)
@@ -560,7 +560,7 @@ attributes #3 = { cold noreturn nounwind }
 !63 = !DILocation(line: 23, column: 16, scope: !15)
 !64 = !DILocalVariable(name: "pair", scope: !15, file: !5, line: 23, type: !65)
 !65 = !DICompositeType(tag: DW_TAG_structure_type, name: "Pair", scope: !66, file: !66, line: 8, size: 128, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !67, identifier: "struct.Pair")
-!66 = !DIFile(filename: "pair.spice", directory: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\std\\data")
+!66 = !DIFile(filename: "pair.spice", directory: "C:\\Users\\I516467\\Documents\\JustForFunGitHubClones\\spice\\std\\data")
 !67 = !{!68, !69}
 !68 = !DIDerivedType(tag: DW_TAG_member, name: "first", scope: !65, file: !66, line: 9, baseType: !34, size: 64)
 !69 = !DIDerivedType(tag: DW_TAG_member, name: "second", scope: !65, file: !66, line: 10, baseType: !32, size: 64, offset: 64)

@@ -28,7 +28,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
     throw SemanticError(node, REF_POINTERS_ARE_NOT_ALLOWED, "Pointers to references are not allowed. Use pointer instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push_back({TY_PTR, "", {}, {}});
+  newTypeChain.emplace_back(TY_PTR);
   return {newTypeChain, specifiers};
 }
 
@@ -47,7 +47,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
     return *this;
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push_back({TY_REF, "", {}, {}});
+  newTypeChain.emplace_back(TY_REF);
   return {newTypeChain, specifiers};
 }
 
@@ -76,7 +76,7 @@ SymbolType SymbolType::toArray(const ASTNode *node, size_t size, bool skipDynChe
     throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
   TypeChain newTypeChain = typeChain;
-  newTypeChain.push_back({TY_ARRAY, "", {.arraySize = size}, {}});
+  newTypeChain.emplace_back(TY_ARRAY, TypeChainElementData{.arraySize = size});
   return {newTypeChain, specifiers};
 }
 
@@ -164,7 +164,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
   if (is(TY_BOOL))
     return llvm::Type::getInt1Ty(context);
 
-  if (is(TY_STRUCT)) {
+  if (isOneOf({TY_STRUCT, TY_INTERFACE})) {
     Scope *structBodyScope = getBodyScope();
     const std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
     SymbolTableEntry *structSymbol = structBodyScope->parent->lookupStrict(structSignature);
@@ -172,7 +172,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
     llvm::StructType *structType = structSymbol->getStructLLVMType();
 
     // If the type is not known yet, build the LLVM type
-    if (structType == nullptr) {
+    if (!structType) {
       Struct *spiceStruct = structSymbol->getType().getStruct(structSymbol->declNode);
       assert(spiceStruct != nullptr);
       const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
@@ -181,9 +181,13 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
 
       // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
-      fieldTypes.reserve(spiceStruct->fieldTypes.size());
-      for (const SymbolType &fieldType : spiceStruct->fieldTypes)
-        fieldTypes.push_back(fieldType.toLLVMType(context, accessScope));
+      if (is(TY_STRUCT)) { // Struct
+        fieldTypes.reserve(spiceStruct->fieldTypes.size());
+        for (const SymbolType &fieldType : spiceStruct->fieldTypes)
+          fieldTypes.push_back(fieldType.toLLVMType(context, accessScope));
+      } else { // Interface
+        fieldTypes.push_back(llvm::PointerType::get(context, 0));
+      }
 
       // Set field types to struct type
       structType->setBody(fieldTypes);
@@ -560,6 +564,29 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
     return true;
 
   return specifiers.match(otherType.specifiers, allowConstify);
+}
+
+/**
+ * Remove pointers / arrays / references if both types have them as far as possible.
+ * Furthermore, remove reference wrappers if possible.
+ *
+ * @param typeA Candidate type
+ * @param typeB Requested type
+ */
+void SymbolType::unwrapBoth(SymbolType &typeA, SymbolType &typeB) {
+  // Unwrap both types as far as possible
+  while (typeA.isSameContainerTypeAs(typeB)) {
+    typeB = typeB.getContainedTy();
+    typeA = typeA.getContainedTy();
+  }
+
+  // Remove reference wrapper of front type if required
+  if (typeA.isRef() && !typeB.isRef())
+    typeA = typeA.removeReferenceWrapper();
+
+  // Remove reference wrapper of requested type if required
+  if (!typeA.isRef() && typeB.isRef() && !typeA.getBaseType().is(TY_GENERIC))
+    typeB = typeB.removeReferenceWrapper();
 }
 
 } // namespace spice::compiler

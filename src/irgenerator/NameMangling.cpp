@@ -4,7 +4,9 @@
 
 #include <exception/CompilerError.h>
 #include <model/Function.h>
+#include <model/Interface.h>
 #include <model/Struct.h>
+#include <symboltablebuilder/SymbolTableEntry.h>
 
 namespace spice::compiler {
 
@@ -80,16 +82,46 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
 std::string NameMangling::mangleStruct(const Struct &spiceStruct) { return "struct." + spiceStruct.name; }
 
 /**
- * Mangle a symbol type
- * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
+ * Mangle an interface
  *
- * @param type Input symbol type
+ * @param spiceInterface Input interface
  * @return Mangled name
  */
-std::string NameMangling::mangleType(const SymbolType &type) {
-  std::stringstream mangledName;
-  mangleType(mangledName, type);
-  return mangledName.str();
+std::string NameMangling::mangleInterface(const Interface &spiceInterface) { return "interface." + spiceInterface.name; }
+
+/**
+ * Mangle a fully qualified name like e.g. test::s1::calledMethod to 4test2s112calledMethod
+ * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
+ *
+ * @param out Output string stream
+ * @param name Input name
+ * @param nestedType True if the name is a nested type
+ * @return Mangled name
+ */
+void NameMangling::mangleName(std::stringstream &out, const std::string &name, bool &nestedType) {
+  std::vector<std::string> fragments;
+  std::istringstream ss(name);
+  std::string token;
+
+  while (std::getline(ss, token, ':')) {
+    std::istringstream subStream(token);
+    std::string subToken;
+    while (std::getline(subStream, subToken, '/')) {
+      fragments.push_back(subToken);
+    }
+  }
+
+  // Start a nested type if needed. The caller needs to emit the end marker.
+  if (fragments.size() > 1) {
+    out << "N";
+    nestedType = true;
+  }
+
+  // Process each fragment and append it to the result
+  for (const std::string &fragment : fragments) {
+    int fragmentLength = static_cast<int>(fragment.length());
+    out << std::to_string(fragmentLength) << fragment;
+  }
 }
 
 /**
@@ -100,7 +132,7 @@ std::string NameMangling::mangleType(const SymbolType &type) {
  * @param type Input symbol type
  * @return Mangled name
  */
-void NameMangling::mangleType(std::stringstream &out, const SymbolType &type) {
+void NameMangling::mangleType(std::stringstream &out, const SymbolType &type) { // NOLINT(*-no-recursion)
   // Unwrap type chain
   assert(!type.typeChain.empty());
   for (size_t i = type.typeChain.size() - 1; i >= 1; i--)
@@ -164,18 +196,23 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     assert(!signedness && "Signed bool types are forbidden");
     out << "b";
     break;
-  case TY_STRUCT:
-  case TY_INTERFACE:
-  case TY_ENUM: {
-    std::string fqName = chainElement.subType;
-    CommonUtil::replaceAll(fqName, "::", ".");
-    out << fqName.length() << fqName; // <length><name>
+  case TY_STRUCT: // fall-through
+  case TY_INTERFACE: {
+    bool nestedType = false;
+    mangleName(out, chainElement.subType, nestedType);
     if (!chainElement.templateTypes.empty()) {
       out << "I";
       for (const SymbolType &templateType : chainElement.templateTypes)
         mangleType(out, templateType);
       out << "E";
     }
+    if (nestedType)
+      out << "E";
+    break;
+  }
+  case TY_ENUM: {
+    bool nestedType = false;
+    mangleName(out, chainElement.subType, nestedType);
     break;
   }
   case TY_FUNCTION: {
@@ -198,6 +235,31 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
   default:
     throw CompilerError(INTERNAL_ERROR, "Type " + chainElement.getName(false) + " cannot be mangled");
   }
+}
+
+std::string NameMangling::mangleTypeInfoName(const StructBase *structBase) {
+  std::stringstream out;
+  out << "_ZTS";
+  mangleType(out, structBase->entry->getType());
+  return out.str();
+}
+
+std::string NameMangling::mangleTypeInfo(const StructBase *structBase) {
+  std::stringstream out;
+  out << "_ZTI";
+  mangleType(out, structBase->entry->getType());
+  return out.str();
+}
+
+std::string NameMangling::mangleVTable(const StructBase *structBase) {
+  std::stringstream out;
+  out << "_ZTV";
+  mangleType(out, structBase->entry->getType());
+  return out.str();
+}
+
+std::string NameMangling::mangleVTable(const std::string &typeName) {
+  return "_ZTV" + std::to_string(typeName.size()) + typeName;
 }
 
 } // namespace spice::compiler

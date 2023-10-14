@@ -30,19 +30,8 @@ bool TypeMatcher::matchRequestedToCandidateTypes(const std::vector<SymbolType> &
 
 bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
                                                 ResolverFct &resolverFct, bool strictSpecifierMatching) {
-  // Unwrap both types as far as possible
-  while (candidateType.isSameContainerTypeAs(requestedType)) {
-    requestedType = requestedType.getContainedTy();
-    candidateType = candidateType.getContainedTy();
-  }
-
-  // Remove reference wrapper of candidate type if required
-  if (candidateType.isRef() && !requestedType.isRef())
-    candidateType = candidateType.removeReferenceWrapper();
-
-  // Remove reference wrapper of requested type if required
-  if (!candidateType.isRef() && requestedType.isRef() && !candidateType.getBaseType().is(TY_GENERIC))
-    requestedType = requestedType.removeReferenceWrapper();
+  // Unwrap as far as possible and remove reference wrappers if possible
+  SymbolType::unwrapBoth(candidateType, requestedType);
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts())

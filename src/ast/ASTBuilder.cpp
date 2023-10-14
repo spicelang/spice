@@ -469,8 +469,8 @@ std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
   return concludeNode(ctx, modAttrNode);
 }
 
-std::any ASTBuilder::visitFctAttr(SpiceParser::FctAttrContext *ctx) {
-  auto fctAttrNode = createNode<FctAttrNode>(ctx);
+std::any ASTBuilder::visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *ctx) {
+  auto fctAttrNode = createNode<TopLevelDefinitionAttrNode>(ctx);
 
   // Visit children
   visitChildren(ctx);

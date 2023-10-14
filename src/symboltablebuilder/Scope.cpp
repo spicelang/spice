@@ -149,6 +149,22 @@ size_t Scope::getFieldCount() const {
 }
 
 /**
+ * Get the number of methods if this is a struct scope
+ *
+ * @return Number of methods
+ */
+size_t Scope::getMethodCount() const {
+  assert(type == ScopeType::STRUCT || type == ScopeType::INTERFACE);
+  size_t methodCount = 0;
+  for (const auto& symbol : symbolTable.symbols) {
+    const ASTNode *declNode = symbol.second.declNode;
+    if (declNode->isFctOrProcDef() || declNode->isStructDef())
+      methodCount++;
+  }
+  return methodCount;
+}
+
+/**
  * Check if this struct has any reference fields
  *
  * @return Has reference fields or not

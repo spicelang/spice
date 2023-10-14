@@ -61,7 +61,7 @@ public:
 private:
   // Members
   SymbolType type;
-  llvm::StructType *llvmStructType = nullptr;
+  llvm::StructType *llvmStructType = nullptr; // For structs and interfaces only
   std::stack<llvm::Value *> memAddress;
   Lifecycle lifecycle;
 };

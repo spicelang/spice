@@ -145,6 +145,12 @@ private:
   void generateDefaultDefaultCopyCtor(const Function *copyCtorFunction);
   void generateDefaultDefaultDtor(const Function *dtorFunction);
 
+  // Generate VTable
+  void ensureRTTIRuntime();
+  llvm::Constant *generateTypeInfoName(StructBase *spiceStruct);
+  llvm::Constant *generateTypeInfo(StructBase *spiceStruct);
+  llvm::Constant *generateVTable(StructBase *spiceStruct);
+
   // Private members
   llvm::LLVMContext &context;
   llvm::IRBuilder<> &builder;
@@ -155,6 +161,7 @@ private:
   struct CommonLLVMTypes {
     llvm::StructType *fatPtrType = nullptr;
   } llvmTypes;
+  llvm::Constant *typeInfoExtPtr = nullptr;
   std::vector<llvm::BasicBlock *> breakBlocks;
   std::vector<llvm::BasicBlock *> continueBlocks;
   llvm::BasicBlock *allocaInsertBlock = nullptr;

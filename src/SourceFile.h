@@ -137,11 +137,14 @@ public:
   [[nodiscard]] bool imports(const SourceFile *sourceFile) const;
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   SourceFile *requestRuntimeModule(RuntimeModule runtimeModule);
+  bool isRuntimeModuleAvailable(RuntimeModule runtimeModule) const;
   void addNameRegistryEntry(const std::string &symbolName, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true,
                             SymbolTableEntry *importEntry = nullptr, const std::string &predecessorName = "");
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
   void checkForSoftErrors();
   void collectAndPrintWarnings();
+  bool isStringRT() const;
+  bool isRttiRT() const;
 
   // Public fields
   std::string name;

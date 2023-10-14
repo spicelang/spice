@@ -76,7 +76,8 @@ std::string SymbolType::TypeChainElement::getName(bool withSize) const {
     return "string";
   case TY_BOOL:
     return "bool";
-  case TY_STRUCT: {
+  case TY_STRUCT: // fall-through
+  case TY_INTERFACE: {
     std::string templateStr;
     if (!templateTypes.empty()) {
       for (const auto &templateType : templateTypes) {
@@ -88,8 +89,6 @@ std::string SymbolType::TypeChainElement::getName(bool withSize) const {
     }
     return subType + templateStr;
   }
-  case TY_INTERFACE:
-    return "interface(" + subType + ")";
   case TY_ENUM:
     return "enum";
   case TY_GENERIC:

@@ -90,13 +90,13 @@ type LivingBeing struct {
 }
 
 type Human struct : MakeSound, Speak {
-    LivingBeing livingBeing
+    compose LivingBeing livingBeing
     string firstName
     string lastName
 }
 
 type Parrot struct : MakeSound, Speak {
-    LivingBeing livingBeing
+    compose LivingBeing livingBeing
     string name
 }
 

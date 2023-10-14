@@ -115,14 +115,14 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
       // Copy interface scope
       const std::string newScopeName = INTERFACE_SCOPE_PREFIX + newSignature;
       matchScope->copyChildScope(INTERFACE_SCOPE_PREFIX + presetInterface.name, newScopeName);
-      substantiatedInterface->interfaceScope = matchScope->getChildScope(newScopeName);
-      assert(substantiatedInterface->interfaceScope != nullptr);
-      substantiatedInterface->interfaceScope->isGenericScope = false;
+      substantiatedInterface->scope = matchScope->getChildScope(newScopeName);
+      assert(substantiatedInterface->scope != nullptr);
+      substantiatedInterface->scope->isGenericScope = false;
 
       // Attach the template types to the new interface entry
       SymbolType entryType = substantiatedInterface->entry->getType();
       entryType.setTemplateTypes(substantiatedInterface->getTemplateTypes());
-      entryType.setBodyScope(substantiatedInterface->interfaceScope);
+      entryType.setBodyScope(substantiatedInterface->scope);
       substantiatedInterface->entry->updateType(entryType, true);
 
       // Replace symbol types of method entries with concrete types

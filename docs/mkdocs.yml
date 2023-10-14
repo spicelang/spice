@@ -79,8 +79,9 @@ nav:
     - cli/install.md
     - cli/uninstall.md
   - Tutorials:
-    - how-to/web-assembly.md
+    - how-to/oop.md
     - how-to/cli-parser.md
+    - how-to/web-assembly.md
   - Documentation:
     - language/hello-world.md
     - language/main-function.md

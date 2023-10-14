@@ -29,6 +29,7 @@ class Interface;
 // Constants
 const char *const STROBJ_NAME = "String";
 const char *const ERROBJ_NAME = "Error";
+const char *const TIOBJ_NAME = "TypeInfo";
 const long ARRAY_SIZE_UNKNOWN = 0;
 
 enum SymbolSuperType : uint8_t {
@@ -70,6 +71,15 @@ public:
   // Structs
   struct TypeChainElement {
   public:
+    // Constructors
+    TypeChainElement() = default;
+    explicit TypeChainElement(SymbolSuperType superType) : superType(superType){};
+    TypeChainElement(SymbolSuperType superType, std::string subType) : superType(superType), subType(std::move(subType)){};
+    TypeChainElement(SymbolSuperType superType, TypeChainElementData data) : superType(superType), data(data){};
+    TypeChainElement(SymbolSuperType superType, std::string subType, TypeChainElementData data,
+                     const std::vector<SymbolType> &templateTypes)
+        : superType(superType), subType(std::move(subType)), data(data), templateTypes(templateTypes){};
+
     // Overloaded operators
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs);
     friend bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs);
@@ -97,7 +107,7 @@ public:
       : typeChain({TypeChainElement{superType, subType}}), specifiers(TypeSpecifiers::of(superType)) {}
   SymbolType(SymbolSuperType superType, const std::string &subType, const TypeChainElementData &data,
              const std::vector<SymbolType> &templateTypes)
-      : typeChain({TypeChainElement{superType, subType, data, templateTypes}}), specifiers(TypeSpecifiers::of(superType)) {}
+      : typeChain({TypeChainElement(superType, subType, data, templateTypes)}), specifiers(TypeSpecifiers::of(superType)) {}
   explicit SymbolType(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
   SymbolType(TypeChain types, TypeSpecifiers specifiers) : typeChain(std::move(types)), specifiers(specifiers) {}
 
@@ -200,6 +210,9 @@ public:
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
   [[nodiscard]] bool matches(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
+
+  // Static util methods
+  static void unwrapBoth(SymbolType &typeA, SymbolType &typeB);
 
   // Public members
   TypeChain typeChain;

@@ -10,11 +10,12 @@ type V dyn;
 
 public type HashTable<K, V> struct {
     Vector<LinkedList<Pair<K, V>>> table
-    unsigned long size = 0l
+    unsigned long bucketCount
 }
 
-public p HashTable.ctor(unsigned long initialBucketCount = 10l) {
-    this.table = Vector<LinkedList<Pair<K, V>>>(initialBucketCount);
+public p HashTable.ctor(unsigned long bucketCount = 100l) {
+    this.bucketCount = bucketCount;
+    this.table = Vector<LinkedList<Pair<K, V>>>(bucketCount);
 }
 
 public p HashTable.insert(const K& key, const V& value) {
@@ -57,5 +58,5 @@ public f<V*> HashTable.get(const K& key) {
 }
 
 inline f<unsigned long> HashTable.hash(const K& key) {
-    return hash(key);
+    return hash(key) % this.bucketCount;
 }

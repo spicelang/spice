@@ -43,7 +43,7 @@ class DeclStmtNode;
 class SpecifierLstNode;
 class SpecifierNode;
 class ModAttrNode;
-class FctAttrNode;
+class TopLevelDefinitionAttrNode;
 class AttrLstNode;
 class AttrNode;
 class ImportStmtNode;
@@ -125,7 +125,7 @@ public:
   virtual std::any visitSpecifierLst(const SpecifierLstNode *node);
   virtual std::any visitSpecifier(const SpecifierNode *node);
   virtual std::any visitModAttr(const ModAttrNode *node);
-  virtual std::any visitFctAttr(const FctAttrNode *node);
+  virtual std::any visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNode *node);
   virtual std::any visitAttrLst(const AttrLstNode *node);
   virtual std::any visitAttr(const AttrNode *node);
   virtual std::any visitImportStmt(const ImportStmtNode *node);

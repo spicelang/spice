@@ -59,7 +59,7 @@ public:
   std::any visitSpecifierLst(SpecifierLstNode *ctx) override { return buildNode(ctx); }
   std::any visitSpecifier(SpecifierNode *ctx) override { return buildNode(ctx); }
   std::any visitModAttr(ModAttrNode *ctx) override { return buildNode(ctx); }
-  std::any visitFctAttr(FctAttrNode *ctx) override { return buildNode(ctx); }
+  std::any visitTopLevelDefinitionAttr(TopLevelDefinitionAttrNode *ctx) override { return buildNode(ctx); }
   std::any visitAttrLst(AttrLstNode *ctx) override { return buildNode(ctx); }
   std::any visitAttr(AttrNode *ctx) override { return buildNode(ctx); }
   std::any visitImportStmt(ImportStmtNode *ctx) override { return buildNode(ctx); }

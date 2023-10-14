@@ -10,6 +10,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class Function;
+class StructBase;
 class Struct;
 class Interface;
 
@@ -46,13 +47,18 @@ public:
   // Public methods
   [[nodiscard]] static std::string mangleFunction(const Function &spiceFunc);
   [[nodiscard]] static std::string mangleStruct(const Struct &spiceStruct);
-  [[nodiscard]] static std::string mangleType(const SymbolType &type);
+  [[nodiscard]] static std::string mangleInterface(const Interface &spiceInterface);
+  [[nodiscard]] static std::string mangleTypeInfoName(const StructBase *structBase);
+  [[nodiscard]] static std::string mangleTypeInfo(const StructBase *structBase);
+  [[nodiscard]] static std::string mangleVTable(const StructBase *structBase);
+  [[nodiscard]] static std::string mangleVTable(const std::string &typeName);
 
 private:
   // Typedefs
   using TypeChainElement = SymbolType::TypeChainElement;
 
   // Private methods
+  static void mangleName(std::stringstream &out, const std::string &name, bool &nestedType);
   static void mangleType(std::stringstream &out, const SymbolType &type);
   static void mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, bool signedness);
 };

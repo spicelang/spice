@@ -38,8 +38,8 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
     if (lhs.matches(rhsModified, false, !lhs.isRef(), true))
       return lhs;
   }
-  // Allow arrays, structs, functions, procedures of the same type straight away
-  if (lhs.isOneOf({TY_ARRAY, TY_STRUCT, TY_FUNCTION, TY_PROCEDURE}) && lhs.matches(rhs, false, true, true))
+  // Allow arrays, structs, interfaces, functions, procedures of the same type straight away
+  if (lhs.isOneOf({TY_ARRAY, TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}) && lhs.matches(rhs, false, true, true))
     return rhs;
   // Allow array to pointer
   if (lhs.isPtr() && rhs.isArray() && lhs.getContainedTy().matches(rhs.getContainedTy(), false, false, true))
@@ -48,12 +48,16 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
   if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING) && lhs.specifiers == rhs.specifiers)
     return lhs;
   // Allow interface = struct that implements this interface
-  if (lhs.is(TY_INTERFACE) && rhs.is(TY_STRUCT)) {
-    Struct *spiceStruct = rhs.getStruct(node);
+  if (lhs.isBaseType(TY_INTERFACE) && rhs.isBaseType(TY_STRUCT) && lhs.typeChain.size() == rhs.typeChain.size()) {
+    SymbolType lhsCopy = lhs;
+    SymbolType rhsCopy = rhs;
+    SymbolType::unwrapBoth(lhsCopy, rhsCopy);
+
+    Struct *spiceStruct = rhsCopy.getStruct(node);
     assert(spiceStruct != nullptr);
     for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
       assert(interfaceType.is(TY_INTERFACE));
-      if (lhs.matches(interfaceType, false, false, true))
+      if (lhsCopy.matches(interfaceType, false, false, true))
         return lhs;
     }
   }

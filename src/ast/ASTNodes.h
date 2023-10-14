@@ -204,7 +204,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitMainFctDef(this); }
 
   // Public get methods
-  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
+  [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
@@ -266,7 +266,7 @@ public:
   using ASTNode::ASTNode;
 
   // Public get methods
-  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
+  [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
@@ -338,6 +338,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStructDef(this); }
 
   // Public get methods
+  [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
@@ -356,6 +357,7 @@ public:
   std::string structName;
   bool hasTemplateTypes = false;
   bool hasInterfaces = false;
+  bool emitVTable = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers structSpecifiers = TypeSpecifiers::of(TY_STRUCT);
   std::vector<Struct *> structManifestations;
@@ -489,7 +491,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitExtDecl(this); }
 
   // Public get methods
-  [[nodiscard]] FctAttrNode *attrs() const { return getChild<FctAttrNode>(); }
+  [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
   [[nodiscard]] TypeLstNode *argTypeLst() const { return getChild<TypeLstNode>(); }
 
@@ -982,16 +984,16 @@ public:
   [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
 };
 
-// ========================================================== FctAttrNode ========================================================
+// =================================================== TopLevelDefinitionAttrNode ================================================
 
-class FctAttrNode : public ASTNode {
+class TopLevelDefinitionAttrNode : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctAttr(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctAttr(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTopLevelDefinitionAttr(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitTopLevelDefinitionAttr(this); }
 
   // Public get methods
   [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
@@ -1026,6 +1028,7 @@ public:
   static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
   static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
   static constexpr const char *const ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
+  static constexpr const char *const ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
 
   // Constructors
   using ASTNode::ASTNode;

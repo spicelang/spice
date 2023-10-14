@@ -384,7 +384,15 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   // Build struct object
   Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, templateTypesGeneric, interfaceTypes, node);
   StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
-  spiceStruct.structScope = node->structScope;
+  spiceStruct.scope = node->structScope;
+
+  // Request RTTI runtime if the struct is polymorphic
+  AttrNode *attr = node->attrs() ? node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_EMIT_VTABLE) : nullptr;
+  if (node->hasInterfaces || (attr && attr->value()->compileTimeValue.boolValue)) {
+    if (!sourceFile->isRttiRT())
+      sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
+    node->emitVTable = true;
+  }
 
   return nullptr;
 }
@@ -441,7 +449,11 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   // Build interface object
   Interface spiceInterface(node->interfaceName, node->entry, node->interfaceScope, signatures, templateTypesGeneric, node);
   InterfaceManager::insertInterface(currentScope, spiceInterface, &node->interfaceManifestations);
-  spiceInterface.interfaceScope = node->interfaceScope;
+  spiceInterface.scope = node->interfaceScope;
+
+  // Request RTTI runtime, that is always required when dealing with interfaces due to polymorphism
+  if (!sourceFile->isRttiRT())
+    sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
 
   return nullptr;
 }

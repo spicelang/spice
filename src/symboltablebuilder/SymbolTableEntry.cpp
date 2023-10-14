@@ -62,7 +62,7 @@ const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declNode->codeL
  * @return LLVM type of the current struct symbol
  */
 llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
-  assert(type.is(TY_STRUCT));
+  assert(type.isOneOf({TY_STRUCT, TY_INTERFACE}));
   return llvmStructType;
 }
 
@@ -72,7 +72,7 @@ llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
  * @param newStructType New struct LLVM type
  */
 void SymbolTableEntry::setStructLLVMType(llvm::StructType *newStructType) {
-  assert(type.is(TY_STRUCT));
+  assert(type.isOneOf({TY_STRUCT, TY_INTERFACE}));
   llvmStructType = newStructType;
 }
 

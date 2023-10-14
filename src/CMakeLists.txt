@@ -88,6 +88,7 @@ set(SOURCES
         irgenerator/GenExpressions.cpp
         irgenerator/GenValues.cpp
         irgenerator/GenImplicit.cpp
+        irgenerator/GenVTable.cpp
         irgenerator/StdFunctionManager.cpp
         irgenerator/StdFunctionManager.h
         irgenerator/OpRuleConversionManager.cpp
@@ -110,6 +111,8 @@ set(SOURCES
         # Model
         model/Function.cpp
         model/Function.h
+        model/StructBase.cpp
+        model/StructBase.h
         model/Struct.cpp
         model/Struct.h
         model/Interface.cpp
