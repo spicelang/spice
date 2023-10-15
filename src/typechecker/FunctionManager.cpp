@@ -284,15 +284,14 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
  * If more than one function matches the requirement, an error gets thrown.
  *
  * @param matchScope Scope to match against
+ * @param spiceInterface Interface that triggered the matching
  * @param requestedName Function name requirement
- * @param templateTypeHints Template types to substantiate generic types
  * @param requestedParamTypes Argument types requirement
  * @param requestedReturnType Return type requirement
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
- * @param callNode Call AST node for printing error messages
  * @return Matched or not
  */
-bool FunctionManager::matchInterfaceMethod(Scope *matchScope, const std::string &requestedName,
+bool FunctionManager::matchInterfaceMethod(Scope *matchScope, Interface *spiceInterface, const std::string &requestedName,
                                            const std::vector<SymbolType> &requestedParamTypes,
                                            const SymbolType &requestedReturnType, bool strictSpecifierMatching) {
   // Copy the registry to prevent iterating over items, that are created within the loop
@@ -302,7 +301,7 @@ bool FunctionManager::matchInterfaceMethod(Scope *matchScope, const std::string 
   for (const auto &[defCodeLocStr, m] : functionRegistry) {
     // Copy the manifestation list to prevent iterating over items, that are created within the loop
     const FunctionManifestationList manifestations = m;
-    for (const auto &[mangledName, presetFunction] : manifestations) {
+    for (const auto &[_, presetFunction] : manifestations) {
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
       // Skip generic substantiations to prevent double matching of a function
@@ -320,6 +319,9 @@ bool FunctionManager::matchInterfaceMethod(Scope *matchScope, const std::string 
       TypeMapping &typeMapping = candidate.typeMapping;
       typeMapping.clear();
       typeMapping.reserve(candidate.templateTypes.size());
+
+      // Unite type mapping with type mapping from 'this' type
+      typeMapping.insert(spiceInterface->typeMapping.begin(), spiceInterface->typeMapping.end());
 
       // Check arg types requirement
       bool forceSubstantiation = false;
@@ -433,8 +435,10 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
  */
 bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedArgTypes,
                                     TypeMapping &typeMapping, bool strictSpecifierMatching, bool &needsSubstantiation) {
+  std::vector<Param> &candidateParamList = candidate.paramList;
+
   // If the number of arguments does not match with the number of params, the matching fails
-  if (requestedArgTypes.size() != candidate.paramList.size())
+  if (requestedArgTypes.size() != candidateParamList.size())
     return false;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
@@ -446,8 +450,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const std::vector<Symbo
   for (size_t i = 0; i < requestedArgTypes.size(); i++) {
     // Retrieve actual and requested types
     const SymbolType &requestedParamType = requestedArgTypes.at(i);
-    assert(!candidate.paramList.at(i).isOptional);
-    SymbolType &candidateParamType = candidate.paramList.at(i).type;
+    assert(!candidateParamList.at(i).isOptional);
+    SymbolType &candidateParamType = candidateParamList.at(i).type;
 
     // Check if the requested param type matches the candidate param type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateParamType, requestedParamType, typeMapping, genericTypeResolver,

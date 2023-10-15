@@ -6,6 +6,7 @@
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {
 
@@ -135,34 +136,53 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 }
 
 std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
-  // Change to generic struct scope
-  currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + node->structName);
-  assert(currentScope != nullptr && currentScope->type == ScopeType::STRUCT);
+  node->resizeToNumberOfManifestations(node->structManifestations.size());
+  manIdx = 0; // Reset the manifestation index
 
-  // Check if the struct implements all methods of all attached interfaces
-  for (const SymbolType &interfaceType : node->structManifestations.front()->interfaceTypes) {
-    // Retrieve interface instance
-    const std::string interfaceName = interfaceType.getOriginalSubType();
-    Scope *matchScope = interfaceType.getBodyScope()->parent;
-    Interface *interface = InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
-    assert(interface != nullptr);
-
-    // Check for all methods, that it is implemented by the struct
-    for (const Function *expectedMethod : interface->methods) {
-      const std::string methodName = expectedMethod->name;
-      const std::vector<SymbolType> params = expectedMethod->getParamTypes();
-      const SymbolType &returnType = expectedMethod->returnType;
-      bool success = FunctionManager::matchInterfaceMethod(currentScope, methodName, params, returnType, true);
-      if (!success)
-        softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
-                  "The struct '" + node->structName + "' does not implement the method '" + expectedMethod->getSignature() +
-                      "', requested of interface '" + interface->name + "'");
+  // Get all manifestations for this procedure definition
+  for (auto &manifestation : node->structManifestations) {
+    // Skip non-substantiated or already checked procedures
+    if (!manifestation->isFullySubstantiated()) {
+      manIdx++; // Increase the manifestation index
+      continue;
     }
-  }
 
-  // Return to the root scope
-  currentScope = rootScope;
-  assert(currentScope != nullptr && currentScope->type == ScopeType::GLOBAL);
+    // Change to struct scope
+    changeToScope(manifestation->scope, ScopeType::STRUCT);
+
+    // Check if the struct implements all methods of all attached interfaces
+    for (const SymbolType &interfaceType : manifestation->interfaceTypes) {
+      // Retrieve interface instance
+      const std::string interfaceName = interfaceType.getOriginalSubType();
+      Scope *matchScope = interfaceType.getBodyScope()->parent;
+      Interface *interface = InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
+      assert(interface != nullptr);
+
+      // Check for all methods, that it is implemented by the struct
+      for (const Function *expectedMethod : interface->methods) {
+        const std::string methodName = expectedMethod->name;
+        std::vector<SymbolType> params = expectedMethod->getParamTypes();
+        SymbolType returnType = expectedMethod->returnType;
+
+        // Substantiate
+        TypeMatcher::substantiateTypesWithTypeMapping(params, interface->typeMapping);
+        if (returnType.hasAnyGenericParts())
+          TypeMatcher::substantiateTypeWithTypeMapping(returnType, interface->typeMapping);
+
+        bool success = FunctionManager::matchInterfaceMethod(currentScope, interface, methodName, params, returnType, true);
+        if (!success)
+          softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
+                    "The struct '" + node->structName + "' does not implement method '" + expectedMethod->getSignature() + "'");
+      }
+    }
+
+    // Return to the root scope
+    currentScope = rootScope;
+    assert(currentScope != nullptr && currentScope->type == ScopeType::GLOBAL);
+
+    manIdx++; // Increase the manifestation index
+  }
+  manIdx = 0; // Reset the manifestation index
 
   return nullptr;
 }

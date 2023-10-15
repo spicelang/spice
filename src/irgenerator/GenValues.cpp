@@ -73,7 +73,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     assert(!data.isCtorCall());
 
     // Retrieve entry of the first fragment
-    assert(firstFragEntry != nullptr && firstFragEntry->getType().isBaseType(TY_STRUCT));
+    assert(firstFragEntry != nullptr && firstFragEntry->getType().getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}));
     Scope *structScope = firstFragEntry->getType().getBaseType().getBodyScope();
 
     // Get address of the referenced variable / struct instance
@@ -177,7 +177,9 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // Function is not defined in the current module -> declare it
   llvm::FunctionType *fctType = nullptr;
-  if (!module->getFunction(mangledName)) {
+  if (llvm::Function *fct = module->getFunction(mangledName)) {
+    fctType = fct->getFunctionType();
+  } else {
     // Get returnType
     llvm::Type *returnType = builder.getVoidTy();
     if (!returnSType.is(TY_DYN))
@@ -196,6 +198,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     if (!data.isFctPtrCall())
       module->getOrInsertFunction(mangledName, fctType);
   }
+  assert(fctType != nullptr);
 
   llvm::Value *result;
   if (data.isFctPtrCall()) {
@@ -208,7 +211,6 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr);
 
     // Generate function call
-    assert(fctType != nullptr);
     result = builder.CreateCall({fctType, fct}, argValues);
   } else {
     // Get callee function

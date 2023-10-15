@@ -133,6 +133,25 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
         fieldEntry->updateType(substantiatedStruct->fieldTypes.at(i), /*overwriteExistingType=*/true);
       }
 
+      // Instantiate implemented interfaces if required
+      for (SymbolType &interfaceType : substantiatedStruct->interfaceTypes) {
+        // Skip non-generic interfaces
+        if (!interfaceType.hasAnyGenericParts())
+          continue;
+
+        // Build template types
+        std::vector<SymbolType> templateTypes = interfaceType.getTemplateTypes();
+        TypeMatcher::substantiateTypesWithTypeMapping(templateTypes, typeMapping);
+
+        // Instantiate interface
+        Scope *interfaceMatchScope = interfaceType.getBodyScope()->parent;
+        Interface *spiceInterface = InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getOriginalSubType(),
+                                                                     templateTypes, node);
+        assert(spiceInterface != nullptr);
+
+        interfaceType = spiceInterface->entry->getType();
+      }
+
       // Add to matched structs
       matches.push_back(substantiatedStruct);
     }

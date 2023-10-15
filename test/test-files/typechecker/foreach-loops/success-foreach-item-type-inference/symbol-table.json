@@ -73,7 +73,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "next<generic(T)>()",
+          "name": "next<T>()",
           "symbols": [
             {
               "codeLoc": "L27C1",
@@ -82,14 +82,14 @@
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "MockIterator<generic(T)>*"
+              "type": "MockIterator<T>*"
             }
           ]
         },
         {
           "captures": [],
           "children": [],
-          "name": "bool isValid<generic(T)>()",
+          "name": "bool isValid<T>()",
           "symbols": [
             {
               "codeLoc": "L23C1",
@@ -107,17 +107,17 @@
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "MockIterator<generic(T)>*"
+              "type": "MockIterator<T>*"
             }
           ]
         },
         {
           "captures": [],
           "children": [],
-          "name": "std/data/pair::Pair<unsigned long,generic(T)&> getIdx<generic(T)>()",
+          "name": "T& get<T>()",
           "symbols": [
             {
-              "codeLoc": "L19C1",
+              "codeLoc": "L15C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "result",
@@ -126,13 +126,29 @@
               "type": "invalid"
             },
             {
-              "codeLoc": "L19C1",
+              "codeLoc": "L15C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "MockIterator<generic(T)>*"
+              "type": "MockIterator<T>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "ctor<T>()",
+          "symbols": [
+            {
+              "codeLoc": "L11C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<T>*"
             }
           ]
         },
@@ -155,10 +171,10 @@
         {
           "captures": [],
           "children": [],
-          "name": "generic(T)& get<generic(T)>()",
+          "name": "std/data/pair::Pair<unsigned long,T&> getIdx<T>()",
           "symbols": [
             {
-              "codeLoc": "L15C1",
+              "codeLoc": "L19C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "result",
@@ -167,29 +183,13 @@
               "type": "invalid"
             },
             {
-              "codeLoc": "L15C1",
+              "codeLoc": "L19C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "MockIterator<generic(T)>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "ctor<generic(T)>()",
-          "symbols": [
-            {
-              "codeLoc": "L11C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<generic(T)>*"
+              "type": "MockIterator<T>*"
             }
           ]
         }
@@ -230,7 +230,7 @@
           "name": "get:L15C1",
           "orderIndex": 3,
           "state": "declared",
-          "type": "f<generic(T)&>()"
+          "type": "f<T&>()"
         },
         {
           "codeLoc": "L19C1",
@@ -239,7 +239,7 @@
           "name": "getIdx:L19C1",
           "orderIndex": 4,
           "state": "declared",
-          "type": "f<std/data/pair::Pair<unsigned long,generic(T)&>>()"
+          "type": "f<std/data/pair::Pair<unsigned long,T&>>()"
         },
         {
           "codeLoc": "L8C5",
@@ -266,7 +266,7 @@
           "name": "get:L15C1",
           "orderIndex": 3,
           "state": "declared",
-          "type": "f<generic(T)&>()"
+          "type": "f<T&>()"
         },
         {
           "codeLoc": "L23C1",
@@ -345,7 +345,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "next<generic(T)>()",
+          "name": "next<T>()",
           "symbols": [
             {
               "codeLoc": "L27C1",
@@ -354,14 +354,14 @@
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "MockIterator<generic(T)>*"
+              "type": "MockIterator<T>*"
             }
           ]
         },
         {
           "captures": [],
           "children": [],
-          "name": "bool isValid<generic(T)>()",
+          "name": "bool isValid<T>()",
           "symbols": [
             {
               "codeLoc": "L23C1",
@@ -379,39 +379,14 @@
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "MockIterator<generic(T)>*"
+              "type": "MockIterator<T>*"
             }
           ]
         },
         {
           "captures": [],
           "children": [],
-          "name": "std/data/pair::Pair<unsigned long,generic(T)&> getIdx<generic(T)>()",
-          "symbols": [
-            {
-              "codeLoc": "L19C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "result",
-              "orderIndex": 1,
-              "state": "declared",
-              "type": "invalid"
-            },
-            {
-              "codeLoc": "L19C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<generic(T)>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "generic(T)& get<generic(T)>()",
+          "name": "T& get<T>()",
           "symbols": [
             {
               "codeLoc": "L15C1",
@@ -429,14 +404,14 @@
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "MockIterator<generic(T)>*"
+              "type": "MockIterator<T>*"
             }
           ]
         },
         {
           "captures": [],
           "children": [],
-          "name": "ctor<generic(T)>()",
+          "name": "ctor<T>()",
           "symbols": [
             {
               "codeLoc": "L11C1",
@@ -445,7 +420,32 @@
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "MockIterator<generic(T)>*"
+              "type": "MockIterator<T>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "std/data/pair::Pair<unsigned long,T&> getIdx<T>()",
+          "symbols": [
+            {
+              "codeLoc": "L19C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "declared",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L19C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<T>*"
             }
           ]
         }
@@ -468,7 +468,7 @@
           "name": "get:L15C1",
           "orderIndex": 3,
           "state": "declared",
-          "type": "f<generic(T)&>()"
+          "type": "f<T&>()"
         },
         {
           "codeLoc": "L19C1",
@@ -477,7 +477,7 @@
           "name": "getIdx:L19C1",
           "orderIndex": 4,
           "state": "declared",
-          "type": "f<std/data/pair::Pair<unsigned long,generic(T)&>>()"
+          "type": "f<std/data/pair::Pair<unsigned long,T&>>()"
         },
         {
           "codeLoc": "L8C5",
@@ -513,7 +513,7 @@
           "name": "item",
           "orderIndex": 0,
           "state": "declared",
-          "type": "generic(T)"
+          "type": "T"
         }
       ]
     }
@@ -544,7 +544,7 @@
       "name": "MockIterator",
       "orderIndex": 2,
       "state": "declared",
-      "type": "MockIterator<generic(T)>"
+      "type": "MockIterator<T>"
     },
     {
       "codeLoc": "L2C1",

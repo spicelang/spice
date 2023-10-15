@@ -427,6 +427,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
 
   // Add signature to current scope
   Function *manifestation = FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
+  manifestation->entry = node->entry;
   manifestation->used = true;
 
   // Prepare signature type

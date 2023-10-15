@@ -91,10 +91,9 @@ std::string SymbolType::TypeChainElement::getName(bool withSize) const {
   }
   case TY_ENUM:
     return "enum";
-  case TY_GENERIC:
-    return "generic(" + subType + ")";
+  case TY_GENERIC: // fall-through
   case TY_ALIAS:
-    return "alias(" + subType + ")";
+    return subType;
   case TY_DYN:
     return "dyn";
   case TY_FUNCTION: {
