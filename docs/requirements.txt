@@ -1,5 +1,5 @@
 mkdocs-material==9.4.4
 mkdocs-minify-plugin==0.7.1
-mkdocs-git-revision-date-localized-plugin==1.2.0
+mkdocs-git-revision-date-localized-plugin==1.2.1
 mkdocs-git-committers-plugin-2==1.2.0
 lunr==0.7.0.post1
