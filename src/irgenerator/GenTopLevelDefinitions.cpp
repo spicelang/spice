@@ -486,10 +486,23 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     SymbolTableEntry *structEntry = spiceStruct->entry;
     assert(structEntry != nullptr);
     structEntry->setStructLLVMType(structType);
-
-    // Collect concrete field types
     std::vector<llvm::Type *> fieldTypes;
     fieldTypes.reserve(node->fields().size());
+
+    // Collect interface types
+    if (const TypeLstNode *typeLst = node->interfaceTypeLst()) {
+      for (const DataTypeNode *interfaceTypeNode : typeLst->dataTypes()) {
+        const SymbolType symbolType = interfaceTypeNode->getEvaluatedSymbolType(manIdx);
+        assert(symbolType.is(TY_INTERFACE));
+        const Interface *interface = symbolType.getInterface(interfaceTypeNode);
+        assert(interface != nullptr);
+        llvm::StructType *interfaceType = interface->entry->getStructLLVMType();
+        assert(interfaceType != nullptr);
+        fieldTypes.push_back(interfaceType);
+      }
+    }
+
+    // Collect concrete field types
     for (const FieldNode *field : node->fields()) {
       SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
       assert(fieldEntry && !fieldEntry->getType().hasAnyGenericParts());

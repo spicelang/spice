@@ -195,20 +195,28 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       argTypes.push_back(paramType.toLLVMType(context, accessScope));
 
     fctType = llvm::FunctionType::get(returnType, argTypes, false);
-    if (!data.isFctPtrCall())
+    if (!data.isFctPtrCall() && !data.isVirtualMethodCall())
       module->getOrInsertFunction(mangledName, fctType);
   }
   assert(fctType != nullptr);
 
   llvm::Value *result;
-  if (data.isFctPtrCall()) {
+  if (data.isFctPtrCall() || data.isVirtualMethodCall()) {
     // Get entry to load the function pointer
     assert(firstFragEntry != nullptr);
     SymbolType firstFragType = firstFragEntry->getType();
     if (!fctPtr)
       fctPtr = firstFragEntry->getAddress();
     autoDeReferencePtr(fctPtr, firstFragType, currentScope);
-    llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr);
+
+    if (data.isVirtualMethodCall()) { // Virtual method call
+      // Load VTable
+      llvm::Value *vtablePtr = builder.CreateLoad(builder.getPtrTy(), fctPtr, "vtable.addr");
+      const size_t vtableIndex = 0; // ToDo: Add vtable index lookup mechanism
+      // Lookup function pointer in VTable
+      fctPtr = builder.CreateInBoundsGEP(builder.getPtrTy(), vtablePtr, builder.getInt32(vtableIndex), "vfct.addr");
+    }
+    llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr, "fct");
 
     // Generate function call
     result = builder.CreateCall({fctType, fct}, argValues);
@@ -341,6 +349,10 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   if (canBeConstant) { // All field values are constants, so we can create a global constant struct instantiation
     // Collect constants
     std::vector<llvm::Constant *> constants;
+    // For each interface a nullptr
+    for (const SymbolType &interfaceType : spiceStruct->interfaceTypes)
+      constants.push_back(getDefaultValueForSymbolType(interfaceType));
+    // Constant value for each field
     for (const LLVMExprResult &exprResult : fieldValueResults)
       constants.push_back(exprResult.constant);
 
@@ -350,9 +362,23 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     return LLVMExprResult{.constant = constantStruct};
   } else { // We have at least one non-immediate value, so we need to take normal struct instantiation as fallback
     llvm::Value *structAddr = insertAlloca(structType);
+    const size_t interfaceCount = spiceStruct->interfaceTypes.size();
+    const size_t fieldCount = spiceStruct->fieldTypes.size();
+    size_t i = 0;
+
+    // Store interface values at their corresponding offsets
+    for (; i < interfaceCount; i++) {
+      const SymbolType &interfaceType = spiceStruct->interfaceTypes.at(i);
+      // Get field value
+      llvm::Value *itemValue = getDefaultValueForSymbolType(interfaceType);
+      // Get field address
+      llvm::Value *currentFieldAddress = builder.CreateStructGEP(structType, structAddr, i);
+      // Store the item value
+      builder.CreateStore(itemValue, currentFieldAddress);
+    }
 
     // Store all field values at their corresponding offsets
-    for (size_t i = 0; i < fieldValueResults.size(); i++) {
+    for (; i < interfaceCount + fieldCount; i++) {
       LLVMExprResult &exprResult = fieldValueResults.at(i);
       // Get field value
       llvm::Value *itemValue = fieldTypes.at(i).isRef() ? resolveAddress(exprResult) : resolveValue(exprResult.node, exprResult);

@@ -218,6 +218,16 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     return llvm::ConstantStruct::get(structType, fieldConstants);
   }
 
+  // Interface
+  if (symbolType.is(TY_INTERFACE)) {
+    // Retrieve struct type
+    Scope *interfaceScope = symbolType.getBodyScope();
+    assert(interfaceScope != nullptr);
+    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, interfaceScope));
+
+    return llvm::ConstantStruct::get(structType, llvm::Constant::getNullValue(builder.getPtrTy()));
+  }
+
   throw CompilerError(INTERNAL_ERROR, "Cannot determine default value for symbol type"); // GCOV_EXCL_LINE
 }
 
