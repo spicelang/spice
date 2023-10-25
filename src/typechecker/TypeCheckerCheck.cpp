@@ -150,6 +150,9 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     // Change to struct scope
     changeToScope(manifestation->scope, ScopeType::STRUCT);
 
+    // Build struct type
+    const SymbolType structType = manifestation->entry->getType();
+
     // Check if the struct implements all methods of all attached interfaces
     for (const SymbolType &interfaceType : manifestation->interfaceTypes) {
       // Retrieve interface instance
@@ -169,10 +172,15 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         if (returnType.hasAnyGenericParts())
           TypeMatcher::substantiateTypeWithTypeMapping(returnType, interface->typeMapping);
 
-        bool success = FunctionManager::matchInterfaceMethod(currentScope, interface, methodName, params, returnType, true);
-        if (!success)
+        Function *spiceFunction = FunctionManager::matchFunction(currentScope, methodName, structType, params, true, nullptr);
+        if (!spiceFunction) {
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                     "The struct '" + node->structName + "' does not implement method '" + expectedMethod->getSignature() + "'");
+          continue;
+        }
+
+        // Set to virtual, since it overrides the interface method
+        spiceFunction->isVirtual = true;
       }
     }
 

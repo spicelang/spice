@@ -28,6 +28,10 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
   // Generate IR
   visitChildren(node);
 
+  // Execute deferred VTable initializations
+  for (DeferredLogic &deferredVTableInit : deferredVTableInitializations)
+    deferredVTableInit.execute();
+
   // Finalize debug info generator
   diGenerator.finalize();
 

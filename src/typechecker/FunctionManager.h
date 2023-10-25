@@ -43,9 +43,6 @@ public:
   static Function *matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
                                  const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
                                  const ASTNode *callNode);
-  [[nodiscard]] static bool matchInterfaceMethod(Scope *matchScope, Interface *spiceInterface, const std::string &requestedName,
-                                                 const std::vector<SymbolType> &requestedParamTypes,
-                                                 const SymbolType &requestedReturnType, bool strictSpecifierMatching);
 
 private:
   // Private methods

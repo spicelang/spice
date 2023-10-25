@@ -441,8 +441,10 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
       return nullptr;
 
     // Set 'this' type
-    for (Function *m : *method)
+    for (Function *m : *method) {
+      m->isVirtual = true; // Interface methods are always virtual
       m->thisType = interfaceType;
+    }
 
     methods.insert(methods.end(), method->begin(), method->end());
   }

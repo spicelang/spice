@@ -10,11 +10,12 @@ namespace spice::compiler {
 struct DeferredLogic {
 public:
   // Constructors
-  explicit DeferredLogic(std::function<void()> deferredFunc) : deferredFunc(std::move(deferredFunc)) {}
+  explicit DeferredLogic(std::function<void()> deferredFunc, bool triggerOnDestruct = true)
+      : deferredFunc(std::move(deferredFunc)), triggerOnDestruct(triggerOnDestruct) {}
 
   // Destructor
   ~DeferredLogic() {
-    if (!alreadyExecuted)
+    if (triggerOnDestruct && !alreadyExecuted)
       deferredFunc();
   }
 
@@ -27,6 +28,7 @@ public:
 private:
   // Private members
   std::function<void()> deferredFunc;
+  bool triggerOnDestruct;
   bool alreadyExecuted = false;
 };
 

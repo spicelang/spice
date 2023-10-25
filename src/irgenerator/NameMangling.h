@@ -49,6 +49,7 @@ public:
   [[nodiscard]] static std::string mangleStruct(const Struct &spiceStruct);
   [[nodiscard]] static std::string mangleInterface(const Interface &spiceInterface);
   [[nodiscard]] static std::string mangleTypeInfoName(const StructBase *structBase);
+  [[nodiscard]] static std::string mangleTypeInfoValue(const std::string &value);
   [[nodiscard]] static std::string mangleTypeInfo(const StructBase *structBase);
   [[nodiscard]] static std::string mangleVTable(const StructBase *structBase);
   [[nodiscard]] static std::string mangleVTable(const std::string &typeName);

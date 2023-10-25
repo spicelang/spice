@@ -128,7 +128,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
 std::any IRGenerator::visitFctDef(const FctDefNode *node) {
   // Loop through manifestations
   manIdx = 0; // Reset the symbolTypeIndex
-  for (const Function *manifestation : node->manifestations) {
+  for (Function *manifestation : node->manifestations) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
@@ -201,6 +201,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     module->getOrInsertFunction(mangledName, funcType);
     llvm::Function *func = module->getFunction(mangledName);
     node->entry->updateAddress(func);
+    manifestation->llvmFunction = func;
 
     // Set attributes to function
     func->setDSOLocal(true);
@@ -294,7 +295,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
   // Loop through manifestations
   manIdx = 0; // Reset the symbolTypeIndex
-  for (const Function *manifestation : node->manifestations) {
+  for (Function *manifestation : node->manifestations) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
@@ -368,6 +369,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     module->getOrInsertFunction(mangledName, procType);
     llvm::Function *proc = module->getFunction(mangledName);
     node->entry->updateAddress(proc);
+    manifestation->llvmFunction = proc;
 
     // Set attributes to procedure
     proc->setDSOLocal(true);
@@ -513,8 +515,10 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     structType->setBody(fieldTypes);
 
     // Generate VTable if required
-    if (node->emitVTable)
+    if (node->emitVTable) {
       generateVTable(spiceStruct);
+      deferredVTableInitializations.emplace_back([=, this]() { generateVTableInitializer(spiceStruct); }, false);
+    }
 
     // Generate default ctor if required
     const SymbolType &thisType = structEntry->getType();
@@ -568,6 +572,7 @@ std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
 
     // Generate VTable information
     generateVTable(spiceInterface);
+    deferredVTableInitializations.emplace_back([=, this]() { generateVTableInitializer(spiceInterface); }, false);
   }
 
   return nullptr;

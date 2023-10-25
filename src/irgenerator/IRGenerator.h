@@ -8,6 +8,7 @@
 #include <irgenerator/OpRuleConversionManager.h>
 #include <irgenerator/StdFunctionManager.h>
 #include <symboltablebuilder/Scope.h>
+#include <util/DeferredLogic.h>
 
 namespace spice::compiler {
 
@@ -150,6 +151,7 @@ private:
   llvm::Constant *generateTypeInfoName(StructBase *spiceStruct);
   llvm::Constant *generateTypeInfo(StructBase *spiceStruct);
   llvm::Constant *generateVTable(StructBase *spiceStruct);
+  void generateVTableInitializer(StructBase *spiceStruct);
 
   // Private members
   llvm::LLVMContext &context;
@@ -167,6 +169,7 @@ private:
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
   bool blockAlreadyTerminated = false;
+  std::vector<DeferredLogic> deferredVTableInitializations;
 };
 
 } // namespace spice::compiler

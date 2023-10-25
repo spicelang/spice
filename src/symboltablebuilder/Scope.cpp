@@ -149,14 +149,37 @@ size_t Scope::getFieldCount() const {
 }
 
 /**
- * Get the number of methods if this is a struct scope
+ * Get all virtual methods in this scope, sorted by declaration code location
  *
- * @return Number of methods
+ * @return List of virtual method pointers
  */
-size_t Scope::getMethodCount() const {
+std::vector<Function *> Scope::getVirtualMethods() {
+  assert(type == ScopeType::STRUCT || type == ScopeType::INTERFACE);
+
+  // Collect all virtual methods
+  std::vector<Function *> methods;
+  for (auto &symbol : functions) {
+    assert(!symbol.second.empty());
+    for (auto &fct : symbol.second)
+      if (fct.second.isVirtualMethod())
+        methods.push_back(&functions.at(symbol.first).at(fct.first));
+  }
+
+  // Sort the list
+  std::ranges::sort(methods, [](const Function *a, const Function *b) { return a->getDeclCodeLoc() < b->getDeclCodeLoc(); });
+
+  return methods;
+}
+
+/**
+ * Get the number of virtual methods in this scope
+ *
+ * @return Number of virtual methods
+ */
+size_t Scope::getVirtualMethodCount() const {
   assert(type == ScopeType::STRUCT || type == ScopeType::INTERFACE);
   size_t methodCount = 0;
-  for (const auto& symbol : symbolTable.symbols) {
+  for (const auto &symbol : symbolTable.symbols) {
     const ASTNode *declNode = symbol.second.declNode;
     if (declNode->isFctOrProcDef() || declNode->isStructDef())
       methodCount++;

@@ -200,7 +200,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
   assert(fctType != nullptr);
 
-  llvm::Value *result;
+  llvm::CallInst *result;
   if (data.isFctPtrCall() || data.isVirtualMethodCall()) {
     // Get entry to load the function pointer
     assert(firstFragEntry != nullptr);
@@ -227,6 +227,14 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
     // Generate function call
     result = builder.CreateCall(callee, argValues);
+  }
+
+  if (data.isMethodCall() || data.isCtorCall() || data.isVirtualMethodCall()) {
+    llvm::Type *thisType = data.thisType.toLLVMType(context, currentScope);
+    result->addParamAttr(0, llvm::Attribute::NoUndef);
+    result->addParamAttr(0, llvm::Attribute::NonNull);
+    result->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(thisType));
+    result->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(thisType)));
   }
 
   // Attach address to anonymous symbol to keep track of deallocation

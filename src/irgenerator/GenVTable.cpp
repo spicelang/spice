@@ -23,7 +23,7 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) {
   const std::string globalName = NameMangling::mangleTypeInfoName(spiceStruct);
 
   // Generate global string constant
-  llvm::Constant *typeInfoNameValue = builder.CreateGlobalStringPtr(spiceStruct->name, globalName, 0, module);
+  builder.CreateGlobalStringPtr(NameMangling::mangleTypeInfoValue(spiceStruct->name), globalName, 0, module);
   llvm::GlobalVariable *global = module->getNamedGlobal(globalName);
 
   // Set global attributes
@@ -38,7 +38,6 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) {
 
 llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   assert(spiceStruct->entry != nullptr);
-  const bool isInterface = spiceStruct->entry->getType().is(TY_INTERFACE);
 
   // Generate type info name
   llvm::Constant *typeInfoName = generateTypeInfoName(spiceStruct);
@@ -77,7 +76,8 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
   ensureRTTIRuntime();
 
   // Retrieve virtual method count
-  const size_t virtualMethodCount = spiceStruct->scope->getMethodCount();
+  const std::vector<Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();
+  const size_t virtualMethodCount = virtualMethods.size();
   const size_t arrayElementCount = virtualMethodCount + 2; // +2 for nullptr and TypeInfo
 
   // Generate type info data structures
@@ -88,13 +88,39 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
   llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(ptrTy, arrayElementCount);
   llvm::StructType *vtableTy = llvm::StructType::get(context, vtableArrayTy, false);
 
+  const std::string mangledName = NameMangling::mangleVTable(spiceStruct);
+  module->getOrInsertGlobal(mangledName, vtableTy);
+  llvm::GlobalVariable *global = module->getNamedGlobal(mangledName);
+
+  // Set global attributes
+  global->setConstant(true);
+  global->setDSOLocal(true);
+  global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+  global->setLinkage(llvm::GlobalValue::LinkOnceODRLinkage);
+  global->setComdat(module->getOrInsertComdat(mangledName));
+
+  return global;
+}
+
+void IRGenerator::generateVTableInitializer(StructBase *spiceStruct) {
+  // Retrieve virtual method count
+  assert(spiceStruct->scope);
+  const std::vector<Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();
+  const size_t virtualMethodCount = virtualMethods.size();
+  const size_t arrayElementCount = virtualMethodCount + 2; // +2 for nullptr and TypeInfo
+
+  // Generate VTable type
+  llvm::PointerType *ptrTy = llvm::PointerType::get(context, 0);
+  llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(ptrTy, arrayElementCount);
+  llvm::StructType *vtableTy = llvm::StructType::get(context, vtableArrayTy, false);
+
   // Generate VTable values
   std::vector<llvm::Constant *> arrayValues;
   arrayValues.push_back(llvm::Constant::getNullValue(ptrTy)); // nullptr as safety guard
   arrayValues.push_back(spiceStruct->typeInfo);               // TypeInfo to identify the type for the VTable
-  for (size_t i = 0; i < virtualMethodCount; i++) {
-    // ToDo
-    arrayValues.push_back(llvm::Constant::getNullValue(ptrTy));
+  for (Function *virtualMethod : virtualMethods) {
+    assert(spiceStruct->scope->type == ScopeType::INTERFACE || virtualMethod->llvmFunction != nullptr);
+    arrayValues.push_back(virtualMethod->llvmFunction ?: llvm::Constant::getNullValue(ptrTy));
   }
 
   // Generate VTable struct
@@ -103,18 +129,9 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
   spiceStruct->vtable = llvm::ConstantStruct::get(vtableTy, fieldValues);
 
   const std::string mangledName = NameMangling::mangleVTable(spiceStruct);
-  module->getOrInsertGlobal(mangledName, vtableTy);
   llvm::GlobalVariable *global = module->getNamedGlobal(mangledName);
+  assert(global != nullptr);
   global->setInitializer(spiceStruct->vtable);
-
-  // Set global attributes
-  global->setConstant(true);
-  global->setDSOLocal(true);
-  global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::None);
-  global->setLinkage(llvm::GlobalValue::LinkOnceODRLinkage);
-  global->setComdat(module->getOrInsertComdat(mangledName));
-
-  return global;
 }
 
 } // namespace spice::compiler

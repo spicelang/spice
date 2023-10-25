@@ -279,67 +279,6 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
   return matches.front();
 }
 
-/**
- * Check if there is a function in the scope, fulfilling all given requirements and if found, return it.
- * If more than one function matches the requirement, an error gets thrown.
- *
- * @param matchScope Scope to match against
- * @param spiceInterface Interface that triggered the matching
- * @param requestedName Function name requirement
- * @param requestedParamTypes Argument types requirement
- * @param requestedReturnType Return type requirement
- * @param strictSpecifierMatching Match argument and this type specifiers strictly
- * @return Matched or not
- */
-bool FunctionManager::matchInterfaceMethod(Scope *matchScope, Interface *spiceInterface, const std::string &requestedName,
-                                           const std::vector<SymbolType> &requestedParamTypes,
-                                           const SymbolType &requestedReturnType, bool strictSpecifierMatching) {
-  // Copy the registry to prevent iterating over items, that are created within the loop
-  FunctionRegistry functionRegistry = matchScope->functions;
-  // Loop over function registry to find functions, that match the requirements of the call
-  std::vector<Function *> matches;
-  for (const auto &[defCodeLocStr, m] : functionRegistry) {
-    // Copy the manifestation list to prevent iterating over items, that are created within the loop
-    const FunctionManifestationList manifestations = m;
-    for (const auto &[_, presetFunction] : manifestations) {
-      assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
-
-      // Skip generic substantiations to prevent double matching of a function
-      if (presetFunction.genericSubstantiation)
-        continue;
-
-      // Copy the function to be able to substantiate types
-      Function candidate = presetFunction;
-
-      // Check name requirement
-      if (!matchName(candidate, requestedName))
-        break; // Leave the whole manifestation list, because all manifestations in this list have the same name
-
-      // Prepare mapping table from generic type name to concrete type
-      TypeMapping &typeMapping = candidate.typeMapping;
-      typeMapping.clear();
-      typeMapping.reserve(candidate.templateTypes.size());
-
-      // Unite type mapping with type mapping from 'this' type
-      typeMapping.insert(spiceInterface->typeMapping.begin(), spiceInterface->typeMapping.end());
-
-      // Check arg types requirement
-      bool forceSubstantiation = false;
-      if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching, forceSubstantiation))
-        continue; // Leave this manifestation and try the next one
-
-      if (!matchReturnType(candidate, requestedReturnType, typeMapping, strictSpecifierMatching))
-        continue; // Leave this manifestation and try the next one
-
-      // We found a match
-      return true;
-    }
-  }
-
-  // We did not find a match
-  return false;
-}
-
 MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&matchScope, const std::string &requestedName,
                                                 const SymbolType &requestedThisType,
                                                 const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,

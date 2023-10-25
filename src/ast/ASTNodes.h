@@ -276,7 +276,7 @@ public:
   [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(name->name, codeLoc); }
   std::vector<Function *> *getFctManifestations(const std::string &_) override { return &manifestations; }
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   FctNameNode *name;
