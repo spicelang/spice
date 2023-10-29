@@ -49,9 +49,9 @@ define dso_local i32 @main() #1 {
   %1 = load i1, ptr %glued_addr, align 1
   %2 = zext i1 %1 to i32
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %2)
-  %4 = call %struct.Stamp @_ZN6Letter8getStampEv(ptr %letter)
+  %4 = call %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %letter)
   store %struct.Stamp %4, ptr %stamp, align 8
-  call void @_ZN5Stamp5printEv(ptr %stamp)
+  call void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceable(16) %stamp)
   %5 = load i32, ptr %result, align 4
   ret i32 %5
 }

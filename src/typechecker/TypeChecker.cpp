@@ -1576,10 +1576,9 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
   // Retrieve return type
   const bool isFct = data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().is(TY_FUNCTION) : data.callee->isFunction();
-  SymbolType returnType(TY_DYN);
+  SymbolType returnType;
   if (data.isFctPtrCall()) {
-    if (isFct)
-      returnType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
+    returnType = isFct ? firstFragEntry->getType().getBaseType().getFunctionReturnType() : SymbolType(TY_BOOL);
   } else if (data.isCtorCall()) {
     // Set return type to 'this' type
     returnType = data.thisType;
@@ -1592,7 +1591,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
   // Initialize return type if required
   SymbolTableEntry *anonymousSymbol = nullptr;
-  if (returnType.is(TY_STRUCT)) {
+  if (returnType.isBaseType(TY_STRUCT)) {
     SymbolType returnBaseType = returnType.getBaseType();
     const std::string structName = returnBaseType.getOriginalSubType();
     Scope *matchScope = returnBaseType.getBodyScope()->parent;
@@ -2349,7 +2348,7 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
 
 SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const {
   // Skip all types, except structs
-  if (!symbolType.getBaseType().is(TY_STRUCT))
+  if (!symbolType.isBaseType(TY_STRUCT))
     return symbolType;
 
   // If the target scope is in the current source file, we can return the symbol type as is
@@ -2376,7 +2375,7 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
 
 SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const {
   // Skip all types, except structs
-  if (!symbolType.getBaseType().is(TY_STRUCT))
+  if (!symbolType.isBaseType(TY_STRUCT))
     return symbolType;
 
   // If the target scope is in the current source file, we can return the symbol type as is

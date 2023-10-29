@@ -19,7 +19,7 @@ define dso_local i32 @main() #0 {
   %fat.ptr1 = alloca { ptr, ptr }, align 8
   %callbackWithArgs1 = alloca { ptr, ptr }, align 8
   %1 = alloca %struct.String, align 8
-  %fat.ptr2 = alloca { ptr, ptr }, align 8
+  %fat.ptr3 = alloca { ptr, ptr }, align 8
   %callbackWithArgs2 = alloca { ptr, ptr }, align 8
   %2 = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
@@ -28,29 +28,29 @@ define dso_local i32 @main() #0 {
   %4 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %4, ptr %callbackWithoutArgs, align 8
   %5 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithoutArgs, i32 0, i32 0
-  %6 = load ptr, ptr %5, align 8
-  call void %6()
-  %7 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 0
-  store ptr @_Z14lambda.L7C44.0RN11__rt_string6StringEd, ptr %7, align 8
-  %8 = load { ptr, ptr }, ptr %fat.ptr1, align 8
-  store { ptr, ptr } %8, ptr %callbackWithArgs1, align 8
-  %9 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs1, i32 0, i32 0
-  call void @_ZN6String4ctorEPc(ptr %1, ptr @anon.string.0)
-  %10 = load ptr, ptr %9, align 8
-  call void %10(ptr %1, double 3.140000e+00)
-  %11 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 0
-  store ptr @_Z15lambda.L12C41.0N11__rt_string6StringEb, ptr %11, align 8
-  %12 = load { ptr, ptr }, ptr %fat.ptr2, align 8
-  store { ptr, ptr } %12, ptr %callbackWithArgs2, align 8
-  %13 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs2, i32 0, i32 0
-  call void @_ZN6String4ctorEPc(ptr %2, ptr @anon.string.1)
-  %14 = load %struct.String, ptr %2, align 8
-  %15 = load ptr, ptr %13, align 8
-  call void %15(%struct.String %14, i1 false)
+  %fct = load ptr, ptr %5, align 8
+  call void %fct()
+  %6 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 0
+  store ptr @_Z14lambda.L7C44.0RN11__rt_string6StringEd, ptr %6, align 8
+  %7 = load { ptr, ptr }, ptr %fat.ptr1, align 8
+  store { ptr, ptr } %7, ptr %callbackWithArgs1, align 8
+  %8 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs1, i32 0, i32 0
+  call void @_ZN6String4ctorEPc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr @anon.string.0)
+  %fct2 = load ptr, ptr %8, align 8
+  call void %fct2(ptr %1, double 3.140000e+00)
+  %9 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 0
+  store ptr @_Z15lambda.L12C41.0N11__rt_string6StringEb, ptr %9, align 8
+  %10 = load { ptr, ptr }, ptr %fat.ptr3, align 8
+  store { ptr, ptr } %10, ptr %callbackWithArgs2, align 8
+  %11 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs2, i32 0, i32 0
+  call void @_ZN6String4ctorEPc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.1)
+  %12 = load %struct.String, ptr %2, align 8
+  %fct4 = load ptr, ptr %11, align 8
+  call void %fct4(%struct.String %12, i1 false)
   call void @_ZN6String4dtorEv(ptr %2)
   call void @_ZN6String4dtorEv(ptr %1)
-  %16 = load i32, ptr %result, align 4
-  ret i32 %16
+  %13 = load i32, ptr %result, align 4
+  ret i32 %13
 }
 
 define private void @_Z14lambda.L2C31.0v() {

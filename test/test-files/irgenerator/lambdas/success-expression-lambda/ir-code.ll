@@ -67,37 +67,37 @@ for.body.L9:                                      ; preds = %for.head.L9
   %20 = load ptr, ptr %array, align 8
   %21 = getelementptr inbounds [10 x i32], ptr %20, i32 0, i32 %19
   %22 = load i32, ptr %21, align 4
-  %23 = load ptr, ptr %13, align 8
-  %24 = call i1 %23(i32 %17, i32 %22)
-  br i1 %24, label %if.then.L10, label %if.exit.L10
+  %fct = load ptr, ptr %13, align 8
+  %23 = call i1 %fct(i32 %17, i32 %22)
+  br i1 %23, label %if.then.L10, label %if.exit.L10
 
 if.then.L10:                                      ; preds = %for.body.L9
-  %25 = load i32, ptr %j, align 4
-  %26 = load ptr, ptr %array, align 8
-  %27 = getelementptr inbounds [10 x i32], ptr %26, i32 0, i32 %25
-  %28 = load i32, ptr %j, align 4
-  %29 = add i32 %28, 1
-  %30 = load ptr, ptr %array, align 8
-  %31 = getelementptr inbounds [10 x i32], ptr %30, i32 0, i32 %29
-  call void @_Z4swapRiRi(ptr %27, ptr %31)
+  %24 = load i32, ptr %j, align 4
+  %25 = load ptr, ptr %array, align 8
+  %26 = getelementptr inbounds [10 x i32], ptr %25, i32 0, i32 %24
+  %27 = load i32, ptr %j, align 4
+  %28 = add i32 %27, 1
+  %29 = load ptr, ptr %array, align 8
+  %30 = getelementptr inbounds [10 x i32], ptr %29, i32 0, i32 %28
+  call void @_Z4swapRiRi(ptr %26, ptr %30)
   br label %if.exit.L10
 
 if.exit.L10:                                      ; preds = %if.then.L10, %for.body.L9
   br label %for.tail.L9
 
 for.tail.L9:                                      ; preds = %if.exit.L10
-  %32 = load i32, ptr %j, align 4
-  %33 = add i32 %32, 1
-  store i32 %33, ptr %j, align 4
+  %31 = load i32, ptr %j, align 4
+  %32 = add i32 %31, 1
+  store i32 %32, ptr %j, align 4
   br label %for.head.L9
 
 for.exit.L9:                                      ; preds = %for.head.L9
   br label %for.tail.L8
 
 for.tail.L8:                                      ; preds = %for.exit.L9
-  %34 = load i32, ptr %i, align 4
-  %35 = add i32 %34, 1
-  store i32 %35, ptr %i, align 4
+  %33 = load i32, ptr %i, align 4
+  %34 = add i32 %33, 1
+  store i32 %34, ptr %i, align 4
   br label %for.head.L8
 
 for.exit.L8:                                      ; preds = %for.head.L8

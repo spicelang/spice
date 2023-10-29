@@ -201,6 +201,12 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     // Get default values for all fields of the struct
     std::vector<llvm::Constant *> fieldConstants;
     fieldConstants.reserve(fieldCount);
+
+    // Add nullptr for each implemented interface
+    for (size_t i = 0; i < symbolType.getStruct(nullptr)->interfaceTypes.size(); i++)
+      fieldConstants.push_back(llvm::Constant::getNullValue(builder.getPtrTy()));
+
+    // Add default value for each struct field
     for (size_t i = 0; i < fieldCount; i++) {
       // Get entry of the field
       SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupStrictByIndex(i);

@@ -521,7 +521,9 @@ Struct *SymbolType::getStruct(const ASTNode *node) const {
 Interface *SymbolType::getInterface(const ASTNode *node) const {
   assert(is(TY_INTERFACE));
   Scope *interfaceDefScope = getBodyScope()->parent;
-  return InterfaceManager::matchInterface(interfaceDefScope, getSubType(), getTemplateTypes(), node);
+  const std::string structName = getOriginalSubType();
+  const std::vector<SymbolType> &templateTypes = getTemplateTypes();
+  return InterfaceManager::matchInterface(interfaceDefScope, structName, templateTypes, node);
 }
 
 bool operator==(const SymbolType &lhs, const SymbolType &rhs) {

@@ -1,36 +1,60 @@
-import "std/iterator/iterable";
-import "std/data/pair";
-
-type T short|int|long;
-
-type MockIterator<T> struct : Iterable<T> {
-    T item
-    unsigned long cursor
+type Driveable interface {
+    public p drive(int);
+    public f<bool> isDriving();
 }
 
-p MockIterator.ctor() {
-    this.cursor = 0l;
+type Car struct : Driveable {
+    bool driving
 }
 
-f<T&> MockIterator.get() {
-    return this.item;
+public p Car.ctor() {
+    this.driving = false;
 }
 
-f<Pair<unsigned long, T&>> MockIterator.getIdx() {
-    return Pair<unsigned long, T&>(0l, this.item);
+public p Car.drive(int param) {
+    this.driving = true;
 }
 
-f<bool> MockIterator.isValid() {
-    return true;
+public f<bool> Car.isDriving() {
+    return this.driving;
 }
-
-p MockIterator.next() {}
 
 f<int> main() {
-    foreach dyn item : MockIterator<short>() {
-        printf("Demo item: %d\n", item);
-    }
+    Car car = Car();
+    Driveable* driveable = &car;
+    driveable.drive(12);
+    printf("Is driving: %d", driveable.isDriving());
 }
+
+/*import "std/io/cli-parser";
+
+type CliOptions struct {
+    bool sayHi = false
+}
+
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
+}
+
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
+
+    CliOptions options;
+    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--callback", callback, "Call a callback function");
+    parser.addFlag("-cb", p(bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
+
+    parser.parse(argc, argv);
+
+    // Print hi if requested
+    if options.sayHi {
+        printf("Hi!\n");
+    }
+}*/
 
 /*type Iterable interface {
     p print();

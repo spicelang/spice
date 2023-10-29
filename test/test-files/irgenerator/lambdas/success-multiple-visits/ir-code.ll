@@ -32,8 +32,8 @@ define private void @_Z4testv() {
   %8 = getelementptr inbounds { ptr, ptr }, ptr %l, i32 0, i32 0
   %9 = getelementptr inbounds { ptr, ptr }, ptr %l, i32 0, i32 1
   %captures1 = load ptr, ptr %9, align 8
-  %10 = load ptr, ptr %8, align 8
-  call void %10(ptr %captures1)
+  %fct = load ptr, ptr %8, align 8
+  call void %fct(ptr %captures1)
   ret void
 }
 
@@ -75,8 +75,8 @@ define private void @_Z4testi(i32 %0) {
   %9 = getelementptr inbounds { ptr, ptr }, ptr %l, i32 0, i32 0
   %10 = getelementptr inbounds { ptr, ptr }, ptr %l, i32 0, i32 1
   %captures1 = load ptr, ptr %10, align 8
-  %11 = load ptr, ptr %9, align 8
-  call void %11(ptr %captures1)
+  %fct = load ptr, ptr %9, align 8
+  call void %fct(ptr %captures1)
   ret void
 }
 

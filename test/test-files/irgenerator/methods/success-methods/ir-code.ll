@@ -37,8 +37,8 @@ define dso_local i32 @main() #0 {
   %letter = alloca %struct.Letter, align 8
   store i32 0, ptr %result, align 4
   store %struct.Letter { ptr @anon.string.0 }, ptr %letter, align 8
-  call void @_ZN6Letter10setContentEPc(ptr %letter, ptr @anon.string.1)
-  %1 = call ptr @_ZN6Letter10getContentEv(ptr %letter)
+  call void @_ZN6Letter10setContentEPc(ptr noundef nonnull align 8 dereferenceable(8) %letter, ptr @anon.string.1)
+  %1 = call ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 dereferenceable(8) %letter)
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %1)
   %3 = load i32, ptr %result, align 4
   ret i32 %3

@@ -59,14 +59,14 @@ define dso_local i32 @main() #0 {
   %vec = alloca %struct.Vector, align 8
   %1 = alloca %struct.Vector, align 8
   store i32 0, ptr %result, align 4
-  call void @_ZN6Vector4ctorEv(ptr %vec)
+  call void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
   %field1_addr = getelementptr inbounds %struct.Vector, ptr %vec, i32 0, i32 0
   %2 = load i1, ptr %field1_addr, align 1
   %3 = zext i1 %2 to i32
   %field2_addr = getelementptr inbounds %struct.Vector, ptr %vec, i32 0, i32 1
   %4 = load ptr, ptr %field2_addr, align 8
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3, ptr %4)
-  call void @_ZN6Vector4ctorEPc(ptr %1, ptr @anon.string.2)
+  call void @_ZN6Vector4ctorEPc(ptr noundef nonnull align 8 dereferenceable(16) %1, ptr @anon.string.2)
   %6 = load %struct.Vector, ptr %1, align 8
   store %struct.Vector %6, ptr %vec, align 8
   %field1_addr1 = getelementptr inbounds %struct.Vector, ptr %vec, i32 0, i32 0
@@ -75,7 +75,7 @@ define dso_local i32 @main() #0 {
   %field2_addr2 = getelementptr inbounds %struct.Vector, ptr %vec, i32 0, i32 1
   %9 = load ptr, ptr %field2_addr2, align 8
   %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %8, ptr %9)
-  %11 = call ptr @_ZN6Vector4testEv(ptr %vec)
+  %11 = call ptr @_ZN6Vector4testEv(ptr noundef nonnull align 8 dereferenceable(16) %vec)
   %12 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %11)
   %13 = load i32, ptr %result, align 4
   ret i32 %13

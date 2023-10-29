@@ -569,6 +569,7 @@ std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
 
     // Set LLVM type to the interface entry
     node->entry->setStructLLVMType(structType);
+    spiceInterface->entry->setStructLLVMType(structType);
 
     // Generate VTable information
     generateVTable(spiceInterface);

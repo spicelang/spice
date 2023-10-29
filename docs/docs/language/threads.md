@@ -14,6 +14,7 @@ f<int> main() {
     Thread thread = Thread(p() {
         // Do something
     });
+    thread.run();
 }
 ```
 
@@ -26,17 +27,19 @@ f<int> main() {
     Thread thread1 = Thread(p() {
         // Do something
     });
+    thread1.run();
     Thread thread2 = Thread(p() {
         // Do something
     });
+    thread2.run();
     // Do something
     thread1.join();
     thread2.join();
 }
 ```
 
-To get the ID of a thread, use the `getId()` method. To get the ID of the current thread (i.e. within the thread routine), you can
-call the static `getThreadId()` function:
+To get the ID of a thread, use the `getId()` method. This only works, if `run()` was already called on the thread object.
+To get the ID of the current thread (i.e. within the thread routine), you can call the static `getThreadId()` function:
 
 ```spice
 import "std/os/thread";
@@ -48,6 +51,8 @@ f<int> main() {
     Thread thread2 = Thread(p() {
         // Do something
     });
+    thread2.run();
+    thread1.run();
     printf("Thread 1 ID: %d\n", thread1.getId());
     printf("Thread 2 ID: %d\n", thread2.getId());
 }
