@@ -1,4 +1,4 @@
-mkdocs-material==9.4.6
+mkdocs-material==9.4.7
 mkdocs-minify-plugin==0.7.1
 mkdocs-git-revision-date-localized-plugin==1.2.1
 mkdocs-git-committers-plugin-2==1.2.0
