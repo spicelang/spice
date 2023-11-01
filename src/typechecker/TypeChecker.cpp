@@ -2383,7 +2383,7 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
   if (sourceSourceFile == sourceFile)
     return symbolType;
 
-  // Match the scope of the symbol type against all scopes in the name registry of the target source file
+  // Match the scope of the symbol type against all scopes in the name registry of this source file
   for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
