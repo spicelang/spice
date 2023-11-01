@@ -1,4 +1,26 @@
-import "std/io/cli-parser";
+type Driveable interface {
+    public p drive(int);
+}
+
+type Car struct : Driveable {
+    bool driving
+}
+
+public p Car.ctor() {
+    this.driving = false;
+}
+
+public p Car.drive(int param) {
+    this.driving = true;
+}
+
+f<int> main() {
+    Car c = Car();
+    Driveable* d = &c;
+    d.drive(12);
+}
+
+/*import "std/io/cli-parser";
 
 type CliOptions struct {
     bool sayHi = false
@@ -26,7 +48,7 @@ f<int> main(int argc, string[] argv) {
     if options.sayHi {
         printf("Hi!\n");
     }
-}
+}*/
 
 /*type Iterable interface {
     p print();

@@ -42,7 +42,7 @@ public:
   size_t manifestationIndex = 0;
   bool genericSubstantiation = false;
   bool used = false;
-  llvm::DICompositeType *structDIType = nullptr;
+  llvm::DICompositeType *diType = nullptr;
   llvm::Constant *typeInfoName = nullptr;
   llvm::Constant *typeInfo = nullptr;
   llvm::Constant *vtable = nullptr;

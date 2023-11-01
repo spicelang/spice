@@ -45,15 +45,31 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   // Generate LLVM type for type info
   const std::string mangledName = NameMangling::mangleTypeInfo(spiceStruct);
   llvm::PointerType *ptrTy = builder.getPtrTy();
-  llvm::StructType *structType = llvm::StructType::get(context, {ptrTy, ptrTy});
+
+  std::vector<SymbolType> interfaceTypes;
+  if (spiceStruct->entry->getType().is(TY_STRUCT)) {
+    auto spiceStructEnsured = static_cast<Struct *>(spiceStruct);
+    interfaceTypes = spiceStructEnsured->interfaceTypes;
+  }
+
+  // Build type info LLVM type
+  std::vector<llvm::Type *> typeInfoFieldTypes = {ptrTy, ptrTy};
+  for (const SymbolType &interfaceType : interfaceTypes)
+    typeInfoFieldTypes.push_back(ptrTy);
+  llvm::StructType *structType = llvm::StructType::get(context, typeInfoFieldTypes);
 
   // Generate type info values
   llvm::Constant *typeInfoVTable = llvm::Constant::getNullValue(ptrTy);
   if (!sourceFile->isRttiRT())
-    typeInfoVTable = llvm::ConstantExpr::getInBoundsGetElementPtr(ptrTy, typeInfoExtPtr, builder.getInt32(2));
+    typeInfoVTable = llvm::ConstantExpr::getInBoundsGetElementPtr(ptrTy, typeInfoExtPtr, builder.getInt64(2));
   std::vector<llvm::Constant *> fieldValues;
   fieldValues.push_back(typeInfoVTable);
   fieldValues.push_back(typeInfoName);
+  for (const SymbolType &interfaceType : interfaceTypes) {
+    Interface *interface = interfaceType.getInterface(nullptr);
+    assert(interface != nullptr && interface->typeInfo != nullptr);
+    fieldValues.push_back(interface->typeInfo);
+  }
   llvm::Constant *typeInfo = llvm::ConstantStruct::get(structType, fieldValues);
 
   // Generate global variable
@@ -67,6 +83,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::None);
   global->setLinkage(llvm::GlobalValue::LinkOnceODRLinkage);
   global->setComdat(module->getOrInsertComdat(mangledName));
+  global->setAlignment(llvm::MaybeAlign(8));
 
   return spiceStruct->typeInfo = global;
 }
@@ -98,6 +115,7 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
   global->setLinkage(llvm::GlobalValue::LinkOnceODRLinkage);
   global->setComdat(module->getOrInsertComdat(mangledName));
+  global->setAlignment(llvm::MaybeAlign(8));
 
   return global;
 }
