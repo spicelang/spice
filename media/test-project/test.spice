@@ -1,23 +1,35 @@
-type Driveable interface {
-    public p drive(int);
+import "std/iterator/iterable";
+import "std/data/pair";
+
+type T short|int|long;
+
+type MockIterator<T> struct : Iterable<T> {
+    T item
+    unsigned long cursor
 }
 
-type Car struct : Driveable {
-    bool driving
+p MockIterator.ctor() {
+    this.cursor = 0l;
 }
 
-public p Car.ctor() {
-    this.driving = false;
+f<T&> MockIterator.get() {
+    return this.item;
 }
 
-public p Car.drive(int param) {
-    this.driving = true;
+f<Pair<unsigned long, T&>> MockIterator.getIdx() {
+    return Pair<unsigned long, T&>(0l, this.item);
 }
+
+f<bool> MockIterator.isValid() {
+    return true;
+}
+
+p MockIterator.next() {}
 
 f<int> main() {
-    Car c = Car();
-    Driveable* d = &c;
-    d.drive(12);
+    foreach dyn item : MockIterator<short>() {
+        printf("Demo item: %d\n", item);
+    }
 }
 
 /*import "std/io/cli-parser";

@@ -424,14 +424,9 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         visit(params.at(argIdx));
     }
 
-    // If this is a constructor, store the default field values
-    if (node->isCtor && cliOptions.buildMode == BuildMode::DEBUG) {
-      assert(node->isMethod && thisEntry != nullptr);
-      assert(thisEntry->getType().isPtrOf(TY_STRUCT));
-      const SymbolType structType = thisEntry->getType().getContainedTy();
-      llvm::Constant *defaultStruct = getDefaultValueForSymbolType(structType);
-      builder.CreateStore(defaultStruct, proc->getArg(0));
-    }
+    // Generate special ctor preamble before generating the body to store VTable, default field values, etc. if required
+    if (node->isCtor)
+      generateCtorBodyPreamble(manifestation, currentScope);
 
     // Visit procedure body
     visit(node->body());
@@ -502,6 +497,9 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
         assert(interfaceType != nullptr);
         fieldTypes.push_back(interfaceType);
       }
+    } else if (node->emitVTable) {
+      // If no interface was specified, we still need to add a pointer to the VTable
+      fieldTypes.push_back(builder.getPtrTy());
     }
 
     // Collect concrete field types
@@ -524,18 +522,18 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     const SymbolType &thisType = structEntry->getType();
     const Function *ctorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, {}, true);
     if (ctorFunc != nullptr && ctorFunc->implicitDefault)
-      generateDefaultDefaultCtor(ctorFunc);
+      generateDefaultCtor(ctorFunc);
 
     // Generate default copy ctor if required
     const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
     const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
-      generateDefaultDefaultCopyCtor(copyCtorFunc);
+      generateDefaultCopyCtor(copyCtorFunc);
 
     // Generate default dtor if required
     const Function *dtorFunc = FunctionManager::lookupFunction(currentScope, DTOR_FUNCTION_NAME, thisType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
-      generateDefaultDefaultDtor(dtorFunc);
+      generateDefaultDtor(dtorFunc);
 
     // Return to root scope
     currentScope = rootScope;
