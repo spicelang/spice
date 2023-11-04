@@ -201,16 +201,24 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   assert(fctType != nullptr);
 
   llvm::CallInst *result;
-  if (data.isFctPtrCall() || data.isVirtualMethodCall()) {
-    if (data.isVirtualMethodCall()) { // Virtual method call
-      assert(data.callee->isVirtual);
-      assert(thisPtr != nullptr);
-      // Load VTable
-      llvm::Value *vtablePtr = builder.CreateLoad(builder.getPtrTy(), thisPtr, "vtable.addr");
-      const size_t vtableIndex = data.callee->vtableIndex;
-      // Lookup function pointer in VTable
-      fctPtr = builder.CreateInBoundsGEP(builder.getPtrTy(), vtablePtr, builder.getInt64(vtableIndex), "vfct.addr");
-    }
+  if (data.isVirtualMethodCall()) {
+    assert(data.callee->isVirtual);
+    assert(thisPtr != nullptr);
+    // Load VTable
+    llvm::Value *vtablePtr = builder.CreateLoad(builder.getPtrTy(), thisPtr, "vtable.addr");
+    const size_t vtableIndex = data.callee->vtableIndex;
+    // Lookup function pointer in VTable
+    fctPtr = builder.CreateInBoundsGEP(builder.getPtrTy(), vtablePtr, builder.getInt64(vtableIndex), "vfct.addr");
+    llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr, "fct");
+
+    // Generate function call
+    result = builder.CreateCall({fctType, fct}, argValues);
+  } else if (data.isFctPtrCall()) {
+    assert(firstFragEntry != nullptr);
+    SymbolType firstFragType = firstFragEntry->getType();
+    if (!fctPtr)
+      fctPtr = firstFragEntry->getAddress();
+    autoDeReferencePtr(fctPtr, firstFragType, currentScope);
     llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr, "fct");
 
     // Generate function call

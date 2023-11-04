@@ -1,20 +1,31 @@
-f<int> test(string _input) {
-    return 12;
+import "std/io/cli-parser";
+
+type CliOptions struct {
+    bool sayHi = false
 }
 
-f<int> invoke(f<int>(string)** fctPtr) {
-    return fctPtr("string");
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
 }
 
-f<int> invoke(f<int>(string)& fctPtr) {
-    return fctPtr("string");
-}
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
 
-f<int> main() {
-    f<int>(string) testFct = test;
-    f<int>(string)* testFctPtr = &testFct;
-    printf("%d\n", invoke(&testFctPtr));
-    printf("%d\n", invoke(testFct));
+    CliOptions options;
+    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--callback", callback, "Call a callback function");
+    parser.addFlag("-cb", p(bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
+
+    parser.parse(argc, argv);
+
+    // Print hi if requested
+    if options.sayHi {
+        printf("Hi!\n");
+    }
 }
 
 /*import "std/io/cli-parser";

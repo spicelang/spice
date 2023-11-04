@@ -20,9 +20,11 @@ define private i32 @_Z6invokePPPFiPcE(ptr %0) {
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
   %2 = getelementptr inbounds { ptr, ptr }, ptr %fctPtr, i32 0, i32 0
-  %fct = load ptr, ptr %2, align 8
-  %3 = call i32 %fct(ptr @anon.string.0)
-  ret i32 %3
+  %3 = load ptr, ptr %2, align 8
+  %4 = load ptr, ptr %3, align 8
+  %fct = load ptr, ptr %4, align 8
+  %5 = call i32 %fct(ptr @anon.string.0)
+  ret i32 %5
 }
 
 define private i32 @_Z6invokeRPFiPcE(ptr %0) {
@@ -30,9 +32,10 @@ define private i32 @_Z6invokeRPFiPcE(ptr %0) {
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
   %2 = getelementptr inbounds { ptr, ptr }, ptr %fctPtr, i32 0, i32 0
-  %fct = load ptr, ptr %2, align 8
-  %3 = call i32 %fct(ptr @anon.string.1)
-  ret i32 %3
+  %3 = load ptr, ptr %2, align 8
+  %fct = load ptr, ptr %3, align 8
+  %4 = call i32 %fct(ptr @anon.string.1)
+  ret i32 %4
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
