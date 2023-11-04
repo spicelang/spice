@@ -433,6 +433,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   assert(currentScope->type == ScopeType::INTERFACE);
 
   // Visit methods
+  size_t vtableIndex = 0;
   std::vector<Function *> methods;
   methods.reserve(node->signatures().size());
   for (SignatureNode *signature : node->signatures()) {
@@ -443,10 +444,12 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
     // Set 'this' type
     for (Function *m : *method) {
       m->isVirtual = true; // Interface methods are always virtual
+      m->vtableIndex = vtableIndex;
       m->thisType = interfaceType;
     }
 
     methods.insert(methods.end(), method->begin(), method->end());
+    vtableIndex++;
   }
 
   // Change to root scope

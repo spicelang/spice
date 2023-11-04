@@ -20,11 +20,11 @@ $_ZTV6Person = comdat any
 
 @_ZTV8TypeInfo = external global ptr
 @_ZTS11CompareableIlE = linkonce_odr dso_local constant [14 x i8] c"11Compareable\00", comdat, align 1
-@_ZTI11CompareableIlE = linkonce_odr dso_local constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i32 2), ptr @_ZTS11CompareableIlE }, comdat
-@_ZTV11CompareableIlE = linkonce_odr dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI11CompareableIlE, ptr null] }, comdat
+@_ZTI11CompareableIlE = linkonce_odr dso_local constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS11CompareableIlE }, comdat, align 8
+@_ZTV11CompareableIlE = linkonce_odr dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI11CompareableIlE, ptr null] }, comdat, align 8
 @_ZTS6Person = linkonce_odr dso_local constant [8 x i8] c"6Person\00", comdat, align 1
-@_ZTI6Person = linkonce_odr dso_local constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i32 2), ptr @_ZTS6Person }, comdat
-@_ZTV6Person = linkonce_odr dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI6Person, ptr @_ZN6Person7compareERKlRKl] }, comdat
+@_ZTI6Person = linkonce_odr dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS6Person, ptr @_ZTI11CompareableIlE }, comdat, align 8
+@_ZTV6Person = linkonce_odr dso_local unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI6Person, ptr @_ZN6Person7compareERKlRKl] }, comdat, align 8
 @anon.string.0 = private unnamed_addr constant [5 x i8] c"Mike\00", align 1
 @anon.string.1 = private unnamed_addr constant [7 x i8] c"Miller\00", align 1
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1

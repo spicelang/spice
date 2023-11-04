@@ -212,7 +212,6 @@ void IRGenerator::generateCtorBodyPreamble(const Function *ctorFunction, Scope *
   // Store VTable to first struct field if required
   Struct *spiceStruct = structSymbolType.getStruct(nullptr);
   assert(spiceStruct != nullptr);
-  size_t firstFieldIdx = 0;
   if (spiceStruct->vtable != nullptr) {
     assert(spiceStruct->vtableType != nullptr);
     // Store VTable to field address at index 0
@@ -220,13 +219,14 @@ void IRGenerator::generateCtorBodyPreamble(const Function *ctorFunction, Scope *
     llvm::Value *indices[3] = {builder.getInt32(0), builder.getInt32(0), builder.getInt32(2)};
     llvm::Value *gepResult = builder.CreateInBoundsGEP(spiceStruct->vtableType, spiceStruct->vtable, indices);
     builder.CreateStore(gepResult, thisAddressLoaded);
-    firstFieldIdx++;
   }
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
     const SymbolType &fieldType = fieldSymbol->getType();
     auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
 
@@ -246,7 +246,7 @@ void IRGenerator::generateCtorBodyPreamble(const Function *ctorFunction, Scope *
       // Retrieve field address
       if (!thisAddressLoaded)
         thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
-      llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(firstFieldIdx + i)};
+      llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
       llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
       // Retrieve default value
       llvm::Value *value;
@@ -287,6 +287,8 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
     const SymbolType &fieldType = fieldSymbol->getType();
 
     // Call copy ctor for struct fields
@@ -330,6 +332,8 @@ void IRGenerator::generateDtorBodyPreamble(const spice::compiler::Function *dtor
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
     const SymbolType &fieldType = fieldSymbol->getType();
 
     // Call dtor for struct fields

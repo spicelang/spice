@@ -19,14 +19,18 @@ define private void @_ZN6Vector4ctorEv(ptr noundef nonnull align 8 dereferenceab
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   store ptr @anon.string.0, ptr %msg, align 8
-  store %struct.Vector { i1 false, ptr @0 }, ptr %0, align 8
   %2 = load ptr, ptr %this, align 8
-  %field1_addr = getelementptr inbounds %struct.Vector, ptr %2, i32 0, i32 0
+  %3 = getelementptr inbounds %struct.Vector, ptr %2, i32 0, i32 0
+  store i1 false, ptr %3, align 1
+  %4 = getelementptr inbounds %struct.Vector, ptr %2, i32 0, i32 1
+  store ptr @0, ptr %4, align 8
+  %5 = load ptr, ptr %this, align 8
+  %field1_addr = getelementptr inbounds %struct.Vector, ptr %5, i32 0, i32 0
   store i1 false, ptr %field1_addr, align 1
-  %3 = load ptr, ptr %this, align 8
-  %field2_addr = getelementptr inbounds %struct.Vector, ptr %3, i32 0, i32 1
-  %4 = load ptr, ptr %msg, align 8
-  store ptr %4, ptr %field2_addr, align 8
+  %6 = load ptr, ptr %this, align 8
+  %field2_addr = getelementptr inbounds %struct.Vector, ptr %6, i32 0, i32 1
+  %7 = load ptr, ptr %msg, align 8
+  store ptr %7, ptr %field2_addr, align 8
   ret void
 }
 
@@ -35,14 +39,18 @@ define private void @_ZN6Vector4ctorEPc(ptr noundef nonnull align 8 dereferencea
   %msg = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   store ptr %1, ptr %msg, align 8
-  store %struct.Vector { i1 false, ptr @1 }, ptr %0, align 8
   %3 = load ptr, ptr %this, align 8
-  %field1_addr = getelementptr inbounds %struct.Vector, ptr %3, i32 0, i32 0
+  %4 = getelementptr inbounds %struct.Vector, ptr %3, i32 0, i32 0
+  store i1 false, ptr %4, align 1
+  %5 = getelementptr inbounds %struct.Vector, ptr %3, i32 0, i32 1
+  store ptr @1, ptr %5, align 8
+  %6 = load ptr, ptr %this, align 8
+  %field1_addr = getelementptr inbounds %struct.Vector, ptr %6, i32 0, i32 0
   store i1 false, ptr %field1_addr, align 1
-  %4 = load ptr, ptr %this, align 8
-  %field2_addr = getelementptr inbounds %struct.Vector, ptr %4, i32 0, i32 1
-  %5 = load ptr, ptr %msg, align 8
-  store ptr %5, ptr %field2_addr, align 8
+  %7 = load ptr, ptr %this, align 8
+  %field2_addr = getelementptr inbounds %struct.Vector, ptr %7, i32 0, i32 1
+  %8 = load ptr, ptr %msg, align 8
+  store ptr %8, ptr %field2_addr, align 8
   ret void
 }
 

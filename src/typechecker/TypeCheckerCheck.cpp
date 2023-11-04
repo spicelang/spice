@@ -154,6 +154,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     const SymbolType structType = manifestation->entry->getType();
 
     // Check if the struct implements all methods of all attached interfaces
+    size_t vtableIndex = 0;
     for (const SymbolType &interfaceType : manifestation->interfaceTypes) {
       // Retrieve interface instance
       const std::string interfaceName = interfaceType.getOriginalSubType();
@@ -181,6 +182,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
         // Set to virtual, since it overrides the interface method
         spiceFunction->isVirtual = true;
+        spiceFunction->vtableIndex = vtableIndex++;
       }
     }
 

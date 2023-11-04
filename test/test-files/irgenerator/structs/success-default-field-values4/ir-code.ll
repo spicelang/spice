@@ -12,9 +12,13 @@ target triple = "x86_64-w64-windows-gnu"
 define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
-  store %struct.Test { i32 12, ptr @0 }, ptr %0, align 8
   %2 = load ptr, ptr %this, align 8
-  %i_addr = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 0
+  %3 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 0
+  store i32 12, ptr %3, align 4
+  %4 = getelementptr inbounds %struct.Test, ptr %2, i32 0, i32 1
+  store ptr @0, ptr %4, align 8
+  %5 = load ptr, ptr %this, align 8
+  %i_addr = getelementptr inbounds %struct.Test, ptr %5, i32 0, i32 0
   store i32 14, ptr %i_addr, align 4
   ret void
 }

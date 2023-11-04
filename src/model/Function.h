@@ -79,6 +79,7 @@ public:
   bool implicitDefault = false;
   llvm::Function *llvmFunction = nullptr;
   bool isVirtual = false;
+  size_t vtableIndex = 0;
 
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, thisType, returnType, paramList, templateTypes)

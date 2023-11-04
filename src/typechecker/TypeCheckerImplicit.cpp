@@ -85,14 +85,24 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
     if (thisType.isRef())
       return;
 
-    auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
-    hasFieldsWithDefaultValue |= fieldNode->defaultValue() != nullptr;
-    if (fieldSymbol->getType().is(TY_STRUCT)) {
-      Scope *fieldScope = fieldSymbol->getType().getBodyScope();
-      // Lookup ctor function
-      const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, true, node);
-      hasFieldsToConstruct |= ctorFct != nullptr;
-      requestRevisitIfRequired(ctorFct);
+    if (auto fieldNode = dynamic_cast<FieldNode *>(fieldSymbol->declNode)) {
+      hasFieldsWithDefaultValue |= fieldNode->defaultValue() != nullptr;
+      if (fieldSymbol->getType().is(TY_STRUCT)) {
+        Scope *fieldScope = fieldSymbol->getType().getBodyScope();
+        // Lookup ctor function
+        const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, true, node);
+        hasFieldsToConstruct |= ctorFct != nullptr;
+        requestRevisitIfRequired(ctorFct);
+      }
+    } else {
+      assert(dynamic_cast<DataTypeNode *>(fieldSymbol->declNode) != nullptr);
+      if (fieldSymbol->getType().is(TY_STRUCT)) {
+        Scope *fieldScope = fieldSymbol->getType().getBodyScope();
+        // Lookup ctor function
+        const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, true, node);
+        hasFieldsToConstruct |= ctorFct != nullptr;
+        requestRevisitIfRequired(ctorFct);
+      }
     }
   }
 

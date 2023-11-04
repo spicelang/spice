@@ -1,35 +1,20 @@
-import "std/iterator/iterable";
-import "std/data/pair";
-
-type T short|int|long;
-
-type MockIterator<T> struct : Iterable<T> {
-    T item
-    unsigned long cursor
+f<int> test(string _input) {
+    return 12;
 }
 
-p MockIterator.ctor() {
-    this.cursor = 0l;
+f<int> invoke(f<int>(string)** fctPtr) {
+    return fctPtr("string");
 }
 
-f<T&> MockIterator.get() {
-    return this.item;
+f<int> invoke(f<int>(string)& fctPtr) {
+    return fctPtr("string");
 }
-
-f<Pair<unsigned long, T&>> MockIterator.getIdx() {
-    return Pair<unsigned long, T&>(0l, this.item);
-}
-
-f<bool> MockIterator.isValid() {
-    return true;
-}
-
-p MockIterator.next() {}
 
 f<int> main() {
-    foreach dyn item : MockIterator<short>() {
-        printf("Demo item: %d\n", item);
-    }
+    f<int>(string) testFct = test;
+    f<int>(string)* testFctPtr = &testFct;
+    printf("%d\n", invoke(&testFctPtr));
+    printf("%d\n", invoke(testFct));
 }
 
 /*import "std/io/cli-parser";

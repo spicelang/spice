@@ -1896,13 +1896,15 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
                     "You've passed too less/many field values. Pass either none or all of them")
 
     // Check if the field types are matching
+    const size_t fieldCount = spiceStruct->fieldTypes.size();
+    const size_t explicitFieldsStartIdx = structScope->getFieldCount() - fieldCount;
     for (size_t i = 0; i < node->fieldLst()->args().size(); i++) {
       // Get actual type
       AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
-      const SymbolTableEntry *expectedField = structScope->symbolTable.lookupStrictByIndex(i);
+      const SymbolTableEntry *expectedField = structScope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
       assert(expectedField != nullptr);
       SymbolType expectedType = expectedField->getType();
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();

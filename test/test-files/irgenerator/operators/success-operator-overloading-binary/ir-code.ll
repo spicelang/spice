@@ -14,11 +14,13 @@ define private void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferencea
   %initialValue = alloca i64, align 8
   store ptr %0, ptr %this, align 8
   store i64 %1, ptr %initialValue, align 8
-  store %struct.Counter zeroinitializer, ptr %0, align 8
   %3 = load ptr, ptr %this, align 8
-  %value_addr = getelementptr inbounds %struct.Counter, ptr %3, i32 0, i32 0
-  %4 = load i64, ptr %initialValue, align 8
-  store i64 %4, ptr %value_addr, align 8
+  %4 = getelementptr inbounds %struct.Counter, ptr %3, i32 0, i32 0
+  store i64 0, ptr %4, align 8
+  %5 = load ptr, ptr %this, align 8
+  %value_addr = getelementptr inbounds %struct.Counter, ptr %5, i32 0, i32 0
+  %6 = load i64, ptr %initialValue, align 8
+  store i64 %6, ptr %value_addr, align 8
   ret void
 }
 
