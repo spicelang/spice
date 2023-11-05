@@ -7,31 +7,6 @@
         {
           "captures": [],
           "children": [],
-          "name": "std/data/pair::Pair<unsigned long,short&> getIdx()",
-          "symbols": [
-            {
-              "codeLoc": "L19C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "result",
-              "orderIndex": 1,
-              "state": "declared",
-              "type": "std/data/pair::Pair<unsigned long,short&>"
-            },
-            {
-              "codeLoc": "L19C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<short>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
           "name": "bool isValid()",
           "symbols": [
             {
@@ -45,6 +20,31 @@
             },
             {
               "codeLoc": "L23C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<short>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "public std/data/pair::Pair<unsigned long,short&> getIdx()",
+          "symbols": [
+            {
+              "codeLoc": "L19C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "declared",
+              "type": "public std/data/pair::Pair<unsigned long,short&>"
+            },
+            {
+              "codeLoc": "L19C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -98,6 +98,22 @@
         {
           "captures": [],
           "children": [],
+          "name": "ctor()",
+          "symbols": [
+            {
+              "codeLoc": "L11C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<short>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
           "name": "next<T>()",
           "symbols": [
             {
@@ -127,6 +143,31 @@
             },
             {
               "codeLoc": "L23C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<T>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "public std/data/pair::Pair<unsigned long,T&> getIdx<T>()",
+          "symbols": [
+            {
+              "codeLoc": "L19C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "declared",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L19C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -176,60 +217,10 @@
               "type": "MockIterator<T>*"
             }
           ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "ctor()",
-          "symbols": [
-            {
-              "codeLoc": "L11C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<short>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "std/data/pair::Pair<unsigned long,T&> getIdx<T>()",
-          "symbols": [
-            {
-              "codeLoc": "L19C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "result",
-              "orderIndex": 1,
-              "state": "declared",
-              "type": "invalid"
-            },
-            {
-              "codeLoc": "L19C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<T>*"
-            }
-          ]
         }
       ],
       "name": "struct:MockIterator<short>",
       "symbols": [
-        {
-          "codeLoc": "L19C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "getIdx:L19C1",
-          "orderIndex": 5,
-          "state": "declared",
-          "type": "f<std/data/pair::Pair<unsigned long,T&>>()"
-        },
         {
           "codeLoc": "L23C1",
           "isGlobal": false,
@@ -264,7 +255,7 @@
           "name": "getIdx:L19C1",
           "orderIndex": 5,
           "state": "declared",
-          "type": "f<std/data/pair::Pair<unsigned long,T&>>()"
+          "type": "f<public std/data/pair::Pair<unsigned long,T&>>()"
         },
         {
           "codeLoc": "L8C5",
@@ -274,6 +265,15 @@
           "orderIndex": 2,
           "state": "initialized",
           "type": "unsigned long"
+        },
+        {
+          "codeLoc": "L19C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "getIdx:L19C1",
+          "orderIndex": 5,
+          "state": "declared",
+          "type": "f<public std/data/pair::Pair<unsigned long,T&>>()"
         },
         {
           "codeLoc": "L27C1",
@@ -429,6 +429,31 @@
         {
           "captures": [],
           "children": [],
+          "name": "public std/data/pair::Pair<unsigned long,T&> getIdx<T>()",
+          "symbols": [
+            {
+              "codeLoc": "L19C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "declared",
+              "type": "invalid"
+            },
+            {
+              "codeLoc": "L19C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<T>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
           "name": "T& get<T>()",
           "symbols": [
             {
@@ -466,31 +491,6 @@
               "type": "MockIterator<T>*"
             }
           ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "std/data/pair::Pair<unsigned long,T&> getIdx<T>()",
-          "symbols": [
-            {
-              "codeLoc": "L19C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "result",
-              "orderIndex": 1,
-              "state": "declared",
-              "type": "invalid"
-            },
-            {
-              "codeLoc": "L19C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<T>*"
-            }
-          ]
         }
       ],
       "name": "struct:MockIterator",
@@ -511,7 +511,7 @@
           "name": "getIdx:L19C1",
           "orderIndex": 5,
           "state": "declared",
-          "type": "f<std/data/pair::Pair<unsigned long,T&>>()"
+          "type": "f<public std/data/pair::Pair<unsigned long,T&>>()"
         },
         {
           "codeLoc": "L8C5",

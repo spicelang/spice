@@ -7,17 +7,6 @@
 
 namespace spice::compiler {
 
-void IRGenerator::ensureRTTIRuntime() {
-  // If we currently compile the RTTI runtime, we don't need to do anything here
-  if (sourceFile->isRttiRT())
-    return;
-
-  // Add external global pointer for TypeInfo vtable
-  assert(sourceFile->isRuntimeModuleAvailable(RuntimeModule::RTTI_RT));
-  const std::string mangledName = NameMangling::mangleVTable("TypeInfo");
-  typeInfoExtPtr = module->getOrInsertGlobal(mangledName, builder.getPtrTy());
-}
-
 llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) {
   // Resolve mangled type info name and mangled global name
   const std::string globalName = NameMangling::mangleTypeInfoName(spiceStruct);
@@ -30,15 +19,13 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) {
   global->setConstant(true);
   global->setDSOLocal(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::None);
-  global->setLinkage(llvm::GlobalValue::LinkOnceODRLinkage);
+  global->setLinkage(llvm::GlobalValue::ExternalLinkage);
   global->setComdat(module->getOrInsertComdat(globalName));
 
   return spiceStruct->typeInfoName = global;
 }
 
 llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
-  assert(spiceStruct->entry != nullptr);
-
   // Generate type info name
   llvm::Constant *typeInfoName = generateTypeInfoName(spiceStruct);
 
@@ -60,15 +47,21 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
 
   // Generate type info values
   llvm::Constant *typeInfoVTable = llvm::Constant::getNullValue(ptrTy);
-  if (!sourceFile->isRttiRT())
+  if (!sourceFile->isRttiRT()) {
+    // Add external global pointer for TypeInfo vtable
+    assert(sourceFile->isRuntimeModuleAvailable(RuntimeModule::RTTI_RT));
+    const std::string mangledName = NameMangling::mangleVTable("TypeInfo");
+    llvm::Constant *typeInfoExtPtr = module->getOrInsertGlobal(mangledName, builder.getPtrTy());
     typeInfoVTable = llvm::ConstantExpr::getInBoundsGetElementPtr(ptrTy, typeInfoExtPtr, builder.getInt64(2));
+  }
   std::vector<llvm::Constant *> fieldValues;
   fieldValues.push_back(typeInfoVTable);
   fieldValues.push_back(typeInfoName);
   for (const SymbolType &interfaceType : interfaceTypes) {
     Interface *interface = interfaceType.getInterface(nullptr);
     assert(interface != nullptr && interface->typeInfo != nullptr);
-    llvm::Constant *global = module->getOrInsertGlobal(interface->typeInfo->getName(), builder.getPtrTy());
+    const std::string mangledName = NameMangling::mangleTypeInfo(interface);
+    llvm::Constant *global = module->getOrInsertGlobal(mangledName, builder.getPtrTy());
     fieldValues.push_back(global);
   }
   llvm::Constant *typeInfo = llvm::ConstantStruct::get(spiceStruct->typeInfoType, fieldValues);
@@ -82,7 +75,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   global->setConstant(true);
   global->setDSOLocal(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::None);
-  global->setLinkage(llvm::GlobalValue::LinkOnceODRLinkage);
+  global->setLinkage(llvm::GlobalValue::ExternalLinkage);
   global->setComdat(module->getOrInsertComdat(mangledName));
   global->setAlignment(llvm::MaybeAlign(8));
 
@@ -90,9 +83,6 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
 }
 
 llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
-  // Make sure that the RTTI runtime is present
-  ensureRTTIRuntime();
-
   // Retrieve virtual method count
   const std::vector<Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();
   const size_t virtualMethodCount = virtualMethods.size();
@@ -114,7 +104,7 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
   global->setConstant(true);
   global->setDSOLocal(true);
   global->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
-  global->setLinkage(llvm::GlobalValue::LinkOnceODRLinkage);
+  global->setLinkage(llvm::GlobalValue::ExternalLinkage);
   global->setComdat(module->getOrInsertComdat(mangledName));
   global->setAlignment(llvm::MaybeAlign(8));
 

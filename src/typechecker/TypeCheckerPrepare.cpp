@@ -331,6 +331,10 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
       // Check if it is an interface type
       if (!interfaceType.is(TY_INTERFACE))
         throw SemanticError(dataType, EXPECTED_INTERFACE_TYPE, "Expected interface type, got " + interfaceType.getName());
+      // Check for visibility
+      if (interfaceType.getBodyScope()->isImportedBy(rootScope) && !interfaceType.isPublic())
+        throw SemanticError(node, INSUFFICIENT_VISIBILITY,
+                            "Cannot access interface '" + interfaceType.getOriginalSubType() + "' due to its private visibility");
       // Add to interface types
       interfaceTypes.push_back(interfaceType);
     }

@@ -48,7 +48,7 @@
               "name": "thread",
               "orderIndex": 1,
               "state": "initialized",
-              "type": "std/os/thread::Thread&"
+              "type": "public std/os/thread::Thread&"
             },
             {
               "codeLoc": "L20C9",
@@ -90,7 +90,7 @@
               "name": "thread",
               "orderIndex": 1,
               "state": "initialized",
-              "type": "std/os/thread::Thread&"
+              "type": "public std/os/thread::Thread&"
             },
             {
               "codeLoc": "L11C9",
@@ -113,7 +113,7 @@
           "name": "threads",
           "orderIndex": 2,
           "state": "initialized",
-          "type": "std/os/thread::Thread[8]"
+          "type": "public std/os/thread::Thread[8]"
         },
         {
           "codeLoc": "L9C5",

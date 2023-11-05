@@ -6,23 +6,15 @@ target triple = "x86_64-w64-windows-gnu"
 %struct.Car = type { %interface.Driveable, i1 }
 %interface.Driveable = type { ptr }
 
-$_ZTS9Driveable = comdat any
-
-$_ZTI9Driveable = comdat any
-
-$_ZTV9Driveable = comdat any
-
 $_ZTS3Car = comdat any
 
 $_ZTI3Car = comdat any
 
 $_ZTV3Car = comdat any
 
-@_ZTS9Driveable = dso_local constant [11 x i8] c"9Driveable\00", comdat, align 1
-@_ZTV8TypeInfo = external global ptr
-@_ZTI9Driveable = dso_local constant { ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS9Driveable }, comdat, align 8
-@_ZTV9Driveable = dso_local unnamed_addr constant { [4 x ptr] } { [4 x ptr] [ptr null, ptr @_ZTI9Driveable, ptr null, ptr null] }, comdat, align 8
 @_ZTS3Car = dso_local constant [5 x i8] c"3Car\00", comdat, align 1
+@_ZTV8TypeInfo = external global ptr
+@_ZTI9Driveable = external global ptr
 @_ZTI3Car = dso_local constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS3Car, ptr @_ZTI9Driveable }, comdat, align 8
 @_ZTV3Car = dso_local unnamed_addr constant { [4 x ptr] } { [4 x ptr] [ptr null, ptr @_ZTI3Car, ptr @_ZN3Car5driveEi, ptr @_ZN3Car9isDrivingEv] }, comdat, align 8
 @printf.str.0 = private unnamed_addr constant [15 x i8] c"Is driving: %d\00", align 1

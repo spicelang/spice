@@ -1,4 +1,4 @@
-public type Driveable interface {
+type Driveable interface {
     public p drive(int);
     public f<bool> isDriving();
 }
