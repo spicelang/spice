@@ -1,7 +1,4 @@
-type Driveable interface {
-    p drive(int);
-    f<bool> isDriving();
-}
+import "source2";
 
 type Car struct : Driveable {
     bool driving

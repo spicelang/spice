@@ -510,6 +510,20 @@ std::any SymbolTableBuilder::visitField(FieldNode *node) {
 }
 
 std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
+  // Build signature specifiers
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_INLINE)
+        node->signatureSpecifiers.isInline = true;
+      else if (specifier->type == SpecifierNode::TY_PUBLIC)
+        node->signatureSpecifiers.isPublic = true;
+      else if (specifier->type == SpecifierNode::TY_CONST)
+        node->signatureSpecifiers.isConst = true;
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on a signature definition");
+    }
+  }
+
   // Add signature entry to symbol table
   node->entry = currentScope->insert(node->methodName, node);
 

@@ -2310,9 +2310,6 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       entryType.setBodyScope(spiceInterface->scope);
     }
 
-    // Remove public specifier
-    entryType.specifiers.isPublic = false;
-
     return node->setEvaluatedSymbolType(entryType, manIdx);
   }
 

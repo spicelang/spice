@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/interfaces/error-private-visibility/source.spice:3:1:
+Insufficient symbol visibility: Cannot access interface 'Driveable' due to its private visibility
+
+3  type Car struct : Driveable {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
