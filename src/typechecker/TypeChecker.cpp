@@ -1601,6 +1601,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     returnBaseType.setBodyScope(spiceStruct->scope);
     returnType = returnType.replaceBaseType(returnBaseType);
 
+    returnType = mapImportedScopeTypeToLocalType(returnType.getBaseType().getBodyScope(), returnType);
+
     // Add anonymous symbol to keep track of deallocation
     if (returnType.is(TY_STRUCT))
       anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
@@ -2380,16 +2382,17 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
   if (!symbolType.isBaseType(TY_STRUCT))
     return symbolType;
 
-  // If the target scope is in the current source file, we can return the symbol type as is
+  // If the source scope is in the current source file, we can return the symbol type as is
   SourceFile *sourceSourceFile = sourceScope->sourceFile;
   if (sourceSourceFile == sourceFile)
     return symbolType;
 
   // Match the scope of the symbol type against all scopes in the name registry of this source file
+  const SymbolType baseType = symbolType.getBaseType();
   for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->scope == symbolType.getBaseType().getBodyScope()) {
+        if (manifestation->scope == baseType.getBodyScope()) {
           // Get the 'fullest-qualified' registry entry
           const NameRegistryEntry *mostQualifiedEntry = sourceFile->getNameRegistryEntry(entry.name);
           assert(mostQualifiedEntry != nullptr);
@@ -2398,10 +2401,9 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
 
   // This source file does not know about the struct at all
   // -> show it how to find the struct
-  const std::string structName = symbolType.getBaseType().getSubType();
-  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(structName);
+  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(baseType.getOriginalSubType());
   assert(origRegistryEntry != nullptr);
-  sourceFile->addNameRegistryEntry(structName, origRegistryEntry->targetEntry, origRegistryEntry->targetScope, false);
+  sourceFile->addNameRegistryEntry(baseType.getSubType(), origRegistryEntry->targetEntry, origRegistryEntry->targetScope, false);
 
   return symbolType;
 }
