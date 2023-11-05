@@ -432,14 +432,24 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   currentScope = node->interfaceScope;
   assert(currentScope->type == ScopeType::INTERFACE);
 
-  // Visit signatures
-  std::vector<Function *> signatures;
-  signatures.reserve(node->signatures().size());
+  // Visit methods
+  size_t vtableIndex = 0;
+  std::vector<Function *> methods;
+  methods.reserve(node->signatures().size());
   for (SignatureNode *signature : node->signatures()) {
     auto method = std::any_cast<std::vector<Function *> *>(visit(signature));
     if (!method)
       return nullptr;
-    signatures.insert(signatures.end(), method->begin(), method->end());
+
+    // Set 'this' type
+    for (Function *m : *method) {
+      m->isVirtual = true; // Interface methods are always virtual
+      m->vtableIndex = vtableIndex;
+      m->thisType = interfaceType;
+    }
+
+    methods.insert(methods.end(), method->begin(), method->end());
+    vtableIndex++;
   }
 
   // Change to root scope
@@ -447,7 +457,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   assert(currentScope->type == ScopeType::GLOBAL);
 
   // Build interface object
-  Interface spiceInterface(node->interfaceName, node->entry, node->interfaceScope, signatures, templateTypesGeneric, node);
+  Interface spiceInterface(node->interfaceName, node->entry, node->interfaceScope, methods, templateTypesGeneric, node);
   InterfaceManager::insertInterface(currentScope, spiceInterface, &node->interfaceManifestations);
   spiceInterface.scope = node->interfaceScope;
 

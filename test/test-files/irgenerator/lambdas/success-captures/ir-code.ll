@@ -54,44 +54,44 @@ define dso_local i32 @main() #0 {
   %15 = getelementptr inbounds { ptr, ptr }, ptr %foo1, i32 0, i32 0
   %16 = getelementptr inbounds { ptr, ptr }, ptr %foo1, i32 0, i32 1
   %captures3 = load ptr, ptr %16, align 8
-  %17 = load ptr, ptr %15, align 8
-  call void %17(ptr %captures3, ptr %x)
-  %18 = load i32, ptr %x, align 4
-  %19 = icmp eq i32 %18, 6
-  br i1 %19, label %assert.exit.L13, label %assert.then.L13, !prof !0
+  %fct = load ptr, ptr %15, align 8
+  call void %fct(ptr %captures3, ptr %x)
+  %17 = load i32, ptr %x, align 4
+  %18 = icmp eq i32 %17, 6
+  br i1 %18, label %assert.exit.L13, label %assert.then.L13, !prof !0
 
 assert.then.L13:                                  ; preds = %0
-  %20 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %19 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L13:                                  ; preds = %0
-  %21 = getelementptr inbounds { ptr, ptr }, ptr %foo2, i32 0, i32 0
-  %22 = getelementptr inbounds { ptr, ptr }, ptr %foo2, i32 0, i32 1
-  %captures4 = load ptr, ptr %22, align 8
-  %23 = load ptr, ptr %21, align 8
-  %24 = call i1 %23(ptr %captures4, ptr %x)
-  br i1 %24, label %assert.exit.L14, label %assert.then.L14, !prof !0
+  %20 = getelementptr inbounds { ptr, ptr }, ptr %foo2, i32 0, i32 0
+  %21 = getelementptr inbounds { ptr, ptr }, ptr %foo2, i32 0, i32 1
+  %captures4 = load ptr, ptr %21, align 8
+  %fct5 = load ptr, ptr %20, align 8
+  %22 = call i1 %fct5(ptr %captures4, ptr %x)
+  br i1 %22, label %assert.exit.L14, label %assert.then.L14, !prof !0
 
 assert.then.L14:                                  ; preds = %assert.exit.L13
-  %25 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  %23 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L14:                                  ; preds = %assert.exit.L13
-  %26 = load i32, ptr %x, align 4
-  %27 = icmp eq i32 %26, 11
-  br i1 %27, label %assert.exit.L15, label %assert.then.L15, !prof !0
+  %24 = load i32, ptr %x, align 4
+  %25 = icmp eq i32 %24, 11
+  br i1 %25, label %assert.exit.L15, label %assert.then.L15, !prof !0
 
 assert.then.L15:                                  ; preds = %assert.exit.L14
-  %28 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
+  %26 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L15:                                  ; preds = %assert.exit.L14
-  %29 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  %30 = load i32, ptr %result, align 4
-  ret i32 %30
+  %27 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %28 = load i32, ptr %result, align 4
+  ret i32 %28
 }
 
 define private void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {

@@ -244,6 +244,8 @@ std::string NameMangling::mangleTypeInfoName(const StructBase *structBase) {
   return out.str();
 }
 
+std::string NameMangling::mangleTypeInfoValue(const std::string &value) { return std::to_string(value.size()) + value; }
+
 std::string NameMangling::mangleTypeInfo(const StructBase *structBase) {
   std::stringstream out;
   out << "_ZTI";

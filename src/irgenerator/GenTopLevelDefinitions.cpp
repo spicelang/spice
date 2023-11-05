@@ -128,7 +128,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
 std::any IRGenerator::visitFctDef(const FctDefNode *node) {
   // Loop through manifestations
   manIdx = 0; // Reset the symbolTypeIndex
-  for (const Function *manifestation : node->manifestations) {
+  for (Function *manifestation : node->manifestations) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
@@ -201,6 +201,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     module->getOrInsertFunction(mangledName, funcType);
     llvm::Function *func = module->getFunction(mangledName);
     node->entry->updateAddress(func);
+    manifestation->llvmFunction = func;
 
     // Set attributes to function
     func->setDSOLocal(true);
@@ -294,7 +295,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
   // Loop through manifestations
   manIdx = 0; // Reset the symbolTypeIndex
-  for (const Function *manifestation : node->manifestations) {
+  for (Function *manifestation : node->manifestations) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
@@ -368,6 +369,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     module->getOrInsertFunction(mangledName, procType);
     llvm::Function *proc = module->getFunction(mangledName);
     node->entry->updateAddress(proc);
+    manifestation->llvmFunction = proc;
 
     // Set attributes to procedure
     proc->setDSOLocal(true);
@@ -422,14 +424,9 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         visit(params.at(argIdx));
     }
 
-    // If this is a constructor, store the default field values
-    if (node->isCtor && cliOptions.buildMode == BuildMode::DEBUG) {
-      assert(node->isMethod && thisEntry != nullptr);
-      assert(thisEntry->getType().isPtrOf(TY_STRUCT));
-      const SymbolType structType = thisEntry->getType().getContainedTy();
-      llvm::Constant *defaultStruct = getDefaultValueForSymbolType(structType);
-      builder.CreateStore(defaultStruct, proc->getArg(0));
-    }
+    // Generate special ctor preamble before generating the body to store VTable, default field values, etc. if required
+    if (node->isCtor)
+      generateCtorBodyPreamble(manifestation, currentScope);
 
     // Visit procedure body
     visit(node->body());
@@ -486,10 +483,26 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     SymbolTableEntry *structEntry = spiceStruct->entry;
     assert(structEntry != nullptr);
     structEntry->setStructLLVMType(structType);
-
-    // Collect concrete field types
     std::vector<llvm::Type *> fieldTypes;
     fieldTypes.reserve(node->fields().size());
+
+    // Collect interface types
+    if (const TypeLstNode *typeLst = node->interfaceTypeLst()) {
+      for (const DataTypeNode *interfaceTypeNode : typeLst->dataTypes()) {
+        const SymbolType symbolType = interfaceTypeNode->getEvaluatedSymbolType(manIdx);
+        assert(symbolType.is(TY_INTERFACE));
+        const Interface *interface = symbolType.getInterface(interfaceTypeNode);
+        assert(interface != nullptr);
+        llvm::StructType *interfaceType = interface->entry->getStructLLVMType();
+        assert(interfaceType != nullptr);
+        fieldTypes.push_back(interfaceType);
+      }
+    } else if (node->emitVTable) {
+      // If no interface was specified, we still need to add a pointer to the VTable
+      fieldTypes.push_back(builder.getPtrTy());
+    }
+
+    // Collect concrete field types
     for (const FieldNode *field : node->fields()) {
       SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
       assert(fieldEntry && !fieldEntry->getType().hasAnyGenericParts());
@@ -500,25 +513,27 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     structType->setBody(fieldTypes);
 
     // Generate VTable if required
-    if (node->emitVTable)
+    if (node->emitVTable) {
       generateVTable(spiceStruct);
+      deferredVTableInitializations.emplace_back([=, this]() { generateVTableInitializer(spiceStruct); }, false);
+    }
 
     // Generate default ctor if required
     const SymbolType &thisType = structEntry->getType();
     const Function *ctorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, {}, true);
     if (ctorFunc != nullptr && ctorFunc->implicitDefault)
-      generateDefaultDefaultCtor(ctorFunc);
+      generateDefaultCtor(ctorFunc);
 
     // Generate default copy ctor if required
     const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
     const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
-      generateDefaultDefaultCopyCtor(copyCtorFunc);
+      generateDefaultCopyCtor(copyCtorFunc);
 
     // Generate default dtor if required
     const Function *dtorFunc = FunctionManager::lookupFunction(currentScope, DTOR_FUNCTION_NAME, thisType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
-      generateDefaultDefaultDtor(dtorFunc);
+      generateDefaultDtor(dtorFunc);
 
     // Return to root scope
     currentScope = rootScope;
@@ -552,9 +567,11 @@ std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
 
     // Set LLVM type to the interface entry
     node->entry->setStructLLVMType(structType);
+    spiceInterface->entry->setStructLLVMType(structType);
 
     // Generate VTable information
     generateVTable(spiceInterface);
+    deferredVTableInitializations.emplace_back([=, this]() { generateVTableInitializer(spiceInterface); }, false);
   }
 
   return nullptr;

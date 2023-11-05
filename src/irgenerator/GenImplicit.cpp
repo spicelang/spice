@@ -98,7 +98,7 @@ void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
   builder.CreateCall(deallocFct, variableAddress);
 }
 
-llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void()> &generateBody, const Function *spiceFunc) {
+llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceFunc) {
   // Only focus on method procedures
   const ASTNode *node = spiceFunc->entry->declNode;
   assert(spiceFunc->isMethodProcedure());
@@ -195,154 +195,176 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   return fct;
 }
 
-void IRGenerator::generateDefaultDefaultCtor(const Function *ctorFunction) {
-  assert(ctorFunction->implicitDefault && ctorFunction->name == CTOR_FUNCTION_NAME);
+void IRGenerator::generateCtorBodyPreamble(const Function *ctorFunction, Scope *bodyScope) {
+  // Retrieve struct scope
+  Scope *structScope = bodyScope->parent;
+  assert(structScope != nullptr);
 
-  const std::function<void()> generateBody = [&]() {
-    // Retrieve struct scope
-    Scope *structScope = ctorFunction->bodyScope->parent;
-    assert(structScope != nullptr);
+  // Get struct address
+  SymbolTableEntry *thisEntry = bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+  assert(thisEntry != nullptr);
+  llvm::Value *thisAddress = thisEntry->getAddress();
+  assert(thisAddress != nullptr);
+  llvm::Value *thisAddressLoaded = nullptr;
+  SymbolType structSymbolType = thisEntry->getType().getBaseType();
+  llvm::Type *structType = structSymbolType.toLLVMType(context, structScope);
 
-    // Get struct address
-    SymbolTableEntry *thisEntry = ctorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
-    assert(thisEntry != nullptr);
-    llvm::Value *thisAddress = thisEntry->getAddress();
-    assert(thisAddress != nullptr);
-    llvm::Value *thisAddressLoaded = nullptr;
-    llvm::Type *structType = thisEntry->getType().getBaseType().toLLVMType(context, structScope);
+  // Store VTable to first struct field if required
+  Struct *spiceStruct = structSymbolType.getStruct(nullptr);
+  assert(spiceStruct != nullptr);
+  if (spiceStruct->vtable != nullptr) {
+    assert(spiceStruct->vtableType != nullptr);
+    // Store VTable to field address at index 0
+    thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
+    llvm::Value *indices[3] = {builder.getInt32(0), builder.getInt32(0), builder.getInt32(2)};
+    llvm::Value *gepResult = builder.CreateInBoundsGEP(spiceStruct->vtableType, spiceStruct->vtable, indices);
+    builder.CreateStore(gepResult, thisAddressLoaded);
+  }
 
-    const size_t fieldCount = structScope->getFieldCount();
-    for (size_t i = 0; i < fieldCount; i++) {
-      SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
-      assert(fieldSymbol != nullptr && fieldSymbol->isField());
-      const SymbolType &fieldType = fieldSymbol->getType();
-      auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
+  const size_t fieldCount = structScope->getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
+    const SymbolType &fieldType = fieldSymbol->getType();
+    auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
 
-      // Call ctor for struct fields
-      if (fieldType.is(TY_STRUCT)) {
-        // Lookup ctor function and call if available
-        Scope *matchScope = fieldType.getBodyScope();
-        const Function *ctorFunction = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false);
-        if (ctorFunction)
-          generateCtorOrDtorCall(fieldSymbol, ctorFunction, {});
+    // Call ctor for struct fields
+    if (fieldType.is(TY_STRUCT)) {
+      // Lookup ctor function and call if available
+      Scope *matchScope = fieldType.getBodyScope();
+      const Function *ctorFunction = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false);
+      if (ctorFunction)
+        generateCtorOrDtorCall(fieldSymbol, ctorFunction, {});
 
-        continue;
-      }
-
-      // Store default field values
-      if (fieldNode->defaultValue() != nullptr || cliOptions.buildMode == BuildMode::DEBUG) {
-        // Retrieve field address
-        if (!thisAddressLoaded)
-          thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
-        llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
-        llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
-        // Retrieve default value
-        llvm::Value *value;
-        if (fieldNode->defaultValue() != nullptr) {
-          assert(fieldNode->defaultValue()->hasCompileTimeValue());
-          const CompileTimeValue compileTimeValue = fieldNode->defaultValue()->getCompileTimeValue();
-          value = getConst(compileTimeValue, fieldType, fieldNode->defaultValue());
-        } else {
-          assert(cliOptions.buildMode == BuildMode::DEBUG);
-          value = getDefaultValueForSymbolType(fieldType);
-        }
-        // Store default value
-        builder.CreateStore(value, fieldAddress);
-      }
+      continue;
     }
-  };
+
+    // Store default field values
+    if (fieldNode->defaultValue() != nullptr || cliOptions.buildMode == BuildMode::DEBUG) {
+      // Retrieve field address
+      if (!thisAddressLoaded)
+        thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
+      llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
+      llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
+      // Retrieve default value
+      llvm::Value *value;
+      if (fieldNode->defaultValue() != nullptr) {
+        assert(fieldNode->defaultValue()->hasCompileTimeValue());
+        const CompileTimeValue compileTimeValue = fieldNode->defaultValue()->getCompileTimeValue();
+        value = getConst(compileTimeValue, fieldType, fieldNode->defaultValue());
+      } else {
+        assert(cliOptions.buildMode == BuildMode::DEBUG);
+        value = getDefaultValueForSymbolType(fieldType);
+      }
+      // Store default value
+      builder.CreateStore(value, fieldAddress);
+    }
+  }
+}
+
+void IRGenerator::generateDefaultCtor(const Function *ctorFunction) {
+  assert(ctorFunction->implicitDefault && ctorFunction->name == CTOR_FUNCTION_NAME);
+  const std::function<void(void)> generateBody = [&]() { generateCtorBodyPreamble(ctorFunction, ctorFunction->bodyScope); };
   generateImplicitProcedure(generateBody, ctorFunction);
 }
 
-void IRGenerator::generateDefaultDefaultCopyCtor(const Function *copyCtorFunction) {
-  assert(copyCtorFunction->implicitDefault && copyCtorFunction->name == CTOR_FUNCTION_NAME);
+void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction) {
+  // Retrieve struct scope
+  Scope *structScope = copyCtorFunction->bodyScope->parent;
+  assert(structScope != nullptr);
 
-  const std::function<void()> generateBody = [&]() {
-    // Retrieve struct scope
-    Scope *structScope = copyCtorFunction->bodyScope->parent;
-    assert(structScope != nullptr);
+  // Get struct address
+  SymbolTableEntry *thisEntry = copyCtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+  assert(thisEntry != nullptr);
+  llvm::Value *thisAddress = thisEntry->getAddress();
+  assert(thisAddress != nullptr);
+  llvm::Value *thisAddressLoaded = nullptr;
+  llvm::Type *structType = thisEntry->getType().getBaseType().toLLVMType(context, structScope);
 
-    // Get struct address
-    SymbolTableEntry *thisEntry = copyCtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
-    assert(thisEntry != nullptr);
-    llvm::Value *thisAddress = thisEntry->getAddress();
-    assert(thisAddress != nullptr);
-    llvm::Value *thisAddressLoaded = nullptr;
-    llvm::Type *structType = thisEntry->getType().getBaseType().toLLVMType(context, structScope);
+  const size_t fieldCount = structScope->getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
+    const SymbolType &fieldType = fieldSymbol->getType();
 
-    const size_t fieldCount = structScope->getFieldCount();
-    for (size_t i = 0; i < fieldCount; i++) {
-      SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
-      assert(fieldSymbol != nullptr && fieldSymbol->isField());
-      const SymbolType &fieldType = fieldSymbol->getType();
-
-      // Call copy ctor for struct fields
-      if (fieldType.is(TY_STRUCT)) {
-        // Lookup copy ctor function and call if available
-        Scope *matchScope = fieldType.getBodyScope();
-        std::vector<SymbolType> paramTypes = {fieldType.toConstReference(nullptr)};
-        const Function *ctorFct = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, paramTypes, false);
-        if (ctorFct) {
-          // Retrieve field address
-          if (!thisAddressLoaded)
-            thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
-          llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
-          llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
-          generateCtorOrDtorCall(fieldSymbol, ctorFct, {fieldAddress});
-        }
-      }
-    }
-  };
-  generateImplicitProcedure(generateBody, copyCtorFunction);
-}
-
-void IRGenerator::generateDefaultDefaultDtor(const Function *dtorFunction) {
-  assert(dtorFunction->implicitDefault && dtorFunction->name == DTOR_FUNCTION_NAME);
-
-  const std::function<void()> generateBody = [&]() {
-    // Retrieve struct scope
-    Scope *structScope = dtorFunction->bodyScope->parent;
-    assert(structScope != nullptr);
-
-    // Get struct address
-    SymbolTableEntry *thisEntry = dtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
-    assert(thisEntry != nullptr);
-    llvm::Value *thisAddress = thisEntry->getAddress();
-    assert(thisAddress != nullptr);
-    llvm::Value *thisAddressLoaded = nullptr;
-    llvm::Type *structType = thisEntry->getType().getBaseType().toLLVMType(context, structScope);
-
-    const size_t fieldCount = structScope->getFieldCount();
-    for (size_t i = 0; i < fieldCount; i++) {
-      SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
-      assert(fieldSymbol != nullptr && fieldSymbol->isField());
-      const SymbolType &fieldType = fieldSymbol->getType();
-
-      // Call dtor for struct fields
-      if (fieldType.is(TY_STRUCT)) {
-        // Lookup dtor function
-        Scope *matchScope = fieldType.getBodyScope();
-        const Function *dtorFunction = FunctionManager::lookupFunction(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, false);
-
-        // Generate call to dtor
-        if (dtorFunction)
-          generateCtorOrDtorCall(fieldSymbol, dtorFunction, {});
-
-        continue;
-      }
-
-      // Deallocate fields, that are stored on the heap
-      if (fieldType.isHeap()) {
+    // Call copy ctor for struct fields
+    if (fieldType.is(TY_STRUCT)) {
+      // Lookup copy ctor function and call if available
+      Scope *matchScope = fieldType.getBodyScope();
+      std::vector<SymbolType> paramTypes = {fieldType.toConstReference(nullptr)};
+      const Function *ctorFct = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, paramTypes, false);
+      if (ctorFct) {
         // Retrieve field address
         if (!thisAddressLoaded)
           thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
         llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
         llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
-        // Call dealloc function
-        generateDeallocCall(fieldAddress);
+        generateCtorOrDtorCall(fieldSymbol, ctorFct, {fieldAddress});
       }
     }
-  };
+  }
+}
+
+void IRGenerator::generateDefaultCopyCtor(const Function *copyCtorFunction) {
+  assert(copyCtorFunction->implicitDefault && copyCtorFunction->name == CTOR_FUNCTION_NAME);
+  const std::function<void(void)> generateBody = [&]() { generateCopyCtorBodyPreamble(copyCtorFunction); };
+  generateImplicitProcedure(generateBody, copyCtorFunction);
+}
+
+void IRGenerator::generateDtorBodyPreamble(const spice::compiler::Function *dtorFunction) {
+  // Retrieve struct scope
+  Scope *structScope = dtorFunction->bodyScope->parent;
+  assert(structScope != nullptr);
+
+  // Get struct address
+  SymbolTableEntry *thisEntry = dtorFunction->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+  assert(thisEntry != nullptr);
+  llvm::Value *thisAddress = thisEntry->getAddress();
+  assert(thisAddress != nullptr);
+  llvm::Value *thisAddressLoaded = nullptr;
+  llvm::Type *structType = thisEntry->getType().getBaseType().toLLVMType(context, structScope);
+
+  const size_t fieldCount = structScope->getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
+    const SymbolType &fieldType = fieldSymbol->getType();
+
+    // Call dtor for struct fields
+    if (fieldType.is(TY_STRUCT)) {
+      // Lookup dtor function
+      Scope *matchScope = fieldType.getBodyScope();
+      const Function *dtorFunction = FunctionManager::lookupFunction(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, false);
+
+      // Generate call to dtor
+      if (dtorFunction)
+        generateCtorOrDtorCall(fieldSymbol, dtorFunction, {});
+
+      continue;
+    }
+
+    // Deallocate fields, that are stored on the heap
+    if (fieldType.isHeap()) {
+      // Retrieve field address
+      if (!thisAddressLoaded)
+        thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
+      llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
+      llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
+      // Call dealloc function
+      generateDeallocCall(fieldAddress);
+    }
+  }
+}
+
+void IRGenerator::generateDefaultDtor(const Function *dtorFunction) {
+  assert(dtorFunction->implicitDefault && dtorFunction->name == DTOR_FUNCTION_NAME);
+  const std::function<void(void)> generateBody = [&]() { generateDtorBodyPreamble(dtorFunction); };
   generateImplicitProcedure(generateBody, dtorFunction);
 }
 

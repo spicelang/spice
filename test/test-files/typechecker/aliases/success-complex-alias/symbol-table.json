@@ -48,7 +48,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "printLength<generic(T)>()",
+          "name": "printLength<T>()",
           "symbols": [
             {
               "codeLoc": "L12C1",
@@ -57,14 +57,14 @@
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "TestStruct<generic(T)>*"
+              "type": "TestStruct<T>*"
             }
           ]
         },
         {
           "captures": [],
           "children": [],
-          "name": "ctor<generic(T)>(const unsigned long)",
+          "name": "ctor<T>(const unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",
@@ -82,7 +82,7 @@
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "TestStruct<generic(T)>*"
+              "type": "TestStruct<T>*"
             }
           ]
         }
@@ -185,7 +185,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "printLength<generic(T)>()",
+          "name": "printLength<T>()",
           "symbols": [
             {
               "codeLoc": "L12C1",
@@ -194,14 +194,14 @@
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "TestStruct<generic(T)>*"
+              "type": "TestStruct<T>*"
             }
           ]
         },
         {
           "captures": [],
           "children": [],
-          "name": "ctor<generic(T)>(const unsigned long)",
+          "name": "ctor<T>(const unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",
@@ -219,7 +219,7 @@
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
-              "type": "TestStruct<generic(T)>*"
+              "type": "TestStruct<T>*"
             }
           ]
         }
@@ -260,7 +260,7 @@
           "name": "_f1",
           "orderIndex": 0,
           "state": "declared",
-          "type": "generic(T)"
+          "type": "T"
         }
       ]
     }
@@ -300,7 +300,7 @@
       "name": "Alias",
       "orderIndex": 1,
       "state": "declared",
-      "type": "alias(TestStruct<long>)"
+      "type": "TestStruct<long>"
     },
     {
       "codeLoc": "L3C1",

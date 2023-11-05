@@ -185,6 +185,16 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
       rootScope->createChildScope(STRUCT_SCOPE_PREFIX + node->structName, ScopeType::STRUCT, &node->codeLoc);
   currentScope->isGenericScope = node->hasTemplateTypes;
 
+  // Insert implicit field for each interface type
+  if (node->interfaceTypeLst()) {
+    for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes()) {
+      const std::string &interfaceName = interfaceNode->baseDataType()->customDataType()->typeNameFragments.back();
+      SymbolTableEntry *interfaceFieldEntry = currentScope->insert("this." + interfaceName, interfaceNode);
+      interfaceFieldEntry->used = true;
+      interfaceFieldEntry->isImplicitField = true;
+    }
+  }
+
   // Visit children
   visitChildren(node);
 

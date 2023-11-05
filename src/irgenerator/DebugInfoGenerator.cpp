@@ -315,8 +315,8 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     assert(spiceStruct != nullptr);
 
     // Check if we already know the DI type
-    if (spiceStruct->structDIType != nullptr) {
-      baseDiType = spiceStruct->structDIType;
+    if (spiceStruct->diType != nullptr) {
+      baseDiType = spiceStruct->diType;
       break;
     }
 
@@ -333,14 +333,17 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     llvm::DICompositeType *structDiType = diBuilder->createStructType(
         diFile, spiceStruct->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
         llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
-    spiceStruct->structDIType = structDiType;
+    baseDiType = spiceStruct->diType = structDiType;
 
     // Collect DI types for fields
     std::vector<llvm::Metadata *> fieldTypes;
-    for (size_t i = 0; i < spiceStruct->fieldTypes.size(); i++) {
+    for (size_t i = 0; i < spiceStruct->scope->getFieldCount(); i++) {
       // Get field entry
       SymbolTableEntry *fieldEntry = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
       assert(fieldEntry != nullptr && fieldEntry->isField());
+      if (fieldEntry->isImplicitField)
+        continue;
+
       const SymbolType fieldType = fieldEntry->getType();
       const size_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
       const size_t offsetInBits = structLayout->getElementOffsetInBits(i);
@@ -354,7 +357,32 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     }
 
     structDiType->replaceElements(llvm::MDTuple::get(irGenerator->context, fieldTypes));
-    baseDiType = structDiType;
+    break;
+  }
+  case TY_INTERFACE: {
+    Interface *spiceInterface = symbolType.getInterface(node);
+    assert(spiceInterface != nullptr);
+
+    // Check if we already know the DI type
+    if (spiceInterface->diType != nullptr) {
+      baseDiType = spiceInterface->diType;
+      break;
+    }
+
+    // Retrieve information about the interface
+    const size_t lineNo = spiceInterface->getDeclCodeLoc().line;
+    llvm::Type *interfaceType = spiceInterface->entry->getType().toLLVMType(irGenerator->context, irGenerator->currentScope);
+    assert(interfaceType != nullptr);
+    const llvm::StructLayout *structLayout =
+        irGenerator->module->getDataLayout().getStructLayout(static_cast<llvm::StructType *>(interfaceType));
+    const uint32_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(interfaceType).value();
+
+    // Create interface type
+    const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
+    llvm::DICompositeType *interfaceDiType = diBuilder->createStructType(
+        diFile, spiceInterface->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
+        llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
+    baseDiType = spiceInterface->diType = interfaceDiType;
     break;
   }
   case TY_FUNCTION: // fall-through

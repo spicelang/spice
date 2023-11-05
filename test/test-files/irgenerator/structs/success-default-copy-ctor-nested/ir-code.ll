@@ -15,14 +15,16 @@ define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 derefer
   %other = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   store ptr %1, ptr %other, align 8
-  store %struct.Inner { i16 -43 }, ptr %0, align 2
   %3 = load ptr, ptr %this, align 8
-  %x_addr = getelementptr inbounds %struct.Inner, ptr %3, i32 0, i32 0
-  %4 = load ptr, ptr %other, align 8
-  %x_addr1 = getelementptr inbounds %struct.Inner, ptr %4, i32 0, i32 0
-  %5 = load i16, ptr %x_addr1, align 2
-  %6 = add i16 %5, 5
-  store i16 %6, ptr %x_addr, align 2
+  %4 = getelementptr inbounds %struct.Inner, ptr %3, i32 0, i32 0
+  store i16 -43, ptr %4, align 2
+  %5 = load ptr, ptr %this, align 8
+  %x_addr = getelementptr inbounds %struct.Inner, ptr %5, i32 0, i32 0
+  %6 = load ptr, ptr %other, align 8
+  %x_addr1 = getelementptr inbounds %struct.Inner, ptr %6, i32 0, i32 0
+  %7 = load i16, ptr %x_addr1, align 2
+  %8 = add i16 %7, 5
+  store i16 %8, ptr %x_addr, align 2
   ret void
 }
 

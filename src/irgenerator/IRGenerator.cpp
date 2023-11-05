@@ -28,6 +28,10 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
   // Generate IR
   visitChildren(node);
 
+  // Execute deferred VTable initializations
+  for (DeferredLogic &deferredVTableInit : deferredVTableInitializations)
+    deferredVTableInit.execute();
+
   // Finalize debug info generator
   diGenerator.finalize();
 
@@ -197,6 +201,8 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     // Get default values for all fields of the struct
     std::vector<llvm::Constant *> fieldConstants;
     fieldConstants.reserve(fieldCount);
+
+    // Add default value for each struct field
     for (size_t i = 0; i < fieldCount; i++) {
       // Get entry of the field
       SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupStrictByIndex(i);
@@ -216,6 +222,16 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
       fieldConstants.push_back(defaultFieldValue);
     }
     return llvm::ConstantStruct::get(structType, fieldConstants);
+  }
+
+  // Interface
+  if (symbolType.is(TY_INTERFACE)) {
+    // Retrieve struct type
+    Scope *interfaceScope = symbolType.getBodyScope();
+    assert(interfaceScope != nullptr);
+    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, interfaceScope));
+
+    return llvm::ConstantStruct::get(structType, llvm::Constant::getNullValue(builder.getPtrTy()));
   }
 
   throw CompilerError(INTERNAL_ERROR, "Cannot determine default value for symbol type"); // GCOV_EXCL_LINE

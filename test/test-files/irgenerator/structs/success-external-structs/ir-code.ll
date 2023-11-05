@@ -12,9 +12,9 @@ define dso_local i32 @main() #0 {
   %v1 = alloca %struct.Vec, align 8
   store i32 0, ptr %result, align 4
   store %struct.Vec { i32 11, i1 false }, ptr %v, align 4
-  call void @_ZN3Vec5printEv(ptr %v)
+  call void @_ZN3Vec5printEv(ptr noundef nonnull align 4 dereferenceable(8) %v)
   store %struct.Vec zeroinitializer, ptr %v1, align 4
-  call void @_ZN3Vec5printEv(ptr %v1)
+  call void @_ZN3Vec5printEv(ptr noundef nonnull align 4 dereferenceable(8) %v1)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
 }

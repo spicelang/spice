@@ -21,37 +21,37 @@ define private void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } %0, { ptr, ptr } %1) {
   %3 = getelementptr inbounds { ptr, ptr }, ptr %l1, i32 0, i32 0
   %4 = getelementptr inbounds { ptr, ptr }, ptr %l1, i32 0, i32 1
   %captures = load ptr, ptr %4, align 8
-  %5 = load ptr, ptr %3, align 8
-  call void %5(ptr %captures, ptr %x)
-  %6 = load i32, ptr %x, align 4
-  %7 = icmp eq i32 %6, 6
-  br i1 %7, label %assert.exit.L4, label %assert.then.L4, !prof !0
+  %fct = load ptr, ptr %3, align 8
+  call void %fct(ptr %captures, ptr %x)
+  %5 = load i32, ptr %x, align 4
+  %6 = icmp eq i32 %5, 6
+  br i1 %6, label %assert.exit.L4, label %assert.then.L4, !prof !0
 
 assert.then.L4:                                   ; preds = %2
-  %8 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %7 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L4:                                   ; preds = %2
-  %9 = getelementptr inbounds { ptr, ptr }, ptr %l2, i32 0, i32 0
-  %10 = getelementptr inbounds { ptr, ptr }, ptr %l2, i32 0, i32 1
-  %captures1 = load ptr, ptr %10, align 8
-  %11 = load ptr, ptr %9, align 8
-  %12 = call i1 %11(ptr %captures1, ptr %x)
-  br i1 %12, label %assert.exit.L5, label %assert.then.L5, !prof !0
+  %8 = getelementptr inbounds { ptr, ptr }, ptr %l2, i32 0, i32 0
+  %9 = getelementptr inbounds { ptr, ptr }, ptr %l2, i32 0, i32 1
+  %captures1 = load ptr, ptr %9, align 8
+  %fct2 = load ptr, ptr %8, align 8
+  %10 = call i1 %fct2(ptr %captures1, ptr %x)
+  br i1 %10, label %assert.exit.L5, label %assert.then.L5, !prof !0
 
 assert.then.L5:                                   ; preds = %assert.exit.L4
-  %13 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  %11 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L5:                                   ; preds = %assert.exit.L4
-  %14 = load i32, ptr %x, align 4
-  %15 = icmp eq i32 %14, 11
-  br i1 %15, label %assert.exit.L6, label %assert.then.L6, !prof !0
+  %12 = load i32, ptr %x, align 4
+  %13 = icmp eq i32 %12, 11
+  br i1 %13, label %assert.exit.L6, label %assert.then.L6, !prof !0
 
 assert.then.L6:                                   ; preds = %assert.exit.L5
-  %16 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
+  %14 = call i32 (ptr, ...) @printf(ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
 

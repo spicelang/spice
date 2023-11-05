@@ -427,6 +427,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
 
   // Add signature to current scope
   Function *manifestation = FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
+  manifestation->entry = node->entry;
   manifestation->used = true;
 
   // Prepare signature type
@@ -1575,10 +1576,9 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
   // Retrieve return type
   const bool isFct = data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().is(TY_FUNCTION) : data.callee->isFunction();
-  SymbolType returnType(TY_DYN);
+  SymbolType returnType;
   if (data.isFctPtrCall()) {
-    if (isFct)
-      returnType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
+    returnType = isFct ? firstFragEntry->getType().getBaseType().getFunctionReturnType() : SymbolType(TY_BOOL);
   } else if (data.isCtorCall()) {
     // Set return type to 'this' type
     returnType = data.thisType;
@@ -1591,7 +1591,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
   // Initialize return type if required
   SymbolTableEntry *anonymousSymbol = nullptr;
-  if (returnType.is(TY_STRUCT)) {
+  if (returnType.isBaseType(TY_STRUCT)) {
     SymbolType returnBaseType = returnType.getBaseType();
     const std::string structName = returnBaseType.getOriginalSubType();
     Scope *matchScope = returnBaseType.getBodyScope()->parent;
@@ -1600,6 +1600,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     assert(spiceStruct != nullptr);
     returnBaseType.setBodyScope(spiceStruct->scope);
     returnType = returnType.replaceBaseType(returnBaseType);
+
+    returnType = mapImportedScopeTypeToLocalType(returnType.getBaseType().getBodyScope(), returnType);
 
     // Add anonymous symbol to keep track of deallocation
     if (returnType.is(TY_STRUCT))
@@ -1896,13 +1898,15 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
                     "You've passed too less/many field values. Pass either none or all of them")
 
     // Check if the field types are matching
+    const size_t fieldCount = spiceStruct->fieldTypes.size();
+    const size_t explicitFieldsStartIdx = structScope->getFieldCount() - fieldCount;
     for (size_t i = 0; i < node->fieldLst()->args().size(); i++) {
       // Get actual type
       AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
-      const SymbolTableEntry *expectedField = structScope->symbolTable.lookupStrictByIndex(i);
+      const SymbolTableEntry *expectedField = structScope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
       assert(expectedField != nullptr);
       SymbolType expectedType = expectedField->getType();
       const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
@@ -2348,7 +2352,7 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
 
 SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const {
   // Skip all types, except structs
-  if (!symbolType.getBaseType().is(TY_STRUCT))
+  if (!symbolType.isBaseType(TY_STRUCT))
     return symbolType;
 
   // If the target scope is in the current source file, we can return the symbol type as is
@@ -2375,19 +2379,20 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
 
 SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const {
   // Skip all types, except structs
-  if (!symbolType.getBaseType().is(TY_STRUCT))
+  if (!symbolType.isBaseType(TY_STRUCT))
     return symbolType;
 
-  // If the target scope is in the current source file, we can return the symbol type as is
+  // If the source scope is in the current source file, we can return the symbol type as is
   SourceFile *sourceSourceFile = sourceScope->sourceFile;
   if (sourceSourceFile == sourceFile)
     return symbolType;
 
-  // Match the scope of the symbol type against all scopes in the name registry of the target source file
+  // Match the scope of the symbol type against all scopes in the name registry of this source file
+  const SymbolType baseType = symbolType.getBaseType();
   for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->scope == symbolType.getBaseType().getBodyScope()) {
+        if (manifestation->scope == baseType.getBodyScope()) {
           // Get the 'fullest-qualified' registry entry
           const NameRegistryEntry *mostQualifiedEntry = sourceFile->getNameRegistryEntry(entry.name);
           assert(mostQualifiedEntry != nullptr);
@@ -2396,10 +2401,9 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
 
   // This source file does not know about the struct at all
   // -> show it how to find the struct
-  const std::string structName = symbolType.getBaseType().getSubType();
-  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(structName);
+  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(baseType.getOriginalSubType());
   assert(origRegistryEntry != nullptr);
-  sourceFile->addNameRegistryEntry(structName, origRegistryEntry->targetEntry, origRegistryEntry->targetScope, false);
+  sourceFile->addNameRegistryEntry(baseType.getSubType(), origRegistryEntry->targetEntry, origRegistryEntry->targetScope, false);
 
   return symbolType;
 }

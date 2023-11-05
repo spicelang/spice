@@ -54,6 +54,7 @@ public:
   [[nodiscard]] ALWAYS_INLINE bool isNormalProcedure() const { return isProcedure() && !isMethod(); }
   [[nodiscard]] ALWAYS_INLINE bool isMethodFunction() const { return isFunction() && isMethod(); }
   [[nodiscard]] ALWAYS_INLINE bool isMethodProcedure() const { return isProcedure() && isMethod(); }
+  [[nodiscard]] ALWAYS_INLINE bool isVirtualMethod() const { return isMethod() && isVirtual; }
   [[nodiscard]] bool hasSubstantiatedParams() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
@@ -76,6 +77,9 @@ public:
   bool alreadyTypeChecked = false;
   bool used = false;
   bool implicitDefault = false;
+  llvm::Function *llvmFunction = nullptr;
+  bool isVirtual = false;
+  size_t vtableIndex = 0;
 
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, thisType, returnType, paramList, templateTypes)

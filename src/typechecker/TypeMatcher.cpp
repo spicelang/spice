@@ -102,6 +102,12 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
   }
 }
 
+void TypeMatcher::substantiateTypesWithTypeMapping(std::vector<SymbolType> &symbolTypes, const TypeMapping &typeMapping) {
+  for (SymbolType &symbolType : symbolTypes)
+    if (symbolType.hasAnyGenericParts())
+      substantiateTypeWithTypeMapping(symbolType, typeMapping);
+}
+
 void TypeMatcher::substantiateTypeWithTypeMapping(SymbolType &symbolType, const TypeMapping &typeMapping) {
   assert(symbolType.hasAnyGenericParts());
 

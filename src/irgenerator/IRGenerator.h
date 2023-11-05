@@ -8,6 +8,7 @@
 #include <irgenerator/OpRuleConversionManager.h>
 #include <irgenerator/StdFunctionManager.h>
 #include <symboltablebuilder/Scope.h>
+#include <util/DeferredLogic.h>
 
 namespace spice::compiler {
 
@@ -140,16 +141,20 @@ private:
   void generateScopeCleanup(const StmtLstNode *node) const;
   void generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
   void generateDeallocCall(llvm::Value *variableAddress) const;
-  llvm::Function *generateImplicitProcedure(const std::function<void()> &generateBody, const Function *spiceFunc);
-  void generateDefaultDefaultCtor(const Function *ctorFunction);
-  void generateDefaultDefaultCopyCtor(const Function *copyCtorFunction);
-  void generateDefaultDefaultDtor(const Function *dtorFunction);
+  llvm::Function *generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceFunc);
+  void generateCtorBodyPreamble(const Function *ctorFunction, Scope *bodyScope);
+  void generateDefaultCtor(const Function *ctorFunction);
+  void generateCopyCtorBodyPreamble(const Function *copyCtorFunction);
+  void generateDefaultCopyCtor(const Function *copyCtorFunction);
+  void generateDtorBodyPreamble(const Function *dtorFunction);
+  void generateDefaultDtor(const Function *dtorFunction);
 
   // Generate VTable
   void ensureRTTIRuntime();
   llvm::Constant *generateTypeInfoName(StructBase *spiceStruct);
   llvm::Constant *generateTypeInfo(StructBase *spiceStruct);
   llvm::Constant *generateVTable(StructBase *spiceStruct);
+  void generateVTableInitializer(StructBase *spiceStruct);
 
   // Private members
   llvm::LLVMContext &context;
@@ -167,6 +172,7 @@ private:
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
   bool blockAlreadyTerminated = false;
+  std::vector<DeferredLogic> deferredVTableInitializations;
 };
 
 } // namespace spice::compiler

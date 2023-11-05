@@ -26,13 +26,15 @@ define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 
   %this = alloca ptr, align 8
   %res = alloca %struct.Result, align 8
   store ptr %0, ptr %this, align 8
-  store %struct.StructWithHeapFields zeroinitializer, ptr %0, align 8
-  %2 = call %struct.Result @_Z6sAllocm(i64 10)
-  store %struct.Result %2, ptr %res, align 8
-  %3 = load ptr, ptr %this, align 8
-  %data_addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %3, i32 0, i32 0
-  %4 = call ptr @_ZN6ResultIPhE6unwrapEv(ptr %res)
-  store ptr %4, ptr %data_addr, align 8
+  %2 = load ptr, ptr %this, align 8
+  %3 = getelementptr inbounds %struct.StructWithHeapFields, ptr %2, i32 0, i32 0
+  store ptr null, ptr %3, align 8
+  %4 = call %struct.Result @_Z6sAllocm(i64 10)
+  store %struct.Result %4, ptr %res, align 8
+  %5 = load ptr, ptr %this, align 8
+  %data_addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i32 0, i32 0
+  %6 = call ptr @_ZN6ResultIPhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
+  store ptr %6, ptr %data_addr, align 8
   ret void
 }
 
@@ -47,7 +49,7 @@ define dso_local i32 @main() #1 {
   %s = alloca %struct.StructWithHeapFields, align 8
   store i32 0, ptr %result, align 4
   store ptr null, ptr %sPtr, align 8
-  call void @_ZN20StructWithHeapFields4ctorEv(ptr %s)
+  call void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %s)
   store ptr %s, ptr %sPtr, align 8
   %data_addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %s, i32 0, i32 0
   %1 = load ptr, ptr %data_addr, align 8

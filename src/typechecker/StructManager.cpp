@@ -126,11 +126,32 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
 
       // Replace symbol types of field entries with concrete types
       assert(substantiatedStruct->scope != nullptr);
-      for (size_t i = 0; i < substantiatedStruct->fieldTypes.size(); i++) {
+      const size_t fieldCount = substantiatedStruct->fieldTypes.size();
+      const size_t explicitFieldsStartIdx = substantiatedStruct->scope->getFieldCount() - fieldCount;
+      for (size_t i = 0; i < fieldCount; i++) {
         // Replace field type with concrete template type
-        SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(i);
+        SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
         assert(fieldEntry != nullptr && fieldEntry->isField());
         fieldEntry->updateType(substantiatedStruct->fieldTypes.at(i), /*overwriteExistingType=*/true);
+      }
+
+      // Instantiate implemented interfaces if required
+      for (SymbolType &interfaceType : substantiatedStruct->interfaceTypes) {
+        // Skip non-generic interfaces
+        if (!interfaceType.hasAnyGenericParts())
+          continue;
+
+        // Build template types
+        std::vector<SymbolType> templateTypes = interfaceType.getTemplateTypes();
+        TypeMatcher::substantiateTypesWithTypeMapping(templateTypes, typeMapping);
+
+        // Instantiate interface
+        Scope *interfaceMatchScope = interfaceType.getBodyScope()->parent;
+        Interface *spiceInterface =
+            InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getOriginalSubType(), templateTypes, node);
+        assert(spiceInterface != nullptr);
+
+        interfaceType = spiceInterface->entry->getType();
       }
 
       // Add to matched structs

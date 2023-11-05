@@ -42,10 +42,14 @@ public:
   size_t manifestationIndex = 0;
   bool genericSubstantiation = false;
   bool used = false;
-  llvm::DICompositeType *structDIType = nullptr;
-  llvm::Constant *typeInfoName = nullptr;
-  llvm::Constant *typeInfo = nullptr;
-  llvm::Constant *vtable = nullptr;
+  llvm::DICompositeType *diType = nullptr;
+  struct {
+    llvm::StructType *typeInfoType = nullptr;
+    llvm::StructType *vtableType = nullptr;
+    llvm::Constant *typeInfoName = nullptr;
+    llvm::Constant *typeInfo = nullptr;
+    llvm::Constant *vtable = nullptr;
+  };
 };
 
 } // namespace spice::compiler

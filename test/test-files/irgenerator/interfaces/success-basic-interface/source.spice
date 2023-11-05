@@ -20,7 +20,8 @@ public f<bool> Car.isDriving() {
 }
 
 f<int> main() {
-    Driveable car = Car();
-    car.drive(12);
-    printf("Is driving: %d", car.isDriving());
+    Car car = Car();
+    Driveable* driveable = &car;
+    driveable.drive(12);
+    printf("Is driving: %d", driveable.isDriving());
 }

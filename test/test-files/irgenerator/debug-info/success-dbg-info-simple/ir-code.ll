@@ -35,7 +35,7 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !48 {
   call void @llvm.dbg.declare(metadata ptr %result, metadata !52, metadata !DIExpression()), !dbg !53
   call void @llvm.dbg.declare(metadata ptr %ref, metadata !54, metadata !DIExpression()), !dbg !53
   store ptr %0, ptr %ref, align 8, !dbg !53
-  call void @_ZN6String4ctorEPc(ptr %2, ptr @anon.string.0), !dbg !55
+  call void @_ZN6String4ctorEPc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.0), !dbg !55
   %3 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 0, !dbg !56
   store i64 6, ptr %3, align 8, !dbg !56
   %4 = load %struct.String, ptr %2, align 8, !dbg !56
@@ -68,7 +68,7 @@ define dso_local i32 @main() #2 !dbg !60 {
   %2 = load i64, ptr %lng_addr, align 8, !dbg !71
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %2), !dbg !71
   %4 = getelementptr inbounds %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !72
-  %5 = call ptr @_ZN6String6getRawEv(ptr %4), !dbg !72
+  %5 = call ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %4), !dbg !72
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %5), !dbg !72
   %i_addr = getelementptr inbounds %struct.TestStruct, ptr %res, i32 0, i32 2, !dbg !73
   %7 = load i32, ptr %i_addr, align 4, !dbg !73
@@ -95,7 +95,7 @@ attributes #3 = { nofree nounwind }
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "anon.string.0", linkageName: "anon.string.0", scope: !2, file: !7, line: 8, type: !15, isLocal: true, isDefinition: true)
 !2 = distinct !DICompileUnit(language: DW_LANG_C17, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
-!3 = !DIFile(filename: "C:\\Users\\I516467\\Documents\\JustForFunGitHubClones\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dbg-info-simple\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-simple")
+!3 = !DIFile(filename: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dbg-info-simple\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-simple")
 !4 = !{!0, !5, !9, !12}
 !5 = !DIGlobalVariableExpression(var: !6, expr: !DIExpression())
 !6 = distinct !DIGlobalVariable(name: "printf.str.0", linkageName: "printf.str.0", scope: !2, file: !7, line: 15, type: !8, isLocal: true, isDefinition: true)
@@ -126,7 +126,7 @@ attributes #3 = { nofree nounwind }
 !31 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
 !32 = !DIDerivedType(tag: DW_TAG_member, name: "str", scope: !28, file: !7, line: 3, baseType: !33, size: 192, align: 8, offset: 64)
 !33 = !DICompositeType(tag: DW_TAG_structure_type, name: "String", scope: !34, file: !34, line: 13, size: 192, align: 8, flags: DIFlagTypePassByValue | DIFlagNonTrivial, elements: !35, identifier: "struct.String")
-!34 = !DIFile(filename: "string_rt.spice", directory: "C:\\Users\\I516467\\Documents\\JustForFunGitHubClones\\spice\\std\\runtime")
+!34 = !DIFile(filename: "string_rt.spice", directory: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\std\\runtime")
 !35 = !{!36, !39, !41}
 !36 = !DIDerivedType(tag: DW_TAG_member, name: "contents", scope: !33, file: !34, line: 14, baseType: !37, size: 64)
 !37 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !38, size: 64)

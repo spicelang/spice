@@ -276,7 +276,7 @@ public:
   [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(name->name, codeLoc); }
   std::vector<Function *> *getFctManifestations(const std::string &_) override { return &manifestations; }
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   FctNameNode *name;
@@ -1728,6 +1728,7 @@ public:
     // Methods
     [[nodiscard]] bool isOrdinaryCall() const { return callType == TYPE_ORDINARY; }
     [[nodiscard]] bool isMethodCall() const { return callType == TYPE_METHOD; }
+    [[nodiscard]] bool isVirtualMethodCall() const { return isMethodCall() && thisType.isBaseType(TY_INTERFACE); }
     [[nodiscard]] bool isCtorCall() const { return callType == TYPE_CTOR; }
     [[nodiscard]] bool isFctPtrCall() const { return callType == TYPE_FCT_PTR; }
   };

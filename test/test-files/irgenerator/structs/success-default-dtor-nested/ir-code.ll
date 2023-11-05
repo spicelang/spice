@@ -18,11 +18,15 @@ declare void @free(ptr)
 define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
-  store %struct.Inner { ptr @anon.string.0, ptr null }, ptr %0, align 8
   %2 = load ptr, ptr %this, align 8
-  %data_addr = getelementptr inbounds %struct.Inner, ptr %2, i32 0, i32 1
-  %3 = call ptr @malloc(i64 10)
-  store ptr %3, ptr %data_addr, align 8
+  %3 = getelementptr inbounds %struct.Inner, ptr %2, i32 0, i32 0
+  store ptr @anon.string.0, ptr %3, align 8
+  %4 = getelementptr inbounds %struct.Inner, ptr %2, i32 0, i32 1
+  store ptr null, ptr %4, align 8
+  %5 = load ptr, ptr %this, align 8
+  %data_addr = getelementptr inbounds %struct.Inner, ptr %5, i32 0, i32 1
+  %6 = call ptr @malloc(i64 10)
+  store ptr %6, ptr %data_addr, align 8
   ret void
 }
 
