@@ -59,6 +59,7 @@ struct CliOptions {
     bool dumpToFiles = false;
   } dumpSettings;
   bool enableAstOpt = false;
+  bool namesForIRValues = false;
   OptLevel optLevel = OptLevel::O0; // Default optimization level for debug build mode is O0
   bool useLTO = false;
   bool noEntryFct = false;

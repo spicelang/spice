@@ -42,7 +42,7 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
 }
 
 llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName) {
-  if (!cliOptions.dumpSettings.dumpIR)
+  if (!cliOptions.namesForIRValues)
     varName = "";
 
   if (allocaInsertInst != nullptr) { // If there is already an alloca inst, insert right after that
@@ -68,7 +68,7 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName
 llvm::Value *IRGenerator::insertLoad(llvm::Type *llvmType, llvm::Value *ptr, std::string varName) const {
   assert(ptr->getType()->isPointerTy());
 
-  if (!cliOptions.dumpSettings.dumpIR)
+  if (!cliOptions.namesForIRValues)
     varName = "";
 
   // Insert load
@@ -80,7 +80,7 @@ llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *llvmType, llvm::Value *b
   assert(basePtr->getType()->isPointerTy());
   assert(!indices.empty());
 
-  if (!cliOptions.dumpSettings.dumpIR)
+  if (!cliOptions.namesForIRValues)
     varName = "";
 
   // Insert GEP

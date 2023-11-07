@@ -132,6 +132,10 @@ void Driver::enrich() {
     cliOptions.targetOs = triple.getOSName();
     cliOptions.isNativeTarget = triple == defaultTriple;
   }
+
+  // Always preserve IR value names when dumping IR
+  if (cliOptions.dumpSettings.dumpIR)
+    cliOptions.namesForIRValues = true;
 }
 
 /**
