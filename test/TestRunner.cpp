@@ -59,6 +59,7 @@ void execTestCase(const TestCase &testCase) {
           /* dumpToFiles= */ false,
       },
       /* disableAstOpt= */ false,
+      /* namesForIRValues= */ true,
       /* optLevel= */ OptLevel::O0,
       /* useLTO= */ std::filesystem::exists(testCase.testPath / CTL_LTO),
       /* noEntryFct= */ false,

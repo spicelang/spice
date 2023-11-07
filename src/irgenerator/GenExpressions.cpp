@@ -674,7 +674,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
       // Calculate address of array item
       llvm::Value *indices[2] = {builder.getInt32(0), indexValue};
-      lhs.ptr = builder.CreateInBoundsGEP(lhsTy, lhs.ptr, indices);
+      lhs.ptr = insertInBoundsGEP(lhsTy, lhs.ptr, indices);
     } else { // Pointer
       // Make sure the value is present
       resolveValue(lhsNode, lhs);
@@ -685,7 +685,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
       lhsTy = lhsSTy.getContainedTy().toLLVMType(context, currentScope);
       // Calculate address of pointer item
-      lhs.ptr = builder.CreateInBoundsGEP(lhsTy, lhs.ptr, indexValue);
+      lhs.ptr = insertInBoundsGEP(lhsTy, lhs.ptr, indexValue);
     }
 
     // Reset value and entry
@@ -716,15 +716,15 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     std::vector<llvm::Value *> indices = {builder.getInt32(0)};
     for (size_t index : indexPath)
       indices.push_back(builder.getInt32(index));
-    llvm::Value *memberAddress = builder.CreateInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices);
-    memberAddress->setName(fieldName + "_addr");
+    const std::string name = fieldName + "_addr";
+    llvm::Value *memberAddr = insertInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices, name);
 
     // Set as ptr or refPtr, depending on the type
     if (fieldSymbolType.isRef()) {
       lhs.ptr = nullptr;
-      lhs.refPtr = memberAddress;
+      lhs.refPtr = memberAddr;
     } else {
-      lhs.ptr = memberAddress;
+      lhs.ptr = memberAddr;
       lhs.refPtr = nullptr;
     }
 

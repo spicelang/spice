@@ -97,7 +97,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       assert(structScope != nullptr);
       // Get address of field
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
-      thisPtr = builder.CreateInBoundsGEP(structTy, thisPtr, indices);
+      thisPtr = insertInBoundsGEP(structTy, thisPtr, indices);
       // Auto de-reference pointer and get new struct type
       autoDeReferencePtr(thisPtr, fieldEntryType, structScope->parent);
       structTy = fieldEntryType.getBaseType().toLLVMType(context, structScope->parent);
@@ -127,7 +127,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     if (firstFragEntry->getType().hasLambdaCaptures()) {
       // Load captures struct
       llvm::Value *capturesPtrPtr = builder.CreateStructGEP(fatStructType, fatPtr, 1);
-      llvm::Value *capturesPtr = builder.CreateLoad(builder.getPtrTy(), capturesPtrPtr, CAPTURES_PARAM_NAME);
+      llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, CAPTURES_PARAM_NAME);
       // Add captures to argument list
       argValues.push_back(capturesPtr);
     }
@@ -205,11 +205,11 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     assert(data.callee->isVirtual);
     assert(thisPtr != nullptr);
     // Load VTable
-    llvm::Value *vtablePtr = builder.CreateLoad(builder.getPtrTy(), thisPtr, "vtable.addr");
+    llvm::Value *vtablePtr = insertLoad(builder.getPtrTy(), thisPtr, "vtable.addr");
     const size_t vtableIndex = data.callee->vtableIndex;
     // Lookup function pointer in VTable
-    fctPtr = builder.CreateInBoundsGEP(builder.getPtrTy(), vtablePtr, builder.getInt64(vtableIndex), "vfct.addr");
-    llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr, "fct");
+    fctPtr = insertInBoundsGEP(builder.getPtrTy(), vtablePtr, builder.getInt64(vtableIndex), "vfct.addr");
+    llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, "fct");
 
     // Generate function call
     result = builder.CreateCall({fctType, fct}, argValues);
@@ -219,7 +219,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     if (!fctPtr)
       fctPtr = firstFragEntry->getAddress();
     autoDeReferencePtr(fctPtr, firstFragType, currentScope);
-    llvm::Value *fct = builder.CreateLoad(builder.getPtrTy(), fctPtr, "fct");
+    llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, "fct");
 
     // Generate function call
     result = builder.CreateCall({fctType, fct}, argValues);
@@ -309,7 +309,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
     llvm::Value *arrayAddr = insertAlloca(arrayType);
 
     // Retrieve address of first item
-    llvm::Value *firstItemAddress = builder.CreateInBoundsGEP(arrayType, arrayAddr, builder.getInt32(0));
+    llvm::Value *firstItemAddress = insertInBoundsGEP(arrayType, arrayAddr, builder.getInt32(0));
 
     // Store all array items at their corresponding offsets
     llvm::Value *currentItemAddress = firstItemAddress;
@@ -318,7 +318,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
       llvm::Value *itemValue = resolveValue(exprResult.node, exprResult);
       // Retrieve current item address
       if (i >= 1)
-        currentItemAddress = builder.CreateInBoundsGEP(itemType, currentItemAddress, builder.getInt32(1));
+        currentItemAddress = insertInBoundsGEP(itemType, currentItemAddress, builder.getInt32(1));
       // Store the item value
       const bool storeVolatile = exprResult.entry != nullptr && exprResult.entry->isVolatile;
       builder.CreateStore(itemValue, currentItemAddress, storeVolatile);
@@ -533,7 +533,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Extract captures from captures struct
   if (hasCaptures) {
     assert(!paramInfoList.empty());
-    llvm::Value *captureStructPtr = builder.CreateLoad(builder.getPtrTy(), captureStructPtrPtr);
+    llvm::Value *captureStructPtr = insertLoad(builder.getPtrTy(), captureStructPtrPtr);
     size_t captureIdx = 0;
     for (const std::pair<const std::string, Capture> &capture : captures) {
       llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
@@ -549,7 +549,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated) {
-    llvm::Value *result = builder.CreateLoad(returnType, resultEntry->getAddress());
+    llvm::Value *result = insertLoad(returnType, resultEntry->getAddress());
     builder.CreateRet(result);
   }
 
@@ -693,7 +693,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   // Extract captures from captures struct
   if (hasCaptures) {
     assert(!paramInfoList.empty());
-    llvm::Value *captureStructPtr = builder.CreateLoad(builder.getPtrTy(), captureStructPtrPtr);
+    llvm::Value *captureStructPtr = insertLoad(builder.getPtrTy(), captureStructPtrPtr);
     size_t captureIdx = 0;
     for (const std::pair<const std::string, Capture> &capture : captures) {
       llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
@@ -854,7 +854,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Extract captures from captures struct
   if (hasCaptures) {
     assert(!paramInfoList.empty());
-    llvm::Value *captureStructPtr = builder.CreateLoad(builder.getPtrTy(), captureStructPtrPtr);
+    llvm::Value *captureStructPtr = insertLoad(builder.getPtrTy(), captureStructPtrPtr);
     size_t captureIdx = 0;
     for (const std::pair<const std::string, Capture> &capture : captures) {
       llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
@@ -922,7 +922,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *cap
       assert(capturedValue != nullptr);
       if (capturingMode == BY_VALUE) {
         llvm::Type *captureType = capturedEntry->getType().toLLVMType(context, currentScope);
-        capturedValue = builder.CreateLoad(captureType, capturedValue);
+        capturedValue = insertLoad(captureType, capturedValue);
       }
       // Store it in the capture struct
       llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructAddress, captureIdx);

@@ -1,24 +1,29 @@
-import "test2";
+import "std/io/cli-parser";
 
-type Car struct : Driveable {
-    bool driving
+type CliOptions struct {
+    bool sayHi = false
 }
 
-p Car.ctor() {
-    this.driving = false;
+p callback(bool& value) {
+    printf("Callback called with value %d\n", value);
 }
 
-public p Car.drive(int param) {
-    this.driving = true;
-}
+f<int> main(int argc, string[] argv) {
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    parser.setVersion("v0.1.0");
+    parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
 
-public f<bool> Car.isDriving() {
-    return this.driving;
-}
+    CliOptions options;
+    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
+    parser.addFlag("--callback", callback, "Call a callback function");
+    parser.addFlag("-cb", p(bool& value) {
+        printf("CB called with value %d\n", value);
+    }, "Call a callback function");
 
-f<int> main() {
-    Car car = Car();
-    Driveable* driveable = &car;
-    driveable.drive(12);
-    printf("Is driving: %d", driveable.isDriving());
+    parser.parse(argc, argv);
+
+    // Print hi if requested
+    if options.sayHi {
+        printf("Hi!\n");
+    }
 }

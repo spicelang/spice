@@ -16,7 +16,7 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, SymbolType dstSTy, Sy
   // Unpack the pointers until a pointer of another type is met
   size_t loadCounter = 0;
   while (srcSTy.isPtr()) {
-    src = builder.CreateLoad(srcSTy.toLLVMType(context, currentScope), src);
+    src = insertLoad(srcSTy.toLLVMType(context, currentScope), src);
     srcSTy = srcSTy.getContainedTy();
     dstSTy = dstSTy.getContainedTy();
     loadCounter++;
@@ -24,9 +24,9 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, SymbolType dstSTy, Sy
   // GEP or bit-cast
   if (dstSTy.isArray() && srcSTy.isArray()) { // Special case that is used for passing arrays as pointer to functions
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
-    src = builder.CreateInBoundsGEP(srcSTy.toLLVMType(context, currentScope), src, indices);
+    src = insertInBoundsGEP(srcSTy.toLLVMType(context, currentScope), src, indices);
   } else {
-    src = builder.CreateLoad(srcSTy.toLLVMType(context, currentScope), src);
+    src = insertLoad(srcSTy.toLLVMType(context, currentScope), src);
     src = builder.CreateBitCast(src, dstSTy.toLLVMType(context, currentScope));
   }
   // Pack the pointers together again
@@ -76,9 +76,9 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
     assert(thisVar != nullptr);
     assert(thisVar->getType().isPtr() && thisVar->getType().getContainedTy().is(TY_STRUCT));
     llvm::Type *thisType = thisVar->getType().getContainedTy().toLLVMType(context, currentScope);
-    llvm::Value *thisPtr = builder.CreateLoad(builder.getPtrTy(), thisVar->getAddress());
+    llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), thisVar->getAddress());
     // Add field offset
-    structPtr = builder.CreateInBoundsGEP(thisType, thisPtr, {builder.getInt32(0), builder.getInt32(entry->orderIndex)});
+    structPtr = insertInBoundsGEP(thisType, thisPtr, {builder.getInt32(0), builder.getInt32(entry->orderIndex)});
   } else {
     structPtr = entry->getAddress();
   }
@@ -215,9 +215,9 @@ void IRGenerator::generateCtorBodyPreamble(const Function *ctorFunction, Scope *
   if (spiceStruct->vtable != nullptr) {
     assert(spiceStruct->vtableType != nullptr);
     // Store VTable to field address at index 0
-    thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
+    thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
     llvm::Value *indices[3] = {builder.getInt32(0), builder.getInt32(0), builder.getInt32(2)};
-    llvm::Value *gepResult = builder.CreateInBoundsGEP(spiceStruct->vtableType, spiceStruct->vtable, indices);
+    llvm::Value *gepResult = insertInBoundsGEP(spiceStruct->vtableType, spiceStruct->vtable, indices);
     builder.CreateStore(gepResult, thisAddressLoaded);
   }
 
@@ -245,9 +245,9 @@ void IRGenerator::generateCtorBodyPreamble(const Function *ctorFunction, Scope *
     if (fieldNode->defaultValue() != nullptr || cliOptions.buildMode == BuildMode::DEBUG) {
       // Retrieve field address
       if (!thisAddressLoaded)
-        thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
+        thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
-      llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
+      llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisAddressLoaded, indices);
       // Retrieve default value
       llvm::Value *value;
       if (fieldNode->defaultValue() != nullptr) {
@@ -300,9 +300,9 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
       if (ctorFct) {
         // Retrieve field address
         if (!thisAddressLoaded)
-          thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
+          thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
         llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
-        llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
+        llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisAddressLoaded, indices);
         generateCtorOrDtorCall(fieldSymbol, ctorFct, {fieldAddress});
       }
     }
@@ -353,9 +353,9 @@ void IRGenerator::generateDtorBodyPreamble(const spice::compiler::Function *dtor
     if (fieldType.isHeap()) {
       // Retrieve field address
       if (!thisAddressLoaded)
-        thisAddressLoaded = builder.CreateLoad(builder.getPtrTy(), thisAddress);
+        thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(i)};
-      llvm::Value *fieldAddress = builder.CreateInBoundsGEP(structType, thisAddressLoaded, indices);
+      llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisAddressLoaded, indices);
       // Call dealloc function
       generateDeallocCall(fieldAddress);
     }

@@ -75,7 +75,7 @@ public:
 
   // Util
   void collectWarnings(std::vector<CompilerWarning> &warnings) const;
-  void checkSuccessfulTypeInference() const;
+  void ensureSuccessfulTypeInference() const;
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] std::vector<Function *> getVirtualMethods();
   [[nodiscard]] size_t getVirtualMethodCount() const;
