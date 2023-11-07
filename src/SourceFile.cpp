@@ -251,7 +251,7 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
   timer.start();
 
   // Then type-check the current file
-  TypeChecker typeChecker(resourceManager, this, TC_MODE_PREPARE);
+  TypeChecker typeChecker(resourceManager, this, TC_MODE_PRE);
   typeChecker.visit(ast);
 
   previousStage = TYPE_CHECKER_PRE;
@@ -268,7 +268,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   timer.start();
 
   // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
-  TypeChecker typeChecker(resourceManager, this, TC_MODE_CHECK);
+  TypeChecker typeChecker(resourceManager, this, TC_MODE_POST);
   unsigned short typeCheckerRuns = 0;
   do {
     typeCheckerRuns++;
@@ -293,7 +293,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
   checkForSoftErrors();
 
   // Check if all dyn variables were type-inferred successfully
-  globalScope->checkSuccessfulTypeInference();
+  globalScope->ensureSuccessfulTypeInference();
 
   previousStage = TYPE_CHECKER_POST;
   timer.stop();
@@ -637,13 +637,9 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
     warning.print();
 }
 
-bool SourceFile::isStringRT() const {
-  return globalScope->lookupStrict(STROBJ_NAME) != nullptr;
-}
+bool SourceFile::isStringRT() const { return globalScope->lookupStrict(STROBJ_NAME) != nullptr; }
 
-bool SourceFile::isRttiRT() const {
-  return globalScope->lookupStrict(TIOBJ_NAME) != nullptr;
-}
+bool SourceFile::isRttiRT() const { return globalScope->lookupStrict(TIOBJ_NAME) != nullptr; }
 
 bool SourceFile::haveAllDependantsBeenTypeChecked() const {
   return std::ranges::all_of(dependants, [](const SourceFile *dependant) { return dependant->totalTypeCheckerRuns >= 1; });

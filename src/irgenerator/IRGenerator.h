@@ -103,7 +103,10 @@ public:
   std::any visitDataType(const DataTypeNode *node) override;
 
   // Public methods
-  llvm::Value *insertAlloca(llvm::Type *llvmType, const std::string &varName = "");
+  llvm::Value *insertAlloca(llvm::Type *llvmType, std::string varName = "");
+  llvm::Value *insertLoad(llvm::Type *llvmType, llvm::Value *ptr, std::string varName = "") const;
+  llvm::Value *insertInBoundsGEP(llvm::Type *llvmType, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
+                                 std::string varName = "") const;
   llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const ASTNode *node, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const SymbolType &symbolType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);

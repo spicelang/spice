@@ -15,7 +15,10 @@
 
 namespace spice::compiler {
 
-enum TypeCheckerMode { TC_MODE_PREPARE, TC_MODE_CHECK };
+enum TypeCheckerMode {
+  TC_MODE_PRE,
+  TC_MODE_POST,
+};
 
 /**
  * Jobs:

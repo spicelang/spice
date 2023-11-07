@@ -108,7 +108,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
 
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated) {
-    llvm::Value *result = builder.CreateLoad(fct->getReturnType(), resultEntry->getAddress());
+    llvm::Value *result = insertLoad(fct->getReturnType(), resultEntry->getAddress());
     builder.CreateRet(result);
   }
 
@@ -269,7 +269,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated) {
-      llvm::Value *result = builder.CreateLoad(returnType, resultEntry->getAddress());
+      llvm::Value *result = insertLoad(returnType, resultEntry->getAddress());
       builder.CreateRet(result);
     }
 

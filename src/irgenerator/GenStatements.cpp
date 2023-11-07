@@ -112,7 +112,7 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
     if (resultEntry != nullptr) {
       llvm::Type *resultSTy = resultEntry->getType().toLLVMType(context, currentScope);
       llvm::Value *returnValueAddr = resultEntry->getAddress();
-      returnValue = builder.CreateLoad(resultSTy, returnValueAddr);
+      returnValue = insertLoad(resultSTy, returnValueAddr);
     }
   }
 

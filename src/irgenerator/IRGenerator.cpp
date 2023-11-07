@@ -41,7 +41,10 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
   return nullptr;
 }
 
-llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &varName) {
+llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName) {
+  if (!cliOptions.dumpSettings.dumpIR)
+    varName = "";
+
   if (allocaInsertInst != nullptr) { // If there is already an alloca inst, insert right after that
     llvm::AllocaInst *allocaInst = builder.CreateAlloca(llvmType, nullptr, varName);
     allocaInst->setDebugLoc(llvm::DebugLoc());
@@ -60,6 +63,28 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, const std::string &
     builder.SetInsertPoint(currentBlock);
   }
   return static_cast<llvm::Value *>(allocaInsertInst);
+}
+
+llvm::Value *IRGenerator::insertLoad(llvm::Type *llvmType, llvm::Value *ptr, std::string varName) const {
+  assert(ptr->getType()->isPointerTy());
+
+  if (!cliOptions.dumpSettings.dumpIR)
+    varName = "";
+
+  // Insert load
+  return builder.CreateLoad(llvmType, ptr, varName);
+}
+
+llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *llvmType, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
+                                            std::string varName) const {
+  assert(basePtr->getType()->isPointerTy());
+  assert(!indices.empty());
+
+  if (!cliOptions.dumpSettings.dumpIR)
+    varName = "";
+
+  // Insert GEP
+  return builder.CreateInBoundsGEP(llvmType, basePtr, indices, varName);
 }
 
 llvm::Value *IRGenerator::resolveValue(const ASTNode *node, Scope *accessScope /*=nullptr*/) {
@@ -93,11 +118,11 @@ llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, LLVMExprRes
   // De-reference if reference type
   SymbolType referencedType = symbolType.removeReferenceWrapper();
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr)
-    exprResult.ptr = builder.CreateLoad(builder.getPtrTy(), exprResult.refPtr);
+    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr);
 
   // Load the value from the pointer
   llvm::Type *valueTy = referencedType.toLLVMType(context, accessScope);
-  exprResult.value = builder.CreateLoad(valueTy, exprResult.ptr);
+  exprResult.value = insertLoad(valueTy, exprResult.ptr);
 
   return exprResult.value;
 }
@@ -115,7 +140,7 @@ llvm::Value *IRGenerator::resolveAddress(LLVMExprResult &exprResult, bool storeV
 
   // Check if the reference address is already present
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr) {
-    exprResult.ptr = builder.CreateLoad(builder.getPtrTy(), exprResult.refPtr);
+    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr);
     return exprResult.ptr;
   }
 
@@ -374,7 +399,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     }
 
     // Load referenced address
-    lhsAddress = builder.CreateLoad(builder.getPtrTy(), lhsAddress);
+    lhsAddress = insertLoad(builder.getPtrTy(), lhsAddress);
   }
 
   // Check if we need to copy the rhs to the lhs. This happens for structs
@@ -448,7 +473,7 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
 
 void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const {
   while (symbolType.isPtr() || symbolType.isRef()) {
-    ptr = builder.CreateLoad(symbolType.toLLVMType(context, accessScope), ptr);
+    ptr = insertLoad(symbolType.toLLVMType(context, accessScope), ptr);
     symbolType = symbolType.getContainedTy();
   }
 }

@@ -351,7 +351,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
  * Checks if all variables of this and all child scopes are of an explicit type.
  * This is executed after type inference to check that all variables could be inferred correctly.
  */
-void Scope::checkSuccessfulTypeInference() const {
+void Scope::ensureSuccessfulTypeInference() const {
   // Check symbols in this scope
   for (auto &[name, entry] : symbolTable.symbols)
     if (entry.getType().is(TY_DYN))
@@ -359,7 +359,7 @@ void Scope::checkSuccessfulTypeInference() const {
 
   // Check child scopes
   for (auto &[_, scope] : children)
-    scope->checkSuccessfulTypeInference();
+    scope->ensureSuccessfulTypeInference();
 }
 
 /**
