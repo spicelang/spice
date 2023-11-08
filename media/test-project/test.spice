@@ -1,29 +1,33 @@
-import "std/io/cli-parser";
+import "std/iterator/iterable";
+import "std/data/pair";
 
-type CliOptions struct {
-    bool sayHi = false
+type T short|int|long;
+
+type MockIterator<T> struct : Iterable<T> {
+    T item
+    unsigned long cursor
 }
 
-p callback(bool& value) {
-    printf("Callback called with value %d\n", value);
+p MockIterator.ctor() {
+    this.cursor = 0l;
 }
 
-f<int> main(int argc, string[] argv) {
-    CliParser parser = CliParser("Test Program", "This is a simple test program");
-    parser.setVersion("v0.1.0");
-    parser.setFooter("Copyright (c) Marc Auberer 2021-2023");
+f<T&> MockIterator.get() {
+    return this.item;
+}
 
-    CliOptions options;
-    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
-    parser.addFlag("--callback", callback, "Call a callback function");
-    parser.addFlag("-cb", p(bool& value) {
-        printf("CB called with value %d\n", value);
-    }, "Call a callback function");
+f<Pair<unsigned long, T&>> MockIterator.getIdx() {
+    return Pair<unsigned long, T&>(0l, this.item);
+}
 
-    parser.parse(argc, argv);
+f<bool> MockIterator.isValid() {
+    return true;
+}
 
-    // Print hi if requested
-    if options.sayHi {
-        printf("Hi!\n");
+p MockIterator.next() {}
+
+f<int> main() {
+    foreach dyn item : MockIterator<short>() {
+        printf("Demo item: %d\n", item);
     }
 }

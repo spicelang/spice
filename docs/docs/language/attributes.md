@@ -45,4 +45,4 @@ public type A struct {
 ### Available attributes
 
 - `core.compiler.alwaysEmitVTable: bool`: Always emit a vtable for the annotated struct
-- 
+- `core.compiler.packed: bool`: Pack the annotated struct
