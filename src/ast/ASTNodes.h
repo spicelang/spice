@@ -1029,6 +1029,7 @@ public:
   static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
   static constexpr const char *const ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
   static constexpr const char *const ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
+  static constexpr const char *const ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
 
   // Constructors
   using ASTNode::ASTNode;

@@ -510,7 +510,10 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     }
 
     // Set field types to struct type
-    structType->setBody(fieldTypes);
+    bool isPacked = false;
+    if (node->attrs() && node->attrs()->attrLst() && node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_PACKED))
+      isPacked = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_PACKED)->getValue().boolValue;
+    structType->setBody(fieldTypes, isPacked);
 
     // Generate VTable if required
     if (node->emitVTable) {
