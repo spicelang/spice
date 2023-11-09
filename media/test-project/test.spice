@@ -1,33 +1,16 @@
-import "std/iterator/iterable";
-import "std/data/pair";
-
-type T short|int|long;
-
-type MockIterator<T> struct : Iterable<T> {
-    T item
-    unsigned long cursor
+f<int> add(int a, int b) {
+    return a + b;
 }
 
-p MockIterator.ctor() {
-    this.cursor = 0l;
-}
+#[test=true, test.name="Test for add function", test.skip=false]
+f<bool> testAdd() {
+    assert add(1, 2) == 3;
+    assert add(2, 2) == 4;
+    assert add(3, 2) == 5;
 
-f<T&> MockIterator.get() {
-    return this.item;
-}
-
-f<Pair<unsigned long, T&>> MockIterator.getIdx() {
-    return Pair<unsigned long, T&>(0l, this.item);
-}
-
-f<bool> MockIterator.isValid() {
     return true;
 }
 
-p MockIterator.next() {}
-
 f<int> main() {
-    foreach dyn item : MockIterator<short>() {
-        printf("Demo item: %d\n", item);
-    }
+    printf("%d\n", add(1, 2));
 }

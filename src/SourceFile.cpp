@@ -624,6 +624,14 @@ void SourceFile::checkForSoftErrors() {
   }
 }
 
+void SourceFile::collectTestFunctions(std::vector<Function *> &result) const { // NOLINT(misc-no-recursion)
+  // Collect test functions from this file
+  result.insert(result.end(), testFunctions.begin(), testFunctions.end());
+  // Collect test functions from all dependencies
+  for (const auto &dependency : dependencies)
+    dependency.second.first->collectTestFunctions(result);
+}
+
 void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
   // Print warnings for all dependencies
   for (const auto &dependency : dependencies) {

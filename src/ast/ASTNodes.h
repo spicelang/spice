@@ -1030,6 +1030,9 @@ public:
   static constexpr const char *const ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
   static constexpr const char *const ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
   static constexpr const char *const ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
+  static constexpr const char *const ATTR_TEST = "test";
+  static constexpr const char *const ATTR_TEST_NAME = "test.name";
+  static constexpr const char *const ATTR_TEST_SKIP = "test.skip";
 
   // Constructors
   using ASTNode::ASTNode;

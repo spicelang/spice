@@ -14,6 +14,10 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   if (!sourceFile->mainFile)
     return nullptr;
 
+  // Generate test main if required
+  if (!cliOptions.testMode)
+    generateTestMain();
+
   // Do not generate main function if it is explicitly specified
   if (cliOptions.noEntryFct)
     return nullptr;
@@ -426,7 +430,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
 
     // Generate special ctor preamble before generating the body to store VTable, default field values, etc. if required
     if (node->isCtor)
-      generateCtorBodyPreamble(manifestation, currentScope);
+      generateCtorBodyPreamble(currentScope);
 
     // Visit procedure body
     visit(node->body());

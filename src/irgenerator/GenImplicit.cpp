@@ -98,17 +98,17 @@ void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
   builder.CreateCall(deallocFct, variableAddress);
 }
 
-llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceFunc) {
+llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(void)> &generateBody, const Function *spiceFunc) {
   // Only focus on method procedures
   const ASTNode *node = spiceFunc->entry->declNode;
-  assert(spiceFunc->isMethodProcedure());
+  assert(spiceFunc->isFunction());
 
   // Only generate if used
   if (!spiceFunc->used)
     return nullptr;
 
   // Retrieve return type
-  llvm::Type *returnType = builder.getVoidTy();
+  llvm::Type *returnType = spiceFunc->returnType.toLLVMType(context, currentScope);
 
   // Get 'this' entry
   std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
@@ -180,6 +180,97 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   // Generate body
   generateBody();
 
+  // Conclude debug info for function
+  diGenerator.concludeFunctionDebugInfo();
+
+  // Verify function
+  verifyFunction(fct, node->codeLoc);
+
+  // Change to parent scope
+  changeToParentScope(ScopeType::FUNC_PROC_BODY);
+
+  return fct;
+}
+
+llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceProc) {
+  // Only focus on method procedures
+  const ASTNode *node = spiceProc->entry->declNode;
+  assert(spiceProc->isProcedure());
+
+  // Only generate if used
+  if (!spiceProc->used)
+    return nullptr;
+
+  // Get 'this' entry
+  std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
+  std::vector<llvm::Type *> paramTypes;
+  SymbolTableEntry *thisEntry = nullptr;
+  if (spiceProc->isMethod()) {
+    thisEntry = spiceProc->bodyScope->lookupStrict(THIS_VARIABLE_NAME);
+    assert(thisEntry != nullptr);
+    paramInfoList.emplace_back(THIS_VARIABLE_NAME, thisEntry);
+    paramTypes.push_back(builder.getPtrTy());
+  }
+
+  // Get parameter types
+  for (const Param &param : spiceProc->paramList) {
+    assert(!param.isOptional);
+    paramTypes.push_back(param.type.toLLVMType(context, currentScope));
+  }
+
+  // Get function linkage
+  const bool isPublic = spiceProc->entry->getType().specifiers.isPublic;
+  llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
+
+  // Create function
+  const std::string mangledName = NameMangling::mangleFunction(*spiceProc);
+  llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
+  llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, mangledName, module);
+  fct->setLinkage(linkage);
+  fct->setDoesNotRecurse();
+
+  // Set attributes to 'this' param
+  if (spiceProc->isMethod()) {
+    fct->addParamAttr(0, llvm::Attribute::NoUndef);
+    fct->addParamAttr(0, llvm::Attribute::NonNull);
+    assert(thisEntry != nullptr);
+    llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+    assert(structType != nullptr);
+    fct->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
+    fct->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
+  }
+
+  // Add debug info
+  diGenerator.generateFunctionDebugInfo(fct, spiceProc);
+  diGenerator.setSourceLocation(node);
+
+  // Change to body scope
+  changeToScope(spiceProc->getSignature(false), ScopeType::FUNC_PROC_BODY);
+
+  // Create entry block
+  llvm::BasicBlock *bEntry = createBlock();
+  switchToBlock(bEntry, fct);
+
+  // Reset alloca insert markers to this block
+  allocaInsertBlock = bEntry;
+  allocaInsertInst = nullptr;
+
+  // Store first argument to 'this' symbol
+  if (spiceProc->isMethod()) {
+    assert(thisEntry != nullptr);
+    // Allocate space for the parameter
+    llvm::Value *thisAddress = insertAlloca(paramTypes.front(), THIS_VARIABLE_NAME);
+    // Update the symbol table entry
+    thisEntry->updateAddress(thisAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(THIS_VARIABLE_NAME, thisAddress, 1);
+    // Store the value at the new address
+    builder.CreateStore(fct->arg_begin(), thisAddress);
+  }
+
+  // Generate body
+  generateBody();
+
   // Create return instruction
   builder.CreateRetVoid();
 
@@ -195,7 +286,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   return fct;
 }
 
-void IRGenerator::generateCtorBodyPreamble(const Function *ctorFunction, Scope *bodyScope) {
+void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   // Retrieve struct scope
   Scope *structScope = bodyScope->parent;
   assert(structScope != nullptr);
@@ -266,7 +357,7 @@ void IRGenerator::generateCtorBodyPreamble(const Function *ctorFunction, Scope *
 
 void IRGenerator::generateDefaultCtor(const Function *ctorFunction) {
   assert(ctorFunction->implicitDefault && ctorFunction->name == CTOR_FUNCTION_NAME);
-  const std::function<void(void)> generateBody = [&]() { generateCtorBodyPreamble(ctorFunction, ctorFunction->bodyScope); };
+  const std::function<void(void)> generateBody = [&]() { generateCtorBodyPreamble(ctorFunction->bodyScope); };
   generateImplicitProcedure(generateBody, ctorFunction);
 }
 
@@ -366,6 +457,72 @@ void IRGenerator::generateDefaultDtor(const Function *dtorFunction) {
   assert(dtorFunction->implicitDefault && dtorFunction->name == DTOR_FUNCTION_NAME);
   const std::function<void(void)> generateBody = [&]() { generateDtorBodyPreamble(dtorFunction); };
   generateImplicitProcedure(generateBody, dtorFunction);
+}
+
+void IRGenerator::generateTestMain() {
+  // Collect all test functions
+  std::vector<Function *> testFunctions;
+  sourceFile->collectTestFunctions(testFunctions);
+
+  // Prepare printf function
+  llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
+
+  // Prepare success and error messages
+  llvm::Constant *successMessage = createGlobalStringConst("successMessage", "[passed]\n", *rootScope->codeLoc);
+  llvm::Constant *errorMessage = createGlobalStringConst("errorMessage", "[failed]\n", *rootScope->codeLoc);
+
+  // Prepare test main function
+  Function testMain(MAIN_FUNCTION_NAME, nullptr, SymbolType(TY_DYN), SymbolType(TY_INT), {}, {}, nullptr);
+  testMain.implicitDefault = true;
+
+  // Generate
+  const std::function<void(void)> generateBody = [&]() {
+    // Prepare result variable
+    llvm::Type *i32Ty = builder.getInt32Ty();
+    llvm::Value *overallResult = insertAlloca(i32Ty, RETURN_VARIABLE_NAME);
+    builder.CreateStore(builder.getTrue(), overallResult);
+
+    // Generate a call to each test function
+    for (Function *testFunction : testFunctions) {
+      assert(testFunction->isNormalFunction());
+      assert(testFunction->paramList.empty());
+
+      // Retrieve attribute list for the test function
+      assert(testFunction->declNode->isFctOrProcDef());
+      auto fctDefNode = spice_pointer_cast<FctDefBaseNode *>(testFunction->declNode);
+      assert(fctDefNode->attrs() != nullptr);
+      const AttrLstNode *attrs = fctDefNode->attrs()->attrLst();
+      assert(attrs != nullptr);
+      const AttrNode *testAttr = attrs->getAttrByName(AttrNode::ATTR_TEST);
+      assert(testAttr && testAttr->getValue().boolValue); // The test attribute must be present
+      const AttrNode *testSkipAttr = attrs->getAttrByName(AttrNode::ATTR_TEST_SKIP);
+      assert(!testSkipAttr || !testSkipAttr->getValue().boolValue); // All skipped tests must be filtered out
+      const AttrNode *testNameAttr = attrs->getAttrByName(AttrNode::ATTR_TEST_NAME);
+      const std::string testName = testNameAttr ? testNameAttr->getValue().stringValue : testFunction->name;
+
+      // Print test name
+      builder.CreateCall(printfFct, createGlobalStringConst("testName", testName + " ", testFunction->getDeclCodeLoc()));
+
+      // Call test function
+      llvm::Function *callee = module->getFunction(NameMangling::mangleFunction(*testFunction));
+      assert(callee != nullptr);
+      llvm::Value *testCaseResult = builder.CreateCall(callee);
+
+      // Update result variable
+      llvm::Value *oldResult = insertLoad(i32Ty, overallResult);
+      llvm::Value *newResult = builder.CreateAnd(oldResult, builder.CreateZExt(testCaseResult, i32Ty));
+      builder.CreateStore(newResult, overallResult);
+
+      // Print success or error message
+      llvm::Value *message = builder.CreateSelect(testCaseResult, successMessage, errorMessage);
+      builder.CreateCall(printfFct, message);
+    }
+
+    // Return result
+    llvm::Value *finalResult = insertLoad(i32Ty, overallResult);
+    builder.CreateRet(finalResult);
+  };
+  generateImplicitFunction(generateBody, &testMain);
 }
 
 } // namespace spice::compiler
