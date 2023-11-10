@@ -1014,8 +1014,9 @@ public:
   [[nodiscard]] std::vector<AttrNode *> attributes() const { return getChildren<AttrNode>(); }
 
   // Other methods
-  [[nodiscard]] std::vector<AttrNode *> getAttrsByName(const char *key) const;
-  [[nodiscard]] AttrNode *getAttrByName(const char *key) const;
+  [[nodiscard]] std::vector<const CompileTimeValue *> getAttrValuesByName(const std::string &key) const;
+  [[nodiscard]] const CompileTimeValue *getAttrValueByName(const std::string &key) const;
+  [[nodiscard]] bool hasAttr(const std::string &key) const;
 };
 
 // ============================================================ AttrNode =========================================================
@@ -1023,13 +1024,20 @@ public:
 class AttrNode : public ASTNode {
 public:
   // Enums
-  static constexpr const char *const ATTR_CORE_LINKER_FLAG = "core.linker.flag";
-  static constexpr const char *const ATTR_CORE_LINKER_DLL = "core.linker.dll";
-  static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
-  static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
-  static constexpr const char *const ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
-  static constexpr const char *const ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
-  static constexpr const char *const ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
+  enum AttrTarget : uint8_t {
+    TARGET_INVALID = 0,
+    TARGET_MODULE = 1 << 0,
+    TARGET_STRUCT = 1 << 1,
+    TARGET_FCT_PROC = 1 << 2,
+    TARGET_EXT_DECL = 1 << 3,
+  };
+
+  enum AttrType : uint8_t {
+    ATTR_TYPE_INVALID,
+    TYPE_STRING,
+    TYPE_BOOL,
+    TYPE_INT,
+  };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1042,10 +1050,12 @@ public:
   [[nodiscard]] ConstantNode *value() const { return getChild<ConstantNode>(); }
 
   // Other methods
-  [[nodiscard]] const CompileTimeValue &getValue() const;
+  [[nodiscard]] const CompileTimeValue *getValue() const;
 
   // Public members
   std::string key;
+  AttrType type = ATTR_TYPE_INVALID;
+  AttrTarget target = TARGET_INVALID;
 };
 
 // ======================================================== ImportStmtNode =======================================================

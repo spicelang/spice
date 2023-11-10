@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "ImportCollector.h"
+#include "ast/Attributes.h"
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
@@ -77,17 +78,38 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
 }
 
 std::any ImportCollector::visitModAttr(ModAttrNode *node) {
+  // Validate all attrs first
+  visitChildren(node);
+
+  // Retrieve attributes
   const AttrLstNode *attrs = node->attrLst();
 
   // core.linker.flag
-  for (const AttrNode *attr : attrs->getAttrsByName(AttrNode::ATTR_CORE_LINKER_FLAG)) {
-    const std::string &value = attr->getValue().stringValue;
-    resourceManager.linker.addLinkerFlag(value);
-  }
+  for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG))
+    resourceManager.linker.addLinkerFlag(value->stringValue);
 
   // core.compiler.keep-on-name-collision
-  if (const AttrNode *attr = attrs->getAttrByName(AttrNode::ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION))
-    sourceFile->alwaysKeepSymbolsOnNameCollision = attr->getValue().boolValue;
+  if (attrs->hasAttr(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)) {
+    const bool keepOnCollision = attrs->getAttrValueByName(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)->boolValue;
+    sourceFile->alwaysKeepSymbolsOnNameCollision = keepOnCollision;
+  }
+
+  return nullptr;
+}
+
+std::any ImportCollector::visitAttr(AttrNode *node) {
+  // Check if this attribute exists
+  if (!ATTR_CONFIGS.contains(node->key.c_str()))
+    throw SemanticError(node, UNKNOWN_ATTR, "Unknown attribute '" + node->key + "'");
+
+  // Check if the target is correct
+  const AttrConfigValue &config = ATTR_CONFIGS.at(node->key.c_str());
+  if ((node->target & config.target) == 0)
+    throw SemanticError(node, INVALID_ATTR_TARGET, "Attribute '" + node->key + "' cannot be used on this target");
+
+  // Check if a value is present
+  if (!node->value() && config.type != AttrNode::TYPE_BOOL)
+    throw SemanticError(node, MISSING_ATTR_VALUE, "Attribute '" + node->key + "' requires a value");
 
   return nullptr;
 }
