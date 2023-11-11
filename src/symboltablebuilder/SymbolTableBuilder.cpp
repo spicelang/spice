@@ -32,7 +32,7 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
     visit(node->attrs());
 
   // Check if the function is already defined
-  if (rootScope->lookup(node->getSignature()))
+  if (rootScope->lookupStrict(node->getSignature()))
     throw SemanticError(node, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
 
   // Insert symbol for main function
@@ -194,7 +194,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
     visit(node->attrs());
 
   // Check if this name already exists
-  if (rootScope->lookup(node->structName))
+  if (rootScope->lookupStrict(node->structName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->structName + "'");
 
   // Create scope for the struct
@@ -238,7 +238,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 
 std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   // Check if this name already exists
-  if (rootScope->lookup(node->interfaceName))
+  if (rootScope->lookupStrict(node->interfaceName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->interfaceName + "'");
 
   // Create scope for the interface
@@ -272,7 +272,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
 
 std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   // Check if this name already exists
-  if (rootScope->lookup(node->enumName))
+  if (rootScope->lookupStrict(node->enumName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->enumName + "'");
 
   // Create scope for the enum
@@ -305,15 +305,19 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
 
 std::any SymbolTableBuilder::visitGenericTypeDef(GenericTypeDefNode *node) {
   // Check if this name already exists
-  if (rootScope->lookup(node->typeName))
+  if (rootScope->lookupStrict(node->typeName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->typeName + "'");
+
+  // Create the generic type to the symbol table
+  node->entry = rootScope->insert(node->typeName, node);
+  node->entry->used = true; // Generic types are always used
 
   return nullptr;
 }
 
 std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
   // Check if this name already exists
-  if (rootScope->lookup(node->aliasName))
+  if (rootScope->lookupStrict(node->aliasName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->aliasName + "'");
 
   // Add the alias to the symbol table
@@ -328,7 +332,7 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
 
 std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
   // Check if this name already exists
-  if (rootScope->lookup(node->varName))
+  if (rootScope->lookupStrict(node->varName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->varName + "'");
 
   // Check if global already exists in an imported source file
@@ -351,7 +355,7 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
     visit(node->attrs());
 
   // Check if this name already exists
-  if (rootScope->lookup(node->extFunctionName))
+  if (rootScope->lookupStrict(node->extFunctionName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->extFunctionName + "'");
 
   // Add the external declaration to the symbol table

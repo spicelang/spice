@@ -576,7 +576,7 @@
       "isGlobal": true,
       "isVolatile": false,
       "name": "MockIterator",
-      "orderIndex": 2,
+      "orderIndex": 3,
       "state": "declared",
       "type": "MockIterator<short>"
     },
@@ -585,16 +585,25 @@
       "isGlobal": true,
       "isVolatile": false,
       "name": "main()",
-      "orderIndex": 3,
+      "orderIndex": 4,
       "state": "declared",
       "type": "f<int>()"
+    },
+    {
+      "codeLoc": "L4C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "T",
+      "orderIndex": 2,
+      "state": "declared",
+      "type": "invalid"
     },
     {
       "codeLoc": "L6C1",
       "isGlobal": true,
       "isVolatile": false,
       "name": "MockIterator",
-      "orderIndex": 2,
+      "orderIndex": 3,
       "state": "declared",
       "type": "MockIterator<T>"
     },

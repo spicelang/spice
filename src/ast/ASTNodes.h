@@ -431,6 +431,7 @@ public:
 
   // Public members
   std::string typeName;
+  SymbolTableEntry *entry = nullptr;
 };
 
 // ========================================================= AliasDefNode ========================================================
