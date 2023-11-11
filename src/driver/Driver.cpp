@@ -29,6 +29,7 @@ void Driver::init() {
   // Create sub-commands
   addBuildSubcommand();
   addRunSubcommand();
+  addTestSubcommand();
   addInstallSubcommand();
   addUninstallSubcommand();
 
@@ -136,6 +137,14 @@ void Driver::enrich() {
   // Always preserve IR value names when dumping IR
   if (cliOptions.dumpSettings.dumpIR)
     cliOptions.namesForIRValues = true;
+
+  // Enable test mode when test mode was selected
+  if (cliOptions.buildMode == BuildMode::TEST) {
+    cliOptions.testMode = true;
+    cliOptions.noEntryFct = true;
+    cliOptions.generateTestMain = true;
+    cliOptions.buildMode = BuildMode::DEBUG;
+  }
 }
 
 /**
@@ -214,6 +223,29 @@ void Driver::addRunSubcommand() {
 }
 
 /**
+ * Add test subcommand to cli interface
+ */
+void Driver::addTestSubcommand() {
+  // Create sub-command itself
+  CLI::App *subCmd = app.add_subcommand("test", "Builds your Spice program and runs all enclosed tests");
+  subCmd->alias("t");
+  subCmd->ignore_case();
+  subCmd->callback([&]() {
+    shouldCompile = shouldExecute = true; // Requires the source file to be compiled
+    cliOptions.testMode = true;           // Always enable assertions for tests, also in higher opt levels
+    cliOptions.generateTestMain = true;   // An alternative entry function is generated
+    cliOptions.noEntryFct = true;         // To not have two main functions, disable normal main
+  });
+
+  addCompileSubcommandOptions(subCmd);
+
+  // --debug-info
+  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
+  // --disable-verifier
+  subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
+}
+
+/**
  * Add install subcommand to cli interface
  */
 void Driver::addInstallSubcommand() {
@@ -259,6 +291,8 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
       cliOptions.buildMode = BuildMode::DEBUG;
     else if (inputString == BUILD_MODE_RELEASE)
       cliOptions.buildMode = BuildMode::RELEASE;
+    else if (inputString == BUILD_MODE_TEST)
+      cliOptions.buildMode = BuildMode::TEST;
     else
       throw CliError(INVALID_BUILD_MODE, "Invalid build mode: " + inputString);
 
@@ -266,7 +300,7 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   };
 
   // --build-mode
-  subCmd->add_option("--build-mode,-m", buildModeCallback, "Build mode (debug, release)");
+  subCmd->add_option("--build-mode,-m", buildModeCallback, "Build mode (debug, release, test)");
   // --llvm-args
   subCmd->add_option<std::string>("--llvm-args,-llvm", cliOptions.llvmArgs, "Additional arguments for LLVM")->join(' ');
   // --jobs

@@ -2,3 +2,8 @@ public type Driveable interface {
     public p drive(int);
     public f<bool> isDriving();
 }
+
+#[test]
+f<bool> testDriveable() {
+    return true;
+}

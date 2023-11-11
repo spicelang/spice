@@ -1,0 +1,7 @@
+f<int> test<byte>() {
+    return 12345;
+}
+
+f<int> main() {
+    test<int>();
+}

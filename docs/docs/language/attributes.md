@@ -47,6 +47,9 @@ ext f<heap byte*> malloc(unsigned long);
 - `core.compiler.mangle: bool (default: true)`: Enable/disable name mangling for the annotated function
 - `core.compiler.mangledName: string`: Set the mangled name for the annotated function
 - `core.linker.dll: bool`: Enable linkage as dll (only relevant for Windows)
+- `test: bool`: Mark the annotated function as test
+- `test.name: string`: Set the name of the test (only procedures with the `test` attribute are considered as tests)
+- `test.skip: bool`: Skip the annotated function (only procedures with the `test` attribute are considered as tests)
 
 
 ## Struct attributes

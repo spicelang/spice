@@ -167,6 +167,7 @@ public:
   std::unordered_map<std::string, std::pair<SourceFile *, const ASTNode *>> dependencies;
   std::vector<const SourceFile *> dependants;
   std::unordered_map<std::string, NameRegistryEntry> exportedNameRegistry;
+  std::vector<const Function *> testFunctions;
 
 private:
   // Private fields

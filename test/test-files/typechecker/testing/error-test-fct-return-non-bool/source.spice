@@ -1,0 +1,6 @@
+#[test]
+f<string> test() {
+  return "failed";
+}
+
+f<int> main() {}

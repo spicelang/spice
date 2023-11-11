@@ -1,0 +1,19 @@
+f<int> sub(int a, int b) {
+    return a - b;
+}
+
+#[test]
+f<bool> testSub1() {
+    assert sub(1, 2) == -1;
+    assert sub(2, 2) == 0;
+    assert sub(3, 2) == 1;
+    return false;
+}
+
+#[test]
+f<bool> testSub2() {
+    assert sub(5, -4) == 9;
+    assert sub(2, 8) == -6;
+    assert sub(-3, 5) == -8;
+    return true;
+}

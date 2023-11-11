@@ -46,6 +46,7 @@ public:
   [[nodiscard]] static std::string getSignature(const std::string &name, const SymbolType &thisType, const SymbolType &returnType,
                                                 const ParamList &paramList, const std::vector<SymbolType> &concreteTemplateTypes,
                                                 bool withThisType = true);
+  [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] static std::string getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc);
   [[nodiscard]] ALWAYS_INLINE bool isMethod() const { return !thisType.is(TY_DYN); }
   [[nodiscard]] ALWAYS_INLINE bool isFunction() const { return !returnType.is(TY_DYN); }

@@ -25,9 +25,11 @@ enum OptLevel : uint8_t {
 enum BuildMode : uint8_t {
   DEBUG = 0,   // Default build mode, uses -O0 per default
   RELEASE = 1, // Build without debug information and with -O2 per default
+  TEST = 2,    // Build with test main function and always emit assertions
 };
 const char *const BUILD_MODE_DEBUG = "debug";
 const char *const BUILD_MODE_RELEASE = "release";
+const char *const BUILD_MODE_TEST = "test";
 
 /**
  * Representation of the various cli options
@@ -63,6 +65,7 @@ struct CliOptions {
   OptLevel optLevel = OptLevel::O0; // Default optimization level for debug build mode is O0
   bool useLTO = false;
   bool noEntryFct = false;
+  bool generateTestMain = false;
   bool staticLinking = false;
   bool generateDebugInfo = false;
   bool disableVerifier = false;
@@ -95,6 +98,7 @@ private:
   // Private methods
   void addBuildSubcommand();
   void addRunSubcommand();
+  void addTestSubcommand();
   void addInstallSubcommand();
   void addUninstallSubcommand();
   void addCompileSubcommandOptions(CLI::App *subCmd);

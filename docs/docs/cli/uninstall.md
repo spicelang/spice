@@ -1,17 +1,17 @@
 ---
-title: Uninstall command
+title: Uninstall subcommand
 ---
 
-The `uninstall` command can be used to delete an installed executable again.
+The `uninstall` subcommand can be used to delete an installed executable again.
 
 ## Usage
 === "Long form"
-    Use the `uninstall` command by executing:
+    Use the `uninstall` subcommand by executing:
     ```sh
-    $ spice uninstall [main-source-file]
+    $ spice uninstall [options] <main-source-file>
     ```
 === "Short form"
-    Use the `uninstall` command by executing:
+    Use the `uninstall` subcommand by executing:
     ```sh
-    $ spice u [mail-source-file]
+    $ spice u [options] <mail-source-file>
     ```

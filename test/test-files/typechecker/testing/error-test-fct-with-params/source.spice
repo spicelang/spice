@@ -1,0 +1,6 @@
+#[test]
+f<bool> test(byte _a, const byte &_b) {
+    return true;
+}
+
+f<int> main() {}

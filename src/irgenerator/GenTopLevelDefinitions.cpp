@@ -194,10 +194,13 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Check if function is explicitly inlined
     const bool explicitlyInlined = manifestation->entry->getType().isInline();
     // Get function linkage
-    llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
+    bool externalLinkage = isPublic;
+    if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_TEST))
+      externalLinkage |= node->attrs()->attrLst()->getAttrValueByName(ATTR_TEST)->boolValue;
+    llvm::GlobalValue::LinkageTypes linkage = externalLinkage ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
     // Create function or implement declared function
-    const std::string mangledName = NameMangling::mangleFunction(*manifestation);
+    const std::string mangledName = manifestation->getMangledName();
     llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
     module->getOrInsertFunction(mangledName, funcType);
     llvm::Function *func = module->getFunction(mangledName);
@@ -365,7 +368,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
     // Create procedure or implement declared procedure
-    const std::string mangledName = NameMangling::mangleFunction(*manifestation);
+    const std::string mangledName = manifestation->getMangledName();
     llvm::FunctionType *procType = llvm::FunctionType::get(returnType, paramTypes, false);
     module->getOrInsertFunction(mangledName, procType);
     llvm::Function *proc = module->getFunction(mangledName);
@@ -427,7 +430,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
 
     // Generate special ctor preamble before generating the body to store VTable, default field values, etc. if required
     if (node->isCtor)
-      generateCtorBodyPreamble(manifestation, currentScope);
+      generateCtorBodyPreamble(currentScope);
 
     // Visit procedure body
     visit(node->body());
@@ -644,7 +647,7 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
 
   // Declare function
   llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, node->isVarArg);
-  const std::string mangledName = NameMangling::mangleFunction(*spiceFunc);
+  const std::string mangledName = spiceFunc->getMangledName();
   module->getOrInsertFunction(mangledName, functionType);
   llvm::Function *fct = module->getFunction(mangledName);
 

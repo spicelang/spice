@@ -144,13 +144,15 @@ private:
   void generateScopeCleanup(const StmtLstNode *node) const;
   void generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
   void generateDeallocCall(llvm::Value *variableAddress) const;
-  llvm::Function *generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceFunc);
-  void generateCtorBodyPreamble(const Function *ctorFunction, Scope *bodyScope);
+  llvm::Function *generateImplicitFunction(const std::function<void(void)> &generateBody, const Function *spiceFunc);
+  llvm::Function *generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceProc);
+  void generateCtorBodyPreamble(Scope *bodyScope);
   void generateDefaultCtor(const Function *ctorFunction);
   void generateCopyCtorBodyPreamble(const Function *copyCtorFunction);
   void generateDefaultCopyCtor(const Function *copyCtorFunction);
   void generateDtorBodyPreamble(const Function *dtorFunction);
   void generateDefaultDtor(const Function *dtorFunction);
+  void generateTestMain();
 
   // Generate VTable
   llvm::Constant *generateTypeInfoName(StructBase *spiceStruct);

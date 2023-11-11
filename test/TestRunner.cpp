@@ -62,12 +62,14 @@ void execTestCase(const TestCase &testCase) {
       /* namesForIRValues= */ true,
       /* optLevel= */ OptLevel::O0,
       /* useLTO= */ std::filesystem::exists(testCase.testPath / CTL_LTO),
-      /* noEntryFct= */ false,
+      /* noEntryFct= */ std::filesystem::exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
+      /* generateTestMain= */ std::filesystem::exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* staticLinking= */ false,
       /* debugInfo= */ std::filesystem::exists(testCase.testPath / CTL_DEBUG_INFO),
       /* disableVerifier= */ false,
       /* testMode= */ true,
   };
+  static_assert(sizeof(CliOptions) == 360, "CliOptions struct size changed");
 
   // Instantiate GlobalResourceManager
   GlobalResourceManager resourceManager(cliOptions);

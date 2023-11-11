@@ -206,6 +206,10 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Expected const variable";
   case DIVISION_BY_ZERO:
     return "Division by zero";
+  case TEST_FUNCTION_WITH_PARAMS:
+    return "Test function with parameters";
+  case TEST_FUNCTION_WRONG_RETURN_TYPE:
+    return "Test function with wrong return type";
   case COMING_SOON_SA:
     return "Coming soon";
   }

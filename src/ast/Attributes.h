@@ -17,6 +17,9 @@ static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compi
 static constexpr const char *const ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
 static constexpr const char *const ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
 static constexpr const char *const ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
+static constexpr const char *const ATTR_TEST = "test";
+static constexpr const char *const ATTR_TEST_NAME = "test.name";
+static constexpr const char *const ATTR_TEST_SKIP = "test.skip";
 
 static const CompileTimeValue DEFAULT_BOOL_COMPILE_VALUE{.boolValue = true};
 
@@ -81,6 +84,27 @@ static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
         ATTR_CORE_COMPILER_PACKED,
         {
             .target = AttrNode::TARGET_STRUCT,
+            .type = AttrNode::TYPE_BOOL,
+        },
+    },
+    {
+        ATTR_TEST,
+        {
+            .target = AttrNode::TARGET_FCT_PROC,
+            .type = AttrNode::TYPE_BOOL,
+        },
+    },
+    {
+        ATTR_TEST_NAME,
+        {
+            .target = AttrNode::TARGET_FCT_PROC,
+            .type = AttrNode::TYPE_STRING,
+        },
+    },
+    {
+        ATTR_TEST_SKIP,
+        {
+            .target = AttrNode::TARGET_FCT_PROC,
             .type = AttrNode::TYPE_BOOL,
         },
     },
