@@ -271,7 +271,7 @@
       "isGlobal": true,
       "isVolatile": false,
       "name": "TestStruct",
-      "orderIndex": 0,
+      "orderIndex": 1,
       "state": "declared",
       "type": "TestStruct<long>"
     },
@@ -280,7 +280,7 @@
       "isGlobal": true,
       "isVolatile": false,
       "name": "Alias.container",
-      "orderIndex": 2,
+      "orderIndex": 3,
       "state": "declared",
       "type": "TestStruct<long>"
     },
@@ -289,7 +289,7 @@
       "isGlobal": true,
       "isVolatile": false,
       "name": "main()",
-      "orderIndex": 3,
+      "orderIndex": 4,
       "state": "declared",
       "type": "f<int>()"
     },
@@ -298,7 +298,7 @@
       "isGlobal": true,
       "isVolatile": false,
       "name": "Alias",
-      "orderIndex": 1,
+      "orderIndex": 2,
       "state": "declared",
       "type": "TestStruct<long>"
     },
@@ -307,9 +307,18 @@
       "isGlobal": true,
       "isVolatile": false,
       "name": "TestStruct",
-      "orderIndex": 0,
+      "orderIndex": 1,
       "state": "declared",
       "type": "TestStruct<long>"
+    },
+    {
+      "codeLoc": "L1C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "T",
+      "orderIndex": 0,
+      "state": "declared",
+      "type": "invalid"
     }
   ]
 }

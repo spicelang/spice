@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/symboltablebuilder/generics/error-duplicate-gen-type-def/source.spice:2:1:
+Duplicate symbol: Duplicate symbol 'T'
+
+2  type T int|double;
+   ^^^^^^^^^^^^^^^^^^
