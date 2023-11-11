@@ -61,7 +61,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   Scope *accessScope = data.calleeParentScope;
   std::string mangledName;
   if (!data.isFctPtrCall())
-    mangledName = NameMangling::mangleFunction(*spiceFunc);
+    mangledName = spiceFunc->getMangledName();
   std::vector<llvm::Value *> argValues;
 
   // Get entry of the first fragment
@@ -461,7 +461,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // Create function or implement declared function
   spiceFunc.mangleSuffix = "." + std::to_string(manIdx);
-  const std::string mangledName = NameMangling::mangleFunction(spiceFunc);
+  const std::string mangledName = spiceFunc.getMangledName();
   llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
   module->getOrInsertFunction(mangledName, funcType);
   llvm::Function *lambda = module->getFunction(mangledName);
@@ -629,7 +629,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
 
   // Create function or implement declared function
   spiceFunc.mangleSuffix = "." + std::to_string(manIdx);
-  const std::string mangledName = NameMangling::mangleFunction(spiceFunc);
+  const std::string mangledName = spiceFunc.getMangledName();
   llvm::FunctionType *funcType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
   module->getOrInsertFunction(mangledName, funcType);
   llvm::Function *lambda = module->getFunction(mangledName);
@@ -791,7 +791,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     returnType = spiceFunc.returnType.toLLVMType(context, currentScope);
 
   // Create function or implement declared function
-  const std::string mangledName = NameMangling::mangleFunction(spiceFunc);
+  const std::string mangledName = spiceFunc.getMangledName();
   llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
   module->getOrInsertFunction(mangledName, funcType);
   llvm::Function *lambda = module->getFunction(mangledName);

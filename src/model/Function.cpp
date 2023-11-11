@@ -3,6 +3,7 @@
 #include "Function.h"
 
 #include <ast/ASTNodes.h>
+#include <irgenerator/NameMangling.h>
 
 namespace spice::compiler {
 
@@ -96,6 +97,17 @@ std::string Function::getSignature(const std::string &name, const SymbolType &th
   }
 
   return returnTyStr + thisTyStr.str() + name + templateTyStr.str() + "(" + paramTyStr.str() + ")";
+}
+
+std::string Function::getMangledName() const {
+  // Use predefined mangled name if available
+  if (!predefinedMangledName.empty())
+    return predefinedMangledName;
+  // Use function name if mangling is disabled
+  if (!mangleFunctionName)
+    return name;
+  // Use normal name mangling
+  return NameMangling::mangleFunction(*this);
 }
 
 std::string Function::getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc) {

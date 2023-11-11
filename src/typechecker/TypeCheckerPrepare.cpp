@@ -160,10 +160,22 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Check function attributes
   if (node->attrs()) {
     const AttrLstNode *attrLst = node->attrs()->attrLst();
+    Function *firstManifestation = node->manifestations.front();
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
-      const bool mangleName = value->boolValue;
+      firstManifestation->mangleFunctionName = value->boolValue;
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME))
-      node->manifestations.front()->predefinedMangledName = value->stringValue;
+      firstManifestation->predefinedMangledName = value->stringValue;
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_TEST); value->boolValue) {
+      // Make sure that the function has the correct signature
+      if (node->hasParams)
+        throw SemanticError(node->paramLst(), TEST_FUNCTION_WITH_PARAMS, "Test function may not have parameters");
+      if (!returnType.is(TY_BOOL))
+        throw SemanticError(node->returnType(), TEST_FUNCTION_WRONG_RETURN_TYPE, "Test function must return a bool");
+      // Add to test function list
+      firstManifestation->entry->used = true; // Avoid printing unused warnings
+      firstManifestation->used = true;        // Always keep test functions, because they are called implicitly by the test main
+      sourceFile->testFunctions.push_back(node->manifestations.front());
+    }
   }
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the function
@@ -280,7 +292,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   if (node->attrs()) {
     const AttrLstNode *attrLst = node->attrs()->attrLst();
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
-      const bool mangleName = value->boolValue;
+      node->manifestations.front()->mangleFunctionName = value->boolValue;
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME))
       node->manifestations.front()->predefinedMangledName = value->stringValue;
   }

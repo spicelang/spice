@@ -2,12 +2,27 @@ f<int> add(int a, int b) {
     return a + b;
 }
 
-#[test=true, test.name="Test for add function", test.skip=false]
+#[test, test.name="Test for add function"]
 f<bool> testAdd() {
     assert add(1, 2) == 3;
     assert add(2, 2) == 4;
     assert add(3, 2) == 5;
+    return true;
+}
 
+#[test]
+f<bool> testAdd1() {
+    assert add(1, 2) == 3;
+    assert add(2, 2) == 4;
+    assert add(3, 2) == 5;
+    return false;
+}
+
+#[test, test.name="This is a demo test", test.skip=true]
+f<bool> testAdd2() {
+    assert add(1, 2) == 3;
+    assert add(2, 2) == 4;
+    assert add(3, 2) == 5;
     return true;
 }
 

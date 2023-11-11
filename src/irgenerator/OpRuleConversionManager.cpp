@@ -1614,7 +1614,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   const Function *opFct = node->opFct.at(manIdx).at(opIdx);
   assert(opFct != nullptr);
 
-  const std::string mangledName = NameMangling::mangleFunction(*opFct);
+  const std::string mangledName = opFct->getMangledName();
   Scope *accessScope = opFct->entry->scope;
   assert(accessScope != nullptr);
 

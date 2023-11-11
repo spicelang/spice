@@ -142,7 +142,6 @@ public:
                             SymbolTableEntry *importEntry = nullptr, const std::string &predecessorName = "");
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
   void checkForSoftErrors();
-  void collectTestFunctions(std::vector<Function *> &result) const;
   void collectAndPrintWarnings();
   bool isStringRT() const;
   bool isRttiRT() const;
@@ -168,7 +167,7 @@ public:
   std::unordered_map<std::string, std::pair<SourceFile *, const ASTNode *>> dependencies;
   std::vector<const SourceFile *> dependants;
   std::unordered_map<std::string, NameRegistryEntry> exportedNameRegistry;
-  std::vector<Function *> testFunctions;
+  std::vector<const Function *> testFunctions;
 
 private:
   // Private fields

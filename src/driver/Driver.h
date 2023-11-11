@@ -63,6 +63,7 @@ struct CliOptions {
   OptLevel optLevel = OptLevel::O0; // Default optimization level for debug build mode is O0
   bool useLTO = false;
   bool noEntryFct = false;
+  bool generateTestMain = false;
   bool staticLinking = false;
   bool generateDebugInfo = false;
   bool disableVerifier = false;
@@ -95,6 +96,7 @@ private:
   // Private methods
   void addBuildSubcommand();
   void addRunSubcommand();
+  void addTestSubcommand();
   void addInstallSubcommand();
   void addUninstallSubcommand();
   void addCompileSubcommandOptions(CLI::App *subCmd);

@@ -1,23 +1,23 @@
 ---
-title: Install command
+title: Install subcommand
 ---
 
-The `install` command can be used to compile your Spice project to an executable file and copy it to a binary directory in the PATH variable.
+The `install` subcommand can be used to compile your Spice project to an executable file and copy it to a binary directory in the PATH variable.
 
 ## Usage
 === "Long form"
-    Use the `install` command by executing:
+    Use the `install` subcommand by executing:
     ```sh
-    $ spice install [main-source-file]
+    $ spice install [options] <main-source-file>
     ```
 === "Short form"
-    Use the `install` command by executing:
+    Use the `install` subcommand by executing:
     ```sh
-    $ spice i [mail-source-file]
+    $ spice i [options] <mail-source-file>
     ```
 
 ## Options
-You can apply following options to the `install` command:
+You can apply following options to the `install` subcommand:
 
 | Option       | Long                 | Description                                                                          |
 |--------------|----------------------|--------------------------------------------------------------------------------------|
@@ -35,4 +35,4 @@ You can apply following options to the `install` command:
 | `-O<n>`      | -                    | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz` |
 | `-m`         | `--build-mode`       | Controls the build mode. Valid values are `debug` and `release`                      |
 | -            | `--ignore-cache`     | Compile always and ignore the compile cache                                          |
-| -            | `--enable-ast-opt`   | Enable AST optimization (recommended for debugging the compiler)                     |
+| -            | `--enable-ast-opt`   | Enable AST optimization                                                              |

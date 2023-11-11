@@ -29,6 +29,7 @@ void Driver::init() {
   // Create sub-commands
   addBuildSubcommand();
   addRunSubcommand();
+  addTestSubcommand();
   addInstallSubcommand();
   addUninstallSubcommand();
 
@@ -203,6 +204,29 @@ void Driver::addRunSubcommand() {
   subCmd->ignore_case();
   subCmd->callback([&]() {
     shouldCompile = shouldExecute = true; // Requires the source file to be compiled
+  });
+
+  addCompileSubcommandOptions(subCmd);
+
+  // --debug-info
+  subCmd->add_flag<bool>("--debug-info,-g", cliOptions.generateDebugInfo, "Generate debug info");
+  // --disable-verifier
+  subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
+}
+
+/**
+ * Add test subcommand to cli interface
+ */
+void Driver::addTestSubcommand() {
+  // Create sub-command itself
+  CLI::App *subCmd = app.add_subcommand("test", "Builds your Spice program and runs all enclosed tests");
+  subCmd->alias("t");
+  subCmd->ignore_case();
+  subCmd->callback([&]() {
+    shouldCompile = shouldExecute = true; // Requires the source file to be compiled
+    cliOptions.testMode = true;           // Always enable assertions for tests, also in higher opt levels
+    cliOptions.generateTestMain = true;   // An alternative entry function is generated
+    cliOptions.noEntryFct = true;         // To not have two main functions, disable normal main
   });
 
   addCompileSubcommandOptions(subCmd);

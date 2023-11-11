@@ -116,7 +116,7 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
   // Create function type
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
 
-  const std::string mangledName = NameMangling::mangleFunction(*spiceFunc);
+  const std::string mangledName = spiceFunc->getMangledName();
   llvm::DISubprogram *subprogram;
   const std::string &name = spiceFunc->name;
   if (spiceFunc->isMethod()) {

@@ -5,11 +5,19 @@
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
-#include <irgenerator/NameMangling.h>
 #include <model/Function.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
+
+// String placeholders for builtin testing output
+static const char *const TEST_ALL_START_MSG = "[==========] Running %d test(s) from %d source files\n";
+static const char *const TEST_ALL_END_MSG = "[==========] Ran %d test(s) from %d source files\n";
+static const char *const TEST_FILE_START_END_MSG = "[----------] %d test(s) from %s\n";
+static const char *const TEST_CASE_RUN_MSG = "[ RUN      ] %s\n";
+static const char *const TEST_CASE_SUCCESS_MSG = "\033[32m[ PASSED   ]\033[0m %s\n";
+static const char *const TEST_CASE_FAILED_MSG = "\033[31m[ FAILED   ]\033[0m %s\n";
+static const char *const TEST_CASE_SKIPPED_MSG = "\033[33m[ SKIPPED  ]\033[0m %s\n";
 
 llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy) {
   assert(srcSTy != dstSTy); // We only need to cast implicitly, if the types do not match exactly
@@ -54,7 +62,7 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
   assert(ctorOrDtor != nullptr);
 
   // Retrieve metadata for the function
-  const std::string mangledName = NameMangling::mangleFunction(*ctorOrDtor);
+  const std::string mangledName = ctorOrDtor->getMangledName();
 
   // Function is not defined in the current module -> declare it
   if (!module->getFunction(mangledName)) {
@@ -133,7 +141,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
   llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
   // Create function
-  const std::string mangledName = NameMangling::mangleFunction(*spiceFunc);
+  const std::string mangledName = spiceFunc->getMangledName();
   llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
   llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, mangledName, module);
   fct->setLinkage(linkage);
@@ -224,7 +232,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
   // Create function
-  const std::string mangledName = NameMangling::mangleFunction(*spiceProc);
+  const std::string mangledName = spiceProc->getMangledName();
   llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
   llvm::Function *fct = llvm::Function::Create(fctType, llvm::Function::ExternalLinkage, mangledName, module);
   fct->setLinkage(linkage);
@@ -462,19 +470,38 @@ void IRGenerator::generateDefaultDtor(const Function *dtorFunction) {
 
 void IRGenerator::generateTestMain() {
   // Collect all test functions
-  std::vector<Function *> testFunctions;
-  sourceFile->collectTestFunctions(testFunctions);
+  std::vector<const std::vector<const Function *> *> tests;
+  for (const auto &sourceFile : resourceManager.sourceFiles) {
+    if (!sourceFile.second->testFunctions.empty())
+      tests.push_back(&sourceFile.second->testFunctions);
+  }
 
   // Prepare printf function
   llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
 
   // Prepare success and error messages
-  llvm::Constant *successMessage = createGlobalStringConst("successMessage", "[passed]\n", *rootScope->codeLoc);
-  llvm::Constant *errorMessage = createGlobalStringConst("errorMessage", "[failed]\n", *rootScope->codeLoc);
+  llvm::Constant *allStartMsg = createGlobalStringConst("allStartMsg", TEST_ALL_START_MSG, *rootScope->codeLoc);
+  llvm::Constant *allEndMsg = createGlobalStringConst("allEndMsg", TEST_ALL_END_MSG, *rootScope->codeLoc);
+  llvm::Constant *fileStartEndMsg = createGlobalStringConst("fileStartMsg", TEST_FILE_START_END_MSG, *rootScope->codeLoc);
+  llvm::Constant *runMsg = createGlobalStringConst("runMsg", TEST_CASE_RUN_MSG, *rootScope->codeLoc);
+  llvm::Constant *successMsg = createGlobalStringConst("successMsg", TEST_CASE_SUCCESS_MSG, *rootScope->codeLoc);
+  llvm::Constant *errorMsg = createGlobalStringConst("errorMsg", TEST_CASE_FAILED_MSG, *rootScope->codeLoc);
+  llvm::Constant *skippedMsg = createGlobalStringConst("skippedMsg", TEST_CASE_SKIPPED_MSG, *rootScope->codeLoc);
+
+  // Prepare entry for test main
+  SymbolType functionType(TY_FUNCTION);
+  functionType.specifiers = TypeSpecifiers::of(TY_FUNCTION);
+  functionType.specifiers.isPublic = true;
+  SymbolTableEntry entry(MAIN_FUNCTION_NAME, functionType, rootScope, nullptr, 0, false);
 
   // Prepare test main function
-  Function testMain(MAIN_FUNCTION_NAME, nullptr, SymbolType(TY_DYN), SymbolType(TY_INT), {}, {}, nullptr);
+  Function testMain(MAIN_FUNCTION_NAME, &entry, SymbolType(TY_DYN), SymbolType(TY_INT), {}, {}, nullptr);
+  testMain.used = true; // Mark as used to prevent removal
   testMain.implicitDefault = true;
+  testMain.mangleFunctionName = false;
+
+  // Prepare scope
+  rootScope->createChildScope(testMain.getSignature(false), ScopeType::FUNC_PROC_BODY, nullptr);
 
   // Generate
   const std::function<void(void)> generateBody = [&]() {
@@ -483,40 +510,79 @@ void IRGenerator::generateTestMain() {
     llvm::Value *overallResult = insertAlloca(i32Ty, RETURN_VARIABLE_NAME);
     builder.CreateStore(builder.getTrue(), overallResult);
 
+    // Print start message
+    const auto accFct = [&](size_t sum, const std::vector<const Function *> *innerVector) { return sum + innerVector->size(); };
+    const size_t totalTestCount = std::accumulate(tests.begin(), tests.end(), 0, accFct);
+    builder.CreateCall(printfFct, {allStartMsg, builder.getInt32(totalTestCount), builder.getInt32(tests.size())});
+
     // Generate a call to each test function
-    for (Function *testFunction : testFunctions) {
-      assert(testFunction->isNormalFunction());
-      assert(testFunction->paramList.empty());
+    for (const std::vector<const Function *> *testSuite : tests) {
+      // Print test suite prologue
+      const std::string fileName = testSuite->front()->bodyScope->sourceFile->fileName;
+      llvm::Constant *fileNameValue = createGlobalStringConst("fileName", fileName, testSuite->front()->getDeclCodeLoc());
+      builder.CreateCall(printfFct, {fileStartEndMsg, builder.getInt32(testSuite->size()), fileNameValue});
 
-      // Retrieve attribute list for the test function
-      assert(testFunction->declNode->isFctOrProcDef());
-      auto fctDefNode = spice_pointer_cast<FctDefBaseNode *>(testFunction->declNode);
-      assert(fctDefNode->attrs() != nullptr);
-      const AttrLstNode *attrs = fctDefNode->attrs()->attrLst();
-      const CompileTimeValue *testValue = attrs->getAttrValueByName(ATTR_TEST);
-      assert(testValue->boolValue); // The test attribute must be present
-      const CompileTimeValue *testSkipAttr = attrs->getAttrValueByName(ATTR_TEST_SKIP);
-      assert(!testSkipAttr || !testSkipAttr->boolValue); // All skipped tests must be filtered out
-      const CompileTimeValue *testNameAttr = attrs->getAttrValueByName(ATTR_TEST_NAME);
-      const std::string testName = testNameAttr ? testNameAttr->stringValue : testFunction->name;
+      for (const Function *testFunction : *testSuite) {
+        assert(testFunction->isNormalFunction());
+        assert(testFunction->paramList.empty());
 
-      // Print test name
-      builder.CreateCall(printfFct, createGlobalStringConst("testName", testName + " ", testFunction->getDeclCodeLoc()));
+        // Retrieve attribute list for the test function
+        assert(testFunction->declNode->isFctOrProcDef());
+        auto fctDefNode = spice_pointer_cast<FctDefBaseNode *>(testFunction->declNode);
+        assert(fctDefNode->attrs() != nullptr);
+        const AttrLstNode *attrs = fctDefNode->attrs()->attrLst();
+        const CompileTimeValue *testValue = attrs->getAttrValueByName(ATTR_TEST);
+        assert(testValue->boolValue); // The test attribute must be present
+        const CompileTimeValue *testSkipAttr = attrs->getAttrValueByName(ATTR_TEST_SKIP);
+        const bool skipTest = testSkipAttr && testSkipAttr->boolValue;
+        const CompileTimeValue *testNameAttr = attrs->getAttrValueByName(ATTR_TEST_NAME);
 
-      // Call test function
-      llvm::Function *callee = module->getFunction(NameMangling::mangleFunction(*testFunction));
-      assert(callee != nullptr);
-      llvm::Value *testCaseResult = builder.CreateCall(callee);
+        // Prepare test name
+        std::stringstream testName;
+        testName << testFunction->name;
+        if (testNameAttr)
+          testName << " (" << testNameAttr->stringValue << ")";
 
-      // Update result variable
-      llvm::Value *oldResult = insertLoad(i32Ty, overallResult);
-      llvm::Value *newResult = builder.CreateAnd(oldResult, builder.CreateZExt(testCaseResult, i32Ty));
-      builder.CreateStore(newResult, overallResult);
+        // Print test case run message
+        llvm::Constant *testNameValue = createGlobalStringConst("testName", testName.str(), testFunction->getDeclCodeLoc());
+        builder.CreateCall(printfFct, {runMsg, testNameValue});
 
-      // Print success or error message
-      llvm::Value *message = builder.CreateSelect(testCaseResult, successMessage, errorMessage);
-      builder.CreateCall(printfFct, message);
+        if (skipTest) {
+          // Print test case skip message
+          builder.CreateCall(printfFct, {skippedMsg, testNameValue});
+          continue;
+        }
+
+        // Test function is not defined in the current module -> declare it
+        const std::string mangledName = testFunction->getMangledName();
+        if (!module->getFunction(mangledName)) {
+          assert(testFunction->returnType.is(TY_BOOL));
+          assert(testFunction->paramList.empty());
+          llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getInt1Ty(), {}, false);
+          module->getOrInsertFunction(mangledName, fctType);
+        }
+
+        // Call test function
+        llvm::Function *callee = module->getFunction(mangledName);
+        assert(callee != nullptr);
+        llvm::Value *testCaseResult = builder.CreateCall(callee);
+
+        // Update result variable
+        llvm::Value *oldResult = insertLoad(i32Ty, overallResult);
+        llvm::Value *newResult = builder.CreateAnd(oldResult, builder.CreateZExt(testCaseResult, i32Ty));
+        builder.CreateStore(newResult, overallResult);
+
+        // Print test case result message
+        llvm::Value *message = builder.CreateSelect(testCaseResult, successMsg, errorMsg);
+        builder.CreateCall(printfFct, {message, testNameValue});
+      }
+
+      // Print test suite epilogue
+      builder.CreateCall(printfFct, {fileStartEndMsg, builder.getInt32(testSuite->size()), fileNameValue});
     }
+
+    // Print end message
+    builder.CreateCall(printfFct, {allEndMsg, builder.getInt32(totalTestCount), builder.getInt32(tests.size())});
 
     // Return result
     llvm::Value *finalResult = insertLoad(i32Ty, overallResult);
