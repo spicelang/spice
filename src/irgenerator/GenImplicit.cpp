@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <ast/Attributes.h>
 #include <irgenerator/NameMangling.h>
 #include <model/Function.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
@@ -492,13 +493,12 @@ void IRGenerator::generateTestMain() {
       auto fctDefNode = spice_pointer_cast<FctDefBaseNode *>(testFunction->declNode);
       assert(fctDefNode->attrs() != nullptr);
       const AttrLstNode *attrs = fctDefNode->attrs()->attrLst();
-      assert(attrs != nullptr);
-      const AttrNode *testAttr = attrs->getAttrByName(AttrNode::ATTR_TEST);
-      assert(testAttr && testAttr->getValue().boolValue); // The test attribute must be present
-      const AttrNode *testSkipAttr = attrs->getAttrByName(AttrNode::ATTR_TEST_SKIP);
-      assert(!testSkipAttr || !testSkipAttr->getValue().boolValue); // All skipped tests must be filtered out
-      const AttrNode *testNameAttr = attrs->getAttrByName(AttrNode::ATTR_TEST_NAME);
-      const std::string testName = testNameAttr ? testNameAttr->getValue().stringValue : testFunction->name;
+      const CompileTimeValue *testValue = attrs->getAttrValueByName(ATTR_TEST);
+      assert(testValue->boolValue); // The test attribute must be present
+      const CompileTimeValue *testSkipAttr = attrs->getAttrValueByName(ATTR_TEST_SKIP);
+      assert(!testSkipAttr || !testSkipAttr->boolValue); // All skipped tests must be filtered out
+      const CompileTimeValue *testNameAttr = attrs->getAttrValueByName(ATTR_TEST_NAME);
+      const std::string testName = testNameAttr ? testNameAttr->stringValue : testFunction->name;
 
       // Print test name
       builder.CreateCall(printfFct, createGlobalStringConst("testName", testName + " ", testFunction->getDeclCodeLoc()));
