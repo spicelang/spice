@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
+#include "ast/Attributes.h"
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
@@ -511,8 +512,8 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
 
     // Set field types to struct type
     bool isPacked = false;
-    if (node->attrs() && node->attrs()->attrLst() && node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_PACKED))
-      isPacked = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_PACKED)->getValue().boolValue;
+    if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_PACKED))
+      isPacked = node->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
     structType->setBody(fieldTypes, isPacked);
 
     // Generate VTable if required
@@ -648,11 +649,9 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   llvm::Function *fct = module->getFunction(mangledName);
 
   // If the function should be imported as dll, add the dll attribute
-  if (node->attrs()) {
-    AttrNode *linkAsDllNode = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_LINKER_DLL);
-    if (linkAsDllNode && linkAsDllNode->getValue().boolValue)
+  if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_CORE_LINKER_DLL))
+    if (node->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_LINKER_DLL)->boolValue)
       fct->setDLLStorageClass(llvm::GlobalValue::DLLImportStorageClass);
-  }
 
   return nullptr;
 }

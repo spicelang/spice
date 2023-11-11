@@ -40,6 +40,8 @@ std::string ParserError::getMessagePrefix(ParserErrorType type) {
     return "Invalid specifier combination";
   case INVALID_CHAR_LITERAL:
     return "Invalid char literal";
+  case INVALID_ATTR_VALUE_TYPE:
+    return "Invalid attribute value type";
   case RESERVED_KEYWORD:
     return "Usage of reserved keyword";
   }

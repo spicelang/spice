@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/symboltablebuilder/attributes/error-invalid-attr-target/source.spice:1:3:
+Invalid attribute target: Attribute 'core.linker.dll' cannot be used on this target
+
+1  #[core.linker.dll]
+     ^^^^^^^^^^^^^^^

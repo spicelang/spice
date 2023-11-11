@@ -1,0 +1,6 @@
+#[core.linker.dll]
+p testFunction() {}
+
+f<int> main() {
+    testFunction();
+}

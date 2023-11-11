@@ -130,6 +130,12 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Scope access is only allowed on imports";
   case UNKNOWN_DATATYPE:
     return "Unknown datatype";
+  case UNKNOWN_ATTR:
+    return "Unknown attribute";
+  case INVALID_ATTR_TARGET:
+    return "Invalid attribute target";
+  case MISSING_ATTR_VALUE:
+    return "Missing attribute value";
   case NUMBER_OF_FIELDS_NOT_MATCHING:
     return "Number of struct fields not matching declaration";
   case FIELD_DEFAULT_VALUE_NO_COMPILETIME_CONST:
