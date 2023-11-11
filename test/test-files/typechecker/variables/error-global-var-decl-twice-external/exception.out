@@ -1,5 +1,0 @@
-[Error|Semantic] ./test-files/typechecker/variables/error-global-var-decl-twice-external/source.spice:3:1:
-Multiple declarations of the same global variable: Duplicate global variable 'GLOBAL_VARIABLE' in other module
-
-3  double GLOBAL_VARIABLE = 14.4;
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

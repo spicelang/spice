@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <ast/Attributes.h>
 #include <exception/SemanticError.h>
 #include <util/CommonUtil.h>
 #include <util/FileUtil.h>
@@ -77,17 +78,14 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
 }
 
 std::any ImportCollector::visitModAttr(ModAttrNode *node) {
+  // Retrieve attributes
   const AttrLstNode *attrs = node->attrLst();
 
-  // core.linker.flag
-  for (const AttrNode *attr : attrs->getAttrsByName(AttrNode::ATTR_CORE_LINKER_FLAG)) {
-    const std::string &value = attr->getValue().stringValue;
-    resourceManager.linker.addLinkerFlag(value);
-  }
-
   // core.compiler.keep-on-name-collision
-  if (const AttrNode *attr = attrs->getAttrByName(AttrNode::ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION))
-    sourceFile->alwaysKeepSymbolsOnNameCollision = attr->getValue().boolValue;
+  if (attrs->hasAttr(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)) {
+    const bool keepOnCollision = attrs->getAttrValueByName(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)->boolValue;
+    sourceFile->alwaysKeepSymbolsOnNameCollision = keepOnCollision;
+  }
 
   return nullptr;
 }

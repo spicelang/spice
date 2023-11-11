@@ -32,6 +32,7 @@ set(SOURCES
         ast/ParallelizableASTVisitor.h
         ast/ASTBuilder.cpp
         ast/ASTBuilder.h
+        ast/Attributes.h
         # AST visualizer
         visualizer/ASTVisualizer.cpp
         visualizer/ASTVisualizer.h

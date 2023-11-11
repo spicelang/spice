@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/symboltablebuilder/aliases/error-duplicate-alias/source.spice:2:1:
+Duplicate symbol: Duplicate symbol 'Alias'
+
+2  type Alias alias double;
+   ^^^^^^^^^^^^^^^^^^^^^^^^

@@ -54,6 +54,11 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   // Tell the return type that it is one
   fctDefNode->returnType()->isReturnType = true;
 
+  // Tell the attributes that they are function attributes
+  if (fctDefNode->attrs())
+    for (AttrNode *attr : fctDefNode->attrs()->attrLst()->attributes())
+      attr->target = AttrNode::TARGET_FCT_PROC;
+
   return concludeNode(ctx, fctDefNode);
 }
 
@@ -70,6 +75,11 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   // Retrieve information from the procedure name
   procDefNode->name = procDefNode->getChild<FctNameNode>();
   procDefNode->isMethod = procDefNode->name->nameFragments.size() > 1;
+
+  // Tell the attributes that they are procedure attributes
+  if (procDefNode->attrs())
+    for (AttrNode *attr : procDefNode->attrs()->attrLst()->attributes())
+      attr->target = AttrNode::TARGET_FCT_PROC;
 
   return concludeNode(ctx, procDefNode);
 }
@@ -107,6 +117,11 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
 
   // Visit children
   visitChildren(ctx);
+
+  // Tell the attributes that they are struct attributes
+  if (structDefNode->attrs())
+    for (AttrNode *attr : structDefNode->attrs()->attrLst()->attributes())
+      attr->target = AttrNode::TARGET_STRUCT;
 
   return concludeNode(ctx, structDefNode);
 }
@@ -190,6 +205,11 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   // Visit children
   visitChildren(ctx);
+
+  // Tell the attributes that they are ext decl attributes
+  if (extDeclNode->attrs())
+    for (AttrNode *attr : extDeclNode->attrs()->attrLst()->attributes())
+      attr->target = AttrNode::TARGET_EXT_DECL;
 
   return concludeNode(ctx, extDeclNode);
 }
@@ -466,6 +486,10 @@ std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
+  // Tell the attributes that they are module attributes
+  for (AttrNode *attr : modAttrNode->attrLst()->attributes())
+    attr->target = AttrNode::TARGET_MODULE;
+
   return concludeNode(ctx, modAttrNode);
 }
 
@@ -499,6 +523,21 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
 
   // Visit children
   visitChildren(ctx);
+
+  // Come up with type
+  if (ctx->constant()) {
+    if (ctx->constant()->STRING_LIT())
+      attrNode->type = AttrNode::TYPE_STRING;
+    else if (ctx->constant()->INT_LIT())
+      attrNode->type = AttrNode::TYPE_INT;
+    else if (ctx->constant()->TRUE() || ctx->constant()->FALSE())
+      attrNode->type = AttrNode::TYPE_BOOL;
+    else
+      throw ParserError(attrNode->value()->codeLoc, INVALID_ATTR_VALUE_TYPE, "Invalid attribute value type");
+  } else {
+    // If no value is given, use the bool type
+    attrNode->type = AttrNode::TYPE_BOOL;
+  }
 
   return concludeNode(ctx, attrNode);
 }

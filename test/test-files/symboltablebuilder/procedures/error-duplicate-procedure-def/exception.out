@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/symboltablebuilder/procedures/error-duplicate-procedure-def/source.spice:5:1:
+Multiple declarations of a function/procedure: The function/procedure 'exampleProcedure()' is declared twice
+
+5  p exampleProcedure() {
+   ^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,3 @@
+#![core.linker.flag]
+
+f<int> main() {}

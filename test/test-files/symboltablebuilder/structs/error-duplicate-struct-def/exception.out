@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/symboltablebuilder/structs/error-duplicate-struct-def/source.spice:7:1:
+Duplicate symbol: Duplicate symbol 'Person'
+
+7  type Person struct {
+   ^^^^^^^^^^^^^^^^^^^^

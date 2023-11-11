@@ -1,0 +1,7 @@
+type TestStruct struct {
+    long a
+    short b
+    string a
+}
+
+f<int> main() {}

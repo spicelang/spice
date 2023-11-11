@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTBuilder.h>
+#include <ast/Attributes.h>
 #include <exception/SemanticError.h>
 
 namespace spice::compiler {
@@ -26,8 +27,12 @@ std::any SymbolTableBuilder::visitEntry(EntryNode *node) {
 }
 
 std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
+  // Visit attributes
+  if (node->attrs())
+    visit(node->attrs());
+
   // Check if the function is already defined
-  if (rootScope->lookup(node->getSignature()))
+  if (rootScope->lookupStrict(node->getSignature()))
     throw SemanticError(node, FUNCTION_DECLARED_TWICE, "Main function is declared twice");
 
   // Insert symbol for main function
@@ -57,6 +62,10 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
 }
 
 std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
+  // Visit attributes
+  if (node->attrs())
+    visit(node->attrs());
+
   // Build function specifiers
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
@@ -116,6 +125,10 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 }
 
 std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
+  // Visit attributes
+  if (node->attrs())
+    visit(node->attrs());
+
   // Build procedure specifiers
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
@@ -176,8 +189,12 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 }
 
 std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
+  // Visit attributes
+  if (node->attrs())
+    visit(node->attrs());
+
   // Check if this name already exists
-  if (rootScope->lookup(node->structName))
+  if (rootScope->lookupStrict(node->structName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->structName + "'");
 
   // Create scope for the struct
@@ -221,7 +238,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 
 std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   // Check if this name already exists
-  if (rootScope->lookup(node->interfaceName))
+  if (rootScope->lookupStrict(node->interfaceName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->interfaceName + "'");
 
   // Create scope for the interface
@@ -255,7 +272,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
 
 std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   // Check if this name already exists
-  if (rootScope->lookup(node->enumName))
+  if (rootScope->lookupStrict(node->enumName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->enumName + "'");
 
   // Create scope for the enum
@@ -288,15 +305,19 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
 
 std::any SymbolTableBuilder::visitGenericTypeDef(GenericTypeDefNode *node) {
   // Check if this name already exists
-  if (rootScope->lookup(node->typeName))
+  if (rootScope->lookupStrict(node->typeName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->typeName + "'");
+
+  // Create the generic type to the symbol table
+  node->entry = rootScope->insert(node->typeName, node);
+  node->entry->used = true; // Generic types are always used
 
   return nullptr;
 }
 
 std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
   // Check if this name already exists
-  if (rootScope->lookup(node->aliasName))
+  if (rootScope->lookupStrict(node->aliasName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->aliasName + "'");
 
   // Add the alias to the symbol table
@@ -311,7 +332,7 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
 
 std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
   // Check if this name already exists
-  if (rootScope->lookup(node->varName))
+  if (rootScope->lookupStrict(node->varName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->varName + "'");
 
   // Check if global already exists in an imported source file
@@ -329,8 +350,12 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
 }
 
 std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
+  // Visit attributes
+  if (node->attrs())
+    visit(node->attrs());
+
   // Check if this name already exists
-  if (rootScope->lookup(node->extFunctionName))
+  if (rootScope->lookupStrict(node->extFunctionName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->extFunctionName + "'");
 
   // Add the external declaration to the symbol table
@@ -542,6 +567,37 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
   // Add variable entry to symbol table
   SymbolTableEntry *varEntry = currentScope->insert(node->varName, node);
   varEntry->isParam = node->isParam;
+
+  return nullptr;
+}
+
+std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
+  // Visit attributes
+  visitChildren(node);
+
+  // Retrieve attributes
+  const AttrLstNode *attrs = node->attrLst();
+
+  // core.linker.flag
+  for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG))
+    resourceManager.linker.addLinkerFlag(value->stringValue);
+
+  return nullptr;
+}
+
+std::any SymbolTableBuilder::visitAttr(AttrNode *node) {
+  // Check if this attribute exists
+  if (!ATTR_CONFIGS.contains(node->key))
+    throw SemanticError(node, UNKNOWN_ATTR, "Unknown attribute '" + node->key + "'");
+
+  // Check if the target is correct
+  const AttrConfigValue &config = ATTR_CONFIGS.at(node->key);
+  if ((node->target & config.target) == 0)
+    throw SemanticError(node, INVALID_ATTR_TARGET, "Attribute '" + node->key + "' cannot be used on this target");
+
+  // Check if a value is present
+  if (!node->value() && config.type != AttrNode::TYPE_BOOL)
+    throw SemanticError(node, MISSING_ATTR_VALUE, "Attribute '" + node->key + "' requires a value");
 
   return nullptr;
 }

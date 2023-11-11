@@ -1,0 +1,13 @@
+type Fruit enum {
+    Apple,
+    Banana,
+    Orange
+}
+
+type Fruit enum {
+    Kiwi,
+    Mango,
+    Pear
+}
+
+f<int> main() {}

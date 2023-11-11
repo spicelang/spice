@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/symboltablebuilder/ext-decl/error-duplicate-ext-decl/source.spice:2:1:
+Duplicate symbol: Duplicate symbol 'malloc'
+
+2  ext f<heap byte*> malloc(unsigned long);
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

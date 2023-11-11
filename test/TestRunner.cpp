@@ -275,10 +275,10 @@ class ParserTests : public testing::TestWithParam<TestCase> {};
 TEST_P(ParserTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, ParserTests, testing::ValuesIn(TestUtil::collectTestCases("parser", false)), TestUtil::NameResolver());
 
-/*class SymbolTableBuilderTests : public testing::TestWithParam<TestCase> {};
+class SymbolTableBuilderTests : public testing::TestWithParam<TestCase> {};
 TEST_P(SymbolTableBuilderTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, SymbolTableBuilderTests, testing::ValuesIn(TestUtil::collectTestCases("symboltablebuilder", true)),
-                         TestUtil::NameResolver());*/
+                         TestUtil::NameResolver());
 
 class TypeCheckerTests : public testing::TestWithParam<TestCase> {};
 TEST_P(TypeCheckerTests, ) { execTestCase(GetParam()); }

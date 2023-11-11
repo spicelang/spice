@@ -2,6 +2,7 @@
 
 #include <ast/ASTNodes.h>
 
+#include <ast/Attributes.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
@@ -67,19 +68,42 @@ bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
   return returns;
 }
 
-std::vector<AttrNode *> AttrLstNode::getAttrsByName(const char *key) const {
-  const std::vector<AttrNode *> attrs = attributes();
-  std::vector<AttrNode *> newAttrs;
-  std::copy_if(attrs.begin(), attrs.end(), std::back_inserter(newAttrs), [=](const AttrNode *attr) { return attr->key == key; });
-  return newAttrs;
+std::vector<const CompileTimeValue *> AttrLstNode::getAttrValuesByName(const std::string &key) const {
+  assert(ATTR_CONFIGS.contains(key));
+  const std::vector<AttrNode *> attrNodes = attributes();
+
+  std::vector<const CompileTimeValue *> attributeValues;
+  for (AttrNode *attrNode : attrNodes) {
+    // Skip attributes with different keys
+    if (attrNode->key != key)
+      continue;
+
+    // Found a matching attribute
+    const CompileTimeValue *value = attrNode->getValue();
+    if (!value) {
+      // If the attribute has no value, we use the default value
+      const AttrConfigValue &config = ATTR_CONFIGS.at(key);
+      attributeValues.push_back(&DEFAULT_BOOL_COMPILE_VALUE);
+    } else {
+      // If the attribute has a value, we use the value
+      attributeValues.push_back(value);
+    }
+  }
+
+  return attributeValues;
 }
 
-AttrNode *AttrLstNode::getAttrByName(const char *key) const {
-  const std::vector<AttrNode *> attrs = getAttrsByName(key);
+const CompileTimeValue *AttrLstNode::getAttrValueByName(const std::string &key) const {
+  const std::vector<const CompileTimeValue *> attrs = getAttrValuesByName(key);
   return attrs.empty() ? nullptr : attrs.back();
 }
 
-const CompileTimeValue &AttrNode::getValue() const { return value()->compileTimeValue; }
+bool AttrLstNode::hasAttr(const std::string &key) const {
+  const std::vector<AttrNode *> attrs = attributes();
+  return std::ranges::any_of(attrs, [&](AttrNode *attr) { return attr->key == key; });
+}
+
+const CompileTimeValue *AttrNode::getValue() const { return value() ? &value()->compileTimeValue : nullptr; }
 
 bool AssertStmtNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   const bool returns = hasCompileTimeValue() && !compileTimeValue.boolValue;

@@ -1,0 +1,4 @@
+ext f<heap byte*> malloc(unsigned long);
+ext f<heap byte*> malloc(unsigned long);
+
+f<int> main() {}

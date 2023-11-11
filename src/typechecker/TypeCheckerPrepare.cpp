@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "TypeChecker.h"
+#include "ast/Attributes.h"
 
 #include <SourceFile.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
@@ -158,10 +159,11 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Check function attributes
   if (node->attrs()) {
-    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLE); attr != nullptr)
-      node->manifestations.front()->mangleFunctionName = attr->value()->compileTimeValue.boolValue;
-    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLED_NAME); attr != nullptr)
-      node->manifestations.front()->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
+    const AttrLstNode *attrLst = node->attrs()->attrLst();
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
+      const bool mangleName = value->boolValue;
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME))
+      node->manifestations.front()->predefinedMangledName = value->stringValue;
   }
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the function
@@ -276,10 +278,11 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Check procedure attributes
   if (node->attrs()) {
-    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLE); attr != nullptr)
-      node->manifestations.front()->mangleFunctionName = attr->value()->compileTimeValue.boolValue;
-    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLED_NAME); attr != nullptr)
-      node->manifestations.front()->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
+    const AttrLstNode *attrLst = node->attrs()->attrLst();
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
+      const bool mangleName = value->boolValue;
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME))
+      node->manifestations.front()->predefinedMangledName = value->stringValue;
   }
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the procedure
@@ -391,12 +394,11 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   spiceStruct.scope = node->structScope;
 
   // Request RTTI runtime if the struct is polymorphic
-  AttrNode *attr = node->attrs() ? node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_EMIT_VTABLE) : nullptr;
-  if (node->hasInterfaces || (attr && attr->value()->compileTimeValue.boolValue)) {
-    if (!sourceFile->isRttiRT())
-      sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
-    node->emitVTable = true;
-  }
+  node->emitVTable |= node->hasInterfaces;
+  if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_EMIT_VTABLE))
+    node->emitVTable |= node->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_EMIT_VTABLE)->boolValue;
+  if (node->emitVTable && !sourceFile->isRttiRT())
+    sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
 
   return nullptr;
 }
@@ -636,10 +638,11 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
 
   // Check procedure attributes
   if (node->attrs()) {
-    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLE); attr != nullptr)
-      node->extFunction->mangleFunctionName = attr->value()->compileTimeValue.boolValue;
-    if (AttrNode *attr = node->attrs()->attrLst()->getAttrByName(AttrNode::ATTR_CORE_COMPILER_MANGLED_NAME); attr != nullptr)
-      node->extFunction->predefinedMangledName = attr->value()->compileTimeValue.stringValue;
+    const AttrLstNode *attrLst = node->attrs()->attrLst();
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
+      node->extFunction->mangleFunctionName = value->boolValue;
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME))
+      node->extFunction->predefinedMangledName = value->stringValue;
   }
 
   // Prepare ext function type

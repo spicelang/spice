@@ -1,0 +1,4 @@
+type T dyn;
+type T int|double;
+
+f<int> main() {}
