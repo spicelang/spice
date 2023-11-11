@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/symboltablebuilder/attributes/error-non-existing-attribute/source.spice:1:3:
+Unknown attribute: Unknown attribute 'non.existing.attr'
+
+1  #[non.existing.attr = 321]
+     ^^^^^^^^^^^^^^^^^^^^^^^

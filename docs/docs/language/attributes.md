@@ -4,10 +4,13 @@ title: Attributes
 
 Spice offers the option to annotate single function or whole modules via attributes.
 
+!!! note "Optional value for bool attributes"
+For attributes of type bool, the value `true` can be omitted.
+
 ## Module attributes
 ```spice
 // Attribute for the whole module
-#![core.linker.flags = "-pthread"]
+#![core.linker.flag = "-pthread"]
 
 // ...
 ```

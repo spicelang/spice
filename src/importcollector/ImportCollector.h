@@ -21,7 +21,6 @@ public:
   std::any visitEntry(EntryNode *node) override;
   std::any visitImportStmt(ImportStmtNode *node) override;
   std::any visitModAttr(ModAttrNode *node) override;
-  std::any visitAttr(AttrNode *node) override;
 };
 
 } // namespace spice::compiler

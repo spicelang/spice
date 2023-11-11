@@ -52,14 +52,14 @@ static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
     {
         ATTR_CORE_COMPILER_MANGLE,
         {
-            .target = AttrNode::TARGET_FCT_PROC,
+            .target = AttrNode::TARGET_FCT_PROC | AttrNode::TARGET_EXT_DECL,
             .type = AttrNode::TYPE_BOOL,
         },
     },
     {
         ATTR_CORE_COMPILER_MANGLED_NAME,
         {
-            .target = AttrNode::TARGET_FCT_PROC,
+            .target = AttrNode::TARGET_FCT_PROC | AttrNode::TARGET_EXT_DECL,
             .type = AttrNode::TYPE_STRING,
         },
     },
