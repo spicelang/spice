@@ -6,15 +6,15 @@ The `test` subcommand can be used to run individual tests or the whole test suit
 
 ## Usage
 === "Long form"
-Use the `test` subcommand by executing:
-```sh
-$ spice test [options] <test-source-file>
-```
+    Use the `test` subcommand by executing:
+    ```sh
+    $ spice test [options] <test-source-file>
+    ```
 === "Short form"
-Use the `test` subcommand by executing:
-```sh
-$ spice t [options] <test-source-file>
-```
+    Use the `test` subcommand by executing:
+    ```sh
+    $ spice t [options] <test-source-file>
+    ```
 
 ## Options
 You can apply following options to the `test` subcommand:

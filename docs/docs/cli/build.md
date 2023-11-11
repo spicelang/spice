@@ -33,7 +33,7 @@ You can apply following options to the `build` subcommand:
 | `-t`         | `--target`           | Target triple for the emitted executable (for cross-compiling). <br> Format: `<arch><sub>-<vendor>-<sys>-<abi>` |
 | `-o`         | `--output`           | Set path for executable output.                                                                                 |
 | `-O<n>`      | -                    | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2`, `-O3`, `-Os`, `-Oz`                            |
-| `-m`         | `--build-mode`       | Controls the build mode. Valid values are `debug` and `release`                                                 |
+| `-m`         | `--build-mode`       | Controls the build mode. Valid values are `debug`, `release` and `test`.                                        |
 | `-lto`       | -                    | Enable link-time-optimization                                                                                   |
 | `-g`         | `--debug-info`       | Generate debug info to debug the executable in GDB, etc.                                                        |
 | -            | `--static`           | Produce stand-alone executable by linking statically                                                            |
