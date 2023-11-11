@@ -28,6 +28,10 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
   // Generate IR
   visitChildren(node);
 
+  // Generate test main if required
+  if (sourceFile->mainFile && cliOptions.generateTestMain)
+    generateTestMain();
+
   // Execute deferred VTable initializations
   for (DeferredLogic &deferredVTableInit : deferredVTableInitializations)
     deferredVTableInit.execute();

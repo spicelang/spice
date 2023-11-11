@@ -598,7 +598,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
 
   // Check if we would need to insert instructions in the global scope to initialize the variable
   if (!globalVarType.isPrimitive())
-    SOFT_ERROR_BOOL(node->dataType(), GLOBAL_OF_INVALID_TYPE, "Spice does only global variables of primitive type")
+    SOFT_ERROR_BOOL(node->dataType(), GLOBAL_OF_INVALID_TYPE, "Spice does only support global variables of primitive type")
 
   // Update type of global var entry
   assert(node->entry != nullptr);

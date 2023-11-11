@@ -137,6 +137,14 @@ void Driver::enrich() {
   // Always preserve IR value names when dumping IR
   if (cliOptions.dumpSettings.dumpIR)
     cliOptions.namesForIRValues = true;
+
+  // Enable test mode when test mode was selected
+  if (cliOptions.buildMode == BuildMode::TEST) {
+    cliOptions.testMode = true;
+    cliOptions.noEntryFct = true;
+    cliOptions.generateTestMain = true;
+    cliOptions.buildMode = BuildMode::DEBUG;
+  }
 }
 
 /**
@@ -283,6 +291,8 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
       cliOptions.buildMode = BuildMode::DEBUG;
     else if (inputString == BUILD_MODE_RELEASE)
       cliOptions.buildMode = BuildMode::RELEASE;
+    else if (inputString == BUILD_MODE_TEST)
+      cliOptions.buildMode = BuildMode::TEST;
     else
       throw CliError(INVALID_BUILD_MODE, "Invalid build mode: " + inputString);
 
@@ -290,7 +300,7 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   };
 
   // --build-mode
-  subCmd->add_option("--build-mode,-m", buildModeCallback, "Build mode (debug, release)");
+  subCmd->add_option("--build-mode,-m", buildModeCallback, "Build mode (debug, release, test)");
   // --llvm-args
   subCmd->add_option<std::string>("--llvm-args,-llvm", cliOptions.llvmArgs, "Additional arguments for LLVM")->join(' ');
   // --jobs

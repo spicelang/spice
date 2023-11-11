@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/testing/error-test-fct-return-non-bool/source.spice:2:3:
+Test function with wrong return type: Test function must return a bool
+
+2  f<string> test() {
+     ^^^^^^

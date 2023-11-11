@@ -11,13 +11,14 @@
 namespace spice::compiler {
 
 // String placeholders for builtin testing output
-static const char *const TEST_ALL_START_MSG = "[==========] Running %d test(s) from %d source files\n";
-static const char *const TEST_ALL_END_MSG = "[==========] Ran %d test(s) from %d source files\n";
-static const char *const TEST_FILE_START_END_MSG = "[----------] %d test(s) from %s\n";
+static const char *const TEST_ALL_START_MSG = "[==========] Running %d test(s) from %d source file(s)\n";
+static const char *const TEST_ALL_END_MSG = "[==========] Ran %d test(s) from %d source file(s)\n";
+static const char *const TEST_FILE_START_MSG = "[----------] Running %d test(s) from %s\n";
+static const char *const TEST_FILE_END_MSG = "[----------] Ran %d test(s) from %s\n\n";
 static const char *const TEST_CASE_RUN_MSG = "[ RUN      ] %s\n";
-static const char *const TEST_CASE_SUCCESS_MSG = "\033[32m[ PASSED   ]\033[0m %s\n";
-static const char *const TEST_CASE_FAILED_MSG = "\033[31m[ FAILED   ]\033[0m %s\n";
-static const char *const TEST_CASE_SKIPPED_MSG = "\033[33m[ SKIPPED  ]\033[0m %s\n";
+static const char *const TEST_CASE_SUCCESS_MSG = "\033[1m\033[32m[ PASSED   ]\033[0m\033[22m %s\n";
+static const char *const TEST_CASE_FAILED_MSG = "\033[1m\033[31m[ FAILED   ]\033[0m\033[22m %s\n";
+static const char *const TEST_CASE_SKIPPED_MSG = "\033[1m\033[33m[ SKIPPED  ]\033[0m\033[22m %s\n";
 
 llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy) {
   assert(srcSTy != dstSTy); // We only need to cast implicitly, if the types do not match exactly
@@ -471,10 +472,9 @@ void IRGenerator::generateDefaultDtor(const Function *dtorFunction) {
 void IRGenerator::generateTestMain() {
   // Collect all test functions
   std::vector<const std::vector<const Function *> *> tests;
-  for (const auto &sourceFile : resourceManager.sourceFiles) {
+  for (const auto &sourceFile : resourceManager.sourceFiles)
     if (!sourceFile.second->testFunctions.empty())
       tests.push_back(&sourceFile.second->testFunctions);
-  }
 
   // Prepare printf function
   llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
@@ -482,7 +482,8 @@ void IRGenerator::generateTestMain() {
   // Prepare success and error messages
   llvm::Constant *allStartMsg = createGlobalStringConst("allStartMsg", TEST_ALL_START_MSG, *rootScope->codeLoc);
   llvm::Constant *allEndMsg = createGlobalStringConst("allEndMsg", TEST_ALL_END_MSG, *rootScope->codeLoc);
-  llvm::Constant *fileStartEndMsg = createGlobalStringConst("fileStartMsg", TEST_FILE_START_END_MSG, *rootScope->codeLoc);
+  llvm::Constant *fileStartMsg = createGlobalStringConst("fileStartMsg", TEST_FILE_START_MSG, *rootScope->codeLoc);
+  llvm::Constant *fileEndMsg = createGlobalStringConst("fileEndMsg", TEST_FILE_END_MSG, *rootScope->codeLoc);
   llvm::Constant *runMsg = createGlobalStringConst("runMsg", TEST_CASE_RUN_MSG, *rootScope->codeLoc);
   llvm::Constant *successMsg = createGlobalStringConst("successMsg", TEST_CASE_SUCCESS_MSG, *rootScope->codeLoc);
   llvm::Constant *errorMsg = createGlobalStringConst("errorMsg", TEST_CASE_FAILED_MSG, *rootScope->codeLoc);
@@ -520,7 +521,7 @@ void IRGenerator::generateTestMain() {
       // Print test suite prologue
       const std::string fileName = testSuite->front()->bodyScope->sourceFile->fileName;
       llvm::Constant *fileNameValue = createGlobalStringConst("fileName", fileName, testSuite->front()->getDeclCodeLoc());
-      builder.CreateCall(printfFct, {fileStartEndMsg, builder.getInt32(testSuite->size()), fileNameValue});
+      builder.CreateCall(printfFct, {fileStartMsg, builder.getInt32(testSuite->size()), fileNameValue});
 
       for (const Function *testFunction : *testSuite) {
         assert(testFunction->isNormalFunction());
@@ -578,7 +579,7 @@ void IRGenerator::generateTestMain() {
       }
 
       // Print test suite epilogue
-      builder.CreateCall(printfFct, {fileStartEndMsg, builder.getInt32(testSuite->size()), fileNameValue});
+      builder.CreateCall(printfFct, {fileEndMsg, builder.getInt32(testSuite->size()), fileNameValue});
     }
 
     // Print end message

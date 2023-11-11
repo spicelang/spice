@@ -1,0 +1,5 @@
+p test<byte>() {}
+
+f<int> main() {
+    test<int>();
+}

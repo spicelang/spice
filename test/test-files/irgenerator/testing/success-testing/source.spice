@@ -1,0 +1,45 @@
+f<int> add(int a, int b) {
+    return a + b;
+}
+
+#[test=false]
+f<int> sub(int a, int b) {
+    return a - b;
+}
+
+#[test, test.name="Simple 'happy-path' test for add function"]
+f<bool> testAdd1() {
+    assert add(1, 2) == 3;
+    assert add(2, 2) == 4;
+    assert add(3, 2) == 5;
+    return true;
+}
+
+#[test, test.skip=true]
+f<bool> testAdd2() {
+    assert add(5, -4) == 1;
+    assert add(2, 8) == 10;
+    assert add(-3, 5) == 2;
+    return false;
+}
+
+#[test=true, test.skip=false]
+f<bool> testSub1() {
+    assert sub(1, 2) == -1;
+    assert sub(2, 2) == 0;
+    assert sub(3, 2) == 1;
+    return false;
+}
+
+#[test=true, test.skip=false]
+f<bool> testSub2() {
+    assert sub(5, -4) == 9;
+    assert sub(2, 8) == -6;
+    assert sub(-3, 5) == -8;
+    return true;
+}
+
+f<int> main() {
+    printf("%d\n", add(1, 2));
+    printf("%d\n", sub(1, 2));
+}

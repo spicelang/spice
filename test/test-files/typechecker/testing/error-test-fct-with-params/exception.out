@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/testing/error-test-fct-with-params/source.spice:2:14:
+Test function with parameters: Test function may not have parameters
+
+2  f<bool> test(byte _a, const byte &_b) {
+                ^^^^^^^^^^^^^^^^^^^^^^^

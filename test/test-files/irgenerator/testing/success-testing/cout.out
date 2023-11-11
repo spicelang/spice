@@ -1,0 +1,13 @@
+[==========] Running 4 test(s) from 1 source file(s)
+[----------] Running 4 test(s) from source.spice
+[ RUN      ] testAdd1 (Simple 'happy-path' test for add function)
+[1m[32m[ PASSED   ][0m[22m testAdd1 (Simple 'happy-path' test for add function)
+[ RUN      ] testAdd2
+[1m[33m[ SKIPPED  ][0m[22m testAdd2
+[ RUN      ] testSub1
+[1m[31m[ FAILED   ][0m[22m testSub1
+[ RUN      ] testSub2
+[1m[32m[ PASSED   ][0m[22m testSub2
+[----------] Ran 4 test(s) from source.spice
+
+[==========] Ran 4 test(s) from 1 source file(s)

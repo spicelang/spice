@@ -15,10 +15,6 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   if (!sourceFile->mainFile)
     return nullptr;
 
-  // Generate test main if required
-  if (cliOptions.generateTestMain)
-    generateTestMain();
-
   // Do not generate main function if it is explicitly specified
   if (cliOptions.noEntryFct)
     return nullptr;

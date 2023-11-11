@@ -2,7 +2,7 @@ f<int> add(int a, int b) {
     return a + b;
 }
 
-#[test, test.name="Test for add function"]
+#[test]
 f<bool> testAdd() {
     assert add(1, 2) == 3;
     assert add(2, 2) == 4;
@@ -18,12 +18,12 @@ f<bool> testAdd1() {
     return false;
 }
 
-#[test, test.name="This is a demo test", test.skip=true]
+#[test]
 f<bool> testAdd2() {
     assert add(1, 2) == 3;
     assert add(2, 2) == 4;
     assert add(3, 2) == 5;
-    return true;
+    return false;
 }
 
 f<int> main() {
