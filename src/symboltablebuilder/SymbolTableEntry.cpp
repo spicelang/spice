@@ -143,31 +143,12 @@ bool SymbolTableEntry::isField() const { return scope->type == ScopeType::STRUCT
  * @return Symbol table entry as a JSON object
  */
 nlohmann::ordered_json SymbolTableEntry::toJSON() const {
-  std::string stateStr;
-  switch (lifecycle.getCurrentState()) {
-  case DECLARED:
-    stateStr = "declared";
-    break;
-  case INITIALIZED:
-    stateStr = "initialized";
-    break;
-  case MOVED:
-    stateStr = "moved";
-    break;
-  case RETURNED:
-    stateStr = "returned";
-    break;
-  case DEAD:
-    stateStr = "destructed";
-    break;
-  }
-
   nlohmann::json result;
   result["name"] = name;
   result["type"] = type.getName(true);
   result["codeLoc"] = declNode->codeLoc.toString();
   result["orderIndex"] = orderIndex;
-  result["state"] = stateStr;
+  result["state"] = lifecycle.getCurrentStateName();
   result["isGlobal"] = global;
   result["isVolatile"] = isVolatile;
   return result;
