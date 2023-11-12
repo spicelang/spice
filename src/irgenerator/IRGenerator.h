@@ -64,6 +64,8 @@ public:
   std::any visitStmtLst(const StmtLstNode *node) override;
   std::any visitTypeAltsLst(const TypeAltsLstNode *node) override;
   std::any visitDeclStmt(const DeclStmtNode *node) override;
+  std::any visitModAttr(const ModAttrNode *node) override;
+  std::any visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNode *node) override;
   std::any visitSpecifierLst(const SpecifierLstNode *node) override;
   std::any visitReturnStmt(const ReturnStmtNode *node) override;
   std::any visitBreakStmt(const BreakStmtNode *node) override;

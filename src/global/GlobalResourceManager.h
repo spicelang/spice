@@ -28,7 +28,7 @@ const char *const LTO_FILE_NAME = "lto-module";
 
 /**
  * The GlobalResourceManager is instantiated at startup of the compiler and serves as distribution point for globally used assets.
- * This component owns all SourceFile instances and is therefore the resource root of the compiler.
+ * This component owns all SourceFile instances and AST nodes and therefore is the resource root of the compiler.
  * Other components of the compiler can request the required global resources from the GlobalResourceManager.
  */
 class GlobalResourceManager {
@@ -36,23 +36,22 @@ public:
   // Constructors
   explicit GlobalResourceManager(const CliOptions &cliOptions);
   GlobalResourceManager(const GlobalResourceManager &) = delete;
-  ~GlobalResourceManager();
 
   // Public methods
   SourceFile *createSourceFile(SourceFile *parent, const std::string &dependencyName, const std::filesystem::path &path,
                                bool isStdFile);
 
   // Public members
-  std::unordered_map<std::string, SourceFile *> sourceFiles;
-  std::vector<std::unique_ptr<ASTNode>> astNodes; // The GlobalResourceManager owns all AST nodes
-  const CliOptions &cliOptions;
-  ExternalLinkerInterface linker;
-  CacheManager cacheManager;
-  RuntimeModuleManager runtimeModuleManager;
   llvm::LLVMContext context;
   llvm::IRBuilder<> builder = llvm::IRBuilder<>(context);
   std::unique_ptr<llvm::Module> ltoModule;
   std::unique_ptr<llvm::TargetMachine> targetMachine;
+  std::unordered_map<std::string, std::unique_ptr<SourceFile>> sourceFiles; // The GlobalResourceManager owns all source files
+  std::vector<std::unique_ptr<ASTNode>> astNodes;                           // The GlobalResourceManager owns all AST nodes
+  const CliOptions &cliOptions;
+  ExternalLinkerInterface linker;
+  CacheManager cacheManager;
+  RuntimeModuleManager runtimeModuleManager;
   Timer totalTimer;
   BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
   BS::synced_stream tout;
