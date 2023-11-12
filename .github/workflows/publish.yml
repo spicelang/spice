@@ -364,7 +364,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          hub release download "${GITHUB_REF#refs/tags/}" -i '*windows_${{ matrix.config.arch }}*.zip'
+          gh release download "${GITHUB_REF#refs/tags/}" -p *windows_${{ matrix.config.arch }}*.zip
           printf "::set-output name=zip::%s\n" *.zip
           unzip -o *.zip && rm -v *.zip
           dir

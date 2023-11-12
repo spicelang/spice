@@ -2,12 +2,29 @@ f<int> main() {
     int i = 1;
     i += 2s;
     i *= 2s;
+    i <<= 2;
+    i >>= 2;
     i /= 2s;
     i -= 2s;
-    printf("Result 1: %d\n", i);
+    assert i == 1;
+
     i += 223372036854775807l;
     i /= 2l;
     i *= 2l;
     i -= 223372036854775807l;
-    printf("Result 2: %d\n", i);
+    assert i == 1;
+
+    i = 123;
+    i %= 2;
+    assert i == 1;
+
+    i = 123;
+    i &= 5;
+    assert i == 1;
+
+    i = 123;
+    i |= 5;
+    assert i == 127;
+
+    printf("All assertions passed!");
 }
