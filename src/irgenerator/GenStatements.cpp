@@ -94,6 +94,14 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   return nullptr;
 }
 
+std::any IRGenerator::visitModAttr(const spice::compiler::ModAttrNode *node) {
+  return nullptr; // Noop
+}
+
+std::any IRGenerator::visitTopLevelDefinitionAttr(const spice::compiler::TopLevelDefinitionAttrNode *node) {
+  return nullptr; // Noop
+}
+
 std::any IRGenerator::visitSpecifierLst(const SpecifierLstNode *node) {
   return nullptr; // Noop
 }

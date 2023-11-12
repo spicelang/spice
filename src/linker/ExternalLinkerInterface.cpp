@@ -45,14 +45,15 @@ void ExternalLinkerInterface::link() const {
   // Build the linker command
   std::stringstream linkerCommandBuilder;
   linkerCommandBuilder << linkerCmd;
+  // linkerCommandBuilder << " -###"; // For debugging purposes
   // Append linker flags
   for (const std::string &linkerFlag : linkerFlags)
-    linkerCommandBuilder << " " + linkerFlag;
+    linkerCommandBuilder << " " << linkerFlag;
   // Append output path
-  linkerCommandBuilder << " -o " + outputPath.string();
+  linkerCommandBuilder << " -o " << outputPath.string();
   // Append object files
   for (const std::string &objectFilePath : objectFilePaths)
-    linkerCommandBuilder << " " + objectFilePath;
+    linkerCommandBuilder << " " << objectFilePath;
 
   // Print status message
   if (cliOptions.printDebugOutput)                                                 // GCOV_EXCL_LINE

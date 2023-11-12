@@ -57,23 +57,16 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
     ltoModule = std::make_unique<llvm::Module>(LTO_FILE_NAME, context);
 }
 
-GlobalResourceManager::~GlobalResourceManager() {
-  // Delete all source files
-  for (const std::pair<const std::string, SourceFile *> &sourceFile : sourceFiles)
-    delete sourceFile.second;
-}
-
 SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const std::string &dependencyName,
                                                     const std::filesystem::path &path, bool isStdFile) {
   // Check if the source file was already added (e.g. by another source file that imports it)
   const std::string filePathStr = path.string();
-  if (sourceFiles.contains(filePathStr))
-    return sourceFiles.at(filePathStr);
 
-  // Create the new source file
-  auto newSourceFile = new SourceFile(*this, parent, dependencyName, path, isStdFile);
-  sourceFiles.insert({filePathStr, newSourceFile});
-  return newSourceFile;
+  // Create the new source file if it does not exist yet
+  if (!sourceFiles.contains(filePathStr))
+    sourceFiles.insert({filePathStr, std::make_unique<SourceFile>(*this, parent, dependencyName, path, isStdFile)});
+
+  return sourceFiles.at(filePathStr).get();
 }
 
 } // namespace spice::compiler
