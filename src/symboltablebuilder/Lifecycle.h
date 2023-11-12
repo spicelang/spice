@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
 
 namespace spice::compiler {
@@ -9,7 +10,11 @@ namespace spice::compiler {
 // Forward declarations
 class ASTNode;
 
-enum LifecycleState { DECLARED, INITIALIZED, MOVED, RETURNED, DEAD };
+enum LifecycleState {
+  DEAD,
+  DECLARED,
+  INITIALIZED,
+};
 
 /**
  * A lifecycle event represents one change of a symbol in time.
@@ -27,10 +32,6 @@ struct LifecycleEvent {
  * - dead
  * - declared
  * - initialized
- * - moved
- * - returned
- * - moved
- * - returned
  * - dead
  */
 class Lifecycle {
@@ -38,13 +39,10 @@ public:
   // Public methods
   void addEvent(const LifecycleEvent &event);
   [[nodiscard]] LifecycleState getCurrentState() const;
+  [[nodiscard]] const char *getCurrentStateName() const;
+  [[nodiscard]] bool isDead() const;
   [[nodiscard]] bool isDeclared() const;
   [[nodiscard]] bool isInitialized() const;
-  [[nodiscard]] bool isMoved() const;
-  [[nodiscard]] bool isReturned() const;
-  [[nodiscard]] bool isDead() const;
-  [[nodiscard]] bool isBorrowable() const;
-  [[nodiscard]] const LifecycleEvent *getLastMoveEvent() const;
 
 private:
   // Private members

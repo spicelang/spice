@@ -43,7 +43,6 @@ public:
   void popAddress();
   [[nodiscard]] bool isField() const;
   [[nodiscard]] bool isInitialized() const { return lifecycle.isInitialized(); }
-  [[nodiscard]] bool isDead() const { return lifecycle.isDead(); }
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
   // Public members

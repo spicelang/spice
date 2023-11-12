@@ -19,58 +19,40 @@ void Lifecycle::addEvent(const LifecycleEvent &event) { events.push_back(event);
 LifecycleState Lifecycle::getCurrentState() const { return events.empty() ? DEAD : events.back().state; }
 
 /**
- * Check if the symbol is declared
+ * Retrieve the name of the  current state of a symbol
  *
- * @return Declared or not
+ * @return Current state name
  */
-bool Lifecycle::isDeclared() const { return !events.empty() && events.back().state == DECLARED; }
-
-/**
- * Check if the symbol is initialized
- *
- * @return Initialized or not
- */
-bool Lifecycle::isInitialized() const { return !events.empty() && events.back().state == INITIALIZED; }
-
-/**
- * Check if the value of the symbol was moved away
- *
- * @return Moved or not
- */
-bool Lifecycle::isMoved() const { return !events.empty() && events.back().state == MOVED; }
-
-/**
- * Check if the value of the symbol has returned after being moved away
- *
- * @return Returned or not
- */
-bool Lifecycle::isReturned() const { return !events.empty() && events.back().state == RETURNED; }
+const char *Lifecycle::getCurrentStateName() const {
+  switch (getCurrentState()) {
+  case DECLARED:
+    return "declared";
+  case INITIALIZED:
+    return "initialized";
+  default:
+    return "dead";
+  }
+}
 
 /**
  * Check if the symbol is dead
  *
  * @return Dead or not
  */
-bool Lifecycle::isDead() const { return events.empty() || events.back().state == DEAD; }
+bool Lifecycle::isDead() const { return getCurrentState() == DEAD; }
 
 /**
- * Check if the symbol is borrowable
+ * Check if the symbol is declared
  *
- * @return Borrowable or not
+ * @return Declared or not
  */
-bool Lifecycle::isBorrowable() const { return isInitialized() || isReturned(); }
+bool Lifecycle::isDeclared() const { return getCurrentState() == DECLARED; }
 
 /**
- * Retrieve the last occurred move event. Is used to find the side effector of a borrow failure.
+ * Check if the symbol is initialized
  *
- * @return Last move event
+ * @return Initialized or not
  */
-const LifecycleEvent *Lifecycle::getLastMoveEvent() const {
-  for (auto it = events.rbegin(); it != events.rend(); it++) {
-    if (it->state == MOVED)
-      return &(*it);
-  }
-  return nullptr;
-}
+bool Lifecycle::isInitialized() const { return getCurrentState() == INITIALIZED; }
 
 } // namespace spice::compiler
