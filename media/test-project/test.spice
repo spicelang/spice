@@ -1,31 +1,11 @@
-f<int> add(int a, int b) {
-    return a + b;
-}
-
-#[test]
-f<bool> testAdd() {
-    assert add(1, 2) == 3;
-    assert add(2, 2) == 4;
-    assert add(3, 2) == 5;
-    return true;
-}
-
-#[test]
-f<bool> testAdd1() {
-    assert add(1, 2) == 3;
-    assert add(2, 2) == 4;
-    assert add(3, 2) == 5;
-    return false;
-}
-
-#[test]
-f<bool> testAdd2() {
-    assert add(1, 2) == 3;
-    assert add(2, 2) == 4;
-    assert add(3, 2) == 5;
-    return false;
-}
+import "std/data/vector";
+import "../../src-bootstrap/bindings/llvm/LLVM" as llvm;
 
 f<int> main() {
-    printf("%d\n", add(1, 2));
+    llvm::LLVMContext context;
+    llvm::Module module = llvm::Module("test", context);
+
+    llvm::Type returnType;
+    Vector<llvm::Type> argTypes;
+    llvm::Type funcType = llvm::getFunctionType(returnType, argTypes);
 }

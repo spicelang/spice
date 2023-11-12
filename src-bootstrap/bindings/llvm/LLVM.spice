@@ -1,0 +1,64 @@
+#![
+    core.linker.flag = "-LD:/LLVM/build-release/lib",
+    core.linker.flag = "-lLLVMCore",
+    core.linker.flag = "-lLLVMSupport",
+    core.linker.flag = "-lLLVMDemangle",
+    core.linker.flag = "-lLLVMRemarks",
+    core.linker.flag = "-lLLVMTarget",
+    core.linker.flag = "-lLLVMTargetParser",
+    core.linker.flag = "-lLLVMDebugInfoDWARF",
+    core.linker.flag = "-lLLVMDWARFLinker",
+    core.linker.flag = "-lLLVMBitstreamReader",
+    core.linker.flag = "-lLLVMBinaryFormat",
+    core.linker.flag = "-lstdc++",
+    core.linker.flag = "-lole32",
+    core.linker.flag = "-luuid",
+    core.linker.flag = "-pthread"
+]
+
+import "std/data/vector";
+
+// ===== External type definitions =====
+type VoidPtr alias byte*;
+type LLVMContextRef alias VoidPtr;
+type LLVMModuleRef alias VoidPtr;
+type LLVMTypeRef alias VoidPtr;
+
+// ===== External function declarations =====
+ext f<LLVMContextRef> LLVMContextCreate();
+ext f<LLVMModuleRef> LLVMModuleCreateWithNameInContext(string /*ModuleID*/, LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMFunctionType(LLVMTypeRef /*ReturnType*/, LLVMTypeRef* /*ParamTypes*/, unsigned int /*ParamCount*/, bool /*IsVarArg*/);
+
+// ===== Structs =====
+
+// LLVMContext
+public type LLVMContext struct {
+    LLVMContextRef internalCtx
+}
+
+// LLVModule
+public type Module struct {
+    LLVMModuleRef internalModule
+}
+
+// Type
+public type Type struct {
+    LLVMTypeRef internalType
+}
+
+// ===== Constructors =====
+
+public p LLVMContext.ctor() {
+    this.internalCtx = LLVMContextCreate();
+}
+
+public p Module.ctor(string name, const LLVMContext& ctx) {
+    this.internalModule = LLVMModuleCreateWithNameInContext(name, ctx.internalCtx);
+}
+
+// ===== Static functions =====
+
+public f<Type> getFunctionType(Type returnType, const Vector<Type>& paramTypes, bool isVarArg = false) {
+    LLVMTypeRef typeRef = LLVMFunctionType(returnType, paramTypes.getDataPtr(), (unsigned int) paramTypes.getSize(), isVarArg);
+    return Type{ typeRef };
+}
