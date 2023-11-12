@@ -16,6 +16,42 @@ f<Counter> operator+(const Counter c1, const Counter c2) {
     return Counter(c1.value + c2.value);
 }
 
+f<Counter> operator-(const Counter c1, const Counter c2) {
+    return Counter(c1.value - c2.value);
+}
+
+f<Counter> operator*(const Counter c1, const Counter c2) {
+    return Counter(c1.value * c2.value);
+}
+
+f<Counter> operator/(const Counter c1, const Counter c2) {
+    return Counter(c1.value / c2.value);
+}
+
+f<Counter> operator<<(const Counter c1, const Counter c2) {
+    return Counter(c1.value << c2.value);
+}
+
+f<Counter> operator>>(const Counter c1, const Counter c2) {
+    return Counter(c1.value >> c2.value);
+}
+
+p operator+=(Counter& c1, const Counter c2) {
+    c1.value += c2.value;
+}
+
+p operator-=(Counter& c1, const Counter c2) {
+    c1.value -= c2.value;
+}
+
+p operator*=(Counter& c1, const Counter c2) {
+    c1.value *= c2.value;
+}
+
+p operator/=(Counter& c1, const Counter c2) {
+    c1.value /= c2.value;
+}
+
 f<int> main() {
     Counter counter1 = Counter(2l);
     Counter counter2 = Counter(3l);
@@ -23,4 +59,22 @@ f<int> main() {
     printf("Counter2 value: %d\n", counter2.getValue());
     Counter counter3 = counter1 + counter2; // Here we call the overloaded operator
     printf("Counter3 value: %d\n", counter3.getValue());
+    Counter counter4 = counter3 - counter2; // Here we call the overloaded operator
+    printf("Counter4 value: %d\n", counter4.getValue());
+    Counter counter5 = counter4 * counter2; // Here we call the overloaded operator
+    printf("Counter5 value: %d\n", counter5.getValue());
+    Counter counter6 = counter5 / counter2; // Here we call the overloaded operator
+    printf("Counter6 value: %d\n", counter6.getValue());
+    Counter counter7 = counter6 << counter2; // Here we call the overloaded operator
+    printf("Counter7 value: %d\n", counter7.getValue());
+    Counter counter8 = counter7 >> counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
+    counter8 += counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
+    counter8 -= counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
+    counter8 *= counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
+    counter8 /= counter2; // Here we call the overloaded operator
+    printf("Counter8 value: %d\n", counter8.getValue());
 }

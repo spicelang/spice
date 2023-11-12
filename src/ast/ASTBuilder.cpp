@@ -474,7 +474,7 @@ std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
     else if (symbolType == SpiceParser::COMPOSE)
       specifierNode->type = SpecifierNode::TY_COMPOSITION;
     else
-      assert(false && "Unknown specifier type");
+      assert(false && "Unknown specifier type"); // GCOV_EXCL_LINE
   }
 
   return concludeNode(ctx, specifierNode);
@@ -1237,7 +1237,7 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
     fctNameNode->overloadedOperator = FctNameNode::OP_MINUS_MINUS;
     fctNameNode->name = OP_FCT_POSTFIX_MINUS_MINUS;
   } else {
-    assert(false);
+    assert(false && "Unsupported overloadable operator"); // GCOV_EXCL_LINE
   }
   fctNameNode->fqName = fctNameNode->name;
   fctNameNode->nameFragments.push_back(fctNameNode->name);

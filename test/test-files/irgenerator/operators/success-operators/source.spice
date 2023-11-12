@@ -1,5 +1,7 @@
 f<int> main() {
     int val = 1;
     val += ((1++)--) * 2 << 2;
-    printf("Value: %d\n", val);
+    assert val == 9;
+
+    printf("All assertions passed!");
 }
