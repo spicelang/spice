@@ -4,8 +4,33 @@ import "../../src-bootstrap/bindings/llvm/LLVM" as llvm;
 f<int> main() {
     llvm::LLVMContext context;
     llvm::Module module = llvm::Module("test", context);
+    llvm::Builder builder = llvm::Builder(context);
 
-    llvm::Type returnType;
+    llvm::Type returnType = builder.getInt32Ty();
     Vector<llvm::Type> argTypes;
     llvm::Type funcType = llvm::getFunctionType(returnType, argTypes);
+    llvm::Function func = llvm::Function(module, "main", funcType);
+    func.setLinkage(llvm::Linkage::ExternalLinkage);
+
+    llvm::BasicBlock entry = llvm::BasicBlock(context, "entry");
+    func.pushBack(entry);
+    builder.setInsertPoint(entry);
+
+    llvm::Value helloWorldStr = builder.createGlobalStringPtr("Hello, world!\n", "helloWorldStr");
+    Vector<llvm::Type> printfArgTypes;
+    printfArgTypes.pushBack(builder.getPtrTy());
+    llvm::Type printfFuncType = llvm::getFunctionType(builder.getInt32Ty(), printfArgTypes, true);
+    llvm::Function printfFunc = module.getOrInsertFunction("printf", printfFuncType);
+
+    Vector<llvm::Value> printfArgs;
+    printfArgs.pushBack(helloWorldStr);
+    builder.createCall(printfFunc, printfArgs);
+
+    builder.createRet(builder.getInt32(0));
+
+    assert !llvm::verifyFunction(func);
+    string output;
+    assert !llvm::verifyModule(module, &output);
+
+    printf("%s", module.print());
 }

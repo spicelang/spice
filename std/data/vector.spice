@@ -171,8 +171,10 @@ public f<long> Vector.getCapacity() {
 /**
  * Retrieve a pointer to the data of the vector
  */
-public f<heap T*> Vector.getDataPtr() {
-    return this.contents;
+public f<T*> Vector.getDataPtr() {
+    unsafe {
+        return (T*) this.contents;
+    }
 }
 
 /**

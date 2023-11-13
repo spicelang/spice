@@ -1,64 +1,303 @@
 #![
     core.linker.flag = "-LD:/LLVM/build-release/lib",
     core.linker.flag = "-lLLVMCore",
+    core.linker.flag = "-lLLVMAnalysis",
+    core.linker.flag = "-lLLVMProfileData",
+    core.linker.flag = "-lLLVMObject",
+    core.linker.flag = "-lLLVMMC",
+    core.linker.flag = "-lLLVMMCParser",
+    core.linker.flag = "-lLLVMTextAPI",
     core.linker.flag = "-lLLVMSupport",
     core.linker.flag = "-lLLVMDemangle",
     core.linker.flag = "-lLLVMRemarks",
     core.linker.flag = "-lLLVMTarget",
     core.linker.flag = "-lLLVMTargetParser",
+    core.linker.flag = "-lLLVMIRReader",
+    core.linker.flag = "-lLLVMASMParser",
     core.linker.flag = "-lLLVMDebugInfoDWARF",
     core.linker.flag = "-lLLVMDWARFLinker",
     core.linker.flag = "-lLLVMBitstreamReader",
+    core.linker.flag = "-lLLVMBitReader",
     core.linker.flag = "-lLLVMBinaryFormat",
     core.linker.flag = "-lstdc++",
     core.linker.flag = "-lole32",
     core.linker.flag = "-luuid",
-    core.linker.flag = "-pthread"
+    core.linker.flag = "-pthread",
+    core.compiler.warnings.ignore
 ]
 
 import "std/data/vector";
 
 // ===== External type definitions =====
 type VoidPtr alias byte*;
+type LLVMBool alias bool;
 type LLVMContextRef alias VoidPtr;
 type LLVMModuleRef alias VoidPtr;
+type LLVMBuilderRef alias VoidPtr;
 type LLVMTypeRef alias VoidPtr;
+type LLVMValueRef alias VoidPtr;
+type LLVMFunctionRef alias VoidPtr;
+type LLVMBasicBlockRef alias VoidPtr;
+
+// ===== Generic helper definitions =====
+type ShortIntLong unsigned short|unsigned int|unsigned long;
+
+// ===== Enums =====
+public type Linkage enum {
+    ExternalLinkage,
+    AvailableExternallyLinkage,
+    LinkOnceAnyLinkage,
+    LinkOnceODRLinkage,
+    LinkOnceODRAutoHideLinkage,
+    WeakAnyLinkage,
+    WeakODRLinkage,
+    AppendingLinkage,
+    InternalLinkage,
+    PrivateLinkage,
+    DLLImportLinkage,
+    DLLExportLinkage,
+    ExternalWeakLinkage,
+    GhostLinkage,
+    CommonLinkage,
+    LinkerPrivateLinkage,
+    LinkerPrivateWeakLinkage
+}
+
+public type VerifierFailureAction enum {
+    AbortProcessAction,
+    PrintMessageAction,
+    ReturnStatusAction
+}
 
 // ===== External function declarations =====
 ext f<LLVMContextRef> LLVMContextCreate();
 ext f<LLVMModuleRef> LLVMModuleCreateWithNameInContext(string /*ModuleID*/, LLVMContextRef /*C*/);
+ext f<LLVMBuilderRef> LLVMCreateBuilderInContext(LLVMContextRef /*C*/);
 ext f<LLVMTypeRef> LLVMFunctionType(LLVMTypeRef /*ReturnType*/, LLVMTypeRef* /*ParamTypes*/, unsigned int /*ParamCount*/, bool /*IsVarArg*/);
+ext f<LLVMTypeRef> LLVMInt1TypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMInt8TypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMInt16TypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMInt32TypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMInt64TypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMPointerTypeInContext(LLVMContextRef /*C*/, unsigned int /*AddressSpace*/);
+ext f<LLVMValueRef> LLVMConstInt(LLVMTypeRef /*IntTy*/, unsigned long /*N*/, LLVMBool /*SignExtend*/);
+ext p LLVMDumpModule(LLVMModuleRef /*M*/);
+ext p LLVMDumpType(LLVMTypeRef /*Val*/);
+ext p LLVMDumpValue(LLVMValueRef /*Val*/);
+ext f<LLVMBool> LLVMVerifyModule(LLVMModuleRef /*M*/, VerifierFailureAction /*Action*/, string* /*OutMessage*/);
+ext f<LLVMBool> LLVMVerifyFunction(LLVMFunctionRef /*Fn*/, VerifierFailureAction /*Action*/);
+ext f<LLVMValueRef> LLVMAddFunction(LLVMModuleRef /*M*/, string /*Name*/, LLVMTypeRef /*FunctionTy*/);
+ext p LLVMSetLinkage(LLVMValueRef /*Global*/, Linkage /*Linkage*/);
+ext f<LLVMBasicBlockRef> LLVMCreateBasicBlockInContext(LLVMContextRef /*C*/, string /*Name*/);
+ext f<LLVMBasicBlockRef> LLVMGetInsertBlock(LLVMBuilderRef /*Builder*/);
+ext p LLVMAppendExistingBasicBlock(LLVMValueRef /*Fn*/, LLVMBasicBlockRef /*BB*/);
+ext p LLVMPositionBuilderAtEnd(LLVMBuilderRef /*Builder*/, LLVMBasicBlockRef /*BB*/);
+ext f<LLVMValueRef> LLVMGetNamedGlobal(LLVMModuleRef /*M*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildGlobalStringPtr(LLVMBuilderRef /*B*/, string /*Str*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildRet(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/);
+ext f<LLVMValueRef> LLVMBuildRetVoid(LLVMBuilderRef /*B*/);
+ext f<LLVMValueRef> LLVMBuildCall2(LLVMBuilderRef /*B*/, LLVMTypeRef /*FctTy*/, LLVMValueRef /*Fn*/, LLVMValueRef* /*Args*/, unsigned int /*NumArgs*/, string /*Name*/);
+ext f<string> LLVMPrintModuleToString(LLVMModuleRef /*M*/);
 
-// ===== Structs =====
-
-// LLVMContext
-public type LLVMContext struct {
-    LLVMContextRef internalCtx
-}
-
-// LLVModule
-public type Module struct {
-    LLVMModuleRef internalModule
-}
-
-// Type
+// ===== Type =====
 public type Type struct {
     LLVMTypeRef internalType
 }
 
-// ===== Constructors =====
+public p Type.dump() {
+    LLVMDumpType(this.internalType);
+}
+
+// ===== Value =====
+public type Value struct {
+    LLVMValueRef internalValue
+}
+
+public p Value.dump() {
+    LLVMDumpValue(this.internalValue);
+}
+
+// ===== LLVMContext =====
+public type LLVMContext struct {
+    LLVMContextRef internalCtx
+}
 
 public p LLVMContext.ctor() {
     this.internalCtx = LLVMContextCreate();
+}
+
+// ===== LLVMModule =====
+public type Module struct {
+    LLVMModuleRef internalModule
 }
 
 public p Module.ctor(string name, const LLVMContext& ctx) {
     this.internalModule = LLVMModuleCreateWithNameInContext(name, ctx.internalCtx);
 }
 
+public p Module.dump() {
+    LLVMDumpModule(this.internalModule);
+}
+
+public f<string> Module.print() {
+    return LLVMPrintModuleToString(this.internalModule);
+}
+
+// ===== BasicBlock =====
+
+public type BasicBlock struct {
+    LLVMBasicBlockRef internalBB
+}
+
+public p BasicBlock.ctor(LLVMContext ctx, string name) {
+    this.internalBB = LLVMCreateBasicBlockInContext(ctx.internalCtx, name);
+}
+
+// ===== Function =====
+
+public type Function struct {
+    LLVMFunctionRef internalFct
+    Type fctType
+}
+
+public p Function.ctor(Module module, string name, Type fctType) {
+    this.fctType = fctType;
+    this.internalFct = LLVMAddFunction(module.internalModule, name, fctType.internalType);
+}
+
+public f<Type> Function.getType() {
+    return this.fctType;
+}
+
+public p Function.setLinkage(Linkage linkage) {
+    LLVMSetLinkage(this.internalFct, linkage);
+}
+
+public p Function.pushBack(BasicBlock bb) {
+    LLVMAppendExistingBasicBlock(this.internalFct, bb.internalBB);
+}
+
+public f<Function> Module.getOrInsertFunction(string name, Type fctType) {
+    LLVMFunctionRef fctRef = LLVMGetNamedGlobal(this.internalModule, name);
+    if fctRef == nil<LLVMFunctionRef> {
+        fctRef = LLVMAddFunction(this.internalModule, name, fctType.internalType);
+    }
+    return Function{ fctRef, fctType };
+}
+
+// ===== LLVMBuilder =====
+public type Builder struct {
+    LLVMBuilderRef internalBuilder
+    LLVMContextRef internalCtx
+}
+
+public p Builder.ctor(const LLVMContext& ctx) {
+    this.internalCtx = ctx.internalCtx;
+    this.internalBuilder = LLVMCreateBuilderInContext(this.internalCtx);
+}
+
+public f<Type> Builder.getInt1Ty() {
+    return Type{ LLVMInt1TypeInContext(this.internalCtx) };
+}
+
+public f<Type> Builder.getInt8Ty() {
+    return Type{ LLVMInt8TypeInContext(this.internalCtx) };
+}
+
+public f<Type> Builder.getInt16Ty() {
+    return Type{ LLVMInt16TypeInContext(this.internalCtx) };
+}
+
+public f<Type> Builder.getInt32Ty() {
+    return Type{ LLVMInt32TypeInContext(this.internalCtx) };
+}
+
+public f<Type> Builder.getInt64Ty() {
+    return Type{ LLVMInt64TypeInContext(this.internalCtx) };
+}
+
+public f<Type> Builder.getPtrTy() {
+    return Type{ LLVMPointerTypeInContext(this.internalCtx, 0) };
+}
+
+public f<Value> Builder.getInt1<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+    LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.internalCtx);
+    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+}
+
+public f<Value> Builder.getInt8<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+    LLVMTypeRef typeRef = LLVMInt8TypeInContext(this.internalCtx);
+    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+}
+
+public f<Value> Builder.getInt16<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+    LLVMTypeRef typeRef = LLVMInt16TypeInContext(this.internalCtx);
+    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+}
+
+public f<Value> Builder.getInt32<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+    LLVMTypeRef typeRef = LLVMInt32TypeInContext(this.internalCtx);
+    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+}
+
+public f<Value> Builder.getInt64<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+    LLVMTypeRef typeRef = LLVMInt64TypeInContext(this.internalCtx);
+    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+}
+
+public f<Value> Builder.getFalse() {
+    LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.internalCtx);
+    return Value{ LLVMConstInt(typeRef, 0l, false) };
+}
+
+public f<Value> Builder.getTrue() {
+    LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.internalCtx);
+    return Value{ LLVMConstInt(typeRef, 1l, false) };
+}
+
+public f<BasicBlock> Builder.getInsertBlock() {
+    return BasicBlock{ LLVMGetInsertBlock(this.internalBuilder) };
+}
+
+public p Builder.setInsertPoint(BasicBlock bb) {
+    LLVMPositionBuilderAtEnd(this.internalBuilder, bb.internalBB);
+}
+
+public f<Value> Builder.createGlobalStringPtr(string content, string name) {
+    return Value{ LLVMBuildGlobalStringPtr(this.internalBuilder, content, name) };
+}
+
+public f<Value> Builder.createCall(Function callee, const Vector<Value>& args, string name = "") {
+    unsafe {
+        LLVMValueRef* argsRef = (LLVMValueRef*) args.getDataPtr();
+        LLVMValueRef valueRef = LLVMBuildCall2(this.internalBuilder, callee.fctType.internalType, callee.internalFct, argsRef, (unsigned int) args.getSize(), name);
+        return Value{ valueRef };
+    }
+}
+
+public f<Value> Builder.createRet(Value returnValue) {
+    return Value{ LLVMBuildRet(this.internalBuilder, returnValue.internalValue) };
+}
+
+public f<Value> Builder.createRetVoid() {
+    return Value{ LLVMBuildRetVoid(this.internalBuilder) };
+}
+
 // ===== Static functions =====
 
 public f<Type> getFunctionType(Type returnType, const Vector<Type>& paramTypes, bool isVarArg = false) {
-    LLVMTypeRef typeRef = LLVMFunctionType(returnType, paramTypes.getDataPtr(), (unsigned int) paramTypes.getSize(), isVarArg);
-    return Type{ typeRef };
+    unsafe {
+        LLVMTypeRef returnTypeRef = returnType.internalType;
+        LLVMTypeRef* paramTypesRef = (LLVMTypeRef*) paramTypes.getDataPtr();
+        LLVMTypeRef typeRef = LLVMFunctionType(returnTypeRef, paramTypesRef, (unsigned int) paramTypes.getSize(), isVarArg);
+        return Type{ typeRef };
+    }
+}
+
+public f<bool> verifyModule(Module module, string* outMessage, VerifierFailureAction action = VerifierFailureAction::AbortProcessAction) {
+    return LLVMVerifyModule(module.internalModule, action, outMessage);
+}
+
+public f<bool> verifyFunction(Function function, VerifierFailureAction action = VerifierFailureAction::AbortProcessAction) {
+    return LLVMVerifyFunction(function.internalFct, action);
 }

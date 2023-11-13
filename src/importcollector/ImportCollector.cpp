@@ -87,6 +87,12 @@ std::any ImportCollector::visitModAttr(ModAttrNode *node) {
     sourceFile->alwaysKeepSymbolsOnNameCollision = keepOnCollision;
   }
 
+  // core.compiler.warnings.ignore
+  if (attrs->hasAttr(ATTR_CORE_COMPILER_WARNINGS_IGNORE)) {
+    const bool ignoreWarnings = attrs->getAttrValueByName(ATTR_CORE_COMPILER_WARNINGS_IGNORE)->boolValue;
+    sourceFile->ignoreWarnings = ignoreWarnings;
+  }
+
   return nullptr;
 }
 
