@@ -71,8 +71,11 @@ public type VerifierFailureAction enum {
 
 // ===== External function declarations =====
 ext f<LLVMContextRef> LLVMContextCreate();
+ext p LLVMContextDispose(LLVMContextRef /*C*/);
 ext f<LLVMModuleRef> LLVMModuleCreateWithNameInContext(string /*ModuleID*/, LLVMContextRef /*C*/);
+ext p LLVMDisposeModule(LLVMModuleRef /*M*/);
 ext f<LLVMBuilderRef> LLVMCreateBuilderInContext(LLVMContextRef /*C*/);
+ext p LLVMDisposeBuilder(LLVMBuilderRef /*B*/);
 ext f<LLVMTypeRef> LLVMFunctionType(LLVMTypeRef /*ReturnType*/, LLVMTypeRef* /*ParamTypes*/, unsigned int /*ParamCount*/, bool /*IsVarArg*/);
 ext f<LLVMTypeRef> LLVMInt1TypeInContext(LLVMContextRef /*C*/);
 ext f<LLVMTypeRef> LLVMInt8TypeInContext(LLVMContextRef /*C*/);
@@ -96,6 +99,18 @@ ext f<LLVMValueRef> LLVMGetNamedGlobal(LLVMModuleRef /*M*/, string /*Name*/);
 ext f<LLVMValueRef> LLVMBuildGlobalStringPtr(LLVMBuilderRef /*B*/, string /*Str*/, string /*Name*/);
 ext f<LLVMValueRef> LLVMBuildRet(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/);
 ext f<LLVMValueRef> LLVMBuildRetVoid(LLVMBuilderRef /*B*/);
+ext f<LLVMValueRef> LLVMBuildBr(LLVMBuilderRef /*B*/, LLVMBasicBlockRef /*Dest*/);
+ext f<LLVMValueRef> LLVMBuildUnreachable(LLVMBuilderRef /*B*/);
+ext f<LLVMValueRef> LLVMBuildCondBr(LLVMBuilderRef /*B*/, LLVMValueRef /*If*/, LLVMBasicBlockRef /*Then*/, LLVMBasicBlockRef /*Else*/);
+ext f<LLVMValueRef> LLVMBuildAlloca(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildArrayAlloca(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, LLVMValueRef /*Val*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildStore(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMValueRef /*Ptr*/);
+ext f<LLVMValueRef> LLVMBuildLoad2(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, LLVMValueRef /*PointerVal*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildGEP2(LLVMBuilderRef /*B*/, LLVMValueRef /*Ptr*/, LLVMValueRef* /*Indices*/, unsigned int /*NumIndices*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildInBoundsGEP2(LLVMBuilderRef /*B*/, LLVMValueRef /*Ptr*/, LLVMValueRef* /*Indices*/, unsigned int /*NumIndices*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildStructGEP2(LLVMBuilderRef /*B*/, LLVMValueRef /*Ptr*/, unsigned int /*Idx*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildSelect(LLVMBuilderRef /*B*/, LLVMValueRef /*If*/, LLVMValueRef /*Then*/, LLVMValueRef /*Else*/, string /*Name*/);
+ext p LLVMSetVolatile(LLVMValueRef /*MemoryAccessInst*/);
 ext f<LLVMValueRef> LLVMBuildCall2(LLVMBuilderRef /*B*/, LLVMTypeRef /*FctTy*/, LLVMValueRef /*Fn*/, LLVMValueRef* /*Args*/, unsigned int /*NumArgs*/, string /*Name*/);
 ext f<string> LLVMPrintModuleToString(LLVMModuleRef /*M*/);
 
@@ -113,6 +128,10 @@ public type Value struct {
     LLVMValueRef internalValue
 }
 
+public p Value.ctor() {
+    this.internalValue = nil<LLVMValueRef>;
+}
+
 public p Value.dump() {
     LLVMDumpValue(this.internalValue);
 }
@@ -126,6 +145,10 @@ public p LLVMContext.ctor() {
     this.internalCtx = LLVMContextCreate();
 }
 
+public p LLVMContext.dtor() {
+    LLVMContextDispose(this.internalCtx);
+}
+
 // ===== LLVMModule =====
 public type Module struct {
     LLVMModuleRef internalModule
@@ -133,6 +156,10 @@ public type Module struct {
 
 public p Module.ctor(string name, const LLVMContext& ctx) {
     this.internalModule = LLVMModuleCreateWithNameInContext(name, ctx.internalCtx);
+}
+
+public p Module.dtor() {
+    LLVMDisposeModule(this.internalModule);
 }
 
 public p Module.dump() {
@@ -194,6 +221,10 @@ public type Builder struct {
 public p Builder.ctor(const LLVMContext& ctx) {
     this.internalCtx = ctx.internalCtx;
     this.internalBuilder = LLVMCreateBuilderInContext(this.internalCtx);
+}
+
+public p Builder.dtor() {
+    LLVMDisposeBuilder(this.internalBuilder);
 }
 
 public f<Type> Builder.getInt1Ty() {
@@ -267,6 +298,55 @@ public f<Value> Builder.createGlobalStringPtr(string content, string name) {
     return Value{ LLVMBuildGlobalStringPtr(this.internalBuilder, content, name) };
 }
 
+public f<Value> Builder.createAlloca(Type ty, Value arraySize = Value(), string name = "") {
+    if arraySize.internalValue == nil<LLVMValueRef> {
+        return Value{ LLVMBuildAlloca(this.internalBuilder, ty.internalType, name) };
+    } else {
+        return Value{ LLVMBuildArrayAlloca(this.internalBuilder, ty.internalType, arraySize.internalValue, name) };
+    }
+}
+
+public f<Value> Builder.createStore(Value value, Value ptr, bool volatile = false) {
+    LLVMValueRef valueRef = LLVMBuildStore(this.internalBuilder, value.internalValue, ptr.internalValue);
+    if volatile {
+        LLVMSetVolatile(valueRef);
+    }
+    return Value{ valueRef };
+}
+
+public f<Value> Builder.createLoad(Value ptr, Type ty, string name = "", bool volatile = false) {
+    LLVMValueRef valueRef = LLVMBuildLoad2(this.internalBuilder, ty.internalType, ptr.internalValue, name);
+    if volatile {
+        LLVMSetVolatile(valueRef);
+    }
+    return Value{ valueRef };
+}
+
+public f<Value> Builder.createGEP(Value ptr, const Vector<Value>& indices, string name = "") {
+    unsafe {
+        LLVMValueRef* indicesRef = (LLVMValueRef*) indices.getDataPtr();
+        LLVMValueRef valueRef = LLVMBuildGEP2(this.internalBuilder, ptr.internalValue, indicesRef, (unsigned int) indices.getSize(), name);
+        return Value{ valueRef };
+    }
+}
+
+public f<Value> Builder.createInBoundsGEP(Value ptr, const Vector<Value>& indices, string name = "") {
+    unsafe {
+        LLVMValueRef* indicesRef = (LLVMValueRef*) indices.getDataPtr();
+        LLVMValueRef valueRef = LLVMBuildInBoundsGEP2(this.internalBuilder, ptr.internalValue, indicesRef, (unsigned int) indices.getSize(), name);
+        return Value{ valueRef };
+    }
+}
+
+public f<Value> Builder.createStructGEP(Value ptr, unsigned int index, string name = "") {
+    LLVMValueRef valueRef = LLVMBuildStructGEP2(this.internalBuilder, ptr.internalValue, index, name);
+    return Value{ valueRef };
+}
+
+public f<Value> Builder.createSelect(Value condition, Value thenValue, Value elseValue, string name = "") {
+    return Value{ LLVMBuildSelect(this.internalBuilder, condition.internalValue, thenValue.internalValue, elseValue.internalValue, name) };
+}
+
 public f<Value> Builder.createCall(Function callee, const Vector<Value>& args, string name = "") {
     unsafe {
         LLVMValueRef* argsRef = (LLVMValueRef*) args.getDataPtr();
@@ -281,6 +361,18 @@ public f<Value> Builder.createRet(Value returnValue) {
 
 public f<Value> Builder.createRetVoid() {
     return Value{ LLVMBuildRetVoid(this.internalBuilder) };
+}
+
+public f<Value> Builder.createBr(BasicBlock bb) {
+    return Value{ LLVMBuildBr(this.internalBuilder, bb.internalBB) };
+}
+
+public f<Value> Builder.createCondBr(Value condition, BasicBlock thenBB, BasicBlock elseBB) {
+    return Value{ LLVMBuildCondBr(this.internalBuilder, condition.internalValue, thenBB.internalBB, elseBB.internalBB) };
+}
+
+public f<Value> Builder.createUnreachable() {
+    return Value{ LLVMBuildUnreachable(this.internalBuilder) };
 }
 
 // ===== Static functions =====
