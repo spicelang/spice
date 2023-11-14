@@ -81,6 +81,8 @@ std::any ImportCollector::visitModAttr(ModAttrNode *node) {
   // Retrieve attributes
   const AttrLstNode *attrs = node->attrLst();
 
+  // !!! Only bool attributes allowed here, due to missing attribute value checks being executed in a later stage !!!
+
   // core.compiler.keep-on-name-collision
   if (attrs->hasAttr(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)) {
     const bool keepOnCollision = attrs->getAttrValueByName(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)->boolValue;

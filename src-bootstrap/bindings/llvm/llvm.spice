@@ -1,32 +1,7 @@
-#![
-    core.linker.flag = "-LD:/LLVM/build-release/lib",
-    core.linker.flag = "-lLLVMCore",
-    core.linker.flag = "-lLLVMAnalysis",
-    core.linker.flag = "-lLLVMProfileData",
-    core.linker.flag = "-lLLVMObject",
-    core.linker.flag = "-lLLVMMC",
-    core.linker.flag = "-lLLVMMCParser",
-    core.linker.flag = "-lLLVMTextAPI",
-    core.linker.flag = "-lLLVMSupport",
-    core.linker.flag = "-lLLVMDemangle",
-    core.linker.flag = "-lLLVMRemarks",
-    core.linker.flag = "-lLLVMTarget",
-    core.linker.flag = "-lLLVMTargetParser",
-    core.linker.flag = "-lLLVMIRReader",
-    core.linker.flag = "-lLLVMASMParser",
-    core.linker.flag = "-lLLVMDebugInfoDWARF",
-    core.linker.flag = "-lLLVMDWARFLinker",
-    core.linker.flag = "-lLLVMBitstreamReader",
-    core.linker.flag = "-lLLVMBitReader",
-    core.linker.flag = "-lLLVMBinaryFormat",
-    core.linker.flag = "-lstdc++",
-    core.linker.flag = "-lole32",
-    core.linker.flag = "-luuid",
-    core.linker.flag = "-pthread",
-    core.compiler.warnings.ignore
-]
-
 import "std/data/vector";
+import "linker-flags";
+
+#![core.compiler.warnings.ignore]
 
 // ===== External type definitions =====
 type VoidPtr alias byte*;
@@ -38,12 +13,17 @@ type LLVMTypeRef alias VoidPtr;
 type LLVMValueRef alias VoidPtr;
 type LLVMFunctionRef alias VoidPtr;
 type LLVMBasicBlockRef alias VoidPtr;
+type LLVMPassBuilderOptionsRef alias VoidPtr;
+type LLVMTargetRef alias VoidPtr;
+type LLVMTargetMachineRef alias VoidPtr;
+type LLVMTargetDataRef alias VoidPtr;
+type LLVMErrorRef alias VoidPtr;
 
 // ===== Generic helper definitions =====
 type ShortIntLong unsigned short|unsigned int|unsigned long;
 
 // ===== Enums =====
-public type Linkage enum {
+public type LLVMLinkage enum {
     ExternalLinkage,
     AvailableExternallyLinkage,
     LinkOnceAnyLinkage,
@@ -63,7 +43,30 @@ public type Linkage enum {
     LinkerPrivateWeakLinkage
 }
 
-public type VerifierFailureAction enum {
+public type LLVMCodeGenOptLevel enum {
+    CodeGenLevelNone,
+    CodeGenLevelLess,
+    CodeGenLevelDefault,
+    CodeGenLevelAggressive
+}
+
+public type LLVMRelocMode enum {
+    RelocDefault,
+    RelocStatic,
+    RelocPIC,
+    RelocDynamicNoPic
+}
+
+public type LLVMCodeModel enum {
+    CodeModelDefault,
+    CodeModelJITDefault,
+    CodeModelSmall,
+    CodeModelKernel,
+    CodeModelMedium,
+    CodeModelLarge
+}
+
+public type LLVMVerifierFailureAction enum {
     AbortProcessAction,
     PrintMessageAction,
     ReturnStatusAction
@@ -87,10 +90,10 @@ ext f<LLVMValueRef> LLVMConstInt(LLVMTypeRef /*IntTy*/, unsigned long /*N*/, LLV
 ext p LLVMDumpModule(LLVMModuleRef /*M*/);
 ext p LLVMDumpType(LLVMTypeRef /*Val*/);
 ext p LLVMDumpValue(LLVMValueRef /*Val*/);
-ext f<LLVMBool> LLVMVerifyModule(LLVMModuleRef /*M*/, VerifierFailureAction /*Action*/, string* /*OutMessage*/);
-ext f<LLVMBool> LLVMVerifyFunction(LLVMFunctionRef /*Fn*/, VerifierFailureAction /*Action*/);
+ext f<LLVMBool> LLVMVerifyModule(LLVMModuleRef /*M*/, LLVMVerifierFailureAction /*Action*/, string* /*OutMessage*/);
+ext f<LLVMBool> LLVMVerifyFunction(LLVMFunctionRef /*Fn*/, LLVMVerifierFailureAction /*Action*/);
 ext f<LLVMValueRef> LLVMAddFunction(LLVMModuleRef /*M*/, string /*Name*/, LLVMTypeRef /*FunctionTy*/);
-ext p LLVMSetLinkage(LLVMValueRef /*Global*/, Linkage /*Linkage*/);
+ext p LLVMSetLinkage(LLVMValueRef /*Global*/, LLVMLinkage /*Linkage*/);
 ext f<LLVMBasicBlockRef> LLVMCreateBasicBlockInContext(LLVMContextRef /*C*/, string /*Name*/);
 ext f<LLVMBasicBlockRef> LLVMGetInsertBlock(LLVMBuilderRef /*Builder*/);
 ext p LLVMAppendExistingBasicBlock(LLVMValueRef /*Fn*/, LLVMBasicBlockRef /*BB*/);
@@ -113,6 +116,25 @@ ext f<LLVMValueRef> LLVMBuildSelect(LLVMBuilderRef /*B*/, LLVMValueRef /*If*/, L
 ext p LLVMSetVolatile(LLVMValueRef /*MemoryAccessInst*/);
 ext f<LLVMValueRef> LLVMBuildCall2(LLVMBuilderRef /*B*/, LLVMTypeRef /*FctTy*/, LLVMValueRef /*Fn*/, LLVMValueRef* /*Args*/, unsigned int /*NumArgs*/, string /*Name*/);
 ext f<string> LLVMPrintModuleToString(LLVMModuleRef /*M*/);
+ext f<LLVMPassBuilderOptionsRef> LLVMCreatePassBuilderOptions();
+ext p LLVMDisposePassBuilderOptions(LLVMPassBuilderOptionsRef /*Options*/);
+ext f<LLVMErrorRef> LLVMRunPasses(LLVMModuleRef /*M*/, LLVMTargetMachineRef /*TM*/, string /*Passes*/, LLVMPassBuilderOptionsRef /*Options*/);
+ext p LLVM_InitializeNativeTarget();
+ext p LLVM_InitializeNativeAsmPrinter();
+ext p LLVM_InitializeAllTargetInfos();
+ext p LLVM_InitializeAllTargets();
+ext p LLVM_InitializeAllTargetMCs();
+ext p LLVM_InitializeAllAsmPrinters();
+ext f<heap string> LLVMGetDefaultTargetTriple();
+ext f<heap string> LLVMNormalizeTargetTriple(string /*TripleIn*/);
+ext f<heap string> LLVMGetHostCPUName();
+ext f<heap string> LLVMGetHostCPUFeatures();
+ext f<LLVMBool> LLVMGetTargetFromTriple(string /*Triple*/, LLVMTargetMachineRef* /*OutMachine*/, string* /*OutError*/);
+ext f<LLVMTargetMachineRef> LLVMCreateTargetMachine(LLVMTargetRef /*T*/, heap string /*Triple*/, string /*CPU*/, string /*Features*/, LLVMCodeGenOptLevel /*OptLevel*/, LLVMRelocMode /*Reloc*/, LLVMCodeModel /*CodeModel*/);
+ext f<LLVMTargetDataRef> LLVMCreateTargetDataLayout(LLVMTargetMachineRef /*TM*/);
+ext p LLVMDisposeTargetData(LLVMTargetDataRef /*TD*/);
+ext p LLVMSetDataLayout(LLVMModuleRef /*M*/, LLVMTargetDataRef /*DL*/);
+ext p LLVMSetTarget(LLVMModuleRef /*M*/, string /*Triple*/);
 
 // ===== Type =====
 public type Type struct {
@@ -149,6 +171,15 @@ public p LLVMContext.dtor() {
     LLVMContextDispose(this.internalCtx);
 }
 
+// ===== DataLayout =====
+public type DataLayout struct {
+    LLVMTargetDataRef internalDataLayout
+}
+
+public p DataLayout.dtor() {
+    LLVMDisposeTargetData(this.internalDataLayout);
+}
+
 // ===== LLVMModule =====
 public type Module struct {
     LLVMModuleRef internalModule
@@ -170,6 +201,14 @@ public f<string> Module.print() {
     return LLVMPrintModuleToString(this.internalModule);
 }
 
+public p Module.setTargetTriple(string triple) {
+    LLVMSetTarget(this.internalModule, triple);
+}
+
+public p Module.setDataLayout(DataLayout dataLayout) {
+    LLVMSetDataLayout(this.internalModule, dataLayout.internalDataLayout);
+}
+
 // ===== BasicBlock =====
 
 public type BasicBlock struct {
@@ -187,16 +226,16 @@ public type Function struct {
     Type fctType
 }
 
-public p Function.ctor(Module module, string name, Type fctType) {
-    this.fctType = fctType;
-    this.internalFct = LLVMAddFunction(module.internalModule, name, fctType.internalType);
+public p Function.ctor(Module module, string name, Type fctTy) {
+    this.fctType = fctTy;
+    this.internalFct = LLVMAddFunction(module.internalModule, name, fctTy.internalType);
 }
 
 public f<Type> Function.getType() {
     return this.fctType;
 }
 
-public p Function.setLinkage(Linkage linkage) {
+public p Function.setLinkage(LLVMLinkage linkage) {
     LLVMSetLinkage(this.internalFct, linkage);
 }
 
@@ -375,6 +414,37 @@ public f<Value> Builder.createUnreachable() {
     return Value{ LLVMBuildUnreachable(this.internalBuilder) };
 }
 
+// ===== TargetMachine =====
+public type TargetMachine struct {
+    LLVMTargetMachineRef internalMachine
+}
+
+public f<DataLayout> TargetMachine.createDataLayout() {
+    return DataLayout{ LLVMCreateTargetDataLayout(this.internalMachine) };
+}
+
+// ===== Target =====
+public type Target struct {
+    LLVMTargetRef internalTarget
+}
+
+public f<TargetMachine> Target.createTargetMachine(heap string triple, string cpu, string features, LLVMCodeGenOptLevel optLevel, LLVMRelocMode relocMode, LLVMCodeModel codeModel) {
+    return TargetMachine{ LLVMCreateTargetMachine(this.internalTarget, triple, cpu, features, optLevel, relocMode, codeModel) };
+}
+
+// ===== PassBuilderOptions =====
+public type PassBuilderOptions struct {
+    LLVMPassBuilderOptionsRef internalOptions
+}
+
+public p PassBuilderOptions.ctor() {
+    this.internalOptions = LLVMCreatePassBuilderOptions();
+}
+
+public p PassBuilderOptions.dtor() {
+    LLVMDisposePassBuilderOptions(this.internalOptions);
+}
+
 // ===== Static functions =====
 
 public f<Type> getFunctionType(Type returnType, const Vector<Type>& paramTypes, bool isVarArg = false) {
@@ -386,10 +456,56 @@ public f<Type> getFunctionType(Type returnType, const Vector<Type>& paramTypes, 
     }
 }
 
-public f<bool> verifyModule(Module module, string* outMessage, VerifierFailureAction action = VerifierFailureAction::AbortProcessAction) {
+public f<bool> verifyModule(Module module, string* outMessage, LLVMVerifierFailureAction action = LLVMVerifierFailureAction::AbortProcessAction) {
     return LLVMVerifyModule(module.internalModule, action, outMessage);
 }
 
-public f<bool> verifyFunction(Function function, VerifierFailureAction action = VerifierFailureAction::AbortProcessAction) {
+public f<bool> verifyFunction(Function function, LLVMVerifierFailureAction action = LLVMVerifierFailureAction::AbortProcessAction) {
     return LLVMVerifyFunction(function.internalFct, action);
+}
+
+public p initializeNativeTarget() {
+    LLVM_InitializeNativeTarget();
+}
+
+public p initializeNativeAsmPrinter() {
+    LLVM_InitializeNativeAsmPrinter();
+}
+
+public p initializeAllTargetInfos() {
+    LLVM_InitializeAllTargetInfos();
+}
+
+public p initializeAllTargets() {
+    LLVM_InitializeAllTargets();
+}
+
+public p initializeAllTargetMCs() {
+    LLVM_InitializeAllTargetMCs();
+}
+
+public p initializeAllAsmPrinters() {
+    LLVM_InitializeAllAsmPrinters();
+}
+
+public f<heap string> getDefaultTargetTriple() {
+    return LLVMGetDefaultTargetTriple();
+}
+
+public f<heap string> normalizeTargetTriple(string tripleIn) {
+    return LLVMNormalizeTargetTriple(tripleIn);
+}
+
+public f<heap string> getHostCPUName() {
+    return LLVMGetHostCPUName();
+}
+
+public f<heap string> getHostCPUFeatures() {
+    return LLVMGetHostCPUFeatures();
+}
+
+public f<Target> getTargetFromTriple(string triple, string* outError) {
+    Target target;
+    LLVMGetTargetFromTriple(triple, &target.internalTarget, outError);
+    return target;
 }

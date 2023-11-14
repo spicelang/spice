@@ -11,6 +11,7 @@ namespace spice::compiler {
 
 // Constants
 static constexpr const char *const ATTR_CORE_LINKER_FLAG = "core.linker.flag";
+static constexpr const char *const ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additional_source";
 static constexpr const char *const ATTR_CORE_LINKER_DLL = "core.linker.dll";
 static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
 static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
@@ -34,6 +35,13 @@ struct AttrConfigValue {
 static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
     {
         ATTR_CORE_LINKER_FLAG,
+        {
+            .target = AttrNode::TARGET_MODULE,
+            .type = AttrNode::TYPE_STRING,
+        },
+    },
+    {
+        ATTR_CORE_LINKER_ADDITIONAL_SOURCE,
         {
             .target = AttrNode::TARGET_MODULE,
             .type = AttrNode::TYPE_STRING,

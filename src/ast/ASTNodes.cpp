@@ -82,7 +82,6 @@ std::vector<const CompileTimeValue *> AttrLstNode::getAttrValuesByName(const std
     const CompileTimeValue *value = attrNode->getValue();
     if (!value) {
       // If the attribute has no value, we use the default value
-      const AttrConfigValue &config = ATTR_CONFIGS.at(key);
       attributeValues.push_back(&DEFAULT_BOOL_COMPILE_VALUE);
     } else {
       // If the attribute has a value, we use the value

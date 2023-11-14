@@ -336,7 +336,7 @@
           "name": "this.Iterable",
           "orderIndex": 0,
           "state": "declared",
-          "type": "invalid"
+          "type": "public std/iterator/iterable::Iterable<T>"
         }
       ]
     },
@@ -565,7 +565,7 @@
           "name": "this.Iterable",
           "orderIndex": 0,
           "state": "declared",
-          "type": "invalid"
+          "type": "public std/iterator/iterable::Iterable<T>"
         }
       ]
     }

@@ -338,20 +338,25 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   std::vector<SymbolType> interfaceTypes;
   if (node->hasInterfaces) {
     interfaceTypes.reserve(node->interfaceTypeLst()->dataTypes().size());
-    for (DataTypeNode *dataType : node->interfaceTypeLst()->dataTypes()) {
+    for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes()) {
       // Visit interface type
-      auto interfaceType = std::any_cast<SymbolType>(visit(dataType));
+      auto interfaceType = std::any_cast<SymbolType>(visit(interfaceNode));
       if (interfaceType.is(TY_UNRESOLVED))
         continue;
       // Check if it is an interface type
       if (!interfaceType.is(TY_INTERFACE))
-        throw SemanticError(dataType, EXPECTED_INTERFACE_TYPE, "Expected interface type, got " + interfaceType.getName());
+        throw SemanticError(interfaceNode, EXPECTED_INTERFACE_TYPE, "Expected interface type, got " + interfaceType.getName());
       // Check for visibility
       if (interfaceType.getBodyScope()->isImportedBy(rootScope) && !interfaceType.isPublic())
         throw SemanticError(node, INSUFFICIENT_VISIBILITY,
                             "Cannot access interface '" + interfaceType.getOriginalSubType() + "' due to its private visibility");
       // Add to interface types
       interfaceTypes.push_back(interfaceType);
+      // Update the type of the entry for that interface field
+      const std::string &interfaceName = interfaceNode->baseDataType()->customDataType()->typeNameFragments.back();
+      SymbolTableEntry *interfaceEntry = node->structScope->lookupStrict("this." + interfaceName);
+      assert(interfaceEntry != nullptr);
+      interfaceEntry->updateType(interfaceType, false);
     }
   }
 

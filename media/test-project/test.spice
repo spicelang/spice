@@ -1,16 +1,30 @@
 import "std/data/vector";
-import "../../src-bootstrap/bindings/llvm/LLVM" as llvm;
+import "../../src-bootstrap/bindings/llvm/llvm" as llvm;
 
 f<int> main() {
+    //llvm::initializeAllTargets();
+    //llvm::initializeAllTargetInfos();
+    //llvm::initializeAllTargetMCs();
+    //llvm::initializeAllAsmPrinters();
+    llvm::initializeNativeTarget();
+    llvm::initializeNativeAsmPrinter();
+
+    heap string targetTriple = llvm::getDefaultTargetTriple();
+    string error;
+    llvm::Target target = llvm::getTargetFromTriple(targetTriple, &error);
+    llvm::TargetMachine targetMachine = target.createTargetMachine(targetTriple, "generic", "", llvm::LLVMCodeGenOptLevel::CodeGenLevelDefault, llvm::LLVMRelocMode::RelocDefault, llvm::LLVMCodeModel::CodeModelDefault);
+
     llvm::LLVMContext context;
     llvm::Module module = llvm::Module("test", context);
+    module.setDataLayout(targetMachine.createDataLayout());
+    module.setTargetTriple(targetTriple);
     llvm::Builder builder = llvm::Builder(context);
 
     llvm::Type returnType = builder.getInt32Ty();
     Vector<llvm::Type> argTypes;
     llvm::Type funcType = llvm::getFunctionType(returnType, argTypes);
     llvm::Function func = llvm::Function(module, "main", funcType);
-    func.setLinkage(llvm::Linkage::ExternalLinkage);
+    func.setLinkage(llvm::LLVMLinkage::ExternalLinkage);
 
     llvm::BasicBlock entry = llvm::BasicBlock(context, "entry");
     func.pushBack(entry);
@@ -34,5 +48,6 @@ f<int> main() {
 
     printf("%s", module.print());
 
-
+    llvm::PassBuilderOptions passBuilderOptions;
+    //llvm::PassBuilder passBuilder = llvm::PassBuilder(module, passBuilderOptions);
 }

@@ -182,9 +182,13 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
       // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
       if (is(TY_STRUCT)) { // Struct
-        fieldTypes.reserve(spiceStruct->fieldTypes.size());
-        for (const SymbolType &fieldType : spiceStruct->fieldTypes)
-          fieldTypes.push_back(fieldType.toLLVMType(context, accessScope));
+        const size_t totalFieldCount = spiceStruct->scope->getFieldCount();
+        fieldTypes.reserve(totalFieldCount);
+        for (size_t i = 0; i < totalFieldCount; i++) {
+          const SymbolTableEntry *fieldSymbol = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
+          assert(fieldSymbol != nullptr);
+          fieldTypes.push_back(fieldSymbol->getType().toLLVMType(context, accessScope));
+        }
       } else { // Interface
         fieldTypes.push_back(llvm::PointerType::get(context, 0));
       }

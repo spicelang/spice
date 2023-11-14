@@ -203,7 +203,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   currentScope->isGenericScope = node->hasTemplateTypes;
 
   // Insert implicit field for each interface type
-  if (node->interfaceTypeLst()) {
+  if (node->hasInterfaces) {
     for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes()) {
       const std::string &interfaceName = interfaceNode->baseDataType()->customDataType()->typeNameFragments.back();
       SymbolTableEntry *interfaceFieldEntry = currentScope->insert("this." + interfaceName, interfaceNode);
@@ -581,6 +581,12 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   // core.linker.flag
   for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG))
     resourceManager.linker.addLinkerFlag(value->stringValue);
+
+  // core.linker.additional_source
+  for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_ADDITIONAL_SOURCE)) {
+    const std::filesystem::path path = sourceFile->filePath.parent_path() / value->stringValue;
+    resourceManager.linker.addAdditionalSourcePath(std::filesystem::canonical(path));
+  }
 
   return nullptr;
 }
