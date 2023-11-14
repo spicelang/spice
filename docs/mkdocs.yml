@@ -67,8 +67,8 @@ nav:
   - Home: index.md
   - intro.md
   - Install:
-    - install/windows.md
     - install/linux.md
+    - install/windows.md
     - install/docker.md
     - install/source.md
   - CLI Usage:

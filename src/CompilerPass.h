@@ -14,10 +14,11 @@ class CompilerPass {
 public:
   // Constructors
   explicit CompilerPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile = nullptr);
+  CompilerPass(const CompilerPass &) = delete;
 
   // Public methods
-  void changeToScope(Scope *scope, const ScopeType &scopeType);
-  void changeToScope(const std::string &scopeName, const ScopeType &scopeType);
+  void changeToScope(Scope *scope, ScopeType scopeType);
+  void changeToScope(const std::string &scopeName, ScopeType scopeType);
   void changeToParentScope(ScopeType oldScopeType);
 
 protected:

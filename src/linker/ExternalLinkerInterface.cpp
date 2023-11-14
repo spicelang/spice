@@ -70,11 +70,6 @@ void ExternalLinkerInterface::link() const {
   // Print linker result if appropriate
   if (cliOptions.printDebugOutput && !result.output.empty())  // GCOV_EXCL_LINE
     std::cout << "Linking result: " << result.output << "\n"; // GCOV_EXCL_LINE
-
-  // Delete object files if required
-  if (!cliOptions.dumpSettings.dumpObjectFile)
-    for (const std::string &objectFilePath : objectFilePaths)
-      std::filesystem::remove(objectFilePath);
 }
 
 /**
@@ -90,5 +85,21 @@ void ExternalLinkerInterface::addObjectFilePath(const std::string &objectFilePat
  * @param linkerFlag Linker flag
  */
 void ExternalLinkerInterface::addLinkerFlag(const std::string &flag) { linkerFlags.push_back(flag); }
+
+/**
+ * Add another source file to compile and link in (C or C++)
+ *
+ * @param additionalSource Additional source file
+ */
+void ExternalLinkerInterface::addAdditionalSourcePath(std::filesystem::path additionalSource) {
+  // Check if the file exists
+  if (!std::filesystem::exists(additionalSource)) // GCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR,
+                        "The additional source file '" + additionalSource.string() + "' does not exist"); // GCOV_EXCL_LINE
+
+  // Add the file to the linker
+  additionalSource.make_preferred();
+  addObjectFilePath(additionalSource.string());
+}
 
 } // namespace spice::compiler

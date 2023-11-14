@@ -155,6 +155,7 @@ public:
   bool stdFile = false;
   bool mainFile = true;
   bool alwaysKeepSymbolsOnNameCollision = false;
+  bool ignoreWarnings = false;
   CompileStageType previousStage = NONE;
   SourceFileAntlrCtx antlrCtx;
   CompilerOutput compilerOutput;

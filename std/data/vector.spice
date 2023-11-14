@@ -169,6 +169,15 @@ public f<long> Vector.getCapacity() {
 }
 
 /**
+ * Retrieve a pointer to the data of the vector
+ */
+public f<T*> Vector.getDataPtr() {
+    unsafe {
+        return (T*) this.contents;
+    }
+}
+
+/**
  * Frees allocated memory that is not used by the queue
  */
 public p Vector.pack() {

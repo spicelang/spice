@@ -11,12 +11,14 @@ namespace spice::compiler {
 
 // Constants
 static constexpr const char *const ATTR_CORE_LINKER_FLAG = "core.linker.flag";
+static constexpr const char *const ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additional_source";
 static constexpr const char *const ATTR_CORE_LINKER_DLL = "core.linker.dll";
 static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
 static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
 static constexpr const char *const ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
 static constexpr const char *const ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
 static constexpr const char *const ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
+static constexpr const char *const ATTR_CORE_COMPILER_WARNINGS_IGNORE = "core.compiler.warnings.ignore";
 static constexpr const char *const ATTR_TEST = "test";
 static constexpr const char *const ATTR_TEST_NAME = "test.name";
 static constexpr const char *const ATTR_TEST_SKIP = "test.skip";
@@ -33,6 +35,13 @@ struct AttrConfigValue {
 static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
     {
         ATTR_CORE_LINKER_FLAG,
+        {
+            .target = AttrNode::TARGET_MODULE,
+            .type = AttrNode::TYPE_STRING,
+        },
+    },
+    {
+        ATTR_CORE_LINKER_ADDITIONAL_SOURCE,
         {
             .target = AttrNode::TARGET_MODULE,
             .type = AttrNode::TYPE_STRING,
@@ -84,6 +93,13 @@ static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
         ATTR_CORE_COMPILER_PACKED,
         {
             .target = AttrNode::TARGET_STRUCT,
+            .type = AttrNode::TYPE_BOOL,
+        },
+    },
+    {
+        ATTR_CORE_COMPILER_WARNINGS_IGNORE,
+        {
+            .target = AttrNode::TARGET_MODULE,
             .type = AttrNode::TYPE_BOOL,
         },
     },

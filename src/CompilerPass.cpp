@@ -19,7 +19,7 @@ CompilerPass::CompilerPass(GlobalResourceManager &resourceManager, SourceFile *s
  * @param scope Scope to change to
  * @param scopeType Expected type of the given scope
  */
-void CompilerPass::changeToScope(Scope *scope, const ScopeType &scopeType) {
+void CompilerPass::changeToScope(Scope *scope, ScopeType scopeType) {
   assert(scope != nullptr);
   assert(scope->type == scopeType);
   assert(!scope->isGenericScope);
@@ -36,7 +36,7 @@ void CompilerPass::changeToScope(Scope *scope, const ScopeType &scopeType) {
  * @param scopeName Name of the scope to change to
  * @param scopeType Expected type of the given scope
  */
-void CompilerPass::changeToScope(const std::string &scopeName, const ScopeType &scopeType) {
+void CompilerPass::changeToScope(const std::string &scopeName, ScopeType scopeType) {
   assert(!scopeName.empty());
   changeToScope(currentScope->getChildScope(scopeName), scopeType);
 }

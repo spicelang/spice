@@ -49,10 +49,11 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, ASTNode *
   if (SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc, numericSuffix))
     return anonSymbol;
   // Otherwise, create an anonymous entry
-  std::string name = "anon." + declNode->codeLoc.toString();
+  std::stringstream name;
+  name << "anon." << declNode->codeLoc.toString();
   if (numericSuffix > 0)
-    name += "." + std::to_string(numericSuffix);
-  SymbolTableEntry *anonSymbol = insert(name, declNode);
+    name << "." << std::to_string(numericSuffix);
+  SymbolTableEntry *anonSymbol = insert(name.str(), declNode);
   anonSymbol->updateType(type, false);
   anonSymbol->updateState(DECLARED, declNode);
   anonSymbol->updateState(INITIALIZED, declNode);

@@ -1,0 +1,784 @@
+import "std/data/vector";
+import "linker-flags";
+
+#![core.compiler.warnings.ignore]
+
+// ===== External type definitions =====
+type VoidPtr alias byte*;
+type LLVMBool alias bool;
+type LLVMContextRef alias VoidPtr;
+type LLVMModuleRef alias VoidPtr;
+type LLVMBuilderRef alias VoidPtr;
+type LLVMTypeRef alias VoidPtr;
+type LLVMValueRef alias VoidPtr;
+type LLVMFunctionRef alias VoidPtr;
+type LLVMBasicBlockRef alias VoidPtr;
+type LLVMPassBuilderOptionsRef alias VoidPtr;
+type LLVMTargetRef alias VoidPtr;
+type LLVMTargetMachineRef alias VoidPtr;
+type LLVMTargetDataRef alias VoidPtr;
+type LLVMErrorRef alias VoidPtr;
+
+// ===== Generic helper definitions =====
+type ShortIntLong unsigned short|unsigned int|unsigned long;
+
+// ===== Enums =====
+public type LLVMLinkage enum {
+    ExternalLinkage = 0,
+    AvailableExternallyLinkage = 1,
+    LinkOnceAnyLinkage = 2,
+    LinkOnceODRLinkage = 3,
+    LinkOnceODRAutoHideLinkage = 4,
+    WeakAnyLinkage = 5,
+    WeakODRLinkage = 6,
+    AppendingLinkage = 7,
+    InternalLinkage = 8,
+    PrivateLinkage = 9,
+    DLLImportLinkage = 10,
+    DLLExportLinkage = 11,
+    ExternalWeakLinkage = 12,
+    GhostLinkage = 13,
+    CommonLinkage = 14,
+    LinkerPrivateLinkage = 15,
+    LinkerPrivateWeakLinkage = 16
+}
+
+public type LLVMCallConv enum {
+    CCallConv = 0,
+    FastCallConv = 8,
+    ColdCallConv = 9,
+    WebKitJSCallConv = 12,
+    AnyRegCallConv = 13,
+    PreserveMostCallConv = 14,
+    PreserveAllCallConv = 15,
+    SwiftCallConv = 16,
+    CXXFASTTLSCallConv = 17,
+    X86StdcallCallConv = 64,
+    X86FastcallCallConv = 65,
+    ARMAPCSCallConv = 66,
+    ARMAAPCSCallConv = 67,
+    ARMAAPCSVFPCallConv = 68,
+    MSP430INTRCallConv = 69,
+    X86ThisCallCallConv = 70,
+    PTXKernelCallConv = 71,
+    PTXDeviceCallConv = 72,
+    SPIRFUNCCallConv = 75,
+    SPIRKERNELCallConv = 76,
+    IntelOCLBICallConv = 77,
+    X8664SysVCallConv = 78,
+    Win64CallConv = 79,
+    X86VectorCallCallConv = 80,
+    HHVMCallConv = 81,
+    HHVMCCallConv = 82,
+    X86INTRCallConv = 83,
+    AVRINTRCallConv = 84,
+    AVRSIGNALCallConv = 85,
+    AVRBUILTINCallConv = 86,
+    AMDGPUVSCallConv = 87,
+    AMDGPUGSCallConv = 88,
+    AMDGPUPSCallConv = 89,
+    AMDGPUCSCallConv = 90,
+    AMDGPUKERNELCallConv = 91,
+    X86RegCallCallConv = 92,
+    AMDGPUHSCallConv = 93,
+    MSP430BUILTINCallConv = 94,
+    AMDGPULSCallConv = 95,
+    AMDGPUESCallConv = 96
+}
+
+public type LLVMCodeGenOptLevel enum {
+    CodeGenLevelNone = 0,
+    CodeGenLevelLess = 1,
+    CodeGenLevelDefault = 2,
+    CodeGenLevelAggressive = 3
+}
+
+public type LLVMRelocMode enum {
+    RelocDefault = 0,
+    RelocStatic = 1,
+    RelocPIC = 2,
+    RelocDynamicNoPic = 3
+}
+
+public type LLVMCodeModel enum {
+    CodeModelDefault = 0,
+    CodeModelJITDefault = 1,
+    CodeModelSmall = 2,
+    CodeModelKernel = 3,
+    CodeModelMedium = 4,
+    CodeModelLarge = 5
+}
+
+public type LLVMCodeGenFileType enum {
+    AssemblyFile = 0,
+    ObjectFile = 1
+}
+
+public type LLVMIntPredicate enum {
+    IntEQ = 32,
+    IntNE = 33,
+    IntUGT = 34,
+    IntUGE = 35,
+    IntULT = 36,
+    IntULE = 37,
+    IntSGT = 38,
+    IntSGE = 39,
+    IntSLT = 40,
+    IntSLE = 41
+}
+
+public type LLVMRealPredicate enum {
+    RealPredicateFalse = 0,
+    RealOEQ = 1,
+    RealOGT = 2,
+    RealOGE = 3,
+    RealOLT = 4,
+    RealOLE = 5,
+    RealONE = 6,
+    RealORD = 7,
+    RealUNO = 8,
+    RealUEQ = 9,
+    RealUGT = 10,
+    RealUGE = 11,
+    RealULT = 12,
+    RealULE = 13,
+    RealUNE = 14,
+    RealPredicateTrue = 15
+}
+
+public type LLVMVerifierFailureAction enum {
+    AbortProcessAction = 0,
+    PrintMessageAction = 1,
+    ReturnStatusAction = 2
+}
+
+// ===== External function declarations =====
+ext f<LLVMContextRef> LLVMContextCreate();
+ext p LLVMContextDispose(LLVMContextRef /*C*/);
+ext f<LLVMModuleRef> LLVMModuleCreateWithNameInContext(string /*ModuleID*/, LLVMContextRef /*C*/);
+ext p LLVMDisposeModule(LLVMModuleRef /*M*/);
+ext f<LLVMBuilderRef> LLVMCreateBuilderInContext(LLVMContextRef /*C*/);
+ext p LLVMDisposeBuilder(LLVMBuilderRef /*B*/);
+ext f<LLVMTypeRef> LLVMFunctionType(LLVMTypeRef /*ReturnType*/, LLVMTypeRef* /*ParamTypes*/, unsigned int /*ParamCount*/, bool /*IsVarArg*/);
+ext f<LLVMTypeRef> LLVMInt1TypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMInt8TypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMInt16TypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMInt32TypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMInt64TypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMDoubleTypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeRef> LLVMPointerTypeInContext(LLVMContextRef /*C*/, unsigned int /*AddressSpace*/);
+ext f<LLVMValueRef> LLVMConstInt(LLVMTypeRef /*IntTy*/, unsigned long /*N*/, LLVMBool /*SignExtend*/);
+ext f<LLVMValueRef> LLVMConstReal(LLVMTypeRef /*RealTy*/, double /*N*/);
+ext f<LLVMValueRef> LLVMConstNull(LLVMTypeRef /*Ty*/);
+ext f<LLVMValueRef> LLVMConstStructInContext(LLVMContextRef /*C*/, LLVMValueRef* /*ConstantVals*/, unsigned int /*Count*/, LLVMBool /*Packed*/);
+ext f<LLVMValueRef> LLVMConstArray2(LLVMTypeRef /*ElementTy*/, LLVMValueRef* /*ConstantVals*/, unsigned long /*Length*/);
+ext p LLVMDumpModule(LLVMModuleRef /*M*/);
+ext p LLVMDumpType(LLVMTypeRef /*Val*/);
+ext p LLVMDumpValue(LLVMValueRef /*Val*/);
+ext f<LLVMBool> LLVMVerifyModule(LLVMModuleRef /*M*/, LLVMVerifierFailureAction /*Action*/, string* /*OutMessage*/);
+ext f<LLVMBool> LLVMVerifyFunction(LLVMFunctionRef /*Fn*/, LLVMVerifierFailureAction /*Action*/);
+ext f<LLVMValueRef> LLVMAddFunction(LLVMModuleRef /*M*/, string /*Name*/, LLVMTypeRef /*FunctionTy*/);
+ext p LLVMSetLinkage(LLVMValueRef /*Global*/, LLVMLinkage /*Linkage*/);
+ext f<LLVMBasicBlockRef> LLVMCreateBasicBlockInContext(LLVMContextRef /*C*/, string /*Name*/);
+ext f<LLVMBasicBlockRef> LLVMGetInsertBlock(LLVMBuilderRef /*Builder*/);
+ext p LLVMAppendExistingBasicBlock(LLVMValueRef /*Fn*/, LLVMBasicBlockRef /*BB*/);
+ext p LLVMPositionBuilderAtEnd(LLVMBuilderRef /*Builder*/, LLVMBasicBlockRef /*BB*/);
+ext f<LLVMValueRef> LLVMGetNamedGlobal(LLVMModuleRef /*M*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildGlobalStringPtr(LLVMBuilderRef /*B*/, string /*Str*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildRet(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/);
+ext f<LLVMValueRef> LLVMBuildRetVoid(LLVMBuilderRef /*B*/);
+ext f<LLVMValueRef> LLVMBuildBr(LLVMBuilderRef /*B*/, LLVMBasicBlockRef /*Dest*/);
+ext f<LLVMValueRef> LLVMBuildUnreachable(LLVMBuilderRef /*B*/);
+ext f<LLVMValueRef> LLVMBuildCondBr(LLVMBuilderRef /*B*/, LLVMValueRef /*If*/, LLVMBasicBlockRef /*Then*/, LLVMBasicBlockRef /*Else*/);
+ext f<LLVMValueRef> LLVMBuildAlloca(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildArrayAlloca(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, LLVMValueRef /*Val*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildStore(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMValueRef /*Ptr*/);
+ext f<LLVMValueRef> LLVMBuildLoad2(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, LLVMValueRef /*PointerVal*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildGEP2(LLVMBuilderRef /*B*/, LLVMValueRef /*Ptr*/, LLVMValueRef* /*Indices*/, unsigned int /*NumIndices*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildInBoundsGEP2(LLVMBuilderRef /*B*/, LLVMValueRef /*Ptr*/, LLVMValueRef* /*Indices*/, unsigned int /*NumIndices*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildStructGEP2(LLVMBuilderRef /*B*/, LLVMValueRef /*Ptr*/, unsigned int /*Idx*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildSelect(LLVMBuilderRef /*B*/, LLVMValueRef /*If*/, LLVMValueRef /*Then*/, LLVMValueRef /*Else*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildPhi(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildAdd(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildSub(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildMul(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildSDiv(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildUDiv(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildURem(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildSRem(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildFRem(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildFAdd(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildFSub(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildFMul(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildFDiv(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildICmp(LLVMBuilderRef /*B*/, LLVMIntPredicate /*Predicate*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildFCmp(LLVMBuilderRef /*B*/, LLVMRealPredicate /*Predicate*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildShl(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildLShr(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildAShr(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildAnd(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildOr(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildXor(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildNeg(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildFNeg(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildNot(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/, string /*Name*/);
+ext p LLVMSetVolatile(LLVMValueRef /*MemoryAccessInst*/);
+ext f<LLVMValueRef> LLVMBuildCall2(LLVMBuilderRef /*B*/, LLVMTypeRef /*FctTy*/, LLVMValueRef /*Fn*/, LLVMValueRef* /*Args*/, unsigned int /*NumArgs*/, string /*Name*/);
+ext f<string> LLVMPrintModuleToString(LLVMModuleRef /*M*/);
+ext f<LLVMPassBuilderOptionsRef> LLVMCreatePassBuilderOptions();
+ext p LLVMDisposePassBuilderOptions(LLVMPassBuilderOptionsRef /*Options*/);
+ext f<LLVMErrorRef> LLVMRunPasses(LLVMModuleRef /*M*/, LLVMTargetMachineRef /*TM*/, string /*Passes*/, LLVMPassBuilderOptionsRef /*Options*/);
+ext p LLVM_InitializeNativeTarget();
+ext p LLVM_InitializeNativeAsmPrinter();
+ext p LLVM_InitializeAllTargetInfos();
+ext p LLVM_InitializeAllTargets();
+ext p LLVM_InitializeAllTargetMCs();
+ext p LLVM_InitializeAllAsmPrinters();
+ext f<heap string> LLVMGetDefaultTargetTriple();
+ext f<heap string> LLVMNormalizeTargetTriple(string /*TripleIn*/);
+ext f<heap string> LLVMGetHostCPUName();
+ext f<heap string> LLVMGetHostCPUFeatures();
+ext f<LLVMBool> LLVMGetTargetFromTriple(string /*Triple*/, LLVMTargetMachineRef* /*OutMachine*/, string* /*OutError*/);
+ext f<LLVMTargetMachineRef> LLVMCreateTargetMachine(LLVMTargetRef /*T*/, heap string /*Triple*/, string /*CPU*/, string /*Features*/, LLVMCodeGenOptLevel /*OptLevel*/, LLVMRelocMode /*Reloc*/, LLVMCodeModel /*CodeModel*/);
+ext p LLVMDisposeTargetMachine(LLVMTargetMachineRef /*TM*/);
+ext f<LLVMTargetDataRef> LLVMCreateTargetDataLayout(LLVMTargetMachineRef /*TM*/);
+ext p LLVMDisposeTargetData(LLVMTargetDataRef /*TD*/);
+ext p LLVMSetDataLayout(LLVMModuleRef /*M*/, LLVMTargetDataRef /*DL*/);
+ext p LLVMSetTarget(LLVMModuleRef /*M*/, string /*Triple*/);
+ext f<unsigned int> LLVMPointerSize(LLVMTargetDataRef /*TD*/);
+ext f<unsigned long> LLVMSizeOfTypeInBits(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
+ext f<unsigned long> LLVMABISizeOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
+ext f<unsigned int> LLVMPreferredAlignmentOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
+ext p LLVMGetVersion(unsigned int* /*Major*/, unsigned int* /*Minor*/, unsigned int* /*Patch*/);
+ext p LLVMShutdown();
+
+// ===== Type =====
+public type Type struct {
+    LLVMTypeRef self
+}
+
+public p Type.dump() {
+    LLVMDumpType(this.self);
+}
+
+// ===== Value =====
+public type Value struct {
+    LLVMValueRef self
+}
+
+public p Value.ctor() {
+    this.self = nil<LLVMValueRef>;
+}
+
+public p Value.dump() {
+    LLVMDumpValue(this.self);
+}
+
+// ===== LLVMContext =====
+public type LLVMContext struct {
+    LLVMContextRef self
+}
+
+public p LLVMContext.ctor() {
+    this.self = LLVMContextCreate();
+}
+
+public p LLVMContext.dtor() {
+    LLVMContextDispose(this.self);
+}
+
+// ===== DataLayout =====
+public type DataLayout struct {
+    LLVMTargetDataRef self
+}
+
+public p DataLayout.dtor() {
+    LLVMDisposeTargetData(this.self);
+}
+
+public f<unsigned int> DataLayout.getPointerSize() {
+    return LLVMPointerSize(this.self);
+}
+
+public inline f<unsigned int> DataLayout.getPointerSizeInBits() {
+    return this.getPointerSize() * 8;
+}
+
+public f<unsigned long> DataLayout.getTypeSize(Type ty) {
+    return this.getTypeSizeInBits(ty) / 8;
+}
+
+public f<unsigned long> DataLayout.getTypeSizeInBits(Type ty) {
+    return LLVMSizeOfTypeInBits(this.self, ty.self);
+}
+
+public f<unsigned long> DataLayout.getTypeAllocSize(Type ty) {
+    return LLVMABISizeOfType(this.self, ty.self);
+}
+
+public f<unsigned int> DataLayout.getTypeAlignment(Type ty) {
+    return LLVMPreferredAlignmentOfType(this.self, ty.self);
+}
+
+// ===== LLVMModule =====
+public type Module struct {
+    LLVMModuleRef self
+}
+
+public p Module.ctor(string name, const LLVMContext& ctx) {
+    this.self = LLVMModuleCreateWithNameInContext(name, ctx.self);
+}
+
+public p Module.dtor() {
+    LLVMDisposeModule(this.self);
+}
+
+public p Module.dump() {
+    LLVMDumpModule(this.self);
+}
+
+public f<string> Module.print() {
+    return LLVMPrintModuleToString(this.self);
+}
+
+public p Module.setTargetTriple(string triple) {
+    LLVMSetTarget(this.self, triple);
+}
+
+public p Module.setDataLayout(DataLayout dataLayout) {
+    LLVMSetDataLayout(this.self, dataLayout.self);
+}
+
+// ===== BasicBlock =====
+
+public type BasicBlock struct {
+    LLVMBasicBlockRef self
+}
+
+public p BasicBlock.ctor(LLVMContext ctx, string name = "") {
+    this.self = LLVMCreateBasicBlockInContext(ctx.self, name);
+}
+
+// ===== Function =====
+
+public type Function struct {
+    LLVMFunctionRef self
+    Type fctType
+}
+
+public p Function.ctor(Module module, string name, Type fctTy) {
+    this.fctType = fctTy;
+    this.self = LLVMAddFunction(module.self, name, fctTy.self);
+}
+
+public f<Type> Function.getType() {
+    return this.fctType;
+}
+
+public p Function.setLinkage(LLVMLinkage linkage) {
+    LLVMSetLinkage(this.self, linkage);
+}
+
+public p Function.pushBack(BasicBlock bb) {
+    LLVMAppendExistingBasicBlock(this.self, bb.self);
+}
+
+public f<Function> Module.getOrInsertFunction(string name, Type fctType) {
+    LLVMFunctionRef fctRef = LLVMGetNamedGlobal(this.self, name);
+    if fctRef == nil<LLVMFunctionRef> {
+        fctRef = LLVMAddFunction(this.self, name, fctType.self);
+    }
+    return Function{ fctRef, fctType };
+}
+
+// ===== LLVMBuilder =====
+public type Builder struct {
+    LLVMBuilderRef self
+    LLVMContextRef ctx
+}
+
+public p Builder.ctor(const LLVMContext& parentCtx) {
+    this.ctx = parentCtx.self;
+    this.self = LLVMCreateBuilderInContext(this.ctx);
+}
+
+public p Builder.dtor() {
+    LLVMDisposeBuilder(this.self);
+}
+
+public f<Type> Builder.getInt1Ty() {
+    return Type{ LLVMInt1TypeInContext(this.ctx) };
+}
+
+public f<Type> Builder.getInt8Ty() {
+    return Type{ LLVMInt8TypeInContext(this.ctx) };
+}
+
+public f<Type> Builder.getInt16Ty() {
+    return Type{ LLVMInt16TypeInContext(this.ctx) };
+}
+
+public f<Type> Builder.getInt32Ty() {
+    return Type{ LLVMInt32TypeInContext(this.ctx) };
+}
+
+public f<Type> Builder.getInt64Ty() {
+    return Type{ LLVMInt64TypeInContext(this.ctx) };
+}
+
+public f<Type> Builder.getPtrTy() {
+    return Type{ LLVMPointerTypeInContext(this.ctx, 0) };
+}
+
+public f<Value> Builder.getInt1<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+    LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.ctx);
+    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+}
+
+public f<Value> Builder.getInt8<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+    LLVMTypeRef typeRef = LLVMInt8TypeInContext(this.ctx);
+    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+}
+
+public f<Value> Builder.getInt16<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+    LLVMTypeRef typeRef = LLVMInt16TypeInContext(this.ctx);
+    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+}
+
+public f<Value> Builder.getInt32<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+    LLVMTypeRef typeRef = LLVMInt32TypeInContext(this.ctx);
+    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+}
+
+public f<Value> Builder.getInt64<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+    LLVMTypeRef typeRef = LLVMInt64TypeInContext(this.ctx);
+    return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
+}
+
+public f<Value> Builder.getFalse() {
+    LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.ctx);
+    return Value{ LLVMConstInt(typeRef, 0l, false) };
+}
+
+public f<Value> Builder.getTrue() {
+    LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.ctx);
+    return Value{ LLVMConstInt(typeRef, 1l, false) };
+}
+
+public f<Value> Builder.getDouble(double value) {
+    LLVMTypeRef typeRef = LLVMDoubleTypeInContext(this.ctx);
+    return Value{ LLVMConstReal(typeRef, value) };
+}
+
+public f<Value> Builder.getNull(Type ty) {
+    return Value{ LLVMConstNull(ty.self) };
+}
+
+public f<Value> Builder.getStruct(const Vector<Value>& values, bool packed = false) {
+    unsafe {
+        LLVMValueRef* valuesRef = (LLVMValueRef*) values.getDataPtr();
+        LLVMValueRef valueRef = LLVMConstStructInContext(this.ctx, valuesRef, (unsigned int) values.getSize(), packed);
+        return Value{ valueRef };
+    }
+}
+
+public f<Value> Builder.getArray(Type ty, const Vector<Value>& values) {
+    unsafe {
+        LLVMValueRef* valuesRef = (LLVMValueRef*) values.getDataPtr();
+        LLVMValueRef valueRef = LLVMConstArray2(ty.self, valuesRef, (unsigned long) values.getSize());
+        return Value{ valueRef };
+    }
+}
+
+public f<BasicBlock> Builder.getInsertBlock() {
+    return BasicBlock{ LLVMGetInsertBlock(this.self) };
+}
+
+public p Builder.setInsertPoint(BasicBlock bb) {
+    LLVMPositionBuilderAtEnd(this.self, bb.self);
+}
+
+public f<Value> Builder.createGlobalStringPtr(string content, string name) {
+    return Value{ LLVMBuildGlobalStringPtr(this.self, content, name) };
+}
+
+public f<Value> Builder.createAlloca(Type ty, Value arraySize = Value(), string name = "") {
+    if arraySize.self == nil<LLVMValueRef> {
+        return Value{ LLVMBuildAlloca(this.self, ty.self, name) };
+    } else {
+        return Value{ LLVMBuildArrayAlloca(this.self, ty.self, arraySize.self, name) };
+    }
+}
+
+public f<Value> Builder.createStore(Value value, Value ptr, bool volatile = false) {
+    LLVMValueRef valueRef = LLVMBuildStore(this.self, value.self, ptr.self);
+    if volatile {
+        LLVMSetVolatile(valueRef);
+    }
+    return Value{ valueRef };
+}
+
+public f<Value> Builder.createLoad(Value ptr, Type ty, string name = "", bool volatile = false) {
+    LLVMValueRef valueRef = LLVMBuildLoad2(this.self, ty.self, ptr.self, name);
+    if volatile {
+        LLVMSetVolatile(valueRef);
+    }
+    return Value{ valueRef };
+}
+
+public f<Value> Builder.createGEP(Value ptr, const Vector<Value>& indices, string name = "") {
+    unsafe {
+        LLVMValueRef* indicesRef = (LLVMValueRef*) indices.getDataPtr();
+        LLVMValueRef valueRef = LLVMBuildGEP2(this.self, ptr.self, indicesRef, (unsigned int) indices.getSize(), name);
+        return Value{ valueRef };
+    }
+}
+
+public f<Value> Builder.createInBoundsGEP(Value ptr, const Vector<Value>& indices, string name = "") {
+    unsafe {
+        LLVMValueRef* indicesRef = (LLVMValueRef*) indices.getDataPtr();
+        LLVMValueRef valueRef = LLVMBuildInBoundsGEP2(this.self, ptr.self, indicesRef, (unsigned int) indices.getSize(), name);
+        return Value{ valueRef };
+    }
+}
+
+public f<Value> Builder.createStructGEP(Value ptr, unsigned int index, string name = "") {
+    LLVMValueRef valueRef = LLVMBuildStructGEP2(this.self, ptr.self, index, name);
+    return Value{ valueRef };
+}
+
+public f<Value> Builder.createSelect(Value condition, Value thenValue, Value elseValue, string name = "") {
+    return Value{ LLVMBuildSelect(this.self, condition.self, thenValue.self, elseValue.self, name) };
+}
+
+public f<Value> Builder.createPhi(Type ty, string name = "") {
+    return Value{ LLVMBuildPhi(this.self, ty.self, name) };
+}
+
+public f<Value> Builder.createAdd(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildAdd(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createSub(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildSub(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createMul(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildMul(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createSDiv(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildSDiv(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createUDiv(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildUDiv(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createURem(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildURem(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createSRem(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildSRem(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createFRem(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildFRem(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createFAdd(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildFAdd(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createFSub(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildFSub(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createFMul(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildFMul(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createFDiv(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildFDiv(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createICmp(LLVMIntPredicate predicate, Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildICmp(this.self, predicate, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createFCmp(LLVMRealPredicate predicate, Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildFCmp(this.self, predicate, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createShl(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildShl(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createLShr(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildLShr(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createAShr(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildAShr(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createAnd(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildAnd(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createOr(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildOr(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createXor(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildXor(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> Builder.createNeg(Value value, string name = "") {
+    return Value{ LLVMBuildNeg(this.self, value.self, name) };
+}
+
+public f<Value> Builder.createFNeg(Value value, string name = "") {
+    return Value{ LLVMBuildFNeg(this.self, value.self, name) };
+}
+
+public f<Value> Builder.createNot(Value value, string name = "") {
+    return Value{ LLVMBuildNot(this.self, value.self, name) };
+}
+
+public f<Value> Builder.createCall(Function callee, const Vector<Value>& args, string name = "") {
+    unsafe {
+        LLVMValueRef* argsRef = (LLVMValueRef*) args.getDataPtr();
+        LLVMValueRef valueRef = LLVMBuildCall2(this.self, callee.fctType.self, callee.self, argsRef, (unsigned int) args.getSize(), name);
+        return Value{ valueRef };
+    }
+}
+
+public f<Value> Builder.createRet(Value returnValue) {
+    return Value{ LLVMBuildRet(this.self, returnValue.self) };
+}
+
+public f<Value> Builder.createRetVoid() {
+    return Value{ LLVMBuildRetVoid(this.self) };
+}
+
+public f<Value> Builder.createBr(BasicBlock bb) {
+    return Value{ LLVMBuildBr(this.self, bb.self) };
+}
+
+public f<Value> Builder.createCondBr(Value condition, BasicBlock thenBB, BasicBlock elseBB) {
+    return Value{ LLVMBuildCondBr(this.self, condition.self, thenBB.self, elseBB.self) };
+}
+
+public f<Value> Builder.createUnreachable() {
+    return Value{ LLVMBuildUnreachable(this.self) };
+}
+
+// ===== TargetMachine =====
+public type TargetMachine struct {
+    LLVMTargetMachineRef self
+}
+
+public p TargetMachine.dtor() {
+    LLVMDisposeTargetMachine(this.self);
+}
+
+public f<DataLayout> TargetMachine.createDataLayout() {
+    return DataLayout{ LLVMCreateTargetDataLayout(this.self) };
+}
+
+// ===== Target =====
+public type Target struct {
+    LLVMTargetRef self
+}
+
+public f<TargetMachine> Target.createTargetMachine(heap string triple, string cpu, string features, LLVMCodeGenOptLevel optLevel, LLVMRelocMode relocMode, LLVMCodeModel codeModel) {
+    return TargetMachine{ LLVMCreateTargetMachine(this.self, triple, cpu, features, optLevel, relocMode, codeModel) };
+}
+
+// ===== PassBuilderOptions =====
+public type PassBuilderOptions struct {
+    LLVMPassBuilderOptionsRef internalOptions
+}
+
+public p PassBuilderOptions.ctor() {
+    this.internalOptions = LLVMCreatePassBuilderOptions();
+}
+
+public p PassBuilderOptions.dtor() {
+    LLVMDisposePassBuilderOptions(this.internalOptions);
+}
+
+// ===== Static functions =====
+
+public f<Type> getFunctionType(Type returnType, const Vector<Type>& paramTypes, bool isVarArg = false) {
+    unsafe {
+        LLVMTypeRef returnTypeRef = returnType.self;
+        LLVMTypeRef* paramTypesRef = (LLVMTypeRef*) paramTypes.getDataPtr();
+        LLVMTypeRef typeRef = LLVMFunctionType(returnTypeRef, paramTypesRef, (unsigned int) paramTypes.getSize(), isVarArg);
+        return Type{ typeRef };
+    }
+}
+
+public f<bool> verifyModule(Module module, string* outMessage, LLVMVerifierFailureAction action = LLVMVerifierFailureAction::AbortProcessAction) {
+    return LLVMVerifyModule(module.self, action, outMessage);
+}
+
+public f<bool> verifyFunction(Function function, LLVMVerifierFailureAction action = LLVMVerifierFailureAction::AbortProcessAction) {
+    return LLVMVerifyFunction(function.self, action);
+}
+
+public p initializeNativeTarget() {
+    LLVM_InitializeNativeTarget();
+}
+
+public p initializeNativeAsmPrinter() {
+    LLVM_InitializeNativeAsmPrinter();
+}
+
+public p initializeAllTargetInfos() {
+    LLVM_InitializeAllTargetInfos();
+}
+
+public p initializeAllTargets() {
+    LLVM_InitializeAllTargets();
+}
+
+public p initializeAllTargetMCs() {
+    LLVM_InitializeAllTargetMCs();
+}
+
+public p initializeAllAsmPrinters() {
+    LLVM_InitializeAllAsmPrinters();
+}
+
+public f<heap string> getDefaultTargetTriple() {
+    return LLVMGetDefaultTargetTriple();
+}
+
+public f<heap string> normalizeTargetTriple(string tripleIn) {
+    return LLVMNormalizeTargetTriple(tripleIn);
+}
+
+public f<heap string> getHostCPUName() {
+    return LLVMGetHostCPUName();
+}
+
+public f<heap string> getHostCPUFeatures() {
+    return LLVMGetHostCPUFeatures();
+}
+
+public f<Target> getTargetFromTriple(string triple, string* outError) {
+    Target target;
+    assert !LLVMGetTargetFromTriple(triple, &target.self, outError);
+    return target;
+}
+
+public p getVersion(unsigned int* major, unsigned int* minor, unsigned int* patch) {
+    LLVMGetVersion(major, minor, patch);
+}
+
+public p shutdown() {
+    LLVMShutdown();
+}

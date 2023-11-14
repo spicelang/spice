@@ -237,13 +237,9 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
       SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupStrictByIndex(i);
       assert(fieldEntry != nullptr && fieldEntry->isField());
 
-      // Retrieve field node
-      const auto fieldNode = dynamic_cast<FieldNode *>(fieldEntry->declNode);
-      assert(fieldNode != nullptr);
-
       // Retrieve default field value
       llvm::Constant *defaultFieldValue;
-      if (fieldNode->defaultValue())
+      if (const auto fieldNode = dynamic_cast<FieldNode *>(fieldEntry->declNode); fieldNode && fieldNode->defaultValue())
         defaultFieldValue = getConst(fieldNode->defaultValue()->getCompileTimeValue(), fieldEntry->getType(), fieldNode);
       else
         defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getType());
