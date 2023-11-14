@@ -1419,7 +1419,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, 
 
   switch (lhsSTy.getSuperType()) {
   case TY_DOUBLE:
-    return {.value = builder.CreateFMul(lhsV(), llvm::ConstantFP::get(builder.getContext(), llvm::APFloat(double(-1))))};
+    return {.value = builder.CreateFNeg(lhsV())};
   case TY_INT:   // fallthrough
   case TY_SHORT: // fallthrough
   case TY_LONG:

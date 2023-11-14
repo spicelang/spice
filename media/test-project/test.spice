@@ -26,18 +26,22 @@ f<int> main() {
     llvm::Function func = llvm::Function(module, "main", funcType);
     func.setLinkage(llvm::LLVMLinkage::ExternalLinkage);
 
-    llvm::BasicBlock entry = llvm::BasicBlock(context, "entry");
+    llvm::BasicBlock entry = llvm::BasicBlock(context, "");
     func.pushBack(entry);
     builder.setInsertPoint(entry);
+
+    llvm::Value calcResult = builder.createAdd(builder.getInt32(1), builder.getInt32(2), "calcResult");
 
     llvm::Value helloWorldStr = builder.createGlobalStringPtr("Hello, world!\n", "helloWorldStr");
     Vector<llvm::Type> printfArgTypes;
     printfArgTypes.pushBack(builder.getPtrTy());
+    printfArgTypes.pushBack(builder.getInt32Ty());
     llvm::Type printfFuncType = llvm::getFunctionType(builder.getInt32Ty(), printfArgTypes, true);
     llvm::Function printfFunc = module.getOrInsertFunction("printf", printfFuncType);
 
     Vector<llvm::Value> printfArgs;
     printfArgs.pushBack(helloWorldStr);
+    printfArgs.pushBack(calcResult);
     builder.createCall(printfFunc, printfArgs);
 
     builder.createRet(builder.getInt32(0));
