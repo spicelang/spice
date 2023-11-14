@@ -1,8 +1,12 @@
 #![
-    // Paths
-    core.linker.flag = "-LD:/LLVM/build-release/lib",
-    core.linker.flag = "-ID:/LLVM/llvm/include",
-    core.linker.flag = "-ID:/LLVM/build-release/include",
+    // Paths - Linux
+    core.linker.flag = "-L$LLVM_LIB_DIR",
+    core.linker.flag = "-I$LLVM_INCLUDE_DIR",
+    core.linker.flag = "-I$LLVM_BUILD_INCLUDE_DIR",
+    // Paths - Windows
+    core.linker.flag = "-L%LLVM_LIB_DIR%",           // e.g.: D:/LLVM/build-release/lib
+    core.linker.flag = "-I%LLVM_INCLUDE_DIR%",       // e.g.: D:/LLVM/llvm/include
+    core.linker.flag = "-I%LLVM_BUILD_INCLUDE_DIR%", // e.g.: D:/LLVM/build-release/include
     // LLVM libs
     core.linker.flag = "-lLLVMAArch64AsmParser",
     core.linker.flag = "-lLLVMAArch64CodeGen",
