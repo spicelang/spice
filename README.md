@@ -10,6 +10,7 @@
 	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml"><img src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
     <a target="_blank" href="https://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
     <a target="_blank" href="./LICENSE.md"><img src="https://img.shields.io/github/license/spicelang/spice"></a>
+    <a target="_blank" href="https://discord.gg/D6sCsJyWPg"><img src="https://dcbadge.vercel.app/api/server/D6sCsJyWPg?style=flat"></a>
   </p>
 </p>
 
