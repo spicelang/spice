@@ -9,6 +9,13 @@ if errorlevel 1 (
     goto end
 )
 
+REM - Check if lld is installed
+where lld > nul 2>&1
+if errorlevel 1 (
+    echo LLD linker was not found. Please install the latest version from https://winlibs.com
+    goto end
+)
+
 REM - Check if Ninja is installed
 where ninja > nul 2>&1
 if errorlevel 1 (
@@ -34,7 +41,7 @@ REM - Build LLVM
 echo [Step 3] Building LLVM (Could take a whole while, please be patient) ...
 mkdir .\llvm\build-release
 pushd .\llvm\build-release
-cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -fuse-ld=lld" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -fuse-ld=lld" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
 cmake --build .
 popd
 echo done.

@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 colored_echo() {
     GREEN='\e[0;92m' # Green color
@@ -10,7 +11,7 @@ colored_echo() {
 colored_echo "[Step 1] Installing dependencies via Linux packages (Could take a while) ... "
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo apt update
-sudo apt-get install -y cmake make ninja-build valgrind ccache uuid-dev pkg-config openjdk-11-jre-headless
+sudo apt-get install -y cmake make ninja-build valgrind ccache uuid-dev pkg-config openjdk-11-jre-headless clang lld
 colored_echo "done."
 
 # Clone LLVM
@@ -23,7 +24,7 @@ colored_echo "[Step 3] Building LLVM (Could take a whole while, please be patien
 mkdir ./llvm/build-release 2>/dev/null
 (
   cd ./llvm/build-release || exit
-  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -fuse-ld=lld" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
+  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -fuse-ld=lld" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
   cmake --build .
 )
 colored_echo "done."
