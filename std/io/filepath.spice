@@ -1,0 +1,64 @@
+import "std/os/os";
+
+/**
+ * Represents a path to a file or directory on the local file system
+ */
+public type FilePath struct {
+    String path
+}
+
+public p FilePath.ctor(string pathStr) {
+    this.path = String(pathStr);
+}
+
+public p FilePath.ctor(const String& pathStr) {
+    this.path = pathStr;
+}
+
+public p FilePath.ctor(const FilePath& other) {
+    this.path = other.path;
+}
+
+public f<string> FilePath.toString() {
+    return this.path.getRaw();
+}
+
+public f<bool> operator==(const FilePath& lhs, const FilePath& rhs) {
+    return lhs.path == rhs.path;
+}
+
+public f<bool> operator!=(const FilePath& lhs, const FilePath& rhs) {
+    return lhs.path != rhs.path;
+}
+
+public p operator/=(FilePath& lhs, string rhs) {
+    if lhs.path.isEmpty() || rhs[len(rhs) - 1] == PATH_SEPARATOR {
+        lhs.path += rhs;
+    } else {
+        lhs.path += PATH_SEPARATOR;
+        lhs.path += rhs;
+    }
+}
+
+public p operator/=(FilePath& lhs, const String& rhs) {
+    lhs /= rhs.getRaw();
+}
+
+public p operator/=(FilePath& lhs, const FilePath& rhs) {
+    lhs /= rhs.path.getRaw();
+}
+
+public f<FilePath> operator/(const FilePath& lhs, string rhs) {
+    result = FilePath(lhs);
+    result /= rhs;
+}
+
+public f<FilePath> operator/(const FilePath& lhs, const String& rhs) {
+    result = FilePath(lhs);
+    result /= rhs.getRaw();
+}
+
+public f<FilePath> operator/(const FilePath& lhs, const FilePath& rhs) {
+    result = FilePath(lhs);
+    result /= rhs.path.getRaw();
+}
