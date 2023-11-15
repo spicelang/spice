@@ -1,40 +1,75 @@
 // Imports
-import "std/io/file" as file;
+import "std/io/filepath";
+import "std/io/file";
 
 public type Reader struct {
-    File inputFile
-    char curChar
-    char nextChar
-    bool metEof
-    unsigned long line
-    unsigned long col
+    FileInputStream file
+    char curChar = '\0'
+    bool moreToRead = true
+    unsigned long line = 1
+    unsigned long col = 0
 }
 
 public p Reader.ctor(const string inputFileName) {
-    this.inputFile = file.openFile(inputFileName, file::MODE_READ);
-    this.cursorPos = 0;
-    this.metEof = false;
-    this.line = 1;
-    this.col = 0;
-    // Fill
+    this.file = file.openFile(inputFileName, file::MODE_READ);
+    if !file.isOpen() {
+
+    }
 }
 
-public f<char> Reader.getCurChar() {
+public p Reader.dtor() {
+    file.close();
+}
+
+/**
+ * @brief Get the previously read character
+ *
+ * @return char Last character
+ */
+public f<char> Reader.getChar() {
     return this.curChar;
 }
 
-public f<bool> Reader.expectChar(char expected) {
-    bool gotExpected = expected == this.nextChar;
-    this.advance();
-    return gotExpected;
+/**
+ * @brief Get the code location of the previously read character
+ *
+ * @return CodeLoc Code location
+ */
+public f<CodeLoc> Reader.getCodeLoc() {
+    return CodeLoc(this.cursorPos, this.line, this.col);
 }
 
+/**
+ * @brief Advance the reader by one character
+ */
 public p Reader.advance() {
-    int readChar = this.inputFile.readChar();
-    if readChar == -1 {
-        metEof = true;
-        return;
+    assert !isEOF();
+    if !input.get(curChar) {
+        moreToRead = false;
     }
-    this.curChar = this.nextChar;
-    this.nextChar = (char) readChar;
+    if curChar == '\n' {
+        this.line++;
+        this.col = 0;
+    }
+    this.col++;
+}
+
+/**
+ * @brief Advance the reader by one character and check if this char equals the
+ * expected
+ *
+ * @param c Expected char
+ */
+public p Reader.expect(char c) {
+    assert this.curChar == c;
+    this.advance();
+}
+
+/**
+ * @brief Check if we are at the end of the input file
+ *
+ * @return At the end or not
+ */
+public f<bool> Reader.isEOF() {
+    return !this.moreToRead;
 }
