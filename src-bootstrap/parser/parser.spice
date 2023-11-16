@@ -1,5 +1,5 @@
-// Imports
-import "../lexer/Token" as tk;
+// Own imports
+import "../lexer/token";
 
 public type Parser struct {
 

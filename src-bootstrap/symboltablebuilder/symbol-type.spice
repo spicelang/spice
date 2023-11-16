@@ -1,7 +1,9 @@
 // Std imports
 import "std/data/vector";
-import "../util/CommonUtil";
-import "../symbol/Scope";
+
+// Own imports
+import "../util/common-util";
+import "../symbol/scope";
 
 public type SymbolSuperType enum {
     TY_INVALID,

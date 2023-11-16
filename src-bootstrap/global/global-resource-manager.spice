@@ -1,9 +1,9 @@
-import "../exception/ErrorManager";
-import "../global/RuntimeModuleManager";
-import "../linker/ExternalLinkerInterface";
-import "../util/CodeLoc";
-import "../util/Timer";
-import "../CliInterface";
+// Own imports
+import "../global/runtime-module-manager";
+import "../linker/external-linker-interface";
+import "../reader/code-loc";
+import "../util/timer";
+import "../driver";
 
 // Constants
 public const string MAIN_FILE_NAME = "root";

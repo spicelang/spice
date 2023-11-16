@@ -1,7 +1,7 @@
 // Imports
 import "std/io/filepath";
 import "std/io/file";
-import "../util/CodeLoc";
+import "../reader/code-loc";
 
 public type Reader struct {
     FileInputStream file

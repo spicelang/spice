@@ -1,5 +1,5 @@
 // Own imports
-import "CodeLoc" as cl;
+import "../reader/code-loc";
 
 public type CompilerWarningType enum {
     UNUSED_FUNCTION,
@@ -31,7 +31,7 @@ public type CompilerWarning struct {
  * @param warningType Type of the warning
  * @param message Warning message suffix
  */
-public p CompilerWarning.ctor(const cl::CodeLoc* codeLoc, const CompilerWarningType warningType, const string message) {
+public p CompilerWarning.ctor(const CodeLoc* codeLoc, const CompilerWarningType warningType, const string message) {
     this.warningMessage = "[Warning] " + codeLoc.toPrettyString() + ": " +
             this.getMessagePrefix(warningType) + ": " + message;
 }
@@ -77,7 +77,7 @@ f<string> CompilerWarning.getMessagePrefix(const CompilerWarningType warningType
 }
 
 f<int> main() {
-    const cl::CodeLoc codeLoc = cl::CodeLoc(2l, 3l);
+    const CodeLoc codeLoc = CodeLoc(2l, 3l);
     CompilerWarning warning = CompilerWarning(&codeLoc, CompilerWarningType.UNUSED_STRUCT, "Dies ist ein Test");
     warning.print();
 }

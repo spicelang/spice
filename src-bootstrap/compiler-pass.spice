@@ -1,4 +1,4 @@
-import "global/GlobalResourceManager";
+import "./global/global-resource-manager";
 
 type ICompilerPass interface {
     p changeToScope(Scope*, const ScopeType&);

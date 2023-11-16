@@ -1,4 +1,6 @@
-// Imports
+// Std imports
+
+// Own imports
 
 public type Generator struct {
 

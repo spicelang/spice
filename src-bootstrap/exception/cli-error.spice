@@ -1,5 +1,5 @@
-// Imports
-import "../util/CodeLoc" as cl;
+// Own imports
+import "../reader/code-loc";
 
 public type CliErrorType enum {
     INCOMPLETE_TARGET_TRIPLE,

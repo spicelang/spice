@@ -1,8 +1,10 @@
+// Std imports
 import "std/os/os";
 
-import "SourceFile";
-import "CliInterface";
-import "global/GlobalResourceManager";
+// Own imports
+import "./source-file";
+import "./driver";
+import "./global/global-resource-manager";
 
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
@@ -44,28 +46,28 @@ f<bool> compileProject(const CliOptions& cliOptions) {
  */
 f<int> main(int argc, string[] argv) {
     // Initialize command line parser
-    CliInterface cli;
-    cli.create();
-    const int exitCode = cli.parse(argc, argv);
+    Driver driver;
+    driver.create();
+    const int exitCode = driver.parse(argc, argv);
     if exitCode != EXIT_SUCCESS {
         return exitCode;
     }
 
     // Cancel here if we do not have to compile
-    if !cli.shouldCompile {
+    if !driver.shouldCompile {
         return EXIT_SUCCESS;
     }
 
-    cli.enrich(); // Prepare the cli options
+    driver.enrich(); // Prepare the cli options
 
     // Kick off the compiling process
-    if !compileProject(cli.cliOptions) {
+    if !compileProject(driver.cliOptions) {
         return EXIT_FAILURE;
     }
 
     // Execute
-    if cli.cliOptions.execute {
-        cli.runBinary();
+    if driver.cliOptions.execute {
+        driver.runBinary();
     }
 
     return EXIT_SUCCESS;

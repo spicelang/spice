@@ -1,4 +1,4 @@
-// Imports
+// Std imports
 import "std/text/print";
 import "std/os/cmd";
 import "std/io/cli-parser";
@@ -37,7 +37,7 @@ public type CliOptions struct {
 /**
  * Helper class to setup the cli interface and command line parser
  */
-public type CliInterface struct {
+public type Driver struct {
     CliParser cliParser
     public CliOptions cliOptions
     public bool shouldCompile = false
@@ -45,12 +45,12 @@ public type CliInterface struct {
     public bool shouldExecute = false
 }
 
-public p CliInterface.create() {
+public p Driver.create() {
     this.cliParser = CliParser("Spice", "Spice programming language");
     this.cliParser.setFooter("(c) Marc Auberer 2021-2023");
 
     // Add version flag
-    this.cliParser.setVersion("Spice version 0.14.3\nbuilt by: GitHub Actions\n\n(c) Marc Auberer 2021-2023");
+    this.cliParser.setVersion("Spice version 0.18.3\nbuilt by: GitHub Actions\n\n(c) Marc Auberer 2021-2023");
 
     // Create sub-commands
     this.addBuildSubcommand();
@@ -64,7 +64,7 @@ public p CliInterface.create() {
 /**
  * Initialize the cli options based on the input of the user
  */
-public p CliInterface.enrich() {
+public p Driver.enrich() {
     // Propagate target information
     if this.cliOptions.targetTriple.isEmpty() && this.cliOptions.targetArch.isEmpty() {
         // ToDo: Extend
@@ -81,7 +81,7 @@ public p CliInterface.enrich() {
 /**
  * Add build subcommand to cli interface
  */
-p CliInterface.addBuildSubcommand() {
+p Driver.addBuildSubcommand() {
     // Create sub-command itself
     CliSubcommand& subCmd = this.cliParser.createSubcommand("build", "Builds your Spice program and emits an executable");
     subCmd.addAlias("b");
@@ -112,7 +112,7 @@ p CliInterface.addBuildSubcommand() {
 /**
  * Add run subcommand to cli interface
  */
-p CliInterface.addRunSubcommand() {
+p Driver.addRunSubcommand() {
     // Create sub-command itself
     CliSubcommand& subCmd = this.cliParser.createSubcommand("run", "Builds your Spice program and runs it immediately");
     subCmd.addAlias("r");
@@ -132,7 +132,7 @@ p CliInterface.addRunSubcommand() {
 /**
  * Add install subcommand to cli interface
  */
-p CliInterface.addInstallSubcommand() {
+p Driver.addInstallSubcommand() {
     // Create sub-command itself
     CliSubcommand& subCmd = this.cliParser.createSubcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
     subCmd.addAlias("i");
@@ -143,7 +143,7 @@ p CliInterface.addInstallSubcommand() {
 /**
  * Add uninstall subcommand to cli interface
  */
-p CliInterface.addUninstallSubcommand() {
+p Driver.addUninstallSubcommand() {
     // Create sub-command itself
     CliSubcommand& subCmd = this.cliParser.createSubcommand("uninstall", "Builds your Spice program and runs it immediately");
     subCmd.addAlias("u");
@@ -151,7 +151,7 @@ p CliInterface.addUninstallSubcommand() {
     addCompileSubcommandOptions(subCmd);
 }
 
-p CliInterface.addCompileSubcommandOptions(CliSubcommand& subCmd) {
+p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --debug-output
     CliOption<bool>& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
     debugOutputFlag.addAlias("-d");
@@ -200,6 +200,6 @@ p CliInterface.addCompileSubcommandOptions(CliSubcommand& subCmd) {
  * @param argv Argument vector
  * @return Return code
  */
-public f<int> CliInterface.parse(int argc, string[] argv) {
+public f<int> Driver.parse(int argc, string[] argv) {
     return this.cliParser.parse(argc, argv);
 }

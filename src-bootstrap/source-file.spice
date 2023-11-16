@@ -1,9 +1,9 @@
 // Imports
 import "std/text/print";
 import "std/data/pair";
-import "CliInterface";
-import "global/GlobalResourceManager";
-import "ast/AstNodes";
+import "./driver";
+import "./global/global-resource-manager";
+import "./ast/ast-nodes";
 
 type CompileStageType enum {
     NONE,
