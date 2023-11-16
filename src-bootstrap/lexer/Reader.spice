@@ -1,17 +1,18 @@
 // Imports
 import "std/io/filepath";
 import "std/io/file";
+import "../util/CodeLoc";
 
 public type Reader struct {
     FileInputStream file
     char curChar = '\0'
     bool moreToRead = true
-    unsigned long line = 1
-    unsigned long col = 0
+    unsigned long line = 1l
+    unsigned long col = 0l
 }
 
 public p Reader.ctor(const string inputFileName) {
-    this.file = file.openFile(inputFileName, file::MODE_READ);
+    this.file = openFile(inputFileName, MODE_READ);
     if !file.isOpen() {
 
     }
@@ -43,13 +44,13 @@ public f<CodeLoc> Reader.getCodeLoc() {
  * @brief Advance the reader by one character
  */
 public p Reader.advance() {
-    assert !isEOF();
-    if !input.get(curChar) {
-        moreToRead = false;
+    assert !this.isEOF();
+    if !this.file.get(this.curChar) {
+        this.moreToRead = false;
     }
-    if curChar == '\n' {
+    if this.curChar == '\n' {
         this.line++;
-        this.col = 0;
+        this.col = 0l;
     }
     this.col++;
 }
