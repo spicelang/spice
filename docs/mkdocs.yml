@@ -52,7 +52,6 @@ plugins:
       - en
   - minify:
       minify_html: true
-  - offline
 
 extra:
   social:
