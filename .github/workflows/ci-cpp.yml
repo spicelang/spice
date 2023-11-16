@@ -3,11 +3,19 @@ name: C++ CI
 
 on:
   push:
+    paths-ignore:
+      - 'docs/**'
+      - 'media/**'
+      - '**.md'
   pull_request:
     branches:
       - main
       - dev
       - feature/**
+    paths:
+      - 'docs/**'
+      - 'media/**'
+      - '**.md'
 
 jobs:
   build-linux:
