@@ -77,6 +77,23 @@ public p String.ctor(const String& value) {
     }
 }
 
+public p String.ctor<IntLong>(IntLong initialSize) {
+    this.length = (unsigned long) initialSize;
+    this.capacity = initialSize > INITIAL_ALLOC_COUNT ? (unsigned long) initialSize * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
+
+    // Allocate space for the initial number of elements
+    unsafe {
+        unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
+        Result<heap byte*> allocResult = sAlloc(requiredBytes);
+        this.contents = (heap char*) allocResult.unwrap();
+    }
+
+    // Save initial value
+    unsafe {
+        this.contents[0] = '\0';
+    }
+}
+
 /**
  * Appends the given string to the current one
  *
@@ -529,7 +546,7 @@ public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startId
  */
 public p String.reserve<IntLongShort>(unsigned IntLongShort charCount) {
     if charCount > this.capacity {
-        this.resize(charCount);
+        this.resize((unsigned long) charCount);
     }
 }
 
@@ -538,11 +555,11 @@ public p String.reserve<IntLongShort>(unsigned IntLongShort charCount) {
  *
  * @param newLength new length of the string after resizing
  */
-p String.resize<IntLongShort>(unsigned IntLongShort newLength) {
+p String.resize(unsigned long newLength) {
     // Allocate the new memory
     unsafe {
         heap char* oldAddress = this.contents;
-        unsigned long requiredBytes = newLength + 1; // +1 because of null terminator
+        unsigned long requiredBytes = newLength + 1l; // +1 because of null terminator
         Result<heap byte*> allocResult = sRealloc((heap byte*) oldAddress, requiredBytes);
         this.contents = (heap char*) allocResult.unwrap();
     }
@@ -559,6 +576,9 @@ p String.resize<IntLongShort>(unsigned IntLongShort newLength) {
  * @return Length of the input string
  */
 public f<unsigned long> getRawLength(string input) {
+    // Handle nullptr gracefully
+    if (char*) input == nil<char*> { return 0l; }
+    // Otherwise count the chars until the null terminator
     result = 0l;
     while input[result] != '\0' {
         result++;

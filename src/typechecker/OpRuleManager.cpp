@@ -294,6 +294,10 @@ ExprResult OpRuleManager::getEqualResultType(ASTNode *node, SymbolType lhs, Symb
   if (lhs.isPtr() && rhs.is(TY_INT))
     return ExprResult(SymbolType(TY_BOOL));
 
+  // Allow 'string == char*' and vice versa straight away
+  if ((lhs.is(TY_STRING) && rhs.isPtrOf(TY_CHAR)) || (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING)))
+    return ExprResult(SymbolType(TY_BOOL));
+
   // Check primitive type combinations
   return ExprResult(validateBinaryOperation(node, EQUAL_OP_RULES, ARRAY_LENGTH(EQUAL_OP_RULES), "==", lhs, rhs));
 }
@@ -314,6 +318,10 @@ ExprResult OpRuleManager::getNotEqualResultType(ASTNode *node, SymbolType lhs, S
 
   // Allow 'pointer != int' straight away
   if (lhs.isPtr() && rhs.is(TY_INT))
+    return ExprResult(SymbolType(TY_BOOL));
+
+  // Allow 'string != char*' and vice versa straight away
+  if ((lhs.is(TY_STRING) && rhs.isPtrOf(TY_CHAR)) || (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING)))
     return ExprResult(SymbolType(TY_BOOL));
 
   // Check primitive type combinations

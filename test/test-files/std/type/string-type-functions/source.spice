@@ -3,32 +3,27 @@ import "std/type/string";
 f<int> main() {
     // toDouble()
     double asDouble = toDouble("5.67");
-    //assert asDouble == 5.67;
+    assert asDouble == 5.67;
 
     // toInt()
     int asInt = toInt("-6546");
-    //assert asInt == -6546;
+    assert asInt == -6546;
 
     // toLong()
     long asLong = toLong("56");
-    //assert asLong == 56l;
+    assert asLong == 56l;
 
     // toShort()
     short asShort = toShort("-12");
-    //assert asShort == -12s;
+    assert asShort == -12s;
 
     // toByte()
     byte asByte = toByte("12");
-    //assert asByte == (byte) 12;
+    assert asByte == (byte) 12;
 
     // toChar()
     char asChar = toChar("i");
-    //assert asChar == 'i';
-
-    // toString()
-    //string asString = toString(15);
-    //assert asString == "15";
-    //printf("Str: %s\n", asString);
+    assert asChar == 'i';
 
     // toBool()
     bool asBool1 = toBool("true");

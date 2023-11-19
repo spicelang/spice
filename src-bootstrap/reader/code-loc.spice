@@ -28,7 +28,7 @@ public f<String> CodeLoc.toString() {
  * @return Pretty code location
  */
 public f<String> CodeLoc.toPrettyString() {
-    String codeLocStr = String(intTy.toString(this.line));
+    String codeLocStr = String(toString(this.line));
     if this.sourceFilePath.empty() {
         return toString(line) + ":" + toString(this.col);
     }

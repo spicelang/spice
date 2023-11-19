@@ -320,6 +320,16 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
   if (rootScope->lookupStrict(node->aliasName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->aliasName + "'");
 
+  // Build alias specifiers
+  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+      if (specifier->type == SpecifierNode::TY_PUBLIC)
+        node->aliasSpecifiers.isPublic = true;
+      else
+        throw SemanticError(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on an alias definition");
+    }
+  }
+
   // Add the alias to the symbol table
   node->entry = rootScope->insert(node->aliasName, node);
 

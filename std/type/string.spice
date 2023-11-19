@@ -1,33 +1,31 @@
 // External declarations
 ext f<long> strtol(string, char**, int);
+ext f<int> atoi(string, char**, int);
+ext f<double> strtod(string, char**);
 
 // Converts a string to a double
 public f<double> toDouble(string input) {
-    // ToDo: implement
-    return 0.0;
+    return strtod(input, nil<char**>);
 }
 
 // Converts a string to an int
 public f<int> toInt(string input, int base = 10) {
-    return (int) toLong(input, base);
+    return atoi(input, nil<char**>, base);
 }
 
 // Converts a string to a short
 public f<short> toShort(string input, int base = 10) {
-    return (short) toLong(input, base);
+    return (short) atoi(input, nil<char**>, base);
 }
 
 // Converts a string to a long
 public f<long> toLong(string input, int base = 10) {
-    char* endPtr = nil<char*>;
-    result = strtol(input, &endPtr, base);
-    // Check if the conversion was successful
-    if (((string) endPtr) == input || *endPtr != '\0') { return 0l; }
+    return strtol(input, nil<char**>, base);
 }
 
 // Converts a string to a byte
 public f<byte> toByte(string input, int base = 10) {
-    return (byte) ((int) toLong(input, base));
+    return (byte) atoi(input, nil<char**>, base);
 }
 
 // Converts a string to a char

@@ -2,6 +2,8 @@ public const int SIZE = 64;
 public const double MIN_VALUE = -1.7976931348623157e+308;
 public const double MAX_VALUE = 1.7976931348623157e+308;
 
+ext f<unsigned int> snprintf(char*, unsigned long, string, double);
+
 // Converts a double to an int
 public f<int> toInt(double input) {
     return (int) input;
@@ -18,9 +20,10 @@ public f<long> toLong(double input) {
 }
 
 // Converts a double to a string
-public f<string> toString(double input) {
-    // ToDo: Implement
-    return "";
+public f<String> toString(double input) {
+    const unsigned int length = snprintf(nil<char*>, 0l, "%f", input);
+    result = String(length); // Assuming this length is enough
+    snprintf((char*) result.getRaw(), length + 1l, "%f", input);
 }
 
 // Converts a double to a boolean

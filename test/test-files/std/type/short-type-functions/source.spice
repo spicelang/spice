@@ -22,9 +22,8 @@ f<int> main() {
     assert asChar == 'B';
 
     // toString()
-    //string asString = toString(15);
-    //assert asString == "15";
-    //printf("Str: %s\n", asString);
+    String asString = toString(15s);
+    assert asString.getRaw() == "15";
 
     // toBool()
     bool asBool1 = toBool(1s);

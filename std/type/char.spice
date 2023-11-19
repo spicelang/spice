@@ -28,8 +28,9 @@ public f<byte> toByte(char input) {
 }
 
 // Converts a char to a string
-public f<string> toString(char input) {
-    return "0";
+public f<String> toString(char input) {
+    result = String();
+    result += input;
 }
 
 // Converts a char to a bool

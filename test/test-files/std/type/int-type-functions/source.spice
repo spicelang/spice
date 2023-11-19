@@ -22,9 +22,8 @@ f<int> main() {
     assert asChar == 'B';
 
     // toString()
-    //string asString = toString(12345);
-    //assert asString == "12345";
-    //printf("Str: %s\n", asString);
+    String asString = toString(12345);
+    assert asString.getRaw() == "12345";
 
     // toBool()
     bool asBool1 = toBool(1);

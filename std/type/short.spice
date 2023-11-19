@@ -2,6 +2,9 @@ public const int SIZE = 16;
 public const short MIN_VALUE = -32768s;
 public const short MAX_VALUE = 32767s;
 
+// External functions
+ext f<unsigned int> snprintf(char*, unsigned long, string, short);
+
 // Converts a short to a double
 public f<double> toDouble(short input) {
     return 0.0 + input;
@@ -28,12 +31,13 @@ public f<char> toChar(short input) {
 }
 
 // Converts a short to a string
-public f<string> toString(short input) {
-    // ToDo: Implement (See https://github.com/golang/go/blob/master/src/strconv/itoa.go)
-    return "";
+public f<String> toString(short input) {
+    const unsigned int length = snprintf(nil<char*>, 0l, "%hd", input);
+    result = String(length);
+    snprintf((char*) result.getRaw(), length + 1l, "%hd", input);
 }
 
-// Converts a v to a boolean
+// Converts a short to a boolean
 public f<bool> toBool(short input) {
     return input >= 1;
 }

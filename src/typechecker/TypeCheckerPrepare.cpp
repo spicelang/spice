@@ -569,8 +569,9 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
   assert(node->entry != nullptr && node->aliasedTypeContainerEntry != nullptr);
 
   // Update type of alias entry
-  const SymbolType symbolType(TY_ALIAS, node->dataTypeString);
-  node->entry->updateType(symbolType, false);
+  SymbolType aliasType(TY_ALIAS, node->dataTypeString);
+  aliasType.specifiers = node->aliasSpecifiers;
+  node->entry->updateType(aliasType, false);
 
   // Update type of the aliased type container entry
   auto aliasedType = std::any_cast<SymbolType>(visit(node->dataType()));

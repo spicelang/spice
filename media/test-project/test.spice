@@ -1,6 +1,8 @@
-import "../../src-bootstrap/lexer/Reader.spice";
+//import "../../src-bootstrap/reader/reader";
+import "std/type/int";
 
 f<int> main() {
-    Reader reader = Reader("./test.spice");
-
+    //Reader reader = Reader("./test.spice");
+    String str = toString(123);
+    printf("%s", str);
 }

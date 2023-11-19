@@ -1,3 +1,6 @@
+import "std/type/result";
+import "std/type/error";
+
 // File open modes
 public const string MODE_READ                 = "r";
 public const string MODE_WRITE                = "w";
@@ -20,9 +23,7 @@ const int SEEK_SET = 0;
 const int SEEK_CUR = 1;
 const int SEEK_END = 2;
 
-public type FilePtr struct {
-    byte* ptr
-}
+public type FilePtr alias byte*;
 
 public type File struct {
     FilePtr* filePtr
@@ -57,11 +58,9 @@ public f<int> createFile(string path) {
  *
  * @return File pointer
  */
-public f<File> openFile(string path, string mode) {
+public f<Result<File>> openFile(string path, string mode) {
     FilePtr* fp = fopen(path, mode);
-    // Insert check for pointer being 0 and throw an exception
-    File openedFile = File { fp };
-    return openedFile;
+    return fp != nil<FilePtr*> ? ok(fp) : err(fp, Error("Failed to open file '" + path + "'"));
 }
 
 /**

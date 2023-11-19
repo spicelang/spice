@@ -1,10 +1,12 @@
 // Imports
 import "std/io/filepath";
 import "std/io/file";
+import "std/type/result";
 import "../reader/code-loc";
 
 public type Reader struct {
-    FileInputStream file
+    File file
+    string filename
     char curChar = '\0'
     bool moreToRead = true
     unsigned long line = 1l
@@ -12,7 +14,9 @@ public type Reader struct {
 }
 
 public p Reader.ctor(const string inputFileName) {
-    this.file = openFile(inputFileName, MODE_READ);
+    this.filename = inputFileName;
+    Result<File> result = openFile(inputFileName, MODE_READ);
+    this.file = result.unwrap();
     if !file.isOpen() {
 
     }
@@ -37,7 +41,7 @@ public f<char> Reader.getChar() {
  * @return CodeLoc Code location
  */
 public f<CodeLoc> Reader.getCodeLoc() {
-    return CodeLoc(this.cursorPos, this.line, this.col);
+    return CodeLoc(this.line, this.col, this.filename);
 }
 
 /**
