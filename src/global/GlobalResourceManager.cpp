@@ -57,6 +57,11 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
     ltoModule = std::make_unique<llvm::Module>(LTO_FILE_NAME, context);
 }
 
+GlobalResourceManager::~GlobalResourceManager() {
+  // Cleanup all global LLVM resources
+  llvm::llvm_shutdown();
+}
+
 SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const std::string &dependencyName,
                                                     const std::filesystem::path &path, bool isStdFile) {
   // Check if the source file was already added (e.g. by another source file that imports it)

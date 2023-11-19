@@ -203,7 +203,8 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
   createDefaultStructMethod(spiceStruct, DTOR_FUNCTION_NAME, {});
 
   // Request memory runtime if we have fields, that are allocated on the heap
-  if (hasHeapFields) {
+  // The string runtime does not use it, but allocates manually to avoid circular dependencies
+  if (hasHeapFields && !sourceFile->isStringRT()) {
     SourceFile *memoryRT = sourceFile->requestRuntimeModule(MEMORY_RT);
     assert(memoryRT != nullptr);
     Scope *matchScope = memoryRT->globalScope.get();

@@ -1,0 +1,18 @@
+type A struct {}
+
+p A.foo() {
+    printf("A.foo\n");
+}
+
+type B struct {
+    A a
+}
+
+p B.callFooOnA() {
+    a.foo();
+}
+
+f<int> main() {
+    B b;
+    b.callFooOnA();
+}

@@ -1502,8 +1502,14 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Retrieve entry of the first fragment
-  SymbolTableEntry *firstFragEntry = currentScope->lookup(node->functionNameFragments.front());
+  const std::string &firstFrag = node->functionNameFragments.front();
+  SymbolTableEntry *firstFragEntry = currentScope->lookup(firstFrag);
   if (firstFragEntry) {
+    // Check if we have seen a 'this.' prefix, because the generator needs that
+    if (firstFragEntry->scope->type == ScopeType::STRUCT && firstFrag != THIS_VARIABLE_NAME)
+      SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE,
+                    "The symbol '" + firstFrag + "' could not be found. Missing 'this.' prefix?")
+
     firstFragEntry->used = true;
     // Decide of which type the function call is
     const SymbolType &baseType = firstFragEntry->getType().getBaseType();
@@ -2232,6 +2238,11 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     SymbolType symbolType = *genericType;
     if (typeMapping.contains(firstFragment))
       symbolType = typeMapping.at(firstFragment);
+
+    // Check if the replacement is a String type
+    if (!isImported && symbolType.isStringObj() && !sourceFile->isStringRT())
+      sourceFile->requestRuntimeModule(STRING_RT);
+
     return node->setEvaluatedSymbolType(symbolType, manIdx);
   }
 

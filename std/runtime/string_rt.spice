@@ -1,6 +1,13 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
-import "std/type/result";
+import "std/type/error";
+
+// Link external functions
+// We intentionally do not use the memory_rt here to avoid dependency circles
+ext f<heap char*> malloc(unsigned long);
+ext f<heap char*> realloc(heap char*, unsigned long);
+ext p free(heap char*);
+ext p memcpy(heap char*, heap char*, unsigned long);
 
 // Constants
 const unsigned long INITIAL_ALLOC_COUNT = 5l;
@@ -30,8 +37,8 @@ public p String.ctor(const string value = "") {
     // Allocate space for the initial number of elements
     unsafe {
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        Result<heap byte*> allocResult = sAlloc(requiredBytes);
-        this.contents = (heap char*) allocResult.unwrap();
+        this.contents = malloc(requiredBytes);
+        this.checkForOOM();
     }
 
     // Save initial value
@@ -49,8 +56,8 @@ public p String.ctor(const char value) {
     // Allocate space for the initial number of elements
     unsafe {
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        Result<heap byte*> allocResult = sAlloc(requiredBytes);
-        this.contents = (heap char*) allocResult.unwrap();
+        this.contents = malloc(requiredBytes);
+        this.checkForOOM();
     }
 
     // Save initial value
@@ -67,13 +74,13 @@ public p String.ctor(const String& value) {
     // Allocate space
     unsafe {
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        Result<heap byte*> allocResult = sAlloc(requiredBytes);
-        this.contents = (heap char*) allocResult.unwrap();
+        this.contents = malloc(requiredBytes);
+        this.checkForOOM();
     }
 
     // Copy the contents from the other string
     unsafe {
-        sCopy((heap byte*) value.contents, (heap byte*) this.contents, value.length + 1l); // +1 because of null terminator
+        memcpy(this.contents, value.contents, value.length + 1l); // +1 because of null terminator
     }
 }
 
@@ -84,8 +91,8 @@ public p String.ctor<IntLong>(IntLong initialSize) {
     // Allocate space for the initial number of elements
     unsafe {
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
-        Result<heap byte*> allocResult = sAlloc(requiredBytes);
-        this.contents = (heap char*) allocResult.unwrap();
+        this.contents = malloc(requiredBytes);
+        this.checkForOOM();
     }
 
     // Save initial value
@@ -460,11 +467,11 @@ public f<bool> String.replace(
         if needleLength != replacementLength {
             const heap char* oldSuffixAddr = startAddr + needleLength;
             const heap char* newSuffixAddr = startAddr + replacementLength;
-            sCopy((heap byte*) oldSuffixAddr, (heap byte*) newSuffixAddr, suffixLength + 1); // +1 because of null terminator
+            memcpy(newSuffixAddr, oldSuffixAddr, suffixLength + 1); // +1 because of null terminator
         }
 
         // Replace needle with replacement
-        sCopy((heap byte*) replacement, (heap byte*) startAddr, replacementLength);
+        memcpy(startAddr, (char*) replacement, replacementLength);
     }
 
     // Update length
@@ -560,11 +567,17 @@ p String.resize(unsigned long newLength) {
     unsafe {
         heap char* oldAddress = this.contents;
         unsigned long requiredBytes = newLength + 1l; // +1 because of null terminator
-        Result<heap byte*> allocResult = sRealloc((heap byte*) oldAddress, requiredBytes);
-        this.contents = (heap char*) allocResult.unwrap();
+        this.contents = realloc(oldAddress, requiredBytes);
+        this.checkForOOM();
     }
     // Set new capacity
     this.capacity = newLength;
+}
+
+p String.checkForOOM() {
+    if this.contents == nil<heap byte*> {
+        panic(Error("Could not allocate memory for dynamic string object"));
+    }
 }
 
 // ======================================================= Static functions ======================================================

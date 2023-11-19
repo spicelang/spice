@@ -23,7 +23,7 @@ const int SEEK_SET = 0;
 const int SEEK_CUR = 1;
 const int SEEK_END = 2;
 
-public type FilePtr alias byte*;
+type FilePtr alias byte*;
 
 public type File struct {
     FilePtr* filePtr
@@ -60,7 +60,8 @@ public f<int> createFile(string path) {
  */
 public f<Result<File>> openFile(string path, string mode) {
     FilePtr* fp = fopen(path, mode);
-    return fp != nil<FilePtr*> ? ok(fp) : err(fp, Error("Failed to open file '" + path + "'"));
+    File file = File{fp};
+    return fp != nil<FilePtr*> ? ok(file) : err(file, Error("Failed to open file"));
 }
 
 /**
@@ -117,13 +118,27 @@ public f<long> File.getSize() {
 }
 
 /**
+ * Checks if the end of the file is reached.
+ *
+ * @return EOF reached / not reached
+ */
+public f<bool> File.isEOF() {
+    return this.readChar() == EOF;
+}
+
+/**
  * Reads a whole file from a given path.
  *
  * @return Content in form of a string
  */
-public f<String> readFile(string path) {
+public f<Result<String>> readFile(string path) {
     // Open the file in read mode
-    File file = openFile(path, MODE_READ);
+    Result<File> fileResult = openFile(path, MODE_READ);
+    // Check for errors
+    if !fileResult.isOk() {
+        return err(String(), fileResult.getErr());
+    }
+    File file = fileResult.unwrap();
     // Read from the file char by char
     int buffer;
     String output = String();
@@ -132,7 +147,7 @@ public f<String> readFile(string path) {
     }
     // Close the file
     file.close();
-    return output;
+    return ok(output);
 }
 
 /**
@@ -140,14 +155,19 @@ public f<String> readFile(string path) {
  *
  * @return Result code of the write operation: 0 = successful, -1 = failed
  */
-public f<int> writeFile(string path, string content) {
+public f<Result<int>> writeFile(string path, string content) {
     // Open the file in write mode
-    File file = openFile(path, MODE_WRITE);
+    Result<File> fileResult = openFile(path, MODE_WRITE);
+    // Check for errors
+    if !fileResult.isOk() {
+        return err(0, fileResult.getErr());
+    }
+    File file = fileResult.unwrap();
     // Write the string to the file
     int resultCode = file.writeString(content);
     // Close the file
     file.close();
-    return resultCode;
+    return ok(resultCode);
 }
 
 /**
@@ -155,14 +175,19 @@ public f<int> writeFile(string path, string content) {
  *
  * @return File size in bytes
  */
-public f<long> getFileSize(string path) {
+public f<Result<long>> getFileSize(string path) {
     // Open the file in read mode
-    File file = openFile(path, MODE_READ);
-    // Get the file size
+    Result<File> fileResult = openFile(path, MODE_READ);
+    // Check for errors
+    if !fileResult.isOk() {
+        return err(0l, fileResult.getErr());
+    }
+    File file = fileResult.unwrap();
+    // Get the file file
     long size = file.getSize();
     // Close the file
     file.close();
-    return size;
+    return ok(size);
 }
 
 /**

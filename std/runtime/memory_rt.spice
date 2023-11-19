@@ -40,6 +40,9 @@ public f<Result<heap byte*>> sRealloc(heap byte* ptr, unsigned long size) {
   * @return A pointer to the copied block, or an error if the copy failed.
   */
 public f<Result<heap byte*>> sCopy(heap byte* oldPtr, heap byte* newPtr, unsigned long size) {
+    if oldPtr == nil<heap byte*> | newPtr == nil<heap byte*> {
+        return err(nil<heap byte*>, "Cannot copy from or to nil pointer!");
+    }
     memcpy(newPtr, oldPtr, size);
     return ok(newPtr);
 }
@@ -51,6 +54,7 @@ public f<Result<heap byte*>> sCopy(heap byte* oldPtr, heap byte* newPtr, unsigne
   * @param ptr The pointer to the block to free.
   */
 public p sDealloc(heap byte*& ptr) {
+    if ptr == nil<heap byte*> { return; }
     free(ptr);
     ptr = nil<heap byte*>; // Zero out to prevent accidental double frees
 }

@@ -1,9 +1,16 @@
-public type Driveable interface {
-    public p drive(int);
-    public f<bool> isDriving();
+import "std/type/result";
+import "std/type/error";
+
+type FilePtr alias byte*;
+public type File struct {
+    FilePtr* filePtr
 }
 
-#[test]
-f<bool> testDriveable() {
-    return true;
+// Link external functions
+ext f<FilePtr*> fopen(string, string);
+
+public f<Result<File>> openFile(string path, string mode) {
+    FilePtr* fp = fopen(path, mode);
+    File file = File{fp};
+    return fp != nil<FilePtr*> ? ok(file) : err(file, Error("Failed to open file"));
 }

@@ -1,14 +1,16 @@
-// Imports
+// Std imports
 import "std/io/filepath";
 import "std/io/file";
 import "std/type/result";
+import "std/type/error";
+
+// Own import
 import "../reader/code-loc";
 
 public type Reader struct {
     File file
     string filename
     char curChar = '\0'
-    bool moreToRead = true
     unsigned long line = 1l
     unsigned long col = 0l
 }
@@ -16,14 +18,14 @@ public type Reader struct {
 public p Reader.ctor(const string inputFileName) {
     this.filename = inputFileName;
     Result<File> result = openFile(inputFileName, MODE_READ);
-    this.file = result.unwrap();
-    if !file.isOpen() {
-
+    if !result.isOk() {
+        panic(Error("Source file cannot be opened"));
     }
+    this.file = result.unwrap();
 }
 
 public p Reader.dtor() {
-    file.close();
+    this.file.close();
 }
 
 /**
@@ -49,9 +51,7 @@ public f<CodeLoc> Reader.getCodeLoc() {
  */
 public p Reader.advance() {
     assert !this.isEOF();
-    if !this.file.get(this.curChar) {
-        this.moreToRead = false;
-    }
+    this.curChar = (char) this.file.readChar();
     if this.curChar == '\n' {
         this.line++;
         this.col = 0l;
@@ -76,5 +76,5 @@ public p Reader.expect(char c) {
  * @return At the end or not
  */
 public f<bool> Reader.isEOF() {
-    return !this.moreToRead;
+    return this.file.isEOF();
 }

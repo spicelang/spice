@@ -31,6 +31,20 @@ public inline f<T> Result.unwrap() {
 }
 
 /**
+ * Return the enclosed error object.
+ */
+public inline f<Error> Result.getErr() {
+    return this.error;
+}
+
+/**
+ * Checks if the result contains any data.
+ */
+public inline f<bool> Result.isOk() {
+    return this.error.code == 0;
+}
+
+/**
  * Returns a result object with a value and no error.
  */
 public inline f<Result<T>> ok<T>(const T& data) {
