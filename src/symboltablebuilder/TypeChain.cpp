@@ -78,16 +78,18 @@ std::string SymbolType::TypeChainElement::getName(bool withSize) const {
     return "bool";
   case TY_STRUCT: // fall-through
   case TY_INTERFACE: {
-    std::string templateStr;
+    std::stringstream name;
+    name << subType;
     if (!templateTypes.empty()) {
-      for (const auto &templateType : templateTypes) {
-        if (!templateStr.empty())
-          templateStr += ",";
-        templateStr += templateType.getName();
+      name << "<";
+      for (size_t i = 0; i < templateTypes.size(); i++) {
+        if (i > 0)
+          name << ",";
+        name << templateTypes.at(i).getName();
       }
-      templateStr = "<" + templateStr + ">";
+      name << ">";
     }
-    return subType + templateStr;
+    return name.str();
   }
   case TY_ENUM:
     return "enum";
@@ -131,6 +133,15 @@ std::string SymbolType::TypeChainElement::getName(bool withSize) const {
   default:
     throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element");
   }
+}
+
+/**
+ * Get the original sub type, without any namespace information
+ *
+ * @return last fragment of sub type
+ */
+std::string SymbolType::TypeChainElement::getOriginalSubType() const {
+  return CommonUtil::getLastFragment(subType, SCOPE_ACCESS_TOKEN);
 }
 
 } // namespace spice::compiler

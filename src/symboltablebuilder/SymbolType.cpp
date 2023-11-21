@@ -3,6 +3,7 @@
 #include "SymbolType.h"
 
 #include <SourceFile.h>
+#include <ast/Attributes.h>
 #include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
 #include <irgenerator/NameMangling.h>
@@ -181,20 +182,33 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
 
       // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
+      bool isPacked = false;
       if (is(TY_STRUCT)) { // Struct
         const size_t totalFieldCount = spiceStruct->scope->getFieldCount();
         fieldTypes.reserve(totalFieldCount);
+
+        // If the struct has no interface types, but a vtable was requested, add another ptr field type
+        assert(structSymbol->declNode->isStructDef());
+        auto structDeclNode = spice_pointer_cast<StructDefNode *>(structSymbol->declNode);
+        if (!structDeclNode->hasInterfaces && structDeclNode->emitVTable)
+          fieldTypes.push_back(llvm::PointerType::get(context, 0));
+
+        // Collect all field types
         for (size_t i = 0; i < totalFieldCount; i++) {
           const SymbolTableEntry *fieldSymbol = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
           assert(fieldSymbol != nullptr);
           fieldTypes.push_back(fieldSymbol->getType().toLLVMType(context, accessScope));
         }
+
+        // Check if the struct is declared as packed
+        if (structDeclNode->attrs() && structDeclNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_PACKED))
+          isPacked = structDeclNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
       } else { // Interface
         fieldTypes.push_back(llvm::PointerType::get(context, 0));
       }
 
       // Set field types to struct type
-      structType->setBody(fieldTypes);
+      structType->setBody(fieldTypes, isPacked);
     }
 
     return structType;
@@ -381,14 +395,15 @@ bool SymbolType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTyp
  * Get the name of the symbol type as a string
  *
  * @param withSize Include the array size for sized types
+ * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
-std::string SymbolType::getName(bool withSize) const { // NOLINT(misc-no-recursion)
+std::string SymbolType::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
   std::stringstream name;
 
   // Append the specifiers
   const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
-  if (specifiers.isPublic && !defaultForSuperType.isPublic)
+  if (!ignorePublic && specifiers.isPublic && !defaultForSuperType.isPublic)
     name << "public ";
   if (specifiers.isInline && !defaultForSuperType.isInline)
     name << "inline ";

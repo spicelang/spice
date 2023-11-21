@@ -479,45 +479,9 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     currentScope = spiceStruct->scope;
     assert(currentScope);
 
-    // Create struct definition
-    const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
-    llvm::StructType *structType = llvm::StructType::create(context, mangledName);
-
     // Set LLVM type to the struct entry
     SymbolTableEntry *structEntry = spiceStruct->entry;
     assert(structEntry != nullptr);
-    structEntry->setStructLLVMType(structType);
-    std::vector<llvm::Type *> fieldTypes;
-    fieldTypes.reserve(node->fields().size());
-
-    // Collect interface types
-    if (const TypeLstNode *typeLst = node->interfaceTypeLst()) {
-      for (const DataTypeNode *interfaceTypeNode : typeLst->dataTypes()) {
-        const SymbolType symbolType = interfaceTypeNode->getEvaluatedSymbolType(manIdx);
-        assert(symbolType.is(TY_INTERFACE));
-        const Interface *interface = symbolType.getInterface(interfaceTypeNode);
-        assert(interface != nullptr);
-        llvm::StructType *interfaceType = interface->entry->getStructLLVMType();
-        assert(interfaceType != nullptr);
-        fieldTypes.push_back(interfaceType);
-      }
-    } else if (node->emitVTable) {
-      // If no interface was specified, we still need to add a pointer to the VTable
-      fieldTypes.push_back(builder.getPtrTy());
-    }
-
-    // Collect concrete field types
-    for (const FieldNode *field : node->fields()) {
-      SymbolTableEntry *fieldEntry = currentScope->lookupStrict(field->fieldName);
-      assert(fieldEntry && !fieldEntry->getType().hasAnyGenericParts());
-      fieldTypes.push_back(fieldEntry->getType().toLLVMType(context, currentScope));
-    }
-
-    // Set field types to struct type
-    bool isPacked = false;
-    if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_PACKED))
-      isPacked = node->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
-    structType->setBody(fieldTypes, isPacked);
 
     // Generate VTable if required
     if (node->emitVTable) {
@@ -566,15 +530,6 @@ std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
     // Do not generate this interface if it is private and used by nobody
     if (!spiceInterface->used && !spiceInterface->entry->getType().isPublic())
       continue;
-
-    // Generate empty struct
-    const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
-    llvm::StructType *structType = llvm::StructType::create(context, mangledName);
-    structType->setBody(builder.getPtrTy());
-
-    // Set LLVM type to the interface entry
-    node->entry->setStructLLVMType(structType);
-    spiceInterface->entry->setStructLLVMType(structType);
 
     // Generate VTable information
     generateVTable(spiceInterface);

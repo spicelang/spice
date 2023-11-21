@@ -6,7 +6,6 @@ import "std/type/error";
 // We intentionally do not use the memory_rt here to avoid dependency circles
 ext f<heap char*> malloc(unsigned long);
 ext f<heap char*> realloc(heap char*, unsigned long);
-ext p free(heap char*);
 ext p memcpy(heap char*, heap char*, unsigned long);
 
 // Constants

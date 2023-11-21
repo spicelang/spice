@@ -161,6 +161,7 @@ public:
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
   [[nodiscard]] virtual bool isStmtNode() const { return false; }
+  [[nodiscard]] virtual bool isParamNode() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
 
   // Public members
@@ -918,6 +919,7 @@ public:
 
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount, nullptr); }
+  [[nodiscard]] bool isParamNode() const override { return isParam; }
 
   // Public members
   std::string varName;

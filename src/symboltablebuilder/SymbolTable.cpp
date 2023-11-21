@@ -28,7 +28,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
   entry->updateState(DECLARED, declNode);
 
   // Check if shadowed
-  if (parent != nullptr && parent->lookup(name) != nullptr) {
+  if (parent != nullptr && parent->lookup(name) != nullptr && !declNode->isParamNode()) {
     CompilerWarning warning(declNode->codeLoc, SHADOWED_VARIABLE, "Variable '" + name + "' shadows a variable in a parent scope");
     scope->sourceFile->compilerOutput.warnings.push_back(warning);
   }

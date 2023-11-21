@@ -19,6 +19,16 @@ llvm::Function *StdFunctionManager::getPrintfFct() const {
   return printfFct;
 }
 
+llvm::Function *StdFunctionManager::getFreeFctPtr() const {
+  llvm::Function *freeFct = getProcedure("free", builder.getPtrTy());
+  // Set attributes
+  freeFct->addFnAttr(llvm::Attribute::NoUnwind);
+  freeFct->addParamAttr(0, llvm::Attribute::NoCapture);
+  freeFct->addParamAttr(0, llvm::Attribute::NoUndef);
+  freeFct->addParamAttr(0, llvm::Attribute::ReadOnly);
+  return freeFct;
+}
+
 llvm::Function *StdFunctionManager::getExitFct() const {
   llvm::Function *exitFct = getProcedure("exit", builder.getInt32Ty());
   // Set attributes

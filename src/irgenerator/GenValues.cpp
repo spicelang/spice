@@ -431,7 +431,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
         captureType = capture.second.capturedEntry->getType().toLLVMType(context, currentScope);
       captureTypes.push_back(captureType);
     }
-    capturesStructType = llvm::StructType::create(context, captureTypes, getUnusedGlobalName(ANON_GLOBAL_CAPTURES_ARRAY_NAME));
+    capturesStructType = llvm::StructType::get(context, captureTypes);
     // Add the captures struct as first parameter
     paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
     paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
@@ -602,7 +602,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
         captureType = capture.second.capturedEntry->getType().toLLVMType(context, currentScope);
       captureTypes.push_back(captureType);
     }
-    capturesStructType = llvm::StructType::create(context, captureTypes, getUnusedGlobalName(ANON_GLOBAL_CAPTURES_ARRAY_NAME));
+    capturesStructType = llvm::StructType::get(context, captureTypes);
     // Add the captures struct as first parameter
     paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
     paramTypes.push_back(builder.getPtrTy()); // The captures struct is always passed as pointer
@@ -760,7 +760,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
         captureType = capture.second.capturedEntry->getType().toLLVMType(context, currentScope);
       captureTypes.push_back(captureType);
     }
-    capturesStructType = llvm::StructType::create(context, captureTypes, getUnusedGlobalName(ANON_GLOBAL_CAPTURES_ARRAY_NAME));
+    capturesStructType = llvm::StructType::get(context, captureTypes);
     // Add the captures struct as first parameter
     paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
     paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
