@@ -3,9 +3,9 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%struct.NumberIterator = type { %interface.Iterable.1, i16, i16, i16 }
-%interface.Iterable.1 = type { ptr }
-%struct.NumberIterator.2 = type { %interface.Iterable.1, i64, i64, i64 }
+%struct.NumberIterator = type { %interface.Iterable, i16, i16, i16 }
+%interface.Iterable = type { ptr }
+%struct.NumberIterator.1 = type { %interface.Iterable, i64, i64, i64 }
 
 @printf.str.0 = private unnamed_addr constant [10 x i8] c"Short %d\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [9 x i8] c"Long %d\0A\00", align 1
@@ -14,7 +14,7 @@ target triple = "x86_64-w64-windows-gnu"
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() local_unnamed_addr #0 {
   %shortIterator = alloca %struct.NumberIterator, align 8
-  %1 = alloca %struct.NumberIterator.2, align 8
+  %1 = alloca %struct.NumberIterator.1, align 8
   %2 = tail call %struct.NumberIterator @_Z5rangess(i16 3, i16 8) #2
   %.fca.0.0.extract2 = extractvalue %struct.NumberIterator %2, 0, 0
   store ptr %.fca.0.0.extract2, ptr %shortIterator, align 8
@@ -31,9 +31,9 @@ define dso_local i32 @main() local_unnamed_addr #0 {
   br i1 %3, label %foreach.body.L5.lr.ph, label %foreach.exit.L5
 
 foreach.body.L5.lr.ph:                            ; preds = %0
-  %.fca.1.gep = getelementptr inbounds %struct.NumberIterator.2, ptr %1, i64 0, i32 1
-  %.fca.2.gep = getelementptr inbounds %struct.NumberIterator.2, ptr %1, i64 0, i32 2
-  %.fca.3.gep = getelementptr inbounds %struct.NumberIterator.2, ptr %1, i64 0, i32 3
+  %.fca.1.gep = getelementptr inbounds %struct.NumberIterator.1, ptr %1, i64 0, i32 1
+  %.fca.2.gep = getelementptr inbounds %struct.NumberIterator.1, ptr %1, i64 0, i32 2
+  %.fca.3.gep = getelementptr inbounds %struct.NumberIterator.1, ptr %1, i64 0, i32 3
   br label %foreach.body.L5
 
 foreach.body.L5:                                  ; preds = %foreach.body.L5.lr.ph, %foreach.tail.L5
@@ -46,14 +46,14 @@ foreach.body.L5:                                  ; preds = %foreach.body.L5.lr.
   br i1 %.not, label %foreach.tail.L5, label %if.then.L7
 
 if.then.L7:                                       ; preds = %foreach.body.L5
-  %9 = call %struct.NumberIterator.2 @_Z5rangell(i64 1, i64 2) #2
-  %.fca.0.0.extract = extractvalue %struct.NumberIterator.2 %9, 0, 0
+  %9 = call %struct.NumberIterator.1 @_Z5rangell(i64 1, i64 2) #2
+  %.fca.0.0.extract = extractvalue %struct.NumberIterator.1 %9, 0, 0
   store ptr %.fca.0.0.extract, ptr %1, align 8
-  %.fca.1.extract = extractvalue %struct.NumberIterator.2 %9, 1
+  %.fca.1.extract = extractvalue %struct.NumberIterator.1 %9, 1
   store i64 %.fca.1.extract, ptr %.fca.1.gep, align 8
-  %.fca.2.extract = extractvalue %struct.NumberIterator.2 %9, 2
+  %.fca.2.extract = extractvalue %struct.NumberIterator.1 %9, 2
   store i64 %.fca.2.extract, ptr %.fca.2.gep, align 8
-  %.fca.3.extract = extractvalue %struct.NumberIterator.2 %9, 3
+  %.fca.3.extract = extractvalue %struct.NumberIterator.1 %9, 3
   store i64 %.fca.3.extract, ptr %.fca.3.gep, align 8
   %10 = call i1 @_ZN14NumberIteratorIlE7isValidEv(ptr nonnull %1) #2
   br i1 %10, label %foreach.body.L8, label %foreach.tail.L5
@@ -83,7 +83,7 @@ declare ptr @_ZN14NumberIteratorIsE3getEv(ptr) local_unnamed_addr
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
-declare %struct.NumberIterator.2 @_Z5rangell(i64, i64) local_unnamed_addr
+declare %struct.NumberIterator.1 @_Z5rangell(i64, i64) local_unnamed_addr
 
 declare i1 @_ZN14NumberIteratorIlE7isValidEv(ptr) local_unnamed_addr
 

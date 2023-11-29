@@ -174,16 +174,16 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
 
     // If the type is not known yet, build the LLVM type
     if (!structType) {
-      Struct *spiceStruct = structSymbol->getType().getStruct(structSymbol->declNode);
-      assert(spiceStruct != nullptr);
-      const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
-      structType = llvm::StructType::create(context, mangledName);
-      structSymbol->setStructLLVMType(structType);
-
       // Collect concrete field types
       std::vector<llvm::Type *> fieldTypes;
       bool isPacked = false;
       if (is(TY_STRUCT)) { // Struct
+        Struct *spiceStruct = structSymbol->getType().getStruct(structSymbol->declNode);
+        assert(spiceStruct != nullptr);
+        const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
+        structType = llvm::StructType::create(context, mangledName);
+        structSymbol->setStructLLVMType(structType);
+
         const size_t totalFieldCount = spiceStruct->scope->getFieldCount();
         fieldTypes.reserve(totalFieldCount);
 
@@ -204,6 +204,12 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
         if (structDeclNode->attrs() && structDeclNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_PACKED))
           isPacked = structDeclNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
       } else { // Interface
+        Interface *spiceInterface = structSymbol->getType().getInterface(structSymbol->declNode);
+        assert(spiceInterface != nullptr);
+        const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
+        structType = llvm::StructType::create(context, mangledName);
+        structSymbol->setStructLLVMType(structType);
+
         fieldTypes.push_back(llvm::PointerType::get(context, 0));
       }
 
@@ -580,11 +586,8 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
       return false;
   }
 
-  // Ignore difference of specifiers
-  if (ignoreSpecifiers && !isPtr() && !isRef())
-    return true;
-
-  return specifiers.match(otherType.specifiers, allowConstify);
+  // Ignore or compare specifiers
+  return ignoreSpecifiers || specifiers.match(otherType.specifiers, allowConstify);
 }
 
 /**

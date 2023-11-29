@@ -1,35 +1,7 @@
-import "std/iterator/iterable";
-import "std/data/pair";
-
-type T short|int|long;
-
-type MockIterator<T> struct : Iterable<T> {
-    T item
-    unsigned long cursor
-}
-
-p MockIterator.ctor() {
-    this.cursor = 0l;
-}
-
-f<T&> MockIterator.get() {
-    return this.item;
-}
-
-f<Pair<unsigned long, T&>> MockIterator.getIdx() {
-    return Pair<unsigned long, T&>(0l, this.item);
-}
-
-f<bool> MockIterator.isValid() {
-    return true;
-}
-
-p MockIterator.next() {}
-
 f<int> main() {
-    foreach dyn item : MockIterator<short>() {
-        printf("Demo item: %d\n", item);
-    }
+    String s = String("This is a test. And because this is a test, it is a test.");
+    assert s.replace("test", "demo");
+    printf("%s\n", s.getRaw());
 }
 
 /*import "../../src-bootstrap/reader/reader";

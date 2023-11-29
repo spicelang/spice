@@ -1609,10 +1609,9 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, SymbolT
   case COMB(TY_STRING, TY_STRING): // fallthrough
   case COMB(TY_STRING, TY_PTR):    // fallthrough
   case COMB(TY_BOOL, TY_BOOL):     // fallthrough
-  case COMB(TY_PTR, TY_STRING):
-    return {.value = rhsV()};
+  case COMB(TY_PTR, TY_STRING):    // fallthrough
   case COMB(TY_PTR, TY_PTR):
-    return {.value = lhsSTy.getContainedTy() == rhsSTy.getContainedTy() ? rhsV() : builder.CreatePointerCast(rhsV(), lhsT)};
+    return {.value = rhsV()};
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
 }

@@ -224,7 +224,18 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
  * @param typeMapping Generic type mapping
  */
 void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping) {
-  // Loop over all field types and substantiate the generic ones
+  // Loop over all implicit fields and substantiate the generic ones
+  const size_t fieldCount = candidate.scope->getFieldCount() - candidate.fieldTypes.size();
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldEntry = candidate.scope->symbolTable.lookupStrictByIndex(i);
+    SymbolType fieldType = fieldEntry->getType();
+    if (fieldType.hasAnyGenericParts()) {
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
+      fieldEntry->updateType(fieldType, true);
+    }
+  }
+
+  // Loop over all explicit field types and substantiate the generic ones
   for (SymbolType &fieldType : candidate.fieldTypes)
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);

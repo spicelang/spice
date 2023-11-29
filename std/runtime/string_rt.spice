@@ -6,6 +6,7 @@ import "std/type/error";
 // We intentionally do not use the memory_rt here to avoid dependency circles
 ext f<heap char*> malloc(unsigned long);
 ext f<heap char*> realloc(heap char*, unsigned long);
+ext p free(heap char*);
 ext p memcpy(heap char*, heap char*, unsigned long);
 
 // Constants
@@ -33,18 +34,13 @@ public p String.ctor(const string value = "") {
     this.length = getRawLength(value);
     this.capacity = this.length > INITIAL_ALLOC_COUNT ? this.length * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
 
-    // Allocate space for the initial number of elements
     unsafe {
+        // Allocate space for the initial number of elements
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
         this.contents = malloc(requiredBytes);
         this.checkForOOM();
-    }
-
-    // Save initial value
-    unsafe {
-        for unsigned long i = 0l; i < this.length + 1l; i++ { // +1 because of null terminator
-            this.contents[i] = value[i];
-        }
+        // Save initial value
+        memcpy(this.contents, (char*) value, this.length + 1l); // +1 because of null terminator
     }
 }
 
@@ -52,15 +48,13 @@ public p String.ctor(const char value) {
     this.length = 1l;
     this.capacity = INITIAL_ALLOC_COUNT;
 
-    // Allocate space for the initial number of elements
     unsafe {
+        // Allocate space for the initial number of elements
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
         this.contents = malloc(requiredBytes);
         this.checkForOOM();
-    }
 
-    // Save initial value
-    unsafe {
+        // Save initial value
         this.contents[0] = value;
         this.contents[1] = '\0';
     }
@@ -70,15 +64,13 @@ public p String.ctor(const String& value) {
     this.length = value.length;
     this.capacity = value.capacity;
 
-    // Allocate space
     unsafe {
+        // Allocate space
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
         this.contents = malloc(requiredBytes);
         this.checkForOOM();
-    }
 
-    // Copy the contents from the other string
-    unsafe {
+        // Copy the contents from the other string
         memcpy(this.contents, value.contents, value.length + 1l); // +1 because of null terminator
     }
 }
@@ -87,16 +79,20 @@ public p String.ctor<IntLong>(IntLong initialSize) {
     this.length = (unsigned long) initialSize;
     this.capacity = initialSize > INITIAL_ALLOC_COUNT ? (unsigned long) initialSize * RESIZE_FACTOR : INITIAL_ALLOC_COUNT;
 
-    // Allocate space for the initial number of elements
     unsafe {
+        // Allocate space for the initial number of elements
         unsigned long requiredBytes = this.capacity + 1l; // +1 because of null terminator
         this.contents = malloc(requiredBytes);
         this.checkForOOM();
-    }
 
-    // Save initial value
-    unsafe {
+        // Save the initial value
         this.contents[0] = '\0';
+    }
+}
+
+public p String.dtor() {
+    unsafe {
+        free(this.contents);
     }
 }
 
@@ -466,7 +462,7 @@ public f<bool> String.replace(
         if needleLength != replacementLength {
             const heap char* oldSuffixAddr = startAddr + needleLength;
             const heap char* newSuffixAddr = startAddr + replacementLength;
-            memcpy(newSuffixAddr, oldSuffixAddr, suffixLength + 1); // +1 because of null terminator
+            memcpy(newSuffixAddr, oldSuffixAddr, suffixLength + 1l); // +1 because of null terminator
         }
 
         // Replace needle with replacement
@@ -575,7 +571,7 @@ p String.resize(unsigned long newLength) {
 
 p String.checkForOOM() {
     if this.contents == nil<heap byte*> {
-        panic(Error("Could not allocate memory for dynamic string object"));
+        panic(Error("Could not allocate enough memory for dynamic string object"));
     }
 }
 
