@@ -325,7 +325,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     llvm::Type *structType = spiceStruct->entry->getType().toLLVMType(irGenerator->context, irGenerator->currentScope);
     assert(structType != nullptr);
     const llvm::StructLayout *structLayout =
-        irGenerator->module->getDataLayout().getStructLayout(static_cast<llvm::StructType *>(structType));
+        irGenerator->module->getDataLayout().getStructLayout(reinterpret_cast<llvm::StructType *>(structType));
     const uint32_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value();
 
     // Create struct type

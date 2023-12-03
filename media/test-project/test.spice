@@ -1,11 +1,5 @@
-f<int> main() {
-    String s = String("This is a test. And because this is a test, it is a test.");
-    assert s.replace("test", "demo");
-    printf("%s\n", s.getRaw());
-}
-
-/*import "../../src-bootstrap/reader/reader";
+import "../../src-bootstrap/reader/reader";
 
 f<int> main() {
     Reader reader = Reader("./test.spice");
-}*/
+}
