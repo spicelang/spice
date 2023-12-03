@@ -1,12 +1,12 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "ASTBuilder.h"
-#include "Attributes.h"
 
 #include <regex>
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <ast/Attributes.h>
 #include <exception/ParserError.h>
 #include <typechecker/OpRuleManager.h>
 #include <util/CommonUtil.h>
