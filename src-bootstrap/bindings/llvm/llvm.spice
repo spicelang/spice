@@ -1,7 +1,10 @@
-import "std/data/vector";
-import "linker-flags";
-
 #![core.compiler.warnings.ignore]
+
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "linker-flags";
 
 // ===== External type definitions =====
 type VoidPtr alias byte*;

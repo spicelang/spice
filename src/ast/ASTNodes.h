@@ -161,6 +161,7 @@ public:
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
   [[nodiscard]] virtual bool isStmtNode() const { return false; }
+  [[nodiscard]] virtual bool isParamNode() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
 
   // Public members
@@ -446,12 +447,14 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAliasDef(this); }
 
   // Public get methods
+  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
 
   // Public members
   std::string aliasName;
   std::string dataTypeString;
   SymbolTableEntry *entry = nullptr;
+  TypeSpecifiers aliasSpecifiers = TypeSpecifiers::of(TY_ALIAS);
   SymbolTableEntry *aliasedTypeContainerEntry = nullptr;
 };
 
@@ -916,6 +919,7 @@ public:
 
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount, nullptr); }
+  [[nodiscard]] bool isParamNode() const override { return isParam; }
 
   // Public members
   std::string varName;

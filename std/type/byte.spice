@@ -2,6 +2,9 @@ public const int SIZE = 8;
 public const int MIN_VALUE = 0;
 public const int MAX_VALUE = 255;
 
+// External functions
+ext f<unsigned int> snprintf(char*, unsigned long, string, byte);
+
 // Converts a byte to a double
 public f<double> toDouble(byte input) {
     return 0.0 + ((int) input);
@@ -28,9 +31,10 @@ public f<char> toChar(byte input) {
 }
 
 // Converts a byte to a string
-public f<string> toString(byte input) {
-    // ToDo: Impmenet
-    return "0";
+public f<String> toString(byte input) {
+    const unsigned int length = snprintf(nil<char*>, 0l, "%hhu", input);
+    result = String(length);
+    snprintf((char*) result.getRaw(), length + 1l, "%hhu", input);
 }
 
 // Converts a byte to a bool

@@ -495,10 +495,18 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
   if (lhsSTy.isPtr() && rhsSTy.isPtr())
     return {.value = builder.CreateICmpEQ(lhsV(), rhsV())};
 
-  // Check if one value is of type pointer and one is of type int
+  // Check if lhs is of type pointer and rhs is of type int
   if (lhsT->isPointerTy() && rhsT->isIntegerTy(32)) {
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV(), rhsT);
     return {.value = builder.CreateICmpEQ(lhsInt, rhsV())};
+  }
+
+  // Check if one value is a string and the other one is a char*
+  if ((lhsSTy.is(TY_STRING) && rhsSTy.isPtrOf(TY_CHAR)) || (lhsSTy.isPtrOf(TY_CHAR) && rhsSTy.is(TY_STRING))) {
+    // Generate call to the function isRawEqual(string, string) of the string std
+    llvm::Function *opFct = stdFunctionManager.getStringIsRawEqualStringStringFct();
+    llvm::Value *result = builder.CreateCall(opFct, {lhsV(), rhsV()});
+    return {.value = result};
   }
 
   // Check for primitive type combinations
@@ -620,10 +628,19 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
   if (lhsSTy.isPtr() && rhsSTy.isPtr())
     return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
 
-  // Check if one value is of type pointer and one is of type int
+  // Check if lhs is of type pointer and rhs is of type int
   if (lhsT->isPointerTy() && rhsT->isIntegerTy(32)) {
     llvm::Value *lhsInt = builder.CreatePtrToInt(lhsV(), rhsT);
     return {.value = builder.CreateICmpNE(lhsInt, rhsV())};
+  }
+
+  // Check if one value is a string and the other one is a char*
+  if ((lhsSTy.is(TY_STRING) && rhsSTy.isPtrOf(TY_CHAR)) || (lhsSTy.isPtrOf(TY_CHAR) && rhsSTy.is(TY_STRING))) {
+    // Generate call to the function isRawEqual(string, string) of the string std
+    llvm::Function *opFct = stdFunctionManager.getStringIsRawEqualStringStringFct();
+    llvm::Value *result = builder.CreateCall(opFct, {lhsV(), rhsV()});
+    // Negate the result
+    return {.value = builder.CreateNot(result)};
   }
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
@@ -1592,10 +1609,9 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, SymbolT
   case COMB(TY_STRING, TY_STRING): // fallthrough
   case COMB(TY_STRING, TY_PTR):    // fallthrough
   case COMB(TY_BOOL, TY_BOOL):     // fallthrough
-  case COMB(TY_PTR, TY_STRING):
-    return {.value = rhsV()};
+  case COMB(TY_PTR, TY_STRING):    // fallthrough
   case COMB(TY_PTR, TY_PTR):
-    return {.value = lhsSTy.getContainedTy() == rhsSTy.getContainedTy() ? rhsV() : builder.CreatePointerCast(rhsV(), lhsT)};
+    return {.value = rhsV()};
   }
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
 }

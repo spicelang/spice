@@ -1,5 +1,7 @@
+// Std imports
 import "std/data/map";
 
+// Own imports
 
 type ScopeType enum {
     GLOBAL,

@@ -2,6 +2,9 @@ public const int SIZE = 32;
 public const int MIN_VALUE = -2147483648;
 public const int MAX_VALUE = 2147483647;
 
+// External functions
+ext f<unsigned int> snprintf(char*, unsigned long, string, int);
+
 // Converts an int to a double
 public f<double> toDouble(int input) {
     return 0.0 + input;
@@ -29,20 +32,9 @@ public f<char> toChar(int input) {
 
 // Converts an int to a string
 public f<String> toString(const int input) {
-    if input == 0 { return String("0"); }
-
-    String str;
-    bool isNeg = input < 0;
-    unsigned int uInput = isNeg ? -input : input;
-
-    while (uInput != 0) {
-        str.append((char) (uInput % 10 + 48 /* ASCII for '0' */));
-        uInput = uInput / 10;
-    }
-    if isNeg { str.append('-'); }
-
-    str.reverse();
-    return str;
+    const unsigned int length = snprintf(nil<char*>, 0l, "%d", input);
+    result = String(length);
+    snprintf((char*) result.getRaw(), length + 1l, "%d", input);
 }
 
 // Converts an int to a boolean

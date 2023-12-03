@@ -3,9 +3,9 @@ import "std/type/Any";
 import "std/data/Vector";
 
 // Own imports
-import "AbstractASTVisitor";
-import "../util/CodeLoc";
-import "../symbol/SymbolType";
+import "../ast/abstract-ast-visitor";
+import "../reader/code-loc";
+import "../symbol/symbol-type";
 
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks

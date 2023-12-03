@@ -1,5 +1,5 @@
 // Imports
-import "../util/CodeLoc" as cl;
+import "../util/code-loc";
 
 public type LexerErrorType enum {
     TOKENIZING_FAILED
@@ -19,7 +19,7 @@ public type ParserError struct {
  * @param errorType Type of the error
  * @param message Error message suffix
  */
-public p ParserError.ctor(const cl::CodeLoc* codeLoc, const LexerErrorType errorType, const string message) {
+public p ParserError.ctor(const CodeLoc* codeLoc, const LexerErrorType errorType, const string message) {
     this.errorMessage = "[Error|Lexer] " + codeLoc.toPrettyString() + ": " + this.getMessagePrefix(errorType) + ": " + message;
 }
 

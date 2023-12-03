@@ -12,7 +12,7 @@ structDef: topLevelDefAttr? specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GRE
 interfaceDef: specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature+ RBRACE;
 enumDef: specifierLst? TYPE TYPE_IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
-aliasDef: TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON;
+aliasDef: specifierLst? TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON;
 globalVarDef: dataType TYPE_IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: topLevelDefAttr? EXT (F LESS dataType GREATER | P) (IDENTIFIER | TYPE_IDENTIFIER) LPAREN (typeLst ELLIPSIS?)? RPAREN SEMICOLON;
 

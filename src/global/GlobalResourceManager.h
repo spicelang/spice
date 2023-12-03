@@ -36,6 +36,7 @@ public:
   // Constructors
   explicit GlobalResourceManager(const CliOptions &cliOptions);
   GlobalResourceManager(const GlobalResourceManager &) = delete;
+  ~GlobalResourceManager();
 
   // Public methods
   SourceFile *createSourceFile(SourceFile *parent, const std::string &dependencyName, const std::filesystem::path &path,

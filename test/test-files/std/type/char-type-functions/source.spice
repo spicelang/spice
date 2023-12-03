@@ -18,8 +18,8 @@ f<int> main() {
     assert asLong == 75l;
 
     // toString()
-    //string asString = toString('v');
-    //assert asString == "v";
+    String asString = toString('v');
+    assert asString.getRaw() == "v";
 
     // toBool()
     bool asBool1 = toBool('1');

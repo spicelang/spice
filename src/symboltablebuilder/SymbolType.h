@@ -84,6 +84,7 @@ public:
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs);
     friend bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs);
     [[nodiscard]] std::string getName(bool withSize) const;
+    [[nodiscard]] std::string getOriginalSubType() const;
 
     // Public members
     SymbolSuperType superType = TY_DYN;
@@ -158,7 +159,7 @@ public:
   }
   [[nodiscard]] ALWAYS_INLINE std::string getOriginalSubType() const {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
-    return CommonUtil::getLastFragment(typeChain.back().subType, SCOPE_ACCESS_TOKEN);
+    return typeChain.back().getOriginalSubType();
   }
   [[nodiscard]] ALWAYS_INLINE SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
   [[nodiscard]] SymbolType getBaseType() const {
@@ -170,7 +171,7 @@ public:
   void setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes);
   [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
-  [[nodiscard]] std::string getName(bool withSize = false) const;
+  [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false) const;
   [[nodiscard]] ALWAYS_INLINE size_t getArraySize() const {
     assert(getSuperType() == TY_ARRAY);
     return typeChain.back().data.arraySize;

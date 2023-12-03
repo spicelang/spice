@@ -2,24 +2,20 @@ import "std/type/double";
 
 f<int> main() {
     // toInt()
-    //int asInt = toInt(123.54);
-    //assert asInt == 123;
+    int asInt = toInt(123.54);
+    assert asInt == 123;
 
     // toShort()
-    //short asShort = toShort(12.345);
-    //assert asShort == 12;
+    short asShort = toShort(12.345);
+    assert asShort == 12;
 
     // toLong()
-    //long asLong = toLong(534569.2345);
-    //assert asLong == 534569l;
-
-    // toByte()
-    //long asByte = toLong(53.89);
-    //assert asByte == (byte) 53;
+    long asLong = toLong(534569.2345);
+    assert asLong == 534569l;
 
     // toString()
-    //string asString = toString(9.0);
-    //assert asString == "9.0";
+    //String asString = toString(3.14);
+    //assert asString.getRaw() == "3.14";
 
     // toBool()
     bool asBool1 = toBool(1.0);

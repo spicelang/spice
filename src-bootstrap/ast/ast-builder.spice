@@ -1,6 +1,6 @@
-import "../CompilerPass";
-import "../SourceFile";
-import "SpiceVisitor";
+import "../compiler-pass";
+import "../source-file";
+import "../ast/spice-visitor";
 
 type ASTBuilder struct : ICompilerPass, SpiceVisitor {
     CompilerPass compilerPass

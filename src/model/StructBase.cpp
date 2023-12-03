@@ -36,7 +36,7 @@ std::string StructBase::getSignature(const std::string &name, const std::vector<
     for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
       if (i > 0)
         templateTyStr << ",";
-      templateTyStr << concreteTemplateTypes.at(i).getName();
+      templateTyStr << concreteTemplateTypes.at(i).getName(false, true);
     }
     templateTyStr << ">";
   }

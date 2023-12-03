@@ -3,9 +3,6 @@ source_filename = "source.spice"
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
-%anon.captures.0 = type { i32, i32 }
-%anon.captures.0.0 = type { i32, i32 }
-
 @anon.string.0 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition 'x == 6' evaluated to false.\00", align 1
 @anon.string.1 = private unnamed_addr constant [56 x i8] c"Assertion failed: Condition 'l2(x)' evaluated to false.\00", align 1
 @anon.string.2 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'x == 11' evaluated to false.\00", align 1
@@ -70,20 +67,20 @@ define dso_local i32 @main() #2 {
   %result = alloca i32, align 4
   %z = alloca i32, align 4
   %w = alloca i32, align 4
-  %captures = alloca %anon.captures.0, align 8
+  %captures = alloca { i32, i32 }, align 8
   %fat.ptr = alloca { ptr, ptr }, align 8
   %foo1 = alloca { ptr, ptr }, align 8
-  %captures1 = alloca %anon.captures.0.0, align 8
+  %captures1 = alloca { i32, i32 }, align 8
   %fat.ptr2 = alloca { ptr, ptr }, align 8
   %foo2 = alloca { ptr, ptr }, align 8
   store i32 0, ptr %result, align 4
   store i32 2, ptr %z, align 4
   store i32 3, ptr %w, align 4
   %1 = load i32, ptr %w, align 4
-  %2 = getelementptr inbounds %anon.captures.0, ptr %captures, i32 0, i32 0
+  %2 = getelementptr inbounds { i32, i32 }, ptr %captures, i32 0, i32 0
   store i32 %1, ptr %2, align 4
   %3 = load i32, ptr %z, align 4
-  %4 = getelementptr inbounds %anon.captures.0, ptr %captures, i32 0, i32 1
+  %4 = getelementptr inbounds { i32, i32 }, ptr %captures, i32 0, i32 1
   store i32 %3, ptr %4, align 4
   %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
   store ptr @_Z15lambda.L12C20.0Ri, ptr %5, align 8
@@ -92,10 +89,10 @@ define dso_local i32 @main() #2 {
   %7 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %7, ptr %foo1, align 8
   %8 = load i32, ptr %w, align 4
-  %9 = getelementptr inbounds %anon.captures.0.0, ptr %captures1, i32 0, i32 0
+  %9 = getelementptr inbounds { i32, i32 }, ptr %captures1, i32 0, i32 0
   store i32 %8, ptr %9, align 4
   %10 = load i32, ptr %z, align 4
-  %11 = getelementptr inbounds %anon.captures.0.0, ptr %captures1, i32 0, i32 1
+  %11 = getelementptr inbounds { i32, i32 }, ptr %captures1, i32 0, i32 1
   store i32 %10, ptr %11, align 4
   %12 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 0
   store ptr @_Z15lambda.L15C26.0Ri, ptr %12, align 8
@@ -117,8 +114,8 @@ define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8
   store ptr %0, ptr %captures, align 8
   store ptr %1, ptr %x, align 8
   %3 = load ptr, ptr %captures, align 8
-  %w = getelementptr inbounds %anon.captures.0, ptr %3, i32 0, i32 0
-  %z = getelementptr inbounds %anon.captures.0, ptr %3, i32 0, i32 1
+  %w = getelementptr inbounds { i32, i32 }, ptr %3, i32 0, i32 0
+  %z = getelementptr inbounds { i32, i32 }, ptr %3, i32 0, i32 1
   %4 = load i32, ptr %w, align 4
   %5 = load i32, ptr %z, align 4
   %6 = add i32 %5, %4
@@ -136,8 +133,8 @@ define private i1 @_Z15lambda.L15C26.0Ri(ptr noundef nonnull dereferenceable(8) 
   store ptr %0, ptr %captures, align 8
   store ptr %1, ptr %x, align 8
   %3 = load ptr, ptr %captures, align 8
-  %w = getelementptr inbounds %anon.captures.0.0, ptr %3, i32 0, i32 0
-  %z = getelementptr inbounds %anon.captures.0.0, ptr %3, i32 0, i32 1
+  %w = getelementptr inbounds { i32, i32 }, ptr %3, i32 0, i32 0
+  %z = getelementptr inbounds { i32, i32 }, ptr %3, i32 0, i32 1
   %4 = load i32, ptr %w, align 4
   %5 = load i32, ptr %z, align 4
   %6 = add i32 %5, %4

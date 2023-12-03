@@ -28,9 +28,9 @@ public f<String> CodeLoc.toString() {
  * @return Pretty code location
  */
 public f<String> CodeLoc.toPrettyString() {
-    String codeLocStr = String(intTy.toString(this.line));
-    if this.sourceFilePath.empty() {
-        return toString(line) + ":" + toString(this.col);
+    String codeLocStr = String(toString(this.line));
+    if len(this.sourceFilePath) == 0 {
+        return toString(this.line) + ":" + toString(this.col);
     }
     return this.sourceFilePath + ":" + toString(this.line) + ":" + toString(this.col);
 }
@@ -52,5 +52,5 @@ public f<String> CodeLoc.toPrettyLineAndColumn() {
 }
 
 public f<bool> operator==(const CodeLoc &lhs, const CodeLoc &rhs) {
-    return /*lhs.sourceFilePath == rhs.sourceFilePath && */lhs.line == rhs.line && lhs.col == rhs.col;
+    return lhs.sourceFilePath == rhs.sourceFilePath && lhs.line == rhs.line && lhs.col == rhs.col;
 }

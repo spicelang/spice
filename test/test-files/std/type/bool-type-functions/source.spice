@@ -32,10 +32,10 @@ f<int> main() {
     assert asByte2 == (byte) 0;
 
     // toString()
-    //string asString1 = toString(true);
-    //assert asString1 == "true";
-    //string asString2 = toString(false);
-    //assert asString2 == "false";
+    string asString1 = toString(true);
+    assert asString1 == "true";
+    string asString2 = toString(false);
+    assert asString2 == "false";
 
     printf("All assertions succeeded");
 }

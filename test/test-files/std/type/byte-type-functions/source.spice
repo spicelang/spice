@@ -18,8 +18,8 @@ f<int> main() {
     assert asLong == 63l;
 
     // toString()
-    //string asString = toString((byte) 13);
-    //assert asString == "13";
+    String asString = toString((byte) 13);
+    assert asString.getRaw() == "13";
 
     // toBool()
     bool asBool1 = toBool((byte) 1);

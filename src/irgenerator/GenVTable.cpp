@@ -35,7 +35,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
 
   std::vector<SymbolType> interfaceTypes;
   if (spiceStruct->entry->getType().is(TY_STRUCT)) {
-    auto spiceStructEnsured = static_cast<Struct *>(spiceStruct);
+    auto spiceStructEnsured = reinterpret_cast<Struct *>(spiceStruct);
     interfaceTypes = spiceStructEnsured->interfaceTypes;
   }
 
@@ -121,7 +121,7 @@ void IRGenerator::generateVTableInitializer(StructBase *spiceStruct) {
   // Generate VTable type
   llvm::PointerType *ptrTy = llvm::PointerType::get(context, 0);
   llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(ptrTy, arrayElementCount);
-  llvm::StructType *vtableTy = llvm::StructType::get(context, vtableArrayTy, false);
+  assert(spiceStruct->vtableType);
 
   // Generate VTable values
   std::vector<llvm::Constant *> arrayValues;
@@ -135,7 +135,7 @@ void IRGenerator::generateVTableInitializer(StructBase *spiceStruct) {
   // Generate VTable struct
   std::vector<llvm::Constant *> fieldValues;
   fieldValues.push_back(llvm::ConstantArray::get(vtableArrayTy, arrayValues));
-  llvm::Constant *initializer = llvm::ConstantStruct::get(vtableTy, fieldValues);
+  llvm::Constant *initializer = llvm::ConstantStruct::get(spiceStruct->vtableType, fieldValues);
 
   const std::string mangledName = NameMangling::mangleVTable(spiceStruct);
   llvm::GlobalVariable *global = module->getNamedGlobal(mangledName);

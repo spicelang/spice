@@ -1,6 +1,6 @@
-// Imports
-import "../ast/AstNodes" as ast;
-import "../util/CodeLoc" as cl;
+// Own imports
+import "../ast/ast-nodes";
+import "../reader/code-loc";
 
 public type SemanticErrorType enum {
     REFERENCED_UNDEFINED_FUNCTION,
@@ -74,7 +74,7 @@ public type SemanticError struct {
     string message
 }
 
-public p SemanticError.ctor(const ast::AstNode* node, const SemanticErrorType errorType, const string message) {
+public p SemanticError.ctor(const AstNode* node, const SemanticErrorType errorType, const string message) {
     this.errorMessage = "[Error|Semantic] " + node.codeLoc.toPrettyString() + ":\n" + this.getMessagePrefix(errorType) +
             ": " + message + "\n\n" + node.errorMessage;
 }
