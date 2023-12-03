@@ -39,4 +39,4 @@ Registry of A:
 | sourceB::TestStruct | 256    | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |
 | sourceC::TestStruct | 257    | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |
 
-This behaviour is intended to avoid bugs due to accessing the wrong structs by accident.
+This behavior is intended to avoid bugs due to accessing the wrong structs by accident.

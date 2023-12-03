@@ -1,20 +1,45 @@
-/*import "../../src-bootstrap/reader/reader";
+import "../../src-bootstrap/reader/reader";
 
 f<int> main() {
-    Reader reader = Reader("./test.spice");
+    Reader reader = Reader("./test-file.txt");
     printf("%d", reader.isEOF());
     while !reader.isEOF() {
         printf("%c", reader.getChar());
         reader.advance();
     }
-}*/
+}
 
-ext f<int> open(string /*file path*/, int /*flags*/...);
-ext f<int> close(int /*file descriptor*/);
+/*import "std/io/file";
 
 f<int> main() {
-    int res = open("this-is-a-test.txt", 65);
-    printf("%d", res);
-    res = close(res);
-    printf("%d", res);
-}
+    // Write file
+    Result<File> fileResult = openFile("./test-file.txt", MODE_WRITE);
+    assert fileResult.isOk();
+    File file = fileResult.unwrap();
+    file.write("Hello, world!\n");
+    file.close();
+
+    // Read file
+    fileResult = openFile("./test-file.txt", MODE_READ);
+    assert fileResult.isOk();
+    file = fileResult.unwrap();
+    String line = file.readLine();
+    printf("%s", line);
+    assert line.getRaw() == "Hello, world!\n";
+    file.close();
+
+    // Append file
+    fileResult = openFile("./test-file.txt", MODE_APPEND);
+    assert fileResult.isOk();
+    file = fileResult.unwrap();
+    file.write("Hello, again!\n");
+    file.close();
+
+    // Read file
+    fileResult = openFile("./test-file.txt", MODE_READ);
+    assert fileResult.isOk();
+    file = fileResult.unwrap();
+    assert file.readLine() == String("Hello, world!\n");
+    assert file.readLine() == String("Hello, again!\n");
+    file.close();
+}*/

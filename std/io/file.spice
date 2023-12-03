@@ -108,11 +108,25 @@ public f<int> File.readChar() {
 }
 
 /**
+ * Reads a single line from the file.
+ *
+ * @return Line in form of a string
+ */
+public f<String> File.readLine() {
+    result = String();
+    int buffer;
+    while (buffer = this.readChar()) != EOF {
+        if buffer == '\n' { break; }
+        result += (char) buffer;
+    }
+}
+
+/**
  * Writes a single character to the file.
  *
  * @return True if successful, false if not
  */
-public f<bool> File.writeChar(char value) {
+public f<bool> File.write(char value) {
     return fputc((int) value, this.filePtr) == STATUS_OK;
 }
 
@@ -121,8 +135,17 @@ public f<bool> File.writeChar(char value) {
  *
  * @return True if successful, false if not
  */
-public f<bool> File.writeString(string value) {
+public f<bool> File.write(string value) {
     return fputs(value, this.filePtr) == STATUS_OK;
+}
+
+/**
+ * Writes a string to the file.
+ *
+ * @return True if successful, false if not
+ */
+public f<bool> File.write(String value) {
+    return this.write(value.getRaw());
 }
 
 /**
@@ -157,9 +180,9 @@ public f<bool> File.isEOF() {
  * @return True if successful, false if not
  */
 public f<bool> createFile(string path) {
-    int res = open(path, O_CREAT | O_WRONLY);
-    result = res != STATUS_ERROR;
-    close(res);
+    FilePtr filePtr = fopen(path, MODE_WRITE);
+    result = filePtr != nil<FilePtr>;
+    fclose(filePtr);
 }
 
 /**
@@ -233,7 +256,7 @@ public f<Result<bool>> writeFile(string path, string content) {
     }
     File file = fileResult.unwrap();
     // Write the string to the file
-    bool success = file.writeString(content);
+    bool success = file.write(content);
     // Close the file
     file.close();
     return ok(success);
