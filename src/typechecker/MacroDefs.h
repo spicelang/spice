@@ -2,8 +2,6 @@
 
 #pragma once
 
-const char *const UNRESOLVED_TYPE_NAME = "unresolved type";
-
 #pragma warning(disable : 4129)
 
 #define SOFT_ERROR_ER(node, type, message)                                                                                       \
@@ -22,12 +20,6 @@ const char *const UNRESOLVED_TYPE_NAME = "unresolved type";
   {                                                                                                                              \
     resourceManager.errorManager.addSoftError(node, type, message);                                                              \
     return false;                                                                                                                \
-  }
-
-#define SOFT_ERROR_STR(node, type, message)                                                                                      \
-  {                                                                                                                              \
-    resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    return UNRESOLVED_TYPE_NAME;                                                                                                 \
   }
 
 #define SOFT_ERROR_VOID(node, type, message)                                                                                     \

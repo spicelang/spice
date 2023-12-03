@@ -127,7 +127,7 @@ private:
   bool typeCheckedMainFct = false;
 
   // Private methods
-  std::string visitOrdinaryFctCall(FctCallNode *node);
+  bool visitOrdinaryFctCall(FctCallNode *node);
   bool visitFctPtrCall(FctCallNode *node, const SymbolType &functionType) const;
   bool visitMethodCall(FctCallNode *node, Scope *structScope) const;
   [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;

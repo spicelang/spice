@@ -23,8 +23,8 @@ const int X_OK = 1; // Can execute
 const int W_OK = 2; // Can write
 const int R_OK = 4; // Can read
 
-const int IF_MT          = 61440; // Decimal for octal: 0170000
-const int IF_DIR         = 16384; // Decimal for octal: 0040000
+const int IF_MT  = 0o0170000;
+const int IF_DIR = 0o0040000;
 
 const int INVALID_HANDLE = -1; // Decimal for 0xFFFFFFFF
 

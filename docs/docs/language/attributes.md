@@ -63,3 +63,14 @@ public type A struct {
 ### Available attributes
 - `core.compiler.alwaysEmitVTable: bool`: Always emit a vtable for the annotated struct
 - `core.compiler.packed: bool`: Pack the annotated struct
+
+## Interface attributes
+```spice
+#[core.compiler.fixedTypeId = 230]
+public type A interface {
+    // ...
+}
+```
+
+### Available attributes
+- `core.compiler.fixedTypeId: int`: Set a fixed type id for the annotated interface. Intended for internal use only.

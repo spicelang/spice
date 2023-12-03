@@ -36,7 +36,7 @@ define dso_local i32 @main() #0 {
   %6 = call ptr %fct()
   %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %6)
   %8 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 0
-  store ptr @_Z14lambda.L7C50.0RN11__rt_string6StringEd, ptr %8, align 8
+  store ptr @_Z14lambda.L7C50.0R6Stringd, ptr %8, align 8
   %9 = load { ptr, ptr }, ptr %fat.ptr1, align 8
   store { ptr, ptr } %9, ptr %callbackWithArgs1, align 8
   %10 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs1, i32 0, i32 0
@@ -46,7 +46,7 @@ define dso_local i32 @main() #0 {
   %12 = zext i1 %11 to i32
   %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %12)
   %14 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 0
-  store ptr @_Z15lambda.L13C49.0N11__rt_string6StringEs, ptr %14, align 8
+  store ptr @_Z15lambda.L13C49.06Strings, ptr %14, align 8
   %15 = load { ptr, ptr }, ptr %fat.ptr3, align 8
   store { ptr, ptr } %15, ptr %callbackWithArgs2, align 8
   %16 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs2, i32 0, i32 0
@@ -73,7 +73,7 @@ define private ptr @_Z14lambda.L2C39.0v() {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-define private i1 @_Z14lambda.L7C50.0RN11__rt_string6StringEd(ptr %0, double %1) {
+define private i1 @_Z14lambda.L7C50.0R6Stringd(ptr %0, double %1) {
   %result = alloca i1, align 1
   %str = alloca ptr, align 8
   %d = alloca double, align 8
@@ -105,7 +105,7 @@ declare i1 @_Z10isRawEqualPcPc(ptr, ptr)
 
 declare void @_ZN6String4ctorEPc(ptr, ptr)
 
-define private i16 @_Z15lambda.L13C49.0N11__rt_string6StringEs(%struct.String %0, i16 %1) {
+define private i16 @_Z15lambda.L13C49.06Strings(%struct.String %0, i16 %1) {
   %result = alloca i16, align 2
   %str = alloca %struct.String, align 8
   %b = alloca i16, align 2

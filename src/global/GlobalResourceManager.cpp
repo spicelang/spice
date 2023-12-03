@@ -62,16 +62,18 @@ GlobalResourceManager::~GlobalResourceManager() {
   llvm::llvm_shutdown();
 }
 
-SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const std::string &dependencyName,
+SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const std::string &depName,
                                                     const std::filesystem::path &path, bool isStdFile) {
   // Check if the source file was already added (e.g. by another source file that imports it)
   const std::string filePathStr = path.string();
 
   // Create the new source file if it does not exist yet
   if (!sourceFiles.contains(filePathStr))
-    sourceFiles.insert({filePathStr, std::make_unique<SourceFile>(*this, parent, dependencyName, path, isStdFile)});
+    sourceFiles.insert({filePathStr, std::make_unique<SourceFile>(*this, parent, depName, path, isStdFile)});
 
   return sourceFiles.at(filePathStr).get();
 }
+
+uint64_t GlobalResourceManager::getNextCustomTypeId() { return nextCustomTypeId++; }
 
 } // namespace spice::compiler

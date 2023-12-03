@@ -11,9 +11,9 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"Inner dtor called\0A\00", align 1
 @anon.string.1 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 1
 
-declare ptr @malloc(i64)
+declare ptr @malloc(i64 noundef)
 
-declare void @free(ptr)
+declare void @free(ptr noundef)
 
 define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) {
   %this = alloca ptr, align 8

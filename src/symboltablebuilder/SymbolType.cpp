@@ -96,22 +96,6 @@ SymbolType SymbolType::getContainedTy() const {
 }
 
 /**
- * Replace the subtype of the base type with another one
- *
- * @param newSubType New sub type of the base type
- * @return The new type with the adjusted type chain
- */
-SymbolType SymbolType::replaceBaseSubType(const std::string &newSubType) const {
-  assert(!typeChain.empty());
-  // Copy the stack to not destroy the present one
-  TypeChain newTypeChain = typeChain;
-  // Replace the first element
-  newTypeChain.front().subType = newSubType;
-  // Return the new chain as a symbol type
-  return {newTypeChain, specifiers};
-}
-
-/**
  * Replace the base type with another one
  *
  * @param newBaseType New base type
@@ -249,7 +233,7 @@ bool SymbolType::isIterator(const ASTNode *node) const {
   if (!is(TY_STRUCT))
     return false;
   SymbolType genericType(TY_GENERIC, "T");
-  SymbolType iteratorType(TY_INTERFACE, "Iterable", {.bodyScope = nullptr}, {genericType});
+  SymbolType iteratorType(TY_INTERFACE, "Iterable", TYPE_ID_ITERABLE, {.bodyScope = nullptr}, {genericType});
   return implements(iteratorType, node);
 }
 
@@ -259,7 +243,7 @@ bool SymbolType::isIterator(const ASTNode *node) const {
  * @return String object or not
  */
 bool SymbolType::isStringObj() const {
-  return is(TY_STRUCT) && getOriginalSubType() == STROBJ_NAME && getBodyScope()->sourceFile->stdFile;
+  return is(TY_STRUCT) && getSubType() == STROBJ_NAME && getBodyScope()->sourceFile->stdFile;
 }
 
 /**
@@ -268,7 +252,7 @@ bool SymbolType::isStringObj() const {
  * @return Error object or not
  */
 bool SymbolType::isErrorObj() const {
-  return is(TY_STRUCT) && getOriginalSubType() == ERROBJ_NAME && getBodyScope()->sourceFile->stdFile;
+  return is(TY_STRUCT) && getSubType() == ERROBJ_NAME && getBodyScope()->sourceFile->stdFile;
 }
 
 /**
@@ -532,7 +516,7 @@ const std::vector<SymbolType> &SymbolType::getFunctionParamAndReturnTypes() cons
 Struct *SymbolType::getStruct(const ASTNode *node) const {
   assert(is(TY_STRUCT));
   Scope *structDefScope = getBodyScope()->parent;
-  const std::string structName = getOriginalSubType();
+  const std::string structName = getSubType();
   const std::vector<SymbolType> &templateTypes = getTemplateTypes();
   return StructManager::matchStruct(structDefScope, structName, templateTypes, node);
 }
@@ -546,7 +530,7 @@ Struct *SymbolType::getStruct(const ASTNode *node) const {
 Interface *SymbolType::getInterface(const ASTNode *node) const {
   assert(is(TY_INTERFACE));
   Scope *interfaceDefScope = getBodyScope()->parent;
-  const std::string structName = getOriginalSubType();
+  const std::string structName = getSubType();
   const std::vector<SymbolType> &templateTypes = getTemplateTypes();
   return InterfaceManager::matchInterface(interfaceDefScope, structName, templateTypes, node);
 }

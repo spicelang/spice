@@ -17,14 +17,15 @@ this symbol gets removed and
 
 **Example:** <br>
 Source file A imports source file B as `sourceB`. B contains a struct with the name `TestStruct`. Formerly, you would
-have written `sourceB::TestStruct` to access the struct from source file A. Now you only need to write `TestStruct`.
+have written `sourceB::TestStruct` to access the struct from source file A. Now you only need to write `TestStruct` and the
+compile resolves the correct struct automatically.
 
 Registry of A:
 
-| Name                | Pointer to SymbolTableEntry | Pointer to scope of symbol | Import entry        | Predecessor name     |
-|---------------------|-----------------------------|----------------------------|---------------------|----------------------|
-| sourceB::TestStruct | Pointer to struct entry     | Ptr to struct body scope   | Ptr to import entry |                      |
-| TestStruct          | Pointer to struct entry     | Ptr to struct body scope   | Ptr to import entry | sourceB::TestStruct  |
+| Name                | TypeId | Pointer to SymbolTableEntry | Pointer to scope of symbol | Import entry        |
+|---------------------|--------|-----------------------------|----------------------------|---------------------|
+| sourceB::TestStruct | 256    | Pointer to struct entry     | Ptr to struct body scope   | Ptr to import entry |
+| TestStruct          | 256    | Pointer to struct entry     | Ptr to struct body scope   | Ptr to import entry |
 
 However, if A also imports source file C, which also exposes a struct with the name `TestStruct`, there would be an
 ambiguity between `sourceB::TestStruct` and `sourceC::TestStruct` when you just write `TestStruct`. Therefore, when
@@ -33,7 +34,9 @@ Accessing `TestStruct` without a scope identifier, leads to a compile error.
 
 Registry of A:
 
-| Name                | Pointer to SymbolTableEntry | Pointer to scope of symbol   | Import entry        | Predecessor name |
-|---------------------|-----------------------------|------------------------------|---------------------|------------------|
-| sourceB::TestStruct | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |                  |
-| sourceC::TestStruct | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |                  |
+| Name                | TypeId | Pointer to SymbolTableEntry | Pointer to scope of symbol   | Import entry        |
+|---------------------|--------|-----------------------------|------------------------------|---------------------|
+| sourceB::TestStruct | 256    | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |
+| sourceC::TestStruct | 257    | Pointer to struct entry     | Pointer to struct body scope | Ptr to import entry |
+
+This behavior is intended to avoid bugs due to accessing the wrong structs by accident.

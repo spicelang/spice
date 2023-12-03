@@ -6,6 +6,8 @@
 #include <ast/ASTNodes.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
+#include <ranges>
+
 namespace spice::compiler {
 
 static const char *const FCT_NAME_DEALLOC = "sDealloc";
@@ -23,7 +25,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
   ASTNode *node = spiceStruct.declNode;
   const SymbolTableEntry *structEntry = spiceStruct.entry;
   const SymbolType &thisType = structEntry->getType();
-  const std::string fqFctName = thisType.getOriginalSubType() + MEMBER_ACCESS_TOKEN + methodName;
+  const std::string fqFctName = thisType.getSubType() + MEMBER_ACCESS_TOKEN + methodName;
 
   // Procedure type
   SymbolType procedureType(TY_PROCEDURE);
@@ -35,7 +37,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
   fctEntry->updateType(procedureType, true);
 
   // Add to external name registry
-  sourceFile->addNameRegistryEntry(fqFctName, fctEntry, structScope, /*keepNewOnCollision=*/true);
+  sourceFile->addNameRegistryEntry(fqFctName, TY_PROCEDURE, fctEntry, structScope, true);
 
   // Create the default method
   const std::vector<GenericType> templateTypes = spiceStruct.templateTypes;
@@ -69,7 +71,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
   // Abort if the struct already has a user-defined constructor
   const SymbolTableEntry *structEntry = spiceStruct.entry;
   const SymbolType &thisType = structEntry->getType();
-  const std::string fqFctName = thisType.getOriginalSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
+  const std::string fqFctName = thisType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
   if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
 
@@ -127,7 +129,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
   // Abort if the struct already has a user-defined constructor
   const SymbolTableEntry *structEntry = spiceStruct.entry;
   const SymbolType &thisType = structEntry->getType();
-  const std::string fqFctName = thisType.getOriginalSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
+  const std::string fqFctName = thisType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
   if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
 
@@ -174,7 +176,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
   // Abort if the struct already has a user-defined destructor
   const SymbolTableEntry *structEntry = spiceStruct.entry;
   const SymbolType &thisType = structEntry->getType();
-  const std::string fqFctName = thisType.getOriginalSubType() + MEMBER_ACCESS_TOKEN + DTOR_FUNCTION_NAME;
+  const std::string fqFctName = thisType.getSubType() + MEMBER_ACCESS_TOKEN + DTOR_FUNCTION_NAME;
   if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
 
@@ -272,8 +274,7 @@ void TypeChecker::implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode 
 void TypeChecker::doScopeCleanup(StmtLstNode *node) {
   // Get all variables, that are approved for deallocation
   std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
-  for (auto it = vars.rbegin(); it != vars.rend(); ++it) {
-    SymbolTableEntry *var = *it;
+  for (SymbolTableEntry *var : std::ranges::reverse_view(vars)) {
     // Only generate dtor call for structs and if not omitted
     if (!var->getType().is(TY_STRUCT) || var->omitDtorCall)
       continue;

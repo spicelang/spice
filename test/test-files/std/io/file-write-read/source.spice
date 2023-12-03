@@ -1,0 +1,24 @@
+import "std/io/file";
+
+f<int> main() {
+    // Write file
+    File file = openFile("./test-file.txt", MODE_WRITE);
+    file.write("Hello, world!\n");
+    file.close();
+
+    // Read file
+    file = openFile("./test-file.txt", MODE_READ);
+    assert file.readLine() == "Hello, world!\n";
+    file.close();
+
+    // Append file
+    file = openFile("./test-file.txt", MODE_APPEND);
+    file.write("Hello, again!\n");
+    file.close();
+
+    // Read file
+    file = openFile("./test-file.txt", MODE_READ);
+    assert file.readLine() == "Hello, world!\n";
+    assert file.readLine() == "Hello, again!\n";
+    file.close();
+}

@@ -588,30 +588,27 @@ SourceFile *SourceFile::requestRuntimeModule(RuntimeModule runtimeModule) {
 
 bool SourceFile::isRuntimeModuleAvailable(RuntimeModule runtimeModule) const { return importedRuntimeModules & runtimeModule; }
 
-void SourceFile::addNameRegistryEntry(const std::string &symbolName, SymbolTableEntry *entry, Scope *scope,
-                                      bool keepNewOnCollision /*=true*/, SymbolTableEntry *importEntry /*=nullptr*/,
-                                      const std::string &predecessorName /*=""*/) {
+void SourceFile::addNameRegistryEntry(const std::string &symbolName, uint64_t typeId, SymbolTableEntry *entry, Scope *scope,
+                                      bool keepNewOnCollision, SymbolTableEntry *importEntry) {
   if (keepNewOnCollision || !exportedNameRegistry.contains(symbolName)) // Overwrite potential existing entry
-    exportedNameRegistry[symbolName] = {symbolName, entry, scope, importEntry, predecessorName};
+    exportedNameRegistry[symbolName] = {symbolName, typeId, entry, scope, importEntry};
   else // Name collision => we must remove the existing entry
     exportedNameRegistry.erase(symbolName);
 }
 
-const NameRegistryEntry *SourceFile::getNameRegistryEntry(std::string symbolName) const {
+const NameRegistryEntry *SourceFile::getNameRegistryEntry(const std::string &symbolName) const {
   if (!exportedNameRegistry.contains(symbolName))
     return nullptr;
 
-  // Resolve the 'fullest-qualified' registry entry for the given name
-  const NameRegistryEntry *registryEntry;
-  do {
-    assert(exportedNameRegistry.contains(symbolName));
-    registryEntry = &exportedNameRegistry.at(symbolName);
-    if (registryEntry->importEntry)
-      registryEntry->importEntry->used = true;
-    symbolName = registryEntry->predecessorName;
-  } while (!symbolName.empty());
+  // Resolve registry entry for the given name
+  assert(exportedNameRegistry.contains(symbolName));
+  const NameRegistryEntry *entry = &exportedNameRegistry.at(symbolName);
 
-  return registryEntry;
+  // Mark the import entry as used
+  if (entry->importEntry != nullptr)
+    entry->importEntry->used = true;
+
+  return entry;
 }
 
 void SourceFile::checkForSoftErrors() {
@@ -669,10 +666,10 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
     std::string newName = importName;
     newName += SCOPE_ACCESS_TOKEN;
     newName += originalName;
-    exportedNameRegistry.insert({newName, {newName, entry.targetEntry, entry.targetScope, importEntry}});
+    exportedNameRegistry.insert({newName, {newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry}});
     // Add the shortened name, considering the name collision
     const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
-    addNameRegistryEntry(originalName, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry, newName);
+    addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
   }
 }
 

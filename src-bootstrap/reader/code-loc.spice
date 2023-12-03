@@ -2,9 +2,9 @@
 import "std/type/long";
 
 public type CodeLoc struct {
-    unsigned long line
-    unsigned long col
-    string sourceFilePath
+    public unsigned long line
+    public unsigned long col
+    public string sourceFilePath
 }
 
 public p CodeLoc.ctor(unsigned long line, unsigned long col, string sourceFilePath = "") {
@@ -28,7 +28,6 @@ public f<String> CodeLoc.toString() {
  * @return Pretty code location
  */
 public f<String> CodeLoc.toPrettyString() {
-    String codeLocStr = String(toString(this.line));
     if len(this.sourceFilePath) == 0 {
         return toString(this.line) + ":" + toString(this.col);
     }

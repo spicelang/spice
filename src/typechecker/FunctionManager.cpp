@@ -307,7 +307,7 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
   if (!thisType.is(TY_DYN)) {
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (matchScope->isGenericScope) {
-      const std::string structName = thisType.getOriginalSubType();
+      const std::string structName = thisType.getSubType();
       Scope *scope = thisType.getBodyScope()->parent;
       Struct *spiceStruct = StructManager::matchStruct(scope, structName, thisType.getTemplateTypes(), candidate.declNode);
       assert(spiceStruct != nullptr);

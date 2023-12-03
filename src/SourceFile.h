@@ -87,17 +87,17 @@ struct CompilerOutput {
 
 struct NameRegistryEntry {
   std::string name;
+  uint64_t typeId; // Set for structs, interfaces and enums
   SymbolTableEntry *targetEntry;
   Scope *targetScope;
   SymbolTableEntry *importEntry = nullptr;
-  std::string predecessorName;
 };
 
 class SourceFile {
 public:
   // Constructors
-  explicit SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name,
-                      const std::filesystem::path &filePath, bool stdFile);
+  SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name, const std::filesystem::path &filePath,
+             bool stdFile);
   SourceFile(const SourceFile &) = delete;
 
   // Friend classes
@@ -138,9 +138,9 @@ public:
   [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch) const;
   SourceFile *requestRuntimeModule(RuntimeModule runtimeModule);
   bool isRuntimeModuleAvailable(RuntimeModule runtimeModule) const;
-  void addNameRegistryEntry(const std::string &symbolName, SymbolTableEntry *entry, Scope *scope, bool keepNewOnCollision = true,
-                            SymbolTableEntry *importEntry = nullptr, const std::string &predecessorName = "");
-  [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(std::string symbolName) const;
+  void addNameRegistryEntry(const std::string &symbolName, uint64_t typeId, SymbolTableEntry *entry, Scope *scope,
+                            bool keepNewOnCollision = true, SymbolTableEntry *importEntry = nullptr);
+  [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(const std::string &symbolName) const;
   void checkForSoftErrors();
   void collectAndPrintWarnings();
   bool isStringRT() const;

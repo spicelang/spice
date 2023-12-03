@@ -157,7 +157,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     size_t vtableIndex = 0;
     for (const SymbolType &interfaceType : manifestation->interfaceTypes) {
       // Retrieve interface instance
-      const std::string interfaceName = interfaceType.getOriginalSubType();
+      const std::string interfaceName = interfaceType.getSubType();
       Scope *matchScope = interfaceType.getBodyScope()->parent;
       Interface *interface = InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
       assert(interface != nullptr);

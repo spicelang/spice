@@ -474,7 +474,6 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
         Scope *matchScope = localVarType.getBodyScope();
         assert(matchScope != nullptr);
         // Check if we have a no-args ctor to call
-        const std::string structName = localVarType.getOriginalSubType();
         const SymbolType &thisType = localVarType;
         const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
         node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true, node);
@@ -482,7 +481,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
 
       // If this is a struct type, check if the type is known. If not, error out
       if (localVarType.isBaseType(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBaseType().getSubType())) {
-        const std::string structName = localVarType.getBaseType().getOriginalSubType();
+        const std::string structName = localVarType.getBaseType().getSubType();
         softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
         localVarType = SymbolType(TY_UNRESOLVED);
       }
@@ -504,7 +503,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       // Check if we need to call a ctor
       node->isCtorCallRequired = matchScope->hasRefFields();
       // Check if we have a no-args ctor to call
-      const std::string structName = localVarType.getOriginalSubType();
+      const std::string &structName = localVarType.getSubType();
       const SymbolType &thisType = localVarType;
       node->calledInitCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, {}, false, node);
       if (!node->calledInitCtor && node->isCtorCallRequired)
@@ -660,9 +659,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
       break;
     }
     case 's': {
-      const std::string strobjTypeName = STRING_RT_IMPORT_NAME + std::string(SCOPE_ACCESS_TOKEN) + STROBJ_NAME;
-      const bool isString = argType.is(TY_STRING) || argType.is(TY_STRUCT, strobjTypeName);
-      if (!isString && !argType.isPtrOf(TY_CHAR) && !argType.isArrayOf(TY_CHAR))
+      if (!argType.is(TY_STRING) && !argType.isStringObj() && !argType.isPtrOf(TY_CHAR) && !argType.isArrayOf(TY_CHAR))
         SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
                       "The placeholder string expects string, String, char* or char[], but got " + argType.getName())
       placeholderCount++;
@@ -1232,7 +1229,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (structScope->isGenericScope) {
-      const std::string structName = lhsBaseTy.getOriginalSubType();
+      const std::string &structName = lhsBaseTy.getSubType();
       Scope *matchScope = lhsBaseTy.getBodyScope()->parent;
       Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
       assert(spiceStruct != nullptr);
@@ -1541,15 +1538,13 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   } else {
     // This is an ordinary function call
     assert(data.isOrdinaryCall() || data.isCtorCall());
-    const std::string knownStructName = visitOrdinaryFctCall(node);
-    if (knownStructName == UNRESOLVED_TYPE_NAME) // Check if soft errors occurred
+    bool success = visitOrdinaryFctCall(node);
+    if (!success) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
     assert(data.calleeParentScope != nullptr);
 
     // Only ordinary function calls can be constructors
     if (data.isCtorCall()) {
-      // Set a name to the thisType that is known to the current source file
-      data.thisType = data.thisType.replaceBaseSubType(knownStructName);
       assert(data.thisType.is(TY_STRUCT));
     }
   }
@@ -1599,7 +1594,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   SymbolTableEntry *anonymousSymbol = nullptr;
   if (returnType.isBaseType(TY_STRUCT)) {
     SymbolType returnBaseType = returnType.getBaseType();
-    const std::string structName = returnBaseType.getOriginalSubType();
+    const std::string structName = returnBaseType.getSubType();
     Scope *matchScope = returnBaseType.getBodyScope()->parent;
     assert(matchScope != nullptr);
     Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
@@ -1624,7 +1619,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }
 
-std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
+bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if this is a ctor call to the String type
@@ -1651,14 +1646,14 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
     concreteTemplateTypes = aliasedTypeContainerEntry->getType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
-      SOFT_ERROR_STR(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
+      SOFT_ERROR_BOOL(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
   // Check if the exported name registry contains that function name
   const NameRegistryEntry *functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName);
   if (!functionRegistryEntry)
-    SOFT_ERROR_STR(node, REFERENCED_UNDEFINED_FUNCTION,
-                   "Function/procedure/struct '" + node->functionNameFragments.back() + "' could not be found")
+    SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION,
+                    "Function/procedure/struct '" + node->functionNameFragments.back() + "' could not be found")
   SymbolTableEntry *functionEntry = functionRegistryEntry->targetEntry;
 
   // Check if the target symbol is a struct -> this must be a constructor call
@@ -1669,7 +1664,7 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
   if (node->hasTemplateTypes) {
     // Only constructors may have template types
     if (!data.isCtorCall())
-      SOFT_ERROR_STR(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls")
+      SOFT_ERROR_BOOL(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls")
 
     for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
       auto templateType = std::any_cast<SymbolType>(visit(templateTypeNode));
@@ -1677,11 +1672,11 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
 
       // Abort if the type is unresolved
       if (templateType.is(TY_UNRESOLVED))
-        return UNRESOLVED_TYPE_NAME;
+        return false;
 
       // Check if the given type is generic
       if (templateType.is(TY_GENERIC))
-        SOFT_ERROR_STR(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here")
+        SOFT_ERROR_BOOL(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here")
 
       concreteTemplateTypes.push_back(templateType);
     }
@@ -1699,8 +1694,8 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
     Struct *thisStruct = StructManager::matchStruct(structEntry->scope, structName, concreteTemplateTypes, node);
     if (!thisStruct) {
       const std::string signature = Struct::getSignature(structName, concreteTemplateTypes);
-      SOFT_ERROR_STR(node, UNKNOWN_DATATYPE,
-                     "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
+      SOFT_ERROR_BOOL(node, UNKNOWN_DATATYPE,
+                      "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
     }
 
     // Override function name
@@ -1710,7 +1705,7 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
     functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName + MEMBER_ACCESS_TOKEN + functionName);
     // Check if the constructor was found
     if (!functionRegistryEntry)
-      SOFT_ERROR_STR(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor")
+      SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "The struct '" + structName + "' does not provide a constructor")
 
     // Set the 'this' type of the function to the struct type
     data.thisType = structEntry->getType();
@@ -1733,7 +1728,7 @@ std::string TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
   // Retrieve function object
   data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, data.thisType, localArgTypes, false, node);
 
-  return knownStructName;
+  return true;
 }
 
 bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionType) const {
@@ -1853,8 +1848,8 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   SymbolTableEntry *structEntry = registryEntry->targetEntry;
   Scope *structScope = accessScope = registryEntry->targetScope;
 
-  // Get struct type and change it to the fully qualified name for identifying without ambiguities
-  SymbolType structType = structEntry->getType().replaceBaseSubType(registryEntry->name);
+  // Get struct type
+  SymbolType structType = structEntry->getType();
 
   // Get the concrete template types
   std::vector<SymbolType> concreteTemplateTypes;
@@ -2267,8 +2262,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   assert(entry != nullptr);
   localAccessScope = registryEntry->targetScope->parent;
 
-  // Get struct type and change it to the fully qualified name for identifying without ambiguities
-  SymbolType entryType = entry->getType().replaceBaseSubType(registryEntry->name);
+  // Get struct type
+  SymbolType entryType = entry->getType();
 
   // Enums can early-return
   if (entryType.is(TY_ENUM))
@@ -2373,14 +2368,16 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
         if (manifestation->scope == symbolType.getBaseType().getBodyScope())
-          return symbolType.replaceBaseSubType(manifestation->name);
+          return symbolType;
 
   // The target source file does not know about the struct at all
   // -> show it how to find the struct
   const std::string structName = symbolType.getBaseType().getSubType();
   const NameRegistryEntry *origRegistryEntry = sourceFile->getNameRegistryEntry(structName);
   assert(origRegistryEntry != nullptr);
-  targetSourceFile->addNameRegistryEntry(structName, origRegistryEntry->targetEntry, origRegistryEntry->targetScope, false);
+  const uint64_t targetTypeId = origRegistryEntry->typeId;
+  SymbolTableEntry *targetEntry = origRegistryEntry->targetEntry;
+  targetSourceFile->addNameRegistryEntry(structName, targetTypeId, targetEntry, origRegistryEntry->targetScope, false);
 
   return symbolType;
 }
@@ -2400,18 +2397,16 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
   for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->scope == baseType.getBodyScope()) {
-          // Get the 'fullest-qualified' registry entry
-          const NameRegistryEntry *mostQualifiedEntry = sourceFile->getNameRegistryEntry(entry.name);
-          assert(mostQualifiedEntry != nullptr);
-          return symbolType.replaceBaseSubType(mostQualifiedEntry->name);
-        }
+        if (manifestation->scope == baseType.getBodyScope())
+          return symbolType;
 
   // This source file does not know about the struct at all
   // -> show it how to find the struct
-  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(baseType.getOriginalSubType());
+  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(baseType.getSubType());
   assert(origRegistryEntry != nullptr);
-  sourceFile->addNameRegistryEntry(baseType.getSubType(), origRegistryEntry->targetEntry, origRegistryEntry->targetScope, false);
+  const uint64_t typeId = origRegistryEntry->typeId;
+  SymbolTableEntry *targetEntry = origRegistryEntry->targetEntry;
+  sourceFile->addNameRegistryEntry(baseType.getSubType(), typeId, targetEntry, origRegistryEntry->targetScope, false);
 
   return symbolType;
 }

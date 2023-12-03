@@ -86,7 +86,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
       if (!matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictSpecifierMatching))
         return false;
     } else {
-      if (requestedType.getOriginalSubType() != candidateType.getOriginalSubType())
+      if (requestedType.getSubType() != candidateType.getSubType())
         return false;
       if (requestedType.getBodyScope()->parent != candidateType.getBodyScope()->parent)
         return false;
