@@ -1,5 +1,20 @@
-import "../../src-bootstrap/reader/reader";
+/*import "../../src-bootstrap/reader/reader";
 
 f<int> main() {
     Reader reader = Reader("./test.spice");
+    printf("%d", reader.isEOF());
+    while !reader.isEOF() {
+        printf("%c", reader.getChar());
+        reader.advance();
+    }
+}*/
+
+ext f<int> open(string /*file path*/, int /*flags*/...);
+ext f<int> close(int /*file descriptor*/);
+
+f<int> main() {
+    int res = open("this-is-a-test.txt", 65);
+    printf("%d", res);
+    res = close(res);
+    printf("%d", res);
 }

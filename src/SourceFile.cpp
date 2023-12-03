@@ -602,7 +602,13 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(const std::string &sym
 
   // Resolve registry entry for the given name
   assert(exportedNameRegistry.contains(symbolName));
-  return &exportedNameRegistry.at(symbolName);
+  const NameRegistryEntry *entry = &exportedNameRegistry.at(symbolName);
+
+  // Mark the import entry as used
+  if (entry->importEntry != nullptr)
+    entry->importEntry->used = true;
+
+  return entry;
 }
 
 void SourceFile::checkForSoftErrors() {

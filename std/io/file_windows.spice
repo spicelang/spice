@@ -8,69 +8,94 @@ public const string MODE_APPEND               = "a";
 public const string MODE_READ_WRITE           = "r+";
 public const string MODE_READ_WRITE_OVERWRITE = "w+";
 public const string MODE_READ_WRITE_APPEND    = "a+";
+const int O_RDONLY = 0o00000000; // Read only
+const int O_WRONLY = 0o00000001; // Write only
+const int O_RDWR   = 0o00000002; // Read and write
 
-const int MODE_CREATE = 0x100;
-const int MODE_RDWR   = 0x002;
+// Flags for open()
+const int O_APPEND    = 0o00002000;  // Set append mode
+const int O_ASYNC     = 0o00020000;  // Send a signal when I/O is possible
+const int O_CLOEXEC   = 0o02000000;  // Close the file descriptor upon execution of an exec family function
+const int O_CREAT     = 0o00000100;  // Create file if it does not exist
+const int O_DIRECT    = 0o00040000;  // Prevent file contents from being cached in memory
+const int O_DIRECTORY = 0o00200000;  // Fail if not a directory
+const int O_DSYNC     = 0o00010000;  // Use synchronized I/O data integrity completion
+const int O_EXCL      = 0o00000200;  // Fail if file already exists
+const int O_LARGEFILE = 0o00100000;  // Allow large file offsets
+const int O_NOATIME   = 0o00020000;  // Do not update file access time
+const int O_NOCTTY    = 0o00000400;  // Do not allow control of terminal device
+const int O_NOFOLLOW  = 0o00001000;  // Do not follow symlinks
+const int O_NONBLOCK  = 0o00004000;  // Use non-blocking I/O
+const int O_PATH      = 0o010000000; // Resolve pathname but do not open file
+const int O_SYNC      = 0o00004000;  // Use synchronized I/O file integrity completion
+const int O_TMPFILE   = 0o020000000; // Create an unnamed temporary file
+const int O_TRUNC     = 0o00001000;  // Truncate flag
 
+// File permission modes
+public const short S_IRWXU = 0o700s; // Read, write, execute/search by owner
+public const short S_IRUSR = 0o400s; // Read permission, owner
+public const short S_IWUSR = 0o200s; // Write permission, owner
+public const short S_IXUSR = 0o100s; // Execute/search permission, owner
+public const short S_IRWXG = 0o070s; // Read, write, execute/search by group
+public const short S_IRGRP = 0o040s; // Read permission, group
+public const short S_IWGRP = 0o020s; // Write permission, group
+public const short S_IXGRP = 0o010s; // Execute/search permission, group
+public const short S_IRWXO = 0o007s; // Read, write, execute/search by others
+public const short S_IROTH = 0o004s; // Read permission, others
+public const short S_IWOTH = 0o002s; // Write permission, others
+public const short S_IXOTH = 0o001s; // Execute/search permission, others
+
+// File operation status codes
+const int STATUS_OK    = 0;
+const int STATUS_ERROR = -1;
+
+// File access flags
 const int F_OK = 0; // File existence
 const int X_OK = 1; // Can execute
 const int W_OK = 2; // Can write
 const int R_OK = 4; // Can read
 
-const int EOF = -1;
-
+// File seek modes
 const int SEEK_SET = 0;
 const int SEEK_CUR = 1;
 const int SEEK_END = 2;
 
+const int EOF = -1;
+
 type FilePtr alias byte*;
 
-public type File struct {
-    FilePtr* filePtr
-}
-
 // Link external functions
-ext f<int> open(string, int...);
-ext f<FilePtr*> fopen(string, string);
-ext f<int> fclose(FilePtr*);
-ext f<int> fgetc(FilePtr*);
-ext f<int> fputc(int, FilePtr*);
-ext f<int> fputs(string, FilePtr*);
-ext f<int> access(string, int);
-ext f<int> fseek(FilePtr*, long, int);
-ext f<long> ftell(FilePtr*);
+ext f<int> open(string /*file path*/, int /*flags*/...);
+ext f<int> close(int /*file descriptor*/);
+ext f<int> chmod(string /*file path*/, short /*mode*/);
+ext f<int> remove(string /*file path*/);
+ext f<FilePtr> fopen(string /*file path*/, string /*mode*/);
+ext f<int> fclose(FilePtr /*stream*/);
+ext f<int> fgetc(FilePtr /*stream*/);
+ext f<int> fputc(int /*char*/, FilePtr /*stream*/);
+ext f<int> fputs(string /*string*/, FilePtr /*stream*/);
+ext f<int> access(string /*file path*/, int /*mode*/);
+ext f<int> fseek(FilePtr /*stream*/, long /*offset*/, int /*whence*/);
+ext f<unsigned long> ftell(FilePtr /*stream*/);
 
-/**
- * Creates an empty file on disk similar to the 'touch' command on Linux.
- *
- * @return Result code of the create operation: 0 = successful, -1 = failed
- */
-public f<int> createFile(string path) {
-    return open(path, MODE_CREATE|MODE_RDWR);
+public type File struct {
+    FilePtr filePtr
 }
 
-/**
- * Opens a (new) file at the specified path with the specified mode.
- *
- * There are predefined constants for the mode available:
- * MODE_READ, MODE_WRITE, MODE_APPEND,
- * MODE_READ_WRITE, MODE_READ_WRITE_OVERWRITE, MODE_READ_WRITE_APPEND
- *
- * @return File pointer
- */
-public f<Result<File>> openFile(string path, string mode) {
-    FilePtr* fp = fopen(path, mode);
-    File file = File{fp};
-    return fp != nil<FilePtr*> ? ok(file) : err(file, Error("Failed to open file"));
+public p File.dtor() {
+    if this.filePtr != nil<FilePtr> {
+        this.close();
+    }
 }
 
 /**
  * Closes the file behind the provided file pointer.
  *
- * @return Result code of the close operation: 0 = successful, -1 = failed
+ * @return True if successful, false if not
  */
-public f<int> File.close() {
-    return fclose(this.filePtr);
+public f<bool> File.close() {
+    result = fclose(this.filePtr) == STATUS_OK;
+    this.filePtr = nil<FilePtr>;
 }
 
 /**
@@ -85,19 +110,19 @@ public f<int> File.readChar() {
 /**
  * Writes a single character to the file.
  *
- * @return Result code of the write operation: 0 = successful, -1 = failed
+ * @return True if successful, false if not
  */
-public f<int> File.writeChar(char value) {
-    return fputc((int) value, this.filePtr);
+public f<bool> File.writeChar(char value) {
+    return fputc((int) value, this.filePtr) == STATUS_OK;
 }
 
 /**
  * Writes a string to the file.
  *
- * @return Result code of the write operation: 0 = successful, -1 = failed
+ * @return True if successful, false if not
  */
-public f<int> File.writeString(string value) {
-    return fputs(value, this.filePtr);
+public f<bool> File.writeString(string value) {
+    return fputs(value, this.filePtr) == STATUS_OK;
 }
 
 /**
@@ -105,13 +130,13 @@ public f<int> File.writeString(string value) {
  *
  * @return File size in bytes
  */
-public f<long> File.getSize() {
+public f<unsigned long> File.getSize() {
     // Remember current cursor position
-    long curPos = ftell(this.filePtr);
+    unsigned long curPos = ftell(this.filePtr);
     // Move the cursor to the end of the file
     fseek(this.filePtr, (long) 0, SEEK_END);
     // Get the cursor position
-    long size = ftell(this.filePtr);
+    unsigned long size = ftell(this.filePtr);
     // Move cursor back to the remembered position
     fseek(this.filePtr, curPos, SEEK_SET);
     return size;
@@ -124,6 +149,51 @@ public f<long> File.getSize() {
  */
 public f<bool> File.isEOF() {
     return this.readChar() == EOF;
+}
+
+/**
+ * Creates an empty file on disk similar to the 'touch' command on Linux.
+ *
+ * @return True if successful, false if not
+ */
+public f<bool> createFile(string path) {
+    int fileDescriptor = open(path, O_CREAT | O_WRONLY);
+    result = fileDescriptor != STATUS_ERROR;
+    printf("%d\n", fileDescriptor);
+    close(fileDescriptor);
+}
+
+/**
+ * Changes the permissions of a file.
+ *
+ * @return True if successful, false if not
+ */
+public f<bool> changeFilePermissions(string path, short mode) {
+    return chmod(path, mode) != STATUS_ERROR;
+}
+
+/**
+ * Deletes a file from disk.
+ *
+ * @return True if successful, false if not
+ */
+public f<bool> deleteFile(string path) {
+    return remove(path) == STATUS_OK;
+}
+
+/**
+ * Opens a (new) file at the specified path with the specified mode.
+ *
+ * There are predefined constants for the mode available:
+ * MODE_READ, MODE_WRITE, MODE_APPEND,
+ * MODE_READ_WRITE, MODE_READ_WRITE_OVERWRITE, MODE_READ_WRITE_APPEND
+ *
+ * @return File pointer
+ */
+public f<Result<File>> openFile(string path, string mode = MODE_READ) {
+    FilePtr fp = fopen(path, mode);
+    File file = File{fp};
+    return fp != nil<FilePtr> ? ok(file) : err(file, Error("Failed to open file"));
 }
 
 /**
@@ -153,21 +223,21 @@ public f<Result<String>> readFile(string path) {
 /**
  * Writes a string to a file at a given path.
  *
- * @return Result code of the write operation: 0 = successful, -1 = failed
+ * @return True if successful, false if not
  */
-public f<Result<int>> writeFile(string path, string content) {
+public f<Result<bool>> writeFile(string path, string content) {
     // Open the file in write mode
     Result<File> fileResult = openFile(path, MODE_WRITE);
     // Check for errors
     if !fileResult.isOk() {
-        return err(0, fileResult.getErr());
+        return err(false, fileResult.getErr());
     }
     File file = fileResult.unwrap();
     // Write the string to the file
-    int resultCode = file.writeString(content);
+    bool success = file.writeString(content);
     // Close the file
     file.close();
-    return ok(resultCode);
+    return ok(success);
 }
 
 /**
@@ -175,16 +245,16 @@ public f<Result<int>> writeFile(string path, string content) {
  *
  * @return File size in bytes
  */
-public f<Result<long>> getFileSize(string path) {
+public f<Result<unsigned long>> getFileSize(string path) {
     // Open the file in read mode
     Result<File> fileResult = openFile(path, MODE_READ);
     // Check for errors
     if !fileResult.isOk() {
-        return err(0l, fileResult.getErr());
+        return err((unsigned long) 0l, fileResult.getErr());
     }
     File file = fileResult.unwrap();
     // Get the file file
-    long size = file.getSize();
+    unsigned long size = file.getSize();
     // Close the file
     file.close();
     return ok(size);
@@ -196,7 +266,7 @@ public f<Result<long>> getFileSize(string path) {
  * @return Existing / not existing
  */
 public f<bool> fileExists(string path) {
-    return access(path, F_OK) == 0;
+    return access(path, F_OK) != STATUS_ERROR;
 }
 
 /**
@@ -205,7 +275,7 @@ public f<bool> fileExists(string path) {
  * @return Readable / not readable
  */
 public f<bool> isFileReadable(string path) {
-    return access(path, R_OK) == 0;
+    return access(path, R_OK) != STATUS_ERROR;
 }
 
 /**
@@ -214,7 +284,7 @@ public f<bool> isFileReadable(string path) {
  * @return Writable / not writable
  */
 public f<bool> isFileWritable(string path) {
-    return access(path, W_OK) == 0;
+    return access(path, W_OK) != STATUS_ERROR;
 }
 
 /**
@@ -223,5 +293,5 @@ public f<bool> isFileWritable(string path) {
  * @return Executable / not executable
  */
 public f<bool> isFileExecutable(string path) {
-    return access(path, X_OK) == 0;
+    return access(path, X_OK) != STATUS_ERROR;
 }

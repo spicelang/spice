@@ -606,6 +606,10 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   module->getOrInsertFunction(mangledName, functionType);
   llvm::Function *fct = module->getFunction(mangledName);
 
+  // Add noundef attribute to all parameters
+  for (size_t i = 0; i < argTypes.size(); i++)
+    fct->addParamAttr(i, llvm::Attribute::NoUndef);
+
   // If the function should be imported as dll, add the dll attribute
   if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_CORE_LINKER_DLL))
     if (node->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_LINKER_DLL)->boolValue)

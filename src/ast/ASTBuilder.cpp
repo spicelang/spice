@@ -220,6 +220,7 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   // Enrich
   extDeclNode->extFunctionName = getIdentifier(ctx->IDENTIFIER() ? ctx->IDENTIFIER() : ctx->TYPE_IDENTIFIER());
   extDeclNode->hasArgs = ctx->typeLst();
+  extDeclNode->isVarArg = ctx->ELLIPSIS();
 
   // Visit children
   visitChildren(ctx);

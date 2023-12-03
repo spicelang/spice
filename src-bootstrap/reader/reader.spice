@@ -11,21 +11,24 @@ public type Reader struct {
     File file
     string filename
     char curChar = '\0'
-    unsigned long line = 1l
-    unsigned long col = 0l
+    CodeLoc curCodeLoc
 }
 
 public p Reader.ctor(const string inputFileName) {
     this.filename = inputFileName;
+    this.curCodeLoc = CodeLoc(1l, 0l, inputFileName);
+
+    // Open the file input stream
     Result<File> result = openFile(inputFileName, MODE_READ);
     if !result.isOk() {
         panic(Error("Source file cannot be opened"));
     }
     this.file = result.unwrap();
-}
 
-public p Reader.dtor() {
-    this.file.close();
+    printf("Size: %d\n", this.file.getSize());
+
+    // Read the first character
+    this.advance();
 }
 
 /**
@@ -33,7 +36,7 @@ public p Reader.dtor() {
  *
  * @return char Last character
  */
-public f<char> Reader.getChar() {
+public inline f<char> Reader.getChar() {
     return this.curChar;
 }
 
@@ -42,8 +45,8 @@ public f<char> Reader.getChar() {
  *
  * @return CodeLoc Code location
  */
-public f<CodeLoc> Reader.getCodeLoc() {
-    return CodeLoc(this.line, this.col, this.filename);
+public inline f<CodeLoc&> Reader.getCodeLoc() {
+    return this.curCodeLoc;
 }
 
 /**
@@ -53,10 +56,10 @@ public p Reader.advance() {
     assert !this.isEOF();
     this.curChar = (char) this.file.readChar();
     if this.curChar == '\n' {
-        this.line++;
-        this.col = 0l;
+        this.curCodeLoc.line++;
+        this.curCodeLoc.col = 0l;
     }
-    this.col++;
+    this.curCodeLoc.col++;
 }
 
 /**
@@ -65,7 +68,7 @@ public p Reader.advance() {
  *
  * @param c Expected char
  */
-public p Reader.expect(char c) {
+public inline p Reader.expect(char c) {
     assert this.curChar == c;
     this.advance();
 }
@@ -75,6 +78,6 @@ public p Reader.expect(char c) {
  *
  * @return At the end or not
  */
-public f<bool> Reader.isEOF() {
+public inline f<bool> Reader.isEOF() {
     return this.file.isEOF();
 }
