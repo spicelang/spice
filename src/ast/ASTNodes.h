@@ -356,6 +356,7 @@ public:
 
   // Public members
   std::string structName;
+  uint64_t typeId;
   bool hasTemplateTypes = false;
   bool hasInterfaces = false;
   bool emitVTable = false;
@@ -378,6 +379,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitInterfaceDef(this); }
 
   // Public get methods
+  [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
   [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
   [[nodiscard]] std::vector<SignatureNode *> signatures() const { return getChildren<SignatureNode>(); }
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
@@ -387,6 +389,7 @@ public:
 
   // Public members
   std::string interfaceName;
+  uint64_t typeId;
   bool hasTemplateTypes = false;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
@@ -411,6 +414,7 @@ public:
 
   // Public members
   std::string enumName;
+  uint64_t typeId;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers enumSpecifiers = TypeSpecifiers::of(TY_ENUM);
   Scope *enumScope;
@@ -1033,8 +1037,9 @@ public:
     TARGET_INVALID = 0,
     TARGET_MODULE = 1 << 0,
     TARGET_STRUCT = 1 << 1,
-    TARGET_FCT_PROC = 1 << 2,
-    TARGET_EXT_DECL = 1 << 3,
+    TARGET_INTERFACE = 1 << 2,
+    TARGET_FCT_PROC = 1 << 3,
+    TARGET_EXT_DECL = 1 << 4,
   };
 
   enum AttrType : uint8_t {

@@ -16,6 +16,7 @@ static constexpr const char *const ATTR_CORE_LINKER_DLL = "core.linker.dll";
 static constexpr const char *const ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
 static constexpr const char *const ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
 static constexpr const char *const ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
+static constexpr const char *const ATTR_CORE_COMPILER_FIXED_TYPE_ID = "core.compiler.fixedTypeId";
 static constexpr const char *const ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
 static constexpr const char *const ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
 static constexpr const char *const ATTR_CORE_COMPILER_WARNINGS_IGNORE = "core.compiler.warnings.ignore";
@@ -52,6 +53,13 @@ static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
         {
             .target = AttrNode::TARGET_MODULE,
             .type = AttrNode::TYPE_BOOL,
+        },
+    },
+    {
+        ATTR_CORE_COMPILER_FIXED_TYPE_ID,
+        {
+            .target = AttrNode::TARGET_STRUCT | AttrNode::TARGET_INTERFACE,
+            .type = AttrNode::TYPE_INT,
         },
     },
     {

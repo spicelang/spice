@@ -148,7 +148,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
         // Instantiate interface
         Scope *interfaceMatchScope = interfaceType.getBodyScope()->parent;
         Interface *spiceInterface =
-            InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getOriginalSubType(), templateTypes, node);
+            InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getSubType(), templateTypes, node);
         assert(spiceInterface != nullptr);
 
         interfaceType = spiceInterface->entry->getType();

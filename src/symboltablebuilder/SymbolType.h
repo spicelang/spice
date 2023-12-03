@@ -31,6 +31,7 @@ const char *const STROBJ_NAME = "String";
 const char *const ERROBJ_NAME = "Error";
 const char *const TIOBJ_NAME = "TypeInfo";
 const long ARRAY_SIZE_UNKNOWN = 0;
+const uint64_t TYPE_ID_ITERABLE = 255;
 
 enum SymbolSuperType : uint8_t {
   TY_INVALID,
@@ -54,7 +55,7 @@ enum SymbolSuperType : uint8_t {
   TY_ARRAY,
   TY_FUNCTION,
   TY_PROCEDURE,
-  TY_IMPORT
+  TY_IMPORT,
 };
 
 class SymbolType {
@@ -73,28 +74,36 @@ public:
   public:
     // Constructors
     TypeChainElement() = default;
-    explicit TypeChainElement(SymbolSuperType superType) : superType(superType){};
-    TypeChainElement(SymbolSuperType superType, std::string subType) : superType(superType), subType(std::move(subType)){};
-    TypeChainElement(SymbolSuperType superType, TypeChainElementData data) : superType(superType), data(data){};
-    TypeChainElement(SymbolSuperType superType, std::string subType, TypeChainElementData data,
+    explicit TypeChainElement(SymbolSuperType superType) : superType(superType), typeId(superType){};
+    TypeChainElement(SymbolSuperType superType, const std::string &subType)
+        : superType(superType), subType(subType), typeId(superType) {
+      // ToDo: This check can be removed once the type id is introduced globally
+      assert(superType == TY_IMPORT || (subType.find('/') == std::string::npos && subType.find("::") == std::string::npos));
+    };
+    TypeChainElement(SymbolSuperType superType, TypeChainElementData data)
+        : superType(superType), data(data), typeId(superType){};
+    TypeChainElement(SymbolSuperType superType, const std::string &subType, uint64_t typeId, TypeChainElementData data,
                      const std::vector<SymbolType> &templateTypes)
-        : superType(superType), subType(std::move(subType)), data(data), templateTypes(templateTypes){};
+        : superType(superType), subType(subType), typeId(typeId), data(data), templateTypes(templateTypes) {
+      // ToDo: This check can be removed once the type id is introduced globally
+      assert(superType == TY_IMPORT || (subType.find('/') == std::string::npos && subType.find("::") == std::string::npos));
+    };
 
     // Overloaded operators
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs);
     friend bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs);
     [[nodiscard]] std::string getName(bool withSize) const;
-    [[nodiscard]] std::string getOriginalSubType() const;
 
     // Public members
     SymbolSuperType superType = TY_DYN;
     std::string subType;
+    uint64_t typeId = TY_DYN;
     TypeChainElementData data = {.arraySize = 0};
     std::vector<SymbolType> templateTypes;
     std::vector<SymbolType> paramTypes; // First type is the return type
 
     // Json serializer/deserializer
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, data, templateTypes, paramTypes)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, typeId, data, templateTypes, paramTypes)
   };
 
   // Typedefs
@@ -106,9 +115,10 @@ public:
       : typeChain({TypeChainElement{superType}}), specifiers(TypeSpecifiers::of(superType)) {}
   SymbolType(SymbolSuperType superType, const std::string &subType)
       : typeChain({TypeChainElement{superType, subType}}), specifiers(TypeSpecifiers::of(superType)) {}
-  SymbolType(SymbolSuperType superType, const std::string &subType, const TypeChainElementData &data,
+  SymbolType(SymbolSuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
              const std::vector<SymbolType> &templateTypes)
-      : typeChain({TypeChainElement(superType, subType, data, templateTypes)}), specifiers(TypeSpecifiers::of(superType)) {}
+      : typeChain({TypeChainElement(superType, subType, typeId, data, templateTypes)}),
+        specifiers(TypeSpecifiers::of(superType)) {}
   explicit SymbolType(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
   SymbolType(TypeChain types, TypeSpecifiers specifiers) : typeChain(std::move(types)), specifiers(specifiers) {}
 
@@ -118,7 +128,6 @@ public:
   [[nodiscard]] SymbolType toConstReference(const ASTNode *node) const;
   [[nodiscard]] SymbolType toArray(const ASTNode *node, size_t size = 0, bool skipDynCheck = false) const;
   [[nodiscard]] SymbolType getContainedTy() const;
-  [[nodiscard]] SymbolType replaceBaseSubType(const std::string &newSubType) const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
   [[nodiscard]] ALWAYS_INLINE bool isPtr() const { return getSuperType() == TY_PTR; }
@@ -156,10 +165,6 @@ public:
   [[nodiscard]] ALWAYS_INLINE const std::string &getSubType() const {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
     return typeChain.back().subType;
-  }
-  [[nodiscard]] ALWAYS_INLINE std::string getOriginalSubType() const {
-    assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
-    return typeChain.back().getOriginalSubType();
   }
   [[nodiscard]] ALWAYS_INLINE SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
   [[nodiscard]] SymbolType getBaseType() const {

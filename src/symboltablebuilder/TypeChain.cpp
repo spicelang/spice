@@ -10,26 +10,25 @@ bool operator==(const SymbolType::TypeChainElement &lhs, const SymbolType::TypeC
   // Check super type
   if (lhs.superType != rhs.superType)
     return false;
+
   // Check data
   switch (lhs.superType) {
   case TY_ARRAY:
     return lhs.data.arraySize == rhs.data.arraySize;
-  case TY_STRUCT:
-  case TY_INTERFACE:
+  case TY_STRUCT:    // fall-through
+  case TY_INTERFACE: // fall-through
   case TY_ENUM: {
-    const std::string lhsSubTypeSuffix = CommonUtil::getLastFragment(lhs.subType, SCOPE_ACCESS_TOKEN);
-    const std::string rhsSubTypeSuffix = CommonUtil::getLastFragment(rhs.subType, SCOPE_ACCESS_TOKEN);
     if (lhs.superType == TY_STRUCT) {
       assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
-      return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.templateTypes == rhs.templateTypes;
+      return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
     } else if (lhs.superType == TY_INTERFACE) {
-      return lhsSubTypeSuffix == rhsSubTypeSuffix;
+      return lhs.typeId == rhs.typeId;
     } else {
       assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
-      return lhsSubTypeSuffix == rhsSubTypeSuffix && lhs.data.bodyScope == rhs.data.bodyScope;
+      return lhs.typeId == rhs.typeId && lhs.data.bodyScope == rhs.data.bodyScope;
     }
   }
-  case TY_FUNCTION:
+  case TY_FUNCTION: // fall-through
   case TY_PROCEDURE:
     if (lhs.paramTypes.size() != rhs.paramTypes.size())
       return false;
@@ -133,15 +132,6 @@ std::string SymbolType::TypeChainElement::getName(bool withSize) const {
   default:
     throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element");
   }
-}
-
-/**
- * Get the original sub type, without any namespace information
- *
- * @return last fragment of sub type
- */
-std::string SymbolType::TypeChainElement::getOriginalSubType() const {
-  return CommonUtil::getLastFragment(subType, SCOPE_ACCESS_TOKEN);
 }
 
 } // namespace spice::compiler

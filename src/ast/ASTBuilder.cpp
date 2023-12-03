@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2023 ChilliBits. All rights reserved.
 
 #include "ASTBuilder.h"
+#include "Attributes.h"
 
 #include <regex>
 
@@ -112,6 +113,7 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
 
   // Enrich
   structDefNode->structName = getIdentifier(ctx->TYPE_IDENTIFIER());
+  structDefNode->typeId = resourceManager.getNextCustomTypeId();
   structDefNode->hasTemplateTypes = ctx->LESS();
   structDefNode->hasInterfaces = ctx->COLON();
 
@@ -123,6 +125,10 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
     for (AttrNode *attr : structDefNode->attrs()->attrLst()->attributes())
       attr->target = AttrNode::TARGET_STRUCT;
 
+  // Check if a custom type id was set
+  if (structDefNode->attrs() && structDefNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
+    structDefNode->typeId = structDefNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+
   return concludeNode(ctx, structDefNode);
 }
 
@@ -131,10 +137,21 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
 
   // Enrich
   interfaceDefNode->interfaceName = getIdentifier(ctx->TYPE_IDENTIFIER());
+  interfaceDefNode->typeId = resourceManager.getNextCustomTypeId();
   interfaceDefNode->hasTemplateTypes = ctx->LESS();
 
   // Visit children
   visitChildren(ctx);
+
+  // Tell the attributes that they are interface attributes
+  if (interfaceDefNode->attrs())
+    for (AttrNode *attr : interfaceDefNode->attrs()->attrLst()->attributes())
+      attr->target = AttrNode::TARGET_INTERFACE;
+
+  // Check if a custom type id was set
+  if (interfaceDefNode->attrs() && interfaceDefNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
+    interfaceDefNode->typeId =
+        interfaceDefNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
 
   return concludeNode(ctx, interfaceDefNode);
 }
@@ -144,6 +161,7 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
 
   // Enrich
   enumDefNode->enumName = getIdentifier(ctx->TYPE_IDENTIFIER());
+  enumDefNode->typeId = resourceManager.getNextCustomTypeId();
 
   // Visit children
   visitChildren(ctx);

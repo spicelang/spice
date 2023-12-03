@@ -349,7 +349,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
       // Check for visibility
       if (interfaceType.getBodyScope()->isImportedBy(rootScope) && !interfaceType.isPublic())
         throw SemanticError(node, INSUFFICIENT_VISIBILITY,
-                            "Cannot access interface '" + interfaceType.getOriginalSubType() + "' due to its private visibility");
+                            "Cannot access interface '" + interfaceType.getSubType() + "' due to its private visibility");
       // Add to interface types
       interfaceTypes.push_back(interfaceType);
       // Update the type of the entry for that interface field
@@ -362,7 +362,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Update type of struct entry
   assert(node->entry != nullptr);
-  SymbolType structType(TY_STRUCT, node->structName, {.bodyScope = node->structScope}, usedTemplateTypes);
+  const SymbolType::TypeChainElementData data = {.bodyScope = node->structScope};
+  SymbolType structType(TY_STRUCT, node->structName, node->typeId, data, usedTemplateTypes);
   structType.specifiers = node->structSpecifiers;
   node->entry->updateType(structType, false);
 
@@ -446,7 +447,8 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   }
 
   // Update type of interface entry
-  SymbolType interfaceType(TY_INTERFACE, node->interfaceName, {.bodyScope = node->interfaceScope}, usedTemplateTypes);
+  const SymbolType::TypeChainElementData data = {.bodyScope = node->interfaceScope};
+  SymbolType interfaceType(TY_INTERFACE, node->interfaceName, node->typeId, data, usedTemplateTypes);
   interfaceType.specifiers = node->interfaceSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(interfaceType, false);
@@ -493,7 +495,8 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
 std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Update type of enum entry
-  SymbolType enumType(TY_ENUM, node->enumName);
+  const SymbolType::TypeChainElementData data = {.bodyScope = node->enumScope};
+  SymbolType enumType(TY_ENUM, node->enumName, node->typeId, data, {});
   enumType.specifiers = node->enumSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(enumType, false);

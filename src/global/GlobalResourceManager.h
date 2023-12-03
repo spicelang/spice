@@ -35,12 +35,12 @@ class GlobalResourceManager {
 public:
   // Constructors
   explicit GlobalResourceManager(const CliOptions &cliOptions);
-  GlobalResourceManager(const GlobalResourceManager &) = delete;
+  GlobalResourceManager(const GlobalResourceManager &) = delete; // Global resource manager can only exist exactly once
   ~GlobalResourceManager();
 
   // Public methods
-  SourceFile *createSourceFile(SourceFile *parent, const std::string &dependencyName, const std::filesystem::path &path,
-                               bool isStdFile);
+  SourceFile *createSourceFile(SourceFile *parent, const std::string &depName, const std::filesystem::path &path, bool isStdFile);
+  uint64_t getNextCustomTypeId();
 
   // Public members
   llvm::LLVMContext context;
@@ -58,6 +58,10 @@ public:
   BS::synced_stream tout;
   std::mutex objectEmitLock;
   ErrorManager errorManager;
+
+private:
+  // Private members
+  std::atomic<uint64_t> nextCustomTypeId = UINT8_MAX + 1; // Start at 256 because all primitive types come first
 };
 
 } // namespace spice::compiler

@@ -84,7 +84,7 @@ assert.then.L12:                                  ; preds = %2
   unreachable, !dbg !42
 
 assert.exit.L12:                                  ; preds = %2
-  %18 = call %struct.VectorIterator @_Z7iterateRN3std4data6vector6VectorIiEE(ptr %vi), !dbg !44
+  %18 = call %struct.VectorIterator @_Z7iterateR6VectorIiE(ptr %vi), !dbg !44
   call void @llvm.dbg.declare(metadata ptr %it, metadata !45, metadata !DIExpression()), !dbg !52
   store %struct.VectorIterator %18, ptr %it, align 8, !dbg !44
   %19 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !53
@@ -261,7 +261,7 @@ assert.then.L45:                                  ; preds = %assert.exit.L43
   unreachable, !dbg !94
 
 assert.exit.L45:                                  ; preds = %assert.exit.L43
-  %72 = call %struct.VectorIterator @_Z7iterateRN3std4data6vector6VectorIiEE(ptr %vi), !dbg !95
+  %72 = call %struct.VectorIterator @_Z7iterateR6VectorIiE(ptr %vi), !dbg !95
   call void @llvm.dbg.declare(metadata ptr %item, metadata !97, metadata !DIExpression()), !dbg !98
   store %struct.VectorIterator %72, ptr %10, align 8, !dbg !95
   br label %foreach.head.L48, !dbg !98
@@ -317,7 +317,7 @@ assert.then.L53:                                  ; preds = %assert.exit.L52
   unreachable, !dbg !105
 
 assert.exit.L53:                                  ; preds = %assert.exit.L52
-  %90 = call %struct.VectorIterator @_Z7iterateRN3std4data6vector6VectorIiEE(ptr %vi), !dbg !106
+  %90 = call %struct.VectorIterator @_Z7iterateR6VectorIiE(ptr %vi), !dbg !106
   call void @llvm.dbg.declare(metadata ptr %item1, metadata !108, metadata !DIExpression()), !dbg !109
   store %struct.VectorIterator %90, ptr %11, align 8, !dbg !106
   br label %foreach.head.L56, !dbg !109
@@ -373,7 +373,7 @@ assert.then.L61:                                  ; preds = %assert.exit.L60
   unreachable, !dbg !116
 
 assert.exit.L61:                                  ; preds = %assert.exit.L60
-  %108 = call %struct.VectorIterator @_Z7iterateRN3std4data6vector6VectorIiEE(ptr %vi), !dbg !117
+  %108 = call %struct.VectorIterator @_Z7iterateR6VectorIiE(ptr %vi), !dbg !117
   store %struct.VectorIterator %108, ptr %13, align 8, !dbg !117
   call void @llvm.dbg.declare(metadata ptr %idx, metadata !119, metadata !DIExpression()), !dbg !121
   call void @llvm.dbg.declare(metadata ptr %item2, metadata !122, metadata !DIExpression()), !dbg !123
@@ -460,7 +460,7 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #3
 
-declare %struct.VectorIterator @_Z7iterateRN3std4data6vector6VectorIiEE(ptr)
+declare %struct.VectorIterator @_Z7iterateR6VectorIiE(ptr)
 
 declare i1 @_ZN14VectorIteratorIiE7isValidEv(ptr)
 

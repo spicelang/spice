@@ -115,7 +115,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   // if a function has overloads, they both refer to the same entry in the registry. So we only register the name once
   const NameRegistryEntry *existingRegistryEntry = sourceFile->getNameRegistryEntry(node->name->fqName);
   if (!existingRegistryEntry || existingRegistryEntry->targetEntry != node->entry)
-    sourceFile->addNameRegistryEntry(node->name->fqName, node->entry, currentScope, /*keepNewOnCollision=*/true);
+    sourceFile->addNameRegistryEntry(node->name->fqName, TY_FUNCTION, node->entry, currentScope, true);
 
   // Leave the struct scope
   if (node->isMethod)
@@ -176,7 +176,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   // if a procedure has overloads, they both refer to the same entry in the registry. So we only register the name once
   const NameRegistryEntry *existingRegistryEntry = sourceFile->getNameRegistryEntry(node->name->fqName);
   if (!existingRegistryEntry || existingRegistryEntry->targetEntry != node->entry)
-    sourceFile->addNameRegistryEntry(node->name->fqName, node->entry, currentScope, /*keepNewOnCollision=*/true);
+    sourceFile->addNameRegistryEntry(node->name->fqName, TY_PROCEDURE, node->entry, currentScope, true);
 
   // Leave the struct scope
   if (node->isMethod)
@@ -231,12 +231,16 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Add the struct to the symbol table
   node->entry = rootScope->insert(node->structName, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->structName, node->entry, node->structScope, /*keepNewOnCollision=*/true);
+  sourceFile->addNameRegistryEntry(node->structName, node->typeId, node->entry, node->structScope, true);
 
   return nullptr;
 }
 
 std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
+  // Visit attributes
+  if (node->attrs())
+    visit(node->attrs());
+
   // Check if this name already exists
   if (rootScope->lookupStrict(node->interfaceName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->interfaceName + "'");
@@ -265,7 +269,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   // Add the interface to the symbol table
   node->entry = rootScope->insert(node->interfaceName, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->interfaceName, node->entry, node->interfaceScope, /*keepNewOnCollision=*/true);
+  sourceFile->addNameRegistryEntry(node->interfaceName, node->typeId, node->entry, node->interfaceScope, true);
 
   return nullptr;
 }
@@ -298,7 +302,7 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
   // Add the enum to the symbol table
   node->entry = rootScope->insert(node->enumName, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->enumName, node->entry, node->enumScope, /*keepNewOnCollision=*/true);
+  sourceFile->addNameRegistryEntry(node->enumName, node->typeId, node->entry, node->enumScope, true);
 
   return nullptr;
 }
@@ -354,7 +358,7 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
   // Add the global to the symbol table
   node->entry = rootScope->insert(node->varName, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->varName, node->entry, currentScope, /*keepNewOnCollision=*/true);
+  sourceFile->addNameRegistryEntry(node->varName, TY_INVALID, node->entry, currentScope, true);
 
   return nullptr;
 }
@@ -371,7 +375,8 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   // Add the external declaration to the symbol table
   node->entry = rootScope->insert(node->extFunctionName, node);
   // Register the name in the exported name registry
-  sourceFile->addNameRegistryEntry(node->extFunctionName, node->entry, rootScope, /*keepNewOnCollision=*/true);
+  const uint64_t typeId = node->returnType() ? TY_FUNCTION : TY_PROCEDURE;
+  sourceFile->addNameRegistryEntry(node->extFunctionName, typeId, node->entry, rootScope, /*keepNewOnCollision=*/true);
 
   return nullptr;
 }
@@ -527,8 +532,8 @@ std::any SymbolTableBuilder::visitEnumItem(EnumItemNode *node) {
 
   // Add external registry entry
   assert(node->enumDef != nullptr);
-  sourceFile->addNameRegistryEntry(node->enumDef->enumName + SCOPE_ACCESS_TOKEN + node->itemName, enumItemEntry, currentScope,
-                                   /*keepNewOnCollision=*/true);
+  const std::string name = node->enumDef->enumName + SCOPE_ACCESS_TOKEN + node->itemName;
+  sourceFile->addNameRegistryEntry(name, TY_INT, enumItemEntry, currentScope, true);
 
   return nullptr;
 }

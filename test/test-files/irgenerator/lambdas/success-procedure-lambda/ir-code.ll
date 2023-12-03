@@ -31,7 +31,7 @@ define dso_local i32 @main() #0 {
   %fct = load ptr, ptr %5, align 8
   call void %fct()
   %6 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 0
-  store ptr @_Z14lambda.L7C44.0RN11__rt_string6StringEd, ptr %6, align 8
+  store ptr @_Z14lambda.L7C44.0R6Stringd, ptr %6, align 8
   %7 = load { ptr, ptr }, ptr %fat.ptr1, align 8
   store { ptr, ptr } %7, ptr %callbackWithArgs1, align 8
   %8 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs1, i32 0, i32 0
@@ -39,7 +39,7 @@ define dso_local i32 @main() #0 {
   %fct2 = load ptr, ptr %8, align 8
   call void %fct2(ptr %1, double 3.140000e+00)
   %9 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 0
-  store ptr @_Z15lambda.L12C41.0N11__rt_string6StringEb, ptr %9, align 8
+  store ptr @_Z15lambda.L12C41.06Stringb, ptr %9, align 8
   %10 = load { ptr, ptr }, ptr %fat.ptr3, align 8
   store { ptr, ptr } %10, ptr %callbackWithArgs2, align 8
   %11 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs2, i32 0, i32 0
@@ -61,7 +61,7 @@ define private void @_Z14lambda.L2C31.0v() {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-define private void @_Z14lambda.L7C44.0RN11__rt_string6StringEd(ptr %0, double %1) {
+define private void @_Z14lambda.L7C44.0R6Stringd(ptr %0, double %1) {
   %str = alloca ptr, align 8
   %d = alloca double, align 8
   store ptr %0, ptr %str, align 8
@@ -76,7 +76,7 @@ define private void @_Z14lambda.L7C44.0RN11__rt_string6StringEd(ptr %0, double %
 
 declare void @_ZN6String4ctorEPc(ptr, ptr)
 
-define private void @_Z15lambda.L12C41.0N11__rt_string6StringEb(%struct.String %0, i1 %1) {
+define private void @_Z15lambda.L12C41.06Stringb(%struct.String %0, i1 %1) {
   %str = alloca %struct.String, align 8
   %b = alloca i1, align 1
   store %struct.String %0, ptr %str, align 8
