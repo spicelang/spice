@@ -75,19 +75,13 @@ public:
     // Constructors
     TypeChainElement() = default;
     explicit TypeChainElement(SymbolSuperType superType) : superType(superType), typeId(superType){};
-    TypeChainElement(SymbolSuperType superType, const std::string &subType)
-        : superType(superType), subType(subType), typeId(superType) {
-      // ToDo: This check can be removed once the type id is introduced globally
-      assert(superType == TY_IMPORT || (subType.find('/') == std::string::npos && subType.find("::") == std::string::npos));
-    };
+    TypeChainElement(SymbolSuperType superType, std::string subType)
+        : superType(superType), subType(std::move(subType)), typeId(superType){};
     TypeChainElement(SymbolSuperType superType, TypeChainElementData data)
         : superType(superType), data(data), typeId(superType){};
-    TypeChainElement(SymbolSuperType superType, const std::string &subType, uint64_t typeId, TypeChainElementData data,
+    TypeChainElement(SymbolSuperType superType, std::string subType, uint64_t typeId, TypeChainElementData data,
                      const std::vector<SymbolType> &templateTypes)
-        : superType(superType), subType(subType), typeId(typeId), data(data), templateTypes(templateTypes) {
-      // ToDo: This check can be removed once the type id is introduced globally
-      assert(superType == TY_IMPORT || (subType.find('/') == std::string::npos && subType.find("::") == std::string::npos));
-    };
+        : superType(superType), subType(std::move(subType)), typeId(typeId), data(data), templateTypes(templateTypes){};
 
     // Overloaded operators
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs);
