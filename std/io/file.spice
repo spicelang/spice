@@ -65,12 +65,10 @@ const int EOF = -1;
 type FilePtr alias byte*;
 
 // Link external functions
-ext f<int> open(string /*file path*/, int /*flags*/...);
-ext f<int> close(int /*file descriptor*/);
-ext f<int> chmod(string /*file path*/, short /*mode*/);
-ext f<int> remove(string /*file path*/);
 ext f<FilePtr> fopen(string /*file path*/, string /*mode*/);
 ext f<int> fclose(FilePtr /*stream*/);
+ext f<int> chmod(string /*file path*/, short /*mode*/);
+ext f<int> remove(string /*file path*/);
 ext f<int> fgetc(FilePtr /*stream*/);
 ext f<int> fputc(int /*char*/, FilePtr /*stream*/);
 ext f<int> fputs(string /*string*/, FilePtr /*stream*/);
@@ -80,12 +78,6 @@ ext f<unsigned long> ftell(FilePtr /*stream*/);
 
 public type File struct {
     FilePtr filePtr
-}
-
-public p File.dtor() {
-    if this.filePtr != nil<FilePtr> {
-        this.close();
-    }
 }
 
 /**
@@ -127,7 +119,7 @@ public f<String> File.readLine() {
  * @return True if successful, false if not
  */
 public f<bool> File.write(char value) {
-    return fputc((int) value, this.filePtr) == STATUS_OK;
+    return fputc((int) value, this.filePtr) != STATUS_ERROR;
 }
 
 /**
@@ -136,7 +128,7 @@ public f<bool> File.write(char value) {
  * @return True if successful, false if not
  */
 public f<bool> File.write(string value) {
-    return fputs(value, this.filePtr) == STATUS_OK;
+    return fputs(value, this.filePtr) != STATUS_ERROR;
 }
 
 /**

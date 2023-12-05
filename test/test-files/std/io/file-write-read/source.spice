@@ -1,24 +1,35 @@
 import "std/io/file";
+import "std/type/result";
 
 f<int> main() {
     // Write file
-    File file = openFile("./test-file.txt", MODE_WRITE);
+    Result<File> fileResult = openFile("./test-file.txt", MODE_WRITE);
+    assert fileResult.isOk();
+    File file = fileResult.unwrap();
     file.write("Hello, world!\n");
     file.close();
 
     // Read file
-    file = openFile("./test-file.txt", MODE_READ);
-    assert file.readLine() == "Hello, world!\n";
+    fileResult = openFile("./test-file.txt", MODE_READ);
+    assert fileResult.isOk();
+    file = fileResult.unwrap();
+    assert file.readLine() == String("Hello, world!");
     file.close();
 
     // Append file
-    file = openFile("./test-file.txt", MODE_APPEND);
+    fileResult = openFile("./test-file.txt", MODE_APPEND);
+    assert fileResult.isOk();
+    file = fileResult.unwrap();
     file.write("Hello, again!\n");
     file.close();
 
     // Read file
-    file = openFile("./test-file.txt", MODE_READ);
-    assert file.readLine() == "Hello, world!\n";
-    assert file.readLine() == "Hello, again!\n";
+    fileResult = openFile("./test-file.txt", MODE_READ);
+    assert fileResult.isOk();
+    file = fileResult.unwrap();
+    assert file.readLine() == String("Hello, world!");
+    assert file.readLine() == String("Hello, again!");
     file.close();
+
+    printf("All assertions passed!");
 }
