@@ -1,13 +1,36 @@
-import "../../src-bootstrap/reader/reader";
+/*ext f<byte*> fopen(string, string);
+ext f<int> fclose(byte*);
+ext f<int> fputc(int, byte*);
+ext f<int> fputs(string, byte*);
+
+f<int> main() {
+    byte* file = fopen("./test-file.txt", "w");
+    fputs("Hello World!", file);
+    fclose(file);
+}*/
+
+import "std/io/file";
+import "std/type/result";
+
+f<int> main() {
+    Result<File> res = openFile("test-file.txt", MODE_WRITE);
+    assert res.isOk();
+    File file = res.unwrap();
+    file.write("test");
+    file.close();
+}
+
+/*import "../../src-bootstrap/reader/reader";
 
 f<int> main() {
     Reader reader = Reader("./test-file.txt");
+
     printf("%d", reader.isEOF());
     while !reader.isEOF() {
         printf("%c", reader.getChar());
         reader.advance();
     }
-}
+}*/
 
 /*import "std/io/file";
 
