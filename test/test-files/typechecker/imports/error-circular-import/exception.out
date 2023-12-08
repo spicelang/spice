@@ -1,5 +1,5 @@
-[Error|Semantic] C:/Users/Marc/Documents/JustForFunGitHubClonesFast/spice/cmake-build-debug/test/test-files/typechecker/imports/error-circular-import/source.spice:1:1:
-Circular import detected: Circular import detected while importing 'C:/Users/Marc/Documents/JustForFunGitHubClonesFast/spice/cmake-build-debug/test/test-files/typechecker/imports/error-circular-import/source1.spice'
+[Error|Semantic] test-files/typechecker/imports/error-circular-import/source.spice:1:1:
+Circular import detected: Circular import detected while importing 'test-files/typechecker/imports/error-circular-import/source1.spice'
 
 1  import "source1" as s1;
    ^^^^^^^^^^^^^^^^^^^^^^^
