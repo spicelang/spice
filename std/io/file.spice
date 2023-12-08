@@ -78,6 +78,7 @@ ext f<unsigned long> ftell(FilePtr /*stream*/);
 
 public type File struct {
     FilePtr filePtr
+    bool isEOF
 }
 
 /**
@@ -95,8 +96,10 @@ public f<bool> File.close() {
  *
  * @return Char in form of an int, because of EOF = -1.
  */
-public f<int> File.readChar() {
-    return fgetc(this.filePtr);
+public f<char> File.readChar() {
+    assert !this.isEOF;
+    result = (char) fgetc(this.filePtr);
+    this.isEOF = result == EOF;
 }
 
 /**
@@ -105,11 +108,15 @@ public f<int> File.readChar() {
  * @return Line in form of a string
  */
 public f<String> File.readLine() {
+    assert !this.isEOF;
     result = String();
-    int buffer;
+    char buffer;
     while (buffer = this.readChar()) != EOF {
         if buffer == '\n' { break; }
         result += (char) buffer;
+    }
+    if buffer == EOF {
+        this.isEOF = true;
     }
 }
 
@@ -162,8 +169,8 @@ public f<unsigned long> File.getSize() {
  *
  * @return EOF reached / not reached
  */
-public f<bool> File.isEOF() {
-    return this.readChar() == EOF;
+public inline f<bool> File.isEOF() {
+    return this.isEOF;
 }
 
 /**
@@ -206,7 +213,7 @@ public f<bool> deleteFile(string path) {
  */
 public f<Result<File>> openFile(string path, string mode = MODE_READ) {
     FilePtr fp = fopen(path, mode);
-    File file = File{fp};
+    File file = File{fp, false};
     return fp != nil<FilePtr> ? ok(file) : err(file, Error("Failed to open file"));
 }
 
@@ -224,9 +231,9 @@ public f<Result<String>> readFile(string path) {
     }
     File file = fileResult.unwrap();
     // Read from the file char by char
-    int buffer;
+    char buffer;
     String output = String();
-    while (buffer = file.readChar()) != EOF {
+    while (buffer = file.readChar()) != (char) EOF {
         output += (char) buffer;
     }
     // Close the file

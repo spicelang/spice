@@ -1,2 +1,121 @@
-// Imports
+// Std imports
+import "std/data/vector";
+import "std/type/error";
+import "std/text/analysis";
+import "std/runtime/iterator_rt";
+
+// Own imports
+//import "../source-file";
+//import "../compiler-pass";
 import "../lexer/token";
+import "../reader/reader";
+import "../reader/code-loc";
+
+public type Lexer struct/* : CompilerPass*/ {
+    Reader reader
+    Token curTok
+}
+
+public p Lexer.ctor(string filePath) {
+    this.reader = Reader(filePath);
+    this.curTok = Token(TokenType::INVALID);
+
+    // Read and consume first token
+    this.advance();
+}
+
+/*public p Lexer.ctor(SourceFile* sourceFile) {
+    this.ctor(sourceFile.filePath);
+}*/
+
+public f<const Token&> Lexer.getToken() {
+    return this.curTok;
+}
+
+public p Lexer.advance() {
+    // Skip any whitespaces
+    while (isWhitespace(this.reader.getChar()) && !this.reader.isEOF()) {
+        this.reader.advance();
+    }
+
+    // Read and consume next token
+    this.curTok = this.consumeToken();
+}
+
+public p Lexer.expect(TokenType expectedType) {
+    if (this.curTok.tokenType != expectedType) {
+        panic(Error("The type of the current token does not match the expected type"));
+    }
+    this.advance();
+}
+
+public p Lexer.expectOneOf(Vector<TokenType> expectedTypes) {
+    foreach TokenType expectedType : iterate(expectedTypes) {
+        if (this.curTok.tokenType == expectedType) {
+            return;
+        }
+    }
+    panic(Error("The type of the current token was not amongst the expected types"));
+}
+
+public f<bool> Lexer.isEOF() {
+    return this.curTok.tokenType == TokenType::EOF;
+}
+
+public f<CodeLoc> Lexer.getCodeLoc() {
+    return this.curTok.codeLoc;
+}
+
+f<Token> Lexer.consumeToken() {
+    Token tok = this.curTok;
+    this.advance();
+    return tok;
+}
+
+f<Token> Lexer.consumeDoubleLiteral() {
+    Token tok = this.curTok;
+    this.expect(TokenType::DOUBLE_LIT);
+    return tok;
+}
+
+f<Token> Lexer.consumeIntLiteral() {
+    Token tok = this.curTok;
+    this.expect(TokenType::INT_LIT);
+    return tok;
+}
+
+f<Token> Lexer.consumeShortLiteral() {
+    Token tok = this.curTok;
+    this.expect(TokenType::SHORT_LIT);
+    return tok;
+}
+
+f<Token> Lexer.consumeByteLiteral() {
+    Token tok = this.curTok;
+    this.expect(TokenType::LONG_LIT);
+    return tok;
+}
+
+f<Token> Lexer.consumeCharLiteral() {
+    Token tok = this.curTok;
+    this.expect(TokenType::CHAR_LIT);
+    return tok;
+}
+
+f<Token> Lexer.consumeStringLiteral() {
+    Token tok = this.curTok;
+    this.expect(TokenType::STRING_LIT);
+    return tok;
+}
+
+f<Token> Lexer.consumeKeywordOrIdentifier() {
+    Token tok = this.curTok;
+    this.expect(TokenType::IDENTIFIER);
+    return tok;
+}
+
+f<Token> Lexer.consumeSemicolon() {
+    Token tok = this.curTok;
+    this.expect(TokenType::SEMICOLON);
+    return tok;
+}

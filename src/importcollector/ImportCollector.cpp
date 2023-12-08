@@ -39,16 +39,18 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
     basePath = sourceFile->filePath.parent_path() / node->importPath;
   }
   basePath.make_preferred();
+  const std::filesystem::path canonicalBasePath = std::filesystem::weakly_canonical(std::filesystem::absolute(basePath));
 
   // Format: /dir/to/path/file.spice
-  std::filesystem::path defaultPath = basePath;
-  defaultPath.replace_filename(basePath.stem().string() + ".spice");
+  std::filesystem::path defaultPath = canonicalBasePath;
+  defaultPath.replace_filename(canonicalBasePath.stem().string() + ".spice");
   // Format: /dir/to/path/file_linux.spice
-  std::filesystem::path osPath = basePath;
-  osPath.replace_filename(basePath.stem().string() + "_" + cliOptions.targetOs + ".spice");
+  std::filesystem::path osPath = canonicalBasePath;
+  osPath.replace_filename(canonicalBasePath.stem().string() + "_" + cliOptions.targetOs + ".spice");
   // Format: /dir/to/path/file_linux_x86_64.spice
-  std::filesystem::path osArchPath = basePath;
-  osArchPath.replace_filename(basePath.stem().string() + "_" + cliOptions.targetOs + "_" + cliOptions.targetArch + ".spice");
+  std::filesystem::path osArchPath = canonicalBasePath;
+  osArchPath.replace_filename(canonicalBasePath.stem().string() + "_" + cliOptions.targetOs + "_" + cliOptions.targetArch +
+                              ".spice");
 
   // Check which source file to import
   std::filesystem::path importPath;
