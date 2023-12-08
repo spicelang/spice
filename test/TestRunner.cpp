@@ -113,7 +113,7 @@ void execTestCase(const TestCase &testCase) {
 
     // Run backend for all dependencies
     for (auto &dependency : mainSourceFile->dependencies)
-      dependency.second.first->runBackEnd();
+      dependency.second->runBackEnd();
 
     // Execute IR generator in normal or debug mode
     mainSourceFile->runIRGenerator();

@@ -224,8 +224,9 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       }
 
       // Check if we already have this manifestation and can simply re-use it
-      if (matchScope->functions.at(defCodeLocStr).contains(candidate.getSignature())) {
-        matches.push_back(&matchScope->functions.at(defCodeLocStr).at(candidate.getSignature()));
+      const std::string nonGenericSignature = candidate.getSignature();
+      if (matchScope->functions.at(defCodeLocStr).contains(nonGenericSignature)) {
+        matches.push_back(&matchScope->functions.at(defCodeLocStr).at(nonGenericSignature));
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 
