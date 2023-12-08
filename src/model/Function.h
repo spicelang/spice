@@ -42,10 +42,10 @@ public:
 
   // Public methods
   [[nodiscard]] std::vector<SymbolType> getParamTypes() const;
-  [[nodiscard]] std::string getSignature(bool withThisType = true) const;
+  [[nodiscard]] std::string getSignature(bool withThisType = true, bool ignorePublic = true) const;
   [[nodiscard]] static std::string getSignature(const std::string &name, const SymbolType &thisType, const SymbolType &returnType,
                                                 const ParamList &paramList, const std::vector<SymbolType> &concreteTemplateTypes,
-                                                bool withThisType = true);
+                                                bool withThisType = true, bool ignorePublic = true);
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] static std::string getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc);
   [[nodiscard]] ALWAYS_INLINE bool isMethod() const { return !thisType.is(TY_DYN); }
