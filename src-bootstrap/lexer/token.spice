@@ -3,6 +3,7 @@ import "../reader/code-loc";
 
 // Enums
 public type TokenType enum {
+    INVALID,
     // Keyword tokens
     TYPE_DOUBLE,
     TYPE_INT,
@@ -109,11 +110,16 @@ public type TokenType enum {
     DOC_COMMENT,
     BLOCK_COMMENT,
     LINE_COMMENT,
-    WS
+    WS,
+    EOF
 }
 
 public type Token struct {
     public TokenType tokenType
     public string text
     public CodeLoc codeLoc
+}
+
+public p Token.ctor(TokenType tokenType) {
+    this.tokenType = tokenType;
 }

@@ -3,8 +3,9 @@ import "std/io/filepath";
 import "std/io/file";
 import "std/type/result";
 import "std/type/error";
+import "std/os/os";
 
-// Own import
+// Own imports
 import "../reader/code-loc";
 
 public type Reader struct {
@@ -14,7 +15,7 @@ public type Reader struct {
     CodeLoc curCodeLoc
 }
 
-public p Reader.ctor(const string inputFileName) {
+public p Reader.ctor(string inputFileName) {
     this.filename = inputFileName;
     this.curCodeLoc = CodeLoc(1l, 0l, inputFileName);
 
@@ -52,7 +53,7 @@ public inline f<CodeLoc&> Reader.getCodeLoc() {
  */
 public p Reader.advance() {
     assert !this.isEOF();
-    this.curChar = (char) this.file.readChar();
+    this.curChar = this.file.readChar();
     if this.curChar == '\n' {
         this.curCodeLoc.line++;
         this.curCodeLoc.col = 0l;

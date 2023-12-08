@@ -3,7 +3,7 @@ import "std/data/vector";
 
 // Own imports
 import "../util/common-util";
-import "../symbol/scope";
+import "../symboltablebuilder/scope";
 
 public type SymbolSuperType enum {
     TY_INVALID,
