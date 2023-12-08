@@ -205,7 +205,7 @@ void SourceFile::runImportCollector() { // NOLINT(misc-no-recursion)
 
   // Run first part of pipeline for the imported source file
   for (const auto &dependency : dependencies)
-    dependency.second.first->runFrontEnd();
+    dependency.second->runFrontEnd();
 
   printStatusMessage("Import Collector", IO_AST, IO_AST, compilerOutput.times.importCollector);
 }
@@ -220,7 +220,7 @@ void SourceFile::runSymbolTableBuilder() {
 
   // The symbol tables of all dependencies are present at this point, so we can merge the exported name registries in
   for (const auto &[importName, sourceFile] : dependencies)
-    mergeNameRegistries(*sourceFile.first, importName);
+    mergeNameRegistries(*sourceFile, importName);
 
   // Build symbol table of the current file
   SymbolTableBuilder symbolTableBuilder(resourceManager, this);
@@ -246,7 +246,7 @@ void SourceFile::runTypeCheckerPre() { // NOLINT(misc-no-recursion)
 
   // Type-check all dependencies first
   for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->runTypeCheckerPre();
+    sourceFile->runTypeCheckerPre();
 
   Timer timer(&compilerOutput.times.typeCheckerPre);
   timer.start();
@@ -282,7 +282,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
 
     // Then type-check all dependencies
     for (const auto &[importName, sourceFile] : dependencies)
-      sourceFile.first->runTypeCheckerPost();
+      sourceFile->runTypeCheckerPost();
 
     // GCOV_EXCL_START
     if (typeCheckerRuns >= 50 || totalTypeCheckerRuns >= 100)
@@ -527,7 +527,7 @@ void SourceFile::runMiddleEnd() {
 void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   // Run backend for all dependencies first
   for (const auto &[importName, sourceFile] : dependencies)
-    sourceFile.first->runBackEnd();
+    sourceFile->runBackEnd();
 
   // Submit source file compilation to the task queue
   resourceManager.threadPool.push_task([&]() {
@@ -561,14 +561,14 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
 
   // Add the dependency
   sourceFile->mainFile = false;
-  dependencies.insert({dependencyName, {sourceFile, declNode}});
+  dependencies.insert({dependencyName, sourceFile});
 
   // Add the dependant
   sourceFile->dependants.push_back(this);
 }
 
 bool SourceFile::imports(const SourceFile *sourceFile) const {
-  return std::ranges::any_of(dependencies, [=](const auto &dependency) { return dependency.second.first == sourceFile; });
+  return std::ranges::any_of(dependencies, [=](const auto &dependency) { return dependency.second == sourceFile; });
 }
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { // NOLINT(misc-no-recursion)
@@ -625,8 +625,8 @@ void SourceFile::checkForSoftErrors() {
 void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
   // Print warnings for all dependencies
   for (const auto &dependency : dependencies) {
-    if (!dependency.second.first->stdFile)
-      dependency.second.first->collectAndPrintWarnings();
+    if (!dependency.second->stdFile)
+      dependency.second->collectAndPrintWarnings();
   }
   // Collect warnings for this file
   if (!ignoreWarnings)
@@ -707,17 +707,15 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
     dumpOutput(output, outputName, outputName + ".dot");
 
     // Generate SVG. This only works if the dot code was dumped into a file
-    if (resourceManager.cliOptions.dumpSettings.dumpToFiles) {
-      std::cout << "\nGenerating SVG file ... ";
-      const std::string dotFileName = filePath.stem().string() + "-" + outputName + ".dot";
-      std::filesystem::path dotFilePath = resourceManager.cliOptions.outputDir / dotFileName;
-      std::filesystem::path svgFilePath = dotFilePath;
-      svgFilePath.replace_extension("svg");
-      dotFilePath.make_preferred();
-      svgFilePath.make_preferred();
-      FileUtil::exec("dot -Tsvg -o" + svgFilePath.string() + " " + dotFilePath.string());
-      std::cout << "done.\nSVG file can be found at: " << svgFilePath << "\n";
-    }
+    std::cout << "\nGenerating SVG file ... ";
+    const std::string dotFileName = filePath.stem().string() + "-" + outputName + ".dot";
+    std::filesystem::path dotFilePath = resourceManager.cliOptions.outputDir / dotFileName;
+    std::filesystem::path svgFilePath = dotFilePath;
+    svgFilePath.replace_extension("svg");
+    dotFilePath.make_preferred();
+    svgFilePath.make_preferred();
+    FileUtil::exec("dot -Tsvg -o" + svgFilePath.string() + " " + dotFilePath.string());
+    std::cout << "done.\nSVG file can be found at: " << svgFilePath << "\n";
   } else {
     // Dump to console
     std::cout << "\nSerialized " << outputName << ":\n\n" << output << "\n";

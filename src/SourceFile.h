@@ -165,7 +165,7 @@ public:
   EntryNode *ast = nullptr;
   std::unique_ptr<Scope> globalScope;
   std::unique_ptr<llvm::Module> llvmModule;
-  std::unordered_map<std::string, std::pair<SourceFile *, const ASTNode *>> dependencies;
+  std::unordered_map<std::string, SourceFile *> dependencies;
   std::vector<const SourceFile *> dependants;
   std::unordered_map<std::string, NameRegistryEntry> exportedNameRegistry;
   std::vector<const Function *> testFunctions;

@@ -17,7 +17,8 @@ SourceFile *RuntimeModuleManager::requestModule(SourceFile *parentSourceFile, Ru
 
   // Add the dependency to the parent source file
   parentSourceFile->addDependency(rtFile, parentSourceFile->ast, importName, rtFile->filePath.string());
-  SourceFile *runtimeFile = parentSourceFile->dependencies.at(importName).first;
+  assert(parentSourceFile->dependencies.contains(importName));
+  SourceFile *runtimeFile = parentSourceFile->dependencies.at(importName);
   modules.emplace(requestedModule, runtimeFile);
 
   // Merge the module name registry with the one of the source file
