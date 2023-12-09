@@ -30,15 +30,15 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   objectFilePath = resourceManager.cliOptions.outputDir / filePath.filename();
   objectFilePath.replace_extension("o");
 
-  if (mainFile)
-    resourceManager.totalTimer.start();
-
   // Deduce fileName and fileDir
   fileName = std::filesystem::path(filePath).filename().string();
   fileDir = std::filesystem::path(filePath).parent_path().string();
 }
 
 void SourceFile::runLexer() {
+  if (mainFile)
+    resourceManager.totalTimer.start();
+
   // Check if this stage has already been done
   if (previousStage >= LEXER)
     return;
@@ -283,12 +283,6 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
     // Then type-check all dependencies
     for (const auto &[importName, sourceFile] : dependencies)
       sourceFile->runTypeCheckerPost();
-
-    // GCOV_EXCL_START
-    if (typeCheckerRuns >= 500 || totalTypeCheckerRuns >= 1000)
-      throw CompilerError(TYPE_CHECKER_RUNS_EXCEEDED, "Number of type checker runs for source file " + name +
-                                                          " exceeded. Please report this as a bug on GitHub.");
-    // GCOV_EXCL_STOP
   } while (typeChecker.reVisitRequested);
 
   checkForSoftErrors();
