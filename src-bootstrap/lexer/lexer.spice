@@ -596,14 +596,13 @@ f<Token> Lexer.consumeLineComment() {
     this.reader.expect('/'); // Consume second '/' (first '/' is consumed by the caller)
 
     while !this.reader.isEOF() {
-        comment += this.reader.getChar();
-
         // Check for comment end
         if this.reader.getChar() == '\n' {
             this.reader.advance(); // Consume '\n'
             break;
         }
 
+        comment += this.reader.getChar();
         this.reader.advance();
     }
 
@@ -623,8 +622,6 @@ f<Token> Lexer.consumeBlockOrDocComment() {
     }
 
     while !this.reader.isEOF() {
-        comment += this.reader.getChar();
-
         // Check for comment end
         if this.reader.getChar() == '*' {
             this.reader.advance(); // Consume '*'
@@ -633,8 +630,10 @@ f<Token> Lexer.consumeBlockOrDocComment() {
                 this.reader.advance(); // Consume '/'
                 break;
             }
+            comment += this.reader.getChar();
         }
 
+        comment += this.reader.getChar();
         this.reader.advance();
     }
 
