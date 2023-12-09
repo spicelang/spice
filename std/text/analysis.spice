@@ -3,6 +3,123 @@
  *
  * @return Is whitespace
  */
-public f<bool> isWhitespace(char c) {
+public inline f<bool> isWhitespace(char c) {
     return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+/**
+ * Checks if the given character is a lowercase alpha character
+ *
+ * @return Is lowercase alpha
+ */
+public inline f<bool> isLower(char c) {
+    return isBetween(c, 'a', 'z');
+}
+
+/**
+ * Checks if the given character is a uppercase alpha character
+ *
+ * @return Is uppercase alpha
+ */
+public inline f<bool> isUpper(char c) {
+    return isBetween(c, 'A', 'Z');
+}
+
+/**
+ * Checks if the given character is a alpha character
+ *
+ * @return Is alpha
+ */
+public inline f<bool> isAlpha(char c) {
+    return isLower(c) || isUpper(c);
+}
+
+/**
+ * Checks if the given character is a alpha character or underscore
+ *
+ * @return Is alpha or underscore
+ */
+public inline f<bool> isAlphaUnderscore(char c) {
+    return isAlpha(c) || is(c, '_');
+}
+
+/**
+ * Checks if the given character is a alphanumeric character
+ *
+ * @return Is alphanumeric
+ */
+public inline f<bool> isAlphaNum(char c) {
+    return isAlpha(c) || isDigit(c);
+}
+
+/**
+ * Checks if the given character is a alphanumeric character or underscore
+ *
+ * @return Is alphanumeric or underscore
+ */
+public inline f<bool> isAlphaNumUnderscore(char c) {
+    return isAlphaNum(c) || is(c, '_');
+}
+
+/**
+ * Checks if the given character is a digit
+ *
+ * @return Is digit
+ */
+public inline f<bool> isDigit(char c) {
+    return isBetween(c, '0', '9');
+}
+
+/**
+ * Checks if the given character is a decimal digit
+ *
+ * @return Is decimal digit
+ */
+public inline f<bool> isDecDigit(char c) {
+    return isDigit(c);
+}
+
+/**
+ * Checks if the given character is a hexadecimal digit
+ *
+ * @return Is hexadecimal digit
+ */
+public inline f<bool> isHexDigit(char c) {
+    return isDigit(c) || isBetween(c, 'a', 'f') || isBetween(c, 'A', 'F');
+}
+
+/**
+ * Checks if the given character is a octal digit
+ *
+ * @return Is octal digit
+ */
+public inline f<bool> isOctDigit(char c) {
+    return isBetween(c, '0', '7');
+}
+
+/**
+ * Checks if the given character is a binary digit
+ *
+ * @return Is binary digit
+ */
+public inline f<bool> isBinDigit(char c) {
+    return is(c, '0') || is(c, '1');
+}
+
+/**
+ * Checks if the given character match an expected character
+ *
+ * @return Is matching expected character
+ */
+public inline f<bool> is(char c, char expected) {
+    return c == expected;
+}
+
+/**
+ * Checks if the given character is included in a range of characters
+ *
+ * @return Is between min and max
+ */
+public inline f<bool> isBetween(char c, char min, char max) {
+    return c >= min && c <= max;
 }

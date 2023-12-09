@@ -2,6 +2,10 @@ import "std/text/analysis";
 
 // Constants
 const int ASCII_SHIFT_OFFSET = 32;
+const int MIN_LOWER_CHAR = 97;
+const int MAX_LOWER_CHAR = 122;
+const int MIN_UPPER_CHAR = 65;
+const int MAX_UPPER_CHAR = 90;
 
 /**
  * Returns a formatted storage string (e.g. 1.4 MB for 1,500,000)
@@ -10,7 +14,7 @@ const int ASCII_SHIFT_OFFSET = 32;
  */
 public f<String> formatStorageSize(long bytes) {
     // ToDo when string concatenation works
-    return "";
+    return String("");
 }
 
 /**
@@ -18,16 +22,25 @@ public f<String> formatStorageSize(long bytes) {
  *
  * @return Text in caps
  */
-public p toUpper(String& text) {
-    const char min = (char) 97;
-    const char max = (char) 122;
-
+/*public p toUpper(String& text) {
     foreach char& c : text {
-        if c >= min && c <= max {
-            c += shiftOffset;
+        if c >= (char) MIN_LOWER_CHAR && c <= (char) MAX_LOWER_CHAR {
+            c += (char) ASCII_SHIFT_OFFSET;
         }
     }
     return text;
+}*/
+
+/**
+ * Returns the given char as upper case version
+ *
+ * @return Char in upper case
+ */
+public f<char> toUpper(char c) {
+    if c >= (char) MIN_LOWER_CHAR && c <= (char) MAX_LOWER_CHAR {
+        c += (char) ASCII_SHIFT_OFFSET;
+    }
+    return c;
 }
 
 /**
@@ -35,16 +48,25 @@ public p toUpper(String& text) {
  *
  * @return Text in all-lower letters
  */
-public p toLower(String& text) {
-    const char min = (char) 65;
-    const char max = (char) 90;
-
+/*public p toLower(String& text) {
     foreach char& c : text {
-        if c >= min && c <= max {
+        if c >= (char) MIN_UPPER_CHAR && c <= (char) MAX_UPPER_CHAR {
             c -= ASCII_SHIFT_OFFSET;
         }
     }
     return text;
+}*/
+
+/**
+ * Returns the given char as lower case version
+ *
+ * @return Char in lower case
+ */
+public f<char> toLower(char c) {
+    if c >= (char) MIN_UPPER_CHAR && c <= (char) MAX_UPPER_CHAR {
+        c -= (char) ASCII_SHIFT_OFFSET;
+    }
+    return c;
 }
 
 /**
@@ -52,21 +74,21 @@ public p toLower(String& text) {
  *
  * @return Capitalized text
  */
-public p capitalize(String& text) {
-    if text[0] >= (char) 97 && text[0] <= (char) 122 {
-        text[0] += ASCII_SHIFT_OFFSET;
+/*public p capitalize(String& text) {
+    if text[0] >= (char) MIN_LOWER_CHAR && text[0] <= (char) MAX_LOWER_CHAR {
+        text[0] += (char) ASCII_SHIFT_OFFSET;
     }
     return text;
-}
+}*/
 
 /**
  * Returns the trimmed string of the given text
  *
  * @return Trimmed string
  */
-public f<String> trim(const String& input) {
-    unsigned long start = 0;
-    unsigned long end = input.length() - 1;
+/*public f<String> trim(const String& input) {
+    unsigned long start = 0l;
+    unsigned long end = input.getLength() - 1l;
 
     while isWhitespace(input[start]) {
         start++;
@@ -76,4 +98,4 @@ public f<String> trim(const String& input) {
     }
 
     return input.substring(start, end);
-}
+}*/

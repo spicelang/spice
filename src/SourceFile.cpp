@@ -285,7 +285,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
       sourceFile->runTypeCheckerPost();
 
     // GCOV_EXCL_START
-    if (typeCheckerRuns >= 50 || totalTypeCheckerRuns >= 100)
+    if (typeCheckerRuns >= 500 || totalTypeCheckerRuns >= 1000)
       throw CompilerError(TYPE_CHECKER_RUNS_EXCEEDED, "Number of type checker runs for source file " + name +
                                                           " exceeded. Please report this as a bug on GitHub.");
     // GCOV_EXCL_STOP
@@ -557,7 +557,7 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
                                const std::string &path) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(path))
-    throw SemanticError(declNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + path + "'");
+    throw SemanticError(declNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + fileName + "'");
 
   // Add the dependency
   sourceFile->mainFile = false;
