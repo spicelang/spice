@@ -3,8 +3,11 @@ import "../../src-bootstrap/lexer/lexer";
 
 f<int> main() {
     Lexer lexer = Lexer("./test-file.txt");
-    Token token = lexer.getToken();
-    assert token.tokenType == TokenType::IDENTIFIER;
+    while !lexer.isEOF() {
+        Token token = lexer.getToken();
+        printf("Type: %d, value: %s, line: %d, col: %d\n", token.tokenType, token.text.getRaw(), token.codeLoc.line, token.codeLoc.col);
+        lexer.advance();
+    }
 }
 
 /*import "std/io/file";

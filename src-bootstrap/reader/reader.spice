@@ -31,7 +31,7 @@ public p Reader.ctor(string inputFileName) {
 }
 
 /**
- * @brief Get the previously read character
+ * Get the previously read character
  *
  * @return char Last character
  */
@@ -40,7 +40,7 @@ public inline f<char> Reader.getChar() {
 }
 
 /**
- * @brief Get the code location of the previously read character
+ * Get the code location of the previously read character
  *
  * @return CodeLoc Code location
  */
@@ -49,7 +49,7 @@ public inline f<CodeLoc&> Reader.getCodeLoc() {
 }
 
 /**
- * @brief Advance the reader by one character
+ * Advance the reader by one character
  */
 public p Reader.advance() {
     assert !this.isEOF();
@@ -62,8 +62,7 @@ public p Reader.advance() {
 }
 
 /**
- * @brief Advance the reader by one character and check if this char equals the
- * expected
+ * Advance the reader by one character and check if this char equals the expected.
  *
  * @param c Expected char
  */
@@ -73,7 +72,7 @@ public inline p Reader.expect(char c) {
 }
 
 /**
- * @brief Check if we are at the end of the input file
+ * Check if we are at the end of the input file
  *
  * @return At the end or not
  */

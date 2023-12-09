@@ -111,8 +111,13 @@ bool AssertStmtNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
 }
 
 bool AssignExprNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  const bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr() &&
-                       lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
+  bool returns;
+  if (children.size() == 1) {
+    returns = children.front()->returnsOnAllControlPaths(overrideUnreachable);
+  } else {
+    returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr() &&
+              lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
+  }
   *overrideUnreachable |= returns;
   return returns;
 }
