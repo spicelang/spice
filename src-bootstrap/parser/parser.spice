@@ -43,17 +43,17 @@ f<bool> Parser.currentTokenIsOneOf(TokenType* expectedTokenTypeArray, unsigned l
 }
 
 public f<ASTEntryNode*> Parser.parse() {
-    dyn entryNode = createNode<ASTEntryNode>();
+    dyn entryNode = this.createNode<ASTEntryNode>();
 
     while !this.currentTokenIs(TokenType::EOF) {
         parseStmt();
     }
 
-    return concludeNode(entryNode);
+    return this.concludeNode(entryNode);
 }
 
 public f<ASTMainFctNode*> Parser.parseMainFctDef() {
-    dyn mainFctDefNode = createNode<ASTMainFctDefNode>();
+    dyn mainFctDefNode = this.createNode<ASTMainFctDefNode>();
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
@@ -84,11 +84,11 @@ public f<ASTMainFctNode*> Parser.parseMainFctDef() {
     this.lexer.parseStmtLst();
     this.lexer.expect(TokenType::RBRACE);
 
-    return concludeNode(mainFctDefNode);
+    return this.concludeNode(mainFctDefNode);
 }
 
 public f<ASTFctDefNode*> Parser.parseFctDef() {
-    dyn fctDefNode = createNode<ASTFctDefNode>();
+    dyn fctDefNode = this.createNode<ASTFctDefNode>();
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
@@ -125,11 +125,11 @@ public f<ASTFctDefNode*> Parser.parseFctDef() {
     this.lexer.parseStmtLst();
     this.lexer.expect(TokenType::RBRACE);
 
-    return concludeNode(fctDefNode);
+    return this.concludeNode(fctDefNode);
 }
 
 public f<ASTFctDefNode*> Parser.parseProcDef() {
-    dyn procDefNode = createNode<ASTProcDefNode>();
+    dyn procDefNode = this.createNode<ASTProcDefNode>();
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
@@ -163,6 +163,97 @@ public f<ASTFctDefNode*> Parser.parseProcDef() {
     this.lexer.parseStmtLst();
     this.lexer.expect(TokenType::RBRACE);
 
-    return concludeNode(procDefNode);
+    return this.concludeNode(procDefNode);
 }
 
+f<ASTFctNameNode*> Parser.parseFctName() {
+    dyn fctNameNode = this.createNode<ASTFctNameNode>();
+
+    if this.currentTokenIs(TokenType::OPERATOR) {
+        this.lexer.expect(TokenType::OPERATOR);
+        // ToDo: consume overloadable op correctly
+        this.lexer.advance();
+    } else {
+        if this.currentTokenIs(TokenType::TYPE_IDENTIFIER) {
+            this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+            this.lexer.expect(TokenType::DOT);
+        }
+        this.lexer.expect(TokenType::IDENTIFIER);
+    }
+
+    return this.concludeNode(fctNameNode);
+}
+
+f<ASTStructDefNode*> Parser.parseStructDef() {
+    dyn structDefNode = this.createNode<ASTStructDefNode>();
+
+    // Parse topLevelDefAttr
+    if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        this.parseTopLevelDefAttr();
+    }
+
+    // Parse specifierLst
+    if !this.currentTokenIs(TokenType::F) {
+        this.parseSpecifierLst();
+    }
+
+    this.lexer.expect(TokenType::TYPE);
+    this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+
+    // Parse typeLst (template type list)
+    if this.currentTokenIs(TokenType::LESS) {
+        this.lexer.expect(TokenType::LESS);
+        this.parseTypeLst();
+        this.lexer.expect(TokenType::GREATER);
+    }
+
+    this.lexer.expect(TokenType::STRUCT);
+
+    // Parse typeLst (implemented interfaces)
+    if this.currentTokenIs(TokenType::COLON) {
+        this.lexer.expect(TokenType::COLON);
+        this.parseTypeLst();
+    }
+
+    // Parse fieldLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.parseFieldLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    return this.concludeNode(structDefNode);
+}
+
+f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
+    dyn interfaceDefNode = this.createNode<ASTInterfaceDefNode>();
+
+    // Parse topLevelDefAttr
+    if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        this.parseTopLevelDefAttr();
+    }
+
+    // Parse specifierLst
+    if !this.currentTokenIs(TokenType::F) {
+        this.parseSpecifierLst();
+    }
+
+    this.lexer.expect(TokenType::TYPE);
+    this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+
+    // Parse typeLst (template type list)
+    if this.currentTokenIs(TokenType::LESS) {
+        this.lexer.expect(TokenType::LESS);
+        this.parseTypeLst();
+        this.lexer.expect(TokenType::GREATER);
+    }
+
+    this.lexer.expect(TokenType::INTERFACE);
+
+    // Parse signatures
+    this.lexer.expect(TokenType::LBRACE);
+    do {
+        this.parseSignature();
+    } while (!this.isCurrentToken(TokenType::RBRACE));
+    this.lexer.expect(TokenType::RBRACE);
+
+    return this.concludeNode(interfaceDefNode);
+}
