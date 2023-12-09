@@ -1,14 +1,168 @@
+// Std imports
+import "std/data/stack";
+
 // Own imports
+//import "../compiler-pass";
+import "../lexer/lexer";
 import "../lexer/token";
+import "../ast/ast-nodes";
 
-public type Parser struct {
+public type Parser struct /*: ICompilerPass*/ {
+    //compose CompilerPass
+    Lexer& lexer
+    Stack<ASTNode*> parentStack
+}
+
+public p Parser.ctor(Lexer& lexer) {
+    this.lexer = lexer;
+}
+
+/*public p Parser.ctor(SourceFile* sourceFile, Lexer& lexer) {
+    this.lexer = lexer;
+}*/
+
+f<T*> Parser.createNode<T>() {
 
 }
 
-public p Parser.ctor(const tk::Token[] tokens, unsigned long tokenCount) {
+f<T*> Parser.concludeNode<T>(T* node) {
 
 }
 
-public p Parser.parse() {
-
+inline f<bool> Parser.currentTokenIs(TokenType expectedTokenType) {
+    return this.lexer.getToken().tokenType == expectedTokenType;
 }
+
+f<bool> Parser.currentTokenIsOneOf(TokenType* expectedTokenTypeArray, unsigned long size) {
+    for unsigned long i = 0l; i < size; i++ {
+        if this.currentTokenIs(expectedTokenTypeArray[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+public f<ASTEntryNode*> Parser.parse() {
+    dyn entryNode = createNode<ASTEntryNode>();
+
+    while !this.currentTokenIs(TokenType::EOF) {
+        parseStmt();
+    }
+
+    return concludeNode(entryNode);
+}
+
+public f<ASTMainFctNode*> Parser.parseMainFctDef() {
+    dyn mainFctDefNode = createNode<ASTMainFctDefNode>();
+
+    // Parse topLevelDefAttr
+    if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        this.parseTopLevelDefAttr();
+    }
+
+    // Parse specifierLst
+    if !this.currentTokenIs(TokenType::F) {
+        this.parseSpecifierLst();
+    }
+
+    // Consume expected tokens 'f<int> main'
+    this.lexer.expect(TokenType::F);
+    this.lexer.expect(TokenType::LESS);
+    this.lexer.expect(TokenType::TYPE_INT);
+    this.lexer.expect(TokenType::GREATER);
+    this.lexer.expect(TokenType::MAIN);
+
+    // Parse praamLst
+    this.lexer.expect(TokenType::LPAREN);
+    if !this.currentTokenIs(TokenType::RPAREN) {
+        this.parseParamLst();
+    }
+    this.lexer.expect(TokenType::RPAREN);
+
+    // Parse stmtLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.lexer.parseStmtLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    return concludeNode(mainFctDefNode);
+}
+
+public f<ASTFctDefNode*> Parser.parseFctDef() {
+    dyn fctDefNode = createNode<ASTFctDefNode>();
+
+    // Parse topLevelDefAttr
+    if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        this.parseTopLevelDefAttr();
+    }
+
+    // Parse specifierLst
+    if !this.currentTokenIs(TokenType::F) {
+        this.parseSpecifierLst();
+    }
+
+    this.lexer.expect(TokenType::F);
+    this.lexer.expect(TokenType::LESS);
+    this.lexer.parseDataType();
+    this.lexer.expect(TokenType::GREATER);
+    this.lexer.parseFctName();
+
+    // Parse typeLst (template type list)
+    if this.currentTokenIs(TokenType::LESS) {
+        this.lexer.expect(TokenType::LESS);
+        this.parseTypeLst();
+        this.lexer.expect(TokenType::GREATER);
+    }
+
+    // Parse paramLst
+    this.lexer.expect(TokenType::LPAREN);
+    if !this.currentTokenIs(TokenType::RPAREN) {
+        this.parseParamLst();
+    }
+    this.lexer.expect(TokenType::RPAREN);
+
+    // Parse stmtLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.lexer.parseStmtLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    return concludeNode(fctDefNode);
+}
+
+public f<ASTFctDefNode*> Parser.parseProcDef() {
+    dyn procDefNode = createNode<ASTProcDefNode>();
+
+    // Parse topLevelDefAttr
+    if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        this.parseTopLevelDefAttr();
+    }
+
+    // Parse specifierLst
+    if !this.currentTokenIs(TokenType::F) {
+        this.parseSpecifierLst();
+    }
+
+    this.lexer.expect(TokenType::P);
+    this.lexer.parseFctName();
+
+    // Parse typeLst (template type list)
+    if this.currentTokenIs(TokenType::LESS) {
+        this.lexer.expect(TokenType::LESS);
+        this.parseTypeLst();
+        this.lexer.expect(TokenType::GREATER);
+    }
+
+    // Parse paramLst
+    this.lexer.expect(TokenType::LPAREN);
+    if !this.currentTokenIs(TokenType::RPAREN) {
+        this.parseParamLst();
+    }
+    this.lexer.expect(TokenType::RPAREN);
+
+    // Parse stmtLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.lexer.parseStmtLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    return concludeNode(procDefNode);
+}
+
