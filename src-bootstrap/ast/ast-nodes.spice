@@ -1,11 +1,12 @@
 // Std imports
 import "std/type/Any";
 import "std/data/Vector";
+import "std/runtime/iterator_rt";
 
 // Own imports
-import "../ast/abstract-ast-visitor";
+//import "../ast/abstract-ast-visitor";
 import "../reader/code-loc";
-import "../symboltablebuilder/symbol-type";
+//import "../symboltablebuilder/symbol-type";
 
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
@@ -21,554 +22,573 @@ public type CompileTimeValue struct {
     bool boolValue
 }
 
-public type IVisitable interface {
+/*public type IVisitable interface {
     f<Any> accept(IAbstractAstVisitor*);
-}
+}*/
 
 // =========================================================== ASTNode ===========================================================
 
-public type ASTNode struct : IVisitable {
-    ASTNode* parent
+public type ASTNode struct /*: IVisitable*/ {
+    ASTNode* parent = nil<ASTNode*>
     Vector<ASTNode*> children
     CodeLoc codeLoc
     string errorMessage
-    Vector<SymbolType> symbolTypes
+    //Vector<SymbolType> symbolTypes
     CompileTimeValue compileTimeValue
     string compileTimeStringValue
     bool hasDirectCompileTimeValue = false
     bool unreachable = false
-    Vector<Vector<const Function*>> opFct // Operator overloading functions
+    //Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
-p ASTNode.ctor(ASTNode *parent, CodeLoc codeLoc) {
-    this.parent = parent;
+p ASTNode.ctor(CodeLoc codeLoc) {
     this.codeLoc = codeLoc;
 }
 
-public f<Any> ASTNode.accept(AbstractAstVisitor* _) {
+/*public f<Any> ASTNode.accept(AbstractAstVisitor* _) {
     assert false; // Please override at child level
+}*/
+
+public p ASTNode.addChild(ASTNode *child) {
+    this.children.pushBack(child);
+    child.parent = this;
+}
+
+/*public f<T*> ASTNode.getChild<T>(int index) {
+    unsigned long j = 0l;
+    foreach ASTNode *child : iterate(children) {
+      if (T* typedChild = dynamic_cast<T *>(child)) {
+        if (j++ == i)
+          return typedChild;
+      }
+    }
+    return nil<T*>;
+}*/
+
+public p ASTNode.reserveChildren(unsigned long numberOfChildren) {
+    this.children.reserve(numberOfChildren);
 }
 
 // ========================================================== EntryNode ==========================================================
 
-public type ASTEntryNode struct : IVisitable {
+public type ASTEntryNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== MainFctDefNode =======================================================
 
-public type ASTMainFctDefNode struct : IVisitable {
+public type ASTMainFctDefNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= FctNameNode =========================================================
 
-public type ASTFctNameNode struct : IVisitable {
+public type ASTFctNameNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== FctDefNode =========================================================
 
-public type ASTFctDefNode struct : IVisitable {
+public type ASTFctDefNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== ProcDefNode ========================================================
 
-public type ASTProcDefNode struct : IVisitable {
+public type ASTProcDefNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= StructDefNode =======================================================
 
-public type ASTStructDefNode struct : IVisitable {
+public type ASTStructDefNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== InterfaceDefNode =====================================================
 
-public type ASTInterfaceDefNode struct : IVisitable {
+public type ASTInterfaceDefNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== EnumDefNode ========================================================
 
-public type ASTEnumDefNode struct : IVisitable {
+public type ASTEnumDefNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================= GenericTypeDefNode ====================================================
 
-public type ASTGenericTypeDefNode struct : IVisitable {
+public type ASTGenericTypeDefNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== AliasDefNode =======================================================
 
-public type ASTAliasDefNode struct : IVisitable {
+public type ASTAliasDefNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== GlobalVarDefNode =====================================================
 
-public type ASTGlobalVarDefNode struct : IVisitable {
+public type ASTGlobalVarDefNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== ExtDeclNode ========================================================
 
-public type ASTExtDeclNode struct : IVisitable {
+public type ASTExtDeclNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== UnsafeBlockNode ========================================================
 
-public type ASTUnsafeBlockNode struct : IVisitable {
+public type ASTUnsafeBlockNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== ForLoopNode ========================================================
 
-public type ASTForLoopNode struct : IVisitable {
+public type ASTForLoopNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== ForeachLoopNode ======================================================
 
-public type ASTForeachLoopNode struct : IVisitable {
+public type ASTForeachLoopNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= WhileLoopNode =======================================================
 
-public type ASTWhileLoopNode struct : IVisitable {
+public type ASTWhileLoopNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== DoWhileLoopNode ======================================================
 
-public type ASTDoWhileLoopNode struct : IVisitable {
+public type ASTDoWhileLoopNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== IfStmtNode ========================================================
 
-public type ASTIfStmtNode struct : IVisitable {
+public type ASTIfStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== ElseStmtNode =======================================================
 
-public type ASTElseStmtNode struct : IVisitable {
+public type ASTElseStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ===================================================== AnonymousBlockStmtNode ==================================================
 
-public type ASTAnonymousBlockStmtNode struct : IVisitable {
+public type ASTAnonymousBlockStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== StmtLstNode ========================================================
 
-public type ASTStmtLstNode struct : IVisitable {
+public type ASTStmtLstNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== TypeLstNode ========================================================
 
-public type ASTTypeLstNode struct : IVisitable {
+public type ASTTypeLstNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== TypeAltsLstNode ======================================================
 
-public type ASTTypeAltsLstNode struct : IVisitable {
+public type ASTTypeAltsLstNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== ParamLstNode =======================================================
 
-public type ASTParamLstNode struct : IVisitable {
+public type ASTParamLstNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // =========================================================== ArgLstNode ========================================================
 
-public type ASTArgLstNode struct : IVisitable {
+public type ASTArgLstNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== EnumItemLstNode ======================================================
 
-public type ASTEnumItemLstNode struct : IVisitable {
+public type ASTEnumItemLstNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== EnumItemNode =======================================================
 
-public type ASTEnumItemNode struct : IVisitable {
+public type ASTEnumItemNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // =========================================================== FieldNode =========================================================
 
-public type ASTFieldNode struct : IVisitable {
+public type ASTFieldNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= SignatureNode =======================================================
 
-public type ASTSignatureNode struct : IVisitable {
+public type ASTSignatureNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ============================================================ StmtNode =========================================================
 
-public type ASTStmtNode struct : IVisitable {
+public type ASTStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== DeclStmtNode =======================================================
 
-public type ASTDeclStmtNode struct : IVisitable {
+public type ASTDeclStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== SpecifierLstNode =====================================================
 
-public type ASTSpecifierLstNode struct : IVisitable {
+public type ASTSpecifierLstNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= SpecifierNode =======================================================
 
-public type ASTSpecifierNode struct : IVisitable {
+public type ASTSpecifierNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== ModAttrNode ========================================================
 
-public type ASTModAttrNode struct : IVisitable {
+public type ASTModAttrNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== FctAttrNode ========================================================
 
-public type ASTFctAttrNode struct : IVisitable {
+public type ASTFctAttrNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== AttrLstNode ========================================================
 
-public type ASTAttrLstNode struct : IVisitable {
+public type ASTAttrLstNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ============================================================ AttrNode =========================================================
 
-public type ASTAttrNode struct : IVisitable {
+public type ASTAttrNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= ImportStmtNode ======================================================
 
-public type ASTImportStmtNode struct : IVisitable {
+public type ASTImportStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= ReturnStmtNode ======================================================
 
-public type ASTReturnStmtNode struct : IVisitable {
+public type ASTReturnStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= BreakStmtNode =======================================================
 
-public type ASTBreakStmtNode struct : IVisitable {
+public type ASTBreakStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== ContinueStmtNode =====================================================
 
-public type ASTContinueStmtNode struct : IVisitable {
+public type ASTContinueStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= AssertStmtNode ======================================================
 
-public type ASTAssertStmtNode struct : IVisitable {
+public type ASTAssertStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= PrintfCallNode =======================================================
 
-public type ASTPrintfCallNode struct : IVisitable {
+public type ASTPrintfCallNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= SizeofCallNode ======================================================
 
-public type ASTSizeofCallNode struct : IVisitable {
+public type ASTSizeofCallNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== AlignofCallNode ======================================================
 
-public type ASTAlignofCallNode struct : IVisitable {
+public type ASTAlignofCallNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== LenCallNode ========================================================
 
-public type ASTLenCallNode struct : IVisitable {
+public type ASTLenCallNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= PanicCallNode =======================================================
 
-public type ASTPanicCallNode struct : IVisitable {
+public type ASTPanicCallNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= AssignExprNode =======================================================
 
-public type ASTAssignExprNode struct : IVisitable {
+public type ASTAssignExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== TernaryExprNode ======================================================
 
-public type ASTTernaryExprNode struct : IVisitable {
+public type ASTTernaryExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================= LogicalOrExprNode =====================================================
 
-public type ASTLogicalOrExprNode struct : IVisitable {
+public type ASTLogicalOrExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================= LogicalAndExprNode ====================================================
 
-public type ASTLogicalAndExprNode struct : IVisitable {
+public type ASTLogicalAndExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================= BitwiseOrExprNode =====================================================
 
-public type ASTBitwiseOrExprNode struct : IVisitable {
+public type ASTBitwiseOrExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================= BitwiseXorExprNode ====================================================
 
-public type ASTBitwiseXorExprNode struct : IVisitable {
+public type ASTBitwiseXorExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================= BitwiseAndExprNode ====================================================
 
-public type ASTBitwiseAndExprNode struct : IVisitable {
+public type ASTBitwiseAndExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== EqualityExprNode =====================================================
 
-public type ASTEqualityExprNode struct : IVisitable {
+public type ASTEqualityExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================= RelationalExprNode ====================================================
 
-public type ASTRelationalExprNode struct : IVisitable {
+public type ASTRelationalExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= ShiftExprNode =======================================================
 
-public type ASTShiftExprNode struct : IVisitable {
+public type ASTShiftExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== AdditiveExprNode =====================================================
 
-public type ASTAdditiveExprNode struct : IVisitable {
+public type ASTAdditiveExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ===================================================== MultiplicativeExprNode ==================================================
 
-public type ASTMultiplicativeExprNode struct : IVisitable {
+public type ASTMultiplicativeExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== CastExprNode =======================================================
 
-public type ASTCastExprNode struct : IVisitable {
+public type ASTCastExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ====================================================== PrefixUnaryExprNode ====================================================
 
-public type ASTPrefixUnaryExprNode struct : IVisitable {
+public type ASTPrefixUnaryExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ====================================================== PostfixUnaryExprNode ===================================================
 
-public type ASTPostfixUnaryExprNode struct : IVisitable {
+public type ASTPostfixUnaryExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= AtomicExprNode ======================================================
 
-public type ASTAtomicExprNode struct : IVisitable {
+public type ASTAtomicExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // =========================================================== ValueNode =========================================================
 
-public type ASTValueNode struct : IVisitable {
+public type ASTValueNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================= PrimitiveValueNode ====================================================
 
-public type ASTPrimitiveValueNode struct : IVisitable {
+public type ASTPrimitiveValueNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== FctCallNode ========================================================
 
-public type ASTFctCallNode struct : IVisitable {
+public type ASTFctCallNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ==================================================== ArrayInitializationNode ==================================================
 
-public type ASTArrayInitializationNode struct : IVisitable {
+public type ASTArrayInitializationNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ==================================================== StructInstantiationNode ==================================================
 
-public type ASTStructInstantiationNode struct : IVisitable {
+public type ASTStructInstantiationNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= LambdaFuncNode ======================================================
 
-public type ASTLambdaFuncNode struct : IVisitable {
+public type ASTLambdaFuncNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= LambdaProcNode ======================================================
 
-public type ASTLambdaProcNode struct : IVisitable {
+public type ASTLambdaProcNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================= LambdaExprNode =======================================================
 
-public type ASTLambdaExprNode struct : IVisitable {
+public type ASTLambdaExprNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ========================================================== DataTypeNode =======================================================
 
-public type ASTDataTypeNode struct : IVisitable {
+public type ASTDataTypeNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================== BaseDataTypeNode =====================================================
 
-public type ASTBaseDataTypeNode struct : IVisitable {
+public type ASTBaseDataTypeNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
 
 // ======================================================= CustomDataTypeNode ====================================================
 
-public type ASTCustomDataTypeNode struct : IVisitable {
+public type ASTCustomDataTypeNode struct /*: IVisitable*/ {
     compose public ASTNode node
 }
 
 // ====================================================== FunctionDataTypeNode ===================================================
 
-public type ASTFunctionDataTypeNode struct : IVisitable {
+public type ASTFunctionDataTypeNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }

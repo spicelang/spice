@@ -1,3 +1,4 @@
+import "../../src-bootstrap/lexer/lexer";
 import "../../src-bootstrap/parser/parser";
 
 f<int> main() {

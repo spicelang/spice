@@ -36,7 +36,7 @@ union CompileTimeValue {
 class ASTNode {
 public:
   // Constructors
-  ASTNode(ASTNode *parent, CodeLoc codeLoc) : parent(parent), codeLoc(std::move(codeLoc)) {}
+  explicit ASTNode(CodeLoc codeLoc) : codeLoc(std::move(codeLoc)) {}
   ASTNode(const ASTNode &) = delete;
 
   // Virtual methods
@@ -44,9 +44,9 @@ public:
   virtual std::any accept(ParallelizableASTVisitor *visitor) const = 0;
 
   // Public methods
-  template <typename T> void addChild(T *node) {
-    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
+  void addChild(ASTNode *node) {
     children.push_back(node);
+    node->parent = this;
   }
 
   template <typename T> [[nodiscard]] T *getChild(size_t i = 0) const {

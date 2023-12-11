@@ -7,6 +7,9 @@ import "../lexer/lexer";
 import "../lexer/token";
 import "../ast/ast-nodes";
 
+// Generic types
+type T dyn;
+
 public type Parser struct /*: ICompilerPass*/ {
     //compose CompilerPass
     Lexer& lexer
@@ -22,18 +25,39 @@ public p Parser.ctor(Lexer& lexer) {
 }*/
 
 f<T*> Parser.createNode<T>() {
+    ASTNode* parent = nil<ASTNode*>;
+    const bool isRootNode = this.parentStack.isEmpty();
+    if !isRootNode {
+        parent = this.parentStack.top();
+    }
 
+    // Create the new node
+    sourceFile.astNodes.pushBack(SourceFile());
+    T* node = &sourceFile.astNodes.back();
+
+    // If this is not the root node, add it to the parent
+    if !isRootNode {
+        parent.addChild(node);
+    }
+
+    // This node is the parent for its children
+    this.parentStack.push(node);
+
+    return node;
 }
 
 f<T*> Parser.concludeNode<T>(T* node) {
-
+    assert !this.parentStack.isEmpty();
+    assert this.parentStack.top() == node;
+    this.parentStack.pop();
+    return node;
 }
 
 inline f<bool> Parser.currentTokenIs(TokenType expectedTokenType) {
     return this.lexer.getToken().tokenType == expectedTokenType;
 }
 
-f<bool> Parser.currentTokenIsOneOf(TokenType* expectedTokenTypeArray, unsigned long size) {
+f<bool> Parser.currentTokenIsOneOf(TokenType[] expectedTokenTypeArray, unsigned long size) {
     for unsigned long i = 0l; i < size; i++ {
         if this.currentTokenIs(expectedTokenTypeArray[i]) {
             return true;
@@ -46,7 +70,7 @@ public f<ASTEntryNode*> Parser.parse() {
     dyn entryNode = this.createNode<ASTEntryNode>();
 
     while !this.currentTokenIs(TokenType::EOF) {
-        parseStmt();
+        this.parseStmt();
     }
 
     return this.concludeNode(entryNode);
@@ -102,9 +126,9 @@ public f<ASTFctDefNode*> Parser.parseFctDef() {
 
     this.lexer.expect(TokenType::F);
     this.lexer.expect(TokenType::LESS);
-    this.lexer.parseDataType();
+    this.parseDataType();
     this.lexer.expect(TokenType::GREATER);
-    this.lexer.parseFctName();
+    this.parseFctName();
 
     // Parse typeLst (template type list)
     if this.currentTokenIs(TokenType::LESS) {
@@ -252,7 +276,7 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
     this.lexer.expect(TokenType::LBRACE);
     do {
         this.parseSignature();
-    } while (!this.isCurrentToken(TokenType::RBRACE));
+    } while (!this.currentTokenIs(TokenType::RBRACE));
     this.lexer.expect(TokenType::RBRACE);
 
     return this.concludeNode(interfaceDefNode);

@@ -1270,7 +1270,7 @@ template <typename T> T *ASTBuilder::createNode(const ParserRuleContext *ctx) {
     parent = parentStack.top();
 
   // Create the new node
-  resourceManager.astNodes.push_back(std::make_unique<T>(parent, getCodeLoc(ctx)));
+  resourceManager.astNodes.push_back(std::make_unique<T>(getCodeLoc(ctx)));
   T *node = static_cast<T *>(resourceManager.astNodes.back().get());
   node->reserveChildren(ctx->children.size());
 
