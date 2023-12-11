@@ -48,12 +48,12 @@ digraph {
  L1C18_declStmt -> L1C22
  L1C23 [color="lightblue",label="RPAREN: )"];
  L1C0_functionDef -> L1C23
+ L1C25_stmtLst [color="lightgreen",label="stmtLst"];
+ L1C0_functionDef -> L1C25_stmtLst;
  L1C25 [color="lightblue",label="LBRACE: {"];
- L1C0_functionDef -> L1C25
- L2C4_stmtLst [color="lightgreen",label="stmtLst"];
- L1C0_functionDef -> L2C4_stmtLst;
+ L1C25_stmtLst -> L1C25
  L2C4_ifStmt [color="lightgreen",label="ifStmt"];
- L2C4_stmtLst -> L2C4_ifStmt;
+ L1C25_stmtLst -> L2C4_ifStmt;
  L2C4 [color="lightblue",label="IF: if"];
  L2C4_ifStmt -> L2C4
  L2C7_assignExpr [color="lightgreen",label="assignExpr"];
@@ -112,12 +112,12 @@ digraph {
  L2C12_atomicExpr -> L2C12_constant;
  L2C12 [color="lightblue",label="INT_LIT: 0"];
  L2C12_constant -> L2C12
+ L2C14_stmtLst [color="lightgreen",label="stmtLst"];
+ L2C4_ifStmt -> L2C14_stmtLst;
  L2C14 [color="lightblue",label="LBRACE: {"];
- L2C4_ifStmt -> L2C14
- L2C16_stmtLst [color="lightgreen",label="stmtLst"];
- L2C4_ifStmt -> L2C16_stmtLst;
+ L2C14_stmtLst -> L2C14
  L2C16_stmt [color="lightgreen",label="stmt"];
- L2C16_stmtLst -> L2C16_stmt;
+ L2C14_stmtLst -> L2C16_stmt;
  L2C16_returnStmt [color="lightgreen",label="returnStmt"];
  L2C16_stmt -> L2C16_returnStmt;
  L2C16 [color="lightblue",label="RETURN: return"];
@@ -175,9 +175,9 @@ digraph {
  L2C28 [color="lightblue",label="SEMICOLON: ;"];
  L2C16_stmt -> L2C28
  L2C30 [color="lightblue",label="RBRACE: }"];
- L2C4_ifStmt -> L2C30
+ L2C14_stmtLst -> L2C30
  L3C4_ifStmt [color="lightgreen",label="ifStmt"];
- L2C4_stmtLst -> L3C4_ifStmt;
+ L1C25_stmtLst -> L3C4_ifStmt;
  L3C4 [color="lightblue",label="IF: if"];
  L3C4_ifStmt -> L3C4
  L3C7_assignExpr [color="lightgreen",label="assignExpr"];
@@ -236,12 +236,12 @@ digraph {
  L3C12_atomicExpr -> L3C12_constant;
  L3C12 [color="lightblue",label="INT_LIT: 0"];
  L3C12_constant -> L3C12
+ L3C14_stmtLst [color="lightgreen",label="stmtLst"];
+ L3C4_ifStmt -> L3C14_stmtLst;
  L3C14 [color="lightblue",label="LBRACE: {"];
- L3C4_ifStmt -> L3C14
- L3C16_stmtLst [color="lightgreen",label="stmtLst"];
- L3C4_ifStmt -> L3C16_stmtLst;
+ L3C14_stmtLst -> L3C14
  L3C16_stmt [color="lightgreen",label="stmt"];
- L3C16_stmtLst -> L3C16_stmt;
+ L3C14_stmtLst -> L3C16_stmt;
  L3C16_returnStmt [color="lightgreen",label="returnStmt"];
  L3C16_stmt -> L3C16_returnStmt;
  L3C16 [color="lightblue",label="RETURN: return"];
@@ -381,9 +381,9 @@ digraph {
  L3C36 [color="lightblue",label="SEMICOLON: ;"];
  L3C16_stmt -> L3C36
  L3C38 [color="lightblue",label="RBRACE: }"];
- L3C4_ifStmt -> L3C38
+ L3C14_stmtLst -> L3C38
  L4C4_stmt [color="lightgreen",label="stmt"];
- L2C4_stmtLst -> L4C4_stmt;
+ L1C25_stmtLst -> L4C4_stmt;
  L4C4_returnStmt [color="lightgreen",label="returnStmt"];
  L4C4_stmt -> L4C4_returnStmt;
  L4C4 [color="lightblue",label="RETURN: return"];
@@ -617,7 +617,7 @@ digraph {
  L4C36 [color="lightblue",label="SEMICOLON: ;"];
  L4C4_stmt -> L4C36
  L5C0 [color="lightblue",label="RBRACE: }"];
- L1C0_functionDef -> L5C0
+ L1C25_stmtLst -> L5C0
  L7C0_mainFunctionDef [color="lightgreen",label="mainFunctionDef"];
  L1C0_entry -> L7C0_mainFunctionDef;
  L7C0 [color="lightblue",label="F: f"];
@@ -634,12 +634,12 @@ digraph {
  L7C0_mainFunctionDef -> L7C11
  L7C12 [color="lightblue",label="RPAREN: )"];
  L7C0_mainFunctionDef -> L7C12
+ L7C14_stmtLst [color="lightgreen",label="stmtLst"];
+ L7C0_mainFunctionDef -> L7C14_stmtLst;
  L7C14 [color="lightblue",label="LBRACE: {"];
- L7C0_mainFunctionDef -> L7C14
- L8C4_stmtLst [color="lightgreen",label="stmtLst"];
- L7C0_mainFunctionDef -> L8C4_stmtLst;
+ L7C14_stmtLst -> L7C14
  L8C4_stmt [color="lightgreen",label="stmt"];
- L8C4_stmtLst -> L8C4_stmt;
+ L7C14_stmtLst -> L8C4_stmt;
  L8C4_declStmt [color="lightgreen",label="declStmt"];
  L8C4_stmt -> L8C4_declStmt;
  L8C4_dataType [color="lightgreen",label="dataType"];
@@ -691,7 +691,7 @@ digraph {
  L8C17 [color="lightblue",label="SEMICOLON: ;"];
  L8C4_stmt -> L8C17
  L9C4_stmt [color="lightgreen",label="stmt"];
- L8C4_stmtLst -> L9C4_stmt;
+ L7C14_stmtLst -> L9C4_stmt;
  L9C4_declStmt [color="lightgreen",label="declStmt"];
  L9C4_stmt -> L9C4_declStmt;
  L9C4_dataType [color="lightgreen",label="dataType"];
@@ -743,7 +743,7 @@ digraph {
  L9C18 [color="lightblue",label="SEMICOLON: ;"];
  L9C4_stmt -> L9C18
  L10C4_stmt [color="lightgreen",label="stmt"];
- L8C4_stmtLst -> L10C4_stmt;
+ L7C14_stmtLst -> L10C4_stmt;
  L10C4_assignExpr [color="lightgreen",label="assignExpr"];
  L10C4_stmt -> L10C4_assignExpr;
  L10C4_ternaryExpr [color="lightgreen",label="ternaryExpr"];
@@ -979,5 +979,5 @@ digraph {
  L10C82 [color="lightblue",label="SEMICOLON: ;"];
  L10C4_stmt -> L10C82
  L11C0 [color="lightblue",label="RBRACE: }"];
- L7C0_mainFunctionDef -> L11C0
+ L7C14_stmtLst -> L11C0
 }

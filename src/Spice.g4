@@ -4,9 +4,9 @@ grammar Spice;
 
 // Top level definitions and declarations
 entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importStmt | extDecl | modAttr)*;
-mainFunctionDef: topLevelDefAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-functionDef: topLevelDefAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-procedureDef: topLevelDefAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+mainFunctionDef: topLevelDefAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN stmtLst;
+functionDef: topLevelDefAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
+procedureDef: topLevelDefAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
 fctName: (TYPE_IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
 structDef: topLevelDefAttr? specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
 interfaceDef: topLevelDefAttr? specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature+ RBRACE;
@@ -17,19 +17,19 @@ globalVarDef: dataType TYPE_IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: topLevelDefAttr? EXT (F LESS dataType GREATER | P) (IDENTIFIER | TYPE_IDENTIFIER) LPAREN (typeLst ELLIPSIS?)? RPAREN SEMICOLON;
 
 // Control structures
-unsafeBlock: UNSAFE LBRACE stmtLst RBRACE;
-forLoop: FOR (forHead | LPAREN forHead RPAREN) LBRACE stmtLst RBRACE;
+unsafeBlock: UNSAFE stmtLst;
+forLoop: FOR (forHead | LPAREN forHead RPAREN) stmtLst;
 forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
-foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) LBRACE stmtLst RBRACE;
+foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) stmtLst;
 foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
-whileLoop: WHILE assignExpr LBRACE stmtLst RBRACE;
-doWhileLoop: DO LBRACE stmtLst RBRACE WHILE assignExpr SEMICOLON;
-ifStmt: IF assignExpr LBRACE stmtLst RBRACE elseStmt?;
-elseStmt: ELSE ifStmt | ELSE LBRACE stmtLst RBRACE;
-anonymousBlockStmt: LBRACE stmtLst RBRACE;
+whileLoop: WHILE assignExpr stmtLst;
+doWhileLoop: DO stmtLst WHILE assignExpr SEMICOLON;
+ifStmt: IF assignExpr stmtLst elseStmt?;
+elseStmt: ELSE ifStmt | ELSE stmtLst;
+anonymousBlockStmt: stmtLst;
 
 // Statements, declarations, definitions and lists
-stmtLst: (stmt | forLoop | foreachLoop | whileLoop | doWhileLoop | ifStmt | assertStmt | unsafeBlock | anonymousBlockStmt)*;
+stmtLst: LBRACE (stmt | forLoop | foreachLoop | whileLoop | doWhileLoop | ifStmt | assertStmt | unsafeBlock | anonymousBlockStmt)* RBRACE;
 typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;
@@ -43,7 +43,7 @@ declStmt: dataType IDENTIFIER (ASSIGN assignExpr)?;
 specifierLst: specifier+;
 specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC | HEAP | COMPOSE;
 modAttr: MOD_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
-topLevelDefAttr: FCT_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
+topLevelDefAttr: TOPLEVEL_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
 attrLst: attr (COMMA attr)*;
 attr: IDENTIFIER (DOT IDENTIFIER)* (ASSIGN constant)?;
 importStmt: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;
@@ -84,8 +84,8 @@ constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | 
 fctCall: (IDENTIFIER SCOPE_ACCESS)* (IDENTIFIER DOT)* (IDENTIFIER | TYPE_IDENTIFIER) (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACKET argLst? RBRACKET;
 structInstantiation: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
-lambdaFunc: F LESS dataType GREATER LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
-lambdaProc: P LPAREN paramLst? RPAREN LBRACE stmtLst RBRACE;
+lambdaFunc: F LESS dataType GREATER LPAREN paramLst? RPAREN stmtLst;
+lambdaProc: P LPAREN paramLst? RPAREN stmtLst;
 lambdaExpr: LPAREN paramLst? RPAREN ARROW assignExpr;
 
 // Types
@@ -193,7 +193,7 @@ DOT: '.';
 ARROW: '->';
 SCOPE_ACCESS: '::';
 ELLIPSIS: '...';
-FCT_ATTR_PREAMBLE: '#';
+TOPLEVEL_ATTR_PREAMBLE: '#';
 MOD_ATTR_PREAMBLE: '#!';
 
 // Regex tokens
