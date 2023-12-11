@@ -165,7 +165,7 @@ public:
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
 
   // Public members
-  ASTNode *parent;
+  ASTNode *parent = nullptr;
   std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
   std::string errorMessage;
@@ -229,7 +229,7 @@ public:
   using ASTNode::ASTNode;
 
   // Enums
-  enum OverloadedOperator {
+  enum OverloadedOperator : uint8_t {
     OP_NONE,
     OP_PLUS,
     OP_MINUS,
@@ -859,7 +859,7 @@ public:
 class SignatureNode : public ASTNode {
 public:
   // Enums
-  enum Type {
+  enum Type : uint8_t {
     TYPE_NONE,
     TYPE_FUNCTION,
     TYPE_PROCEDURE,
@@ -956,7 +956,7 @@ public:
 class SpecifierNode : public ASTNode {
 public:
   // Enums
-  enum SpecifierType {
+  enum SpecifierType : uint8_t {
     TY_NONE,
     TY_CONST,
     TY_SIGNED,
@@ -1268,7 +1268,7 @@ public:
 class AssignExprNode : public ASTNode {
 public:
   // Enums
-  enum AssignOp {
+  enum AssignOp : uint8_t {
     OP_NONE,
     OP_ASSIGN,
     OP_PLUS_EQUAL,
@@ -1425,7 +1425,11 @@ public:
 class EqualityExprNode : public ASTNode {
 public:
   // Enums
-  enum EqualityOp { OP_NONE, OP_EQUAL, OP_NOT_EQUAL };
+  enum EqualityOp : uint8_t {
+    OP_NONE,
+    OP_EQUAL,
+    OP_NOT_EQUAL,
+  };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1450,7 +1454,13 @@ public:
 class RelationalExprNode : public ASTNode {
 public:
   // Enums
-  enum RelationalOp { OP_NONE, OP_LESS, OP_GREATER, OP_LESS_EQUAL, OP_GREATER_EQUAL };
+  enum RelationalOp : uint8_t {
+    OP_NONE,
+    OP_LESS,
+    OP_GREATER,
+    OP_LESS_EQUAL,
+    OP_GREATER_EQUAL,
+  };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1475,7 +1485,7 @@ public:
 class ShiftExprNode : public ASTNode {
 public:
   // Enums
-  enum ShiftOp {
+  enum ShiftOp : uint8_t {
     OP_NONE,
     OP_SHIFT_LEFT,
     OP_SHIFT_RIGHT,
@@ -1504,7 +1514,7 @@ public:
 class AdditiveExprNode : public ASTNode {
 public:
   // Enums
-  enum AdditiveOp {
+  enum AdditiveOp : uint8_t {
     OP_NONE,
     OP_PLUS,
     OP_MINUS,
@@ -1536,7 +1546,7 @@ public:
 class MultiplicativeExprNode : public ASTNode {
 public:
   // Enums
-  enum MultiplicativeOp {
+  enum MultiplicativeOp : uint8_t {
     OP_NONE,
     OP_MUL,
     OP_DIV,
@@ -1592,7 +1602,16 @@ public:
 class PrefixUnaryExprNode : public ASTNode {
 public:
   // Enums
-  enum PrefixUnaryOp { OP_NONE, OP_MINUS, OP_PLUS_PLUS, OP_MINUS_MINUS, OP_NOT, OP_BITWISE_NOT, OP_DEREFERENCE, OP_ADDRESS_OF };
+  enum PrefixUnaryOp : uint8_t {
+    OP_NONE,
+    OP_MINUS,
+    OP_PLUS_PLUS,
+    OP_MINUS_MINUS,
+    OP_NOT,
+    OP_BITWISE_NOT,
+    OP_DEREFERENCE,
+    OP_ADDRESS_OF,
+  };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1618,7 +1637,13 @@ public:
 class PostfixUnaryExprNode : public ASTNode {
 public:
   // Enums
-  enum PostfixUnaryOp { OP_NONE, OP_SUBSCRIPT, OP_MEMBER_ACCESS, OP_PLUS_PLUS, OP_MINUS_MINUS };
+  enum PostfixUnaryOp : uint8_t {
+    OP_NONE,
+    OP_SUBSCRIPT,
+    OP_MEMBER_ACCESS,
+    OP_PLUS_PLUS,
+    OP_MINUS_MINUS,
+  };
 
   // Constructors
   using ASTNode::ASTNode;
@@ -1707,7 +1732,7 @@ public:
 class ConstantNode : public ASTNode {
 public:
   // Enum
-  enum PrimitiveValueType {
+  enum PrimitiveValueType : uint8_t {
     TYPE_NONE,
     TYPE_DOUBLE,
     TYPE_INT,
@@ -1735,7 +1760,12 @@ public:
 
 class FctCallNode : public ASTNode {
 public:
-  enum FctCallType : uint8_t { TYPE_ORDINARY, TYPE_METHOD, TYPE_CTOR, TYPE_FCT_PTR };
+  enum FctCallType : uint8_t {
+    TYPE_ORDINARY,
+    TYPE_METHOD,
+    TYPE_CTOR,
+    TYPE_FCT_PTR,
+  };
 
   // Structs
   struct FctCallData {
@@ -1897,7 +1927,11 @@ public:
 class DataTypeNode : public ASTNode {
 public:
   // Enums
-  enum TypeModifierType { TYPE_PTR, TYPE_REF, TYPE_ARRAY };
+  enum TypeModifierType : uint8_t {
+    TYPE_PTR,
+    TYPE_REF,
+    TYPE_ARRAY,
+  };
 
   // Structs
   struct TypeModifier {
@@ -1934,7 +1968,7 @@ public:
 class BaseDataTypeNode : public ASTNode {
 public:
   // Enums
-  enum Type {
+  enum Type : uint8_t {
     TYPE_NONE,
     TYPE_DOUBLE,
     TYPE_INT,

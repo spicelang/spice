@@ -295,9 +295,21 @@ public type ASTSpecifierLstNode struct /*: IVisitable*/ {
 
 // ========================================================= SpecifierNode =======================================================
 
+type SpecifierType enum {
+    NONE,
+    CONST,
+    SIGNED,
+    UNSIGNED,
+    INLINE,
+    PUBLIC,
+    HEAP,
+    COMPOSITION
+}
+
 public type ASTSpecifierNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
+    public SpecifierType specifierType = SpecifierType::TY_NONE
 }
 
 // ========================================================== ModAttrNode ========================================================

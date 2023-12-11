@@ -161,7 +161,7 @@ public f<ASTFctDefNode*> Parser.parseProcDef() {
     }
 
     // Parse specifierLst
-    if !this.currentTokenIs(TokenType::F) {
+    if !this.currentTokenIs(TokenType::P) {
         this.parseSpecifierLst();
     }
 
@@ -217,7 +217,7 @@ f<ASTStructDefNode*> Parser.parseStructDef() {
     }
 
     // Parse specifierLst
-    if !this.currentTokenIs(TokenType::F) {
+    if !this.currentTokenIs(TokenType::TYPE) {
         this.parseSpecifierLst();
     }
 
@@ -256,7 +256,7 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
     }
 
     // Parse specifierLst
-    if !this.currentTokenIs(TokenType::F) {
+    if !this.currentTokenIs(TokenType::TYPE) {
         this.parseSpecifierLst();
     }
 
@@ -276,8 +276,516 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
     this.lexer.expect(TokenType::LBRACE);
     do {
         this.parseSignature();
-    } while (!this.currentTokenIs(TokenType::RBRACE));
+    } while !this.currentTokenIs(TokenType::RBRACE);
     this.lexer.expect(TokenType::RBRACE);
 
     return this.concludeNode(interfaceDefNode);
+}
+
+f<ASTEnumDefNode*> Parser.parseEnumDef() {
+    dyn enumDefNode = this.createNode<ASTEnumDefNode>();
+
+    // Parse specifierLst
+    if !this.currentTokenIs(TokenType::TYPE) {
+        this.parseSpecifierLst();
+    }
+
+    this.lexer.expect(TokenType::TYPE);
+    this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+    this.lexer.expect(TokenType::ENUM);
+
+    // Parse enumItemLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.parseEnumItemLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    return this.concludeNode(enumDefNode);
+}
+
+f<ASTGenericTypeDefNode*> Parser.parseGenericTypeDef() {
+    dyn genericTypeDefNode = this.createNode<ASTGenericTypeDefNode>();
+
+    this.lexer.expect(TokenType::TYPE);
+    this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+    this.parseTypeAltsLst();
+    this.lexer.expect(TokenType::SEMICOLON);
+
+    return this.concludeNode(genericTypeDefNode);
+}
+
+f<ASTAliasDefNode*> Parser.parseAliasDef() {
+    dyn aliasDefNode = this.createNode<ASTAliasDefNode>();
+
+    // Parse specifierLst
+    if !this.currentTokenIs(TokenType::TYPE) {
+        this.parseSpecifierLst();
+    }
+
+    this.lexer.expect(TokenType::TYPE);
+    this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+    this.lexer.expect(TokenType::ALIAS);
+    this.parseDataType();
+    this.lexer.expect(TokenType::SEMICOLON);
+
+    return this.concludeNode(aliasDefNode);
+}
+
+f<ASTGlobalVarDefNode*> Parser.parseGlobalVarDef() {
+    dyn globalVarDefNode = this.createNode<ASTGlobalVarDefNode>();
+
+    this.parseDataType();
+    this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+
+    // Parse initializer
+    if !this.currentTokenIs(TokenType::ASSIGN) {
+        this.lexer.expect(TokenType::ASSIGN);
+        this.parseConstant();
+    }
+
+    this.lexer.expect(TokenType::SEMICOLON);
+
+    return this.concludeNode(globalVarDefNode);
+}
+
+f<ASTExtDeclNode*> Parser.parseExtDecl() {
+    dyn extDeclNode = this.createNode<ASTExtDeclNode>();
+
+    // Parse topLevelDefAttr
+    if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        this.parseTopLevelDefAttr();
+    }
+
+    this.lexer.expect(TokenType::EXT);
+
+    // Parse parse function prefix / procedure prefix
+    if this.currentTokenIs(TokenType::F) {
+        this.lex.expect(TokenType::F);
+        this.lexer.expect(TokenType::LESS);
+        this.parseDataType();
+        this.lexer.expect(TokenType::GREATER);
+    } else {
+        this.lexer.expect(TokenType::P);
+    }
+
+    // Parse external function name
+    if this.currentTokenIs(TokenType::IDENTIFIER) {
+        this.lexer.expect(TokenType::IDENTIFIER);
+    } else {
+        this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+    }
+
+    // Parse typeLst (param list)
+    this.lexer.expect(TokenType::LPAREN);
+    if !this.currentTokenIs(TokenType::RPAREN) {
+        this.parseTypeLst();
+        if this.currentTokenIs(TokenType::ELLIPSIS) {
+            this.lexer.expect(TokenType::ELLIPSIS);
+        }
+    }
+    this.lexer.expect(TokenType::RPAREN);
+
+    this.lexer.expect(TokenType::SEMICOLON);
+
+    return this.concludeNode(extDeclNode);
+}
+
+f<ASTUnsafeBlockNode*> Parser.parseUnsafeBlock() {
+    dyn unsafeBlockNode = this.createNode<ASTUnsafeBlockNode>();
+
+    this.lexer.expect(TokenType::UNSAFE);
+    this.lexer.expect(TokenType::LBRACE);
+    this.parseStmtLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    return this.concludeNode(unsafeBlockNode);
+}
+
+f<ASTForLoopNode*> Parser.parseForLoop() {
+    dyn forLoopNode = this.createNode<ASTForLoopNode>();
+
+    this.lexer.expect(TokenType::FOR);
+
+    // Parse head
+    if this.currentTokenIs(TokenType::LPAREN) {
+        this.lexer.expect(TokenType::LPAREN);
+        this.parseForHead();
+        this.lexer.expect(TokenType::RPAREN);
+    } else {
+        this.parseAssignExpr();
+    }
+
+    // Parse stmtLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.parseStmtLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    return this.concludeNode(forLoopNode);
+}
+
+p Parser.parseForHead() {
+    this.parseDeclStmt();
+    this.lexer.expect(TokenType::SEMICOLON);
+    this.parseAssignExpr();
+    this.lexer.expect(TokenType::SEMICOLON);
+    this.parseAssignExpr();
+}
+
+f<ASTForeachLoopNode*> Parser.parseForeachLoop() {
+    dyn foreachLoopNode = this.createNode<ASTForeachLoopNode>();
+
+    this.lexer.expect(TokenType::FOREACH);
+
+    // Parse head
+    if this.currentTokenIs(TokenType::LPAREN) {
+        this.lexer.expect(TokenType::LPAREN);
+        this.parseForeachHead();
+        this.lexer.expect(TokenType::RPAREN);
+    } else {
+        this.parseAssignExpr();
+    }
+
+    // Parse stmtLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.parseStmtLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    return this.concludeNode(foreachLoopNode);
+}
+
+p Parser.parseForeachHead() {
+    this.parseDeclStmt();
+    if this.currentTokenIs(TokenType::COMMA) {
+        this.lexer.expect(TokenType::COMMA);
+        this.parseDeclStmt();
+    }
+    this.lexer.expect(TokenType::COLON);
+    this.parseAssignExpr();
+}
+
+f<ASTWhileLoopNode*> Parser.parseWhileLoop() {
+    dyn whileLoopNode = this.createNode<ASTWhileLoopNode>();
+
+    this.lexer.expect(TokenType::WHILE);
+
+    // Parse head
+    this.parseAssignExpr();
+
+    // Parse stmtLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.parseStmtLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    return this.concludeNode(whileLoopNode);
+}
+
+f<ASTDoWhileLoopNode*> Parser.parseDoWhileLoop() {
+    dyn doWhileLoopNode = this.createNode<ASTDoWhileLoopNode>();
+
+    this.lexer.expect(TokenType::DO);
+
+    // Parse stmtLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.parseStmtLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    // Parse foot
+    this.lexer.expect(TokenType::WHILE);
+    this.parseAssignExpr();
+    this.lexer.expect(TokenType::SEMICOLON);
+
+    return this.concludeNode(doWhileLoopNode);
+}
+
+f<ASTIfStmtNode> Parser.parseIfStmt() {
+    dyn ifStmtNode = this.createNode<ASTIfStmtNode>();
+
+    this.lexer.expect(TokenType::IF);
+
+    // Parse head
+    this.parseAssignExpr();
+
+    // Parse stmtLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.parseStmtLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    // Parse else
+    if !this.currentTokenIs(TokenType::ELSE) {
+        this.parseElseStmt();
+    }
+
+    return this.concludeNode(ifStmtNode);
+}
+
+f<ASTElseStmtNode> Parser.parseElseStmt() {
+    dyn elseStmtNode = this.createNode<ASTElseStmtNode>();
+
+    this.lexer.expect(TokenType::ELSE);
+
+    if this.currentTokenIs(TokenType::IF) { // Else if
+        this.parseIfStmt();
+    } else { // Else
+        this.lexer.expect(TokenType::LBRACE);
+        this.parseStmtLst();
+        this.lexer.expect(TokenType::RBRACE);
+    }
+
+    return this.concludeNode(elseStmtNode);
+}
+
+f<ASTAnonymousBlockStmtNode*> Parser.parseAnonymousBlockStmt() {
+    dyn anonymousBlockStmtNode = this.createNode<ASTAnonymousBlockStmtNode>();
+
+    // Parse stmtLst
+    this.lexer.expect(TokenType::LBRACE);
+    this.parseStmtLst();
+    this.lexer.expect(TokenType::RBRACE);
+
+    return this.concludeNode(anonymousBlockStmtNode);
+}
+
+f<ASTStmtLstNode*> Parser.parseStmtLst() {
+    dyn stmtLstNode = this.createNode<ASTStmtLstNode>();
+
+    while !this.currentTokenIs(TokenType::RBRACE) {
+        this.parseStmt();
+    }
+
+    return this.concludeNode(stmtLstNode);
+}
+
+f<ASTTypeLstNode*> Parser.parseTypeLst() {
+    dyn typeLstNode = this.createNode<ASTTypeLstNode>();
+
+    this.parseDataType();
+    while this.currentTokenIs(TokenType::COMMA) {
+        this.lexer.expect(TokenType::COMMA);
+        this.parseDataType();
+    }
+
+    return this.concludeNode(typeLstNode);
+}
+
+f<ASTTypeAltsLstNode*> Parser.parseTypeAltsLst() {
+    dyn typeAltsLstNode = this.createNode<ASTTypeAltsLstNode>();
+
+    this.parseDataType();
+    while this.currentTokenIs(TokenType::BITWISE_OR) {
+        this.lexer.expect(TokenType::BITWISE_OR);
+        this.parseDataType();
+    }
+
+    return this.concludeNode(typeAltsLstNode);
+}
+
+f<ASTParamLstNode*> Parser.parseParamLst() {
+    dyn paramLstNode = this.createNode<ASTParamLstNode>();
+
+    this.parseDeclStmt();
+    while this.currentTokenIs(TokenType::COMMA) {
+        this.lexer.expect(TokenType::COMMA);
+        this.parseDeclStmt();
+    }
+
+    return this.concludeNode(paramLstNode);
+}
+
+f<ASTArgLstNode*> Parser.parseArgLst() {
+    dyn argLstNode = this.createNode<ASTArgLstNode>();
+
+    this.parseAssignExpr();
+    while this.currentTokenIs(TokenType::COMMA) {
+        this.lexer.expect(TokenType::COMMA);
+        this.parseAssignExpr();
+    }
+
+    return this.concludeNode(argLstNode);
+}
+
+f<ASTEnumItemLstNode*> Parser.parseEnumItemLst() {
+    dyn enumItemLstNode = this.createNode<ASTEnumItemLstNode>();
+
+    this.parseEnumItem();
+    while this.currentTokenIs(TokenType::COMMA) {
+        this.lexer.expect(TokenType::COMMA);
+        this.parseEnumItem();
+    }
+
+    return this.concludeNode(enumItemLstNode);
+}
+
+f<ASTEnumItemNode*> Parser.parseEnumItem() {
+    dyn enumItemNode = this.createNode<ASTEnumItemNode>();
+
+    this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+    if this.currentTokenIs(TokenType::ASSIGN) {
+        this.lexer.expect(TokenType::ASSIGN);
+        this.lexer.expect(TokenType::INT_LIT);
+    }
+
+    return this.concludeNode(enumItemNode);
+}
+
+f<ASTFieldNode*> Parser.parseField() {
+    this.parseDataType();
+    this.lexer.expect(TokenType::IDENTIFIER);
+
+    if this.currentTokenIs(TokenType::ASSIGN) {
+        this.lexer.expect(TokenType::ASSIGN);
+        this.parseTernaryExpr();
+    }
+}
+
+f<ASTSignatureNode*> Parser.parseSignature() {
+    dyn signatureNode = this.createNode<ASTSignatureNode>();
+
+    // Parse specifierLst
+    const dyn options = [TokenType::F, TokenType::P];
+    if !this.currentTokenIsOneOf(options, sizeof(options)) {
+        this.parseSpecifierLst();
+    }
+
+    if this.currentTokenIs(TokenType::F) {
+        this.lexer.expect(TokenType::F);
+        this.lexer.expect(TokenType::LESS);
+        this.parseDataType();
+        this.lexer.expect(TokenType::GREATER);
+    } else {
+        this.lexer.expect(TokenType::P);
+    }
+
+    // Parse function name
+    this.lexer.epect(TokenType::IDENTIFIER);
+
+    // Parse typeLst (template type list)
+    if this.currentTokenIs(TokenType::LESS) {
+        this.lexer.expect(TokenType::LESS);
+        this.parseTypeLst();
+        this.lexer.expect(TokenType::GREATER);
+    }
+
+    // Parse paramLst
+    this.lexer.expect(TokenType::LPAREN);
+    if !this.currentTokenIs(TokenType::RPAREN) {
+        this.parseParamLst();
+    }
+    this.lexer.expect(TokenType::RPAREN);
+
+    this.lexer.expect(TokenType::SEMICOLON);
+
+    return this.concludeNode(signatureNode);
+}
+
+f<ASTStmtNode*> Parser.parseStmt() {
+    dyn stmtNode = this.createNode<ASTStmtNode>();
+
+    const dyn declStmtSelect = [
+        // declStmt -> dataType -> specifierLst -> specifier
+        TokenType::CONST,
+        TokenType::SIGNED,
+        TokenType::UNSIGNED,
+        TokenType::INLINE,
+        TokenType::PUBLIC,
+        TokenType::HEAP,
+        TokenType::COMPOSE,
+        // declStmt -> dataType -> baseDataType
+        TokenType::TYPE_DOUBLE,
+        TokenType::TYPE_INT,
+        TokenType::TYPE_SHORT,
+        TokenType::TYPE_LONG,
+        TokenType::TYPE_BYTE,
+        TokenType::TYPE_CHAR,
+        TokenType::TYPE_STRING,
+        TokenType::TYPE_BOOL,
+        TokenType::TYPE_DYN
+        // ToDo: add other
+    ];
+    if this.currentTokenIs(TokenType::RETURN) {
+        this.parseReturnStmt();
+    } else if this.currentTokenIs(TokenType::BREAK) {
+        this.parseBreakStmt();
+    } else if this.currentTokenIs(TokenType::CONTINUE) {
+        this.parseContinueStmt();
+    } else if this.currentTokenIsOneOf(declStmtSelect, sizeof(declStmtSelect)) {
+        this.parseDeclStmt();
+    } else {
+        this.parseAssignExpr();
+    }
+    this.lexer.expect(TokenType::SEMICOLON);
+
+    return this.concludeNode(stmtNode);
+}
+
+f<ASTDeclStmtNode*> Parser.parseDeclStmt() {
+    dyn declStmtNode = this.createNode<ASTDeclStmtNode>();
+
+    // Parse dataType
+    this.parseDataType();
+
+    this.expect(TokenType::IDENTIFIER);
+
+    // Parse initializer
+    if this.currentTokenIs(TokenType::ASSIGN) {
+        this.lexer.expect(TokenType::ASSIGN);
+        this.parseAssignExpr();
+    }
+
+    return this.concludeNode(declStmtNode);
+}
+
+f<SpecifierLstNode*> Parser.parseSpecifierLst() {
+    dyn specifierLstNode = this.createNode<ASTSpecifierLstNode>();
+
+    const dyn specifierSelect = [TokenType::CONST, TokenType::SIGNED, TokenType::UNSIGNED, TokenType::INLINE, TokenType::PUBLIC, TokenType::HEAP, TokenType::COMPOSE];
+    do {
+        this.parseSpecifier();
+    } while this.currentTokenIsOneOf(specifierSelect, sizeof(specifierSelect));
+
+    return this.concludeNode(specifierLstNode);
+}
+
+f<ASTSpecifierNode*> Parser.parseSpecifier() {
+    dyn specifierNode = this.createNode<ASTSpecifierNode>();
+
+    if this.currentTokenIs(TokenType::CONST) {
+        specifierNode.specifierType = SpecifierType::CONST;
+    } else if this.currentTokenIs(TokenType::SIGNED) {
+        specifierNode.specifierType = SpecifierType::SIGNED;
+    } else if this.currentTokenIs(TokenType::UNSIGNED) {
+        specifierNode.specifierType = SpecifierType::UNSIGNED;
+    } else if this.currentTokenIs(TokenType::INLINE) {
+        specifierNode.specifierType = SpecifierType::INLINE;
+    } else if this.currentTokenIs(TokenType::PUBLIC) {
+        specifierNode.specifierType = SpecifierType::PUBLIC;
+    } else if this.currentTokenIs(TokenType::HEAP) {
+        specifierNode.specifierType = SpecifierType::HEAP;
+    } else if this.currentTokenIs(TokenType::COMPOSE) {
+        specifierNode.specifierType = SpecifierType::COMPOSE;
+    } else {
+        assert false;
+    }
+
+    return this.concludeNode(specifierNode);
+}
+
+f<ASTModAttrNode*> Parser.parseModAttr() {
+    dyn modAttrNode = this.createNode<ASTModAttrNode>();
+
+    this.lexer.expect(TokenType::MOD_ATTR_PREAMBLE);
+    this.lexer.expect(TokenType::LBRACKET);
+    this.parseAttrLst();
+    this.lexer.expect(TokenType::RBRACKET);
+
+    return this.concludeNode(modAttrNode);
+}
+
+f<ASTTopLevelDefAttrNode*> Parser.parseTopLevelDefAttr() {
+    dyn topLevelDefAttrNode = this.createNode<ASTTopLevelDefAttrNode>();
+
+    this.lexer.expect(TokenType::FCT_ATTR_PREAMBLE);
+    this.lexer.expect(TokenType::LBRACKET);
+    this.parseAttrLst();
+    this.lexer.expect(TokenType::RBRACKET);
+
+    return this.concludeNode(topLevelDefAttrNode);
 }
