@@ -4,10 +4,10 @@ digraph {
  L3C1_EntryNode [color="lightgreen",label="EntryNode"];
  L3C1_MainFctDefNode [color="lightgreen",label="MainFctDefNode"];
  L3C1_EntryNode -> L3C1_MainFctDefNode;
- L4C5_StmtLstNode [color="lightgreen",label="StmtLstNode"];
- L3C1_MainFctDefNode -> L4C5_StmtLstNode;
+ L3C15_StmtLstNode [color="lightgreen",label="StmtLstNode"];
+ L3C1_MainFctDefNode -> L3C15_StmtLstNode;
  L4C5_StmtNode [color="lightgreen",label="StmtNode"];
- L4C5_StmtLstNode -> L4C5_StmtNode;
+ L3C15_StmtLstNode -> L4C5_StmtNode;
  L4C5_DeclStmtNode [color="lightgreen",label="DeclStmtNode"];
  L4C5_StmtNode -> L4C5_DeclStmtNode;
  L4C5_DataTypeNode [color="lightgreen",label="DataTypeNode"];
@@ -53,7 +53,7 @@ digraph {
  L4C24_ConstantNode [color="lightgreen",label="ConstantNode"];
  L4C24_AtomicExprNode -> L4C24_ConstantNode;
  L5C5_WhileLoopNode [color="lightgreen",label="WhileLoopNode"];
- L4C5_StmtLstNode -> L5C5_WhileLoopNode;
+ L3C15_StmtLstNode -> L5C5_WhileLoopNode;
  L5C11_AssignExprNode [color="lightgreen",label="AssignExprNode"];
  L5C5_WhileLoopNode -> L5C11_AssignExprNode;
  L5C11_TernaryExprNode [color="lightgreen",label="TernaryExprNode"];
@@ -102,10 +102,10 @@ digraph {
  L5C16_PostfixUnaryExprNode -> L5C16_AtomicExprNode;
  L5C16_ConstantNode [color="lightgreen",label="ConstantNode"];
  L5C16_AtomicExprNode -> L5C16_ConstantNode;
- L6C9_StmtLstNode [color="lightgreen",label="StmtLstNode"];
- L5C5_WhileLoopNode -> L6C9_StmtLstNode;
+ L5C18_StmtLstNode [color="lightgreen",label="StmtLstNode"];
+ L5C5_WhileLoopNode -> L5C18_StmtLstNode;
  L6C9_StmtNode [color="lightgreen",label="StmtNode"];
- L6C9_StmtLstNode -> L6C9_StmtNode;
+ L5C18_StmtLstNode -> L6C9_StmtNode;
  L6C9_AssignExprNode [color="lightgreen",label="AssignExprNode"];
  L6C9_StmtNode -> L6C9_AssignExprNode;
  L6C9_TernaryExprNode [color="lightgreen",label="TernaryExprNode"];
