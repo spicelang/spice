@@ -21,9 +21,10 @@ using namespace spice::compiler;
  * Collect the test cases in a particular test suite
  *
  * @param suitePath Path to the test suite
+ * @param useSubDirs Use subdirectories as test cases
  * @return Vector of tests cases
  */
-std::vector<TestCase> TestUtil::collectTestCases(const std::string &suiteName, bool useSubDirs) {
+std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool useSubDirs) {
   const std::filesystem::path suitePath = std::filesystem::path(PATH_TEST_FILES) / suiteName;
 
   std::vector<TestCase> testCases;
@@ -142,14 +143,17 @@ std::vector<std::string> TestUtil::getFileContentLinesVector(const std::filesyst
  * @param input Input string
  * @return Camel-cased string
  */
-std::string TestUtil::toCamelCase(std::string input) {
-  for (auto it = input.begin(); it != input.end(); it++) {
-    if (*it == '-' || *it == '_') {
-      it = input.erase(it);
-      *it = (char)toupper(*it);
-    }
+std::string TestUtil::toCamelCase(const std::string& input) {
+  std::stringstream ss(input);
+  std::string token;
+  std::string camelCase;
+
+  while (std::getline(ss, token, '-')) {
+    camelCase += token[0];
+    camelCase += token.substr(1);
   }
-  return input;
+
+  return camelCase;
 }
 
 /**
