@@ -21,7 +21,7 @@ std::string CodeLoc::toString() const { return "L" + std::to_string(line) + "C" 
  * @return Pretty code location
  */
 std::string CodeLoc::toPrettyString() const {
-  const std::string prefix = sourceFilePath.empty() ? "" : std::filesystem::relative(sourceFilePath).generic_string() + ":";
+  const std::string prefix = sourceFilePath.empty() ? "" : sourceFilePath.generic_string() + ":";
   return prefix + std::to_string(line) + ":" + std::to_string(col);
 }
 
