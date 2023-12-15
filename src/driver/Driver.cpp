@@ -102,6 +102,10 @@ void Driver::init() {
  * Initialize the cli options based on the input of the user
  */
 void Driver::enrich() {
+  // Make path of given main source file canonical and relative
+  cliOptions.mainSourceFile = std::filesystem::canonical(cliOptions.mainSourceFile);
+  cliOptions.mainSourceFile = std::filesystem::path(cliOptions.mainSourceFile);
+
   // Propagate llvm args to llvm
   if (!cliOptions.llvmArgs.empty()) {
     const std::vector<std::string> result = CommonUtil::split("llvm " + cliOptions.llvmArgs);
