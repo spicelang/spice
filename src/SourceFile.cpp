@@ -567,7 +567,7 @@ bool SourceFile::imports(const SourceFile *sourceFile) const {
 
 bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { // NOLINT(misc-no-recursion)
   // Check if the current source file corresponds to the path to search
-  if (std::filesystem::absolute(filePath) == std::filesystem::absolute(filePathSearch))
+  if (std::filesystem::equivalent(filePath, filePathSearch))
     return true;
   // Check parent recursively
   return parent != nullptr && parent->isAlreadyImported(filePathSearch);
