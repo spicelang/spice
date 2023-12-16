@@ -39,7 +39,6 @@ std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
     basePath = sourceFile->filePath.parent_path() / node->importPath;
   }
   basePath.make_preferred();
-  basePath = std::filesystem::relative(std::filesystem::weakly_canonical(basePath));
 
   // Format: /dir/to/path/file.spice
   std::filesystem::path defaultPath = basePath;

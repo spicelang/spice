@@ -551,7 +551,7 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
                                const std::string &path) {
   // Check if this would cause a circular dependency
   if (isAlreadyImported(path))
-    throw SemanticError(declNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + fileName + "'");
+    throw SemanticError(declNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + sourceFile->fileName + "'");
 
   // Add the dependency
   sourceFile->mainFile = false;
