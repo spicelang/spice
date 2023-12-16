@@ -1,3 +1,5 @@
-public f<int> dummy() {
-    return 3;
+import "test" as s;
+
+p test() {
+    printf("p: %f", s.getDouble());
 }

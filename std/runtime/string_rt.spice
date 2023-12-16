@@ -251,6 +251,14 @@ public f<bool> operator==(const String& a, const String& b) {
     return true;
 }
 
+public f<bool> operator==(const String& a, const string& b) {
+    return isRawEqual(a.getRaw(), b);
+}
+
+public f<bool> operator==(const string& a, const String& b) {
+    return isRawEqual(a, b.getRaw());
+}
+
 /**
  * Checks if two strings have not the same value
  *
@@ -259,6 +267,14 @@ public f<bool> operator==(const String& a, const String& b) {
  * @return Not equal or not
  */
 public f<bool> operator!=(const String& a, const String& b) {
+    return !(a == b);
+}
+
+public f<bool> operator!=(const String& a, const string& b) {
+    return !(a == b);
+}
+
+public f<bool> operator!=(const string& a, const String& b) {
     return !(a == b);
 }
 

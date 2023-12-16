@@ -1,68 +1,58 @@
-/*ext f<byte*> fopen(string, string);
-ext f<int> fclose(byte*);
-ext f<int> fputc(int, byte*);
-ext f<int> fputs(string, byte*);
-
-f<int> main() {
-    byte* file = fopen("./test-file.txt", "w");
-    fputs("Hello World!", file);
-    fclose(file);
-}*/
-
-import "std/io/file";
-import "std/type/result";
-
-f<int> main() {
-    Result<File> res = openFile("test-file.txt", MODE_WRITE);
-    assert res.isOk();
-    File file = res.unwrap();
-    file.write("test");
-    file.close();
+type IASTNode interface {
+    p accept();
+    f<string> getName();
 }
 
-/*import "../../src-bootstrap/reader/reader";
+type ASTNode struct : IASTNode {
+
+}
+
+p ASTNode.ctor() {}
+
+p ASTNode.accept() {
+
+}
+
+f<string> ASTNode.getName() {
+    return "ASTNode";
+}
+
+type ASTEntryNode struct : IASTNode {
+    compose ASTNode base
+}
+
+p ASTEntryNode.ctor() {}
+
+p ASTEntryNode.accept() {
+
+}
+
+f<string> ASTEntryNode.getName() {
+    return "ASTEntryNode";
+}
+
+type ASTFctDefNode struct : IASTNode {
+    compose ASTNode base
+}
+
+p ASTFctDefNode.ctor() {}
+
+p ASTFctDefNode.accept() {
+
+}
+
+f<string> ASTFctDefNode.getName() {
+    return "ASTFctDefNode";
+}
 
 f<int> main() {
-    Reader reader = Reader("./test-file.txt");
-
-    printf("%d", reader.isEOF());
-    while !reader.isEOF() {
-        printf("%c", reader.getChar());
-        reader.advance();
-    }
-}*/
-
-/*import "std/io/file";
-
-f<int> main() {
-    // Write file
-    Result<File> fileResult = openFile("./test-file.txt", MODE_WRITE);
-    assert fileResult.isOk();
-    File file = fileResult.unwrap();
-    file.write("Hello, world!\n");
-    file.close();
-
-    // Read file
-    fileResult = openFile("./test-file.txt", MODE_READ);
-    assert fileResult.isOk();
-    file = fileResult.unwrap();
-    String line = file.readLine();
-    printf("%s", line);
-    assert line.getRaw() == "Hello, world!\n";
-    file.close();
-
-    // Append file
-    fileResult = openFile("./test-file.txt", MODE_APPEND);
-    assert fileResult.isOk();
-    file = fileResult.unwrap();
-    file.write("Hello, again!\n");
-    file.close();
-
-    // Read file
-    fileResult = openFile("./test-file.txt", MODE_READ);
-    assert fileResult.isOk();
-    file = fileResult.unwrap();
-    assert file.readLine() == String("Hello, world!\n");
-    assert file.readLine() == String("Hello, again!\n");
-    file.close();
-}*/
+    IASTNode node1 = ASTEntryNode();
+    IASTNode node2 = ASTNode();
+    IASTNode node3 = ASTFctDefNode();
+    IASTNode* node1Ptr = &node1;
+    IASTNode* node2Ptr = &node2;
+    IASTNode* node3Ptr = &node3;
+    printf("%s\n", node2Ptr.getName());
+    printf("%s\n", node3Ptr.getName());
+    printf("%s\n", node1Ptr.getName());
+}

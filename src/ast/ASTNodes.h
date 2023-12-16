@@ -1260,6 +1260,7 @@ public:
 
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override { return true; }
 };
 
 // ======================================================= AssignExprNode ========================================================

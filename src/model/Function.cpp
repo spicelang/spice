@@ -26,15 +26,16 @@ std::vector<SymbolType> Function::getParamTypes() const {
  * string Vector<double>.setData<double>(double)
  *
  * @param withThisType Include 'this' type in signature
+ * @param ignorePublic Not include public modifiers in signature
  * @return String representation as function signature
  */
-std::string Function::getSignature(bool withThisType /*=true*/) const {
+std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePublic /*=false*/) const {
   std::vector<SymbolType> templateSymbolTypes;
   templateSymbolTypes.reserve(templateTypes.size());
   for (const GenericType &genericType : templateTypes)
     templateSymbolTypes.push_back(genericType);
 
-  return Function::getSignature(name, thisType, returnType, paramList, templateSymbolTypes, withThisType);
+  return Function::getSignature(name, thisType, returnType, paramList, templateSymbolTypes, withThisType, ignorePublic);
 }
 
 /**
@@ -46,11 +47,12 @@ std::string Function::getSignature(bool withThisType /*=true*/) const {
  * @param paramList Param symbol types
  * @param concreteTemplateTypes Concrete template symbol types
  * @param withThisType Include 'this' type in signature
+ * @param ignorePublic Not include public modifiers in signature
  * @return Function signature
  */
 std::string Function::getSignature(const std::string &name, const SymbolType &thisType, const SymbolType &returnType,
                                    const ParamList &paramList, const std::vector<SymbolType> &concreteTemplateTypes,
-                                   bool withThisType /*=true*/) {
+                                   bool withThisType /*=true*/, bool ignorePublic /*=false*/) {
   // Build this type string
   std::stringstream thisTyStr;
   if (withThisType && !thisType.is(TY_DYN)) {
@@ -61,7 +63,7 @@ std::string Function::getSignature(const std::string &name, const SymbolType &th
       for (size_t i = 0; i < thisTemplateTypes.size(); i++) {
         if (i > 0)
           thisTyStr << ",";
-        thisTyStr << thisTemplateTypes.at(i).getName();
+        thisTyStr << thisTemplateTypes.at(i).getName(false, ignorePublic);
       }
       thisTyStr << ">";
     }
@@ -71,7 +73,7 @@ std::string Function::getSignature(const std::string &name, const SymbolType &th
   // Build return type string
   std::string returnTyStr;
   if (!returnType.is(TY_DYN))
-    returnTyStr = returnType.getName() + " ";
+    returnTyStr = returnType.getName(false, ignorePublic) + " ";
 
   // Parameter type string
   std::stringstream paramTyStr;
@@ -79,7 +81,7 @@ std::string Function::getSignature(const std::string &name, const SymbolType &th
     const Param &param = paramList.at(i);
     if (i > 0)
       paramTyStr << ",";
-    paramTyStr << param.type.getName();
+    paramTyStr << param.type.getName(false, ignorePublic);
     if (param.isOptional)
       paramTyStr << "?";
   }
@@ -91,7 +93,7 @@ std::string Function::getSignature(const std::string &name, const SymbolType &th
     for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
       if (i > 0)
         templateTyStr << ",";
-      templateTyStr << concreteTemplateTypes.at(i).getName();
+      templateTyStr << concreteTemplateTypes.at(i).getName(false, ignorePublic);
     }
     templateTyStr << ">";
   }

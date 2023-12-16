@@ -1365,8 +1365,9 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   if (varType.is(TY_INVALID))
     SOFT_ERROR_ER(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.")
 
-  // The base type should be a primitive, struct, function or procedure
-  if (!varType.getBaseType().isPrimitive() && !varType.getBaseType().isOneOf({TY_STRUCT, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
+  // The base type should be a primitive, struct, interface, function or procedure
+  if (!varType.getBaseType().isPrimitive() &&
+      !varType.getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
     SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here")
 
   // Check if is an imported variable

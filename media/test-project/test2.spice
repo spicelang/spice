@@ -1,16 +1,5 @@
-import "std/type/result";
-import "std/type/error";
+import "test3" as s2;
 
-type FilePtr alias byte*;
-public type File struct {
-    FilePtr* filePtr
-}
-
-// Link external functions
-ext f<FilePtr*> fopen(string, string);
-
-public f<Result<File>> openFile(string path, string mode) {
-    FilePtr* fp = fopen(path, mode);
-    File file = File{fp};
-    return fp != nil<FilePtr*> ? ok(file) : err(file, Error("Failed to open file"));
+p test() {
+    printf("p: %f", s2.getDouble());
 }
