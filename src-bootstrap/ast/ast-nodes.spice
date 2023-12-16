@@ -303,7 +303,7 @@ type SpecifierType enum {
     INLINE,
     PUBLIC,
     HEAP,
-    COMPOSITION
+    COMPOSE
 }
 
 public type ASTSpecifierNode struct /*: IVisitable*/ {
@@ -319,9 +319,9 @@ public type ASTModAttrNode struct /*: IVisitable*/ {
 
 }
 
-// ========================================================== FctAttrNode ========================================================
+// ====================================================== TopLevelDefAttrNode ====================================================
 
-public type ASTFctAttrNode struct /*: IVisitable*/ {
+public type ASTTopLevelDefAttrNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
@@ -529,9 +529,9 @@ public type ASTValueNode struct /*: IVisitable*/ {
 
 }
 
-// ======================================================= PrimitiveValueNode ====================================================
+// ========================================================== ConstantNode =======================================================
 
-public type ASTPrimitiveValueNode struct /*: IVisitable*/ {
+public type ASTConstantNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }

@@ -73,13 +73,13 @@ relationalExpr: shiftExpr ((LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) shiftEx
 shiftExpr: additiveExpr ((LESS LESS | GREATER GREATER) additiveExpr)?;
 additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
-castExpr: LPAREN dataType RPAREN prefixUnaryExpr | prefixUnaryExpr;
+castExpr: (LPAREN dataType RPAREN)? prefixUnaryExpr;
 prefixUnaryExpr: postfixUnaryExpr | (MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND) prefixUnaryExpr;
 postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS);
-atomicExpr: constant | value | ((IDENTIFIER | TYPE_IDENTIFIER) SCOPE_ACCESS)* (IDENTIFIER | TYPE_IDENTIFIER) | builtinCall | LPAREN assignExpr RPAREN;
+atomicExpr: constant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values
-value: fctCall | arrayInitialization | structInstantiation| lambdaFunc | lambdaProc | lambdaExpr | NIL LESS dataType GREATER;
+value: fctCall | arrayInitialization | structInstantiation | lambdaFunc | lambdaProc | lambdaExpr | NIL LESS dataType GREATER;
 constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | TRUE | FALSE;
 fctCall: (IDENTIFIER SCOPE_ACCESS)* (IDENTIFIER DOT)* (IDENTIFIER | TYPE_IDENTIFIER) (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACKET argLst? RBRACKET;
@@ -92,7 +92,7 @@ lambdaExpr: LPAREN paramLst? RPAREN ARROW assignExpr;
 dataType: specifierLst? baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | TYPE_IDENTIFIER)? RBRACKET)*;
 baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN | customDataType | functionDataType;
 customDataType: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)?;
-functionDataType: (P | F LESS dataType GREATER) LPAREN typeLst? RPAREN;
+functionDataType: (F LESS dataType GREATER | P) LPAREN typeLst? RPAREN;
 
 // Shorthands
 assignOp: ASSIGN | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | REM_EQUAL | SHL_EQUAL | SHR_EQUAL | AND_EQUAL | OR_EQUAL | XOR_EQUAL;
