@@ -137,3 +137,7 @@ public p Token.ctor(TokenType tokenType, String text, const CodeLoc& codeLoc) {
 public p Token.ctor(TokenType tokenType, string text, const CodeLoc& codeLoc) {
     this.ctor(tokenType, String(text), codeLoc);
 }
+
+public p Token.print() {
+    printf("Token(type=%d, text=\"%s\", line=%d, col: %d)\n", this.tokenType, this.text, this.codeLoc.line, this.codeLoc.col);
+}

@@ -1,58 +1,27 @@
-type IASTNode interface {
-    p accept();
-    f<string> getName();
-}
-
-type ASTNode struct : IASTNode {
-
-}
-
-p ASTNode.ctor() {}
-
-p ASTNode.accept() {
-
-}
-
-f<string> ASTNode.getName() {
-    return "ASTNode";
-}
-
-type ASTEntryNode struct : IASTNode {
-    compose ASTNode base
-}
-
-p ASTEntryNode.ctor() {}
-
-p ASTEntryNode.accept() {
-
-}
-
-f<string> ASTEntryNode.getName() {
-    return "ASTEntryNode";
-}
-
-type ASTFctDefNode struct : IASTNode {
-    compose ASTNode base
-}
-
-p ASTFctDefNode.ctor() {}
-
-p ASTFctDefNode.accept() {
-
-}
-
-f<string> ASTFctDefNode.getName() {
-    return "ASTFctDefNode";
-}
+import "../../src-bootstrap/lexer/lexer";
+import "../../src-bootstrap/parser/parser";
 
 f<int> main() {
-    IASTNode node1 = ASTEntryNode();
-    IASTNode node2 = ASTNode();
-    IASTNode node3 = ASTFctDefNode();
-    IASTNode* node1Ptr = &node1;
-    IASTNode* node2Ptr = &node2;
-    IASTNode* node3Ptr = &node3;
-    printf("%s\n", node2Ptr.getName());
-    printf("%s\n", node3Ptr.getName());
-    printf("%s\n", node1Ptr.getName());
+    Lexer lexer = Lexer("./file.spice");
+    Parser parser = Parser(lexer);
+    parser.parse();
 }
+
+/*import "../../src-bootstrap/lexer/lexer";
+import "std/time/timer";
+
+f<int> main() {
+    Timer timer = Timer();
+    timer.start();
+    Lexer lexer = Lexer("./file.spice");
+    unsigned long i = 1l;
+    while (!lexer.isEOF()) {
+        Token token = lexer.getToken();
+        //printf("Token %d: ", i);
+        //token.print();
+        lexer.advance();
+        i++;
+    }
+    timer.stop();
+    printf("Tokens: %d, Time: %d\n", i, timer.getDurationInMillis());
+}*/

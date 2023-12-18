@@ -2,8 +2,8 @@
 import "std/type/any";
 
 public type IAbstractAstVisitor interface {
-    f<Any> visitEntry(EntryNode*);
-    f<Any> visitMainFctDef(EntryNode*);
-    f<Any> visitFctDef(EntryNode*);
-    f<Any> visitProcDef(EntryNode*);
+    f<Any> visitEntry(ASTEntryNode*);
+    f<Any> visitMainFctDef(ASTMainFctDefNode*);
+    f<Any> visitFctDef(ASTFctDefNode*);
+    f<Any> visitProcDef(ASTProcDefNode*);
 }

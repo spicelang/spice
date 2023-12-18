@@ -73,7 +73,7 @@ public:
   static void handleError(const TestCase &testCase, const std::exception &error);
   static std::vector<std::string> getSubdirs(const std::filesystem::path &basePath);
   static std::vector<std::string> getFileContentLinesVector(const std::filesystem::path &filePath);
-  static std::string toCamelCase(const std::string& input);
+  static std::string toCamelCase(std::string input);
   static constexpr const char *getDefaultExecutableName() {
 #if OS_WINDOWS
     return ".\\source.exe";

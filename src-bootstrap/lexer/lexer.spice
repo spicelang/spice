@@ -12,7 +12,7 @@ import "../lexer/token";
 import "../reader/reader";
 import "../reader/code-loc";
 
-public type Lexer struct/* : CompilerPass*/ {
+public type Lexer struct/* : ICompilerPass*/ {
     Reader reader
     Token curTok
 }
@@ -431,7 +431,7 @@ f<Token> Lexer.consumeKeywordOrIdentifier() {
     do {
         identifier += this.reader.getChar();
         this.reader.advance();
-    } while (isAlphaNum(this.reader.getChar()) || this.reader.getChar() == '_');
+    } while isAlphaNum(this.reader.getChar()) || this.reader.getChar() == '_';
 
     // Check if identifier is a keyword
     if identifier == "double" {
@@ -586,7 +586,7 @@ f<Token> Lexer.consumeTypeIdentifier() {
     do {
         identifier += this.reader.getChar();
         this.reader.advance();
-    } while (isAlphaNum(this.reader.getChar()) || this.reader.getChar() == '_');
+    } while isAlphaNum(this.reader.getChar()) || this.reader.getChar() == '_';
     return Token(TokenType::TYPE_IDENTIFIER, identifier, codeLoc);
 }
 
