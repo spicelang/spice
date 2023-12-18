@@ -89,9 +89,9 @@ public:
     [[nodiscard]] std::string getName(bool withSize) const;
 
     // Public members
-    SymbolSuperType superType = TY_DYN;
+    SymbolSuperType superType = TY_INVALID;
     std::string subType;
-    uint64_t typeId = TY_DYN;
+    uint64_t typeId = TY_INVALID;
     TypeChainElementData data = {.arraySize = 0};
     std::vector<SymbolType> templateTypes;
     std::vector<SymbolType> paramTypes; // First type is the return type

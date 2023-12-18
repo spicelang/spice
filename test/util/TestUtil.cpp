@@ -143,17 +143,14 @@ std::vector<std::string> TestUtil::getFileContentLinesVector(const std::filesyst
  * @param input Input string
  * @return Camel-cased string
  */
-std::string TestUtil::toCamelCase(const std::string& input) {
-  std::stringstream ss(input);
-  std::string token;
-  std::string camelCase;
-
-  while (std::getline(ss, token, '-')) {
-    camelCase += token[0];
-    camelCase += token.substr(1);
+std::string TestUtil::toCamelCase(std::string input) {
+  for (auto it = input.begin(); it != input.end(); it++) {
+    if (*it == '-' || *it == '_') {
+      it = input.erase(it);
+      *it = (char)toupper(*it);
+    }
   }
-
-  return camelCase;
+  return input;
 }
 
 /**

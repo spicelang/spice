@@ -1,8 +1,12 @@
 import "../../src-bootstrap/lexer/lexer";
-import "../../src-bootstrap/parser/parser";
+//import "../../src-bootstrap/parser/parser";
 
 f<int> main() {
     Lexer lexer = Lexer("./text-file.spice");
-    Parser parser = Parser(lexer);
-    parser.parse();
+    while (lexer.hasNext()) {
+        Token token = lexer.next();
+        token.print();
+    }
+    //Parser parser = Parser(lexer);
+    //parser.parse();
 }

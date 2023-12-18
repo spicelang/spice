@@ -3,7 +3,7 @@ import "std/data/stack";
 
 // Own imports
 //import "../compiler-pass";
-import "../lexer/lexer" as lexer;
+import "../lexer/lexer";
 import "../lexer/token";
 import "../ast/ast-nodes";
 
@@ -16,7 +16,7 @@ public type Parser struct /*: ICompilerPass*/ {
     Stack<ASTNode*> parentStack
 }
 
-public p Parser.ctor(lexer::Lexer& lexer) {
+public p Parser.ctor(Lexer& lexer) {
     this.lexer = lexer;
 }
 

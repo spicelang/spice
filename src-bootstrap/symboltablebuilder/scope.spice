@@ -2,7 +2,7 @@
 import "std/data/map";
 
 // Own imports
-import "../reader/code-loc";
+//import "../reader/code-loc";
 
 type ScopeType enum {
     GLOBAL,
