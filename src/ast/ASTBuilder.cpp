@@ -1412,6 +1412,7 @@ void ASTBuilder::replaceEscapeChars(std::string &string) {
   CommonUtil::replaceAll(string, "\\t", "\t");
   CommonUtil::replaceAll(string, "\\v", "\v");
   CommonUtil::replaceAll(string, "\\'", "\'");
+  CommonUtil::replaceAll(string, "\\\"", "\"");
   CommonUtil::replaceAll(string, "\\?", "\?");
 }
 

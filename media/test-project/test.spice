@@ -1,12 +1,27 @@
 import "../../src-bootstrap/lexer/lexer";
-//import "../../src-bootstrap/parser/parser";
+import "../../src-bootstrap/parser/parser";
 
 f<int> main() {
-    Lexer lexer = Lexer("./text-file.spice");
-    while (lexer.hasNext()) {
-        Token token = lexer.next();
-        token.print();
-    }
-    //Parser parser = Parser(lexer);
-    //parser.parse();
+    Lexer lexer = Lexer("./file.spice");
+    Parser parser = Parser(lexer);
+    parser.parse();
 }
+
+/*import "../../src-bootstrap/lexer/lexer";
+import "std/time/timer";
+
+f<int> main() {
+    Timer timer = Timer();
+    timer.start();
+    Lexer lexer = Lexer("./file.spice");
+    unsigned long i = 1l;
+    while (!lexer.isEOF()) {
+        Token token = lexer.getToken();
+        //printf("Token %d: ", i);
+        //token.print();
+        lexer.advance();
+        i++;
+    }
+    timer.stop();
+    printf("Tokens: %d, Time: %d\n", i, timer.getDurationInMillis());
+}*/
