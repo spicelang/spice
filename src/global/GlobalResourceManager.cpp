@@ -65,7 +65,7 @@ GlobalResourceManager::~GlobalResourceManager() {
 SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const std::string &depName,
                                                     const std::filesystem::path &path, bool isStdFile) {
   // Check if the source file was already added (e.g. by another source file that imports it)
-  const std::string filePathStr = path.string();
+  const std::string filePathStr = std::filesystem::weakly_canonical(std::filesystem::absolute(path)).string();
 
   // Create the new source file if it does not exist yet
   if (!sourceFiles.contains(filePathStr))
