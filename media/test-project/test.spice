@@ -1,21 +1,11 @@
-type T dyn;
-
-f<T> test<T>(int test) {
-    return T();
-}
-
-f<int> main() {
-    test(0);
-}
-
-/*import "../../src-bootstrap/lexer/lexer";
+import "../../src-bootstrap/lexer/lexer";
 import "../../src-bootstrap/parser/parser";
 
 f<int> main() {
     Lexer lexer = Lexer("./file.spice");
     Parser parser = Parser(lexer);
     parser.parse();
-}*/
+}
 
 /*import "../../src-bootstrap/lexer/lexer";
 import "std/time/timer";

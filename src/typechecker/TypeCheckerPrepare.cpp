@@ -94,7 +94,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
     for (const SymbolType &templateType : thisType.getTemplateTypes()) {
-      usedGenericTypes.emplace_back(templateType);
+      if (std::ranges::none_of(usedGenericTypes, [&](const GenericType &genericType) { return genericType == templateType; }))
+        usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
     }
   }
@@ -236,7 +237,8 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
     for (const SymbolType &templateType : thisType.getTemplateTypes()) {
-      usedGenericTypes.emplace_back(templateType);
+      if (std::ranges::none_of(usedGenericTypes, [&](const GenericType &genericType) { return genericType == templateType; }))
+        usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
     }
   }
