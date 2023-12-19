@@ -367,13 +367,6 @@ std::any TypeChecker::visitField(FieldNode *node) {
 std::any TypeChecker::visitSignature(SignatureNode *node) {
   const bool isFunction = node->signatureType == SignatureNode::TYPE_FUNCTION;
 
-  // Visit return type
-  SymbolType returnType(TY_DYN);
-  if (isFunction)
-    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
-  if (returnType.is(TY_UNRESOLVED))
-    return static_cast<std::vector<Function *> *>(nullptr);
-
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
@@ -392,6 +385,18 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
+  }
+
+  // Visit return type
+  SymbolType returnType(TY_DYN);
+  if (isFunction) {
+    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+    if (returnType.is(TY_UNRESOLVED))
+      return static_cast<std::vector<Function *> *>(nullptr);
+
+    if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
+      softError(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+                "Generic return type not included in the template type list of the function");
   }
 
   // Visit params
@@ -416,7 +421,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
     }
   }
 
-  // Check if all template types were used in the function parameters
+  // Check if all template types were used in the function parameters or in the return type
   if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; })) {
     softError(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters");
     return static_cast<std::vector<Function *> *>(nullptr);
@@ -1663,10 +1668,6 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
 
   // Get concrete template types
   if (node->hasTemplateTypes) {
-    // Only constructors may have template types
-    if (!data.isCtorCall())
-      SOFT_ERROR_BOOL(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls")
-
     for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
       auto templateType = std::any_cast<SymbolType>(visit(templateTypeNode));
       assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
@@ -1727,7 +1728,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
     localArgType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localArgType);
 
   // Retrieve function object
-  data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, data.thisType, localArgTypes, false, node);
+  data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, data.thisType, localArgTypes, concreteTemplateTypes, false, node);
 
   return true;
 }
@@ -1757,10 +1758,6 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionT
 
 bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
-
-  // Methods cannot have template types
-  if (node->hasTemplateTypes)
-    SOFT_ERROR_BOOL(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls")
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
@@ -1797,7 +1794,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
 
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
-  data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, localThisType, localArgTypes, false, node);
+  data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, localThisType, localArgTypes, initTypeMapping, false, node);
 
   return true;
 }

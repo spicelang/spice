@@ -1,11 +1,22 @@
-import "../../src-bootstrap/lexer/lexer";
+type T int|short;
+
+f<T> test<T>() {
+    return 0;
+}
+
+f<int> main() {
+    int t = test<int>();
+    printf("%d\n", t);
+}
+
+/*import "../../src-bootstrap/lexer/lexer";
 import "../../src-bootstrap/parser/parser";
 
 f<int> main() {
     Lexer lexer = Lexer("./file.spice");
     Parser parser = Parser(lexer);
     parser.parse();
-}
+}*/
 
 /*import "../../src-bootstrap/lexer/lexer";
 import "std/time/timer";
