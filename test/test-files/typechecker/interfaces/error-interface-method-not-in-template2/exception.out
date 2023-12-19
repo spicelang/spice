@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./test-files/typechecker/interfaces/error-interface-method-not-in-template2/source.spice:4:7:
+Generic type not contained in template: Generic return type not included in the template type list of the function
+
+4  f<T**> compare();
+     ^^^

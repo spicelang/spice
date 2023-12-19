@@ -209,7 +209,8 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       Function candidate = presetFunction;
 
       // Prepare type mapping, based on the given initial type mapping
-      TypeMapping typeMapping;
+      TypeMapping &typeMapping = candidate.typeMapping;
+      typeMapping.clear();
       for (size_t i = 0; i < std::min(requestedTemplateTypes.size(), candidate.templateTypes.size()); i++) {
         const std::string &typeName = candidate.templateTypes.at(i).getSubType();
         const SymbolType &templateType = requestedTemplateTypes.at(i);
@@ -307,6 +308,10 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
 
   // Check arg types requirement
   if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching, forceSubstantiation))
+    return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
+
+  // Check if there are unresolved generic types
+  if (typeMapping.size() < candidate.templateTypes.size())
     return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
 
   // Substantiate return type

@@ -1,7 +1,7 @@
 type T int|long|short;
 
 type Compareable<T> interface {
-    f<T**> compare(const T&, const T&);
+    f<T**> compare();
 }
 
 f<int> main() {

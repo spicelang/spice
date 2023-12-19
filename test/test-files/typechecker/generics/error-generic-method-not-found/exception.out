@@ -1,6 +1,12 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
+[Error|Semantic] ./test-files/typechecker/generics/error-generic-method-not-found/source.spice:5:5:
+Referenced undefined function: Function/procedure 'Vector<int>.setData(int)' could not be found
+
+5  v.setData(12);
+   ^^^^^^^^^^^^^
+
 [Error|Semantic] ./test-files/typechecker/generics/error-generic-method-not-found/source.spice:7:5:
 Referenced undefined function: Function/procedure 'Vector<int>.setData(double)' could not be found
 

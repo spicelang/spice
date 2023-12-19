@@ -1,12 +1,11 @@
-type T int|short;
+type T dyn;
 
-f<T> test<T>() {
-    return 0;
+f<T> test<T>(int test) {
+    return T();
 }
 
 f<int> main() {
-    int t = test<int>();
-    printf("%d\n", t);
+    test(0);
 }
 
 /*import "../../src-bootstrap/lexer/lexer";
