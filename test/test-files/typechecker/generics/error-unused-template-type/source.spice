@@ -1,7 +1,7 @@
 type T dyn;
 
-f<T> test<T>(int test) {
-    return T();
+f<int> test<T>(int test) {
+    return 1 + test;
 }
 
 f<int> main() {

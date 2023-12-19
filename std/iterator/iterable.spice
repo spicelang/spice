@@ -9,8 +9,8 @@ type T dyn;
  */
 #[core.compiler.fixedTypeId = 255]
 public type Iterable<T> interface {
-    f<T&> get();                         // Get the current item
-    f<Pair<unsigned long, T&>> getIdx(); // Get the current index and item
-    f<bool> isValid();                   // Check if the iterator is still valid
-    p next();                            // Advance the cursor by one
+    f<T&> get<T>();                         // Get the current item
+    f<Pair<unsigned long, T&>> getIdx<T>(); // Get the current index and item
+    f<bool> isValid();                      // Check if the iterator is still valid
+    p next();                               // Advance the cursor by one
 }

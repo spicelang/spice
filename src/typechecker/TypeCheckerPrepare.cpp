@@ -94,7 +94,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
     for (const SymbolType &templateType : thisType.getTemplateTypes()) {
-      usedGenericTypes.emplace_back(templateType);
+      if (std::ranges::none_of(usedGenericTypes, [&](const GenericType &genericType) { return genericType == templateType; }))
+        usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
     }
   }
@@ -124,10 +125,6 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     }
   }
 
-  // Check if all template types were used by at least one parameter
-  if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; }))
-    SOFT_ERROR_BOOL(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters")
-
   // Retrieve return type
   auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
   HANDLE_UNRESOLVED_TYPE_PTR(returnType)
@@ -136,6 +133,11 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
     SOFT_ERROR_BOOL(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                     "Generic return type not included in the template type list of the function")
+
+  // Check if all template types were used by at least one parameter or the return type
+  if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; }))
+    SOFT_ERROR_BOOL(node->templateTypeLst(), GENERIC_TYPE_NOT_USED,
+                    "Generic type was not used by the function parameters or the return type")
 
   // Leave function body scope
   currentScope = node->scope->parent;
@@ -235,7 +237,8 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
     for (const SymbolType &templateType : thisType.getTemplateTypes()) {
-      usedGenericTypes.emplace_back(templateType);
+      if (std::ranges::none_of(usedGenericTypes, [&](const GenericType &genericType) { return genericType == templateType; }))
+        usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
     }
   }
@@ -267,7 +270,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Check if all template types were used by at least one parameter
   if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; }))
-    SOFT_ERROR_BOOL(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters")
+    SOFT_ERROR_BOOL(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the procedure parameters")
 
   // Leave procedure body scope
   currentScope = node->scope->parent;

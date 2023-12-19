@@ -1,0 +1,10 @@
+type T int|short;
+
+f<T> test<T>() {
+    return 0;
+}
+
+f<int> main() {
+    int t = test<int>();
+    printf("%d\n", t);
+}

@@ -169,17 +169,17 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   Scope *matchScope = iteratorType.getBodyScope();
   SymbolType iteratorItemType;
   if (hasIdx) {
-    node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType, {}, false, node);
+    node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType, {}, {}, false, node);
     assert(node->getIdxFct != nullptr);
     iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
   } else {
-    node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, false, node);
+    node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, {}, false, node);
     assert(node->getFct != nullptr);
     iteratorItemType = node->getFct->returnType;
   }
-  node->isValidFct = FunctionManager::matchFunction(matchScope, "isValid", iteratorType, {}, false, node);
+  node->isValidFct = FunctionManager::matchFunction(matchScope, "isValid", iteratorType, {}, {}, false, node);
   assert(node->isValidFct != nullptr);
-  node->nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, false, node);
+  node->nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, {}, false, node);
   assert(node->nextFct != nullptr);
 
   // Check type of the item
@@ -367,13 +367,6 @@ std::any TypeChecker::visitField(FieldNode *node) {
 std::any TypeChecker::visitSignature(SignatureNode *node) {
   const bool isFunction = node->signatureType == SignatureNode::TYPE_FUNCTION;
 
-  // Visit return type
-  SymbolType returnType(TY_DYN);
-  if (isFunction)
-    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
-  if (returnType.is(TY_UNRESOLVED))
-    return static_cast<std::vector<Function *> *>(nullptr);
-
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
@@ -392,6 +385,18 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
+  }
+
+  // Visit return type
+  SymbolType returnType(TY_DYN);
+  if (isFunction) {
+    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+    if (returnType.is(TY_UNRESOLVED))
+      return static_cast<std::vector<Function *> *>(nullptr);
+
+    if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
+      softError(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+                "Generic return type not included in the template type list of the function");
   }
 
   // Visit params
@@ -416,7 +421,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
     }
   }
 
-  // Check if all template types were used in the function parameters
+  // Check if all template types were used in the function parameters or in the return type
   if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; })) {
     softError(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters");
     return static_cast<std::vector<Function *> *>(nullptr);
@@ -476,7 +481,8 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
         // Check if we have a no-args ctor to call
         const SymbolType &thisType = localVarType;
         const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
-        node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true, node);
+        node->calledCopyCtor =
+            FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, paramTypes, {}, true, node);
       }
 
       // If this is a struct type, check if the type is known. If not, error out
@@ -505,7 +511,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       // Check if we have a no-args ctor to call
       const std::string &structName = localVarType.getSubType();
       const SymbolType &thisType = localVarType;
-      node->calledInitCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, {}, false, node);
+      node->calledInitCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
       if (!node->calledInitCtor && node->isCtorCallRequired)
         SOFT_ERROR_ST(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
     }
@@ -1519,13 +1525,54 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     }
   }
 
+  // Get struct name. Retrieve it from alias if required
+  std::string fqFunctionName = node->fqFunctionName;
+  SymbolTableEntry *aliasEntry = rootScope->lookupStrict(fqFunctionName);
+  SymbolTableEntry *aliasedTypeContainerEntry = nullptr;
+  const bool isAliasType = aliasEntry && aliasEntry->getType().is(TY_ALIAS);
+  if (isAliasType) {
+    aliasedTypeContainerEntry = rootScope->lookupStrict(aliasEntry->name + ALIAS_CONTAINER_SUFFIX);
+    assert(aliasedTypeContainerEntry != nullptr);
+    // Set alias entry used
+    aliasEntry->used = true;
+    fqFunctionName = aliasedTypeContainerEntry->getType().getSubType();
+  }
+
+  // Get the concrete template types
+  std::vector<SymbolType> concreteTemplateTypes;
+  if (isAliasType) {
+    // Retrieve concrete template types from type alias
+    concreteTemplateTypes = aliasedTypeContainerEntry->getType().getTemplateTypes();
+    // Check if the aliased type specified template types and the struct instantiation does
+    if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
+      SOFT_ERROR_BOOL(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
+  }
+
+  // Get concrete template types
+  if (node->hasTemplateTypes) {
+    for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
+      auto templateType = std::any_cast<SymbolType>(visit(templateTypeNode));
+      assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
+
+      // Abort if the type is unresolved
+      if (templateType.is(TY_UNRESOLVED))
+        return false;
+
+      // Check if the given type is generic
+      if (templateType.is(TY_GENERIC))
+        SOFT_ERROR_BOOL(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here")
+
+      concreteTemplateTypes.push_back(templateType);
+    }
+  }
+
   // Check if this is a method call or a normal function call
   if (data.isMethodCall()) {
     // This is a method call
     data.thisType = firstFragEntry->getType();
     Scope *structBodyScope = data.thisType.getBaseType().getBodyScope();
     assert(structBodyScope != nullptr);
-    bool success = visitMethodCall(node, structBodyScope);
+    bool success = visitMethodCall(node, structBodyScope, concreteTemplateTypes);
     if (!success) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
     assert(data.calleeParentScope != nullptr);
@@ -1539,7 +1586,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   } else {
     // This is an ordinary function call
     assert(data.isOrdinaryCall() || data.isCtorCall());
-    bool success = visitOrdinaryFctCall(node);
+    bool success = visitOrdinaryFctCall(node, concreteTemplateTypes, fqFunctionName);
     if (!success) // Check if soft errors occurred
       return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
     assert(data.calleeParentScope != nullptr);
@@ -1620,35 +1667,13 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }
 
-bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
+bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, const std::vector<SymbolType> &templateTypes,
+                                       const std::string &fqFunctionName) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if this is a ctor call to the String type
   if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !sourceFile->isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
-
-  // Get struct name. Retrieve it from alias if required
-  std::string fqFunctionName = node->fqFunctionName;
-  SymbolTableEntry *aliasEntry = rootScope->lookupStrict(fqFunctionName);
-  SymbolTableEntry *aliasedTypeContainerEntry = nullptr;
-  const bool isAliasType = aliasEntry && aliasEntry->getType().is(TY_ALIAS);
-  if (isAliasType) {
-    aliasedTypeContainerEntry = rootScope->lookupStrict(aliasEntry->name + ALIAS_CONTAINER_SUFFIX);
-    assert(aliasedTypeContainerEntry != nullptr);
-    // Set alias entry used
-    aliasEntry->used = true;
-    fqFunctionName = aliasedTypeContainerEntry->getType().getSubType();
-  }
-
-  // Get the concrete template types
-  std::vector<SymbolType> concreteTemplateTypes;
-  if (isAliasType) {
-    // Retrieve concrete template types from type alias
-    concreteTemplateTypes = aliasedTypeContainerEntry->getType().getTemplateTypes();
-    // Check if the aliased type specified template types and the struct instantiation does
-    if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
-      SOFT_ERROR_BOOL(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
-  }
 
   // Check if the exported name registry contains that function name
   const NameRegistryEntry *functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName);
@@ -1661,28 +1686,6 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
   if (functionEntry != nullptr && functionEntry->getType().is(TY_STRUCT))
     data.callType = FctCallNode::TYPE_CTOR;
 
-  // Get concrete template types
-  if (node->hasTemplateTypes) {
-    // Only constructors may have template types
-    if (!data.isCtorCall())
-      SOFT_ERROR_BOOL(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls")
-
-    for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
-      auto templateType = std::any_cast<SymbolType>(visit(templateTypeNode));
-      assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
-
-      // Abort if the type is unresolved
-      if (templateType.is(TY_UNRESOLVED))
-        return false;
-
-      // Check if the given type is generic
-      if (templateType.is(TY_GENERIC))
-        SOFT_ERROR_BOOL(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here")
-
-      concreteTemplateTypes.push_back(templateType);
-    }
-  }
-
   // For constructor calls, do some preparation
   std::string knownStructName;
   std::string functionName = node->functionNameFragments.back();
@@ -1692,9 +1695,9 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
     const std::string structName = structRegistryEntry->targetEntry->name;
 
     // Substantiate potentially generic this struct
-    Struct *thisStruct = StructManager::matchStruct(structEntry->scope, structName, concreteTemplateTypes, node);
+    Struct *thisStruct = StructManager::matchStruct(structEntry->scope, structName, templateTypes, node);
     if (!thisStruct) {
-      const std::string signature = Struct::getSignature(structName, concreteTemplateTypes);
+      const std::string signature = Struct::getSignature(structName, templateTypes);
       SOFT_ERROR_BOOL(node, UNKNOWN_DATATYPE,
                       "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
     }
@@ -1717,8 +1720,8 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
   }
 
   // Attach the concrete template types to the 'this' type
-  if (!data.thisType.is(TY_DYN) && !concreteTemplateTypes.empty())
-    data.thisType.setTemplateTypes(concreteTemplateTypes);
+  if (!data.thisType.is(TY_DYN) && !templateTypes.empty())
+    data.thisType.setTemplateTypes(templateTypes);
 
   // Map local types to imported types
   data.calleeParentScope = functionRegistryEntry->targetScope;
@@ -1727,7 +1730,8 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node) {
     localArgType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localArgType);
 
   // Retrieve function object
-  data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, data.thisType, localArgTypes, false, node);
+  data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, data.thisType, localArgTypes, templateTypes,
+                                               false, node);
 
   return true;
 }
@@ -1755,12 +1759,8 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionT
   return true;
 }
 
-bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
+bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, const std::vector<SymbolType> &templateTypes) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
-
-  // Methods cannot have template types
-  if (node->hasTemplateTypes)
-    SOFT_ERROR_BOOL(node->templateTypeLst(), INVALID_TEMPLATE_TYPES, "Template types are only allowed for constructor calls")
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
   for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
@@ -1797,7 +1797,8 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope) const {
 
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
-  data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, localThisType, localArgTypes, false, node);
+  data.callee = FunctionManager::matchFunction(data.calleeParentScope, functionName, localThisType, localArgTypes, templateTypes,
+                                               false, node);
 
   return true;
 }

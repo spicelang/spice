@@ -173,7 +173,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         if (returnType.hasAnyGenericParts())
           TypeMatcher::substantiateTypeWithTypeMapping(returnType, interface->typeMapping);
 
-        Function *spiceFunction = FunctionManager::matchFunction(currentScope, methodName, structType, params, true, nullptr);
+        Function *spiceFunction = FunctionManager::matchFunction(currentScope, methodName, structType, params, {}, true, nullptr);
         if (!spiceFunction) {
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                     "The struct '" + node->structName + "' does not implement method '" + expectedMethod->getSignature() + "'");

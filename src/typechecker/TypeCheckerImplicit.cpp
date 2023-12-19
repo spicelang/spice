@@ -92,7 +92,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
       if (fieldSymbol->getType().is(TY_STRUCT)) {
         Scope *fieldScope = fieldSymbol->getType().getBodyScope();
         // Lookup ctor function
-        const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, true, node);
+        const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
         hasFieldsToConstruct |= ctorFct != nullptr;
         requestRevisitIfRequired(ctorFct);
       }
@@ -101,7 +101,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
       if (fieldSymbol->getType().is(TY_STRUCT)) {
         Scope *fieldScope = fieldSymbol->getType().getBodyScope();
         // Lookup ctor function
-        const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, true, node);
+        const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
         hasFieldsToConstruct |= ctorFct != nullptr;
         requestRevisitIfRequired(ctorFct);
       }
@@ -148,7 +148,8 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
       Scope *fieldScope = fieldSymbol->getType().getBodyScope();
       // Lookup ctor function
       const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
-      const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true, node);
+      const Function *ctorFct =
+          FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, paramTypes, {}, true, node);
       hasFieldsToCopyConstruct |= ctorFct != nullptr;
       requestRevisitIfRequired(ctorFct);
     }
@@ -191,7 +192,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
       Scope *fieldScope = fieldSymbol->getType().getBodyScope();
       // Lookup dtor function
       const SymbolType &thisType = fieldSymbol->getType();
-      const Function *dtorFct = FunctionManager::matchFunction(fieldScope, DTOR_FUNCTION_NAME, thisType, {}, true, node);
+      const Function *dtorFct = FunctionManager::matchFunction(fieldScope, DTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
       hasFieldsToDestruct |= dtorFct != nullptr;
       requestRevisitIfRequired(dtorFct);
     }
@@ -215,7 +216,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     SymbolType bytePtrRefType = SymbolType(TY_BYTE).toPointer(node).toReference(node);
     bytePtrRefType.specifiers.isHeap = true;
     const std::vector<SymbolType> paramTypes = {bytePtrRefType};
-    Function *deallocFct = FunctionManager::matchFunction(matchScope, FCT_NAME_DEALLOC, thisType, paramTypes, true, node);
+    Function *deallocFct = FunctionManager::matchFunction(matchScope, FCT_NAME_DEALLOC, thisType, paramTypes, {}, true, node);
     assert(deallocFct != nullptr);
     deallocFct->used = true;
   }
@@ -240,7 +241,7 @@ Function *TypeChecker::implicitlyCallStructMethod(SymbolTableEntry *entry, const
   const bool isImported = matchScope->isImportedBy(rootScope);
   if (isImported)
     thisType = mapLocalTypeToImportedScopeType(matchScope, thisType);
-  return FunctionManager::matchFunction(matchScope, methodName, thisType, paramTypes, true, node);
+  return FunctionManager::matchFunction(matchScope, methodName, thisType, paramTypes, {}, true, node);
 }
 
 /**

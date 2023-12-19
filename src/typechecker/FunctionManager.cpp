@@ -150,9 +150,12 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
       // Copy the function to be able to substantiate types
       Function candidate = presetFunction;
 
+      // Create empty type mapping
+      TypeMapping typeMapping;
+
       bool forceSubstantiation = false;
       MatchResult matchResult = matchManifestation(candidate, matchScope, requestedName, requestedThisType, requestedParamTypes,
-                                                   strictSpecifierMatching, forceSubstantiation);
+                                                   typeMapping, strictSpecifierMatching, forceSubstantiation);
       if (matchResult == MatchResult::SKIP_FUNCTION)
         break; // Leave the whole function
       if (matchResult == MatchResult::SKIP_MANIFESTATION)
@@ -177,12 +180,14 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * @param requestedName Function name requirement
  * @param requestedThisType This type requirement
  * @param requestedParamTypes Argument types requirement
+ * @param requestedTemplateTypes Template type requirement
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
-                                         const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
+                                         const std::vector<SymbolType> &requestedParamTypes,
+                                         const std::vector<SymbolType> &requestedTemplateTypes, bool strictSpecifierMatching,
                                          const ASTNode *callNode) {
   assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
 
@@ -203,9 +208,18 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       // Copy the function to be able to substantiate types
       Function candidate = presetFunction;
 
+      // Prepare type mapping, based on the given initial type mapping
+      TypeMapping &typeMapping = candidate.typeMapping;
+      typeMapping.clear();
+      for (size_t i = 0; i < std::min(requestedTemplateTypes.size(), candidate.templateTypes.size()); i++) {
+        const std::string &typeName = candidate.templateTypes.at(i).getSubType();
+        const SymbolType &templateType = requestedTemplateTypes.at(i);
+        typeMapping.insert({typeName, templateType});
+      }
+
       bool forceSubstantiation = false;
       MatchResult matchResult = matchManifestation(candidate, matchScope, requestedName, requestedThisType, requestedParamTypes,
-                                                   strictSpecifierMatching, forceSubstantiation);
+                                                   typeMapping, strictSpecifierMatching, forceSubstantiation);
       if (matchResult == MatchResult::SKIP_FUNCTION)
         break; // Leave the whole function
       if (matchResult == MatchResult::SKIP_MANIFESTATION)
@@ -282,16 +296,11 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 
 MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&matchScope, const std::string &requestedName,
                                                 const SymbolType &requestedThisType,
-                                                const std::vector<SymbolType> &requestedParamTypes, bool strictSpecifierMatching,
-                                                bool &forceSubstantiation) {
+                                                const std::vector<SymbolType> &requestedParamTypes, TypeMapping &typeMapping,
+                                                bool strictSpecifierMatching, bool &forceSubstantiation) {
   // Check name requirement
   if (!matchName(candidate, requestedName))
     return MatchResult::SKIP_FUNCTION; // Leave the whole manifestation list, because all have the same name
-
-  // Prepare mapping table from generic type name to concrete type
-  TypeMapping &typeMapping = candidate.typeMapping;
-  typeMapping.clear();
-  typeMapping.reserve(candidate.templateTypes.size());
 
   // Check 'this' type requirement
   if (!matchThisType(candidate, requestedThisType, typeMapping, strictSpecifierMatching))
@@ -299,6 +308,10 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
 
   // Check arg types requirement
   if (!matchArgTypes(candidate, requestedParamTypes, typeMapping, strictSpecifierMatching, forceSubstantiation))
+    return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
+
+  // Check if there are unresolved generic types
+  if (typeMapping.size() < candidate.templateTypes.size())
     return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
 
   // Substantiate return type

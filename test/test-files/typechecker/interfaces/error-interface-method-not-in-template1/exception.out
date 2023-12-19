@@ -1,8 +1,8 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/interfaces/error-interface-method-not-in-template/source.spice:4:20:
+[Error|Semantic] ./test-files/typechecker/interfaces/error-interface-method-not-in-template1/source.spice:4:21:
 Generic type not contained in template: Generic param type not included in the template type list of the function
 
-4  f<T**> compare(const T&, const T&);
-                  ^^^^^^^^^^^^^^^^^^
+4  f<int&> compare(const T&, const T&);
+                   ^^^^^^^^^^^^^^^^^^
