@@ -180,14 +180,15 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * @param requestedName Function name requirement
  * @param requestedThisType This type requirement
  * @param requestedParamTypes Argument types requirement
- * @param initTypeMapping Concrete template type mapping
+ * @param requestedTemplateTypes Template type requirement
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
-                                         const std::vector<SymbolType> &requestedParamTypes, TypeMapping &initTypeMapping,
-                                         bool strictSpecifierMatching, const ASTNode *callNode) {
+                                         const std::vector<SymbolType> &requestedParamTypes,
+                                         const std::vector<SymbolType> &requestedTemplateTypes, bool strictSpecifierMatching,
+                                         const ASTNode *callNode) {
   assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
 
   // Copy the registry to prevent iterating over items, that are created within the loop
@@ -208,7 +209,12 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       Function candidate = presetFunction;
 
       // Prepare type mapping, based on the given initial type mapping
-      TypeMapping typeMapping = initTypeMapping;
+      TypeMapping typeMapping;
+      for (size_t i = 0; i < std::min(requestedTemplateTypes.size(), candidate.templateTypes.size()); i++) {
+        const std::string &typeName = candidate.templateTypes.at(i).getSubType();
+        const SymbolType &templateType = requestedTemplateTypes.at(i);
+        typeMapping.insert({typeName, templateType});
+      }
 
       bool forceSubstantiation = false;
       MatchResult matchResult = matchManifestation(candidate, matchScope, requestedName, requestedThisType, requestedParamTypes,

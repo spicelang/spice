@@ -41,8 +41,9 @@ public:
                                                       const std::vector<SymbolType> &requestedParamTypes,
                                                       bool strictSpecifierMatching);
   static Function *matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
-                                 const std::vector<SymbolType> &requestedParamTypes, TypeMapping &initTypeMapping,
-                                 bool strictSpecifierMatching, const ASTNode *callNode);
+                                 const std::vector<SymbolType> &requestedParamTypes,
+                                 const std::vector<SymbolType> &requestedTemplateTypes, bool strictSpecifierMatching,
+                                 const ASTNode *callNode);
 
 private:
   // Private methods

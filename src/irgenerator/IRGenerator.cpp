@@ -411,7 +411,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     // Check if we have a copy ctor
     Scope *structScope = rhsSType.getBodyScope();
     const std::vector<SymbolType> paramTypes = {rhsSType.toConstReference(nullptr)};
-    auto copyCtor = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, rhsSType, paramTypes, true, nullptr);
+    auto copyCtor = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, rhsSType, paramTypes, {}, true, nullptr);
     if (copyCtor != nullptr) {
       // Call copy ctor
       generateCtorOrDtorCall(lhsEntry, copyCtor, {rhsAddress});
