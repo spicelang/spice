@@ -94,7 +94,9 @@ jobs:
           java-version: 11
 
       - name: Setup latest GCC and build dependencies
-        run: sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        run: |
+          sudo apt update
+          sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Setup Ninja
         run: sudo apt-get install ninja-build
