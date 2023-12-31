@@ -15,6 +15,7 @@
 #include <llvm/Target/TargetMachine.h>
 
 #include "../../lib/thread-pool/thread-pool.hpp"
+#include "../../lib/thread-pool/thread-pool-utils.hpp"
 
 namespace spice::compiler {
 

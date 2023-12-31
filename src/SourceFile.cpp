@@ -524,7 +524,7 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
     sourceFile->runBackEnd();
 
   // Submit source file compilation to the task queue
-  resourceManager.threadPool.push_task([&]() {
+  resourceManager.threadPool.detach_task([&]() {
     runIRGenerator();
     if (resourceManager.cliOptions.useLTO) {
       runPreLinkIROptimizer();
@@ -538,7 +538,7 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   });
 
   // Wait until all compile tasks for all depending source files are done
-  resourceManager.threadPool.wait_for_tasks();
+  resourceManager.threadPool.wait();
 
   if (mainFile) {
     resourceManager.totalTimer.stop();

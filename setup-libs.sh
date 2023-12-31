@@ -17,7 +17,8 @@ curl -SsL "https://github.com/nlohmann/json/releases/download/v3.11.2/json.hpp" 
 
 # Download Thread Pool
 mkdir thread-pool
-curl -SsL "https://raw.githubusercontent.com/bshoshany/thread-pool/v3.5.0/include/BS_thread_pool.hpp" --output thread-pool/thread-pool.hpp
+curl -SsL "https://raw.githubusercontent.com/bshoshany/thread-pool/v4.0.1/include/BS_thread_pool.hpp" --output thread-pool/thread-pool.hpp
+curl -SsL "https://raw.githubusercontent.com/bshoshany/thread-pool/v4.0.1/include/BS_thread_pool_utils.hpp" --output thread-pool/thread-pool-utils.hpp
 
 # Download CLI11
 mkdir cli11
