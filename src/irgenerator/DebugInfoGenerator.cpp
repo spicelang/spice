@@ -89,12 +89,22 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
   const ASTNode *node = spiceFunc->declNode;
   const size_t lineNo = spiceFunc->getDeclCodeLoc().line;
 
-  // Prepare information
+  // Prepare flags
   llvm::DIScope *scope = diFile;
   llvm::DINode::DIFlags flags = llvm::DINode::FlagPrototyped;
+  if (spiceFunc->entry && spiceFunc->entry->getType().specifiers.isPublic)
+    flags |= llvm::DINode::FlagPublic;
+
+  // Prepare spFlags
   llvm::DISubprogram::DISPFlags spFlags = llvm::DISubprogram::SPFlagDefinition;
   if (isLambda)
     spFlags |= llvm::DISubprogram::SPFlagLocalToUnit;
+  if (spiceFunc->isVirtual) {
+    if (spiceFunc->thisType.is(TY_INTERFACE))
+      spFlags |= llvm::DISubprogram::SPFlagPureVirtual;
+    else
+      spFlags |= llvm::DISubprogram::SPFlagVirtual;
+  }
 
   // Collect arguments
   std::vector<llvm::Metadata *> argTypes;
@@ -324,15 +334,15 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     const size_t lineNo = spiceStruct->getDeclCodeLoc().line;
     llvm::Type *structType = spiceStruct->entry->getType().toLLVMType(irGenerator->context, irGenerator->currentScope);
     assert(structType != nullptr);
-    const llvm::StructLayout *structLayout =
-        irGenerator->module->getDataLayout().getStructLayout(reinterpret_cast<llvm::StructType *>(structType));
-    const uint32_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value();
+    llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
+    const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(structType));
+    const uint32_t alignInBits = dataLayout.getABITypeAlign(structType).value();
 
     // Create struct type
     const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
     llvm::DICompositeType *structDiType = diBuilder->createStructType(
         diFile, spiceStruct->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
-        llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
+        llvm::DINode::FlagTypePassByReference | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
     baseDiType = spiceStruct->diType = structDiType;
 
     // Collect DI types for fields
@@ -373,15 +383,19 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     const size_t lineNo = spiceInterface->getDeclCodeLoc().line;
     llvm::Type *interfaceType = spiceInterface->entry->getType().toLLVMType(irGenerator->context, irGenerator->currentScope);
     assert(interfaceType != nullptr);
-    const llvm::StructLayout *structLayout =
-        irGenerator->module->getDataLayout().getStructLayout(static_cast<llvm::StructType *>(interfaceType));
-    const uint32_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(interfaceType).value();
+    llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
+    const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(interfaceType));
+    const uint32_t alignInBits = dataLayout.getABITypeAlign(interfaceType).value();
 
     // Create interface type
     const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
     llvm::DICompositeType *interfaceDiType = diBuilder->createStructType(
         diFile, spiceInterface->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
-        llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
+        llvm::DINode::FlagTypePassByReference | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
+
+    // Set vtable holder to itself for interfaces
+    interfaceDiType->replaceVTableHolder(interfaceDiType);
+
     baseDiType = spiceInterface->diType = interfaceDiType;
     break;
   }

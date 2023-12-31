@@ -1,11 +1,29 @@
-import "../../src-bootstrap/lexer/lexer";
+type Visitable interface {
+    p print();
+}
+
+type Test1 struct : Visitable {
+    int f1
+}
+
+p Test1.print() {
+    printf("Foo: %d", this.f1);
+}
+
+f<int> main() {
+    Test1 t1 = Test1{123};
+    Visitable* v = &t1;
+    v.print();
+}
+
+/*import "../../src-bootstrap/lexer/lexer";
 import "../../src-bootstrap/parser/parser";
 
 f<int> main() {
     Lexer lexer = Lexer("./file.spice");
     Parser parser = Parser(lexer);
     parser.parse();
-}
+}*/
 
 /*import "../../src-bootstrap/lexer/lexer";
 import "std/time/timer";

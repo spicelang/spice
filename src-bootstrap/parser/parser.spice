@@ -148,7 +148,7 @@ public f<ASTFctDefNode*> Parser.parseFctDef() {
     return this.concludeNode(fctDefNode);
 }
 
-public f<ASTFctDefNode*> Parser.parseProcDef() {
+public f<ASTProcDefNode*> Parser.parseProcDef() {
     dyn procDefNode = this.createNode<ASTProcDefNode>();
 
     // Parse topLevelDefAttr
@@ -484,7 +484,7 @@ f<ASTDoWhileLoopNode*> Parser.parseDoWhileLoop() {
     return this.concludeNode(doWhileLoopNode);
 }
 
-f<ASTIfStmtNode> Parser.parseIfStmt() {
+f<ASTIfStmtNode*> Parser.parseIfStmt() {
     dyn ifStmtNode = this.createNode<ASTIfStmtNode>();
 
     this.lexer.expect(TokenType::IF);
@@ -503,7 +503,7 @@ f<ASTIfStmtNode> Parser.parseIfStmt() {
     return this.concludeNode(ifStmtNode);
 }
 
-f<ASTElseStmtNode> Parser.parseElseStmt() {
+f<ASTElseStmtNode*> Parser.parseElseStmt() {
     dyn elseStmtNode = this.createNode<ASTElseStmtNode>();
 
     this.lexer.expect(TokenType::ELSE);

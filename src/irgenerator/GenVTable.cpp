@@ -50,8 +50,8 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   if (!sourceFile->isRttiRT()) {
     // Add external global pointer for TypeInfo vtable
     assert(sourceFile->isRuntimeModuleAvailable(RuntimeModule::RTTI_RT));
-    const std::string mangledName = NameMangling::mangleVTable("TypeInfo");
-    llvm::Constant *typeInfoExtPtr = module->getOrInsertGlobal(mangledName, builder.getPtrTy());
+    const std::string typeInfoMangledName = NameMangling::mangleVTable("TypeInfo");
+    llvm::Constant *typeInfoExtPtr = module->getOrInsertGlobal(typeInfoMangledName, builder.getPtrTy());
     typeInfoVTable = llvm::ConstantExpr::getInBoundsGetElementPtr(ptrTy, typeInfoExtPtr, builder.getInt64(2));
   }
   std::vector<llvm::Constant *> fieldValues;
@@ -60,8 +60,8 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   for (const SymbolType &interfaceType : interfaceTypes) {
     Interface *interface = interfaceType.getInterface(nullptr);
     assert(interface != nullptr && interface->typeInfo != nullptr);
-    const std::string mangledName = NameMangling::mangleTypeInfo(interface);
-    llvm::Constant *global = module->getOrInsertGlobal(mangledName, builder.getPtrTy());
+    const std::string interfaceMangledName = NameMangling::mangleTypeInfo(interface);
+    llvm::Constant *global = module->getOrInsertGlobal(interfaceMangledName, builder.getPtrTy());
     fieldValues.push_back(global);
   }
   llvm::Constant *typeInfo = llvm::ConstantStruct::get(spiceStruct->typeInfoType, fieldValues);
