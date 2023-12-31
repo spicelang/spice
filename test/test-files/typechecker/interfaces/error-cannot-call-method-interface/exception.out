@@ -1,8 +1,0 @@
-[Error|Compiler]:
-Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
-
-[Error|Semantic] ./test-files/typechecker/interfaces/error-cannot-call-method-interface/source.spice:15:5:
-Member access is only allowed on structs and Strings: Cannot call a method on an interface
-
-15  a.print();
-    ^^^^^^^^^

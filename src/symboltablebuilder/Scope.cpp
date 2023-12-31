@@ -294,8 +294,17 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
       break;
     }
     case TY_INTERFACE: {
-      warningType = UNUSED_INTERFACE;
-      warningMessage = "The interface '" + entry.name + "' is unused";
+      if (entry.scope->type == ScopeType::GLOBAL) {
+        // Skip generic struct entries
+        if (!entry.getType().getTemplateTypes().empty())
+          continue;
+
+        warningType = UNUSED_INTERFACE;
+        warningMessage = "The interface '" + entry.name + "' is unused";
+      } else {
+        warningType = UNUSED_VARIABLE;
+        warningMessage = "The variable '" + entry.name + "' is unused";
+      }
       break;
     }
     case TY_IMPORT: {

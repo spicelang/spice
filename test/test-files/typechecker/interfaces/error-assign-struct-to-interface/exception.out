@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/interfaces/error-assign-struct-to-interface/source.spice:14:5:
+Wrong data type for operator: Cannot apply '=' operator on types Iterable and A
+
+14  Iterable a = A{5};
+    ^^^^^^^^^^^^^^^^^

@@ -47,8 +47,9 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
   // Allow char* = string
   if (lhs.isPtrOf(TY_CHAR) && rhs.is(TY_STRING) && lhs.specifiers == rhs.specifiers)
     return lhs;
-  // Allow interface = struct that implements this interface
-  if (lhs.isBaseType(TY_INTERFACE) && rhs.isBaseType(TY_STRUCT) && lhs.typeChain.size() == rhs.typeChain.size()) {
+  // Allow interface* = struct* that implements this interface
+  const bool sameChainDepth = lhs.typeChain.size() == rhs.typeChain.size();
+  if (lhs.isPtr() && rhs.isPtr() && sameChainDepth && lhs.isBaseType(TY_INTERFACE) && rhs.isBaseType(TY_STRUCT)) {
     SymbolType lhsCopy = lhs;
     SymbolType rhsCopy = rhs;
     SymbolType::unwrapBoth(lhsCopy, rhsCopy);
