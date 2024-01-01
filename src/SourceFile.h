@@ -63,7 +63,6 @@ struct TimerOutput {
   uint64_t parser = 0;
   uint64_t cstVisualizer = 0;
   uint64_t astBuilder = 0;
-  uint64_t astOptimizer = 0;
   uint64_t astVisualizer = 0;
   uint64_t importCollector = 0;
   uint64_t symbolTableBuilder = 0;
@@ -108,7 +107,6 @@ public:
   void runParser();
   void runCSTVisualizer();
   void runASTBuilder();
-  void runASTOptimizer();
   void runASTVisualizer();
   void runImportCollector();
   void runSymbolTableBuilder();

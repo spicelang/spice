@@ -36,4 +36,3 @@ You can apply following options to the `run` subcommand:
 | `-g`         | `--debug-info`       | Generate debug info to debug the executable in GDB, etc.                                    |
 | -            | `--disable-verifier` | Disable LLVM module and function verification (only recommended for debugging the compiler) |
 | -            | `--ignore-cache`     | Compile always and ignore the compile cache                                                 |
-| -            | `--enable-ast-opt`   | Enable AST optimization                                                                     |

@@ -36,9 +36,6 @@ set(SOURCES
         # AST visualizer
         visualizer/ASTVisualizer.cpp
         visualizer/ASTVisualizer.h
-        # AST optimizer
-        astoptimizer/ASTOptimizer.cpp
-        astoptimizer/ASTOptimizer.h
         # Import collector
         importcollector/ImportCollector.cpp
         importcollector/ImportCollector.h

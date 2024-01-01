@@ -11,7 +11,6 @@ graph TD;
     Parser-->
     CSTVisualizer-->
     ASTBuilder-->
-    ASTOptimizer-->
     ASTVisualizer-->
     ImportCollector-->
     SymbolTableBuilder-->
@@ -46,37 +45,33 @@ graph TD;
     Input/Output: CST -> AST <br>
     Note: Transforms the Concrete Syntax Tree to an Abstract Syntax Tree, enriches it and executes concluding syntax checks.
 
-5.  **AST Optimizer** <br>
-    Input/Output: AST -> AST <br>
-    Note: Removes obviously unnecessary nodes like empty if-statements
-
-6.  **AST Visualizer** <br>
+5.  **AST Visualizer** <br>
     Input/Output: AST -> AST <br>
     Note: Prints the AST as JSON or Dot code.
 
-7.  **Import Collector** <br>
+6.  **Import Collector** <br>
     Input/Output: AST -> AST <br>
     Note: Checks, which other source file are imported by the current one. Registers external symbols. Process module attributes. 
     [here](./better-imports.md).
 
-8.  **Symbol Table Builder** <br>
+7.  **Symbol Table Builder** <br>
     Input/Output: AST -> AST <br>
     Note: Creates the symbol table without types and lifetimes
 
-9.  **Type Checker** <br>
+8.  **Type Checker** <br>
     Input/Output: AST -> AST <br>
     Note: Checks if all types match, performs type inference, fill types in symbol table
 
-10. **IR Generator** <br>
+9.  **IR Generator** <br>
     Input/Output: AST -> IR <br>
     Additional used resources: Symbol Table <br>
     Note: Uses several helper modules to generate IR from the information of AST and Symbol Table.
 
-11. **IR Optimizer** <br>
+10. **IR Optimizer** <br>
     Input/Output: IR -> IR <br>
     Note: Uses the stated optimization level to call the LLVM optimizer. In case of -O0, the IR Optimizer is not invoked.
 
-12. **Object Emitter** <br>
+11. **Object Emitter** <br>
     Input/Output: IR -> Object file <br>
     Note: Calls LLVM to emit an object file from the generated IR.
 
@@ -109,21 +104,24 @@ Source file A imports B and C.
        4. AST Builder for C
        5. AST Visualizer for C
        6. Import Collector for C
-7. Type Checker for B (prepare)
-8. Type Checker for C (prepare)
-9. Type Checker for A (prepare)
-10. Type Checker for A (check)
-11. Type Checker for B (check)
-12. Type Checker for C (check)
-13. IR Generator for B
-14. IR Optimizer for B
-15. Object Emitter for B
-16. IR Generator for C
-17. IR Optimizer for C
-18. Object Emitter for C
-19. IR Generator for A
-20. IR Optimizer for A
-21. Object Emitter for A
+7. Symbol Table Builder for B
+8. Symbol Table Builder for C
+9. Symbol Table Builder for A
+10. Type Checker for B (prepare)
+11. Type Checker for C (prepare)
+12. Type Checker for A (prepare)
+13. Type Checker for A (check)
+14. Type Checker for B (check)
+15. Type Checker for C (check)
+16. IR Generator for B
+17. IR Optimizer for B
+18. Object Emitter for B
+19. IR Generator for C
+20. IR Optimizer for C 
+21. Object Emitter for C 
+22. IR Generator for A 
+23. IR Optimizer for A 
+24. Object Emitter for A
 
 ## Note for parallelization:
 
