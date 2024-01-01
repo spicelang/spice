@@ -35,6 +35,7 @@ You can also install Spice from a Linux package.
 
 === "Debian/Ubuntu"
     [Download amd64](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.deb){ .md-button .md-button--primary .md-button--small }
+    [Download arm64](https://github.com/spicelang/spice/releases/latest/download/spice_arm64.deb){ .md-button .md-button--primary .md-button--small }
 
     To install it, execute the following command:
     ```sh
@@ -43,6 +44,7 @@ You can also install Spice from a Linux package.
 
 === "Fedora/CentOS"
     [Download amd64](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.rpm){ .md-button .md-button--primary .md-button--small }
+    [Download arm64](https://github.com/spicelang/spice/releases/latest/download/spice_arm64.rpm){ .md-button .md-button--primary .md-button--small }
 
     To install it, execute the following command:
     ```sh
@@ -51,6 +53,7 @@ You can also install Spice from a Linux package.
 
 === "Alpine"
     [Download amd64](https://github.com/spicelang/spice/releases/latest/download/spice_amd64.apk){ .md-button .md-button--primary .md-button--small }
+    [Download arm64](https://github.com/spicelang/spice/releases/latest/download/spice_arm64.apk){ .md-button .md-button--primary .md-button--small }
 
     To install it, execute the following command:
     ```sh
