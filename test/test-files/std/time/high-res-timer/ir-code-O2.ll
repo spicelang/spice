@@ -17,11 +17,11 @@ define private fastcc i1 @_Z9isInRangemmj(i64 %0, i64 %1, i32 %2) unnamed_addr #
 land.exit.L6C12:
   %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %1, i32 %2, i64 %0)
   %4 = zext i32 %2 to i64
-  %5 = sub i64 %1, %4
+  %5 = sub nsw i64 %1, %4
   %.not = icmp ule i64 %5, %0
-  %6 = add i64 %4, %1
+  %6 = add nuw nsw i64 %4, %1
   %7 = icmp uge i64 %6, %0
-  %land_phi = and i1 %.not, %7
+  %land_phi = select i1 %.not, i1 %7, i1 false
   ret i1 %land_phi
 }
 

@@ -18,10 +18,10 @@ for.body.L19:                                     ; preds = %0, %for.tail.L19
   %k.030 = phi i64 [ 1, %0 ], [ %k.1, %for.tail.L19 ]
   %t.029 = phi i64 [ 1, %0 ], [ %t.1, %for.tail.L19 ]
   %r.028 = phi i64 [ 0, %0 ], [ %r.1, %for.tail.L19 ]
-  %1 = shl i64 %q.033, 2
+  %1 = shl nsw i64 %q.033, 2
   %2 = sub i64 %r.028, %t.029
   %3 = add i64 %2, %1
-  %4 = mul i64 %m.031, %t.029
+  %4 = mul nsw i64 %m.031, %t.029
   %5 = icmp slt i64 %3, %4
   br i1 %5, label %if.then.L20, label %if.else.L20
 
@@ -35,32 +35,32 @@ if.then.L22:                                      ; preds = %if.then.L20
   br label %if.exit.L22
 
 if.exit.L22:                                      ; preds = %if.then.L22, %if.then.L20
-  %8 = add i32 %printedDigits.034, 1
-  %9 = mul i64 %q.033, 10
-  %10 = sub i64 %r.028, %4
-  %11 = mul i64 %10, 10
-  %12 = mul i64 %q.033, 3
-  %13 = add i64 %12, %r.028
-  %14 = mul i64 %13, 10
+  %8 = add nsw i32 %printedDigits.034, 1
+  %9 = mul nsw i64 %q.033, 10
+  %10 = sub nsw i64 %r.028, %4
+  %11 = mul nsw i64 %10, 10
+  %12 = mul nsw i64 %q.033, 3
+  %13 = add nsw i64 %12, %r.028
+  %14 = mul nsw i64 %13, 10
   %15 = sdiv i64 %14, %t.029
   %.neg = mul i64 %m.031, -10
   %16 = add i64 %15, %.neg
   br label %for.tail.L19
 
 if.else.L20:                                      ; preds = %for.body.L19
-  %17 = mul i64 %q.033, %k.030
-  %18 = shl i64 %q.033, 1
-  %19 = add i64 %18, %r.028
-  %20 = mul i64 %19, %x.032
-  %21 = mul i64 %x.032, %t.029
-  %22 = add i64 %k.030, 1
-  %23 = mul i64 %k.030, 7
-  %24 = add i64 %23, 2
-  %25 = mul i64 %q.033, %24
-  %26 = mul i64 %x.032, %r.028
-  %27 = add i64 %25, %26
+  %17 = mul nsw i64 %q.033, %k.030
+  %18 = shl nsw i64 %q.033, 1
+  %19 = add nsw i64 %18, %r.028
+  %20 = mul nsw i64 %19, %x.032
+  %21 = mul nsw i64 %x.032, %t.029
+  %22 = add nsw i64 %k.030, 1
+  %23 = mul nsw i64 %k.030, 7
+  %24 = add nsw i64 %23, 2
+  %25 = mul nsw i64 %q.033, %24
+  %26 = mul nsw i64 %x.032, %r.028
+  %27 = add nsw i64 %25, %26
   %28 = sdiv i64 %27, %21
-  %29 = add i64 %x.032, 2
+  %29 = add nsw i64 %x.032, 2
   br label %for.tail.L19
 
 for.tail.L19:                                     ; preds = %if.exit.L22, %if.else.L20

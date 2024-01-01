@@ -1,10 +1,43 @@
-import "std/math/fct";
-
 f<int> main() {
-    printf("Abs: %d\n", abs(-123234));
-    printf("Abs: %d\n", abs(-24352345l));
-    printf("Abs: %d\n", abs(24352345l));
-    printf("Abs: %d\n", abs(-123s));
+    // Directly
+    String s1 = String("");
+    dyn s2 = String("Hello");
+    dyn s3 = String("Hello!");
+    dyn s4 = String("Hello World!");
+
+    assert s1.isEmpty();
+    assert !s2.isEmpty();
+    assert s3.getLength() == 6;
+    assert s4.getLength() == 12;
+    assert s3.getCapacity() == 12;
+    assert s4.getCapacity() == 24;
+    assert s2.isFull();
+    assert !s4.isFull();
+    assert s4.find("ell") == 1;
+    assert s4.find("Wort") == -1;
+    assert s4.find("H") == 0;
+    assert s4.find("!") == 11;
+    assert s4.find(" ", 12) == -1;
+    assert s4.rfind("ell") == 1;
+    assert s4.rfind("o") == 7;
+    assert s4.rfind("!") == 11;
+    assert s4.rfind("o", 6) == 4;
+    assert !s4.contains("abc");
+    assert s4.contains("Hello");
+    assert s4.contains("World!");
+    assert s4.contains("o W");
+    String sub = s4.getSubstring(0, 5l);
+    assert sub.getRaw() == "Hello";
+    sub = s4.getSubstring(4l, 2l);
+    assert sub.getRaw() == "o ";
+    sub = s4.getSubstring(6);
+    assert sub.getRaw() == "World!";
+    sub = s4.getSubstring(2, 0l);
+    assert sub.getRaw() == "";
+    sub =  s4.getSubstring(2l, 12l);
+    assert sub.getRaw() == "llo World!";
+
+    printf("All assertions passed!");
 }
 
 /*type Visitable interface {

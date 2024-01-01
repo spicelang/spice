@@ -56,7 +56,7 @@ if.exit.L2:                                       ; preds = %if.exit.L2.preheade
   %.tr4 = phi i32 [ %9, %if.exit.L2 ], [ %.tr4.ph, %if.exit.L2.preheader7 ]
   %accumulator.tr3 = phi i32 [ %10, %if.exit.L2 ], [ %accumulator.tr3.ph, %if.exit.L2.preheader7 ]
   %9 = add nsw i32 %.tr4, -1
-  %10 = mul i32 %.tr4, %accumulator.tr3
+  %10 = mul nsw i32 %.tr4, %accumulator.tr3
   %11 = icmp ult i32 %.tr4, 3
   br i1 %11, label %common.ret, label %if.exit.L2, !llvm.loop !3
 }
