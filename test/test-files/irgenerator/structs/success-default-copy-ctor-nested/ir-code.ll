@@ -23,7 +23,7 @@ define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 derefer
   %6 = load ptr, ptr %other, align 8
   %x_addr1 = getelementptr inbounds %struct.Inner, ptr %6, i32 0, i32 0
   %7 = load i16, ptr %x_addr1, align 2
-  %8 = add i16 %7, 5
+  %8 = add nsw i16 %7, 5
   store i16 %8, ptr %x_addr, align 2
   ret void
 }

@@ -54,9 +54,9 @@ define private i64 @_Z15genericFunctionlsl(i64 %0, i16 %1, i64 %2) {
   %4 = load i16, ptr %arg2, align 2
   %5 = sext i16 %4 to i64
   %6 = load i64, ptr %arg1, align 8
-  %7 = add i64 %6, %5
+  %7 = add nsw i64 %6, %5
   %8 = load i64, ptr %arg3, align 8
-  %9 = add i64 %7, %8
+  %9 = add nsw i64 %7, %8
   ret i64 %9
 }
 

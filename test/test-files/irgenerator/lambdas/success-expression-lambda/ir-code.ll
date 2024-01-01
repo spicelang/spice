@@ -49,8 +49,8 @@ for.body.L8:                                      ; preds = %for.head.L8
 for.head.L9:                                      ; preds = %for.tail.L9, %for.body.L8
   %6 = load i32, ptr %i, align 4
   %7 = sext i32 %6 to i64
-  %8 = sub i64 10, %7
-  %9 = sub i64 %8, 1
+  %8 = sub nsw i64 10, %7
+  %9 = sub nsw i64 %8, 1
   %10 = load i32, ptr %j, align 4
   %11 = sext i32 %10 to i64
   %12 = icmp slt i64 %11, %9
@@ -63,7 +63,7 @@ for.body.L9:                                      ; preds = %for.head.L9
   %16 = getelementptr inbounds [10 x i32], ptr %15, i32 0, i32 %14
   %17 = load i32, ptr %16, align 4
   %18 = load i32, ptr %j, align 4
-  %19 = add i32 %18, 1
+  %19 = add nsw i32 %18, 1
   %20 = load ptr, ptr %array, align 8
   %21 = getelementptr inbounds [10 x i32], ptr %20, i32 0, i32 %19
   %22 = load i32, ptr %21, align 4
@@ -76,7 +76,7 @@ if.then.L10:                                      ; preds = %for.body.L9
   %25 = load ptr, ptr %array, align 8
   %26 = getelementptr inbounds [10 x i32], ptr %25, i32 0, i32 %24
   %27 = load i32, ptr %j, align 4
-  %28 = add i32 %27, 1
+  %28 = add nsw i32 %27, 1
   %29 = load ptr, ptr %array, align 8
   %30 = getelementptr inbounds [10 x i32], ptr %29, i32 0, i32 %28
   call void @_Z4swapRiRi(ptr %26, ptr %30)
@@ -87,7 +87,7 @@ if.exit.L10:                                      ; preds = %if.then.L10, %for.b
 
 for.tail.L9:                                      ; preds = %if.exit.L10
   %31 = load i32, ptr %j, align 4
-  %32 = add i32 %31, 1
+  %32 = add nsw i32 %31, 1
   store i32 %32, ptr %j, align 4
   br label %for.head.L9
 
@@ -96,7 +96,7 @@ for.exit.L9:                                      ; preds = %for.head.L9
 
 for.tail.L8:                                      ; preds = %for.exit.L9
   %33 = load i32, ptr %i, align 4
-  %34 = add i32 %33, 1
+  %34 = add nsw i32 %33, 1
   store i32 %34, ptr %i, align 4
   br label %for.head.L8
 
@@ -154,7 +154,7 @@ for.body.L24:                                     ; preds = %for.head.L24
 
 for.tail.L24:                                     ; preds = %for.body.L24
   %10 = load i32, ptr %i, align 4
-  %11 = add i32 %10, 1
+  %11 = add nsw i32 %10, 1
   store i32 %11, ptr %i, align 4
   br label %for.head.L24
 

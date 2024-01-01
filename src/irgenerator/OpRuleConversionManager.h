@@ -125,6 +125,8 @@ private:
   template <size_t N>
   LLVMExprResult callOperatorOverloadFct(const ASTNode *node, const std::array<ResolverFct, N * 2> &opV, size_t opIdx);
   [[nodiscard]] llvm::Value *generateIToFp(const SymbolType &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const;
+  [[nodiscard]] llvm::Value *generateSHR(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                         llvm::Value *rhsV) const;
   [[nodiscard]] llvm::Value *generateLT(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
                                         llvm::Value *rhsV) const;
   [[nodiscard]] llvm::Value *generateGT(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
@@ -133,6 +135,10 @@ private:
                                         llvm::Value *rhsV) const;
   [[nodiscard]] llvm::Value *generateGE(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
                                         llvm::Value *rhsV) const;
+  [[nodiscard]] llvm::Value *generateDiv(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                         llvm::Value *rhsV) const;
+  [[nodiscard]] llvm::Value *generateRem(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+                                         llvm::Value *rhsV) const;
   [[nodiscard]] static inline uint32_t getTypeCombination(const SymbolType &lhsTy, const SymbolType &rhsTy) {
     return COMB(lhsTy.getSuperType(), rhsTy.getSuperType());
   }

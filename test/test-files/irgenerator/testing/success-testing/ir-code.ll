@@ -37,7 +37,7 @@ define private i32 @_Z3addii(i32 %0, i32 %1) {
   store i32 %1, ptr %b, align 4
   %3 = load i32, ptr %b, align 4
   %4 = load i32, ptr %a, align 4
-  %5 = add i32 %4, %3
+  %5 = add nsw i32 %4, %3
   ret i32 %5
 }
 
@@ -49,7 +49,7 @@ define private i32 @_Z3subii(i32 %0, i32 %1) {
   store i32 %1, ptr %b, align 4
   %3 = load i32, ptr %b, align 4
   %4 = load i32, ptr %a, align 4
-  %5 = sub i32 %4, %3
+  %5 = sub nsw i32 %4, %3
   ret i32 %5
 }
 

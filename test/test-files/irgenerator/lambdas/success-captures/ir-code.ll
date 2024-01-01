@@ -101,10 +101,10 @@ define private void @_Z14lambda.L4C20.0Ri(ptr noundef nonnull dereferenceable(8)
   %z = getelementptr inbounds { i32, i32 }, ptr %3, i32 0, i32 1
   %4 = load i32, ptr %w, align 4
   %5 = load i32, ptr %z, align 4
-  %6 = add i32 %5, %4
+  %6 = add nsw i32 %5, %4
   %7 = load ptr, ptr %x, align 8
   %8 = load i32, ptr %7, align 4
-  %9 = add i32 %8, %6
+  %9 = add nsw i32 %8, %6
   store i32 %9, ptr %7, align 4
   ret void
 }
@@ -120,10 +120,10 @@ define private i1 @_Z14lambda.L7C26.0Ri(ptr noundef nonnull dereferenceable(8) %
   %z = getelementptr inbounds { i32, i32 }, ptr %3, i32 0, i32 1
   %4 = load i32, ptr %w, align 4
   %5 = load i32, ptr %z, align 4
-  %6 = add i32 %5, %4
+  %6 = add nsw i32 %5, %4
   %7 = load ptr, ptr %x, align 8
   %8 = load i32, ptr %7, align 4
-  %9 = add i32 %8, %6
+  %9 = add nsw i32 %8, %6
   store i32 %9, ptr %7, align 4
   ret i1 true
 }

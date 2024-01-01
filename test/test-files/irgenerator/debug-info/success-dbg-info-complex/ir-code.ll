@@ -275,7 +275,7 @@ foreach.body.L48:                                 ; preds = %foreach.head.L48
   %75 = load i32, ptr %74, align 4, !dbg !98
   store i32 %75, ptr %item, align 4, !dbg !98
   %76 = load i32, ptr %item, align 4, !dbg !99
-  %77 = add i32 %76, 1, !dbg !99
+  %77 = add nsw i32 %76, 1, !dbg !99
   store i32 %77, ptr %item, align 4, !dbg !99
   br label %foreach.tail.L48, !dbg !99
 
@@ -331,7 +331,7 @@ foreach.body.L56:                                 ; preds = %foreach.head.L56
   store ptr %92, ptr %12, align 8, !dbg !109
   %93 = load ptr, ptr %12, align 8, !dbg !110
   %94 = load i32, ptr %93, align 4, !dbg !110
-  %95 = add i32 %94, 1, !dbg !110
+  %95 = add nsw i32 %94, 1, !dbg !110
   store i32 %95, ptr %93, align 4, !dbg !110
   br label %foreach.tail.L56, !dbg !110
 
@@ -397,7 +397,7 @@ foreach.body.L63:                                 ; preds = %foreach.head.L63
   %113 = trunc i64 %112 to i32, !dbg !124
   %114 = load ptr, ptr %14, align 8, !dbg !124
   %115 = load i32, ptr %114, align 4, !dbg !124
-  %116 = add i32 %115, %113, !dbg !124
+  %116 = add nsw i32 %115, %113, !dbg !124
   store i32 %116, ptr %114, align 4, !dbg !124
   br label %foreach.tail.L63, !dbg !124
 
@@ -498,7 +498,7 @@ attributes #3 = { cold noreturn nounwind }
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "printf.str.0", linkageName: "printf.str.0", scope: !2, file: !5, line: 70, type: !6, isLocal: true, isDefinition: true)
 !2 = distinct !DICompileUnit(language: DW_LANG_C17, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
-!3 = !DIFile(filename: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
+!3 = !DIFile(filename: "C:\\Users\\I516467\\Documents\\JustForFunGitHubClones\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
 !4 = !{!0}
 !5 = !DIFile(filename: "source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
 !6 = !DIStringType(name: "printf.str.0", size: 192)

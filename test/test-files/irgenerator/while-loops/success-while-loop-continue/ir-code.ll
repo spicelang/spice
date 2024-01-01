@@ -43,7 +43,7 @@ while.body.L7:                                    ; preds = %while.head.L7
   %12 = sext i16 %11 to i32
   %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double %10, i32 %12)
   %14 = load i16, ptr %loopCounterInner, align 2
-  %15 = sub i16 %14, 1
+  %15 = sub nsw i16 %14, 1
   store i16 %15, ptr %loopCounterInner, align 2
   %16 = load i16, ptr %loopCounterInner, align 2
   %17 = sext i16 %16 to i32

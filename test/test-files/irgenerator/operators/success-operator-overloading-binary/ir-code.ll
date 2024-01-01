@@ -54,7 +54,7 @@ define private %struct.Counter @_Z7op.plus7Counter7Counter(%struct.Counter %0, %
   %value_addr1 = getelementptr inbounds %struct.Counter, ptr %c2, i32 0, i32 0
   %4 = load i64, ptr %value_addr1, align 8
   %5 = load i64, ptr %value_addr, align 8
-  %6 = add i64 %5, %4
+  %6 = add nsw i64 %5, %4
   call void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %3, i64 %6)
   %7 = load %struct.Counter, ptr %3, align 8
   ret %struct.Counter %7
@@ -71,7 +71,7 @@ define private %struct.Counter @_Z8op.minus7Counter7Counter(%struct.Counter %0, 
   %value_addr1 = getelementptr inbounds %struct.Counter, ptr %c2, i32 0, i32 0
   %4 = load i64, ptr %value_addr1, align 8
   %5 = load i64, ptr %value_addr, align 8
-  %6 = sub i64 %5, %4
+  %6 = sub nsw i64 %5, %4
   call void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %3, i64 %6)
   %7 = load %struct.Counter, ptr %3, align 8
   ret %struct.Counter %7
@@ -88,7 +88,7 @@ define private %struct.Counter @_Z6op.mul7Counter7Counter(%struct.Counter %0, %s
   %value_addr1 = getelementptr inbounds %struct.Counter, ptr %c2, i32 0, i32 0
   %4 = load i64, ptr %value_addr1, align 8
   %5 = load i64, ptr %value_addr, align 8
-  %6 = mul i64 %5, %4
+  %6 = mul nsw i64 %5, %4
   call void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %3, i64 %6)
   %7 = load %struct.Counter, ptr %3, align 8
   ret %struct.Counter %7
@@ -139,7 +139,7 @@ define private %struct.Counter @_Z6op.shr7Counter7Counter(%struct.Counter %0, %s
   %value_addr1 = getelementptr inbounds %struct.Counter, ptr %c2, i32 0, i32 0
   %4 = load i64, ptr %value_addr1, align 8
   %5 = load i64, ptr %value_addr, align 8
-  %6 = lshr i64 %5, %4
+  %6 = ashr i64 %5, %4
   call void @_ZN7Counter4ctorEl(ptr noundef nonnull align 8 dereferenceable(8) %3, i64 %6)
   %7 = load %struct.Counter, ptr %3, align 8
   ret %struct.Counter %7
@@ -155,7 +155,7 @@ define private void @_Z12op.plusequalR7Counter7Counter(ptr %0, %struct.Counter %
   %value_addr1 = getelementptr inbounds %struct.Counter, ptr %3, i32 0, i32 0
   %4 = load i64, ptr %value_addr, align 8
   %5 = load i64, ptr %value_addr1, align 8
-  %6 = add i64 %5, %4
+  %6 = add nsw i64 %5, %4
   store i64 %6, ptr %value_addr1, align 8
   ret void
 }
@@ -170,7 +170,7 @@ define private void @_Z13op.minusequalR7Counter7Counter(ptr %0, %struct.Counter 
   %value_addr1 = getelementptr inbounds %struct.Counter, ptr %3, i32 0, i32 0
   %4 = load i64, ptr %value_addr, align 8
   %5 = load i64, ptr %value_addr1, align 8
-  %6 = sub i64 %5, %4
+  %6 = sub nsw i64 %5, %4
   store i64 %6, ptr %value_addr1, align 8
   ret void
 }
@@ -185,7 +185,7 @@ define private void @_Z11op.mulequalR7Counter7Counter(ptr %0, %struct.Counter %1
   %value_addr1 = getelementptr inbounds %struct.Counter, ptr %3, i32 0, i32 0
   %4 = load i64, ptr %value_addr, align 8
   %5 = load i64, ptr %value_addr1, align 8
-  %6 = mul i64 %5, %4
+  %6 = mul nsw i64 %5, %4
   store i64 %6, ptr %value_addr1, align 8
   ret void
 }

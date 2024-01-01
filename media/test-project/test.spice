@@ -1,4 +1,13 @@
-type Visitable interface {
+import "std/math/fct";
+
+f<int> main() {
+    printf("Abs: %d\n", abs(-123234));
+    printf("Abs: %d\n", abs(-24352345l));
+    printf("Abs: %d\n", abs(24352345l));
+    printf("Abs: %d\n", abs(-123s));
+}
+
+/*type Visitable interface {
     p print();
 }
 
@@ -14,7 +23,7 @@ f<int> main() {
     Test1 t1 = Test1{123};
     Visitable* v = &t1;
     v.print();
-}
+}*/
 
 /*import "../../src-bootstrap/lexer/lexer";
 import "../../src-bootstrap/parser/parser";

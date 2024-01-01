@@ -37,13 +37,13 @@ for.body.L4:                                      ; preds = %for.head.L4
   %8 = getelementptr inbounds [10 x i32], ptr %6, i32 0, i32 %7
   %9 = load i32, ptr %j, align 4
   %10 = load i32, ptr %i, align 4
-  %11 = mul i32 %10, %9
+  %11 = mul nsw i32 %10, %9
   store i32 %11, ptr %8, align 4
   br label %for.tail.L4
 
 for.tail.L4:                                      ; preds = %for.body.L4
   %12 = load i32, ptr %j, align 4
-  %13 = add i32 %12, 1
+  %13 = add nsw i32 %12, 1
   store i32 %13, ptr %j, align 4
   br label %for.head.L4
 
@@ -52,7 +52,7 @@ for.exit.L4:                                      ; preds = %for.head.L4
 
 for.tail.L3:                                      ; preds = %for.exit.L4
   %14 = load i32, ptr %i, align 4
-  %15 = add i32 %14, 1
+  %15 = add nsw i32 %14, 1
   store i32 %15, ptr %i, align 4
   br label %for.head.L3
 

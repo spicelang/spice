@@ -25,7 +25,7 @@ for.body.L2:                                      ; preds = %for.head.L2
 
 for.tail.L2:                                      ; preds = %for.body.L2
   %5 = load i32, ptr %i, align 4
-  %6 = add i32 %5, 2
+  %6 = add nsw i32 %5, 2
   store i32 %6, ptr %i, align 4
   br label %for.head.L2
 

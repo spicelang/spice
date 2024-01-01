@@ -26,7 +26,7 @@ define dso_local i32 @main() #0 {
   %f2_addr1 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1
   %6 = load ptr, ptr %f2_addr1, align 8
   %7 = load i32, ptr %6, align 4
-  %8 = add i32 %7, 1
+  %8 = add nsw i32 %7, 1
   store i32 %8, ptr %6, align 4
   %9 = load i32, ptr %t, align 4
   %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %9)

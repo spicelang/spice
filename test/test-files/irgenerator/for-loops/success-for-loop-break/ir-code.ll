@@ -52,7 +52,7 @@ if.exit.L7:                                       ; preds = %for.body.L5
 
 for.tail.L5:                                      ; preds = %if.exit.L7
   %13 = load i32, ptr %subCounter, align 4
-  %14 = sub i32 %13, 1
+  %14 = sub nsw i32 %13, 1
   store i32 %14, ptr %subCounter, align 4
   br label %for.head.L5
 
@@ -64,7 +64,7 @@ if.exit.L4:                                       ; preds = %for.exit.L5, %for.b
 
 for.tail.L2:                                      ; preds = %if.exit.L4
   %15 = load i32, ptr %counter, align 4
-  %16 = add i32 %15, 2
+  %16 = add nsw i32 %15, 2
   store i32 %16, ptr %counter, align 4
   br label %for.head.L2
 
