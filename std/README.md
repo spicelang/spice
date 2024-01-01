@@ -36,4 +36,4 @@ The package `std/type` offers functions for type related work like type conversi
 
 *More std library components to come ...*
 
-© ChilliBits 2021-2023
+© ChilliBits 2021-2024

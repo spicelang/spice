@@ -51,7 +51,7 @@ import "std/io/cli-parser";
 f<int> main(int argc, string[] argv) {
     CliParser cli = CliParser("app-name", "Short description of the app");
     cli.setVersion("v1.0.0");
-    cli.setFooter("(c) 2023 by John Doe");
+    cli.setFooter("(c) 2024 by John Doe");
     
     bool flagValue = false;
     cli.addFlag("--hi", flagValue, "Say Hi");
@@ -77,7 +77,7 @@ Flags:
 --version,-v                    Print version info
 --hi                            Say Hi
 
-(c) 2023 by John Doe
+(c) 2024 by John Doe
 ```
 
 When we run the program with the `--hi` flag, we get the following output:
@@ -99,7 +99,7 @@ import "std/io/cli-parser";
 f<int> main(int argc, string[] argv) {
     CliParser cli = CliParser("app-name", "Short description of the app");
     cli.setVersion("v1.0.0");
-    cli.setFooter("(c) 2023 by John Doe");
+    cli.setFooter("(c) 2024 by John Doe");
     
     CliSubcommand& greet = cli.addSubcommand("greet", "Greet someone");
     CliSubcommand& walk = cli.addSubcommand("walk", "Walk somewhere");
@@ -119,7 +119,7 @@ import "std/io/cli-parser";
 f<int> main(int argc, string[] argv) {
     CliParser cli = CliParser("app-name", "Short description of the app");
     cli.setVersion("v1.0.0");
-    cli.setFooter("(c) 2023 by John Doe");
+    cli.setFooter("(c) 2024 by John Doe");
     
     CliSubcommand& greet = cli.addSubcommand("greet", "Greet someone");
     CliSubcommand& greetFriendly = greet.addSubcommand("friendly", "Greet someone in a friendly way");
