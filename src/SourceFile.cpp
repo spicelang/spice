@@ -3,7 +3,6 @@
 #include "SourceFile.h"
 
 #include <ast/ASTBuilder.h>
-#include <astoptimizer/ASTOptimizer.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/CompilerError.h>
 #include <global/GlobalResourceManager.h>
@@ -143,22 +142,6 @@ void SourceFile::runASTBuilder() {
   previousStage = AST_BUILDER;
   timer.stop();
   printStatusMessage("AST Builder", IO_CST, IO_AST, compilerOutput.times.astBuilder);
-}
-
-void SourceFile::runASTOptimizer() {
-  // Skip if restored from cache or this stage has already been done
-  if (restoredFromCache || previousStage >= AST_OPTIMIZER)
-    return;
-
-  Timer timer(&compilerOutput.times.astOptimizer);
-  timer.start();
-
-  ASTOptimizer astOptimizer(resourceManager, this);
-  astOptimizer.visit(ast);
-
-  previousStage = AST_OPTIMIZER;
-  timer.stop();
-  printStatusMessage("AST Optimizer", IO_AST, IO_AST, compilerOutput.times.astOptimizer);
 }
 
 void SourceFile::runASTVisualizer() {
@@ -507,7 +490,6 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
   runParser();
   runCSTVisualizer();
   runASTBuilder();
-  runASTOptimizer();
   runASTVisualizer();
   runImportCollector();
   runSymbolTableBuilder();

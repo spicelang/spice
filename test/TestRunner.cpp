@@ -58,7 +58,6 @@ void execTestCase(const TestCase &testCase) {
           /* dumpObjectFile= */ false,
           /* dumpToFiles= */ false,
       },
-      /* disableAstOpt= */ false,
       /* namesForIRValues= */ true,
       /* optLevel= */ OptLevel::O0,
       /* useLTO= */ std::filesystem::exists(testCase.testPath / CTL_LTO),
@@ -90,7 +89,6 @@ void execTestCase(const TestCase &testCase) {
 
     // Build and optimize AST
     mainSourceFile->runASTBuilder();
-    mainSourceFile->runASTOptimizer();
 
     // Check AST
     TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYNTAX_TREE, [&]() {

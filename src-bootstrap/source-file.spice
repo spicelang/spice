@@ -36,7 +36,6 @@ type TimerOutput struct {
   unsigned long parser = 0l
   unsigned long cstVisualizer = 0l
   unsigned long astBuilder = 0l
-  unsigned long astOptimizer = 0l
   unsigned long astVisualizer = 0l
   unsigned long importCollector = 0l
   unsigned long symbolTableBuilder = 0l
