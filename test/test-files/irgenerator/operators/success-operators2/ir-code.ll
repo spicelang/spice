@@ -17,22 +17,22 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store i32 1, ptr %i, align 4
   %1 = load i32, ptr %i, align 4
-  %2 = add i32 %1, 2
+  %2 = add nsw i32 %1, 2
   store i32 %2, ptr %i, align 4
   %3 = load i32, ptr %i, align 4
-  %4 = mul i32 %3, 2
+  %4 = mul nsw i32 %3, 2
   store i32 %4, ptr %i, align 4
   %5 = load i32, ptr %i, align 4
   %6 = shl i32 %5, 2
   store i32 %6, ptr %i, align 4
   %7 = load i32, ptr %i, align 4
-  %8 = lshr i32 %7, 2
+  %8 = ashr i32 %7, 2
   store i32 %8, ptr %i, align 4
   %9 = load i32, ptr %i, align 4
   %10 = sdiv i32 %9, 2
   store i32 %10, ptr %i, align 4
   %11 = load i32, ptr %i, align 4
-  %12 = sub i32 %11, 2
+  %12 = sub nsw i32 %11, 2
   store i32 %12, ptr %i, align 4
   %13 = load i32, ptr %i, align 4
   %14 = icmp eq i32 %13, 1
@@ -45,16 +45,16 @@ assert.then.L9:                                   ; preds = %0
 
 assert.exit.L9:                                   ; preds = %0
   %16 = load i32, ptr %i, align 4
-  %17 = add i32 %16, 494665727
+  %17 = add nsw i32 %16, 494665727
   store i32 %17, ptr %i, align 4
   %18 = load i32, ptr %i, align 4
   %19 = sdiv i32 %18, 2
   store i32 %19, ptr %i, align 4
   %20 = load i32, ptr %i, align 4
-  %21 = mul i32 %20, 2
+  %21 = mul nsw i32 %20, 2
   store i32 %21, ptr %i, align 4
   %22 = load i32, ptr %i, align 4
-  %23 = sub i32 %22, 494665727
+  %23 = sub nsw i32 %22, 494665727
   store i32 %23, ptr %i, align 4
   %24 = load i32, ptr %i, align 4
   %25 = icmp eq i32 %24, 1

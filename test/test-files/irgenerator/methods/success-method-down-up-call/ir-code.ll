@@ -44,7 +44,7 @@ if.then.L18:                                      ; preds = %1
   %5 = load ptr, ptr %this, align 8
   %test_addr1 = getelementptr inbounds %struct.TestStruct, ptr %5, i32 0, i32 1
   %6 = load i32, ptr %test_addr1, align 4
-  %7 = add i32 %6, 1
+  %7 = add nsw i32 %6, 1
   store i32 %7, ptr %test_addr1, align 4
   %8 = load ptr, ptr %this, align 8
   call void @_ZN10TestStructIhE9printTestEv(ptr noundef nonnull align 8 dereferenceable(8) %8)

@@ -32,13 +32,13 @@ for.body.L6:                                      ; preds = %for.head.L6
   %9 = load i16, ptr %8, align 2
   %10 = sext i16 %9 to i32
   %11 = load i32, ptr %result, align 4
-  %12 = add i32 %11, %10
+  %12 = add nsw i32 %11, %10
   store i32 %12, ptr %result, align 4
   br label %for.tail.L6
 
 for.tail.L6:                                      ; preds = %for.body.L6
   %13 = load i64, ptr %i, align 8
-  %14 = add i64 %13, 1
+  %14 = add nsw i64 %13, 1
   store i64 %14, ptr %i, align 8
   br label %for.head.L6
 
@@ -71,13 +71,13 @@ for.body.L6:                                      ; preds = %for.head.L6
   %9 = load i64, ptr %8, align 8
   %10 = trunc i64 %9 to i32
   %11 = load i32, ptr %result, align 4
-  %12 = add i32 %11, %10
+  %12 = add nsw i32 %11, %10
   store i32 %12, ptr %result, align 4
   br label %for.tail.L6
 
 for.tail.L6:                                      ; preds = %for.body.L6
   %13 = load i64, ptr %i, align 8
-  %14 = add i64 %13, 1
+  %14 = add nsw i64 %13, 1
   store i64 %14, ptr %i, align 8
   br label %for.head.L6
 
@@ -110,7 +110,7 @@ for.body.L12:                                     ; preds = %for.head.L12
 
 for.tail.L12:                                     ; preds = %for.body.L12
   %10 = load i64, ptr %i, align 8
-  %11 = add i64 %10, 1
+  %11 = add nsw i64 %10, 1
   store i64 %11, ptr %i, align 8
   br label %for.head.L12
 

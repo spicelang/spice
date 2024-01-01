@@ -19,12 +19,12 @@ if.then.L2:                                       ; preds = %1
 
 if.exit.L2:                                       ; preds = %1
   %5 = load i32, ptr %n, align 4
-  %6 = sub i32 %5, 1
+  %6 = sub nsw i32 %5, 1
   %7 = call i32 @_Z4fiboi(i32 %6)
   %8 = load i32, ptr %n, align 4
-  %9 = sub i32 %8, 2
+  %9 = sub nsw i32 %8, 2
   %10 = call i32 @_Z4fiboi(i32 %9)
-  %11 = add i32 %7, %10
+  %11 = add nsw i32 %7, %10
   ret i32 %11
 }
 

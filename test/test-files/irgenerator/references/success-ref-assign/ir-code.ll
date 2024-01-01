@@ -31,7 +31,7 @@ assert.then.L5:                                   ; preds = %0
 assert.exit.L5:                                   ; preds = %0
   %4 = load ptr, ptr %testRef, align 8
   %5 = load i32, ptr %4, align 4
-  %6 = add i32 %5, 12
+  %6 = add nsw i32 %5, 12
   store i32 %6, ptr %4, align 4
   %7 = load i32, ptr %test, align 4
   %8 = icmp eq i32 %7, 135
@@ -45,7 +45,7 @@ assert.then.L9:                                   ; preds = %assert.exit.L5
 assert.exit.L9:                                   ; preds = %assert.exit.L5
   %10 = load ptr, ptr %testRef, align 8
   %11 = load i32, ptr %10, align 4
-  %12 = sub i32 %11, 11
+  %12 = sub nsw i32 %11, 11
   store i32 %12, ptr %10, align 4
   %13 = load i32, ptr %test, align 4
   %14 = icmp eq i32 %13, 124
@@ -71,7 +71,7 @@ assert.then.L13:                                  ; preds = %assert.exit.L11
 assert.exit.L13:                                  ; preds = %assert.exit.L11
   %20 = load ptr, ptr %testRef, align 8
   %21 = load i32, ptr %20, align 4
-  %22 = add i32 %21, 4
+  %22 = add nsw i32 %21, 4
   %23 = load ptr, ptr %testRef, align 8
   store i32 %22, ptr %23, align 4
   %24 = load i32, ptr %test, align 4
@@ -86,7 +86,7 @@ assert.then.L15:                                  ; preds = %assert.exit.L13
 assert.exit.L15:                                  ; preds = %assert.exit.L13
   %27 = load ptr, ptr %testRef, align 8
   %28 = load i32, ptr %27, align 4
-  %29 = sub i32 %28, 4
+  %29 = sub nsw i32 %28, 4
   %30 = load ptr, ptr %testRef, align 8
   store i32 %29, ptr %30, align 4
   %31 = load i32, ptr %test, align 4

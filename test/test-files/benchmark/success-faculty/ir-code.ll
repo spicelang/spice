@@ -18,10 +18,10 @@ if.then.L2:                                       ; preds = %1
 
 if.exit.L2:                                       ; preds = %1
   %4 = load i32, ptr %input, align 4
-  %5 = sub i32 %4, 1
+  %5 = sub nsw i32 %4, 1
   %6 = call i32 @_Z7facultyi(i32 %5)
   %7 = load i32, ptr %input, align 4
-  %8 = mul i32 %7, %6
+  %8 = mul nsw i32 %7, %6
   store i32 %8, ptr %result, align 4
   %9 = load i32, ptr %result, align 4
   ret i32 %9

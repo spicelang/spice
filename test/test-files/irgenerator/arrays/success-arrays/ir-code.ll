@@ -24,7 +24,7 @@ define dso_local i32 @main() #0 {
   store [3 x i32] %6, ptr %intArray, align 4
   %7 = getelementptr inbounds [3 x i32], ptr %intArray, i32 0, i32 2
   %8 = load i32, ptr %7, align 4
-  %9 = mul i32 %8, 11
+  %9 = mul nsw i32 %8, 11
   store i32 %9, ptr %7, align 4
   %10 = getelementptr inbounds [3 x i32], ptr %intArray, i32 0, i32 0
   store i32 3, ptr %10, align 4

@@ -18,7 +18,7 @@ define private void @_Z4procRiRK6Struct(ptr %0, ptr %1) {
   store ptr %1, ptr %structRef, align 8
   %3 = load ptr, ptr %intRef, align 8
   %4 = load i32, ptr %3, align 4
-  %5 = add i32 %4, 12
+  %5 = add nsw i32 %4, 12
   store i32 %5, ptr %3, align 4
   %6 = load ptr, ptr %structRef, align 8
   %ref_addr = getelementptr inbounds %struct.Struct, ptr %6, i32 0, i32 0

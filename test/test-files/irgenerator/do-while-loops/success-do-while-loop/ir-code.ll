@@ -15,7 +15,7 @@ define dso_local i32 @main() #0 {
 
 dowhile.body.L3:                                  ; preds = %dowhile.foot.L3, %0
   %1 = load i32, ptr %i, align 4
-  %2 = add i32 %1, 1
+  %2 = add nsw i32 %1, 1
   store i32 %2, ptr %i, align 4
   %3 = load i32, ptr %i, align 4
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)

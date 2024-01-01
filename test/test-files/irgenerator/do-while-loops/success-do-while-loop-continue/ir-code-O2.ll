@@ -13,21 +13,19 @@ dowhile.body.L3:                                  ; preds = %dowhile.foot.L3, %0
   %loopCounterOuter.0 = phi double [ 0.000000e+00, %0 ], [ %1, %dowhile.foot.L3 ]
   %1 = fadd double %loopCounterOuter.0, 1.500000e-01
   %2 = fcmp olt double %1, 4.000000e+00
-  br i1 %2, label %dowhile.body.L7, label %dowhile.foot.L3
+  br i1 %2, label %dowhile.body.L7.preheader, label %dowhile.foot.L3
 
-dowhile.body.L7:                                  ; preds = %dowhile.body.L3, %dowhile.body.L7
-  %loopCounterInner.0 = phi i16 [ %5, %dowhile.body.L7 ], [ 10, %dowhile.body.L3 ]
-  %3 = zext i16 %loopCounterInner.0 to i32
-  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 %3)
-  %5 = add nsw i16 %loopCounterInner.0, -1
-  switch i16 %loopCounterInner.0, label %dowhile.body.L7 [
-    i16 6, label %dowhile.foot.L3
-    i16 1, label %dowhile.foot.L3
-  ]
+dowhile.body.L7.preheader:                        ; preds = %dowhile.body.L3
+  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 10)
+  %4 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 9)
+  %5 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 8)
+  %6 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 7)
+  %7 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, double %1, i32 6)
+  br label %dowhile.foot.L3
 
-dowhile.foot.L3:                                  ; preds = %dowhile.body.L7, %dowhile.body.L7, %dowhile.body.L3
-  %6 = fcmp olt double %1, 1.000000e+01
-  br i1 %6, label %dowhile.body.L3, label %dowhile.exit.L3
+dowhile.foot.L3:                                  ; preds = %dowhile.body.L7.preheader, %dowhile.body.L3
+  %8 = fcmp olt double %1, 1.000000e+01
+  br i1 %8, label %dowhile.body.L3, label %dowhile.exit.L3
 
 dowhile.exit.L3:                                  ; preds = %dowhile.foot.L3
   ret i32 0

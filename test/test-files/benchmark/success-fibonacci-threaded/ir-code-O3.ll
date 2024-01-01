@@ -15,7 +15,7 @@ define private fastcc i32 @_Z3fibi(i32 %0) unnamed_addr #0 {
   br i1 %2, label %common.ret, label %if.exit.L4
 
 common.ret.loopexit:                              ; preds = %if.exit.L4
-  %3 = add i32 %7, 1
+  %3 = add nsw i32 %7, 1
   br label %common.ret
 
 common.ret:                                       ; preds = %common.ret.loopexit, %1
@@ -28,7 +28,7 @@ if.exit.L4:                                       ; preds = %1, %if.exit.L4
   %4 = add nsw i32 %.tr4, -1
   %5 = tail call fastcc i32 @_Z3fibi(i32 %4)
   %6 = add nsw i32 %.tr4, -2
-  %7 = add i32 %5, %accumulator.tr3
+  %7 = add nsw i32 %5, %accumulator.tr3
   %8 = icmp ult i32 %.tr4, 5
   br i1 %8, label %common.ret.loopexit, label %if.exit.L4
 }

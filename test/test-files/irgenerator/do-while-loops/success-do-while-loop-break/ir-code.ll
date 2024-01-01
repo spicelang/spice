@@ -29,7 +29,7 @@ dowhile.body.L6:                                  ; preds = %dowhile.foot.L6, %i
   %5 = sext i16 %4 to i32
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double %3, i32 %5)
   %7 = load i16, ptr %loopCounterInner, align 2
-  %8 = sub i16 %7, 1
+  %8 = sub nsw i16 %7, 1
   store i16 %8, ptr %loopCounterInner, align 2
   br label %dowhile.exit.L3
 

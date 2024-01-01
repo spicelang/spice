@@ -17,7 +17,7 @@ define dso_local i32 @main() #0 {
   store i32 2, ptr %1, align 4
   store i32 0, ptr %2, align 4
   %3 = load i32, ptr %val, align 4
-  %4 = add i32 %3, 8
+  %4 = add nsw i32 %3, 8
   store i32 %4, ptr %val, align 4
   %5 = load i32, ptr %val, align 4
   %6 = icmp eq i32 %5, 9

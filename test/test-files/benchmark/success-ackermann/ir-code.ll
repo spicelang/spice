@@ -17,7 +17,7 @@ define private i32 @_Z3ackii(i32 %0, i32 %1) {
 
 if.then.L2:                                       ; preds = %2
   %5 = load i32, ptr %n, align 4
-  %6 = add i32 %5, 1
+  %6 = add nsw i32 %5, 1
   ret i32 %6
 
 if.exit.L2:                                       ; preds = %2
@@ -27,16 +27,16 @@ if.exit.L2:                                       ; preds = %2
 
 if.then.L3:                                       ; preds = %if.exit.L2
   %9 = load i32, ptr %m, align 4
-  %10 = sub i32 %9, 1
+  %10 = sub nsw i32 %9, 1
   %11 = call i32 @_Z3ackii(i32 %10, i32 1)
   ret i32 %11
 
 if.exit.L3:                                       ; preds = %if.exit.L2
   %12 = load i32, ptr %m, align 4
-  %13 = sub i32 %12, 1
+  %13 = sub nsw i32 %12, 1
   %14 = load i32, ptr %m, align 4
   %15 = load i32, ptr %n, align 4
-  %16 = sub i32 %15, 1
+  %16 = sub nsw i32 %15, 1
   %17 = call i32 @_Z3ackii(i32 %14, i32 %16)
   %18 = call i32 @_Z3ackii(i32 %13, i32 %17)
   ret i32 %18

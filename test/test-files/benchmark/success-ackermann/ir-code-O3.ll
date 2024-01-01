@@ -12,7 +12,7 @@ define private fastcc i32 @_Z3ackii(i32 %0, i32 %1) unnamed_addr #0 {
 
 if.then.L2:                                       ; preds = %tailrecurse.backedge, %2
   %.tr7.lcssa = phi i32 [ %1, %2 ], [ %.tr7.be, %tailrecurse.backedge ]
-  %4 = add i32 %.tr7.lcssa, 1
+  %4 = add nsw i32 %.tr7.lcssa, 1
   ret i32 %4
 
 if.exit.L2:                                       ; preds = %2, %tailrecurse.backedge
@@ -28,7 +28,7 @@ tailrecurse.backedge:                             ; preds = %if.exit.L2, %if.exi
   br i1 %6, label %if.then.L2, label %if.exit.L2
 
 if.exit.L3:                                       ; preds = %if.exit.L2
-  %7 = add i32 %.tr79, -1
+  %7 = add nsw i32 %.tr79, -1
   %8 = tail call fastcc i32 @_Z3ackii(i32 %.tr8, i32 %7)
   br label %tailrecurse.backedge
 }

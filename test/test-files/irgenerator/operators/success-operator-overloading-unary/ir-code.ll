@@ -16,7 +16,7 @@ define private ptr @_Z16op.plusplus.postR10TestStruct(ptr %0) {
   %2 = load ptr, ptr %ts, align 8
   %test_addr = getelementptr inbounds %struct.TestStruct, ptr %2, i32 0, i32 0
   %3 = load i64, ptr %test_addr, align 8
-  %4 = add i64 %3, 1
+  %4 = add nsw i64 %3, 1
   store i64 %4, ptr %test_addr, align 8
   %5 = load ptr, ptr %ts, align 8
   ret ptr %5
@@ -34,7 +34,7 @@ define dso_local i32 @main() #0 {
   store ptr %2, ptr %output, align 8
   %test_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 0
   %3 = load i64, ptr %test_addr, align 8
-  %4 = add i64 %3, 1
+  %4 = add nsw i64 %3, 1
   store i64 %4, ptr %test_addr, align 8
   %5 = load ptr, ptr %output, align 8
   %test_addr1 = getelementptr inbounds %struct.TestStruct, ptr %5, i32 0, i32 0
