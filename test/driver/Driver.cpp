@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2023 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
 #include "Driver.h"
 
@@ -9,12 +9,12 @@ void Driver::createInterface() {
   app.positionals_at_end();
   app.require_subcommand(0);
   app.allow_extras(false);
-  app.footer("(c) Marc Auberer 2021-2023");
+  app.footer("(c) Marc Auberer 2021-2024");
 
   // Add version flag
   std::string versionName = std::string(SPICE_VERSION);
   std::string builtBy = std::string(SPICE_BUILT_BY);
-  std::string versionString = "Spice version " + versionName + "\nbuilt by: " + builtBy + "\n\n(c) Marc Auberer 2021-2023";
+  std::string versionString = "Spice version " + versionName + "\nbuilt by: " + builtBy + "\n\n(c) Marc Auberer 2021-2024";
   app.set_version_flag("--version,-v", versionString);
 }
 

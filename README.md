@@ -93,4 +93,4 @@ But you can try to compile to the following architectures without any stability 
 ## Contribute to the project
 If you want to contribute to this project, please ensure you comply with the [contribution guidelines](./CONTRIBUTING.md).
 
-© ChilliBits 2021-2023
+© ChilliBits 2021-2024

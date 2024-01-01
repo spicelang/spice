@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2023 ChilliBits. All rights reserved.
+// Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
 #include "ParserError.h"
 
