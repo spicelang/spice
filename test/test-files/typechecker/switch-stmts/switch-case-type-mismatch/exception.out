@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./test-files/typechecker/switch-stmts/switch-case-type-mismatch/source.spice:3:14:
+Case constant type does not match switch expression type: Case value type does not match the switch expression type
+
+3  case 1.0: { return 1; }
+        ^^^

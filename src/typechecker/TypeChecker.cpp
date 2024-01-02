@@ -298,6 +298,12 @@ std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   // Visit children
   visitChildren(node);
 
+  // Check if case constant types match switch expression type
+  for (CaseBranchNode *caseBranchNode : node->caseBranches())
+    for (ConstantNode *constantNode : caseBranchNode->constantLst()->constants())
+      if (constantNode->getEvaluatedSymbolType(manIdx) != exprType)
+        SOFT_ERROR_ER(constantNode, SWITCH_CASE_TYPE_MISMATCH, "Case value type does not match the switch expression type")
+
   return nullptr;
 }
 

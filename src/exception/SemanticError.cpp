@@ -106,6 +106,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Condition must be bool";
   case SWITCH_EXPR_MUST_BE_PRIMITIVE:
     return "Switch expression of wrong type";
+  case SWITCH_CASE_TYPE_MISMATCH:
+    return "Case constant type does not match switch expression type";
   case MISSING_MAIN_FUNCTION:
     return "Spice programs must contain a main function";
   case FCT_PARAM_IS_TYPE_DYN:
