@@ -1,0 +1,29 @@
+f<string> digitToString(unsigned int number) {
+    switch number {
+        case 0: { return "Zero"; }
+        case 1: { return "One"; }
+        case 2: { return "Two"; }
+        case 3: { return "Three"; }
+        case 4: { return "Four"; }
+        case 5: { return "Five"; }
+        case 6: { return "Six"; }
+        case 7: { return "Seven"; }
+        case 8: { return "Eight"; }
+        case 9: { return "Nine"; }
+        default: { return "NaN"; }
+    }
+}
+
+f<int> main() {
+    printf("1 is %s\n", digitToString(1));
+    printf("8 is %s\n", digitToString(8));
+    printf("5 is %s\n", digitToString(5));
+    printf("9 is %s\n", digitToString(9));
+    printf("2 is %s\n", digitToString(2));
+    printf("3 is %s\n", digitToString(3));
+    printf("4 is %s\n", digitToString(4));
+    printf("7 is %s\n", digitToString(7));
+    printf("6 is %s\n", digitToString(6));
+    printf("0 is %s\n", digitToString(0));
+    printf("10 is %s\n", digitToString(10));
+}

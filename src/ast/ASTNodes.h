@@ -143,20 +143,20 @@ public:
     return children.size() == 1 && children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   }
 
-  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &fctName) {
-    assert(false && "Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode");
-    return nullptr;
-  }
+  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &fctName) {              // LCOV_EXCL_LINE
+    assert(false && "Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
+    return nullptr;                                                                                              // LCOV_EXCL_LINE
+  }                                                                                                              // LCOV_EXCL_LINE
 
-  [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() {
-    assert(false && "Must be called on a StructDefNode");
-    return nullptr;
-  }
+  [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() { // LCOV_EXCL_LINE
+    assert(false && "Must be called on a StructDefNode");                  // LCOV_EXCL_LINE
+    return nullptr;                                                        // LCOV_EXCL_LINE
+  }                                                                        // LCOV_EXCL_LINE
 
-  [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() {
-    assert(false && "Must be called on a InterfaceDefNode");
-    return nullptr;
-  }
+  [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() { // LCOV_EXCL_LINE
+    assert(false && "Must be called on a InterfaceDefNode");                     // LCOV_EXCL_LINE
+    return nullptr;                                                              // LCOV_EXCL_LINE
+  }                                                                              // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }

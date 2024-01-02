@@ -341,15 +341,18 @@ std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
 
 std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   diGenerator.setSourceLocation(node);
+  const std::vector<CaseBranchNode *> caseBranches = node->caseBranches();
+  const DefaultBranchNode *defaultBranch = node->defaultBranch();
 
   // Create blocks
-  const std::string codeLine = node->codeLoc.toPrettyLine();
-  const std::vector<CaseBranchNode *> caseBranches = node->caseBranches();
   std::vector<llvm::BasicBlock *> bCases;
   bCases.reserve(caseBranches.size());
-  for (size_t i = 0; i < caseBranches.size(); i++)
-    bCases.push_back(createBlock("switch.case." + codeLine));
-  llvm::BasicBlock *bDefault = node->hasDefaultBranch ? createBlock("switch.default." + codeLine) : nullptr;
+  for (auto caseBranch : caseBranches)
+    bCases.push_back(createBlock("switch.case." + caseBranch->codeLoc.toPrettyLine()));
+  llvm::BasicBlock *bDefault = nullptr;
+  if (node->hasDefaultBranch)
+    bDefault = createBlock("switch.default." + defaultBranch->codeLoc.toPrettyLine());
+  const std::string codeLine = node->codeLoc.toPrettyLine();
   llvm::BasicBlock *bExit = createBlock("switch.exit." + codeLine);
 
   // Save the blocks for break and continue
@@ -361,6 +364,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   // Generate switch instruction
   llvm::SwitchInst *switchInst = builder.CreateSwitch(exprValue, bDefault ?: bExit, caseBranches.size());
 
+  // Generate case branches
   for (size_t i = 0; i < caseBranches.size(); i++) {
     const CaseBranchNode *caseBranch = caseBranches.at(i);
 
@@ -393,12 +397,13 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     }
   }
 
+  // Generate default branch
   if (node->hasDefaultBranch) {
     // Switch to default block
     switchToBlock(bDefault);
 
     // Visit default body
-    visit(node->defaultBranch()->body());
+    visit(defaultBranch->body());
 
     // Create jump from default to exit block
     insertJump(bExit);
