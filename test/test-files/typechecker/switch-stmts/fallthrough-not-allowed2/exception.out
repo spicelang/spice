@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./test-files/typechecker/switch-stmts/fallthrough-not-allowed2/source.spice:8:13:
+Fallthrough statement not allowed here: Fallthrough is only allowed in case branches
+
+8  fallthrough;
+   ^^^^^^^^^^^

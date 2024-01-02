@@ -47,6 +47,8 @@ public:
   std::any visitDoWhileLoop(DoWhileLoopNode *node) override;
   std::any visitIfStmt(IfStmtNode *node) override;
   std::any visitElseStmt(ElseStmtNode *node) override;
+  std::any visitCaseBranch(CaseBranchNode *node) override;
+  std::any visitDefaultBranch(DefaultBranchNode *node) override;
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) override;
   std::any visitEnumItem(EnumItemNode *node) override;
   std::any visitField(FieldNode *node) override;

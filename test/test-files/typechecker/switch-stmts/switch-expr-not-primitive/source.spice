@@ -1,0 +1,9 @@
+type Struct struct {
+    int a
+    int b
+}
+
+f<int> main() {
+    Struct s = Struct{1, 2};
+    switch s {}
+}

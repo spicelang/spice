@@ -219,6 +219,20 @@ size_t Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
 }
 
 /**
+ * Check if this scope is one of the child scopes of a switch statement
+ *
+ * @return Child scope of switch statement or not
+ */
+bool Scope::isInCaseBranch() const { // NOLINT(misc-no-recursion)
+  assert(parent != nullptr);
+  if (parent->parent == nullptr)
+    return false;
+  if (type == ScopeType::CASE_BODY)
+    return true;
+  return parent->isInCaseBranch();
+}
+
+/**
  * Collect all warnings, produced within this scope
  *
  * @param List of warnings

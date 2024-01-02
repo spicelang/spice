@@ -54,7 +54,7 @@ importStmt: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;
 returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INT_LIT?;
 continueStmt: CONTINUE INT_LIT?;
-fallthroughStmt: FALLTHROUGH SEMICOLON;
+fallthroughStmt: FALLTHROUGH;
 assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Builtin functions

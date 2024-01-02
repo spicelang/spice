@@ -104,6 +104,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Cannot re-assign constant variable";
   case CONDITION_MUST_BE_BOOL:
     return "Condition must be bool";
+  case SWITCH_EXPR_MUST_BE_PRIMITIVE:
+    return "Switch expression of wrong type";
   case MISSING_MAIN_FUNCTION:
     return "Spice programs must contain a main function";
   case FCT_PARAM_IS_TYPE_DYN:
@@ -112,6 +114,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Invalid number of break calls";
   case INVALID_CONTINUE_NUMBER:
     return "Invalid number of continue calls";
+  case FALLTHROUGH_NOT_ALLOWED:
+    return "Fallthrough statement not allowed here";
   case PRINTF_TYPE_ERROR:
     return "Types of printf call not matching";
   case PRINTF_ARG_COUNT_ERROR:

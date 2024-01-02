@@ -319,6 +319,9 @@ std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
 std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
   auto switchStmtNode = createNode<SwitchStmtNode>(ctx);
 
+  // Enrich
+  switchStmtNode->hasDefaultBranch = ctx->defaultBranch();
+
   // Visit children
   visitChildren(ctx);
 

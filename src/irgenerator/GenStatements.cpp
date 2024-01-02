@@ -94,11 +94,11 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   return nullptr;
 }
 
-std::any IRGenerator::visitModAttr(const spice::compiler::ModAttrNode *node) {
+std::any IRGenerator::visitModAttr(const ModAttrNode *node) {
   return nullptr; // Noop
 }
 
-std::any IRGenerator::visitTopLevelDefinitionAttr(const spice::compiler::TopLevelDefinitionAttrNode *node) {
+std::any IRGenerator::visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNode *node) {
   return nullptr; // Noop
 }
 
@@ -158,6 +158,15 @@ std::any IRGenerator::visitContinueStmt(const ContinueStmtNode *node) {
   // Jump to destination block
   const size_t blockIdx = continueBlocks.size() - node->continueTimes;
   insertJump(continueBlocks.at(blockIdx));
+
+  return nullptr;
+}
+
+std::any IRGenerator::visitFallthroughStmt(const FallthroughStmtNode *node) {
+  diGenerator.setSourceLocation(node);
+
+  // Jump to destination block
+  insertJump(fallthroughBlocks.top());
 
   return nullptr;
 }

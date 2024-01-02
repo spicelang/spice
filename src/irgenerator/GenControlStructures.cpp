@@ -339,6 +339,105 @@ std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
   return nullptr;
 }
 
+std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
+  diGenerator.setSourceLocation(node);
+
+  // Create blocks
+  const std::string codeLine = node->codeLoc.toPrettyLine();
+  const std::vector<CaseBranchNode *> caseBranches = node->caseBranches();
+  std::vector<llvm::BasicBlock *> bCases;
+  bCases.reserve(caseBranches.size());
+  for (size_t i = 0; i < caseBranches.size(); i++)
+    bCases.push_back(createBlock("switch.case." + codeLine));
+  llvm::BasicBlock *bDefault = node->hasDefaultBranch ? createBlock("switch.default." + codeLine) : nullptr;
+  llvm::BasicBlock *bExit = createBlock("switch.exit." + codeLine);
+
+  // Save the blocks for break and continue
+  breakBlocks.push_back(bExit);
+
+  // Visit switch expression
+  llvm::Value *exprValue = resolveValue(node->assignExpr());
+
+  // Generate switch instruction
+  llvm::SwitchInst *switchInst = builder.CreateSwitch(exprValue, bDefault ?: bExit, caseBranches.size());
+
+  for (size_t i = 0; i < caseBranches.size(); i++) {
+    const CaseBranchNode *caseBranch = caseBranches.at(i);
+
+    // Push fallthrough block
+    llvm::BasicBlock *bFallthrough = bDefault;
+    if (i + 1 < caseBranches.size())
+      bFallthrough = bCases.at(i + 1);
+    fallthroughBlocks.push(bFallthrough);
+
+    // Switch to case block
+    switchToBlock(bCases.at(i));
+
+    // Visit case body
+    visit(caseBranch->body());
+
+    // Create jump from case to exit block
+    insertJump(bExit);
+
+    // Pop fallthrough block
+    fallthroughBlocks.pop();
+
+    // Add case to switch instruction
+    const std::vector<ConstantNode *> constantNodes = caseBranch->constantLst()->constants();
+    for (ConstantNode *constNode : constantNodes) {
+      const ConstantNode::PrimitiveValueType type = constNode->type;
+      assert(constNode->hasDirectCompileTimeValue);
+      assert(type != ConstantNode::TYPE_NONE && type != ConstantNode::TYPE_DOUBLE && type != ConstantNode::TYPE_STRING);
+      llvm::Constant *constant = getConst(constNode->getCompileTimeValue(), constNode->getEvaluatedSymbolType(manIdx), constNode);
+      switchInst->addCase(llvm::cast<llvm::ConstantInt>(constant), bCases.at(i));
+    }
+  }
+
+  if (node->hasDefaultBranch) {
+    // Switch to default block
+    switchToBlock(bDefault);
+
+    // Visit default body
+    visit(node->defaultBranch()->body());
+
+    // Create jump from default to exit block
+    insertJump(bExit);
+  }
+
+  // Switch to exit block
+  switchToBlock(bExit);
+
+  // Pop basic blocks from break stack
+  assert(breakBlocks.back() == bExit);
+  breakBlocks.pop_back();
+
+  return nullptr;
+}
+
+std::any IRGenerator::visitCaseBranch(const CaseBranchNode *node) {
+  diGenerator.setSourceLocation(node);
+
+  // Change to case body scope
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::CASE_BODY);
+
+  // Visit case body
+  visit(node->body());
+
+  return nullptr;
+}
+
+std::any IRGenerator::visitDefaultBranch(const DefaultBranchNode *node) {
+  diGenerator.setSourceLocation(node);
+
+  // Change to default body scope
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::DEFAULT_BODY);
+
+  // Visit case body
+  visit(node->body());
+
+  return nullptr;
+}
+
 std::any IRGenerator::visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node) {
   diGenerator.setSourceLocation(node);
 

@@ -1,4 +1,17 @@
-type Visitable interface {
+f<int> main() {
+    int i = 1;
+    switch i {
+        case 1, 2: {
+            printf("1 or 2\n");
+            fallthrough;
+        }
+        default: {
+            printf("Default\n");
+        }
+    }
+}
+
+/*type Visitable interface {
     p print();
 }
 
@@ -14,7 +27,7 @@ f<int> main() {
     Test1 t1 = Test1{123};
     Visitable* v = &t1;
     v.print();
-}
+}*/
 
 /*import "../../src-bootstrap/lexer/lexer";
 import "../../src-bootstrap/parser/parser";
