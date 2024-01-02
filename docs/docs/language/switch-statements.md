@@ -46,7 +46,7 @@ being executed.
 In Spice, the `switch` statement does not fall through by default. This means, that if you don't have to use the `break` keyword
 to prevent the next case from being executed, like in other languages. In Spice, you have to use the `fallthrough` keyword to
 fall through to the next case. This originated from the assumption, that you more often have the situation, that you only want to
-execute one branch, instead of having fallthrough behaviour.
+execute one branch, instead of having fallthrough behavior.
 
 The fallthrough keyword can be used like this:
 ```spice
