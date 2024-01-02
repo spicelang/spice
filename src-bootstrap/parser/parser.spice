@@ -517,10 +517,47 @@ f<ASTElseStmtNode*> Parser.parseElseStmt() {
     return this.concludeNode(elseStmtNode);
 }
 
+f<ASTSwitchStmtNode*> Parser.parseSwitchStmt() {
+    dyn switchStmtNode = this.createNode<ASTSwitchStmtNode>();
+
+    this.lexer.expect(TokenType::SWITCH);
+    this.parseAssignExpr();
+    this.lexer.expect(TokenType::LBRACE);
+    while !this.currentTokenIs(TokenType::RBRACE) {
+        this.parseCaseBranch();
+    }
+    if this.currentTokenIs(TokenType::DEFAULT) {
+        this.parseDefaultBranch();
+    }
+    this.lexer.expect(TokenType::RBRACE);
+
+    return this.concludeNode(switchStmtNode);
+}
+
+f<ASTCaseBranchNode*> Parser.parseCaseBranch() {
+    dyn caseBranchNode = this.createNode<ASTCaseBranchNode>();
+
+    this.lexer.expect(TokenType::CASE);
+    this.parseConstantLst();
+    this.lexer.expect(TokenType::COLON);
+    this.parseStmtLst();
+
+    return this.concludeNode(caseBranchNode);
+}
+
+f<ASTDefaultBranchNode*> Parser.parseDefaultBranch() {
+    dyn defaultBranchNode = this.createNode<ASTDefaultBranchNode>();
+
+    this.lexer.expect(TokenType::DEFAULT);
+    this.lexer.expect(TokenType::COLON);
+    this.parseStmtLst();
+
+    return this.concludeNode(defaultBranchNode);
+}
+
 f<ASTAnonymousBlockStmtNode*> Parser.parseAnonymousBlockStmt() {
     dyn anonymousBlockStmtNode = this.createNode<ASTAnonymousBlockStmtNode>();
 
-    // Parse stmtLst
     this.parseStmtLst();
 
     return this.concludeNode(anonymousBlockStmtNode);
@@ -692,6 +729,8 @@ f<ASTStmtNode*> Parser.parseStmt() {
         this.parseBreakStmt();
     } else if this.currentTokenIs(TokenType::CONTINUE) {
         this.parseContinueStmt();
+    } else if this.currentTokenIs(TokenType::FALLTHROUGH) {
+        this.parseFallthroughStmt();
     } else if this.currentTokenIsOneOf(declStmtSelect, sizeof(declStmtSelect)) {
         this.parseDeclStmt();
     } else {
@@ -853,6 +892,14 @@ f<ASTContinueStmtNode*> Parser.parseContinueStmt() {
     }
 
     return this.concludeNode(continueStmtNode);
+}
+
+f<ASTFallthroughStmtNode*> Parser.parseFallthroughStmt() {
+    dyn fallthroughStmtNode = this.createNode<ASTFallthroughStmtNode>();
+
+    this.lexer.expect(TokenType::FALLTHROUGH);
+
+    return this.concludeNode(fallthroughStmtNode);
 }
 
 f<ASTAssertStmtNode*> Parser.parseAssertStmt() {
