@@ -29,7 +29,7 @@ matches, the optional `default` branch gets executed. The default branch must be
 order of case branches does not matter.
 
 !!! note "Optional parentheses"
-As with the for, foreach and while loops, the parentheses around the head of the `switch` statement are optional.
+    As with the for, foreach and while loops, the parentheses around the head of the `switch` statement are optional.
 
 Let's take a look at a switch statement:
 ```spice
@@ -43,10 +43,10 @@ being executed.
 
 ## Fallthrough
 
-In Spice, the `switch` statement does not fall through by default. This means, that if you don't have to use the `break` keyword
-to prevent the next case from being executed, like in other languages. In Spice, you have to use the `fallthrough` keyword to
-fall through to the next case. This originated from the assumption, that you more often have the situation, that you only want to
-execute one branch, instead of having fallthrough behavior.
+In Spice, the `switch` statement does not fall through by default. This means, that you don't need to use the `break` keyword to
+prevent the next case from being executed, like in other languages. In Spice, you have to use the `fallthrough` keyword to fall
+through to the next case branch. This originated from the assumption, that you more often want to execute one branch, instead of
+having fallthrough behavior.
 
 The fallthrough keyword can be used like this:
 ```spice
