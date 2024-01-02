@@ -56,6 +56,9 @@ public:
   std::any visitDoWhileLoop(const DoWhileLoopNode *node) override;
   std::any visitIfStmt(const IfStmtNode *node) override;
   std::any visitElseStmt(const ElseStmtNode *node) override;
+  std::any visitSwitchStmt(const SwitchStmtNode *node) override;
+  std::any visitCaseBranch(const CaseBranchNode *node) override;
+  std::any visitDefaultBranch(const DefaultBranchNode *node) override;
   std::any visitAssertStmt(const AssertStmtNode *node) override;
   std::any visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node) override;
   // Statements
@@ -68,6 +71,7 @@ public:
   std::any visitReturnStmt(const ReturnStmtNode *node) override;
   std::any visitBreakStmt(const BreakStmtNode *node) override;
   std::any visitContinueStmt(const ContinueStmtNode *node) override;
+  std::any visitFallthroughStmt(const FallthroughStmtNode *node) override;
   // Builtin functions
   std::any visitPrintfCall(const PrintfCallNode *node) override;
   std::any visitSizeofCall(const SizeofCallNode *node) override;
@@ -172,6 +176,7 @@ private:
   } llvmTypes;
   std::vector<llvm::BasicBlock *> breakBlocks;
   std::vector<llvm::BasicBlock *> continueBlocks;
+  std::stack<llvm::BasicBlock *> fallthroughBlocks;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::Instruction *allocaInsertInst = nullptr;
   bool blockAlreadyTerminated = false;

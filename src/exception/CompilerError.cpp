@@ -11,7 +11,7 @@ CompilerError::CompilerError(const CompilerErrorType &type, const std::string &m
   errorMessage += getMessagePrefix(type) + ": " + message;
 }
 
-CompilerError::CompilerError(const CodeLoc &codeLoc, const spice::compiler::CompilerErrorType &type, const std::string &message) {
+CompilerError::CompilerError(const CodeLoc &codeLoc, const CompilerErrorType &type, const std::string &message) {
   errorMessage = "[Error|Compiler] " + codeLoc.toPrettyString() + ":\n";
   errorMessage += getMessagePrefix(type) + ": " + message;
 }

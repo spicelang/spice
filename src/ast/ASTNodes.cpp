@@ -7,61 +7,82 @@
 
 namespace spice::compiler {
 
-bool MainFctDefNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body()->returnsOnAllControlPaths(overrideUnreachable);
+bool MainFctDefNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
-bool FctDefBaseNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body()->returnsOnAllControlPaths(overrideUnreachable);
+bool FctDefBaseNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
-bool ForLoopNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+bool ForLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   const AssignExprNode *cond = condAssign();
   return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
 }
 
-bool WhileLoopNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+bool WhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   const AssignExprNode *cond = condition();
   return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
 }
 
-bool DoWhileLoopNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
+bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   const AssignExprNode *cond = condition();
   return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
 }
 
-bool IfStmtNode::returnsOnAllControlPaths(bool *overrideUnreachable) const { // NOLINT(misc-no-recursion)
+bool IfStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
   // An if statement returns on all control paths, if then and else block return on all control paths
   const AssignExprNode *cond = condition();
   if (!cond->hasCompileTimeValue())
-    return thenBody()->returnsOnAllControlPaths(overrideUnreachable) && elseStmt() != nullptr &&
-           elseStmt()->returnsOnAllControlPaths(overrideUnreachable);
+    return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable) && elseStmt() != nullptr &&
+           elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   // If the condition always evaluates to 'true' only the then block must return and vice versa
   const CompileTimeValue &compileTimeValue = cond->getCompileTimeValue();
   if (compileTimeValue.boolValue)
-    return thenBody()->returnsOnAllControlPaths(overrideUnreachable);
-  return elseStmt() != nullptr && elseStmt()->returnsOnAllControlPaths(overrideUnreachable);
+    return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return elseStmt() != nullptr && elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
-bool ElseStmtNode::returnsOnAllControlPaths(bool *overrideUnreachable) const { // NOLINT(misc-no-recursion)
-  return isElseIf ? ifStmt()->returnsOnAllControlPaths(overrideUnreachable)
-                  : body()->returnsOnAllControlPaths(overrideUnreachable);
+bool ElseStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
+  return isElseIf ? ifStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable)
+                  : body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+}
+
+bool SwitchStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+  const std::vector<CaseBranchNode *> caseNodes = caseBranches();
+  const DefaultBranchNode *defaultBranchNode = defaultBranch();
+
+  const bool allCaseBranchesReturn = std::ranges::all_of(
+      caseNodes, [=](CaseBranchNode *node) { return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable); });
+  const bool defaultBranchReturns =
+      !defaultBranchNode || defaultBranchNode->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+
+  return allCaseBranchesReturn && defaultBranchReturns;
+}
+
+bool CaseBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+}
+
+bool DefaultBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
   // An empty statement list does not return at all
   if (children.empty())
     return false;
-  // A statement list returns on all control paths, if the one statement returns on all control paths
+  // A statement list returns on all control paths, if the one direct child statement returns on all control paths
   bool returns = false;
-  bool overrideUnreachable = false;
+  bool doSetPredecessorsUnreachable = true;
   for (ASTNode *child : children) {
     if (!child)
       continue;
     if (returns) {
-      child->unreachable = !overrideUnreachable;
-    } else if (child->returnsOnAllControlPaths(&overrideUnreachable)) {
+      // Prevent marking as unreachable if doSetPredecessorsUnreachable is set to false
+      child->unreachable = doSetPredecessorsUnreachable;
+    } else if (child->returnsOnAllControlPaths(&doSetPredecessorsUnreachable)) {
       returns = true;
     }
   }
@@ -104,22 +125,22 @@ bool AttrLstNode::hasAttr(const std::string &key) const {
 
 const CompileTimeValue *AttrNode::getValue() const { return value() ? &value()->compileTimeValue : nullptr; }
 
-bool AssertStmtNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  const bool returns = hasCompileTimeValue() && !compileTimeValue.boolValue;
-  *overrideUnreachable |= returns;
-  return returns;
-}
+bool FallthroughStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { return true; }
 
-bool AssignExprNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  bool returns;
-  if (children.size() == 1) {
-    returns = children.front()->returnsOnAllControlPaths(overrideUnreachable);
+bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+  if (op == OP_NONE) {
+    return children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   } else {
-    returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr() &&
-              lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
+    bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr() &&
+                   lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
+
+    // If we assign the result variable, we technically return from the function, but at the end of the function.
+    // Therefore, the following code is not unreachable, but will be executed in any case.
+    if (returns)
+      *doSetPredecessorsUnreachable = false;
+
+    return returns;
   }
-  *overrideUnreachable |= returns;
-  return returns;
 }
 
 bool TernaryExprNode::hasCompileTimeValue() const {
@@ -375,7 +396,7 @@ CompileTimeValue CastExprNode::getCompileTimeValue() const {
   return prefixUnaryExpr()->getCompileTimeValue();
 }
 
-bool PrefixUnaryExprNode::hasCompileTimeValue() const {
+bool PrefixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursion)
   if (postfixUnaryExpr())
     return postfixUnaryExpr()->hasCompileTimeValue();
 
@@ -384,7 +405,7 @@ bool PrefixUnaryExprNode::hasCompileTimeValue() const {
   return isOperatorSupported && prefixUnary()->hasCompileTimeValue();
 }
 
-CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const {
+CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-no-recursion)
   if (postfixUnaryExpr())
     return postfixUnaryExpr()->getCompileTimeValue();
 
@@ -403,7 +424,7 @@ CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const {
   throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExprNode::getCompileTimeValue()");
 }
 
-bool PostfixUnaryExprNode::hasCompileTimeValue() const {
+bool PostfixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursion)
   if (atomicExpr())
     return atomicExpr()->hasCompileTimeValue();
 
@@ -411,7 +432,7 @@ bool PostfixUnaryExprNode::hasCompileTimeValue() const {
   return isOperatorSupported && postfixUnaryExpr()->hasCompileTimeValue();
 }
 
-CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const {
+CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-no-recursion)
   if (atomicExpr())
     return atomicExpr()->getCompileTimeValue();
 
@@ -449,7 +470,7 @@ bool LambdaProcNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
   return body()->returnsOnAllControlPaths(overrideUnreachable);
 }
 
-void DataTypeNode::setFieldTypeRecursive() {
+void DataTypeNode::setFieldTypeRecursive() { // NOLINT(*-no-recursion)
   // Set the current node to field type
   isFieldType = true;
   // Do the same for all template nodes

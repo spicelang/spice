@@ -53,7 +53,7 @@ SourceFile *RuntimeModuleManager::loadModule(SourceFile *parentSourceFile, Runti
   return moduleSourceFile;
 }
 
-ModuleNamePair RuntimeModuleManager::resolveNamePair(spice::compiler::RuntimeModule runtimeModule) {
+ModuleNamePair RuntimeModuleManager::resolveNamePair(RuntimeModule runtimeModule) {
   switch (runtimeModule) {
   case STRING_RT:
     return {STRING_RT_IMPORT_NAME, "string_rt"};

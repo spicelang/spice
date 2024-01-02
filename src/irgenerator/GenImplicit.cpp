@@ -421,7 +421,7 @@ void IRGenerator::generateDefaultCopyCtor(const Function *copyCtorFunction) {
   generateImplicitProcedure(generateBody, copyCtorFunction);
 }
 
-void IRGenerator::generateDtorBodyPreamble(const spice::compiler::Function *dtorFunction) {
+void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
   // Retrieve struct scope
   Scope *structScope = dtorFunction->bodyScope->parent;
   assert(structScope != nullptr);

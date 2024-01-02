@@ -27,6 +27,8 @@ enum class ScopeType : uint8_t {
   WHILE_BODY,
   FOR_BODY,
   FOREACH_BODY,
+  CASE_BODY,
+  DEFAULT_BODY,
   UNSAFE_BODY,
   ANONYMOUS_BLOCK_BODY
 };
@@ -81,6 +83,7 @@ public:
   [[nodiscard]] size_t getVirtualMethodCount() const;
   [[nodiscard]] bool hasRefFields();
   [[nodiscard]] size_t getLoopNestingDepth() const;
+  [[nodiscard]] bool isInCaseBranch() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
   [[nodiscard]] bool isImportedBy(const Scope *askingScope) const;
   const StructRegistry &getStructs() const { return structs; }

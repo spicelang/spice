@@ -507,6 +507,34 @@ std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
   return nullptr;
 }
 
+std::any SymbolTableBuilder::visitCaseBranch(CaseBranchNode *node) {
+  // Create scope for the case branch
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), ScopeType::CASE_BODY, &node->body()->codeLoc);
+
+  // Visit case body
+  visit(node->body());
+
+  // Leave case body scope
+  currentScope = node->bodyScope->parent;
+
+  return nullptr;
+}
+
+std::any SymbolTableBuilder::visitDefaultBranch(DefaultBranchNode *node) {
+  // Create scope for the default branch
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getScopeId(), ScopeType::DEFAULT_BODY, &node->body()->codeLoc);
+
+  // Visit default body
+  visit(node->body());
+
+  // Leave default body scope
+  currentScope = node->bodyScope->parent;
+
+  return nullptr;
+}
+
 std::any SymbolTableBuilder::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Create scope for the anonymous block body
   node->bodyScope = currentScope =

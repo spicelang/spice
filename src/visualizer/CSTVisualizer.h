@@ -46,6 +46,9 @@ public:
   std::any visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) override { return buildRule(ctx); }
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override { return buildRule(ctx); }
+  std::any visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) override { return buildRule(ctx); }
+  std::any visitCaseBranch(SpiceParser::CaseBranchContext *ctx) override { return buildRule(ctx); }
+  std::any visitDefaultBranch(SpiceParser::DefaultBranchContext *ctx) override { return buildRule(ctx); }
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override { return buildRule(ctx); }
@@ -65,10 +68,12 @@ public:
   std::any visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *ctx) override { return buildRule(ctx); }
   std::any visitAttrLst(SpiceParser::AttrLstContext *ctx) override { return buildRule(ctx); }
   std::any visitAttr(SpiceParser::AttrContext *ctx) override { return buildRule(ctx); }
+  std::any visitConstantLst(SpiceParser::ConstantLstContext *ctx) override { return buildRule(ctx); }
   std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override { return buildRule(ctx); }
+  std::any visitFallthroughStmt(SpiceParser::FallthroughStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override { return buildRule(ctx); }
   std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override { return buildRule(ctx); }
   std::any visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) override { return buildRule(ctx); }

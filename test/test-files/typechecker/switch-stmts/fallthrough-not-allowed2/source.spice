@@ -1,0 +1,12 @@
+f<int> main() {
+    long l = 123l;
+    switch l {
+        case 123l: {
+            return 0;
+        }
+        default: {
+            fallthrough;
+            return 1;
+        }
+    }
+}

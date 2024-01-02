@@ -262,7 +262,7 @@ bool SymbolType::isErrorObj() const {
  * @param node ASTNode
  * @return Struct implements interface or not
  */
-bool SymbolType::implements(const SymbolType &symbolType, const spice::compiler::ASTNode *node) const {
+bool SymbolType::implements(const SymbolType &symbolType, const ASTNode *node) const {
   assert(is(TY_STRUCT) && symbolType.is(TY_INTERFACE));
   Struct *spiceStruct = getStruct(node);
   assert(spiceStruct != nullptr);

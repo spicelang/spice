@@ -139,24 +139,24 @@ public:
     return children.front()->getCompileTimeValue();
   }
 
-  [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *overrideUnreachable) const { // NOLINT(misc-no-recursion)
-    return children.size() == 1 && children.front()->returnsOnAllControlPaths(overrideUnreachable);
+  [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
+    return children.size() == 1 && children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   }
 
-  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &fctName) {
-    assert(false && "Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode");
-    return nullptr;
-  }
+  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &fctName) {              // LCOV_EXCL_LINE
+    assert(false && "Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
+    return nullptr;                                                                                              // LCOV_EXCL_LINE
+  }                                                                                                              // LCOV_EXCL_LINE
 
-  [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() {
-    assert(false && "Must be called on a StructDefNode");
-    return nullptr;
-  }
+  [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() { // LCOV_EXCL_LINE
+    assert(false && "Must be called on a StructDefNode");                  // LCOV_EXCL_LINE
+    return nullptr;                                                        // LCOV_EXCL_LINE
+  }                                                                        // LCOV_EXCL_LINE
 
-  [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() {
-    assert(false && "Must be called on a InterfaceDefNode");
-    return nullptr;
-  }
+  [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() { // LCOV_EXCL_LINE
+    assert(false && "Must be called on a InterfaceDefNode");                     // LCOV_EXCL_LINE
+    return nullptr;                                                              // LCOV_EXCL_LINE
+  }                                                                              // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
@@ -212,7 +212,7 @@ public:
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
   [[nodiscard]] std::string getSignature() const { return takesArgs ? "main(int, string[])" : "main()"; }
-  bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
@@ -277,7 +277,7 @@ public:
   [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(name->name, codeLoc); }
   std::vector<Function *> *getFctManifestations(const std::string &_) override { return &manifestations; }
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
-  bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
   FctNameNode *name;
@@ -555,7 +555,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "for:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -609,7 +609,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "while:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -632,7 +632,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "dowhile:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
@@ -656,7 +656,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
   Scope *thenBodyScope = nullptr;
@@ -679,11 +679,79 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
   bool isElseIf = false;
   Scope *elseBodyScope = nullptr;
+};
+
+// ======================================================== SwitchStmtNode =======================================================
+
+class SwitchStmtNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSwitchStmt(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSwitchStmt(this); }
+
+  // Public get methods
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] std::vector<CaseBranchNode *> caseBranches() const { return getChildren<CaseBranchNode>(); }
+  [[nodiscard]] DefaultBranchNode *defaultBranch() const { return getChild<DefaultBranchNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+
+  // Public members
+  bool hasDefaultBranch = false;
+};
+
+// ======================================================== CaseBranchNode =======================================================
+
+class CaseBranchNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCaseBranch(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCaseBranch(this); }
+
+  // Public get methods
+  [[nodiscard]] ConstantLstNode *constantLst() const { return getChild<ConstantLstNode>(); }
+  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "case:" + codeLoc.toString(); }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+
+  // Public members
+  Scope *bodyScope = nullptr;
+};
+
+// ======================================================= DefaultBranchNode =====================================================
+
+class DefaultBranchNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDefaultBranch(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDefaultBranch(this); }
+
+  // Public get methods
+  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
+
+  // Other methods
+  [[nodiscard]] std::string getScopeId() const { return "default:" + codeLoc.toString(); }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+
+  // Public members
+  Scope *bodyScope = nullptr;
 };
 
 // ==================================================== AnonymousBlockStmtNode ===================================================
@@ -719,7 +787,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStmtLst(this); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   void resizeToNumberOfManifestations(size_t manifestationCount) override {
     ASTNode::resizeToNumberOfManifestations(manifestationCount);
     dtorFunctions.resize(manifestationCount, std::vector<std::pair<SymbolTableEntry *, Function *>>());
@@ -1068,6 +1136,21 @@ public:
   AttrTarget target = TARGET_INVALID;
 };
 
+// ======================================================== ConstantLstNode ======================================================
+
+class ConstantLstNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitConstantLst(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitConstantLst(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<ConstantNode *> constants() const { return getChildren<ConstantNode>(); }
+};
+
 // ======================================================== ImportStmtNode =======================================================
 
 class ImportStmtNode : public ASTNode {
@@ -1100,7 +1183,7 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override { return true; }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override { return true; }
   [[nodiscard]] StmtLstNode *getParentScopeNode() const {
     assert(dynamic_cast<StmtLstNode *>(parent->parent) != nullptr);
     return spice_pointer_cast<StmtLstNode *>(parent->parent);
@@ -1140,6 +1223,21 @@ public:
   int continueTimes = 1;
 };
 
+// ====================================================== FallthroughStmtNode ====================================================
+
+class FallthroughStmtNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFallthroughStmt(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFallthroughStmt(this); }
+
+  // Other methods
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+};
+
 // ======================================================== AssertStmtNode =======================================================
 
 class AssertStmtNode : public ASTNode {
@@ -1153,9 +1251,6 @@ public:
 
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-
-  // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 
   // Public members
   std::string expressionString;
@@ -1260,7 +1355,7 @@ public:
 
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override { return true; }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override { return true; }
 };
 
 // ======================================================= AssignExprNode ========================================================
@@ -1296,7 +1391,7 @@ public:
   [[nodiscard]] TernaryExprNode *ternaryExpr() const { return getChild<TernaryExprNode>(); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   [[nodiscard]] bool isAssignExpr() const override { return true; }
 
   // Public members
@@ -1881,7 +1976,7 @@ public:
 
   // Public get methods
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Visit methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaFunc(this); }
@@ -1900,7 +1995,7 @@ public:
 
   // Public get methods
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Visit methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaProc(this); }

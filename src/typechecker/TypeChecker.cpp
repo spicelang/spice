@@ -286,6 +286,50 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   return nullptr;
 }
 
+std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
+  // Check expression type
+  AssignExprNode *expr = node->assignExpr();
+  SymbolType exprType = std::any_cast<ExprResult>(visit(expr)).type;
+  HANDLE_UNRESOLVED_TYPE_PTR(exprType)
+  if (!exprType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}))
+    SOFT_ERROR_ER(node->assignExpr(), SWITCH_EXPR_MUST_BE_PRIMITIVE,
+                  "Switch expression must be of int, short, long, byte, char or bool type")
+
+  // Visit children
+  visitChildren(node);
+
+  // Check if case constant types match switch expression type
+  for (CaseBranchNode *caseBranchNode : node->caseBranches())
+    for (ConstantNode *constantNode : caseBranchNode->constantLst()->constants())
+      if (!constantNode->getEvaluatedSymbolType(manIdx).matches(exprType, false, true, true))
+        SOFT_ERROR_ER(constantNode, SWITCH_CASE_TYPE_MISMATCH, "Case value type does not match the switch expression type")
+
+  return nullptr;
+}
+
+std::any TypeChecker::visitCaseBranch(CaseBranchNode *node) {
+  // Change to case body scope
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::CASE_BODY);
+
+  // Visit constant list
+  visit(node->constantLst());
+
+  // Visit body
+  visit(node->body());
+
+  return nullptr;
+}
+
+std::any TypeChecker::visitDefaultBranch(DefaultBranchNode *node) {
+  // Change to default body scope
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::DEFAULT_BODY);
+
+  // Visit body
+  visit(node->body());
+
+  return nullptr;
+}
+
 std::any TypeChecker::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Change to anonymous scope body scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY);
@@ -596,9 +640,17 @@ std::any TypeChecker::visitContinueStmt(ContinueStmtNode *node) {
                   "Continue count must be >= 1, you provided " + std::to_string(node->continueTimes))
 
   // Check if we can continue this often
-  const size_t maxBreaks = currentScope->getLoopNestingDepth();
-  if (node->continueTimes > maxBreaks)
-    SOFT_ERROR_ER(node, INVALID_CONTINUE_NUMBER, "We can only continue " + std::to_string(maxBreaks) + " time(s) here")
+  const size_t maxContinues = currentScope->getLoopNestingDepth();
+  if (node->continueTimes > maxContinues)
+    SOFT_ERROR_ER(node, INVALID_CONTINUE_NUMBER, "We can only continue " + std::to_string(maxContinues) + " time(s) here")
+
+  return nullptr;
+}
+
+std::any TypeChecker::visitFallthroughStmt(FallthroughStmtNode *node) {
+  // Check if we can do a fallthrough here
+  if (!currentScope->isInCaseBranch())
+    SOFT_ERROR_ER(node, FALLTHROUGH_NOT_ALLOWED, "Fallthrough is only allowed in case branches")
 
   return nullptr;
 }
@@ -678,6 +730,8 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
       placeholderCount++;
       break;
     }
+    default:
+      SOFT_ERROR_ER(node, PRINTF_TYPE_ERROR, "The placeholder string contains an invalid placeholder")
     }
     index = node->templatedString.find_first_of('%', index + 2); // We can also skip the following char
   }
@@ -1235,8 +1289,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (structScope->isGenericScope) {
-      const std::string &structName = lhsBaseTy.getSubType();
-      Scope *matchScope = lhsBaseTy.getBodyScope()->parent;
+      Scope *matchScope = structScope->parent;
       Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
       assert(spiceStruct != nullptr);
       structScope = spiceStruct->scope;

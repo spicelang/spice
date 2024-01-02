@@ -60,11 +60,13 @@ LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LL
     return {.value = builder.CreateAdd(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
-  case COMB(TY_PTR, TY_LONG):
+  case COMB(TY_PTR, TY_LONG): {
     llvm::Type *elementTy = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
     return {.value = builder.CreateGEP(elementTy, lhsV(), rhsV())};
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +="); // GCOV_EXCL_LINE
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +="); // GCOV_EXCL_LINE
+  }
 }
 
 LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -113,11 +115,13 @@ LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, L
     return {.value = builder.CreateSub(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
-  case COMB(TY_PTR, TY_LONG):
+  case COMB(TY_PTR, TY_LONG): {
     llvm::Type *elementType = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
     return {.value = builder.CreateGEP(elementType, lhsV(), rhsV())};
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -="); // GCOV_EXCL_LINE
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -="); // GCOV_EXCL_LINE
+  }
 }
 
 LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -163,8 +167,9 @@ LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLV
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateMul(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -210,8 +215,9 @@ LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLV
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -251,8 +257,9 @@ LLVMExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, LLV
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -284,8 +291,9 @@ LLVMExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, LLV
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateShl(lhsV(), rhsV())};
+  default:                                                              // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -317,8 +325,9 @@ LLVMExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, LLV
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = generateSHR(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  default:                                                              // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -350,8 +359,9 @@ LLVMExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, LLV
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateAnd(lhsV(), rhsV())};
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -382,8 +392,9 @@ LLVMExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, LLVM
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateOr(lhsV(), rhsV())};
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -416,8 +427,9 @@ LLVMExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, LLV
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder.CreateXor(lhsV(), rhsV())};
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -435,8 +447,9 @@ LLVMExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, LL
   case COMB(TY_BYTE, TY_BYTE):   // fallthrough
   case COMB(TY_BOOL, TY_BOOL):
     return {.value = builder.CreateOr(lhsV(), rhsV())};
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: |"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -454,8 +467,9 @@ LLVMExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, L
   case COMB(TY_BYTE, TY_BYTE):   // fallthrough
   case COMB(TY_BOOL, TY_BOOL):
     return {.value = builder.CreateXor(lhsV(), rhsV())};
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ^"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -473,8 +487,9 @@ LLVMExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, L
   case COMB(TY_BYTE, TY_BYTE):   // fallthrough
   case COMB(TY_BOOL, TY_BOOL):
     return {.value = builder.CreateAnd(lhsV(), rhsV())};
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: &"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -600,13 +615,15 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
   }
   case COMB(TY_BOOL, TY_BOOL):         // fallthrough
   case COMB(TY_FUNCTION, TY_FUNCTION): // fallthrough
-  case COMB(TY_PROCEDURE, TY_PROCEDURE):
+  case COMB(TY_PROCEDURE, TY_PROCEDURE): {
     const uint64_t typeSize = irGenerator->module->getDataLayout().getTypeSizeInBits(lhsT) / 8;
     llvm::Function *memcmpFct = stdFunctionManager.getMemcmpIntrinsic();
     llvm::Value *memcmpResult = builder.CreateCall(memcmpFct, {lhsP(), rhsP(), builder.getInt64(typeSize)});
     return {.value = builder.CreateICmpEQ(memcmpResult, llvm::ConstantInt::get(context, llvm::APInt(32, 0)))};
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: =="); // GCOV_EXCL_LINE
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: =="); // GCOV_EXCL_LINE
+  }
 }
 
 LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -740,8 +757,9 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
     llvm::Value *memcmpResult = builder.CreateCall(memcmpFct, {lhsP(), rhsP(), builder.getInt64(typeSize)});
     return {.value = builder.CreateICmpNE(memcmpResult, llvm::ConstantInt::get(context, llvm::APInt(32, 0)))};
   }
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -803,8 +821,9 @@ LLVMExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, LLVMExp
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = generateLT(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -866,8 +885,9 @@ LLVMExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, LLVM
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = generateGT(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -930,8 +950,9 @@ LLVMExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, LL
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = generateLE(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -994,8 +1015,9 @@ LLVMExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node,
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = generateGE(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >="); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >="); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -1040,8 +1062,9 @@ LLVMExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, LL
   }
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateShl(lhsV(), rhsV())};
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: <<"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -1086,8 +1109,9 @@ LLVMExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, L
   }
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = generateSHR(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  default:                                                             // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: >>"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -1166,8 +1190,9 @@ LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExp
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):
     return {.value = builder.CreateGEP(lhsSTy.getContainedTy().toLLVMType(context, accessScope), lhsV(), rhsV())};
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -1246,8 +1271,9 @@ LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMEx
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):
     return {.value = builder.CreateGEP(lhsSTy.getContainedTy().toLLVMType(context, accessScope), lhsV(), rhsV())};
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -1314,8 +1340,9 @@ LLVMExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, LLVMExpr
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
     return {.value = builder.CreateMul(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: *"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -1383,8 +1410,9 @@ LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExpr
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder.CreateSDiv(lhsV(), rhsV())};
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -1426,8 +1454,9 @@ LLVMExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, LLVMExpr
   }
   case COMB(TY_LONG, TY_LONG):
     return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsV())};
+  default:                                                            // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: %"); // GCOV_EXCL_LINE
 }
 
 LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
@@ -1622,9 +1651,10 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, SymbolT
   case COMB(TY_PTR, TY_STRING):    // fallthrough
   case COMB(TY_PTR, TY_PTR):
     return {.value = rhsV()};
+  default:                                                                 // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
   }
-  throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: (cast)"); // GCOV_EXCL_LINE
-}                                                                        // namespace spice::compiler
+}
 
 bool OpRuleConversionManager::callsOverloadedOpFct(const ASTNode *node, size_t opIdx) const {
   const std::vector<const Function *> &opFctList = irGenerator->getOpFctPointers(node);
