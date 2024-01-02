@@ -55,6 +55,12 @@ std::any ParallelizableASTVisitor::visitIfStmt(const IfStmtNode *node) { return 
 
 std::any ParallelizableASTVisitor::visitElseStmt(const ElseStmtNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitSwitchStmt(const SwitchStmtNode *node) { return visitChildren(node); }
+
+std::any ParallelizableASTVisitor::visitCaseBranch(const CaseBranchNode *node) { return visitChildren(node); }
+
+std::any ParallelizableASTVisitor::visitDefaultBranch(const DefaultBranchNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitStmtLst(const StmtLstNode *node) { return visitChildren(node); }
@@ -91,6 +97,8 @@ std::any ParallelizableASTVisitor::visitAttrLst(const AttrLstNode *node) { retur
 
 std::any ParallelizableASTVisitor::visitAttr(const AttrNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitConstantLst(const ConstantLstNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitImportStmt(const ImportStmtNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitReturnStmt(const ReturnStmtNode *node) { return visitChildren(node); }
@@ -98,6 +106,8 @@ std::any ParallelizableASTVisitor::visitReturnStmt(const ReturnStmtNode *node) {
 std::any ParallelizableASTVisitor::visitBreakStmt(const BreakStmtNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitContinueStmt(const ContinueStmtNode *node) { return visitChildren(node); }
+
+std::any ParallelizableASTVisitor::visitFallthroughStmt(const FallthroughStmtNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitAssertStmt(const AssertStmtNode *node) { return visitChildren(node); }
 

@@ -678,6 +678,8 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
       placeholderCount++;
       break;
     }
+    default:
+      SOFT_ERROR_ER(node, PRINTF_TYPE_ERROR, "The placeholder string contains an invalid placeholder")
     }
     index = node->templatedString.find_first_of('%', index + 2); // We can also skip the following char
   }
@@ -1235,8 +1237,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (structScope->isGenericScope) {
-      const std::string &structName = lhsBaseTy.getSubType();
-      Scope *matchScope = lhsBaseTy.getBodyScope()->parent;
+      Scope *matchScope = structScope->parent;
       Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
       assert(spiceStruct != nullptr);
       structScope = spiceStruct->scope;

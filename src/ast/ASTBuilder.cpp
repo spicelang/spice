@@ -316,6 +316,33 @@ std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   return concludeNode(ctx, elseStmtNode);
 }
 
+std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
+  auto switchStmtNode = createNode<SwitchStmtNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, switchStmtNode);
+}
+
+std::any ASTBuilder::visitCaseBranch(SpiceParser::CaseBranchContext *ctx) {
+  auto caseBranchNode = createNode<CaseBranchNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, caseBranchNode);
+}
+
+std::any ASTBuilder::visitDefaultBranch(SpiceParser::DefaultBranchContext *ctx) {
+  auto defaultBranchNode = createNode<DefaultBranchNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, defaultBranchNode);
+}
+
 std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) {
   auto anonymousBlockStmtNode = createNode<AnonymousBlockStmtNode>(ctx);
 
@@ -561,6 +588,15 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
   return concludeNode(ctx, attrNode);
 }
 
+std::any ASTBuilder::visitConstantLst(SpiceParser::ConstantLstContext *ctx) {
+  auto constantLstNode = createNode<ConstantLstNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, constantLstNode);
+}
+
 std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
   auto importStmtNode = createNode<ImportStmtNode>(ctx);
 
@@ -610,6 +646,15 @@ std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
   visitChildren(ctx);
 
   return concludeNode(ctx, continueStmtNode);
+}
+
+std::any ASTBuilder::visitFallthroughStmt(SpiceParser::FallthroughStmtContext *ctx) {
+  auto fallthroughStmtNode = createNode<FallthroughStmtNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(ctx, fallthroughStmtNode);
 }
 
 std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {

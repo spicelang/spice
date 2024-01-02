@@ -16,7 +16,7 @@ class ASTNode;
 class ConstantNode;
 
 #define ERROR_MESSAGE_CONTEXT 20
-const char *const RESERVED_KEYWORDS[] = {"new", "switch", "case", "stash", "pick", "sync", "class"};
+const char *const RESERVED_KEYWORDS[] = {"new", "stash", "pick", "sync", "class"};
 const char *const MEMBER_ACCESS_TOKEN = ".";
 const char *const SCOPE_ACCESS_TOKEN = "::";
 
@@ -52,6 +52,9 @@ public:
   std::any visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) override;
   std::any visitIfStmt(SpiceParser::IfStmtContext *ctx) override;
   std::any visitElseStmt(SpiceParser::ElseStmtContext *ctx) override;
+  std::any visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) override;
+  std::any visitCaseBranch(SpiceParser::CaseBranchContext *ctx) override;
+  std::any visitDefaultBranch(SpiceParser::DefaultBranchContext *ctx) override;
   std::any visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) override;
   std::any visitStmtLst(SpiceParser::StmtLstContext *ctx) override;
   std::any visitTypeLst(SpiceParser::TypeLstContext *ctx) override;
@@ -70,10 +73,12 @@ public:
   std::any visitModAttr(SpiceParser::ModAttrContext *ctx) override;
   std::any visitAttrLst(SpiceParser::AttrLstContext *ctx) override;
   std::any visitAttr(SpiceParser::AttrContext *ctx) override;
+  std::any visitConstantLst(SpiceParser::ConstantLstContext *ctx) override;
   std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
   std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override;
+  std::any visitFallthroughStmt(SpiceParser::FallthroughStmtContext *ctx) override;
   std::any visitAssertStmt(SpiceParser::AssertStmtContext *ctx) override;
   std::any visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) override;
   std::any visitPrintfCall(SpiceParser::PrintfCallContext *ctx) override;

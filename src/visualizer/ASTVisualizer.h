@@ -43,6 +43,9 @@ public:
   std::any visitDoWhileLoop(DoWhileLoopNode *ctx) override { return buildNode(ctx); }
   std::any visitIfStmt(IfStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitElseStmt(ElseStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitSwitchStmt(SwitchStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitCaseBranch(CaseBranchNode *ctx) override { return buildNode(ctx); }
+  std::any visitDefaultBranch(DefaultBranchNode *ctx) override { return buildNode(ctx); }
   std::any visitAssertStmt(AssertStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitAnonymousBlockStmt(AnonymousBlockStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitStmtLst(StmtLstNode *ctx) override { return buildNode(ctx); }
@@ -62,10 +65,12 @@ public:
   std::any visitTopLevelDefinitionAttr(TopLevelDefinitionAttrNode *ctx) override { return buildNode(ctx); }
   std::any visitAttrLst(AttrLstNode *ctx) override { return buildNode(ctx); }
   std::any visitAttr(AttrNode *ctx) override { return buildNode(ctx); }
+  std::any visitConstantLst(ConstantLstNode *ctx) override { return buildNode(ctx); }
   std::any visitImportStmt(ImportStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitReturnStmt(ReturnStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitBreakStmt(BreakStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitContinueStmt(ContinueStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitFallthroughStmt(FallthroughStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitPrintfCall(PrintfCallNode *ctx) override { return buildNode(ctx); }
   std::any visitSizeofCall(SizeofCallNode *ctx) override { return buildNode(ctx); }
   std::any visitAlignofCall(AlignofCallNode *ctx) override { return buildNode(ctx); }

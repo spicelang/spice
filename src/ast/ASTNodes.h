@@ -686,6 +686,54 @@ public:
   Scope *elseBodyScope = nullptr;
 };
 
+// ======================================================== SwitchStmtNode =======================================================
+
+class SwitchStmtNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSwitchStmt(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSwitchStmt(this); }
+
+  // Other methods
+  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+  [[nodiscard]] std::vector<CaseBranchNode *> caseBranches() const { return getChildren<CaseBranchNode>(); }
+  [[nodiscard]] DefaultBranchNode *defaultBranch() const { return getChild<DefaultBranchNode>(); }
+};
+
+// ======================================================== CaseBranchNode =======================================================
+
+class CaseBranchNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCaseBranch(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCaseBranch(this); }
+
+  // Other methods
+  [[nodiscard]] ConstantLstNode *constantLst() const { return getChild<ConstantLstNode>(); }
+  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
+};
+
+// ======================================================= DefaultBranchNode =====================================================
+
+class DefaultBranchNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDefaultBranch(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDefaultBranch(this); }
+
+  // Other methods
+  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
+};
+
 // ==================================================== AnonymousBlockStmtNode ===================================================
 
 class AnonymousBlockStmtNode : public ASTNode {
@@ -1068,6 +1116,21 @@ public:
   AttrTarget target = TARGET_INVALID;
 };
 
+// ======================================================== ConstantLstNode ======================================================
+
+class ConstantLstNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitConstantLst(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitConstantLst(this); }
+
+  // Public get methods
+  [[nodiscard]] std::vector<ConstantNode *> constants() const { return getChildren<ConstantNode>(); }
+};
+
 // ======================================================== ImportStmtNode =======================================================
 
 class ImportStmtNode : public ASTNode {
@@ -1138,6 +1201,18 @@ public:
 
   // Public members
   int continueTimes = 1;
+};
+
+// ====================================================== FallthroughStmtNode ====================================================
+
+class FallthroughStmtNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFallthroughStmt(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFallthroughStmt(this); }
 };
 
 // ======================================================== AssertStmtNode =======================================================
