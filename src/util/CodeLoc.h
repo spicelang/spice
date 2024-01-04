@@ -7,6 +7,7 @@
 #include <utility>
 
 #include <Token.h>
+#include <misc/Interval.h>
 
 #include <util/GlobalDefinitions.h>
 
@@ -18,9 +19,11 @@ public:
   CodeLoc(size_t line, size_t col, std::filesystem::path sourceFilePath = "")
       : line(line), col(col), sourceFilePath(std::move(sourceFilePath)) {}
   explicit CodeLoc(const antlr4::Token *token, std::filesystem::path sourceFilePath = "")
-      : line(token->getLine()), col(token->getCharPositionInLine() + 1), sourceFilePath(std::move(sourceFilePath)){};
+      : token(token), line(token->getLine()), col(token->getCharPositionInLine() + 1),
+        sourceFilePath(std::move(sourceFilePath)){};
 
   // Public members
+  const antlr4::Token *token = nullptr;
   std::filesystem::path sourceFilePath;
   size_t line;
   size_t col;

@@ -36,6 +36,7 @@ class ASTNode {
 public:
   // Constructors
   explicit ASTNode(CodeLoc codeLoc) : codeLoc(std::move(codeLoc)) {}
+  virtual ~ASTNode() = default;
   ASTNode(const ASTNode &) = delete;
 
   // Virtual methods
@@ -138,6 +139,8 @@ public:
     return children.front()->getCompileTimeValue();
   }
 
+  [[nodiscard]] std::string getErrorMessage() const;
+
   [[nodiscard]] virtual bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
     return children.size() == 1 && children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   }
@@ -167,13 +170,12 @@ public:
   ASTNode *parent = nullptr;
   std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
-  std::string errorMessage;
   std::vector<SymbolType> symbolTypes;
   CompileTimeValue compileTimeValue = {.boolValue = false};
   std::string compileTimeStringValue;
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
   bool hasDirectCompileTimeValue = false;
   bool unreachable = false;
-  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 
 // ========================================================== EntryNode ==========================================================

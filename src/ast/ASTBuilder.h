@@ -17,7 +17,6 @@ namespace spice::compiler {
 class ASTNode;
 class ConstantNode;
 
-#define ERROR_MESSAGE_CONTEXT 20
 const char *const RESERVED_KEYWORDS[] = {"new", "stash", "pick", "sync", "class"};
 const char *const MEMBER_ACCESS_TOKEN = ".";
 const char *const SCOPE_ACCESS_TOKEN = "::";
@@ -127,7 +126,7 @@ private:
 
   // Private methods
   template <typename T> T *createNode(const ParserRuleContext *ctx);
-  template <typename T> T *concludeNode(const ParserRuleContext *ctx, T *node);
+  template <typename T> T *concludeNode(T *node);
   ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) { return CodeLoc(ctx->start, filePath); }
   int32_t parseInt(ConstantNode *constantNode, TerminalNode *terminal);
   int16_t parseShort(ConstantNode *constantNode, TerminalNode *terminal);
@@ -138,7 +137,6 @@ private:
   T parseNumeric(ConstantNode *constantNode, TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
   static void replaceEscapeChars(std::string &string);
   std::string getIdentifier(TerminalNode *terminal);
-  void saveErrorMessage(ASTNode *node, const ParserRuleContext *ctx);
 };
 
 } // namespace spice::compiler

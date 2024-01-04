@@ -1,29 +1,16 @@
-import "std/io/cli-parser";
-import "std/io/cli-subcommand";
-
-type CliOptions struct {
-    string greetName = ""
-}
-
-p callback(bool& value) {
-    printf("Callback called with value %d\n", value);
-}
+import "../../src-bootstrap/lexer/lexer";
 
 f<int> main(int argc, string[] argv) {
-    CliParser parser = CliParser("Test Program", "This is a simple test program");
-    parser.setVersion("v0.1.0");
-    parser.setFooter("Copyright (c) Marc Auberer 2021-2024");
-
-    CliOptions options;
-    CliSubcommand& greet = parser.addSubcommand("greet", "Greet someone");
-    greet.addOption("--name", options.greetName, "Name of the person to greet");
-
-    parser.parse(argc, argv);
-
-    // Greet persion if requested
-    if options.greetName != "" {
-        printf("Hello %s!\n", options.greetName);
+    Lexer lexer = Lexer(argv[1]);
+    unsigned long i = 1l;
+    while (!lexer.isEOF()) {
+        Token token = lexer.getToken();
+        //printf("Token %d: ", i);
+        //token.print();
+        lexer.advance();
+        i++;
     }
+    printf("Tokens: %d\n", i);
 }
 
 /*type Visitable interface {

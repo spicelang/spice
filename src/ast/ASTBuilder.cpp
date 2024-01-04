@@ -23,7 +23,7 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, entryNode);
+  return concludeNode(entryNode);
 }
 
 std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *ctx) {
@@ -35,7 +35,7 @@ std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, mainFctDefNode);
+  return concludeNode(mainFctDefNode);
 }
 
 std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
@@ -60,7 +60,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     for (AttrNode *attr : fctDefNode->attrs()->attrLst()->attributes())
       attr->target = AttrNode::TARGET_FCT_PROC;
 
-  return concludeNode(ctx, fctDefNode);
+  return concludeNode(fctDefNode);
 }
 
 std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
@@ -82,7 +82,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
     for (AttrNode *attr : procDefNode->attrs()->attrLst()->attributes())
       attr->target = AttrNode::TARGET_FCT_PROC;
 
-  return concludeNode(ctx, procDefNode);
+  return concludeNode(procDefNode);
 }
 
 std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
@@ -105,7 +105,7 @@ std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, fctNameNode);
+  return concludeNode(fctNameNode);
 }
 
 std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
@@ -129,7 +129,7 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
   if (structDefNode->attrs() && structDefNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
     structDefNode->typeId = structDefNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
 
-  return concludeNode(ctx, structDefNode);
+  return concludeNode(structDefNode);
 }
 
 std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
@@ -153,7 +153,7 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
     interfaceDefNode->typeId =
         interfaceDefNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
 
-  return concludeNode(ctx, interfaceDefNode);
+  return concludeNode(interfaceDefNode);
 }
 
 std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
@@ -170,7 +170,7 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   for (EnumItemNode *enumItem : enumDefNode->itemLst()->items())
     enumItem->enumDef = enumDefNode;
 
-  return concludeNode(ctx, enumDefNode);
+  return concludeNode(enumDefNode);
 }
 
 std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
@@ -182,7 +182,7 @@ std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, genericTypeDefNode);
+  return concludeNode(genericTypeDefNode);
 }
 
 std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
@@ -195,7 +195,7 @@ std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, aliasDefNode);
+  return concludeNode(aliasDefNode);
 }
 
 std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
@@ -211,7 +211,7 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
   // Tell the data type that it is a global one
   globalVarDefNode->dataType()->isGlobalType = true;
 
-  return concludeNode(ctx, globalVarDefNode);
+  return concludeNode(globalVarDefNode);
 }
 
 std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
@@ -230,7 +230,7 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
     for (AttrNode *attr : extDeclNode->attrs()->attrLst()->attributes())
       attr->target = AttrNode::TARGET_EXT_DECL;
 
-  return concludeNode(ctx, extDeclNode);
+  return concludeNode(extDeclNode);
 }
 
 std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
@@ -239,7 +239,7 @@ std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, unsafeBlockDefNode);
+  return concludeNode(unsafeBlockDefNode);
 }
 
 std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
@@ -248,7 +248,7 @@ std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, forLoopNode);
+  return concludeNode(forLoopNode);
 }
 
 std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
@@ -267,7 +267,7 @@ std::any ASTBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
   // Tell the foreach item that it is one
   foreachLoopNode->itemVarDecl()->isForEachItem = true;
 
-  return concludeNode(ctx, foreachLoopNode);
+  return concludeNode(foreachLoopNode);
 }
 
 std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
@@ -283,7 +283,7 @@ std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, whileLoopNode);
+  return concludeNode(whileLoopNode);
 }
 
 std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {
@@ -292,7 +292,7 @@ std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, doWhileLoopNode);
+  return concludeNode(doWhileLoopNode);
 }
 
 std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
@@ -301,7 +301,7 @@ std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, ifStmtNode);
+  return concludeNode(ifStmtNode);
 }
 
 std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
@@ -313,7 +313,7 @@ std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, elseStmtNode);
+  return concludeNode(elseStmtNode);
 }
 
 std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
@@ -325,7 +325,7 @@ std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, switchStmtNode);
+  return concludeNode(switchStmtNode);
 }
 
 std::any ASTBuilder::visitCaseBranch(SpiceParser::CaseBranchContext *ctx) {
@@ -334,7 +334,7 @@ std::any ASTBuilder::visitCaseBranch(SpiceParser::CaseBranchContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, caseBranchNode);
+  return concludeNode(caseBranchNode);
 }
 
 std::any ASTBuilder::visitDefaultBranch(SpiceParser::DefaultBranchContext *ctx) {
@@ -343,7 +343,7 @@ std::any ASTBuilder::visitDefaultBranch(SpiceParser::DefaultBranchContext *ctx) 
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, defaultBranchNode);
+  return concludeNode(defaultBranchNode);
 }
 
 std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtContext *ctx) {
@@ -352,7 +352,7 @@ std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtCont
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, anonymousBlockStmtNode);
+  return concludeNode(anonymousBlockStmtNode);
 }
 
 std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
@@ -361,7 +361,7 @@ std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, stmtLstNode);
+  return concludeNode(stmtLstNode);
 }
 
 std::any ASTBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
@@ -370,7 +370,7 @@ std::any ASTBuilder::visitTypeLst(SpiceParser::TypeLstContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, typeLstNode);
+  return concludeNode(typeLstNode);
 }
 
 std::any ASTBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
@@ -379,7 +379,7 @@ std::any ASTBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, typeAltsLstNode);
+  return concludeNode(typeAltsLstNode);
 }
 
 std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
@@ -394,7 +394,7 @@ std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
     param->dataType()->isParamType = true;
   }
 
-  return concludeNode(ctx, paramLstNode);
+  return concludeNode(paramLstNode);
 }
 
 std::any ASTBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
@@ -403,7 +403,7 @@ std::any ASTBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, argLstNode);
+  return concludeNode(argLstNode);
 }
 
 std::any ASTBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
@@ -412,7 +412,7 @@ std::any ASTBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, enumItemLstNode);
+  return concludeNode(enumItemLstNode);
 }
 
 std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
@@ -425,7 +425,7 @@ std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
     enumItemNode->hasValue = true;
   }
 
-  return concludeNode(ctx, enumItemNode);
+  return concludeNode(enumItemNode);
 }
 
 std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
@@ -440,7 +440,7 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
   // Tell the data type that it is a field type
   fieldNode->dataType()->setFieldTypeRecursive();
 
-  return concludeNode(ctx, fieldNode);
+  return concludeNode(fieldNode);
 }
 
 std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
@@ -458,7 +458,7 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, signatureNode);
+  return concludeNode(signatureNode);
 }
 
 std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
@@ -467,7 +467,7 @@ std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, stmtNode);
+  return concludeNode(stmtNode);
 }
 
 std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
@@ -480,7 +480,7 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, declStmtNode);
+  return concludeNode(declStmtNode);
 }
 
 std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
@@ -499,7 +499,7 @@ std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
     seenSignedOrUnsigned = true;
   }
 
-  return concludeNode(ctx, specifierLstNode);
+  return concludeNode(specifierLstNode);
 }
 
 std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
@@ -526,7 +526,7 @@ std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
       assert(false && "Unknown specifier type"); // GCOV_EXCL_LINE
   }
 
-  return concludeNode(ctx, specifierNode);
+  return concludeNode(specifierNode);
 }
 
 std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
@@ -539,7 +539,7 @@ std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
   for (AttrNode *attr : modAttrNode->attrLst()->attributes())
     attr->target = AttrNode::TARGET_MODULE;
 
-  return concludeNode(ctx, modAttrNode);
+  return concludeNode(modAttrNode);
 }
 
 std::any ASTBuilder::visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *ctx) {
@@ -548,7 +548,7 @@ std::any ASTBuilder::visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *c
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, fctAttrNode);
+  return concludeNode(fctAttrNode);
 }
 
 std::any ASTBuilder::visitAttrLst(SpiceParser::AttrLstContext *ctx) {
@@ -557,7 +557,7 @@ std::any ASTBuilder::visitAttrLst(SpiceParser::AttrLstContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, attrLstNode);
+  return concludeNode(attrLstNode);
 }
 
 std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
@@ -588,7 +588,7 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
     attrNode->type = AttrNode::TYPE_BOOL;
   }
 
-  return concludeNode(ctx, attrNode);
+  return concludeNode(attrNode);
 }
 
 std::any ASTBuilder::visitConstantLst(SpiceParser::ConstantLstContext *ctx) {
@@ -597,7 +597,7 @@ std::any ASTBuilder::visitConstantLst(SpiceParser::ConstantLstContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, constantLstNode);
+  return concludeNode(constantLstNode);
 }
 
 std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
@@ -610,7 +610,7 @@ std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
   // If no name is given, use the path as name
   importStmtNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER()) : importStmtNode->importPath;
 
-  return concludeNode(ctx, importStmtNode);
+  return concludeNode(importStmtNode);
 }
 
 std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
@@ -622,7 +622,7 @@ std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, returnStmtNode);
+  return concludeNode(returnStmtNode);
 }
 
 std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
@@ -635,7 +635,7 @@ std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, breakStmtNode);
+  return concludeNode(breakStmtNode);
 }
 
 std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
@@ -648,7 +648,7 @@ std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, continueStmtNode);
+  return concludeNode(continueStmtNode);
 }
 
 std::any ASTBuilder::visitFallthroughStmt(SpiceParser::FallthroughStmtContext *ctx) {
@@ -657,7 +657,7 @@ std::any ASTBuilder::visitFallthroughStmt(SpiceParser::FallthroughStmtContext *c
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, fallthroughStmtNode);
+  return concludeNode(fallthroughStmtNode);
 }
 
 std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
@@ -670,7 +670,7 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, assertStmtNode);
+  return concludeNode(assertStmtNode);
 }
 
 std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
@@ -692,7 +692,7 @@ std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, printfCallNode);
+  return concludeNode(printfCallNode);
 }
 
 std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
@@ -704,7 +704,7 @@ std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, sizeofCallNode);
+  return concludeNode(sizeofCallNode);
 }
 
 std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
@@ -716,7 +716,7 @@ std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, alignofCallNode);
+  return concludeNode(alignofCallNode);
 }
 
 std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
@@ -725,7 +725,7 @@ std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, lenCallNode);
+  return concludeNode(lenCallNode);
 }
 
 std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {
@@ -734,7 +734,7 @@ std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, panicCallNode);
+  return concludeNode(panicCallNode);
 }
 
 std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
@@ -743,7 +743,7 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, assignExprNode);
+  return concludeNode(assignExprNode);
 }
 
 std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
@@ -755,7 +755,7 @@ std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, ternaryExprNode);
+  return concludeNode(ternaryExprNode);
 }
 
 std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
@@ -764,7 +764,7 @@ std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) 
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, logicalOrExprNode);
+  return concludeNode(logicalOrExprNode);
 }
 
 std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
@@ -773,7 +773,7 @@ std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, logicalAndExprNode);
+  return concludeNode(logicalAndExprNode);
 }
 
 std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
@@ -782,7 +782,7 @@ std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) 
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, bitwiseOrExprNode);
+  return concludeNode(bitwiseOrExprNode);
 }
 
 std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
@@ -791,7 +791,7 @@ std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, bitwiseXorExprNode);
+  return concludeNode(bitwiseXorExprNode);
 }
 
 std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
@@ -800,7 +800,7 @@ std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, bitwiseAndExprNode);
+  return concludeNode(bitwiseAndExprNode);
 }
 
 std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
@@ -815,7 +815,7 @@ std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, equalityExprNode);
+  return concludeNode(equalityExprNode);
 }
 
 std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
@@ -834,7 +834,7 @@ std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, relationalExprNode);
+  return concludeNode(relationalExprNode);
 }
 
 std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
@@ -849,7 +849,7 @@ std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, shiftExprNode);
+  return concludeNode(shiftExprNode);
 }
 
 std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
@@ -865,7 +865,7 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
       additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, SymbolType(TY_INVALID));
   }
 
-  return concludeNode(ctx, additiveExprNode);
+  return concludeNode(additiveExprNode);
 }
 
 std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
@@ -883,7 +883,7 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, SymbolType(TY_INVALID));
   }
 
-  return concludeNode(ctx, multiplicativeExprNode);
+  return concludeNode(multiplicativeExprNode);
 }
 
 std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
@@ -895,7 +895,7 @@ std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, castExprNode);
+  return concludeNode(castExprNode);
 }
 
 std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
@@ -920,7 +920,7 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, prefixUnaryExprNode);
+  return concludeNode(prefixUnaryExprNode);
 }
 
 std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
@@ -941,7 +941,7 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, postfixUnaryExprNode);
+  return concludeNode(postfixUnaryExprNode);
 }
 
 std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
@@ -967,7 +967,7 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
     }
   }
 
-  return concludeNode(ctx, atomicExprNode);
+  return concludeNode(atomicExprNode);
 }
 
 std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
@@ -979,7 +979,7 @@ std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, valueNode);
+  return concludeNode(valueNode);
 }
 
 std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
@@ -1016,7 +1016,7 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
   }
   constantNode->hasDirectCompileTimeValue = true;
 
-  return concludeNode(ctx, constantNode);
+  return concludeNode(constantNode);
 }
 
 std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
@@ -1047,7 +1047,7 @@ std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
     }
   }
 
-  return concludeNode(ctx, fctCallNode);
+  return concludeNode(fctCallNode);
 }
 
 std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
@@ -1056,7 +1056,7 @@ std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationCo
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, arrayInitializationNode);
+  return concludeNode(arrayInitializationNode);
 }
 
 std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
@@ -1079,7 +1079,7 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, structInstantiationNode);
+  return concludeNode(structInstantiationNode);
 }
 
 std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
@@ -1091,7 +1091,7 @@ std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, lambdaFuncNode);
+  return concludeNode(lambdaFuncNode);
 }
 
 std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
@@ -1103,7 +1103,7 @@ std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, lambdaProcNode);
+  return concludeNode(lambdaProcNode);
 }
 
 std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
@@ -1115,7 +1115,7 @@ std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, lambdaExprNode);
+  return concludeNode(lambdaExprNode);
 }
 
 std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
@@ -1153,7 +1153,7 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, dataTypeNode);
+  return concludeNode(dataTypeNode);
 }
 
 std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
@@ -1186,7 +1186,7 @@ std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, baseDataTypeNode);
+  return concludeNode(baseDataTypeNode);
 }
 
 std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx) {
@@ -1209,7 +1209,7 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, customDataTypeNode);
+  return concludeNode(customDataTypeNode);
 }
 
 std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext *ctx) {
@@ -1221,7 +1221,7 @@ std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext 
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(ctx, functionDataTypeNode);
+  return concludeNode(functionDataTypeNode);
 }
 
 std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
@@ -1331,15 +1331,10 @@ template <typename T> T *ASTBuilder::createNode(const ParserRuleContext *ctx) {
   return node;
 }
 
-template <typename T> T *ASTBuilder::concludeNode(const ParserRuleContext *ctx, T *node) {
-  // For all nodes, except the entry and stmtLst nodes, create and save the error message
-  if constexpr (!std::is_same_v<T, EntryNode> && !std::is_same_v<T, StmtLstNode>)
-    saveErrorMessage(node, ctx);
-
+template <typename T> T *ASTBuilder::concludeNode(T *node) {
   // This node is no longer the parent for its children
   assert(parentStack.top() == node);
   parentStack.pop();
-
   return node;
 }
 
@@ -1477,50 +1472,6 @@ std::string ASTBuilder::getIdentifier(TerminalNode *terminal) {
   }
 
   return identifier;
-}
-
-void ASTBuilder::saveErrorMessage(ASTNode *node, const ParserRuleContext *ctx) {
-  const antlr4::misc::Interval sourceInterval(ctx->start->getStartIndex(), ctx->stop->getStopIndex());
-  antlr4::misc::Interval extSourceInterval(sourceInterval);
-
-  // If we have a multi-line interval, only use the first line
-  if (size_t offset = inputStream->getText(extSourceInterval).find('\n'); offset != std::string::npos)
-    extSourceInterval.b = extSourceInterval.a + static_cast<ssize_t>(offset);
-
-  size_t markerIndentation = 0;
-  for (; markerIndentation < ERROR_MESSAGE_CONTEXT; markerIndentation++) {
-    extSourceInterval.a--;
-    if (extSourceInterval.a < 0 || inputStream->getText(extSourceInterval).find('\n') != std::string::npos) {
-      extSourceInterval.a++;
-      break;
-    }
-  }
-  for (size_t suffixContext = 0; suffixContext < ERROR_MESSAGE_CONTEXT; suffixContext++) {
-    extSourceInterval.b++;
-    if (extSourceInterval.b > inputStream->size() || inputStream->getText(extSourceInterval).find('\n') != std::string::npos) {
-      extSourceInterval.b--;
-      break;
-    }
-  }
-
-  // Trim start
-  while (inputStream->getText(extSourceInterval)[0] == ' ') {
-    extSourceInterval.a++;
-    markerIndentation--;
-  }
-
-  // Trim end
-  if (inputStream->getText(extSourceInterval)[extSourceInterval.length() - 1] == '\n')
-    extSourceInterval.b--;
-
-  const std::string lineNumberStr = std::to_string(ctx->start->getLine());
-  markerIndentation += lineNumberStr.length() + 2;
-
-  // Build error message
-  std::stringstream ss;
-  ss << lineNumberStr << "  " << inputStream->getText(extSourceInterval) << "\n";
-  ss << std::string(markerIndentation, ' ') << std::string(std::min(sourceInterval.length(), extSourceInterval.length()), '^');
-  node->errorMessage = ss.str();
 }
 
 } // namespace spice::compiler

@@ -11,6 +11,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class ASTNode;
+class SourceFile;
 struct CodeLoc;
 
 enum SemanticErrorType : uint8_t {
