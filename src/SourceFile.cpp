@@ -53,7 +53,6 @@ void SourceFile::runLexer() {
   // Create error handlers for lexer and parser
   antlrCtx.lexerErrorHandler = std::make_unique<AntlrThrowingErrorListener>(ThrowingErrorListenerMode::LEXER, filePath);
   antlrCtx.parserErrorHandler = std::make_unique<AntlrThrowingErrorListener>(ThrowingErrorListenerMode::PARSER, filePath);
-  std::ifstream test;
 
   // Tokenize input
   antlrCtx.inputStream = std::make_unique<antlr4::ANTLRInputStream>(fileInputStream);
@@ -692,7 +691,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
     svgFilePath.replace_extension("svg");
     dotFilePath.make_preferred();
     svgFilePath.make_preferred();
-    FileUtil::exec("dot -Tsvg -o" + svgFilePath.string() + " " + dotFilePath.string());
+    FileUtil::exec("dot -T svg -o" + svgFilePath.string() + " " + dotFilePath.string());
     std::cout << "done.\nSVG file can be found at: " << svgFilePath << "\n";
   } else {
     // Dump to console

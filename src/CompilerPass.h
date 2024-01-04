@@ -2,12 +2,16 @@
 
 #pragma once
 
-#include <global/GlobalResourceManager.h>
+#include <string>
+#include <cstdint>
 
 namespace spice::compiler {
 
 // Forward declarations
 class Scope;
+class GlobalResourceManager;
+class SourceFile;
+struct CliOptions;
 enum class ScopeType : uint8_t;
 
 class CompilerPass {

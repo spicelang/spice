@@ -6,6 +6,7 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
 #include <driver/Driver.h>
+#include <global/GlobalResourceManager.h>
 
 namespace spice::compiler {
 

@@ -18,6 +18,7 @@
 
 #include <llvm/IR/IRBuilder.h>
 
+#include "../lib/thread-pool/thread-pool-utils.hpp"
 #include "../lib/thread-pool/thread-pool.hpp"
 
 namespace spice::compiler {

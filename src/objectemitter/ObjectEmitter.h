@@ -8,10 +8,13 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+class GlobalResourceManager;
+
 class ObjectEmitter : private CompilerPass {
 public:
   // Constructors
-  ObjectEmitter(GlobalResourceManager &resourceManager, SourceFile *sourceFile) : CompilerPass(resourceManager, sourceFile) {}
+  ObjectEmitter(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
 
   // Public methods
   void emit() const;
@@ -19,7 +22,7 @@ public:
 
 private:
   // Private members
-  llvm::Module &module = cliOptions.useLTO ? *resourceManager.ltoModule : *sourceFile->llvmModule;
+  llvm::Module &module;
 };
 
 } // namespace spice::compiler

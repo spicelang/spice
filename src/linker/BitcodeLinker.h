@@ -6,6 +6,7 @@
 
 #include "CompilerPass.h"
 #include "SourceFile.h"
+#include <global/GlobalResourceManager.h>
 
 namespace spice::compiler {
 

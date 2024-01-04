@@ -3,6 +3,7 @@
 #include "GlobalResourceManager.h"
 
 #include <SourceFile.h>
+#include <ast/ASTNodes.h>
 
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>

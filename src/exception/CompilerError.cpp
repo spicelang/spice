@@ -57,6 +57,8 @@ std::string CompilerError::getMessagePrefix(CompilerErrorType type) {
     return "Referenced undefined function";
   case PRINTF_NULL_TYPE:
     return "Printf has null type";
+  case OOM:
+    return "An out of memory error occurred";
   case INVALID_FUNCTION:
     return "Invalid function";
   case INVALID_MODULE:

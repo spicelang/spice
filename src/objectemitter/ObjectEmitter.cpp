@@ -2,6 +2,7 @@
 
 #include "ObjectEmitter.h"
 
+#include <global/GlobalResourceManager.h>
 #include <util/FileUtil.h>
 #include <util/RawStringOStream.h>
 
@@ -9,6 +10,10 @@
 #include <llvm/Support/FileSystem.h>
 
 namespace spice::compiler {
+
+ObjectEmitter::ObjectEmitter(spice::compiler::GlobalResourceManager &resourceManager, spice::compiler::SourceFile *sourceFile)
+    : CompilerPass(resourceManager, sourceFile),
+      module(cliOptions.useLTO ? *resourceManager.ltoModule : *sourceFile->llvmModule) {}
 
 void ObjectEmitter::emit() const {
   const std::filesystem::path &objectFile = sourceFile->objectFilePath;

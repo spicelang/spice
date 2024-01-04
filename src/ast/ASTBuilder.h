@@ -2,11 +2,13 @@
 
 #pragma once
 
+#include <filesystem>
 #include <functional>
 #include <utility>
 
 #include <CompilerPass.h>
 #include <SpiceVisitor.h>
+#include <util/CodeLoc.h>
 #include <util/GlobalDefinitions.h>
 
 namespace spice::compiler {
