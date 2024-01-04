@@ -3,6 +3,7 @@
 #include "CompilerPass.h"
 
 #include <SourceFile.h>
+#include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {

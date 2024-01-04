@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <exception/CompilerError.h>
+#include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/Scope.h>
 #include <util/FileUtil.h>
 

@@ -6,6 +6,7 @@
 #include <global/CacheManager.h>
 #include <global/RuntimeModuleManager.h>
 #include <linker/ExternalLinkerInterface.h>
+#include <util/BlockAllocator.h>
 #include <util/CodeLoc.h>
 #include <util/Timer.h>
 
@@ -14,8 +15,8 @@
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Target/TargetMachine.h>
 
-#include "../../lib/thread-pool/thread-pool.hpp"
 #include "../../lib/thread-pool/thread-pool-utils.hpp"
+#include "../../lib/thread-pool/thread-pool.hpp"
 
 namespace spice::compiler {
 
@@ -48,8 +49,9 @@ public:
   llvm::IRBuilder<> builder = llvm::IRBuilder<>(context);
   std::unique_ptr<llvm::Module> ltoModule;
   std::unique_ptr<llvm::TargetMachine> targetMachine;
+  BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>();
   std::unordered_map<std::string, std::unique_ptr<SourceFile>> sourceFiles; // The GlobalResourceManager owns all source files
-  std::vector<std::unique_ptr<ASTNode>> astNodes;                           // The GlobalResourceManager owns all AST nodes
+  std::vector<ASTNode *> astNodes;
   const CliOptions &cliOptions;
   ExternalLinkerInterface linker;
   CacheManager cacheManager;
