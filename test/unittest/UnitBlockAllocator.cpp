@@ -93,6 +93,7 @@ TEST(BlockAllocatorTest, TestBlockAllocatorOOM) {
   auto mallocCallback = [](size_t size) { return static_cast<byte *>(malloc(size)); };
   EXPECT_CALL(mockMemoryManager, allocate(::testing::_)).Times(4).WillRepeatedly(mallocCallback);
   EXPECT_CALL(mockMemoryManager, allocate(::testing::_)).Times(1).WillOnce(::testing::Return(nullptr));
+  EXPECT_CALL(mockMemoryManager, deallocate(::testing::_)).Times(4).WillRepeatedly(::testing::Invoke(free));
 
   {
     // Create allocator, that can hold 2 nodes per block

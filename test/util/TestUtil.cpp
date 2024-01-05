@@ -11,13 +11,13 @@
 #include "util/CommonUtil.h"
 #include "util/FileUtil.h"
 
-namespace spice::testing {
-
-using namespace spice::compiler;
-
 #ifdef OS_UNIX
 #include <cstring> // Required by builds on Linux
 #endif
+
+namespace spice::testing {
+
+using namespace spice::compiler;
 
 /**
  * Collect the test cases in a particular test suite
