@@ -71,8 +71,10 @@ ExecResult FileUtil::exec(const std::string &cmd) {
 bool FileUtil::isCommandAvailable(const std::string &cmd) {
 #if OS_WINDOWS
   const std::string checkCmd = "where " + cmd + " > nul 2>&1";
-#else
+#elif OS_UNIX
   const std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
+#else
+#error "Unsupported platform"
 #endif
   return std::system(checkCmd.c_str()) != 0;
 }
@@ -84,16 +86,19 @@ bool FileUtil::isCommandAvailable(const std::string &cmd) {
  * @return Std directory
  */
 std::filesystem::path FileUtil::getStdDir() {
-#ifdef OS_UNIX
-  if (std::filesystem::exists(std::filesystem::path("/usr/lib/spice/std/")))
-    return std::filesystem::path("/usr/lib/spice/std/");
-#endif
+#if OS_WINDOWS
   if (std::getenv("SPICE_STD_DIR")) {
     std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR"));
     if (std::filesystem::exists(stdPath))
       return stdPath;
   }
-  return ""; // GCOV_EXCL_LINE
+#elif OS_UNIX
+  if (std::filesystem::exists(std::filesystem::path("/usr/lib/spice/std/")))
+    return std::filesystem::path("/usr/lib/spice/std/");
+#else
+#error "Unsupported platform"
+#endif
+  return "";
 }
 
 /**
@@ -104,8 +109,10 @@ std::filesystem::path FileUtil::getStdDir() {
 std::filesystem::path FileUtil::getSpiceBinDir() {
 #if OS_WINDOWS
   return std::filesystem::path(std::getenv("USERPROFILE")) / "spice" / "bin";
-#else
+#elif OS_UNIX
   return "/usr/local/bin/";
+#else
+#error "Unsupported platform"
 #endif
 }
 

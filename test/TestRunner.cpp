@@ -24,6 +24,8 @@
 
 using namespace spice::compiler;
 
+namespace spice::testing {
+
 void execTestCase(const TestCase &testCase) {
   // Check if test is disabled
   if (TestUtil::isDisabled(testCase, skipNonGitHubTests))
@@ -263,40 +265,44 @@ void execTestCase(const TestCase &testCase) {
   SUCCEED();
 }
 
-class CommonTests : public testing::TestWithParam<TestCase> {};
+class CommonTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(CommonTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, CommonTests, testing::ValuesIn(TestUtil::collectTestCases("common", false)), TestUtil::NameResolver());
+INSTANTIATE_TEST_SUITE_P(, CommonTests, ::testing::ValuesIn(TestUtil::collectTestCases("common", false)),
+                         TestUtil::NameResolver());
 
-class LexerTests : public testing::TestWithParam<TestCase> {};
+class LexerTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(LexerTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, LexerTests, testing::ValuesIn(TestUtil::collectTestCases("lexer", false)), TestUtil::NameResolver());
+INSTANTIATE_TEST_SUITE_P(, LexerTests, ::testing::ValuesIn(TestUtil::collectTestCases("lexer", false)), TestUtil::NameResolver());
 
-class ParserTests : public testing::TestWithParam<TestCase> {};
+class ParserTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(ParserTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, ParserTests, testing::ValuesIn(TestUtil::collectTestCases("parser", false)), TestUtil::NameResolver());
+INSTANTIATE_TEST_SUITE_P(, ParserTests, ::testing::ValuesIn(TestUtil::collectTestCases("parser", false)),
+                         TestUtil::NameResolver());
 
-class SymbolTableBuilderTests : public testing::TestWithParam<TestCase> {};
+class SymbolTableBuilderTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(SymbolTableBuilderTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, SymbolTableBuilderTests, testing::ValuesIn(TestUtil::collectTestCases("symboltablebuilder", true)),
+INSTANTIATE_TEST_SUITE_P(, SymbolTableBuilderTests, ::testing::ValuesIn(TestUtil::collectTestCases("symboltablebuilder", true)),
                          TestUtil::NameResolver());
 
-class TypeCheckerTests : public testing::TestWithParam<TestCase> {};
+class TypeCheckerTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(TypeCheckerTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, TypeCheckerTests, testing::ValuesIn(TestUtil::collectTestCases("typechecker", true)),
+INSTANTIATE_TEST_SUITE_P(, TypeCheckerTests, ::testing::ValuesIn(TestUtil::collectTestCases("typechecker", true)),
                          TestUtil::NameResolver());
 
-class IRGeneratorTests : public testing::TestWithParam<TestCase> {};
+class IRGeneratorTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(IRGeneratorTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, IRGeneratorTests, testing::ValuesIn(TestUtil::collectTestCases("irgenerator", true)),
+INSTANTIATE_TEST_SUITE_P(, IRGeneratorTests, ::testing::ValuesIn(TestUtil::collectTestCases("irgenerator", true)),
                          TestUtil::NameResolver());
 
-class StdTests : public testing::TestWithParam<TestCase> {};
+class StdTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(StdTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, StdTests, testing::ValuesIn(TestUtil::collectTestCases("std", true)), TestUtil::NameResolver());
+INSTANTIATE_TEST_SUITE_P(, StdTests, ::testing::ValuesIn(TestUtil::collectTestCases("std", true)), TestUtil::NameResolver());
 
-class BenchmarkTests : public testing::TestWithParam<TestCase> {};
+class BenchmarkTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(BenchmarkTests, ) { execTestCase(GetParam()); }
-INSTANTIATE_TEST_SUITE_P(, BenchmarkTests, testing::ValuesIn(TestUtil::collectTestCases("benchmark", false)),
+INSTANTIATE_TEST_SUITE_P(, BenchmarkTests, ::testing::ValuesIn(TestUtil::collectTestCases("benchmark", false)),
                          TestUtil::NameResolver());
+
+} // namespace spice::testing
 
 // GCOV_EXCL_STOP

@@ -148,7 +148,7 @@ set(SOURCES
         util/GlobalDefinitions.h
         util/Timer.h
         util/DeferredLogic.h
-        #util/Memory.h
+        util/Memory.h
         util/RawStringOStream.cpp
         util/RawStringOStream.h
 )

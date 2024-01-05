@@ -3,28 +3,31 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
+#include <unistd.h>
 #include <vector>
 
 #include <ast/ASTNodes.h>
+#include <util/Memory.h>
 
 namespace spice::compiler {
-
-// Typedefs
-using byte = uint8_t;
 
 template <typename Base> class BlockAllocator {
 public:
   // Constructors
-  explicit BlockAllocator(size_t blockSize = 2048ull) : blockSize(blockSize) { allocateNewBlock(); }
+  explicit BlockAllocator(const MemoryManager &memoryManager, size_t blockSize = CommonUtil::getSystemPageSize())
+      : memoryManager(memoryManager), blockSize(blockSize) {
+    allocateNewBlock();
+  }
   ~BlockAllocator() {
     // Destruct all objects
     for (Base *ptr : allocatedObjects)
       ptr->~Base();
+    allocatedObjects.clear();
 
     // Free memory
     for (byte *ptr : memoryBlocks)
-      std::free(static_cast<void *>(ptr));
+      memoryManager.deallocate(ptr);
+    memoryBlocks.clear();
   }
 
   // Public methods
@@ -49,6 +52,7 @@ public:
 
 private:
   // Private members
+  const MemoryManager &memoryManager;
   std::vector<byte *> memoryBlocks;
   std::vector<Base *> allocatedObjects;
   size_t blockSize;
@@ -57,7 +61,7 @@ private:
   // Private methods
   void allocateNewBlock() {
     // Allocate new block
-    byte *ptr = static_cast<byte *>(std::malloc(blockSize));
+    byte *ptr = memoryManager.allocate(blockSize);
     if (!ptr)
       throw CompilerError(OOM, "Could not allocate memory for ArenaAllocator. Already allocated " +
                                    std::to_string(memoryBlocks.size()) + " blocks.");

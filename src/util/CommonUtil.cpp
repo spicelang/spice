@@ -2,6 +2,14 @@
 
 #include "CommonUtil.h"
 
+#ifdef OS_WINDOWS
+#include <windows.h>
+#elif OS_UNIX
+#include <unistd.h>
+#else
+#error "Unsupported platform"
+#endif
+
 namespace spice::compiler {
 
 /**
@@ -60,6 +68,18 @@ std::vector<std::string> CommonUtil::split(const std::string &input) {
     result.push_back(trim(token));
 
   return result;
+}
+
+size_t CommonUtil::getSystemPageSize() {
+#ifdef OS_WINDOWS
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+  return static_cast<size_t>(si.dwPageSize);
+#elif OS_UNIX
+  return static_cast<size_t>(sysconf(_SC_PAGESIZE));
+#else
+#error "Unsupported platform"
+#endif
 }
 
 } // namespace spice::compiler

@@ -19,9 +19,10 @@ set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/antlr-4.13.1-com
 find_package(ANTLR REQUIRED)
 message(STATUS "Spice: Found ANTLR ${ANTLR_VERSION}")
 
-# Find Google Test
+# Find Google Test and Google Mock
 add_subdirectory(lib/googletest)
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
 
 # Find LLVM
 find_package(LLVM REQUIRED CONFIG)

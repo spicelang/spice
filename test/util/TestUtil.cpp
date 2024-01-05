@@ -11,6 +11,8 @@
 #include "util/CommonUtil.h"
 #include "util/FileUtil.h"
 
+namespace spice::testing {
+
 using namespace spice::compiler;
 
 #ifdef OS_UNIX
@@ -223,5 +225,7 @@ void TestUtil::eraseLinesBySubstring(std::string &irCode, const char *const need
     irCode.erase(lineStart, lineEnd - lineStart);
   }
 }
+
+} // namespace spice::testing
 
 // GCOV_EXCL_STOP

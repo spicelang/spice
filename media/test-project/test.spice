@@ -1,6 +1,9 @@
+import "std/time/timer";
 import "../../src-bootstrap/lexer/lexer";
 
 f<int> main(int argc, string[] argv) {
+    Timer timer = Timer();
+    timer.start();
     Lexer lexer = Lexer(argv[1]);
     unsigned long i = 1l;
     while (!lexer.isEOF()) {
@@ -10,7 +13,8 @@ f<int> main(int argc, string[] argv) {
         lexer.advance();
         i++;
     }
-    printf("Tokens: %d\n", i);
+    timer.stop();
+    printf("Tokens: %d in %d ms\n", i, timer.getDurationInMillis());
 }
 
 /*type Visitable interface {

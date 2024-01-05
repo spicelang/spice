@@ -6,10 +6,16 @@
 
 // GCOV_EXCL_START
 
+namespace spice::testing {
+
 bool updateRefs = false;
 bool runBenchmarks = false;
 bool enableLeakDetection = false;
 bool skipNonGitHubTests = false;
+
+} // namespace spice::testing
+
+using namespace spice::testing;
 
 /**
  * Entry point to the Spice testing suite
@@ -19,7 +25,7 @@ bool skipNonGitHubTests = false;
  * @return Return code
  */
 int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   // Initialize command line parser
   Driver driver;
   driver.createInterface();

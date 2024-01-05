@@ -108,221 +108,218 @@ f<Token> Lexer.consumeToken() {
     }
 
     // Check if operator can consumed
-    switch curChar {
-        case '{': {
-            this.reader.advance(); // Consume '{'
-            return Token(TokenType::LBRACE, "{", this.reader.getCodeLoc());
-        }
-        case '}': {
-            this.reader.advance(); // Consume '}'
-            return Token(TokenType::RBRACE, "}", this.reader.getCodeLoc());
-        }
-        case '(': {
-            this.reader.advance(); // Consume '('
-            return Token(TokenType::LPAREN, "(", this.reader.getCodeLoc());
-        }
-        case ')': {
-            this.reader.advance(); // Consume ')'
-            return Token(TokenType::RPAREN, ")", this.reader.getCodeLoc());
-        }
-        case '[': {
-            this.reader.advance(); // Consume '['
-            return Token(TokenType::LBRACKET, "[", this.reader.getCodeLoc());
-        }
-        case ']': {
-            this.reader.advance(); // Consume ']'
-            return Token(TokenType::RBRACKET, "]", this.reader.getCodeLoc());
-        }
-        case '|': {
+    if curChar == '{' {
+        this.reader.advance(); // Consume '{'
+        return Token(TokenType::LBRACE, "{", this.reader.getCodeLoc());
+    }
+    if curChar == '}' {
+        this.reader.advance(); // Consume '}'
+        return Token(TokenType::RBRACE, "}", this.reader.getCodeLoc());
+    }
+    if curChar == '(' {
+        this.reader.advance(); // Consume '('
+        return Token(TokenType::LPAREN, "(", this.reader.getCodeLoc());
+    }
+    if curChar == ')' {
+        this.reader.advance(); // Consume ')'
+        return Token(TokenType::RPAREN, ")", this.reader.getCodeLoc());
+    }
+    if curChar == '[' {
+        this.reader.advance(); // Consume '['
+        return Token(TokenType::LBRACKET, "[", this.reader.getCodeLoc());
+    }
+    if curChar == ']' {
+        this.reader.advance(); // Consume ']'
+        return Token(TokenType::RBRACKET, "]", this.reader.getCodeLoc());
+    }
+    if curChar == '|' {
+        this.reader.advance(); // Consume '|'
+        curChar = this.reader.getChar();
+        if this.reader.getChar() == '|' { // "||"
             this.reader.advance(); // Consume '|'
-            curChar = this.reader.getChar();
-            if this.reader.getChar() == '|' { // "||"
-                this.reader.advance(); // Consume '|'
-                return Token(TokenType::LOGICAL_OR, "||", this.reader.getCodeLoc());
-            } else { // '|'
-                return Token(TokenType::BITWISE_OR, "||", this.reader.getCodeLoc());
-            }
-        }
-        case '&': {
-            this.reader.advance(); // Consume '&'
-            curChar = this.reader.getChar();
-            if this.reader.getChar() == '&' { // "&&"
-                this.reader.advance(); // Consume '&'
-                return Token(TokenType::LOGICAL_AND, "&&", this.reader.getCodeLoc());
-            } else { // '&'
-                return Token(TokenType::BITWISE_AND, "&&", this.reader.getCodeLoc());
-            }
-        }
-        case '^': {
-            this.reader.advance(); // Consume '^'
-            if this.reader.getChar() == '=' { // "^="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::XOR_EQUAL, "^=", this.reader.getCodeLoc());
-            } else { // '^'
-                return Token(TokenType::BITWISE_XOR, "^", this.reader.getCodeLoc());
-            }
-        }
-        case '~': {
-            this.reader.advance(); // Consume '~'
-            return Token(TokenType::BITWISE_NOT, "~", this.reader.getCodeLoc());
-        }
-        case '!': {
-            this.reader.advance(); // Consume '!'
-            if this.reader.getChar() == '=' { // "!="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::NOT_EQUAL, "!=", this.reader.getCodeLoc());
-            } else { // '!'
-                return Token(TokenType::NOT, "!", this.reader.getCodeLoc());
-            }
-        }
-        case '+': {
-            this.reader.advance(); // Consume '+'
-            if this.reader.getChar() == '+' { // "++"
-                this.reader.advance(); // Consume '+'
-                return Token(TokenType::PLUS_PLUS, "++", this.reader.getCodeLoc());
-            } else if this.reader.getChar() == '=' { // "+="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::PLUS_EQUAL, "+=", this.reader.getCodeLoc());
-            } else { // '+'
-                return Token(TokenType::PLUS, "+", this.reader.getCodeLoc());
-            }
-        }
-        case '-': {
-            this.reader.advance(); // Consume '-'
-            if this.reader.getChar() == '-' { // "--"
-                this.reader.advance(); // Consume '-'
-                return Token(TokenType::MINUS_MINUS, "--", this.reader.getCodeLoc());
-            } else if this.reader.getChar() == '=' { // "-="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::MINUS_EQUAL, "-=", this.reader.getCodeLoc());
-            } else if this.reader.getChar() == '>' { // "->"
-                this.reader.advance(); // Consume '>'
-                return Token(TokenType::ARROW, "->", this.reader.getCodeLoc());
-            } else { // '-'
-                return Token(TokenType::MINUS, "-", this.reader.getCodeLoc());
-            }
-        }
-        case '*': {
-            this.reader.advance(); // Consume '*'
-            if this.reader.getChar() == '=' { // "*="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::MUL_EQUAL, "*=", this.reader.getCodeLoc());
-            } else { // '*'
-                return Token(TokenType::MUL, "*", this.reader.getCodeLoc());
-            }
-        }
-        case '/': {
-            this.reader.advance(); // Consume '/'
-            if this.reader.getChar() == '=' { // "/="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::DIV_EQUAL, "/=", this.reader.getCodeLoc());
-            } else if this.reader.getChar() == '/' { // "//"
-                return this.consumeLineComment();
-            } else if this.reader.getChar() == '*' { // "/*"
-                return this.consumeBlockOrDocComment();
-            } else { // '/'
-                return Token(TokenType::DIV, "/", this.reader.getCodeLoc());
-            }
-        }
-        case '%': {
-            this.reader.advance(); // Consume '%'
-            if this.reader.getChar() == '=' { // "%="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::REM_EQUAL, "%=", this.reader.getCodeLoc());
-            } else { // '%'
-                return Token(TokenType::REM, "%", this.reader.getCodeLoc());
-            }
-        }
-        case '=': {
-            this.reader.advance(); // Consume '='
-            curChar = this.reader.getChar();
-            if this.reader.getChar() == '=' { // "=="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::EQUAL, "==", this.reader.getCodeLoc());
-            } else { // '='
-                return Token(TokenType::ASSIGN, "=", this.reader.getCodeLoc());
-            }
-        }
-        case '<': {
-            this.reader.advance(); // Consume '<'
-            curChar = this.reader.getChar();
-            if this.reader.getChar() == '=' { // "<="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::LESS_EQUAL, "<=", this.reader.getCodeLoc());
-            } else if this.reader.getChar() == '<' { // "<<"
-                this.reader.advance(); // Consume '<'
-                if this.reader.getChar() == '=' { // "<<="
-                    this.reader.advance(); // Consume '='
-                    return Token(TokenType::SHL_EQUAL, "<<=", this.reader.getCodeLoc());
-                } else { // "<<"
-                    return Token(TokenType::SHL, "<<", this.reader.getCodeLoc());
-                }
-            } else { // '<'
-                return Token(TokenType::LESS, "<", this.reader.getCodeLoc());
-            }
-        }
-        case '>': {
-            this.reader.advance(); // Consume '>'
-            curChar = this.reader.getChar();
-            if this.reader.getChar() == '=' { // ">="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::GREATER_EQUAL, ">=", this.reader.getCodeLoc());
-            } else if this.reader.getChar() == '>' { // ">>"
-                this.reader.advance(); // Consume '>'
-                if this.reader.getChar() == '=' { // ">>="
-                    this.reader.advance(); // Consume '='
-                    return Token(TokenType::SHR_EQUAL, ">>=", this.reader.getCodeLoc());
-                } else { // ">>"
-                    return Token(TokenType::SHR, ">>", this.reader.getCodeLoc());
-                }
-            } else { // '>'
-                return Token(TokenType::GREATER, ">", this.reader.getCodeLoc());
-            }
-        }
-        case '?': {
-            this.reader.advance(); // Consume '?'
-            return Token(TokenType::QUESTION_MARK, "?", this.reader.getCodeLoc());
-        }
-        case ':': {
-            this.reader.advance(); // Consume ':'
-            if this.reader.getChar() == ':' { // "::"
-                this.reader.advance(); // Consume ':'
-                return Token(TokenType::SCOPE_ACCESS, "::", this.reader.getCodeLoc());
-            } else { // ':'
-                return Token(TokenType::COLON, ":", this.reader.getCodeLoc());
-            }
-        }
-        case ';': {
-            this.reader.advance(); // Consume ';'
-            return Token(TokenType::SEMICOLON, ";", this.reader.getCodeLoc());
-        }
-        case ',': {
-            this.reader.advance(); // Consume ','
-            return Token(TokenType::COMMA, ",", this.reader.getCodeLoc());
-        }
-        case '.': {
-            this.reader.advance(); // Consume '.'
-            if this.reader.getChar() == '.' { // ".."
-                this.reader.advance(); // Consume second '.'
-                this.reader.expect('.'); // Consume third '.'
-                return Token(TokenType::ELLIPSIS, "...", this.reader.getCodeLoc());
-            } else { // '.'
-                return Token(TokenType::DOT, ".", this.reader.getCodeLoc());
-            }
-        }
-        case '#': {
-            this.reader.advance(); // Consume '#'
-            if this.reader.getChar() == '!' { // "#!"
-                this.reader.advance(); // Consume '!'
-                return Token(TokenType::MOD_ATTR_PREAMBLE, "#!", this.reader.getCodeLoc());
-            } else { // '#'
-                return Token(TokenType::FCT_ATTR_PREAMBLE, "#", this.reader.getCodeLoc());
-            }
-        }
-        default: {
-            panic(Error("Got unexpected character"));
+            return Token(TokenType::LOGICAL_OR, "||", this.reader.getCodeLoc());
+        } else { // '|'
+            return Token(TokenType::BITWISE_OR, "||", this.reader.getCodeLoc());
         }
     }
+    if curChar == '&' {
+        this.reader.advance(); // Consume '&'
+        curChar = this.reader.getChar();
+        if this.reader.getChar() == '&' { // "&&"
+            this.reader.advance(); // Consume '&'
+            return Token(TokenType::LOGICAL_AND, "&&", this.reader.getCodeLoc());
+        } else { // '&'
+            return Token(TokenType::BITWISE_AND, "&&", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '^' {
+        this.reader.advance(); // Consume '^'
+        if this.reader.getChar() == '=' { // "^="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::XOR_EQUAL, "^=", this.reader.getCodeLoc());
+        } else { // '^'
+            return Token(TokenType::BITWISE_XOR, "^", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '~' {
+        this.reader.advance(); // Consume '~'
+        return Token(TokenType::BITWISE_NOT, "~", this.reader.getCodeLoc());
+    }
+    if curChar == '!' {
+        this.reader.advance(); // Consume '!'
+        if this.reader.getChar() == '=' { // "!="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::NOT_EQUAL, "!=", this.reader.getCodeLoc());
+        } else { // '!'
+            return Token(TokenType::NOT, "!", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '+' {
+        this.reader.advance(); // Consume '+'
+        if this.reader.getChar() == '+' { // "++"
+            this.reader.advance(); // Consume '+'
+            return Token(TokenType::PLUS_PLUS, "++", this.reader.getCodeLoc());
+        } else if this.reader.getChar() == '=' { // "+="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::PLUS_EQUAL, "+=", this.reader.getCodeLoc());
+        } else { // '+'
+            return Token(TokenType::PLUS, "+", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '-' {
+        this.reader.advance(); // Consume '-'
+        if this.reader.getChar() == '-' { // "--"
+            this.reader.advance(); // Consume '-'
+            return Token(TokenType::MINUS_MINUS, "--", this.reader.getCodeLoc());
+        } else if this.reader.getChar() == '=' { // "-="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::MINUS_EQUAL, "-=", this.reader.getCodeLoc());
+        } else if this.reader.getChar() == '>' { // "->"
+            this.reader.advance(); // Consume '>'
+            return Token(TokenType::ARROW, "->", this.reader.getCodeLoc());
+        } else { // '-'
+            return Token(TokenType::MINUS, "-", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '*' {
+        this.reader.advance(); // Consume '*'
+        if this.reader.getChar() == '=' { // "*="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::MUL_EQUAL, "*=", this.reader.getCodeLoc());
+        } else { // '*'
+            return Token(TokenType::MUL, "*", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '/' {
+        this.reader.advance(); // Consume '/'
+        if this.reader.getChar() == '=' { // "/="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::DIV_EQUAL, "/=", this.reader.getCodeLoc());
+        } else if this.reader.getChar() == '/' { // "//"
+            return this.consumeLineComment();
+        } else if this.reader.getChar() == '*' { // "/*"
+            return this.consumeBlockOrDocComment();
+        } else { // '/'
+            return Token(TokenType::DIV, "/", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '%' {
+        this.reader.advance(); // Consume '%'
+        if this.reader.getChar() == '=' { // "%="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::REM_EQUAL, "%=", this.reader.getCodeLoc());
+        } else { // '%'
+            return Token(TokenType::REM, "%", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '=' {
+        this.reader.advance(); // Consume '='
+        curChar = this.reader.getChar();
+        if this.reader.getChar() == '=' { // "=="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::EQUAL, "==", this.reader.getCodeLoc());
+        } else { // '='
+            return Token(TokenType::ASSIGN, "=", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '<' {
+        this.reader.advance(); // Consume '<'
+        curChar = this.reader.getChar();
+        if this.reader.getChar() == '=' { // "<="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::LESS_EQUAL, "<=", this.reader.getCodeLoc());
+        } else if this.reader.getChar() == '<' { // "<<"
+            this.reader.advance(); // Consume '<'
+            if this.reader.getChar() == '=' { // "<<="
+                this.reader.advance(); // Consume '='
+                return Token(TokenType::SHL_EQUAL, "<<=", this.reader.getCodeLoc());
+            } else { // "<<"
+                return Token(TokenType::SHL, "<<", this.reader.getCodeLoc());
+            }
+        } else { // '<'
+            return Token(TokenType::LESS, "<", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '>' {
+        this.reader.advance(); // Consume '>'
+        curChar = this.reader.getChar();
+        if this.reader.getChar() == '=' { // ">="
+            this.reader.advance(); // Consume '='
+            return Token(TokenType::GREATER_EQUAL, ">=", this.reader.getCodeLoc());
+        } else if this.reader.getChar() == '>' { // ">>"
+            this.reader.advance(); // Consume '>'
+            if this.reader.getChar() == '=' { // ">>="
+                this.reader.advance(); // Consume '='
+                return Token(TokenType::SHR_EQUAL, ">>=", this.reader.getCodeLoc());
+            } else { // ">>"
+                return Token(TokenType::SHR, ">>", this.reader.getCodeLoc());
+            }
+        } else { // '>'
+            return Token(TokenType::GREATER, ">", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '?' {
+        this.reader.advance(); // Consume '?'
+        return Token(TokenType::QUESTION_MARK, "?", this.reader.getCodeLoc());
+    }
+    if curChar == ':' {
+        this.reader.advance(); // Consume ':'
+        if this.reader.getChar() == ':' { // "::"
+            this.reader.advance(); // Consume ':'
+            return Token(TokenType::SCOPE_ACCESS, "::", this.reader.getCodeLoc());
+        } else { // ':'
+            return Token(TokenType::COLON, ":", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == ';' {
+        this.reader.advance(); // Consume ';'
+        return Token(TokenType::SEMICOLON, ";", this.reader.getCodeLoc());
+    }
+    if curChar == ',' {
+        this.reader.advance(); // Consume ','
+        return Token(TokenType::COMMA, ",", this.reader.getCodeLoc());
+    }
+    if curChar == '.' {
+        this.reader.advance(); // Consume '.'
+        if this.reader.getChar() == '.' { // ".."
+            this.reader.advance(); // Consume second '.'
+            this.reader.expect('.'); // Consume third '.'
+            return Token(TokenType::ELLIPSIS, "...", this.reader.getCodeLoc());
+        } else { // '.'
+            return Token(TokenType::DOT, ".", this.reader.getCodeLoc());
+        }
+    }
+    if curChar == '#' {
+        this.reader.advance(); // Consume '#'
+        if this.reader.getChar() == '!' { // "#!"
+            this.reader.advance(); // Consume '!'
+            return Token(TokenType::MOD_ATTR_PREAMBLE, "#!", this.reader.getCodeLoc());
+        } else { // '#'
+            return Token(TokenType::FCT_ATTR_PREAMBLE, "#", this.reader.getCodeLoc());
+        }
+    }
+
+    panic(Error("Got unexpected character"));
 }
 
 f<Token> Lexer.consumeNumberLiteral() {
@@ -437,165 +434,150 @@ f<Token> Lexer.consumeKeywordOrIdentifier() {
     } while isAlphaNum(this.reader.getChar()) || this.reader.getChar() == '_';
 
     // Check if identifier is a keyword
-    switch identifier {
-        case "double": {
-            return Token(TokenType::TYPE_DOUBLE, "double", codeLoc);
-        }
-        case "int": {
-            return Token(TokenType::TYPE_INT, "int", codeLoc);
-        }
-        case "short": {
-            return Token(TokenType::TYPE_SHORT, "short", codeLoc);
-        }
-        case "long": {
-            return Token(TokenType::TYPE_LONG, "long", codeLoc);
-        }
-        case "byte": {
-            return Token(TokenType::TYPE_BYTE, "byte", codeLoc);
-        }
-        case "char": {
-            return Token(TokenType::TYPE_CHAR, "char", codeLoc);
-        }
-        case "string": {
-            return Token(TokenType::TYPE_STRING, "string", codeLoc);
-        }
-        case "bool": {
-            return Token(TokenType::TYPE_BOOL, "bool", codeLoc);
-        }
-        case "dyn": {
-            return Token(TokenType::TYPE_DYN, "dyn", codeLoc);
-        }
-        case "const": {
-            return Token(TokenType::CONST, "const", codeLoc);
-        }
-        case "signed": {
-            return Token(TokenType::SIGNED, "signed", codeLoc);
-        }
-        case "unsigned": {
-            return Token(TokenType::UNSIGNED, "unsigned", codeLoc);
-        }
-        case "inline": {
-            return Token(TokenType::INLINE, "inline", codeLoc);
-        }
-        case "public": {
-            return Token(TokenType::PUBLIC, "public", codeLoc);
-        }
-        case "heap": {
-            return Token(TokenType::HEAP, "heap", codeLoc);
-        }
-        case "compose": {
-            return Token(TokenType::COMPOSE, "compose", codeLoc);
-        }
-        case "f": {
-            return Token(TokenType::F, "f", codeLoc);
-        }
-        case "p": {
-            return Token(TokenType::P, "p", codeLoc);
-        }
-        case "if": {
-            return Token(TokenType::IF, "if", codeLoc);
-        }
-        case "else": {
-            return Token(TokenType::ELSE, "else", codeLoc);
-        }
-        case "switch": {
-            return Token(TokenType::SWITCH, "switch", codeLoc);
-        }
-        case "case": {
-            return Token(TokenType::CASE, "case", codeLoc);
-        }
-        case "default": {
-            return Token(TokenType::DEFAULT, "default", codeLoc);
-        }
-        case "assert": {
-            return Token(TokenType::ASSERT, "assert", codeLoc);
-        }
-        case "for": {
-            return Token(TokenType::FOR, "for", codeLoc);
-        }
-        case "foreach": {
-            return Token(TokenType::FOREACH, "foreach", codeLoc);
-        }
-        case "do": {
-            return Token(TokenType::DO, "do", codeLoc);
-        }
-        case "while": {
-            return Token(TokenType::WHILE, "while", codeLoc);
-        }
-        case "import": {
-            return Token(TokenType::IMPORT, "import", codeLoc);
-        }
-        case "break": {
-            return Token(TokenType::BREAK, "break", codeLoc);
-        }
-        case "continue": {
-            return Token(TokenType::CONTINUE, "continue", codeLoc);
-        }
-        case "fallthrough": {
-            return Token(TokenType::FALLTHROUGH, "fallthrough", codeLoc);
-        }
-        case "return": {
-            return Token(TokenType::RETURN, "return", codeLoc);
-        }
-        case "as": {
-            return Token(TokenType::AS, "as", codeLoc);
-        }
-        case "struct": {
-            return Token(TokenType::STRUCT, "struct", codeLoc);
-        }
-        case "interface": {
-            return Token(TokenType::INTERFACE, "interface", codeLoc);
-        }
-        case "type": {
-            return Token(TokenType::TYPE, "type", codeLoc);
-        }
-        case "enum": {
-            return Token(TokenType::ENUM, "enum", codeLoc);
-        }
-        case "operator": {
-            return Token(TokenType::OPERATOR, "operator", codeLoc);
-        }
-        case "alias": {
-            return Token(TokenType::ALIAS, "alias", codeLoc);
-        }
-        case "unsafe": {
-            return Token(TokenType::UNSAFE, "unsafe", codeLoc);
-        }
-        case "nil": {
-            return Token(TokenType::NIL, "nil", codeLoc);
-        }
-        case "main": {
-            return Token(TokenType::MAIN, "main", codeLoc);
-        }
-        case "printf": {
-            return Token(TokenType::PRINTF, "printf", codeLoc);
-        }
-        case "sizeof": {
-            return Token(TokenType::SIZEOF, "sizeof", codeLoc);
-        }
-        case "alignof": {
-            return Token(TokenType::ALIGNOF, "alignof", codeLoc);
-        }
-        case "len": {
-            return Token(TokenType::LEN, "len", codeLoc);
-        }
-        case "panic": {
-            return Token(TokenType::PANIC, "panic", codeLoc);
-        }
-        case "ext": {
-            return Token(TokenType::EXT, "ext", codeLoc);
-        }
-        case "true": {
-            return Token(TokenType::TRUE, "true", codeLoc);
-        }
-        case "false": {
-            return Token(TokenType::FALSE, "false", codeLoc);
-        }
-        default: {
-            // No keyword was matched -> treat as identifier
-            return Token(TokenType::IDENTIFIER, identifier, codeLoc);
-        }
+    if identifier == "double" {
+        return Token(TokenType::TYPE_DOUBLE, "double", codeLoc);
     }
+    if identifier == "int" {
+        return Token(TokenType::TYPE_INT, "int", codeLoc);
+    }
+    if identifier == "short" {
+        return Token(TokenType::TYPE_SHORT, "short", codeLoc);
+    }
+    if identifier == "long" {
+        return Token(TokenType::TYPE_LONG, "long", codeLoc);
+    }
+    if identifier == "byte" {
+        return Token(TokenType::TYPE_BYTE, "byte", codeLoc);
+    }
+    if identifier == "char" {
+        return Token(TokenType::TYPE_CHAR, "char", codeLoc);
+    }
+    if identifier == "string" {
+        return Token(TokenType::TYPE_STRING, "string", codeLoc);
+    }
+    if identifier == "bool" {
+        return Token(TokenType::TYPE_BOOL, "bool", codeLoc);
+    }
+    if identifier == "dyn" {
+        return Token(TokenType::TYPE_DYN, "dyn", codeLoc);
+    }
+    if identifier == "const" {
+        return Token(TokenType::CONST, "const", codeLoc);
+    }
+    if identifier == "signed" {
+        return Token(TokenType::SIGNED, "signed", codeLoc);
+    }
+    if identifier == "unsigned" {
+        return Token(TokenType::UNSIGNED, "unsigned", codeLoc);
+    }
+    if identifier == "inline" {
+        return Token(TokenType::INLINE, "inline", codeLoc);
+    }
+    if identifier == "public" {
+        return Token(TokenType::PUBLIC, "public", codeLoc);
+    }
+    if identifier == "heap" {
+        return Token(TokenType::HEAP, "heap", codeLoc);
+    }
+    if identifier == "compose" {
+        return Token(TokenType::COMPOSE, "compose", codeLoc);
+    }
+    if identifier == "f" {
+        return Token(TokenType::F, "f", codeLoc);
+    }
+    if identifier == "p" {
+        return Token(TokenType::P, "p", codeLoc);
+    }
+    if identifier == "if" {
+        return Token(TokenType::IF, "if", codeLoc);
+    }
+    if identifier == "else" {
+        return Token(TokenType::ELSE, "else", codeLoc);
+    }
+    if identifier == "assert" {
+        return Token(TokenType::ASSERT, "assert", codeLoc);
+    }
+    if identifier == "for" {
+        return Token(TokenType::FOR, "for", codeLoc);
+    }
+    if identifier == "foreach" {
+        return Token(TokenType::FOREACH, "foreach", codeLoc);
+    }
+    if identifier == "do" {
+        return Token(TokenType::DO, "do", codeLoc);
+    }
+    if identifier == "while" {
+        return Token(TokenType::WHILE, "while", codeLoc);
+    }
+    if identifier == "import" {
+        return Token(TokenType::IMPORT, "import", codeLoc);
+    }
+    if identifier == "break" {
+        return Token(TokenType::BREAK, "break", codeLoc);
+    }
+    if identifier == "continue" {
+        return Token(TokenType::CONTINUE, "continue", codeLoc);
+    }
+    if identifier == "return" {
+        return Token(TokenType::RETURN, "return", codeLoc);
+    }
+    if identifier == "as" {
+        return Token(TokenType::AS, "as", codeLoc);
+    }
+    if identifier == "struct" {
+        return Token(TokenType::STRUCT, "struct", codeLoc);
+    }
+    if identifier == "interface" {
+        return Token(TokenType::INTERFACE, "interface", codeLoc);
+    }
+    if identifier == "type" {
+        return Token(TokenType::TYPE, "type", codeLoc);
+    }
+    if identifier == "enum" {
+        return Token(TokenType::ENUM, "enum", codeLoc);
+    }
+    if identifier == "operator" {
+        return Token(TokenType::OPERATOR, "operator", codeLoc);
+    }
+    if identifier == "alias" {
+        return Token(TokenType::ALIAS, "alias", codeLoc);
+    }
+    if identifier == "unsafe" {
+        return Token(TokenType::UNSAFE, "unsafe", codeLoc);
+    }
+    if identifier == "nil" {
+        return Token(TokenType::NIL, "nil", codeLoc);
+    }
+    if identifier == "main" {
+        return Token(TokenType::MAIN, "main", codeLoc);
+    }
+    if identifier == "printf" {
+        return Token(TokenType::PRINTF, "printf", codeLoc);
+    }
+    if identifier == "sizeof" {
+        return Token(TokenType::SIZEOF, "sizeof", codeLoc);
+    }
+    if identifier == "alignof" {
+        return Token(TokenType::ALIGNOF, "alignof", codeLoc);
+    }
+    if identifier == "len" {
+        return Token(TokenType::LEN, "len", codeLoc);
+    }
+    if identifier == "panic" {
+        return Token(TokenType::PANIC, "panic", codeLoc);
+    }
+    if identifier == "ext" {
+        return Token(TokenType::EXT, "ext", codeLoc);
+    }
+    if identifier == "true" {
+        return Token(TokenType::TRUE, "true", codeLoc);
+    }
+    if identifier == "false" {
+        return Token(TokenType::FALSE, "false", codeLoc);
+    }
+
+    // No keyword was matched -> treat as identifier
+    return Token(TokenType::IDENTIFIER, identifier, codeLoc);
 }
 
 f<Token> Lexer.consumeTypeIdentifier() {
