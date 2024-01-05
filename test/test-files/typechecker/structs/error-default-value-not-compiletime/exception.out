@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./test-files/typechecker/structs/error-default-value-not-compiletime/source.spice:4:5:
-Field default value no compiletime constant: Default values must be computable at compile time
+Field default value no compile time constant: Default values must be computable at compile time
 
 4  int i = test()
    ^^^^^^^^^^^^^^

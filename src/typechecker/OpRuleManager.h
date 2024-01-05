@@ -682,7 +682,7 @@ private:
   static SemanticError getExceptionBinary(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs,
                                           const char *messagePrefix);
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs) const;
-  void ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs);
+  static void ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs);
 };
 
 } // namespace spice::compiler

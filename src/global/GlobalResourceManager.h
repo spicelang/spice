@@ -50,7 +50,8 @@ public:
   std::unique_ptr<llvm::Module> ltoModule;
   std::unique_ptr<llvm::TargetMachine> targetMachine;
   DefaultMemoryManager memoryManager;
-  BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>(memoryManager);
+  std::vector<std::string> compileTimeStringValues;
+  BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>(memoryManager); // Used to allocate all AST nodes
   std::unordered_map<std::string, std::unique_ptr<SourceFile>> sourceFiles; // The GlobalResourceManager owns all source files
   std::vector<ASTNode *> astNodes;
   const CliOptions &cliOptions;

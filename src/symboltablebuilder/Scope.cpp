@@ -14,11 +14,11 @@ namespace spice::compiler {
  *
  * @param scopeName Name of the child scope
  * @param scopeType Type of the child scope
- * @param codeLoc Code location of the scope
+ * @param declCodeLoc Code location of the scope
  * @return Child scope (heap allocated)
  */
-Scope *Scope::createChildScope(const std::string &scopeName, ScopeType scopeType, const CodeLoc *codeLoc) {
-  children.insert({scopeName, std::make_shared<Scope>(this, sourceFile, scopeType, codeLoc)});
+Scope *Scope::createChildScope(const std::string &scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
+  children.insert({scopeName, std::make_shared<Scope>(this, sourceFile, scopeType, declCodeLoc)});
   return children.at(scopeName).get();
 }
 
@@ -50,7 +50,7 @@ void Scope::copyChildScope(const std::string &oldName, const std::string &newNam
   children.insert({newName, newScope});
 }
 
-std::shared_ptr<Scope> Scope::deepCopyScope() {
+std::shared_ptr<Scope> Scope::deepCopyScope() { // NOLINT(misc-no-recursion)
   const std::shared_ptr<Scope> newScope = std::make_shared<Scope>(*this);
   for (const auto &[childName, oldChild] : children) {
     newScope->children[childName] = oldChild->deepCopyScope();
@@ -169,22 +169,6 @@ std::vector<Function *> Scope::getVirtualMethods() {
   std::ranges::sort(methods, [](const Function *a, const Function *b) { return a->getDeclCodeLoc() < b->getDeclCodeLoc(); });
 
   return methods;
-}
-
-/**
- * Get the number of virtual methods in this scope
- *
- * @return Number of virtual methods
- */
-size_t Scope::getVirtualMethodCount() const {
-  assert(type == ScopeType::STRUCT || type == ScopeType::INTERFACE);
-  size_t methodCount = 0;
-  for (const auto &symbol : symbolTable.symbols) {
-    const ASTNode *declNode = symbol.second.declNode;
-    if (declNode->isFctOrProcDef() || declNode->isStructDef())
-      methodCount++;
-  }
-  return methodCount;
 }
 
 /**
@@ -374,7 +358,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
  * Checks if all variables of this and all child scopes are of an explicit type.
  * This is executed after type inference to check that all variables could be inferred correctly.
  */
-void Scope::ensureSuccessfulTypeInference() const {
+void Scope::ensureSuccessfulTypeInference() const { // NOLINT(misc-no-recursion)
   // Check symbols in this scope
   for (auto &[name, entry] : symbolTable.symbols)
     if (entry.getType().is(TY_DYN))

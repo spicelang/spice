@@ -16,7 +16,11 @@ const char *const ANON_GLOBAL_STRING_NAME = "anon.string.";
 const char *const ANON_GLOBAL_ARRAY_NAME = "anon.array.";
 const char *const CAPTURES_PARAM_NAME = "captures";
 
-enum Likeliness { UNSPECIFIED, LIKELY, UNLIKELY };
+enum Likeliness : uint8_t {
+  UNSPECIFIED,
+  LIKELY,
+  UNLIKELY,
+};
 
 // Forward declarations
 class SourceFile;

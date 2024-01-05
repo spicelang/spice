@@ -208,7 +208,7 @@ CompileTimeValue TernaryExprNode::getCompileTimeValue() const {
   // If the condition has no compile time value, we do not need to evaluate the true and false values
   const LogicalOrExprNode *condition = ops[0];
   if (!condition->hasCompileTimeValue())
-    return compileTimeValue;
+    return {};
 
   // Check if condition always evaluates to 'true'
   if (condition->getCompileTimeValue().boolValue) {

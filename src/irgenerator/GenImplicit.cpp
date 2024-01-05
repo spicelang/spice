@@ -444,14 +444,10 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
 
     // Call dtor for struct fields
     if (fieldType.is(TY_STRUCT)) {
-      // Lookup dtor function
-      Scope *matchScope = fieldType.getBodyScope();
-      const Function *dtorFunction = FunctionManager::lookupFunction(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, false);
-
-      // Generate call to dtor
+      // Lookup dtor function and generate call if found
+      dtorFunction = FunctionManager::lookupFunction(fieldType.getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
       if (dtorFunction)
         generateCtorOrDtorCall(fieldSymbol, dtorFunction, {});
-
       continue;
     }
 
@@ -547,7 +543,7 @@ void IRGenerator::generateTestMain() {
         std::stringstream testName;
         testName << testFunction->name;
         if (testNameAttr)
-          testName << " (" << testNameAttr->stringValue << ")";
+          testName << " (" << resourceManager.compileTimeStringValues.at(testNameAttr->stringValueOffset) << ")";
 
         // Print test case run message
         llvm::Constant *testNameValue = createGlobalStringConst("testName", testName.str(), testFunction->getDeclCodeLoc());

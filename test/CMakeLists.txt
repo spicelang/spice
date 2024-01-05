@@ -8,7 +8,8 @@ set(SOURCES
         TestRunner.cpp
         util/TestUtil.cpp
         util/TestUtil.h
-        unittest/UnitBlockAllocator.cpp)
+        unittest/UnitBlockAllocator.cpp
+        unittest/UnitCommonUtil.cpp)
 
 add_executable(spicetest ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 

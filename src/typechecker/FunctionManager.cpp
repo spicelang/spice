@@ -438,36 +438,6 @@ void FunctionManager::substantiateReturnType(Function &candidate, TypeMapping &t
 }
 
 /**
- * Checks if the matching candidate fulfills the return type requirement
- *
- * @param candidate Matching candidate function
- * @param requestedReturnType Requested return type
- * @param typeMapping Concrete template type mapping
- * @param strictSpecifierMatching Match specifiers strictly
- * @return Fulfilled or not
- */
-bool FunctionManager::matchReturnType(Function &candidate, const SymbolType &requestedReturnType, TypeMapping &typeMapping,
-                                      bool strictSpecifierMatching) {
-  SymbolType &candidateReturnType = candidate.returnType;
-
-  // Give the type matcher a way to retrieve instances of GenericType by their name
-  TypeMatcher::ResolverFct genericTypeResolver = [&](const std::string &genericTypeName) {
-    return getGenericTypeOfCandidateByName(candidate, genericTypeName);
-  };
-
-  // Check if the requested param type matches the candidate param type. The type mapping may be extended
-  if (!TypeMatcher::matchRequestedToCandidateType(candidateReturnType, requestedReturnType, typeMapping, genericTypeResolver,
-                                                  strictSpecifierMatching))
-    return false;
-
-  // Substantiate the candidate param type, based on the type mapping
-  if (candidateReturnType.hasAnyGenericParts())
-    TypeMatcher::substantiateTypeWithTypeMapping(candidateReturnType, typeMapping);
-
-  return true;
-}
-
-/**
  * Searches the candidate template types for a generic type object with a certain name and return it
  *
  * @param candidate Matching candidate function

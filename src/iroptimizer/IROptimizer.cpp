@@ -64,13 +64,13 @@ void IROptimizer::optimizePostLink(llvm::Module &ltoModule) {
   modulePassMgr.run(ltoModule, moduleAnalysisMgr);
 }
 
-std::string IROptimizer::getOptimizedIRString(llvm::Module *module) const {
-  if (!module)
-    module = this->module;
-  assert(module != nullptr); // Ensure that the module was not moved away
+std::string IROptimizer::getOptimizedIRString(llvm::Module *llvmModule) const {
+  if (!llvmModule)
+    llvmModule = module;
+  assert(llvmModule != nullptr); // Ensure that the module was not moved away
   std::string output;
   llvm::raw_string_ostream oss(output);
-  module->print(oss, nullptr);
+  llvmModule->print(oss, nullptr);
   return oss.str();
 }
 

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -10,7 +11,7 @@ namespace spice::compiler {
 // Forward declarations
 class ASTNode;
 
-enum LifecycleState {
+enum LifecycleState : uint8_t {
   DEAD,
   DECLARED,
   INITIALIZED,
@@ -40,8 +41,8 @@ public:
   void addEvent(const LifecycleEvent &event);
   [[nodiscard]] LifecycleState getCurrentState() const;
   [[nodiscard]] const char *getCurrentStateName() const;
-  [[nodiscard]] bool isDead() const;
-  [[nodiscard]] bool isDeclared() const;
+  [[nodiscard]] [[maybe_unused]] bool isDead() const;
+  [[nodiscard]] [[maybe_unused]] bool isDeclared() const;
   [[nodiscard]] bool isInitialized() const;
 
 private:

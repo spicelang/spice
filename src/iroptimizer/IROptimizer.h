@@ -25,7 +25,7 @@ public:
   void optimizeDefault();
   void optimizePreLink();
   void optimizePostLink(llvm::Module &ltoModule);
-  [[nodiscard]] std::string getOptimizedIRString(llvm::Module *module = nullptr) const;
+  [[nodiscard]] std::string getOptimizedIRString(llvm::Module *llvmModule = nullptr) const;
 
 private:
   // Private members

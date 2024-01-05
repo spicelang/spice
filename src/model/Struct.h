@@ -18,7 +18,7 @@ public:
   // Constructors
   Struct(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<SymbolType> fieldTypes,
          std::vector<GenericType> templateTypes, std::vector<SymbolType> interfaceTypes, ASTNode *declNode)
-      : StructBase(name, entry, scope, templateTypes, declNode), fieldTypes(std::move(fieldTypes)),
+      : StructBase(std::move(name), entry, scope, std::move(templateTypes), declNode), fieldTypes(std::move(fieldTypes)),
         interfaceTypes(std::move(interfaceTypes)) {}
 
   // Public methods

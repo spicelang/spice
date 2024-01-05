@@ -5,7 +5,6 @@
 #include <SourceFile.h>
 #include <ast/ASTBuilder.h>
 #include <ast/Attributes.h>
-#include <driver/Driver.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 
@@ -623,12 +622,15 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   const AttrLstNode *attrs = node->attrLst();
 
   // core.linker.flag
-  for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG))
-    resourceManager.linker.addLinkerFlag(value->stringValue);
+  for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG)) {
+    const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
+    resourceManager.linker.addLinkerFlag(stringValue);
+  }
 
   // core.linker.additional_source
   for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_ADDITIONAL_SOURCE)) {
-    const std::filesystem::path path = sourceFile->filePath.parent_path() / value->stringValue;
+    const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
+    const std::filesystem::path path = sourceFile->filePath.parent_path() / stringValue;
     resourceManager.linker.addAdditionalSourcePath(std::filesystem::canonical(path));
   }
 

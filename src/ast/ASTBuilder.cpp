@@ -523,7 +523,7 @@ std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
     else if (symbolType == SpiceParser::COMPOSE)
       specifierNode->type = SpecifierNode::TY_COMPOSITION;
     else
-      assert(false && "Unknown specifier type"); // GCOV_EXCL_LINE
+      assert_fail("Unknown specifier type"); // GCOV_EXCL_LINE
   }
 
   return concludeNode(specifierNode);
@@ -986,35 +986,37 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
   auto constantNode = createNode<ConstantNode>(ctx);
 
   // Enrich
+  CompileTimeValue &value = constantNode->compileTimeValue;
   if (ctx->DOUBLE_LIT()) {
     constantNode->type = ConstantNode::TYPE_DOUBLE;
-    constantNode->compileTimeValue.doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
+    value.doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
   } else if (ctx->INT_LIT()) {
     constantNode->type = ConstantNode::TYPE_INT;
-    constantNode->compileTimeValue.intValue = parseInt(constantNode, ctx->INT_LIT());
+    value.intValue = parseInt(constantNode, ctx->INT_LIT());
   } else if (ctx->SHORT_LIT()) {
     constantNode->type = ConstantNode::TYPE_SHORT;
-    constantNode->compileTimeValue.shortValue = parseShort(constantNode, ctx->SHORT_LIT());
+    value.shortValue = parseShort(constantNode, ctx->SHORT_LIT());
   } else if (ctx->LONG_LIT()) {
     constantNode->type = ConstantNode::TYPE_LONG;
-    constantNode->compileTimeValue.longValue = parseLong(constantNode, ctx->LONG_LIT());
+    value.longValue = parseLong(constantNode, ctx->LONG_LIT());
   } else if (ctx->CHAR_LIT()) {
     constantNode->type = ConstantNode::TYPE_CHAR;
-    constantNode->compileTimeValue.charValue = parseChar(ctx->CHAR_LIT());
+    value.charValue = parseChar(ctx->CHAR_LIT());
   } else if (ctx->STRING_LIT()) {
-    // Transfer ownership to the AST node
-    constantNode->compileTimeStringValue = parseString(ctx->STRING_LIT()->toString());
     // Save a pointer to the string in the compile time value
     constantNode->type = ConstantNode::TYPE_STRING;
-    constantNode->compileTimeValue.stringValue = constantNode->compileTimeStringValue.c_str();
+    value.stringValueOffset = resourceManager.compileTimeStringValues.size();
+    // Add the string to the global compile time string list
+    resourceManager.compileTimeStringValues.push_back(parseString(ctx->STRING_LIT()->toString()));
   } else if (ctx->TRUE()) {
     constantNode->type = ConstantNode::TYPE_BOOL;
-    constantNode->compileTimeValue.boolValue = true;
+    value.boolValue = true;
   } else if (ctx->FALSE()) {
     constantNode->type = ConstantNode::TYPE_BOOL;
-    constantNode->compileTimeValue.boolValue = false;
+    value.boolValue = false;
+  } else {
+    assert_fail("Unknown constant type"); // GCOV_EXCL_LINE
   }
-  constantNode->hasDirectCompileTimeValue = true;
 
   return concludeNode(constantNode);
 }
@@ -1182,6 +1184,8 @@ std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_CUSTOM;
   else if (ctx->functionDataType())
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_FUNCTION;
+  else
+    assert_fail("Unknown base data type");
 
   // Visit children
   visitChildren(ctx);
@@ -1251,7 +1255,7 @@ std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
   else if (ctx->XOR_EQUAL())
     assignExprNode->op = AssignExprNode::OP_XOR_EQUAL;
   else
-    assert(false && "Unknown assign operator");
+    assert_fail("Unknown assign operator");
   assignExprNode->hasOperator = true;
 
   return nullptr;
@@ -1261,51 +1265,37 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
   auto fctNameNode = spice_pointer_cast<FctNameNode *>(parentStack.top());
 
   // Enrich
-  if (ctx->PLUS()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_PLUS;
+  if (ctx->PLUS())
     fctNameNode->name = OP_FCT_PLUS;
-  } else if (ctx->MINUS()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_MINUS;
+  else if (ctx->MINUS())
     fctNameNode->name = OP_FCT_MINUS;
-  } else if (ctx->MUL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_MUL;
+  else if (ctx->MUL())
     fctNameNode->name = OP_FCT_MUL;
-  } else if (ctx->DIV()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_DIV;
+  else if (ctx->DIV())
     fctNameNode->name = OP_FCT_DIV;
-  } else if (ctx->EQUAL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_EQUAL;
+  else if (ctx->EQUAL())
     fctNameNode->name = OP_FCT_EQUAL;
-  } else if (ctx->NOT_EQUAL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_NOT_EQUAL;
+  else if (ctx->NOT_EQUAL())
     fctNameNode->name = OP_FCT_NOT_EQUAL;
-  } else if (ctx->LESS().size() == 2) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_SHL;
+  else if (ctx->LESS().size() == 2)
     fctNameNode->name = OP_FCT_SHL;
-  } else if (ctx->GREATER().size() == 2) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_SHR;
+  else if (ctx->GREATER().size() == 2)
     fctNameNode->name = OP_FCT_SHR;
-  } else if (ctx->PLUS_EQUAL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_PLUS_EQUAL;
+  else if (ctx->PLUS_EQUAL())
     fctNameNode->name = OP_FCT_PLUS_EQUAL;
-  } else if (ctx->MINUS_EQUAL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_MINUS_EQUAL;
+  else if (ctx->MINUS_EQUAL())
     fctNameNode->name = OP_FCT_MINUS_EQUAL;
-  } else if (ctx->MUL_EQUAL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_MUL_EQUAL;
+  else if (ctx->MUL_EQUAL())
     fctNameNode->name = OP_FCT_MUL_EQUAL;
-  } else if (ctx->DIV_EQUAL()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_DIV_EQUAL;
+  else if (ctx->DIV_EQUAL())
     fctNameNode->name = OP_FCT_DIV_EQUAL;
-  } else if (ctx->PLUS_PLUS()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_PLUS_PLUS;
+  else if (ctx->PLUS_PLUS())
     fctNameNode->name = OP_FCT_POSTFIX_PLUS_PLUS;
-  } else if (ctx->MINUS_MINUS()) {
-    fctNameNode->overloadedOperator = FctNameNode::OP_MINUS_MINUS;
+  else if (ctx->MINUS_MINUS())
     fctNameNode->name = OP_FCT_POSTFIX_MINUS_MINUS;
-  } else {
-    assert(false && "Unsupported overloadable operator"); // GCOV_EXCL_LINE
-  }
+  else
+    assert_fail("Unsupported overloadable operator"); // GCOV_EXCL_LINE
+
   fctNameNode->fqName = fctNameNode->name;
   fctNameNode->nameFragments.push_back(fctNameNode->name);
 
@@ -1339,21 +1329,35 @@ template <typename T> T *ASTBuilder::concludeNode(T *node) {
 }
 
 int32_t ASTBuilder::parseInt(ConstantNode *constantNode, TerminalNode *terminal) {
-  std::function<int32_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
-    return std::stoi(substr, nullptr, base);
+  NumericParserCallback<int32_t> cb = [](const std::string &substr, int base, bool isSigned) -> int32_t {
+    // Prepare limits
+    const int64_t upperLimit = isSigned ? INT32_MAX : UINT32_MAX;
+    const int64_t lowerLimit = isSigned ? INT32_MIN : 0;
+    // Parse number and check for limits
+    const int64_t number = std::stoll(substr, nullptr, base);
+    if (number < lowerLimit || number > upperLimit)
+      throw std::out_of_range("Number out of range");
+    return static_cast<int32_t>(number);
   };
   return parseNumeric(constantNode, terminal, cb);
 }
 
 int16_t ASTBuilder::parseShort(ConstantNode *constantNode, TerminalNode *terminal) {
-  std::function<int16_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
-    return (int16_t)std::stoi(substr, nullptr, base);
+  NumericParserCallback<int16_t> cb = [](const std::string &substr, int base, bool isSigned) -> int16_t {
+    // Prepare limits
+    const int64_t upperLimit = isSigned ? INT16_MAX : UINT16_MAX;
+    const int64_t lowerLimit = isSigned ? INT16_MIN : 0;
+    // Parse number and check for limits
+    const int64_t number = std::stoll(substr, nullptr, base);
+    if (number < lowerLimit || number > upperLimit)
+      throw std::out_of_range("Number out of range");
+    return static_cast<int16_t>(number);
   };
   return parseNumeric(constantNode, terminal, cb);
 }
 
 int64_t ASTBuilder::parseLong(ConstantNode *constantNode, TerminalNode *terminal) {
-  std::function<int64_t(const std::string &, int)> cb = [](const std::string &substr, int base) {
+  NumericParserCallback<int64_t> cb = [](const std::string &substr, int base, bool isSigned) -> int64_t {
     return std::stoll(substr, nullptr, base);
   };
   return parseNumeric(constantNode, terminal, cb);
@@ -1402,40 +1406,35 @@ std::string ASTBuilder::parseString(std::string input) {
 }
 
 template <typename T>
-T ASTBuilder::parseNumeric(ConstantNode *constantNode, TerminalNode *terminal, std::function<T(const std::string &, int)> cb) {
+T ASTBuilder::parseNumeric(ConstantNode *constantNode, TerminalNode *terminal,
+                           std::function<T(const std::string &, int, bool)> cb) {
   const std::string input = terminal->toString();
 
-  // Set to signed if the input string ends with 'u'
-  if (constantNode)
-    constantNode->isSigned = input.ends_with('u');
+  // Set to signed if the input string does not end with 'u'
+  const bool isSigned = !input.ends_with('u');
 
   try {
     if (input.length() >= 3) {
-      const char c1 = input[0];
-      const char c2 = input[1];
-      const std::string subStr = input.substr(2);
-      if (c1 == '0') {
-        switch (c2) {
-        case 'd':
-        case 'D':
-          return cb(subStr, 10);
+      if (input[0] == '0') {
+        const std::string subStr = input.substr(2);
+        switch (input[1]) {
         case 'b':
         case 'B':
-          return cb(subStr, 2);
+          return cb(subStr, 2, isSigned);
         case 'h':
         case 'H':
         case 'x':
         case 'X':
-          return cb(subStr, 16);
+          return cb(subStr, 16, isSigned);
         case 'o':
         case 'O':
-          return cb(subStr, 8);
+          return cb(subStr, 8, isSigned);
         default:
-          return cb(input, 10);
+          return cb(input, 10, isSigned);
         }
       }
     }
-    return cb(input, 10);
+    return cb(input, 10, isSigned);
   } catch (std::out_of_range &e) {
     const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
     throw ParserError(codeLoc, NUMBER_OUT_OF_RANGE, "The provided number is out of range");

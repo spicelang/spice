@@ -5,7 +5,6 @@
 
 #include <filesystem>
 #include <iostream>
-#include <sys/stat.h>
 
 #include <util/CommonUtil.h>
 

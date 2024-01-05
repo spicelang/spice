@@ -26,6 +26,7 @@ private:
   // Private type defs
   using TerminalNode = antlr4::tree::TerminalNode;
   using ParserRuleContext = antlr4::ParserRuleContext;
+  template <typename T> using NumericParserCallback = std::function<T(const std::string &, int, bool)>;
 
 public:
   // Constructors
@@ -134,8 +135,7 @@ private:
   int64_t parseLong(ConstantNode *constantNode, TerminalNode *terminal);
   int8_t parseChar(TerminalNode *terminal);
   static std::string parseString(std::string input);
-  template <typename T>
-  T parseNumeric(ConstantNode *constantNode, TerminalNode *terminal, std::function<T(const std::string &, int)> cb);
+  template <typename T> T parseNumeric(ConstantNode *constantNode, TerminalNode *terminal, NumericParserCallback<T> cb);
   static void replaceEscapeChars(std::string &string);
   std::string getIdentifier(TerminalNode *terminal);
 };

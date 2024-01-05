@@ -21,14 +21,15 @@ namespace spice::compiler {
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
  */
 union CompileTimeValue {
-  std::double_t doubleValue;
-  std::int32_t intValue;
-  std::int16_t shortValue;
-  std::int64_t longValue;
-  std::int8_t charValue;
-  const char *stringValue;
+  double_t doubleValue;
+  int32_t intValue;
+  int16_t shortValue;
+  int64_t longValue;
+  int8_t charValue;
   bool boolValue;
+  size_t stringValueOffset = 0; // Offset into vector of strings in GlobalResourceManager
 };
+static_assert(sizeof(CompileTimeValue) == 8);
 
 // =========================================================== AstNode ===========================================================
 
@@ -72,35 +73,12 @@ public:
     return nodes;
   }
 
-  ALWAYS_INLINE void reserveChildren(size_t numberOfChildren) { children.reserve(numberOfChildren); }
-
-  void replaceInParent(ASTNode *replacementNode) {
-    assert(parent != nullptr);
-    for (auto &child : parent->children) {
-      if (child == this) [[unlikely]] {
-        // Replace in children vector
-        child = replacementNode;
-        break;
-      }
-    }
-  }
-
-  void removeFromParent() {
-    assert(parent != nullptr);
-    for (auto &child : parent->children) {
-      if (child == this) [[unlikely]] {
-        // Remove from children vector
-        child = nullptr;
-        break;
-      }
-    }
-  }
-
   virtual void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Resize children
-    for (ASTNode *child : children)
-      if (child != nullptr)
-        child->resizeToNumberOfManifestations(manifestationCount);
+    for (ASTNode *child : children) {
+      assert(child != nullptr);
+      child->resizeToNumberOfManifestations(manifestationCount);
+    }
     // Reserve this node
     symbolTypes.resize(manifestationCount, SymbolType(TY_INVALID));
     // Reserve operator functions
@@ -126,16 +104,14 @@ public:
   }
 
   [[nodiscard]] virtual bool hasCompileTimeValue() const { // NOLINT(misc-no-recursion)
-    if (hasDirectCompileTimeValue)
-      return true;
     if (children.size() != 1)
       return false;
     return children.front()->hasCompileTimeValue();
   }
 
   [[nodiscard]] virtual CompileTimeValue getCompileTimeValue() const { // NOLINT(misc-no-recursion)
-    if (hasDirectCompileTimeValue || children.empty())
-      return compileTimeValue;
+    if (children.size() != 1)
+      return {};
     return children.front()->getCompileTimeValue();
   }
 
@@ -145,18 +121,18 @@ public:
     return children.size() == 1 && children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   }
 
-  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &fctName) {              // LCOV_EXCL_LINE
-    assert(false && "Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
-    return nullptr;                                                                                              // LCOV_EXCL_LINE
-  }                                                                                                              // LCOV_EXCL_LINE
+  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &fctName) {          // LCOV_EXCL_LINE
+    assert_fail("Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
+    return nullptr;                                                                                          // LCOV_EXCL_LINE
+  }                                                                                                          // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() { // LCOV_EXCL_LINE
-    assert(false && "Must be called on a StructDefNode");                  // LCOV_EXCL_LINE
+    assert_fail("Must be called on a StructDefNode");                      // LCOV_EXCL_LINE
     return nullptr;                                                        // LCOV_EXCL_LINE
   }                                                                        // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() { // LCOV_EXCL_LINE
-    assert(false && "Must be called on a InterfaceDefNode");                     // LCOV_EXCL_LINE
+    assert_fail("Must be called on a InterfaceDefNode");                         // LCOV_EXCL_LINE
     return nullptr;                                                              // LCOV_EXCL_LINE
   }                                                                              // LCOV_EXCL_LINE
 
@@ -171,12 +147,12 @@ public:
   std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
   std::vector<SymbolType> symbolTypes;
-  CompileTimeValue compileTimeValue = {.boolValue = false};
-  std::string compileTimeStringValue;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
-  bool hasDirectCompileTimeValue = false;
   bool unreachable = false;
 };
+
+// Make sure we have no unexpected increases in memory consumption
+static_assert(sizeof(ASTNode) == 136);
 
 // ========================================================== EntryNode ==========================================================
 
@@ -211,7 +187,7 @@ public:
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
   // Other methods
-  [[nodiscard]] std::string getScopeId() const { return "fct:main"; }
+  [[nodiscard]] static std::string getScopeId() { return "fct:main"; }
   [[nodiscard]] std::string getSignature() const { return takesArgs ? "main(int, string[])" : "main()"; }
   bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
@@ -229,25 +205,6 @@ public:
   // Constructors
   using ASTNode::ASTNode;
 
-  // Enums
-  enum OverloadedOperator : uint8_t {
-    OP_NONE,
-    OP_PLUS,
-    OP_MINUS,
-    OP_MUL,
-    OP_DIV,
-    OP_EQUAL,
-    OP_NOT_EQUAL,
-    OP_SHL,
-    OP_SHR,
-    OP_PLUS_EQUAL,
-    OP_MINUS_EQUAL,
-    OP_MUL_EQUAL,
-    OP_DIV_EQUAL,
-    OP_PLUS_PLUS,
-    OP_MINUS_MINUS
-  };
-
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctName(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctName(this); }
@@ -257,7 +214,6 @@ public:
   std::string structName;
   std::string fqName;
   std::vector<std::string> nameFragments;
-  OverloadedOperator overloadedOperator = OP_NONE;
 };
 
 // ======================================================== FctDefBaseNode =======================================================
@@ -813,9 +769,6 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
-
-  // Public members
-  size_t numberOfTypes = 0;
 };
 
 // ======================================================= TypeAltsLstNode =======================================================
@@ -831,9 +784,6 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
-
-  // Public members
-  size_t numberOfAlts = 0;
 };
 
 // ======================================================== ParamLstNode =========================================================
@@ -879,9 +829,6 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<EnumItemNode *> items() const { return getChildren<EnumItemNode>(); }
-
-  // Public members
-  EnumDefNode *enumDef = nullptr;
 };
 
 // ========================================================= EnumItemNode ========================================================
@@ -1611,7 +1558,6 @@ class AdditiveExprNode : public ASTNode {
 public:
   // Enums
   enum AdditiveOp : uint8_t {
-    OP_NONE,
     OP_PLUS,
     OP_MINUS,
   };
@@ -1643,7 +1589,6 @@ class MultiplicativeExprNode : public ASTNode {
 public:
   // Enums
   enum MultiplicativeOp : uint8_t {
-    OP_NONE,
     OP_MUL,
     OP_DIV,
     OP_REM,
@@ -1847,9 +1792,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitConstant(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitConstant(this); }
 
+  // Other methods
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override { return compileTimeValue; }
+  [[nodiscard]] bool hasCompileTimeValue() const override { return true; }
+
   // Public members
+  CompileTimeValue compileTimeValue;
   PrimitiveValueType type = TYPE_NONE;
-  bool isSigned = true;
 };
 
 // ====================================================== FctCallNode ============================================================
