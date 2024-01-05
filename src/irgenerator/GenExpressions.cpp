@@ -14,7 +14,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
     return visit(node->ternaryExpr());
 
   // Assign or compound assign operation
-  if (node->hasOperator) {
+  if (node->op != AssignExprNode::OP_NONE) {
     const PrefixUnaryExprNode *lhsNode = node->lhs();
     const AssignExprNode *rhsNode = node->rhs();
 
