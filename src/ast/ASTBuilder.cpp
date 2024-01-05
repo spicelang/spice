@@ -15,7 +15,7 @@
 namespace spice::compiler {
 
 ASTBuilder::ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile, antlr4::ANTLRInputStream *inputStream)
-    : CompilerPass(resourceManager, sourceFile), filePath(sourceFile->filePath), inputStream(inputStream) {}
+    : CompilerPass(resourceManager, sourceFile), inputStream(inputStream) {}
 
 std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
   auto entryNode = createNode<EntryNode>(ctx);
@@ -1386,11 +1386,11 @@ int8_t ASTBuilder::parseChar(TerminalNode *terminal) {
     case '0':
       return '\0';
     default:
-      const CodeLoc codeLoc(terminal->getSymbol(), filePath);
+      const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
       throw ParserError(codeLoc, INVALID_CHAR_LITERAL, "Invalid escape sequence " + input);
     }
   } else {
-    const CodeLoc codeLoc(terminal->getSymbol(), filePath);
+    const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
     throw ParserError(codeLoc, INVALID_CHAR_LITERAL, "Invalid char literal " + input);
   }
 }
@@ -1437,10 +1437,10 @@ T ASTBuilder::parseNumeric(ConstantNode *constantNode, TerminalNode *terminal, s
     }
     return cb(input, 10);
   } catch (std::out_of_range &e) {
-    const CodeLoc codeLoc(terminal->getSymbol(), filePath);
+    const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
     throw ParserError(codeLoc, NUMBER_OUT_OF_RANGE, "The provided number is out of range");
   } catch (std::invalid_argument &e) {
-    const CodeLoc codeLoc(terminal->getSymbol(), filePath);
+    const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
     throw ParserError(codeLoc, NUMBER_OUT_OF_RANGE, "You tried to parse '" + input + "' as an integer, but it was no integer");
   }
 }
@@ -1467,7 +1467,7 @@ std::string ASTBuilder::getIdentifier(TerminalNode *terminal) {
   isReserved |= std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), identifier) != std::end(RESERVED_KEYWORDS);
   // Print error message
   if (isReserved) {
-    const CodeLoc codeLoc(terminal->getSymbol(), filePath);
+    const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
     throw ParserError(codeLoc, RESERVED_KEYWORD, "'" + identifier + "' is a reserved keyword. Please use another name instead");
   }
 

@@ -10,7 +10,7 @@ namespace spice::compiler {
 
 void AntlrThrowingErrorListener::syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line,
                                              size_t charPositionInLine, const std::string &msg, std::exception_ptr e) {
-  const CodeLoc codeLoc(line, charPositionInLine, filePath);
+  const CodeLoc codeLoc(line, charPositionInLine, sourceFile);
   if (mode == ThrowingErrorListenerMode::LEXER)
     throw LexerError(codeLoc, TOKENIZING_FAILED, msg);
   else

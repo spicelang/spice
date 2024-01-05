@@ -120,14 +120,15 @@ public:
 
 private:
   // Members
-  const std::filesystem::path &filePath;
   antlr4::ANTLRInputStream *inputStream;
   std::stack<ASTNode *> parentStack;
 
   // Private methods
   template <typename T> T *createNode(const ParserRuleContext *ctx);
   template <typename T> T *concludeNode(T *node);
-  ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) { return CodeLoc(ctx->start, filePath); }
+  ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) {
+    return {ctx->start, ctx->start->getStartIndex(), ctx->stop->getStopIndex(), sourceFile};
+  }
   int32_t parseInt(ConstantNode *constantNode, TerminalNode *terminal);
   int16_t parseShort(ConstantNode *constantNode, TerminalNode *terminal);
   int64_t parseLong(ConstantNode *constantNode, TerminalNode *terminal);

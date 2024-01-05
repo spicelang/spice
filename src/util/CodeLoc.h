@@ -13,18 +13,23 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+class SourceFile;
+
 struct CodeLoc {
 public:
   // Constructors
-  CodeLoc(size_t line, size_t col, std::filesystem::path sourceFilePath = "")
-      : line(line), col(col), sourceFilePath(std::move(sourceFilePath)) {}
-  explicit CodeLoc(const antlr4::Token *token, std::filesystem::path sourceFilePath = "")
-      : token(token), line(token->getLine()), col(token->getCharPositionInLine() + 1),
-        sourceFilePath(std::move(sourceFilePath)){};
+  explicit CodeLoc(const antlr4::Token *token, SourceFile *sourceFile = nullptr)
+      : sourceInterval(token->getStartIndex(), token->getStopIndex()), line(token->getLine()),
+        col(token->getCharPositionInLine() + 1), sourceFile(sourceFile){};
+  CodeLoc(const antlr4::Token *token, size_t startIdx, size_t stopIdx, SourceFile *sourceFile = nullptr)
+      : sourceInterval(startIdx, stopIdx), line(token->getLine()), col(token->getCharPositionInLine() + 1),
+        sourceFile(sourceFile){};
+  CodeLoc(size_t line, size_t col, SourceFile *sourceFile = nullptr) : line(line), col(col), sourceFile(sourceFile) {}
 
   // Public members
-  const antlr4::Token *token = nullptr;
-  std::filesystem::path sourceFilePath;
+  SourceFile *sourceFile = nullptr;
+  const antlr4::misc::Interval sourceInterval;
   size_t line;
   size_t col;
 
@@ -35,9 +40,7 @@ public:
   [[nodiscard]] std::string toPrettyLineAndColumn() const;
 
   // Operators
-  ALWAYS_INLINE friend bool operator==(const CodeLoc &a, const CodeLoc &b) {
-    return a.sourceFilePath == b.sourceFilePath && a.line == b.line && a.col == b.col;
-  }
+  friend bool operator==(const CodeLoc &a, const CodeLoc &b);
   ALWAYS_INLINE friend bool operator<(const CodeLoc &a, const CodeLoc &b) {
     return a.line == b.line ? a.col < b.col : a.line < b.line;
   }

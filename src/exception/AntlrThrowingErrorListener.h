@@ -9,7 +9,10 @@
 
 namespace spice::compiler {
 
-enum class ThrowingErrorListenerMode {
+// Forward declarations
+class SourceFile;
+
+enum class ThrowingErrorListenerMode : uint8_t {
   LEXER,
   PARSER,
 };
@@ -17,8 +20,7 @@ enum class ThrowingErrorListenerMode {
 class AntlrThrowingErrorListener : public antlr4::BaseErrorListener {
 public:
   // Constructors
-  AntlrThrowingErrorListener(ThrowingErrorListenerMode mode, std::filesystem::path filePath)
-      : mode(mode), filePath(std::move(filePath)){};
+  AntlrThrowingErrorListener(ThrowingErrorListenerMode mode, SourceFile *sourceFile) : mode(mode), sourceFile(sourceFile){};
 
   // Public methods
   void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line, size_t charPositionInLine,
@@ -27,7 +29,7 @@ public:
 private:
   // Private members
   ThrowingErrorListenerMode mode;
-  std::filesystem::path filePath;
+  SourceFile *sourceFile;
 };
 
 } // namespace spice::compiler

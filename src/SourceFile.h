@@ -47,7 +47,14 @@ enum CompileStageType : uint8_t {
   FINISHED
 };
 
-enum CompileStageIOType { IO_CODE, IO_TOKENS, IO_CST, IO_AST, IO_IR, IO_OBJECT_FILE };
+enum CompileStageIOType : uint8_t {
+  IO_CODE,
+  IO_TOKENS,
+  IO_CST,
+  IO_AST,
+  IO_IR,
+  IO_OBJECT_FILE,
+};
 
 struct SourceFileAntlrCtx {
   // Create error handlers for lexer and parser
