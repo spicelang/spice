@@ -11,11 +11,13 @@
 #include "util/CommonUtil.h"
 #include "util/FileUtil.h"
 
-using namespace spice::compiler;
-
 #ifdef OS_UNIX
 #include <cstring> // Required by builds on Linux
 #endif
+
+namespace spice::testing {
+
+using namespace spice::compiler;
 
 /**
  * Collect the test cases in a particular test suite
@@ -223,5 +225,7 @@ void TestUtil::eraseLinesBySubstring(std::string &irCode, const char *const need
     irCode.erase(lineStart, lineEnd - lineStart);
   }
 }
+
+} // namespace spice::testing
 
 // GCOV_EXCL_STOP

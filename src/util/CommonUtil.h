@@ -17,6 +17,7 @@ public:
   static std::string getLastFragment(const std::string &haystack, const std::string &needle);
   static std::string trim(const std::string &input);
   static std::vector<std::string> split(const std::string &input);
+  static size_t getSystemPageSize();
 };
 
 } // namespace spice::compiler

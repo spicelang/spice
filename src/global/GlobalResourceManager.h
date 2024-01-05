@@ -49,7 +49,8 @@ public:
   llvm::IRBuilder<> builder = llvm::IRBuilder<>(context);
   std::unique_ptr<llvm::Module> ltoModule;
   std::unique_ptr<llvm::TargetMachine> targetMachine;
-  BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>();
+  DefaultMemoryManager memoryManager;
+  BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>(memoryManager);
   std::unordered_map<std::string, std::unique_ptr<SourceFile>> sourceFiles; // The GlobalResourceManager owns all source files
   std::vector<ASTNode *> astNodes;
   const CliOptions &cliOptions;

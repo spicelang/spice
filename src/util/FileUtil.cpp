@@ -71,8 +71,10 @@ ExecResult FileUtil::exec(const std::string &cmd) {
 bool FileUtil::isCommandAvailable(const std::string &cmd) {
 #if OS_WINDOWS
   const std::string checkCmd = "where " + cmd + " > nul 2>&1";
-#else
+#elif OS_UNIX
   const std::string checkCmd = "which " + cmd + " > /dev/null 2>&1";
+#else
+#error "Unsupported platform"
 #endif
   return std::system(checkCmd.c_str()) != 0;
 }
@@ -104,8 +106,10 @@ std::filesystem::path FileUtil::getStdDir() {
 std::filesystem::path FileUtil::getSpiceBinDir() {
 #if OS_WINDOWS
   return std::filesystem::path(std::getenv("USERPROFILE")) / "spice" / "bin";
-#else
+#elif OS_UNIX
   return "/usr/local/bin/";
+#else
+#error "Unsupported platform"
 #endif
 }
 

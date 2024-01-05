@@ -12,6 +12,8 @@
 
 #include "util/FileUtil.h"
 
+namespace spice::testing {
+
 const char *const PATH_TEST_FILES = "./test-files/";
 const unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
 const unsigned int IR_FILE_SKIP_LINES = 5; // Skip the first couple of lines, because they contain target dependent information
@@ -59,7 +61,7 @@ class TestUtil {
 public:
   // Public structs
   struct NameResolver {
-    template <class T> std::string operator()(const testing::TestParamInfo<T> &info) const {
+    template <class T> std::string operator()(const ::testing::TestParamInfo<T> &info) const {
       T testCase = static_cast<T>(info.param);
       return TestUtil::toCamelCase(testCase.testSuite) + "_" + TestUtil::toCamelCase(testCase.testName);
     }
@@ -86,5 +88,7 @@ public:
   static void eraseGDBHeader(std::string &gdbOutput);
   static void eraseLinesBySubstring(std::string &irCode, const char *needle);
 };
+
+} // namespace spice::testing
 
 // GCOV_EXCL_STOP
