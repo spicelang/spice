@@ -11,6 +11,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class ASTNode;
+class SourceFile;
 struct CodeLoc;
 
 enum SemanticErrorType : uint8_t {
@@ -116,7 +117,7 @@ enum SemanticErrorType : uint8_t {
 class SemanticError : public std::exception {
 public:
   // Constructors
-  SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message);
+  SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message, bool printErrorMessage = true);
 
   // Public methods
   [[nodiscard]] const char *what() const noexcept override;

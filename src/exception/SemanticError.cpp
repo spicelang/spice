@@ -7,12 +7,14 @@
 
 namespace spice::compiler {
 
-SemanticError::SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &message) {
+SemanticError::SemanticError(const ASTNode *node, const SemanticErrorType &type, const std::string &msg, bool printErrorMessage) {
   assert(node != nullptr);
   errorMessage = "[Error|Semantic] " + node->codeLoc.toPrettyString() + ":\n";
-  errorMessage += getMessagePrefix(type) + ": " + message;
-  if (!node->errorMessage.empty())
-    errorMessage += "\n\n" + node->errorMessage;
+  errorMessage += getMessagePrefix(type) + ": " + msg;
+  if (printErrorMessage) {
+    const std::string nodeErrorMessage = node->getErrorMessage();
+    errorMessage += "\n\n" + nodeErrorMessage;
+  }
 }
 
 /**

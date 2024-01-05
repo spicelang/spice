@@ -2,11 +2,60 @@
 
 #include <ast/ASTNodes.h>
 
+#include "SourceFile.h"
 #include <ast/Attributes.h>
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
+
+// Constant definitions
+static constexpr size_t ERROR_MESSAGE_CONTEXT = 20;
+
+std::string ASTNode::getErrorMessage() const {
+  antlr4::CharStream *inputStream = codeLoc.sourceFile->antlrCtx.inputStream.get();
+  antlr4::misc::Interval extSourceInterval(codeLoc.sourceInterval);
+
+  // If we have a multi-line interval, only use the first line
+  if (size_t offset = inputStream->getText(extSourceInterval).find('\n'); offset != std::string::npos)
+    extSourceInterval.b = extSourceInterval.a + static_cast<ssize_t>(offset);
+
+  size_t markerIndentation = 0;
+  for (; markerIndentation < ERROR_MESSAGE_CONTEXT; markerIndentation++) {
+    extSourceInterval.a--;
+    if (extSourceInterval.a < 0 || inputStream->getText(extSourceInterval).find('\n') != std::string::npos) {
+      extSourceInterval.a++;
+      break;
+    }
+  }
+  for (size_t suffixContext = 0; suffixContext < ERROR_MESSAGE_CONTEXT; suffixContext++) {
+    extSourceInterval.b++;
+    if (extSourceInterval.b > inputStream->size() || inputStream->getText(extSourceInterval).find('\n') != std::string::npos) {
+      extSourceInterval.b--;
+      break;
+    }
+  }
+
+  // Trim start
+  while (inputStream->getText(extSourceInterval)[0] == ' ') {
+    extSourceInterval.a++;
+    markerIndentation--;
+  }
+
+  // Trim end
+  if (inputStream->getText(extSourceInterval)[extSourceInterval.length() - 1] == '\n')
+    extSourceInterval.b--;
+
+  const std::string lineNumberStr = std::to_string(codeLoc.line);
+  markerIndentation += lineNumberStr.length() + 2;
+
+  // Build error message
+  std::stringstream ss;
+  ss << lineNumberStr << "  " << inputStream->getText(extSourceInterval) << "\n";
+  ss << std::string(markerIndentation, ' ');
+  ss << std::string(std::min(codeLoc.sourceInterval.length(), extSourceInterval.length()), '^');
+  return ss.str();
+}
 
 bool MainFctDefNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);

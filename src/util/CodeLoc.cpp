@@ -2,6 +2,7 @@
 
 #include "CodeLoc.h"
 
+#include "SourceFile.h"
 #include <util/CommonUtil.h>
 
 #include <utility>
@@ -21,6 +22,7 @@ std::string CodeLoc::toString() const { return "L" + std::to_string(line) + "C" 
  * @return Pretty code location
  */
 std::string CodeLoc::toPrettyString() const {
+  const std::filesystem::path &sourceFilePath = sourceFile->filePath;
   const std::string prefix = sourceFilePath.empty() ? "" : sourceFilePath.generic_string() + ":";
   return prefix + std::to_string(line) + ":" + std::to_string(col);
 }
@@ -38,5 +40,9 @@ std::string CodeLoc::toPrettyLine() const { return "L" + std::to_string(line); }
  * @return Pretty line and column numbers
  */
 std::string CodeLoc::toPrettyLineAndColumn() const { return toString(); }
+
+bool operator==(const CodeLoc &a, const CodeLoc &b) {
+  return a.sourceFile->filePath == b.sourceFile->filePath && a.line == b.line && a.col == b.col;
+}
 
 } // namespace spice::compiler

@@ -51,8 +51,8 @@ void SourceFile::runLexer() {
     throw CompilerError(SOURCE_FILE_NOT_FOUND, "Source file at path '" + filePath.string() + "' does not exist.");
 
   // Create error handlers for lexer and parser
-  antlrCtx.lexerErrorHandler = std::make_unique<AntlrThrowingErrorListener>(ThrowingErrorListenerMode::LEXER, filePath);
-  antlrCtx.parserErrorHandler = std::make_unique<AntlrThrowingErrorListener>(ThrowingErrorListenerMode::PARSER, filePath);
+  antlrCtx.lexerErrorHandler = std::make_unique<AntlrThrowingErrorListener>(ThrowingErrorListenerMode::LEXER, this);
+  antlrCtx.parserErrorHandler = std::make_unique<AntlrThrowingErrorListener>(ThrowingErrorListenerMode::PARSER, this);
 
   // Tokenize input
   antlrCtx.inputStream = std::make_unique<antlr4::ANTLRInputStream>(fileInputStream);
