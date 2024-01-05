@@ -15,7 +15,7 @@
 
 namespace spice::compiler {
 
-enum TypeCheckerMode {
+enum TypeCheckerMode : bool {
   TC_MODE_PRE,
   TC_MODE_POST,
 };

@@ -131,7 +131,8 @@ SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
  * @param indexPath How to index the found symbol using order indices (e.g. for GEP)
  * @return Desired symbol / nullptr if the symbol was not found
  */
-SymbolTableEntry *SymbolTable::lookupInComposedFields(const std::string &name, std::vector<size_t> &indexPath) {
+SymbolTableEntry *SymbolTable::lookupInComposedFields(const std::string &name,
+                                                      std::vector<size_t> &indexPath) { // NOLINT(misc-no-recursion)
   assert(scope->type == ScopeType::STRUCT);
 
   // Check if we have a symbol with this name in the current scope

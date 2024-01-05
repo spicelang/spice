@@ -5,8 +5,6 @@
 #include "SourceFile.h"
 #include <util/CommonUtil.h>
 
-#include <utility>
-
 namespace spice::compiler {
 
 /**

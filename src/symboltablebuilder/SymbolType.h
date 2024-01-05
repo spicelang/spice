@@ -127,9 +127,11 @@ public:
   [[nodiscard]] ALWAYS_INLINE bool isPtr() const { return getSuperType() == TY_PTR; }
   [[nodiscard]] ALWAYS_INLINE bool isPtrOf(SymbolSuperType superType) const { return isPtr() && getContainedTy().is(superType); }
   [[nodiscard]] ALWAYS_INLINE bool isRef() const { return getSuperType() == TY_REF; }
-  [[nodiscard]] ALWAYS_INLINE bool isRefOf(SymbolSuperType superType) const { return isRef() && getContainedTy().is(superType); }
+  [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isRefOf(SymbolSuperType superType) const {
+    return isRef() && getContainedTy().is(superType);
+  }
   [[nodiscard]] ALWAYS_INLINE bool isArray() const { return getSuperType() == TY_ARRAY; }
-  [[nodiscard]] ALWAYS_INLINE bool isArrayOf(SymbolSuperType superType) const {
+  [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isArrayOf(SymbolSuperType superType) const {
     return isArray() && getContainedTy().is(superType);
   }
   [[nodiscard]] ALWAYS_INLINE bool isArrayOf(const SymbolType &symbolType) const {

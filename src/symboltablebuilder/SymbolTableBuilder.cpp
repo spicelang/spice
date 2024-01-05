@@ -5,7 +5,6 @@
 #include <SourceFile.h>
 #include <ast/ASTBuilder.h>
 #include <ast/Attributes.h>
-#include <driver/Driver.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 

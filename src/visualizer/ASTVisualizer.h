@@ -113,7 +113,7 @@ private:
   std::string parentNodeId;
 
   // Private methods
-  template <typename T, typename = std::enable_if_t<std::is_base_of_v<ASTNode, T>>> std::string buildNode(const T *node) {
+  template <typename T> std::string buildNode(const T *node) requires std::is_base_of_v<ASTNode, T> {
     std::stringstream result;
 
     // Prepare strings

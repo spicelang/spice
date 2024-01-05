@@ -60,8 +60,6 @@ private:
   [[nodiscard]] static bool matchArgTypes(Function &candidate, const std::vector<SymbolType> &requestedArgTypes,
                                           TypeMapping &typeMapping, bool strictSpecifierMatching, bool &needsSubstantiation);
   static void substantiateReturnType(Function &candidate, TypeMapping &typeMapping);
-  static bool matchReturnType(Function &candidate, const SymbolType &requestedReturnType, TypeMapping &typeMapping,
-                              bool strictSpecifierMatching);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Function &candidate,
                                                                           const std::string &templateTypeName);
 };

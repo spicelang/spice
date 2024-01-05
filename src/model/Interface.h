@@ -19,7 +19,7 @@ public:
   // Constructors
   Interface(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<Function *> methods,
             std::vector<GenericType> templateTypes, ASTNode *declNode)
-      : StructBase(name, entry, scope, templateTypes, declNode), methods(std::move(methods)) {}
+      : StructBase(std::move(name), entry, scope, std::move(templateTypes), declNode), methods(std::move(methods)) {}
 
   // Public members
   std::vector<Function *> methods;

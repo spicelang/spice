@@ -52,9 +52,9 @@ public:
   [[nodiscard]] ALWAYS_INLINE bool isFunction() const { return !returnType.is(TY_DYN); }
   [[nodiscard]] ALWAYS_INLINE bool isProcedure() const { return returnType.is(TY_DYN); }
   [[nodiscard]] ALWAYS_INLINE bool isNormalFunction() const { return isFunction() && !isMethod(); }
-  [[nodiscard]] ALWAYS_INLINE bool isNormalProcedure() const { return isProcedure() && !isMethod(); }
-  [[nodiscard]] ALWAYS_INLINE bool isMethodFunction() const { return isFunction() && isMethod(); }
-  [[nodiscard]] ALWAYS_INLINE bool isMethodProcedure() const { return isProcedure() && isMethod(); }
+  [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isNormalProcedure() const { return isProcedure() && !isMethod(); }
+  [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isMethodFunction() const { return isFunction() && isMethod(); }
+  [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isMethodProcedure() const { return isProcedure() && isMethod(); }
   [[nodiscard]] ALWAYS_INLINE bool isVirtualMethod() const { return isMethod() && isVirtual; }
   [[nodiscard]] bool hasSubstantiatedParams() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;

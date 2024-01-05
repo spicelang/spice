@@ -64,7 +64,7 @@ public:
 
   // Public methods
   // Scope management
-  Scope *createChildScope(const std::string &scopeName, ScopeType scopeType, const CodeLoc *codeLoc);
+  Scope *createChildScope(const std::string &scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc);
   void renameChildScope(const std::string &oldName, const std::string &newName);
   void copyChildScope(const std::string &oldName, const std::string &newName);
   std::shared_ptr<Scope> deepCopyScope();
@@ -80,7 +80,6 @@ public:
   void ensureSuccessfulTypeInference() const;
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] std::vector<Function *> getVirtualMethods();
-  [[nodiscard]] size_t getVirtualMethodCount() const;
   [[nodiscard]] bool hasRefFields();
   [[nodiscard]] size_t getLoopNestingDepth() const;
   [[nodiscard]] bool isInCaseBranch() const;

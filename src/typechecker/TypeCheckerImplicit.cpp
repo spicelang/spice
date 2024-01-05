@@ -6,8 +6,6 @@
 #include <ast/ASTNodes.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
-#include <ranges>
-
 namespace spice::compiler {
 
 static const char *const FCT_NAME_DEALLOC = "sDealloc";
@@ -24,8 +22,8 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
   Scope *structScope = spiceStruct.scope;
   ASTNode *node = spiceStruct.declNode;
   const SymbolTableEntry *structEntry = spiceStruct.entry;
-  const SymbolType &thisType = structEntry->getType();
-  const std::string fqFctName = thisType.getSubType() + MEMBER_ACCESS_TOKEN + methodName;
+  const SymbolType &structType = structEntry->getType();
+  const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + methodName;
 
   // Procedure type
   SymbolType procedureType(TY_PROCEDURE);
@@ -42,7 +40,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
   // Create the default method
   const std::vector<GenericType> templateTypes = spiceStruct.templateTypes;
   const SymbolType returnType(TY_DYN);
-  Function defaultMethod(methodName, fctEntry, thisType, returnType, params, templateTypes, structEntry->declNode);
+  Function defaultMethod(methodName, fctEntry, structType, returnType, params, templateTypes, structEntry->declNode);
   defaultMethod.implicitDefault = true;
 
   // Create function scope
@@ -51,7 +49,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
 
   // Create 'this' symbol in the function scope
   SymbolTableEntry *thisEntry = fctScope->insert(THIS_VARIABLE_NAME, node);
-  thisEntry->updateType(thisType.toPointer(node), true);
+  thisEntry->updateType(structType.toPointer(node), true);
   thisEntry->used = true; // Always set to used to not print warnings for non-existing code
 
   // Hand it off to the function manager to register the function
@@ -70,8 +68,8 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
 
   // Abort if the struct already has a user-defined constructor
   const SymbolTableEntry *structEntry = spiceStruct.entry;
-  const SymbolType &thisType = structEntry->getType();
-  const std::string fqFctName = thisType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
+  const SymbolType &structType = structEntry->getType();
+  const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
   if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
 
@@ -128,8 +126,8 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
 
   // Abort if the struct already has a user-defined constructor
   const SymbolTableEntry *structEntry = spiceStruct.entry;
-  const SymbolType &thisType = structEntry->getType();
-  const std::string fqFctName = thisType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
+  const SymbolType &structType = structEntry->getType();
+  const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
   if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
 
@@ -160,7 +158,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
     return;
 
   // Create the default copy ctor function
-  const ParamList paramTypes = {{thisType.toConstReference(node), false}};
+  const ParamList paramTypes = {{structType.toConstReference(node), false}};
   createDefaultStructMethod(spiceStruct, CTOR_FUNCTION_NAME, paramTypes);
 }
 
@@ -176,8 +174,8 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
 
   // Abort if the struct already has a user-defined destructor
   const SymbolTableEntry *structEntry = spiceStruct.entry;
-  const SymbolType &thisType = structEntry->getType();
-  const std::string fqFctName = thisType.getSubType() + MEMBER_ACCESS_TOKEN + DTOR_FUNCTION_NAME;
+  const SymbolType &structType = structEntry->getType();
+  const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + DTOR_FUNCTION_NAME;
   if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
 

@@ -319,7 +319,7 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   // Switch to exit block
   switchToBlock(bExit);
 
-  // Return conditional value as result for the if stmt
+  // Return conditional value as result for the 'if' stmt
   return condValue;
 }
 

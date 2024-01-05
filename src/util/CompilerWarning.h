@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace spice::compiler {
@@ -9,7 +10,7 @@ namespace spice::compiler {
 // Forward declaration
 struct CodeLoc;
 
-enum CompilerWarningType {
+enum CompilerWarningType : uint8_t {
   UNUSED_FUNCTION,
   UNUSED_PROCEDURE,
   UNUSED_METHOD,

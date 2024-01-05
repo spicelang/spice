@@ -113,7 +113,6 @@ set(SOURCES
         model/StructBase.h
         model/Struct.cpp
         model/Struct.h
-        model/Interface.cpp
         model/Interface.h
         model/GenericType.cpp
         model/GenericType.h
