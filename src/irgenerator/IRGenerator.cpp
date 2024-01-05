@@ -278,8 +278,10 @@ llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, 
   if (type.isOneOf({TY_BYTE, TY_CHAR}))
     return builder.getInt8(compileTimeValue.charValue);
 
-  if (type.is(TY_STRING))
-    return createGlobalStringConst(ANON_GLOBAL_STRING_NAME, compileTimeValue.stringValue, node->codeLoc);
+  if (type.is(TY_STRING)) {
+    const std::string &stringValue = resourceManager.compileTimeStringValues.at(compileTimeValue.stringValueOffset);
+    return createGlobalStringConst(ANON_GLOBAL_STRING_NAME, stringValue, node->codeLoc);
+  }
 
   if (type.is(TY_BOOL))
     return builder.getInt1(compileTimeValue.boolValue);

@@ -547,7 +547,7 @@ void IRGenerator::generateTestMain() {
         std::stringstream testName;
         testName << testFunction->name;
         if (testNameAttr)
-          testName << " (" << testNameAttr->stringValue << ")";
+          testName << " (" << resourceManager.compileTimeStringValues.at(testNameAttr->stringValueOffset) << ")";
 
         // Print test case run message
         llvm::Constant *testNameValue = createGlobalStringConst("testName", testName.str(), testFunction->getDeclCodeLoc());

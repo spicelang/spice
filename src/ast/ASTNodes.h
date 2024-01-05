@@ -26,7 +26,7 @@ union CompileTimeValue {
   int16_t shortValue;
   int64_t longValue;
   int8_t charValue;
-  const char *stringValue;
+  size_t stringValueOffset; // Offset into vector of strings in GlobalResourceManager
   bool boolValue;
 };
 static_assert(sizeof(CompileTimeValue) == 8);
@@ -150,14 +150,13 @@ public:
   const CodeLoc codeLoc;
   std::vector<SymbolType> symbolTypes;
   CompileTimeValue compileTimeValue = {.boolValue = false};
-  std::string compileTimeStringValue;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
   bool hasDirectCompileTimeValue = false;
   bool unreachable = false;
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(ASTNode) == 176);
+static_assert(sizeof(ASTNode) == 144);
 
 // ========================================================== EntryNode ==========================================================
 

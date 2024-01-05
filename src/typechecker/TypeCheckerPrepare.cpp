@@ -165,8 +165,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     Function *firstManifestation = node->manifestations.front();
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
       firstManifestation->mangleFunctionName = value->boolValue;
-    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME))
-      firstManifestation->predefinedMangledName = value->stringValue;
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME)) {
+      const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
+      firstManifestation->predefinedMangledName = stringValue;
+    }
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_TEST); value->boolValue) {
       // Make sure that the function has the correct signature
       if (node->hasParams)
@@ -296,8 +298,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     const AttrLstNode *attrLst = node->attrs()->attrLst();
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
       node->manifestations.front()->mangleFunctionName = value->boolValue;
-    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME))
-      node->manifestations.front()->predefinedMangledName = value->stringValue;
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME)) {
+      const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
+      node->manifestations.front()->predefinedMangledName = stringValue;
+    }
   }
 
   // Rename / duplicate the original child scope to reflect the substantiated versions of the procedure
@@ -665,8 +669,10 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
     const AttrLstNode *attrLst = node->attrs()->attrLst();
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
       node->extFunction->mangleFunctionName = value->boolValue;
-    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME))
-      node->extFunction->predefinedMangledName = value->stringValue;
+    if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME)) {
+      const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
+      node->extFunction->predefinedMangledName = stringValue;
+    }
   }
 
   // Prepare ext function type
