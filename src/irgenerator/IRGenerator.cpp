@@ -541,8 +541,8 @@ std::string IRGenerator::getIRString() const {
  * @return Op fct pointer list
  */
 const std::vector<const Function *> &IRGenerator::getOpFctPointers(const ASTNode *node) const {
-  assert(node->opFct.size() > manIdx);
-  return node->opFct.at(manIdx);
+  assert(node->getOpFctPointers()->size() > manIdx);
+  return node->getOpFctPointers()->at(manIdx);
 }
 
 } // namespace spice::compiler

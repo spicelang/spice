@@ -1256,7 +1256,6 @@ std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
     assignExprNode->op = AssignExprNode::OP_XOR_EQUAL;
   else
     assert_fail("Unknown assign operator");
-  assignExprNode->hasOperator = true;
 
   return nullptr;
 }

@@ -1665,9 +1665,10 @@ template <size_t N>
 LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *node, const std::array<ResolverFct, N * 2> &opV,
                                                                 size_t opIdx) {
   const size_t manIdx = irGenerator->manIdx;
-  assert(!node->opFct.empty() && node->opFct.size() > manIdx);
-  assert(!node->opFct.at(manIdx).empty() && node->opFct.at(manIdx).size() > opIdx);
-  const Function *opFct = node->opFct.at(manIdx).at(opIdx);
+  const std::vector<std::vector<const Function *>> *opFctPointers = node->getOpFctPointers();
+  assert(!opFctPointers->empty() && opFctPointers->size() > manIdx);
+  assert(!opFctPointers->at(manIdx).empty() && opFctPointers->at(manIdx).size() > opIdx);
+  const Function *opFct = opFctPointers->at(manIdx).at(opIdx);
   assert(opFct != nullptr);
 
   const std::string mangledName = opFct->getMangledName();

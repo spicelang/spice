@@ -253,7 +253,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
     SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
 
   // Warning for bool assignment
-  if (condition->hasOperator && condition->op == AssignExprNode::OP_ASSIGN)
+  if (condition->op == AssignExprNode::OP_ASSIGN)
     sourceFile->compilerOutput.warnings.emplace_back(condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
                                                      "If you want to compare the values, use '=='");
 
@@ -800,7 +800,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   }
 
   // Check if assignment
-  if (node->hasOperator) {
+  if (node->op != AssignExprNode::OP_NONE) {
     // Visit the right side first
     auto [rhsType, rhsEntry] = std::any_cast<ExprResult>(visit(node->rhs()));
     HANDLE_UNRESOLVED_TYPE_ER(rhsType)
@@ -2486,8 +2486,8 @@ void TypeChecker::autoDeReference(SymbolType &symbolType) {
  * @return Op fct pointer list
  */
 std::vector<const Function *> &TypeChecker::getOpFctPointers(ASTNode *node) const {
-  assert(node->opFct.size() > manIdx);
-  return node->opFct.at(manIdx);
+  assert(node->getOpFctPointers()->size() > manIdx);
+  return node->getOpFctPointers()->at(manIdx);
 }
 
 /**

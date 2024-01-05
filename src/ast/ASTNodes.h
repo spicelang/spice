@@ -81,11 +81,18 @@ public:
     }
     // Reserve this node
     symbolTypes.resize(manifestationCount, SymbolType(TY_INVALID));
-    // Reserve operator functions
-    opFct.resize(manifestationCount, {nullptr});
     // Do custom work
     customItemsInitialization(manifestationCount);
   }
+
+  virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {             // LCOV_EXCL_LINE
+    assert_fail("The given node does not overload the getOpFctPointers function");     // LCOV_EXCL_LINE
+    return nullptr;                                                                    // LCOV_EXCL_LINE
+  }                                                                                    // LCOV_EXCL_LINE
+  virtual const std::vector<std::vector<const Function *>> *getOpFctPointers() const { // LCOV_EXCL_LINE
+    assert_fail("The given node does not overload the getOpFctPointers function");     // LCOV_EXCL_LINE
+    return nullptr;                                                                    // LCOV_EXCL_LINE
+  }                                                                                    // LCOV_EXCL_LINE
 
   virtual void customItemsInitialization(size_t) {} // Noop
 
@@ -147,12 +154,11 @@ public:
   std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
   std::vector<SymbolType> symbolTypes;
-  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
   bool unreachable = false;
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(ASTNode) == 136);
+static_assert(sizeof(ASTNode) == 112);
 
 // ========================================================== EntryNode ==========================================================
 
@@ -1341,10 +1347,13 @@ public:
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   [[nodiscard]] bool isAssignExpr() const override { return true; }
+  [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
+  [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
+  void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
   AssignOp op = OP_NONE;
-  bool hasOperator = false;
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 
 // ======================================================= TernaryExprNode =======================================================
@@ -1487,9 +1496,13 @@ public:
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
+  [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
+  void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
   EqualityOp op = OP_NONE;
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 
 // ==================================================== RelationalExprNode =======================================================
@@ -1547,9 +1560,13 @@ public:
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
+  [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
+  void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
   ShiftOp op = OP_NONE;
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 
 // ==================================================== AdditiveExprNode =========================================================
@@ -1578,9 +1595,13 @@ public:
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
+  [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
+  void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
   OpQueue opQueue;
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 
 // ================================================== MultiplicativeExprNode =====================================================
@@ -1610,9 +1631,13 @@ public:
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
+  [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
+  void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
   OpQueue opQueue;
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 
 // ======================================================= CastExprNode ==========================================================
@@ -1701,10 +1726,14 @@ public:
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
+  [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
+  [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
+  void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
   PostfixUnaryOp op = OP_NONE;
-  std::string identifier; // Only set when operator is member access
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
+  std::string identifier;                           // Only set when operator is member access
 };
 
 // ====================================================== AtomicExprNode =========================================================
