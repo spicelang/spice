@@ -135,7 +135,6 @@ set(SOURCES
         exception/AntlrThrowingErrorListener.cpp
         exception/AntlrThrowingErrorListener.h
         # Utility
-        util/BlockAllocator.cpp
         util/BlockAllocator.h
         util/CommonUtil.cpp
         util/CommonUtil.h
