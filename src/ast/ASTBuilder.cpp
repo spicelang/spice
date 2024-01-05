@@ -1017,7 +1017,6 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
   } else {
     assert_fail("Unknown constant type"); // GCOV_EXCL_LINE
   }
-  constantNode->hasDirectCompileTimeValue = true;
 
   return concludeNode(constantNode);
 }

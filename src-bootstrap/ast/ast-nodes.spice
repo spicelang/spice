@@ -18,7 +18,7 @@ public type CompileTimeValue struct {
     long longValue
     byte byteValue
     char charValue
-    string stringValue
+    unsigned long stringValueOffset = 0l // Offset into vector of strings in GlobalResourceManager
     bool boolValue
 }
 
@@ -34,9 +34,6 @@ public type ASTNode struct /*: IVisitable*/ {
     CodeLoc codeLoc
     string errorMessage
     //Vector<SymbolType> symbolTypes
-    CompileTimeValue compileTimeValue
-    string compileTimeStringValue
-    bool hasDirectCompileTimeValue = false
     bool unreachable = false
     //Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
@@ -533,7 +530,7 @@ public type ASTValueNode struct /*: IVisitable*/ {
 
 public type ASTConstantNode struct /*: IVisitable*/ {
     compose public ASTNode node
-
+    CompileTimeValue compileTimeValue
 }
 
 // ========================================================== FctCallNode ========================================================

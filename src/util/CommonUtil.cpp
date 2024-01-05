@@ -61,7 +61,7 @@ std::string CommonUtil::trim(const std::string &input) {
  */
 std::vector<std::string> CommonUtil::split(const std::string &input) {
   std::vector<std::string> result;
-  std::istringstream stream(input);
+  std::istringstream stream(trim(input));
 
   std::string token;
   while (std::getline(stream, token, ' '))

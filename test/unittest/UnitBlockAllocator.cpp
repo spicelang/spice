@@ -8,6 +8,8 @@
 #include <util/CodeLoc.h>
 #include <util/Memory.h>
 
+namespace spice::testing {
+
 using namespace spice::compiler;
 
 static size_t destructedDummyNodes = 0;
@@ -123,3 +125,5 @@ TEST(BlockAllocatorTest, TestBlockAllocatorOOM) {
   ASSERT_EQ(8, destructedDummyNodes); // Only 8 blocks were constructed until the OOM error occurred
   ::testing::Mock::VerifyAndClearExpectations(&mockMemoryManager);
 }
+
+} // namespace spice::testing

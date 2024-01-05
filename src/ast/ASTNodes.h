@@ -26,8 +26,8 @@ union CompileTimeValue {
   int16_t shortValue;
   int64_t longValue;
   int8_t charValue;
-  size_t stringValueOffset; // Offset into vector of strings in GlobalResourceManager
   bool boolValue;
+  size_t stringValueOffset = 0; // Offset into vector of strings in GlobalResourceManager
 };
 static_assert(sizeof(CompileTimeValue) == 8);
 
@@ -104,16 +104,14 @@ public:
   }
 
   [[nodiscard]] virtual bool hasCompileTimeValue() const { // NOLINT(misc-no-recursion)
-    if (hasDirectCompileTimeValue)
-      return true;
     if (children.size() != 1)
       return false;
     return children.front()->hasCompileTimeValue();
   }
 
   [[nodiscard]] virtual CompileTimeValue getCompileTimeValue() const { // NOLINT(misc-no-recursion)
-    if (hasDirectCompileTimeValue || children.empty())
-      return compileTimeValue;
+    if (children.size() != 1)
+      return {};
     return children.front()->getCompileTimeValue();
   }
 
@@ -123,18 +121,18 @@ public:
     return children.size() == 1 && children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   }
 
-  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &fctName) {              // LCOV_EXCL_LINE
+  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &fctName) {          // LCOV_EXCL_LINE
     assert_fail("Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
-    return nullptr;                                                                                              // LCOV_EXCL_LINE
-  }                                                                                                              // LCOV_EXCL_LINE
+    return nullptr;                                                                                          // LCOV_EXCL_LINE
+  }                                                                                                          // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() { // LCOV_EXCL_LINE
-    assert_fail("Must be called on a StructDefNode");                  // LCOV_EXCL_LINE
+    assert_fail("Must be called on a StructDefNode");                      // LCOV_EXCL_LINE
     return nullptr;                                                        // LCOV_EXCL_LINE
   }                                                                        // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() { // LCOV_EXCL_LINE
-    assert_fail("Must be called on a InterfaceDefNode");                     // LCOV_EXCL_LINE
+    assert_fail("Must be called on a InterfaceDefNode");                         // LCOV_EXCL_LINE
     return nullptr;                                                              // LCOV_EXCL_LINE
   }                                                                              // LCOV_EXCL_LINE
 
@@ -149,14 +147,12 @@ public:
   std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
   std::vector<SymbolType> symbolTypes;
-  CompileTimeValue compileTimeValue = {.boolValue = false};
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
-  bool hasDirectCompileTimeValue = false;
   bool unreachable = false;
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(ASTNode) == 144);
+static_assert(sizeof(ASTNode) == 136);
 
 // ========================================================== EntryNode ==========================================================
 
@@ -1796,7 +1792,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitConstant(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitConstant(this); }
 
+  // Other methods
+  [[nodiscard]] CompileTimeValue getCompileTimeValue() const override { return compileTimeValue; }
+  [[nodiscard]] bool hasCompileTimeValue() const override { return true; }
+
   // Public members
+  CompileTimeValue compileTimeValue;
   PrimitiveValueType type = TYPE_NONE;
 };
 
