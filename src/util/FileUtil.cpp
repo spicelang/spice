@@ -86,19 +86,16 @@ bool FileUtil::isCommandAvailable(const std::string &cmd) {
  * @return Std directory
  */
 std::filesystem::path FileUtil::getStdDir() {
-#if OS_WINDOWS
+#ifdef OS_UNIX
+  if (std::filesystem::exists(std::filesystem::path("/usr/lib/spice/std/")))
+    return std::filesystem::path("/usr/lib/spice/std/");
+#endif
   if (std::getenv("SPICE_STD_DIR")) {
     std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR"));
     if (std::filesystem::exists(stdPath))
       return stdPath;
   }
-#elif OS_UNIX
-  if (std::filesystem::exists(std::filesystem::path("/usr/lib/spice/std/")))
-    return std::filesystem::path("/usr/lib/spice/std/");
-#else
-#error "Unsupported platform"
-#endif
-  return "";
+  return ""; // GCOV_EXCL_LINE
 }
 
 /**
