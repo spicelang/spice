@@ -1,5 +1,7 @@
 #![core.linker.flag = "-pthread"]
 
+import "std/type/error";
+
 // Type definitions
 type Pthread_t alias long;
 type Pthread_attr_t struct {
@@ -31,14 +33,18 @@ public p Thread.ctor(p() threadRoutine) {
  * Start the thread
  */
 public p Thread.run() {
-    pthread_create(&this.threadId, nil<Pthread_attr_t*>, this.threadRoutine);
+    if pthread_create(&this.threadId, nil<Pthread_attr_t*>, this.threadRoutine) != 0 {
+        panic(Error("pthread_create failed"));
+    }
 }
 
 /**
  * Wait synchronous until the thread has terminated
  */
 public p Thread.join() {
-    pthread_join(this.threadId, nil<byte**>);
+    if pthread_join(this.threadId, nil<byte**>) != 0 {
+        panic(Error("pthread_join failed"));
+    }
 }
 
 /**

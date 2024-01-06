@@ -2,7 +2,8 @@
 title: Threads
 ---
 
-Spice supports multithreading. It is very easy to use and very lightweight. Spice uses posix pthreads under the hood.
+Spice supports multithreading. It is very easy to use and very lightweight. Under the hood Spice uses posix pthreads to realize
+multi-threading.
 
 ## Usage
 A simple worker thread can be spawned like this:
@@ -60,7 +61,39 @@ f<int> main() {
 
 ## Thread pools
 
-ToDo
+Spice offers thread pools out of the box via the `std/os/threadpool` module. A thread pool is a collection of worker threads of
+a fixed size. The threads are spawned when the thread pool is created and are kept alive until the thread pool is destroyed.
+The threads are idle until a task is enqueued to the thread pool. The thread pool then assigns the task to one of the workers.
+The thread pool can be used like this:
+
+```spice
+import "std/os/threadpool";
+
+f<int> main() {
+    ThreadPool tp = ThreadPool(3s); // Create a thread pool with 3 worker threads
+    // Enque tasks to the thread pool, that will run in parallel
+    tp.enqueue(p() {
+        delay(50);
+        printf("Hello from task 1\n");
+    });
+    tp.enqueue(p() {
+        delay(100);
+        printf("Hello from task 2\n");
+    });
+    tp.enqueue(p() {
+        delay(150);
+        printf("Hello from task 3\n");
+    });
+    tp.start(); // This will kick off the worker threads and immediately return
+}
+```
+
+To pause the thread pool, use the `pause()` method. This will pause all worker threads. To resume the thread pool, use the
+`resume()` method. This will resume all worker threads. To stop the thread pool, use the `stop()` method. The worker threads will
+continue the current task and then exit. You can start the thread pool again by calling the `start()` method at any time.
+
+To wait for all tasks to finish, use the `join()` method. This will block the current thread until all tasks in the thread pool
+are finished.
 
 ## Mutexes
 

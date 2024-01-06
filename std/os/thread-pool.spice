@@ -7,6 +7,8 @@ import "std/runtime/iterator_rt";
 
 /**
  * A thread pool that can be used to run multiple jobs in parallel.
+ * Thread pools in Spice work with a fixed number of worker threads, that are created when the pool is started. After that, an
+ * arbitrary number of jobs can be queued to be run by the pool. The pool will then run as many jobs as possible in parallel.
  */
 public type ThreadPool struct {
     Vector<Thread> workerThreads
@@ -139,6 +141,9 @@ public f<unsigned short> ThreadPool.getWorkerThreadCount() {
     return this.workerThreadCount;
 }
 
+/**
+ * Wait for all worker threads to terminate.
+ */
 p ThreadPool.joinWorkerThreads() {
     foreach (const Thread& workerThread : iterate(this.workerThreads)) {
         workerThread.join();
