@@ -656,10 +656,10 @@ std::any SymbolTableBuilder::visitAttr(AttrNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
   // Create scope for the lambda body
-  node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &node->body()->codeLoc);
+  const CodeLoc &codeLoc = node->body()->codeLoc;
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
-  currentScope->symbolTable.setCapturingRequired(BY_VALUE);
+  currentScope->symbolTable.setCapturingRequired();
 
   // Create symbol for 'result' variable
   currentScope->insert(RETURN_VARIABLE_NAME, node);
@@ -679,10 +679,10 @@ std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
   // Create scope for the lambda body
-  node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &node->body()->codeLoc);
+  const CodeLoc &codeLoc = node->body()->codeLoc;
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
-  currentScope->symbolTable.setCapturingRequired(BY_VALUE);
+  currentScope->symbolTable.setCapturingRequired();
 
   // Create symbols for the parameters
   if (node->hasParams)
@@ -699,10 +699,10 @@ std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaExpr(LambdaExprNode *node) {
   // Create scope for the anonymous block body
-  node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &node->lambdaExpr()->codeLoc);
+  const CodeLoc &codeLoc = node->lambdaExpr()->codeLoc;
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
-  currentScope->symbolTable.setCapturingRequired(BY_VALUE);
+  currentScope->symbolTable.setCapturingRequired();
 
   // Create symbols for the parameters
   if (node->hasParams)

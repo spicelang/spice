@@ -12,16 +12,40 @@ namespace spice::compiler {
 std::string Capture::getName() const { return name.empty() ? capturedEntry->name : name; }
 
 /**
- * Set the type of this capture.
+ * Set the access type of this capture.
  * Possible values are READ_ONLY and READ_WRITE
  *
- * @param captureType Capture type
+ * @param captureAccessType Capture access type
  */
-void Capture::setCaptureType(CaptureType captureType) {
-  type = captureType;
+void Capture::setAccessType(CaptureAccessType captureAccessType) {
+  accessType = captureAccessType;
   // Set the captured symbol table entry to volatile if appropriate
-  capturedEntry->isVolatile = captureType == READ_WRITE;
+  capturedEntry->isVolatile = captureAccessType == READ_WRITE;
 }
+
+/**
+ * Retrieve the access type of this capture.
+ * Possible values are READ_ONLY and READ_WRITE
+ *
+ * @return Capture access type
+ */
+CaptureAccessType Capture::getAccessType() const { return accessType; }
+
+/**
+ * Set the mode of this capture.
+ * Possible values are BY_VALUE and BY_REFERENCE
+ *
+ * @param captureMode Capture mode
+ */
+void Capture::setMode(CaptureMode captureMode) { captureType = captureMode; }
+
+/**
+ * Retrieve the mode of this capture.
+ * Possible values are BY_VALUE and BY_REFERENCE
+ *
+ * @return Capture mode
+ */
+CaptureMode Capture::getMode() const { return captureType; }
 
 /**
  * Stringify the current capture to a human-readable form. Used to dump whole symbol tables with their contents.
