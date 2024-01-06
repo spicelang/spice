@@ -82,4 +82,17 @@ size_t CommonUtil::getSystemPageSize() {
 #endif
 }
 
+/**
+ * Generate the version info string for the Spice driver
+ *
+ * @return Version info string
+ */
+std::string CommonUtil::getVersionInfo() {
+  std::stringstream versionString;
+  versionString << "spice version " << SPICE_VERSION << " " << SPICE_TARGET_OS << "/" << SPICE_TARGET_ARCH << "\n";
+  versionString << "built by: " << SPICE_BUILT_BY << "\n\n";
+  versionString << "(c) Marc Auberer 2021-2024";
+  return versionString.str();
+}
+
 } // namespace spice::compiler

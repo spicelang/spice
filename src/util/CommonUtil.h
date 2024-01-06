@@ -18,6 +18,7 @@ public:
   static std::string trim(const std::string &input);
   static std::vector<std::string> split(const std::string &input);
   static size_t getSystemPageSize();
+  static std::string getVersionInfo();
 };
 
 } // namespace spice::compiler

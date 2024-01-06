@@ -16,15 +16,11 @@ namespace spice::compiler {
 void Driver::init() {
   // Allow positional args
   app.positionals_at_end();
-  app.require_subcommand(1);
   app.allow_extras(false);
   app.footer("(c) Marc Auberer 2021-2024");
 
   // Add version flag
-  const std::string versionName(SPICE_VERSION);
-  const std::string builtBy(SPICE_BUILT_BY);
-  const std::string versionString = "Spice version " + versionName + "\nbuilt by: " + builtBy + "\n\n(c) Marc Auberer 2021-2024";
-  app.set_version_flag("--version,-v", versionString);
+  app.set_version_flag("--version,-v", CommonUtil::getVersionInfo());
 
   // Create sub-commands
   addBuildSubcommand();
@@ -34,6 +30,12 @@ void Driver::init() {
   addUninstallSubcommand();
 
   app.final_callback([&]() {
+    // Print help text for the root command if no sub-command was given
+    if (app.get_subcommands().empty()) {
+      std::cout << app.help();
+      return;
+    }
+
     if (shouldInstall || shouldUninstall) {
       // Prepare the installation path
       std::filesystem::path installPath = FileUtil::getSpiceBinDir();
