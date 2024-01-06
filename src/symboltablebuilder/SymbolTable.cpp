@@ -131,8 +131,8 @@ SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
  * @param indexPath How to index the found symbol using order indices (e.g. for GEP)
  * @return Desired symbol / nullptr if the symbol was not found
  */
-SymbolTableEntry *SymbolTable::lookupInComposedFields(const std::string &name,
-                                                      std::vector<size_t> &indexPath) { // NOLINT(misc-no-recursion)
+SymbolTableEntry *SymbolTable::lookupInComposedFields(const std::string &name, // NOLINT(misc-no-recursion)
+                                                      std::vector<size_t> &indexPath) {
   assert(scope->type == ScopeType::STRUCT);
 
   // Check if we have a symbol with this name in the current scope
@@ -229,14 +229,9 @@ Capture *SymbolTable::lookupCaptureStrict(const std::string &name) {
 }
 
 /**
- * Set capturing for this scope to required. Also set the capture mode
- *
- * @param captureMode Capture mode
+ * Set capturing for this scope to required.
  */
-void SymbolTable::setCapturingRequired(CaptureMode captureMode) {
-  capturingRequired = true;
-  capturingMode = captureMode;
-}
+void SymbolTable::setCapturingRequired() { capturingRequired = true; }
 
 /**
  * Deletes an existing anonymous symbol

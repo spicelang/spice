@@ -10,8 +10,15 @@
 
 namespace spice::compiler {
 
-enum CaptureMode : uint8_t { BY_VALUE, BY_REFERENCE };
-enum CaptureType : uint8_t { READ_ONLY, READ_WRITE };
+enum CaptureMode : uint8_t {
+  BY_VALUE,
+  BY_REFERENCE,
+};
+
+enum CaptureAccessType : uint8_t {
+  READ_ONLY,
+  READ_WRITE,
+};
 
 class Capture {
 public:
@@ -20,7 +27,10 @@ public:
 
   // Public methods
   [[nodiscard]] std::string getName() const;
-  void setCaptureType(CaptureType captureType);
+  void setAccessType(CaptureAccessType captureAccessType);
+  [[nodiscard]] CaptureAccessType getAccessType() const;
+  void setMode(CaptureMode captureMode);
+  [[nodiscard]] CaptureMode getMode() const;
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
   // Public members
@@ -28,7 +38,8 @@ public:
 
 private:
   // Members
-  CaptureType type = READ_ONLY;
+  CaptureAccessType accessType = READ_ONLY;
+  CaptureMode captureType = BY_VALUE;
   std::string name;
 };
 

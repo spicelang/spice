@@ -170,7 +170,6 @@ void DebugInfoGenerator::popLexicalBlock() {
 
 llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const Function *spiceFunc) {
   const std::unordered_map<std::string, Capture> &captures = spiceFunc->bodyScope->symbolTable.captures;
-  const CaptureMode captureMode = spiceFunc->bodyScope->symbolTable.capturingMode;
   const ASTNode *node = spiceFunc->declNode;
   const size_t lineNo = node->codeLoc.line;
 
@@ -182,7 +181,7 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
     SymbolType captureType = capture.capturedEntry->getType();
 
     // Capture by reference
-    if (captureMode == BY_REFERENCE)
+    if (capture.getMode() == BY_REFERENCE)
       captureType = captureType.toReference(node);
 
     fieldEntries.push_back(capture.capturedEntry);

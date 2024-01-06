@@ -422,13 +422,12 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   const bool hasCaptures = !captures.empty();
   llvm::StructType *capturesStructType = nullptr;
   if (hasCaptures) {
-    const CaptureMode capturingMode = bodyScope->symbolTable.capturingMode;
     // Create captures struct type
     std::vector<llvm::Type *> captureTypes;
-    for (const std::pair<const std::string, Capture> &capture : captures) {
+    for (const auto &[_, capture] : captures) {
       llvm::Type *captureType = builder.getPtrTy();
-      if (capturingMode == BY_VALUE)
-        captureType = capture.second.capturedEntry->getType().toLLVMType(context, currentScope);
+      if (capture.getMode() == BY_VALUE)
+        captureType = capture.capturedEntry->getType().toLLVMType(context, currentScope);
       captureTypes.push_back(captureType);
     }
     capturesStructType = llvm::StructType::get(context, captureTypes);
@@ -593,13 +592,12 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   const bool hasCaptures = !captures.empty();
   llvm::StructType *capturesStructType = nullptr;
   if (hasCaptures) {
-    const CaptureMode capturingMode = bodyScope->symbolTable.capturingMode;
     // Create captures struct type
     std::vector<llvm::Type *> captureTypes;
-    for (const std::pair<const std::string, Capture> &capture : captures) {
+    for (const auto &[_, capture] : captures) {
       llvm::Type *captureType = builder.getPtrTy();
-      if (capturingMode == BY_VALUE)
-        captureType = capture.second.capturedEntry->getType().toLLVMType(context, currentScope);
+      if (capture.getMode() == BY_VALUE)
+        captureType = capture.capturedEntry->getType().toLLVMType(context, currentScope);
       captureTypes.push_back(captureType);
     }
     capturesStructType = llvm::StructType::get(context, captureTypes);
@@ -751,13 +749,12 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   const bool hasCaptures = !captures.empty();
   llvm::StructType *capturesStructType = nullptr;
   if (hasCaptures) {
-    const CaptureMode capturingMode = bodyScope->symbolTable.capturingMode;
     // Create captures struct type
     std::vector<llvm::Type *> captureTypes;
-    for (const std::pair<const std::string, Capture> &capture : captures) {
+    for (const auto &[_, capture] : captures) {
       llvm::Type *captureType = builder.getPtrTy();
-      if (capturingMode == BY_VALUE)
-        captureType = capture.second.capturedEntry->getType().toLLVMType(context, currentScope);
+      if (capture.getMode() == BY_VALUE)
+        captureType = capture.capturedEntry->getType().toLLVMType(context, currentScope);
       captureTypes.push_back(captureType);
     }
     capturesStructType = llvm::StructType::get(context, captureTypes);
@@ -911,16 +908,15 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *cap
   llvm::Value *captureStructAddress = nullptr;
   if (capturesStructType != nullptr) {
     assert(bodyScope != nullptr);
-    const CaptureMode capturingMode = bodyScope->symbolTable.capturingMode;
     captureStructAddress = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
 
     size_t captureIdx = 0;
-    for (const std::pair<const std::string, Capture> &capture : bodyScope->symbolTable.captures) {
-      const SymbolTableEntry *capturedEntry = capture.second.capturedEntry;
+    for (const auto &[_, capture] : bodyScope->symbolTable.captures) {
+      const SymbolTableEntry *capturedEntry = capture.capturedEntry;
       // Get address or value of captured variable, depending on the capturing mode
       llvm::Value *capturedValue = capturedEntry->getAddress();
       assert(capturedValue != nullptr);
-      if (capturingMode == BY_VALUE) {
+      if (capture.getMode() == BY_VALUE) {
         llvm::Type *captureType = capturedEntry->getType().toLLVMType(context, currentScope);
         capturedValue = insertLoad(captureType, capturedValue);
       }
