@@ -115,7 +115,7 @@ TEST(BlockAllocatorTest, TestBlockAllocatorOOM) {
     } catch (CompilerError &ce) {
       std::stringstream ss;
       ss << "[Error|Compiler]:\n";
-      ss << "An out of memory error occurred: Could not allocate memory for ArenaAllocator. Already allocated 4 blocks.";
+      ss << "An out of memory error occurred: Could not allocate memory for BlockAllocator. Already allocated 4 blocks.";
       ASSERT_EQ(ss.str(), ce.what());
     }
 

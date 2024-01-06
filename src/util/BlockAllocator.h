@@ -63,7 +63,7 @@ private:
     // Allocate new block
     byte *ptr = memoryManager.allocate(blockSize);
     if (!ptr)
-      throw CompilerError(OOM, "Could not allocate memory for ArenaAllocator. Already allocated " +
+      throw CompilerError(OOM, "Could not allocate memory for BlockAllocator. Already allocated " +
                                    std::to_string(memoryBlocks.size()) + " blocks.");
 
     // Store pointer and reset offset

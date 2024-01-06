@@ -1,39 +1,15 @@
-type Letter struct {
-    string content
-}
-
-f<string> Letter.getContent() {
-    return this.content;
-}
-
-p Letter.setContent(string text) {
-    this.content = text;
-}
+import "std/os/thread";
 
 f<int> main() {
-    dyn letter = Letter { "No content" };
-    letter.setContent("Hello World!");
-    printf("Content: %s\n", letter.getContent());
-}
-
-/*import "std/time/timer";
-import "../../src-bootstrap/lexer/lexer";
-
-f<int> main(int argc, string[] argv) {
-    Timer timer = Timer();
-    timer.start();
-    Lexer lexer = Lexer(argv[1]);
-    unsigned long i = 1l;
-    while (!lexer.isEOF()) {
-        Token token = lexer.getToken();
-        //printf("Token %d: ", i);
-        //token.print();
-        lexer.advance();
+    int i = 123;
+    Thread thread = Thread(p() {
         i++;
-    }
-    timer.stop();
-    printf("Tokens: %d in %d ms\n", i, timer.getDurationInMillis());
-}*/
+        printf("Hello from inside: %d\n", i);
+    });
+    thread.run();
+    thread.join();
+    printf("Hello from outside: %d\n", i);
+}
 
 /*type Visitable interface {
     p print();
