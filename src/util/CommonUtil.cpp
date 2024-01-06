@@ -70,6 +70,11 @@ std::vector<std::string> CommonUtil::split(const std::string &input) {
   return result;
 }
 
+/**
+ * Get the memory page size of the current system
+ *
+ * @return Page size in bytes
+ */
 size_t CommonUtil::getSystemPageSize() {
 #ifdef OS_WINDOWS
   SYSTEM_INFO si;

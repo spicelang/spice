@@ -76,10 +76,10 @@ digraph {
  L4C23_postfixUnaryExpr -> L4C23_atomicExpr;
  L4C23_constant [color="lightgreen",label="constant"];
  L4C23_atomicExpr -> L4C23_constant;
- L4C23 [color="lightblue",label="LONG_LIT: 32183114504l"];
+ L4C23 [color="lightblue",label="LONG_LIT: 0x357620655410l"];
  L4C23_constant -> L4C23
- L4C35 [color="lightblue",label="SEMICOLON: ;"];
- L4C4_stmt -> L4C35
+ L4C38 [color="lightblue",label="SEMICOLON: ;"];
+ L4C4_stmt -> L4C38
  L5C4_whileLoop [color="lightgreen",label="whileLoop"];
  L3C14_stmtLst -> L5C4_whileLoop;
  L5C4 [color="lightblue",label="WHILE: while"];
@@ -266,14 +266,48 @@ digraph {
  L6C29_postfixUnaryExpr -> L6C29_atomicExpr;
  L6C29_constant [color="lightgreen",label="constant"];
  L6C29_atomicExpr -> L6C29_constant;
- L6C29 [color="lightblue",label="LONG_LIT: 8245928625469605920l"];
+ L6C29 [color="lightblue",label="LONG_LIT: 0x726F6C6564574820l"];
  L6C29_constant -> L6C29
+ L6C49 [color="lightblue",label="GREATER: >"];
+ L6C29_shiftExpr -> L6C49
  L6C50 [color="lightblue",label="GREATER: >"];
  L6C29_shiftExpr -> L6C50
- L6C51 [color="lightblue",label="GREATER: >"];
- L6C29_shiftExpr -> L6C51
+ L6C52_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L6C29_shiftExpr -> L6C52_additiveExpr;
+ L6C52_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L6C52_additiveExpr -> L6C52_multiplicativeExpr;
+ L6C52_castExpr [color="lightgreen",label="castExpr"];
+ L6C52_multiplicativeExpr -> L6C52_castExpr;
+ L6C52_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L6C52_castExpr -> L6C52_prefixUnaryExpr;
+ L6C52_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L6C52_prefixUnaryExpr -> L6C52_postfixUnaryExpr;
+ L6C52_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L6C52_postfixUnaryExpr -> L6C52_atomicExpr;
+ L6C52 [color="lightblue",label="LPAREN: ("];
+ L6C52_atomicExpr -> L6C52
+ L6C53_assignExpr [color="lightgreen",label="assignExpr"];
+ L6C52_atomicExpr -> L6C53_assignExpr;
+ L6C53_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L6C53_assignExpr -> L6C53_ternaryExpr;
+ L6C53_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L6C53_ternaryExpr -> L6C53_logicalOrExpr;
+ L6C53_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L6C53_logicalOrExpr -> L6C53_logicalAndExpr;
+ L6C53_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L6C53_logicalAndExpr -> L6C53_bitwiseOrExpr;
+ L6C53_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L6C53_bitwiseOrExpr -> L6C53_bitwiseXorExpr;
+ L6C53_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L6C53_bitwiseXorExpr -> L6C53_bitwiseAndExpr;
+ L6C53_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L6C53_bitwiseAndExpr -> L6C53_equalityExpr;
+ L6C53_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L6C53_equalityExpr -> L6C53_relationalExpr;
+ L6C53_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L6C53_relationalExpr -> L6C53_shiftExpr;
  L6C53_additiveExpr [color="lightgreen",label="additiveExpr"];
- L6C29_shiftExpr -> L6C53_additiveExpr;
+ L6C53_shiftExpr -> L6C53_additiveExpr;
  L6C53_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
  L6C53_additiveExpr -> L6C53_multiplicativeExpr;
  L6C53_castExpr [color="lightgreen",label="castExpr"];
@@ -322,122 +356,88 @@ digraph {
  L6C54_atomicExpr -> L6C54
  L6C55_assignExpr [color="lightgreen",label="assignExpr"];
  L6C54_atomicExpr -> L6C55_assignExpr;
- L6C55_ternaryExpr [color="lightgreen",label="ternaryExpr"];
- L6C55_assignExpr -> L6C55_ternaryExpr;
- L6C55_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
- L6C55_ternaryExpr -> L6C55_logicalOrExpr;
- L6C55_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
- L6C55_logicalOrExpr -> L6C55_logicalAndExpr;
- L6C55_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
- L6C55_logicalAndExpr -> L6C55_bitwiseOrExpr;
- L6C55_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
- L6C55_bitwiseOrExpr -> L6C55_bitwiseXorExpr;
- L6C55_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
- L6C55_bitwiseXorExpr -> L6C55_bitwiseAndExpr;
- L6C55_equalityExpr [color="lightgreen",label="equalityExpr"];
- L6C55_bitwiseAndExpr -> L6C55_equalityExpr;
- L6C55_relationalExpr [color="lightgreen",label="relationalExpr"];
- L6C55_equalityExpr -> L6C55_relationalExpr;
- L6C55_shiftExpr [color="lightgreen",label="shiftExpr"];
- L6C55_relationalExpr -> L6C55_shiftExpr;
- L6C55_additiveExpr [color="lightgreen",label="additiveExpr"];
- L6C55_shiftExpr -> L6C55_additiveExpr;
- L6C55_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
- L6C55_additiveExpr -> L6C55_multiplicativeExpr;
- L6C55_castExpr [color="lightgreen",label="castExpr"];
- L6C55_multiplicativeExpr -> L6C55_castExpr;
  L6C55_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
- L6C55_castExpr -> L6C55_prefixUnaryExpr;
+ L6C55_assignExpr -> L6C55_prefixUnaryExpr;
  L6C55_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
  L6C55_prefixUnaryExpr -> L6C55_postfixUnaryExpr;
  L6C55_atomicExpr [color="lightgreen",label="atomicExpr"];
  L6C55_postfixUnaryExpr -> L6C55_atomicExpr;
- L6C55 [color="lightblue",label="LPAREN: ("];
+ L6C55 [color="lightblue",label="IDENTIFIER: dx"];
  L6C55_atomicExpr -> L6C55
- L6C56_assignExpr [color="lightgreen",label="assignExpr"];
- L6C55_atomicExpr -> L6C56_assignExpr;
- L6C56_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
- L6C56_assignExpr -> L6C56_prefixUnaryExpr;
- L6C56_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
- L6C56_prefixUnaryExpr -> L6C56_postfixUnaryExpr;
- L6C56_atomicExpr [color="lightgreen",label="atomicExpr"];
- L6C56_postfixUnaryExpr -> L6C56_atomicExpr;
- L6C56 [color="lightblue",label="IDENTIFIER: dx"];
- L6C56_atomicExpr -> L6C56
- L6C59_assignOp [color="lightgreen",label="assignOp"];
- L6C56_assignExpr -> L6C59_assignOp;
- L6C59 [color="lightblue",label="SHR_EQUAL: >>="];
- L6C59_assignOp -> L6C59
- L6C63_assignExpr [color="lightgreen",label="assignExpr"];
- L6C56_assignExpr -> L6C63_assignExpr;
- L6C63_ternaryExpr [color="lightgreen",label="ternaryExpr"];
- L6C63_assignExpr -> L6C63_ternaryExpr;
- L6C63_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
- L6C63_ternaryExpr -> L6C63_logicalOrExpr;
- L6C63_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
- L6C63_logicalOrExpr -> L6C63_logicalAndExpr;
- L6C63_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
- L6C63_logicalAndExpr -> L6C63_bitwiseOrExpr;
- L6C63_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
- L6C63_bitwiseOrExpr -> L6C63_bitwiseXorExpr;
- L6C63_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
- L6C63_bitwiseXorExpr -> L6C63_bitwiseAndExpr;
- L6C63_equalityExpr [color="lightgreen",label="equalityExpr"];
- L6C63_bitwiseAndExpr -> L6C63_equalityExpr;
- L6C63_relationalExpr [color="lightgreen",label="relationalExpr"];
- L6C63_equalityExpr -> L6C63_relationalExpr;
- L6C63_shiftExpr [color="lightgreen",label="shiftExpr"];
- L6C63_relationalExpr -> L6C63_shiftExpr;
- L6C63_additiveExpr [color="lightgreen",label="additiveExpr"];
- L6C63_shiftExpr -> L6C63_additiveExpr;
- L6C63_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
- L6C63_additiveExpr -> L6C63_multiplicativeExpr;
- L6C63_castExpr [color="lightgreen",label="castExpr"];
- L6C63_multiplicativeExpr -> L6C63_castExpr;
- L6C63_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
- L6C63_castExpr -> L6C63_prefixUnaryExpr;
- L6C63_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
- L6C63_prefixUnaryExpr -> L6C63_postfixUnaryExpr;
- L6C63_atomicExpr [color="lightgreen",label="atomicExpr"];
- L6C63_postfixUnaryExpr -> L6C63_atomicExpr;
- L6C63_constant [color="lightgreen",label="constant"];
- L6C63_atomicExpr -> L6C63_constant;
- L6C63 [color="lightblue",label="LONG_LIT: 3l"];
- L6C63_constant -> L6C63
- L6C65 [color="lightblue",label="RPAREN: )"];
- L6C55_atomicExpr -> L6C65
- L6C67 [color="lightblue",label="BITWISE_AND: &"];
- L6C55_bitwiseAndExpr -> L6C67
- L6C69_equalityExpr [color="lightgreen",label="equalityExpr"];
- L6C55_bitwiseAndExpr -> L6C69_equalityExpr;
- L6C69_relationalExpr [color="lightgreen",label="relationalExpr"];
- L6C69_equalityExpr -> L6C69_relationalExpr;
- L6C69_shiftExpr [color="lightgreen",label="shiftExpr"];
- L6C69_relationalExpr -> L6C69_shiftExpr;
- L6C69_additiveExpr [color="lightgreen",label="additiveExpr"];
- L6C69_shiftExpr -> L6C69_additiveExpr;
- L6C69_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
- L6C69_additiveExpr -> L6C69_multiplicativeExpr;
- L6C69_castExpr [color="lightgreen",label="castExpr"];
- L6C69_multiplicativeExpr -> L6C69_castExpr;
- L6C69_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
- L6C69_castExpr -> L6C69_prefixUnaryExpr;
- L6C69_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
- L6C69_prefixUnaryExpr -> L6C69_postfixUnaryExpr;
- L6C69_atomicExpr [color="lightgreen",label="atomicExpr"];
- L6C69_postfixUnaryExpr -> L6C69_atomicExpr;
- L6C69_constant [color="lightgreen",label="constant"];
- L6C69_atomicExpr -> L6C69_constant;
- L6C69 [color="lightblue",label="LONG_LIT: 7l"];
- L6C69_constant -> L6C69
+ L6C58_assignOp [color="lightgreen",label="assignOp"];
+ L6C55_assignExpr -> L6C58_assignOp;
+ L6C58 [color="lightblue",label="SHR_EQUAL: >>="];
+ L6C58_assignOp -> L6C58
+ L6C62_assignExpr [color="lightgreen",label="assignExpr"];
+ L6C55_assignExpr -> L6C62_assignExpr;
+ L6C62_ternaryExpr [color="lightgreen",label="ternaryExpr"];
+ L6C62_assignExpr -> L6C62_ternaryExpr;
+ L6C62_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
+ L6C62_ternaryExpr -> L6C62_logicalOrExpr;
+ L6C62_logicalAndExpr [color="lightgreen",label="logicalAndExpr"];
+ L6C62_logicalOrExpr -> L6C62_logicalAndExpr;
+ L6C62_bitwiseOrExpr [color="lightgreen",label="bitwiseOrExpr"];
+ L6C62_logicalAndExpr -> L6C62_bitwiseOrExpr;
+ L6C62_bitwiseXorExpr [color="lightgreen",label="bitwiseXorExpr"];
+ L6C62_bitwiseOrExpr -> L6C62_bitwiseXorExpr;
+ L6C62_bitwiseAndExpr [color="lightgreen",label="bitwiseAndExpr"];
+ L6C62_bitwiseXorExpr -> L6C62_bitwiseAndExpr;
+ L6C62_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L6C62_bitwiseAndExpr -> L6C62_equalityExpr;
+ L6C62_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L6C62_equalityExpr -> L6C62_relationalExpr;
+ L6C62_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L6C62_relationalExpr -> L6C62_shiftExpr;
+ L6C62_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L6C62_shiftExpr -> L6C62_additiveExpr;
+ L6C62_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L6C62_additiveExpr -> L6C62_multiplicativeExpr;
+ L6C62_castExpr [color="lightgreen",label="castExpr"];
+ L6C62_multiplicativeExpr -> L6C62_castExpr;
+ L6C62_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L6C62_castExpr -> L6C62_prefixUnaryExpr;
+ L6C62_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L6C62_prefixUnaryExpr -> L6C62_postfixUnaryExpr;
+ L6C62_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L6C62_postfixUnaryExpr -> L6C62_atomicExpr;
+ L6C62_constant [color="lightgreen",label="constant"];
+ L6C62_atomicExpr -> L6C62_constant;
+ L6C62 [color="lightblue",label="INT_LIT: 4"];
+ L6C62_constant -> L6C62
+ L6C63 [color="lightblue",label="RPAREN: )"];
+ L6C54_atomicExpr -> L6C63
+ L6C65 [color="lightblue",label="BITWISE_AND: &"];
+ L6C54_bitwiseAndExpr -> L6C65
+ L6C67_equalityExpr [color="lightgreen",label="equalityExpr"];
+ L6C54_bitwiseAndExpr -> L6C67_equalityExpr;
+ L6C67_relationalExpr [color="lightgreen",label="relationalExpr"];
+ L6C67_equalityExpr -> L6C67_relationalExpr;
+ L6C67_shiftExpr [color="lightgreen",label="shiftExpr"];
+ L6C67_relationalExpr -> L6C67_shiftExpr;
+ L6C67_additiveExpr [color="lightgreen",label="additiveExpr"];
+ L6C67_shiftExpr -> L6C67_additiveExpr;
+ L6C67_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
+ L6C67_additiveExpr -> L6C67_multiplicativeExpr;
+ L6C67_castExpr [color="lightgreen",label="castExpr"];
+ L6C67_multiplicativeExpr -> L6C67_castExpr;
+ L6C67_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
+ L6C67_castExpr -> L6C67_prefixUnaryExpr;
+ L6C67_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
+ L6C67_prefixUnaryExpr -> L6C67_postfixUnaryExpr;
+ L6C67_atomicExpr [color="lightgreen",label="atomicExpr"];
+ L6C67_postfixUnaryExpr -> L6C67_atomicExpr;
+ L6C67_constant [color="lightgreen",label="constant"];
+ L6C67_atomicExpr -> L6C67_constant;
+ L6C67 [color="lightblue",label="LONG_LIT: 0xFl"];
+ L6C67_constant -> L6C67
  L6C71 [color="lightblue",label="RPAREN: )"];
- L6C54_atomicExpr -> L6C71
+ L6C53_atomicExpr -> L6C71
  L6C73 [color="lightblue",label="LESS: <"];
- L6C54_shiftExpr -> L6C73
+ L6C53_shiftExpr -> L6C73
  L6C74 [color="lightblue",label="LESS: <"];
- L6C54_shiftExpr -> L6C74
+ L6C53_shiftExpr -> L6C74
  L6C76_additiveExpr [color="lightgreen",label="additiveExpr"];
- L6C54_shiftExpr -> L6C76_additiveExpr;
+ L6C53_shiftExpr -> L6C76_additiveExpr;
  L6C76_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
  L6C76_additiveExpr -> L6C76_multiplicativeExpr;
  L6C76_castExpr [color="lightgreen",label="castExpr"];
@@ -450,40 +450,16 @@ digraph {
  L6C76_postfixUnaryExpr -> L6C76_atomicExpr;
  L6C76_constant [color="lightgreen",label="constant"];
  L6C76_atomicExpr -> L6C76_constant;
- L6C76 [color="lightblue",label="LONG_LIT: 3l"];
+ L6C76 [color="lightblue",label="INT_LIT: 3"];
  L6C76_constant -> L6C76
+ L6C77 [color="lightblue",label="RPAREN: )"];
+ L6C52_atomicExpr -> L6C77
  L6C78 [color="lightblue",label="RPAREN: )"];
- L6C53_atomicExpr -> L6C78
- L6C80 [color="lightblue",label="BITWISE_AND: &"];
- L6C29_bitwiseAndExpr -> L6C80
- L6C82_equalityExpr [color="lightgreen",label="equalityExpr"];
- L6C29_bitwiseAndExpr -> L6C82_equalityExpr;
- L6C82_relationalExpr [color="lightgreen",label="relationalExpr"];
- L6C82_equalityExpr -> L6C82_relationalExpr;
- L6C82_shiftExpr [color="lightgreen",label="shiftExpr"];
- L6C82_relationalExpr -> L6C82_shiftExpr;
- L6C82_additiveExpr [color="lightgreen",label="additiveExpr"];
- L6C82_shiftExpr -> L6C82_additiveExpr;
- L6C82_multiplicativeExpr [color="lightgreen",label="multiplicativeExpr"];
- L6C82_additiveExpr -> L6C82_multiplicativeExpr;
- L6C82_castExpr [color="lightgreen",label="castExpr"];
- L6C82_multiplicativeExpr -> L6C82_castExpr;
- L6C82_prefixUnaryExpr [color="lightgreen",label="prefixUnaryExpr"];
- L6C82_castExpr -> L6C82_prefixUnaryExpr;
- L6C82_postfixUnaryExpr [color="lightgreen",label="postfixUnaryExpr"];
- L6C82_prefixUnaryExpr -> L6C82_postfixUnaryExpr;
- L6C82_atomicExpr [color="lightgreen",label="atomicExpr"];
- L6C82_postfixUnaryExpr -> L6C82_atomicExpr;
- L6C82_constant [color="lightgreen",label="constant"];
- L6C82_atomicExpr -> L6C82_constant;
- L6C82 [color="lightblue",label="LONG_LIT: 255l"];
- L6C82_constant -> L6C82
- L6C86 [color="lightblue",label="RPAREN: )"];
- L6C28_atomicExpr -> L6C86
- L6C87 [color="lightblue",label="RPAREN: )"];
- L6C8_printfCall -> L6C87
- L6C88 [color="lightblue",label="SEMICOLON: ;"];
- L6C8_stmt -> L6C88
+ L6C28_atomicExpr -> L6C78
+ L6C79 [color="lightblue",label="RPAREN: )"];
+ L6C8_printfCall -> L6C79
+ L6C80 [color="lightblue",label="SEMICOLON: ;"];
+ L6C8_stmt -> L6C80
  L7C4 [color="lightblue",label="RBRACE: }"];
  L5C17_stmtLst -> L7C4
  L8C0 [color="lightblue",label="RBRACE: }"];
