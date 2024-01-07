@@ -88,7 +88,8 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
     llvm::Type *thisType = thisVar->getType().getContainedTy().toLLVMType(context, currentScope);
     llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), thisVar->getAddress());
     // Add field offset
-    structPtr = insertInBoundsGEP(thisType, thisPtr, {builder.getInt32(0), builder.getInt32(entry->orderIndex)});
+    llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(entry->orderIndex)};
+    structPtr = insertInBoundsGEP(thisType, thisPtr, indices);
   } else {
     structPtr = entry->getAddress();
   }

@@ -1,4 +1,13 @@
+import "std/data/triple" as triple;
+
 f<int> main() {
+    triple::Triple<string, int, bool> stringIntBoolTriple = triple::Triple<string, int, bool>("Test", 1234, true);
+    printf("First: %s\n", stringIntBoolTriple.getFirst());
+    printf("Second: %d\n", stringIntBoolTriple.getSecond());
+    printf("Third: %d\n", stringIntBoolTriple.getThird());
+}
+
+/*f<int> main() {
     int i = 123; // Captured by ref
     int j = 321; // Captured by val
     dyn lambda = p() {
@@ -9,7 +18,7 @@ f<int> main() {
     };
     lambda();
     printf("Hello from outside: %d\n", i);
-}
+}*/
 
 /*type Visitable interface {
     p print();

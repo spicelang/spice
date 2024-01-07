@@ -18,7 +18,7 @@ define dso_local i32 @main() #0 {
   %3 = load i8, ptr %2, align 1
   store i8 %3, ptr %c1, align 1
   %4 = load i8, ptr %c1, align 1
-  %5 = sext i8 %4 to i32
+  %5 = zext i8 %4 to i32
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %5)
   %7 = load i32, ptr %result, align 4
   ret i32 %7

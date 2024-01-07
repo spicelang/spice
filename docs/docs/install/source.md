@@ -3,8 +3,8 @@ title: Build or install from source
 ---
 
 ### Setup
-Before being able to compile the source code, you first have to download it from GitHub and install Golang (if you don't have it already).
-Furthermore you need a common C++ compiler and CMake to build the compiler executable.
+Before being able to compile the source code, you first have to download it from GitHub.
+Furthermore you need a common C++ compiler (preferably GCC) and CMake to build the compiler executable.
 
 #### Clone from GitHub
 ```sh

@@ -32,7 +32,6 @@ private:
   std::vector<std::string> linkerFlags = {
       "-fuse-ld=lld", // Use LLD linker
       "-flto",        // Enable LTO
-      "-Wl,-s",       // Strip symbols
   };
 };
 

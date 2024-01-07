@@ -48,11 +48,11 @@ define dso_local i32 @main() #0 {
   %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, ptr %10)
   store i8 0, ptr %byteVar, align 1
   %12 = load i8, ptr %byteVar, align 1
-  %13 = sext i8 %12 to i32
+  %13 = zext i8 %12 to i32
   %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.5, i32 %13)
   store i8 0, ptr %charVar, align 1
   %15 = load i8, ptr %charVar, align 1
-  %16 = sext i8 %15 to i32
+  %16 = zext i8 %15 to i32
   %17 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.6, i32 %16)
   store i1 false, ptr %boolVar, align 1
   %18 = load i1, ptr %boolVar, align 1
