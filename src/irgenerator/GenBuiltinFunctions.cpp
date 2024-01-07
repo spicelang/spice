@@ -38,8 +38,8 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
 
     // Extend all integer types lower than 32 bit to 32 bit
     argType = argVal->getType();
-    if (argSymbolType.isOneOf({TY_SHORT, TY_BYTE, TY_CHAR, TY_BOOL})) {
-      if (argSymbolType.isSigned())
+    if (argSymbolType.removeReferenceWrapper().isOneOf({TY_SHORT, TY_BYTE, TY_CHAR, TY_BOOL})) {
+      if (argSymbolType.removeReferenceWrapper().isSigned())
         argVal = builder.CreateSExt(argVal, llvm::Type::getInt32Ty(context));
       else
         argVal = builder.CreateZExt(argVal, llvm::Type::getInt32Ty(context));
