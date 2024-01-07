@@ -1740,6 +1740,13 @@ public:
 
 class AtomicExprNode : public ASTNode {
 public:
+  // Structs
+  struct VarAccessData {
+    SymbolTableEntry *entry = nullptr;
+    Scope *accessScope = nullptr;
+    Capture *capture = nullptr;
+  };
+
   // Constructors
   using ASTNode::ASTNode;
 
@@ -1758,16 +1765,12 @@ public:
   [[nodiscard]] PanicCallNode *panicCall() const { return getChild<PanicCallNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override {
-    entries.resize(manifestationCount, nullptr);
-    accessScopes.resize(manifestationCount, nullptr);
-  }
+  void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
 
   // Public members
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
-  std::vector<SymbolTableEntry *> entries; // Only set if identifier is set as well
-  std::vector<Scope *> accessScopes;       // Only set if identifier is set as well
+  std::vector<VarAccessData> data; // Only set if identifier is set as well
 };
 
 // ======================================================== ValueNode ============================================================
@@ -1834,6 +1837,7 @@ public:
 
 class FctCallNode : public ASTNode {
 public:
+  // Enums
   enum FctCallType : uint8_t {
     TYPE_ORDINARY,
     TYPE_METHOD,

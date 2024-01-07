@@ -23,7 +23,7 @@ enum CaptureAccessType : uint8_t {
 class Capture {
 public:
   // Constructors
-  explicit Capture(SymbolTableEntry *entry, std::string name = "") : capturedEntry(entry), name(std::move(name)){};
+  explicit Capture(SymbolTableEntry *entry);
 
   // Public methods
   [[nodiscard]] std::string getName() const;
@@ -39,8 +39,7 @@ public:
 private:
   // Members
   CaptureAccessType accessType = READ_ONLY;
-  CaptureMode captureType = BY_VALUE;
-  std::string name;
+  CaptureMode captureMode = BY_VALUE;
 };
 
 } // namespace spice::compiler

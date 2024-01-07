@@ -1316,26 +1316,21 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     break;
   }
   case PostfixUnaryExprNode::OP_PLUS_PLUS: {
+    if (lhsEntry) {
+      // In case the lhs is captured, notify the capture about the write access
+      if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsEntry->name); lhsCapture)
+        lhsCapture->setAccessType(READ_WRITE);
+
+      // Update the state of the variable
+      lhsEntry->updateState(INITIALIZED, node, false);
+    }
+
     ExprResult result = opRuleManager.getPostfixPlusPlusResultType(node, lhsType, 0);
     lhsType = result.type;
     lhsEntry = result.entry;
-
-    if (lhsEntry) {
-      // In case the lhs is captured, notify the capture about the write access
-      if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsEntry->name); lhsCapture)
-        lhsCapture->setAccessType(READ_WRITE);
-
-      // Update the state of the variable
-      lhsEntry->updateState(INITIALIZED, node, false);
-    }
-
     break;
   }
   case PostfixUnaryExprNode::OP_MINUS_MINUS: {
-    ExprResult result = opRuleManager.getPostfixMinusMinusResultType(node, lhsType, 0);
-    lhsType = result.type;
-    lhsEntry = result.entry;
-
     if (lhsEntry) {
       // In case the lhs is captured, notify the capture about the write access
       if (Capture *lhsCapture = currentScope->symbolTable.lookupCapture(lhsEntry->name); lhsCapture)
@@ -1345,6 +1340,9 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       lhsEntry->updateState(INITIALIZED, node, false);
     }
 
+    ExprResult result = opRuleManager.getPostfixMinusMinusResultType(node, lhsType, 0);
+    lhsType = result.type;
+    lhsEntry = result.entry;
     break;
   }
   default:
@@ -1404,8 +1402,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   }
   assert(varEntry != nullptr);
   assert(accessScope != nullptr);
-  node->entries.at(manIdx) = varEntry;
-  node->accessScopes.at(manIdx) = accessScope;
+  AtomicExprNode::VarAccessData &data = node->data.at(manIdx);
+  data = {varEntry, accessScope, accessScope->symbolTable.lookupCapture(varEntry->name)};
   SymbolType varType = varEntry->getType();
   HANDLE_UNRESOLVED_TYPE_ER(varType)
 
@@ -1425,8 +1423,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     SOFT_ERROR_ER(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.")
 
   // The base type should be a primitive, struct, interface, function or procedure
-  if (!varType.getBaseType().isPrimitive() &&
-      !varType.getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
+  const SymbolType baseType = varType.getBaseType();
+  if (!baseType.isPrimitive() && !baseType.isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
     SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here")
 
   // Check if is an imported variable
@@ -1445,15 +1443,13 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   varEntry->used = true;
 
   // Retrieve scope for the new scope path fragment
-  if (varType.isBaseType(TY_STRUCT)) {
+  if (baseType.is(TY_STRUCT)) {
     // Set access scope to struct scope
-    const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(varType.getBaseType().getSubType());
+    const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(baseType.getSubType());
     assert(nameRegistryEntry != nullptr);
 
     // Change the access scope to the struct scope
-    accessScope = nameRegistryEntry->targetScope;
-    assert(accessScope != nullptr);
-    node->accessScopes.at(manIdx) = accessScope;
+    data.accessScope = accessScope = nameRegistryEntry->targetScope;
 
     // Check if the entry is public if it is imported
     assert(nameRegistryEntry->targetEntry != nullptr);

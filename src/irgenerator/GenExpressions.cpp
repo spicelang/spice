@@ -818,9 +818,10 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(!node->identifierFragments.empty());
 
   // Get symbol table entry
-  SymbolTableEntry *varEntry = node->entries.at(manIdx);
+  const AtomicExprNode::VarAccessData &data = node->data.at(manIdx);
+  SymbolTableEntry *varEntry = data.entry;
   assert(varEntry != nullptr);
-  Scope *accessScope = node->accessScopes.at(manIdx);
+  Scope *accessScope = data.accessScope;
   assert(accessScope != nullptr);
   SymbolType varSymbolType = varEntry->getType();
   llvm::Type *varType = varSymbolType.toLLVMType(context, accessScope);
@@ -834,8 +835,7 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
 
   // Check if enum item
   if (accessScope->type == ScopeType::ENUM) {
-    auto itemNode = dynamic_cast<const EnumItemNode *>(varEntry->declNode);
-    assert(itemNode != nullptr);
+    auto itemNode = spice_pointer_cast<const EnumItemNode *>(varEntry->declNode);
     llvm::Constant *constantItemValue = llvm::ConstantInt::get(varType, itemNode->itemValue);
     return LLVMExprResult{.constant = constantItemValue, .entry = varEntry};
   }
@@ -850,7 +850,7 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   }
 
   // Load the address of the referenced variable
-  if (varSymbolType.isRef())
+  if (varSymbolType.isRef() || (data.capture && data.capture->getMode() == BY_REFERENCE))
     return LLVMExprResult{.refPtr = address, .entry = varEntry};
 
   return LLVMExprResult{.ptr = address, .entry = varEntry};

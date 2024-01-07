@@ -3,6 +3,7 @@ import "std/os/thread";
 f<int> main() {
     int i = 123;
     Thread thread = Thread(p() {
+        printf("Hello from inside: %d\n", i);
         i++;
         printf("Hello from inside: %d\n", i);
     });
