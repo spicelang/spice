@@ -4,12 +4,19 @@
 
 namespace spice::compiler {
 
+Capture::Capture(SymbolTableEntry *entry) : capturedEntry(entry) {
+  // Set the capture mode depending on the symbol type
+  // All types with guaranteed size <= 64 bit are captured by value, all others by reference.
+  const bool typeFitsInto64Bit = entry->getType().isPrimitive();
+  captureMode = typeFitsInto64Bit ? BY_VALUE : BY_REFERENCE;
+}
+
 /**
  * Retrieve the name of the capture
  *
  * @return Capture name or symbol name if no capture name was set
  */
-std::string Capture::getName() const { return name.empty() ? capturedEntry->name : name; }
+std::string Capture::getName() const { return capturedEntry->name; }
 
 /**
  * Set the access type of this capture.
@@ -21,6 +28,9 @@ void Capture::setAccessType(CaptureAccessType captureAccessType) {
   accessType = captureAccessType;
   // Set the captured symbol table entry to volatile if appropriate
   capturedEntry->isVolatile = captureAccessType == READ_WRITE;
+  // If we write to the captured symbol, we need to set the symbol to be a reference
+  if (captureAccessType == READ_WRITE)
+    captureMode = BY_REFERENCE;
 }
 
 /**
@@ -35,9 +45,9 @@ CaptureAccessType Capture::getAccessType() const { return accessType; }
  * Set the mode of this capture.
  * Possible values are BY_VALUE and BY_REFERENCE
  *
- * @param captureMode Capture mode
+ * @param mode Capture mode
  */
-void Capture::setMode(CaptureMode captureMode) { captureType = captureMode; }
+void Capture::setMode(CaptureMode mode) { captureMode = mode; }
 
 /**
  * Retrieve the mode of this capture.
@@ -45,18 +55,26 @@ void Capture::setMode(CaptureMode captureMode) { captureType = captureMode; }
  *
  * @return Capture mode
  */
-CaptureMode Capture::getMode() const { return captureType; }
+CaptureMode Capture::getMode() const { return captureMode; }
 
 /**
  * Stringify the current capture to a human-readable form. Used to dump whole symbol tables with their contents.
  *
  * Example:
  * {
- *   "name": "testIdentifier"
+ *   "name": "testIdentifier",
+ *   "accessType": "READ_ONLY",
+ *   "mode": "BY_VALUE"
  * }
  *
  * @return Capture as a JSON object
  */
-nlohmann::ordered_json Capture::toJSON() const { return capturedEntry->toJSON(); }
+nlohmann::ordered_json Capture::toJSON() const {
+  nlohmann::json result;
+  result["name"] = capturedEntry->name;
+  result["accessType"] = accessType == READ_ONLY ? "READ_ONLY" : "READ_WRITE";
+  result["mode"] = captureMode == BY_VALUE ? "BY_VALUE" : "BY_REFERENCE";
+  return result;
+}
 
 } // namespace spice::compiler
