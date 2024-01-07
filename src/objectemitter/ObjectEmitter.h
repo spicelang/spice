@@ -17,7 +17,7 @@ public:
   ObjectEmitter(GlobalResourceManager &resourceManager, SourceFile *sourceFile);
 
   // Public methods
-  void emit() const;
+  void emit(const std::filesystem::path &objectPath) const;
   void getASMString(std::string &output) const;
 
 private:

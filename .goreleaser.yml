@@ -120,8 +120,8 @@ changelog:
   use: github
   filters:
     exclude:
-    - Merge pull request
-    - Merge branch
+      - Merge pull request
+      - Merge branch
 milestones:
   - close: true
     fail_on_error: false

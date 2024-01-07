@@ -156,7 +156,6 @@ public:
   std::string fileName;
   std::filesystem::path filePath;
   std::string fileDir;
-  std::filesystem::path objectFilePath;
   bool stdFile = false;
   bool mainFile = true;
   bool alwaysKeepSymbolsOnNameCollision = false;

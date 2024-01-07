@@ -1,5 +1,3 @@
-import "std/os/thread";
-
 f<int> main() {
     int i = 123; // Captured by ref
     int j = 321; // Captured by val

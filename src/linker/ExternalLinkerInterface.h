@@ -29,7 +29,11 @@ private:
   // Members
   const CliOptions &cliOptions;
   std::vector<std::string> objectFilePaths;
-  std::vector<std::string> linkerFlags = {"-fuse-ld=lld", "-flto"};
+  std::vector<std::string> linkerFlags = {
+      "-fuse-ld=lld", // Use LLD linker
+      "-flto",        // Enable LTO
+      "-Wl,-s",       // Strip symbols
+  };
 };
 
 } // namespace spice::compiler
