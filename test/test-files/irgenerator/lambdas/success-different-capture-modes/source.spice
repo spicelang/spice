@@ -1,0 +1,14 @@
+import "std/os/thread";
+
+f<int> main() {
+    int i = 123; // Captured by ref
+    int j = 321; // Captured by val
+    dyn lambda = p() {
+        printf("Hello from inside: %d\n", i);
+        i++;
+        i += j;
+        printf("Hello from inside: %d\n", i);
+    };
+    lambda();
+    printf("Hello from outside: %d\n", i);
+}

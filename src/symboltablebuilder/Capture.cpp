@@ -62,11 +62,19 @@ CaptureMode Capture::getMode() const { return captureMode; }
  *
  * Example:
  * {
- *   "name": "testIdentifier"
+ *   "name": "testIdentifier",
+ *   "accessType": "READ_ONLY",
+ *   "mode": "BY_VALUE"
  * }
  *
  * @return Capture as a JSON object
  */
-nlohmann::ordered_json Capture::toJSON() const { return capturedEntry->toJSON(); }
+nlohmann::ordered_json Capture::toJSON() const {
+  nlohmann::json result;
+  result["name"] = capturedEntry->name;
+  result["accessType"] = accessType == READ_ONLY ? "READ_ONLY" : "READ_WRITE";
+  result["mode"] = captureMode == BY_VALUE ? "BY_VALUE" : "BY_REFERENCE";
+  return result;
+}
 
 } // namespace spice::compiler

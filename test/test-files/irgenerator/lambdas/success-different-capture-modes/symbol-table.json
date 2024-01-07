@@ -1,0 +1,86 @@
+{
+  "captures": [],
+  "children": [
+    {
+      "captures": [],
+      "children": [
+        {
+          "captures": [
+            {
+              "accessType": "READ_ONLY",
+              "mode": "BY_VALUE",
+              "name": "j"
+            },
+            {
+              "accessType": "READ_WRITE",
+              "mode": "BY_REFERENCE",
+              "name": "i"
+            }
+          ],
+          "children": [],
+          "name": "lambda:L6C18",
+          "symbols": []
+        }
+      ],
+      "name": "fct:main",
+      "symbols": [
+        {
+          "codeLoc": "L6C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "lambda",
+          "orderIndex": 3,
+          "state": "initialized",
+          "type": "p[]()"
+        },
+        {
+          "codeLoc": "L5C5",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "j",
+          "orderIndex": 2,
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L4C5",
+          "isGlobal": false,
+          "isVolatile": true,
+          "name": "i",
+          "orderIndex": 1,
+          "state": "initialized",
+          "type": "int"
+        },
+        {
+          "codeLoc": "L3C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "declared",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "symbols": [
+    {
+      "codeLoc": "L3C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "main()",
+      "orderIndex": 1,
+      "state": "declared",
+      "type": "f<int>()"
+    },
+    {
+      "codeLoc": "L1C1",
+      "isGlobal": true,
+      "isVolatile": false,
+      "name": "std/os/thread",
+      "orderIndex": 0,
+      "state": "declared",
+      "type": "import"
+    }
+  ]
+}
