@@ -1,0 +1,23 @@
+#![core.linker.flag = "-pthread"]
+
+ext f<int> pthread_create(long*, byte*, p(), byte*);
+ext f<int> pthread_join(long, byte**);
+
+f<int> main() {
+    long tid1;
+    long tid2;
+    int i = 123;
+    double d = 123.456;
+    pthread_create(&tid1, nil<byte*>, p() {
+        i++;
+        printf("Hello from thread 1\n");
+    }, nil<byte*>);
+    pthread_create(&tid2, nil<byte*>, p() {
+        i++;
+        d += 1.23;
+        printf("Hello from thread 2\n");
+    }, nil<byte*>);
+    pthread_join(tid1, nil<byte**>);
+    pthread_join(tid2, nil<byte**>);
+    printf("%d\n", i);
+}

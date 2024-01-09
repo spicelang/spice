@@ -372,6 +372,9 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   if (rootScope->lookupStrict(node->extFunctionName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->extFunctionName + "'");
 
+  // Create scope for the external function (this is required in case of forceSubstantiation in FunctionManager::matchFunction)
+  rootScope->createChildScope(node->getScopeId(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
+
   // Add the external declaration to the symbol table
   node->entry = rootScope->insert(node->extFunctionName, node);
   // Register the name in the exported name registry

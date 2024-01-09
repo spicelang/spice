@@ -468,14 +468,19 @@ public:
 
   // Other methods
   std::vector<Function *> *getFctManifestations(const std::string &_) override { return &extFunctionManifestations; }
+  [[nodiscard]] std::string getScopeId() const {
+    const char *prefix = hasReturnType ? "func:" : "proc:";
+    return prefix + codeLoc.toString();
+  }
 
   // Public members
   std::string extFunctionName;
-  bool hasArgs = false;
-  bool isVarArg = false;
   SymbolTableEntry *entry = nullptr;
   Function *extFunction = nullptr;
   std::vector<Function *> extFunctionManifestations;
+  bool hasArgs = false;
+  bool isVarArg = false;
+  bool hasReturnType = false;
 };
 
 // ======================================================== UnsafeBlockNode ======================================================

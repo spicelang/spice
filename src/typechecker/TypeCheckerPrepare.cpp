@@ -684,6 +684,9 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   // Set type of external function
   node->entry->updateType(extFunctionType, false);
 
+  // Rename the original child scope to reflect the substantiated versions of the external function
+  currentScope->renameChildScope(node->getScopeId(), spiceFunc.getSignature(false));
+
   return nullptr;
 }
 
