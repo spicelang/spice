@@ -179,7 +179,7 @@ public:
   }
   [[nodiscard]] ALWAYS_INLINE bool isConst() const { return typeChain.size() == 1 && specifiers.isConst; }
   [[nodiscard]] ALWAYS_INLINE bool isSigned() const {
-    assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR}));
+    assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
     return specifiers.isSigned;
   }
   [[nodiscard]] ALWAYS_INLINE bool isInline() const {

@@ -32,13 +32,6 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
 }
 
 /**
- * Destroy the thread pool.
- */
-public p ThreadPool.dtor() {
-    this.stop();
-}
-
-/**
  * Start the thread pool.
  */
 public p ThreadPool.start() {

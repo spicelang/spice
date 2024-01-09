@@ -26,9 +26,6 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
                        const std::filesystem::path &filePath, bool stdFile)
     : resourceManager(resourceManager), tout(resourceManager.tout), name(std::move(name)), filePath(filePath), stdFile(stdFile),
       parent(parent) {
-  objectFilePath = resourceManager.cliOptions.outputDir / filePath.filename();
-  objectFilePath.replace_extension("o");
-
   // Deduce fileName and fileDir
   fileName = std::filesystem::path(filePath).filename().string();
   fileDir = std::filesystem::path(filePath).parent_path().string();
@@ -441,9 +438,13 @@ void SourceFile::runObjectEmitter() {
   Timer timer(&compilerOutput.times.objectEmitter);
   timer.start();
 
+  // Deduce object file path
+  std::filesystem::path objectFilePath = resourceManager.cliOptions.outputDir / filePath.filename();
+  objectFilePath.replace_extension("o");
+
   // Emit object for this source file
   ObjectEmitter objectEmitter(resourceManager, this);
-  objectEmitter.emit();
+  objectEmitter.emit(objectFilePath);
 
   // Save assembly string in the compiler output
   if (resourceManager.cliOptions.isNativeTarget)
@@ -524,7 +525,7 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   if (mainFile) {
     resourceManager.totalTimer.stop();
     if (resourceManager.cliOptions.printDebugOutput) {
-      std::cout << "\nSuccessfully compiled " << std::to_string(resourceManager.sourceFiles.size()) << " source files.\n";
+      std::cout << "\nSuccessfully compiled " << std::to_string(resourceManager.sourceFiles.size()) << " source file(s).\n";
       std::cout << "Total compile time: " << std::to_string(resourceManager.totalTimer.getDurationMilliseconds()) << " ms\n";
     }
   }

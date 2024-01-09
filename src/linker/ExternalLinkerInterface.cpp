@@ -20,6 +20,10 @@ void ExternalLinkerInterface::prepare() {
   if (cliOptions.staticLinking)
     addLinkerFlag("-static");
 
+  // Stripping symbols
+  if (!cliOptions.generateDebugInfo)
+    addLinkerFlag("-Wl,-s");
+
   // Web Assembly
   if (cliOptions.targetArch == TARGET_WASM32 || cliOptions.targetArch == TARGET_WASM64) {
     addLinkerFlag("-nostdlib");

@@ -61,7 +61,6 @@ public:
   Timer totalTimer;
   BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
   BS::synced_stream tout;
-  std::mutex objectEmitLock;
   ErrorManager errorManager;
 
 private:
