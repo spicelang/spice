@@ -221,6 +221,7 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   extDeclNode->extFunctionName = getIdentifier(ctx->IDENTIFIER() ? ctx->IDENTIFIER() : ctx->TYPE_IDENTIFIER());
   extDeclNode->hasArgs = ctx->typeLst();
   extDeclNode->isVarArg = ctx->ELLIPSIS();
+  extDeclNode->hasReturnType = ctx->F();
 
   // Visit children
   visitChildren(ctx);

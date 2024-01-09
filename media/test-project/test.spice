@@ -1,50 +1,23 @@
-import "std/os/thread-pool";
-import "std/time/delay";
+#![core.linker.flag = "-pthread"]
+
+ext f<int> pthread_create(long*, byte*, p(), byte*);
+ext f<int> pthread_join(long, byte**);
 
 f<int> main() {
-    ThreadPool tp = ThreadPool(3s);
-    tp.enqueue(p() {
-        delay(50);
-        printf("Hello from task 1\n");
-    });
-    tp.enqueue(p() {
-        delay(100);
-        printf("Hello from task 2\n");
-    });
-    tp.enqueue(p() {
-        delay(150);
-        printf("Hello from task 3\n");
-    });
-    tp.enqueue(p() {
-        delay(200);
-        printf("Hello from task 4\n");
-    });
-    tp.enqueue(p() {
-        delay(250);
-        printf("Hello from task 5\n");
-    });
-    tp.enqueue(p() {
-        delay(300);
-        printf("Hello from task 6\n");
-    });
-    tp.enqueue(p() {
-        delay(350);
-        printf("Hello from task 7\n");
-    });
-    tp.enqueue(p() {
-        delay(400);
-        printf("Hello from task 8\n");
-    });
-    tp.enqueue(p() {
-        delay(450);
-        printf("Hello from task 9\n");
-    });
-    tp.enqueue(p() {
-        delay(500);
-        printf("Hello from task 10\n");
-    });
-    tp.start();
-    tp.join();
+    long tid1;
+    long tid2;
+    int i = 123;
+    pthread_create(&tid1, nil<byte*>, p() {
+        i++;
+        printf("Hello from thread 1\n");
+    }, nil<byte*>);
+    pthread_create(&tid2, nil<byte*>, p() {
+        i++;
+        printf("Hello from thread 2\n");
+    }, nil<byte*>);
+    pthread_join(tid1, nil<byte**>);
+    pthread_join(tid2, nil<byte**>);
+    printf("%d\n", i);
 }
 
 /*f<int> main() {
