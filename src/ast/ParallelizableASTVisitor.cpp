@@ -91,7 +91,11 @@ std::any ParallelizableASTVisitor::visitSpecifier(const SpecifierNode *node) { r
 
 std::any ParallelizableASTVisitor::visitModAttr(const ModAttrNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNode *node) { return visitChildren(node); }
+std::any ParallelizableASTVisitor::visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNode *node) {
+  return visitChildren(node);
+}
+
+std::any ParallelizableASTVisitor::visitLambdaAttr(const LambdaAttrNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitAttrLst(const AttrLstNode *node) { return visitChildren(node); }
 

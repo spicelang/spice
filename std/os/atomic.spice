@@ -1,0 +1,43 @@
+import "std/os/mutex";
+
+// Generic type defs
+type T dyn;
+
+public type Atomic<T> struct {
+    T value
+    Mutex mutex
+}
+
+public p Atomic.ctor() {
+    this.value = (T) 0;
+}
+
+public p Atomic.ctor(T value) {
+    this.value = value;
+}
+
+public p Atomic.store(const T& value) {
+    LockGuard _ = LockGuard(this.mutex);
+    this.value = value;
+}
+
+public const f<T> Atomic.load() {
+    LockGuard _ = LockGuard(this.mutex);
+    return this.value;
+}
+
+public p Atomic.exchange(const T& value) {
+    LockGuard _ = LockGuard(this.mutex);
+    T old = this.value;
+    this.value = value;
+    return old;
+}
+
+public p Atomic.compareExchange(const T& expected, const T& desired) {
+    LockGuard _ = LockGuard(this.mutex);
+    if this.value == expected {
+        this.value = desired;
+        return true;
+    }
+    return false;
+}

@@ -47,6 +47,7 @@ public:
   std::any visitSpecifier(SpecifierNode *node) override;
   std::any visitModAttr(ModAttrNode *node) override;
   std::any visitTopLevelDefinitionAttr(TopLevelDefinitionAttrNode *node) override;
+  std::any visitLambdaAttr(LambdaAttrNode *node) override;
   std::any visitAttrLst(AttrLstNode *node) override;
   std::any visitAttr(AttrNode *node) override;
   std::any visitConstantLst(ConstantLstNode *node) override;

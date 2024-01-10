@@ -552,6 +552,15 @@ std::any ASTBuilder::visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *c
   return concludeNode(fctAttrNode);
 }
 
+std::any ASTBuilder::visitLambdaAttr(SpiceParser::LambdaAttrContext *ctx) {
+  auto lambdaAttrNode = createNode<LambdaAttrNode>(ctx);
+
+  // Visit children
+  visitChildren(ctx);
+
+  return concludeNode(lambdaAttrNode);
+}
+
 std::any ASTBuilder::visitAttrLst(SpiceParser::AttrLstContext *ctx) {
   auto attrLstNode = createNode<AttrLstNode>(ctx);
 

@@ -82,6 +82,8 @@ std::any ASTVisitor::visitModAttr(ModAttrNode *node) { return visitChildren(node
 
 std::any ASTVisitor::visitTopLevelDefinitionAttr(TopLevelDefinitionAttrNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitLambdaAttr(LambdaAttrNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitAttrLst(AttrLstNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitAttr(AttrNode *node) { return visitChildren(node); }

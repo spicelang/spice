@@ -63,6 +63,7 @@ public:
   std::any visitSpecifier(SpecifierNode *ctx) override { return buildNode(ctx); }
   std::any visitModAttr(ModAttrNode *ctx) override { return buildNode(ctx); }
   std::any visitTopLevelDefinitionAttr(TopLevelDefinitionAttrNode *ctx) override { return buildNode(ctx); }
+  std::any visitLambdaAttr(LambdaAttrNode *ctx) override { return buildNode(ctx); }
   std::any visitAttrLst(AttrLstNode *ctx) override { return buildNode(ctx); }
   std::any visitAttr(AttrNode *ctx) override { return buildNode(ctx); }
   std::any visitConstantLst(ConstantLstNode *ctx) override { return buildNode(ctx); }
@@ -113,7 +114,10 @@ private:
   std::string parentNodeId;
 
   // Private methods
-  template <typename T> std::string buildNode(const T *node) requires std::is_base_of_v<ASTNode, T> {
+  template <typename T>
+  std::string buildNode(const T *node)
+    requires std::is_base_of_v<ASTNode, T>
+  {
     std::stringstream result;
 
     // Prepare strings

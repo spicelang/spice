@@ -24,3 +24,25 @@ public p Mutex.acquire() {
 public p Mutex.release() {
 	this.occupied = false;
 }
+
+/**
+ * LockGuard is a RAII wrapper for Mutex
+ */
+public type LockGuard struct {
+    Mutex& mutex
+}
+
+/**
+ * Acquire the mutex
+ */
+public p LockGuard.ctor(Mutex& mutex) {
+    this.mutex = mutex;
+    this.mutex.acquire();
+}
+
+/**
+ * Release the mutex
+ */
+public p LockGuard.dtor() {
+    this.mutex.release();
+}
