@@ -47,6 +47,7 @@ specifierLst: specifier+;
 specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC | HEAP | COMPOSE;
 modAttr: MOD_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
 topLevelDefAttr: TOPLEVEL_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
+lambdaAttr: LBRACKET LBRACKET attrLst RBRACKET RBRACKET;
 attrLst: attr (COMMA attr)*;
 attr: IDENTIFIER (DOT IDENTIFIER)* (ASSIGN constant)?;
 constantLst: constant (COMMA constant)*;
@@ -89,8 +90,8 @@ constant: DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT | CHAR_LIT | STRING_LIT | 
 fctCall: (IDENTIFIER SCOPE_ACCESS)* (IDENTIFIER DOT)* (IDENTIFIER | TYPE_IDENTIFIER) (LESS typeLst GREATER)? LPAREN argLst? RPAREN;
 arrayInitialization: LBRACKET argLst? RBRACKET;
 structInstantiation: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
-lambdaFunc: F LESS dataType GREATER LPAREN paramLst? RPAREN stmtLst;
-lambdaProc: P LPAREN paramLst? RPAREN stmtLst;
+lambdaFunc: F LESS dataType GREATER LPAREN paramLst? RPAREN lambdaAttr? stmtLst;
+lambdaProc: P LPAREN paramLst? RPAREN lambdaAttr? stmtLst;
 lambdaExpr: LPAREN paramLst? RPAREN ARROW assignExpr;
 
 // Types

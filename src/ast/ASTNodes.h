@@ -1035,6 +1035,21 @@ public:
   [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
 };
 
+// ========================================================= LambdaAttrNode ======================================================
+
+class LambdaAttrNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaAttr(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaAttr(this); }
+
+  // Public get methods
+  [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
+};
+
 // ========================================================== AttrLstNode ========================================================
 
 class AttrLstNode : public ASTNode {
@@ -1067,6 +1082,7 @@ public:
     TARGET_INTERFACE = 1 << 2,
     TARGET_FCT_PROC = 1 << 3,
     TARGET_EXT_DECL = 1 << 4,
+    TARGET_LAMBDA = 1 << 5,
   };
 
   enum AttrType : uint8_t {
@@ -1962,16 +1978,17 @@ public:
   // Constructors
   using LambdaBaseNode::LambdaBaseNode;
 
-  // Public get methods
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
-
   // Visit methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaFunc(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaFunc(this); }
 
   // Public get methods
   [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
+  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
+  [[nodiscard]] LambdaAttrNode *lambdaAttr() const { return getChild<LambdaAttrNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 };
 
 // ====================================================== LambdaProcNode =========================================================
@@ -1981,13 +1998,16 @@ public:
   // Constructors
   using LambdaBaseNode::LambdaBaseNode;
 
-  // Public get methods
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
-
   // Visit methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaProc(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaProc(this); }
+
+  // Public get methods
+  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
+  [[nodiscard]] LambdaAttrNode *lambdaAttr() const { return getChild<LambdaAttrNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 };
 
 // ====================================================== LambdaExprNode =========================================================

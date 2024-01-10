@@ -1,8 +1,9 @@
 import "std/os/thread";
 import "std/data/vector";
 import "std/data/queue";
-import "std/os/system";
+import "std/os/atomic";
 import "std/os/cpu";
+import "std/os/system";
 import "std/runtime/iterator_rt";
 
 /**
@@ -13,7 +14,7 @@ import "std/runtime/iterator_rt";
 public type ThreadPool struct {
     Vector<Thread> workerThreads
     Queue<p()> queuedJobs
-    unsigned short runningJobs = 0s
+    Atomic<unsigned short> runningJobs
     unsigned short workerThreadCount
     bool stopRequested = false
     bool stopOnEmptyQueueRequested = false
@@ -28,6 +29,7 @@ public type ThreadPool struct {
 public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
     this.workerThreads = Vector<Thread>();
     this.queuedJobs = Queue<p()>();
+    this.runningJobs = Atomic<unsigned short>(0s);
     this.workerThreadCount = workerThreadCount > 0s ? workerThreadCount : (unsigned short) getCPUCoreCount();
 }
 
@@ -35,24 +37,28 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
  * Start the thread pool.
  */
 public p ThreadPool.start() {
-    p() workerRoutine = p() {
+    p() workerRoutine = p() [[async]] {
         do {
+            // Check if there are jobs to run
             bool hasQueuedJobs = !this.queuedJobs.isEmpty();
-            if (this.stopOnEmptyQueueRequested & !hasQueuedJobs) {
+            // If we are supposed to stop when the queue is empty and there are no more jobs, abort
+            if this.stopOnEmptyQueueRequested & !hasQueuedJobs {
                 break;
             }
+            // If we are not supposed to stop and there are jobs, run them
             if !this.pauseRequested & hasQueuedJobs {
                 p() task = this.queuedJobs.pop();
-                this.runningJobs++;
+                this.runningJobs.store(this.runningJobs.load() + 1s);
                 task();
-                this.runningJobs--;
+                this.runningJobs.store(this.runningJobs.load() - 1s);
             }
+            // Yield to other threads
             yield();
         } while (!this.stopRequested);
     };
 
     // Create worker threads
-    for (unsigned short i = 0s; i < this.workerThreadCount; i++) {
+    for unsigned short i = 0s; i < this.workerThreadCount; i++ {
         this.workerThreads.pushBack(Thread(workerRoutine));
         Thread& workerThread = this.workerThreads.back();
         workerThread.run();
@@ -117,7 +123,7 @@ public f<bool> ThreadPool.isPaused() {
  * Retrieve the number of jobs that are currently running.
  */
 public f<unsigned short> ThreadPool.getRunningJobCount() {
-    return this.runningJobs;
+    return this.runningJobs.load();
 }
 
 /**
@@ -138,7 +144,7 @@ public f<unsigned short> ThreadPool.getWorkerThreadCount() {
  * Wait for all worker threads to terminate.
  */
 p ThreadPool.joinWorkerThreads() {
-    foreach (const Thread& workerThread : iterate(this.workerThreads)) {
+    foreach const Thread& workerThread : iterate(this.workerThreads) {
         workerThread.join();
     }
 }

@@ -815,6 +815,18 @@ f<ASTTopLevelDefAttrNode*> Parser.parseTopLevelDefAttr() {
     return this.concludeNode(topLevelDefAttrNode);
 }
 
+f<ASTLambdaAttrNode*> Parser.parseLambdaAttr() {
+    dyn lambdaAttrNode = this.createNode<ASTLambdaAttrNode>();
+
+    this.lexer.expect(TokenType::LBRACKET);
+    this.lexer.expect(TokenType::LBRACKET);
+    this.parseAttrLst();
+    this.lexer.expect(TokenType::RBRACKET);
+    this.lexer.expect(TokenType::RBRACKET);
+
+    return this.concludeNode(lambdaAttrNode);
+}
+
 f<ASTAttrLstNode*> Parser.parseAttrLst() {
     dyn attrLstNode = this.createNode<ASTAttrLstNode>();
 
@@ -1312,6 +1324,11 @@ f<ASTLambdaFuncNode*> Parser.parseLambdaFunc() {
     }
     this.lexer.expect(TokenType::RPAREN);
 
+    // Parse lambda attrs
+    if this.currentTokenIs(TokenType::LBRACKET) {
+        this.parseLambdaAttr();
+    }
+
     this.parseStmtLst();
 
     return this.concludeNode(lambdaFuncNode);
@@ -1328,6 +1345,11 @@ f<ASTLambdaProcNode*> Parser.parseLambdaProc() {
         this.parseParamLst();
     }
     this.lexer.expect(TokenType::RPAREN);
+
+    // Parse lambda attrs
+    if this.currentTokenIs(TokenType::LBRACKET) {
+        this.parseLambdaAttr();
+    }
 
     // Parse
     this.parseStmtLst();

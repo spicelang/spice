@@ -23,6 +23,7 @@ static constexpr const char *const ATTR_CORE_COMPILER_WARNINGS_IGNORE = "core.co
 static constexpr const char *const ATTR_TEST = "test";
 static constexpr const char *const ATTR_TEST_NAME = "test.name";
 static constexpr const char *const ATTR_TEST_SKIP = "test.skip";
+static constexpr const char *const ATTR_ASYNC = "async";
 
 static const CompileTimeValue DEFAULT_BOOL_COMPILE_VALUE{.boolValue = true};
 
@@ -129,6 +130,13 @@ static const std::unordered_map<std::string, AttrConfigValue> ATTR_CONFIGS = {
         ATTR_TEST_SKIP,
         {
             .target = AttrNode::TARGET_FCT_PROC,
+            .type = AttrNode::TYPE_BOOL,
+        },
+    },
+    {
+        ATTR_ASYNC,
+        {
+            .target = AttrNode::TARGET_FCT_PROC | AttrNode::TARGET_LAMBDA,
             .type = AttrNode::TYPE_BOOL,
         },
     },

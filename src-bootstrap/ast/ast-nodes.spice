@@ -323,6 +323,13 @@ public type ASTTopLevelDefAttrNode struct /*: IVisitable*/ {
 
 }
 
+// ======================================================== LambdaAttrNode =======================================================
+
+public type ASTLambdaAttrNode struct /*: IVisitable*/ {
+    compose public ASTNode node
+
+}
+
 // ========================================================== AttrLstNode ========================================================
 
 public type ASTAttrLstNode struct /*: IVisitable*/ {

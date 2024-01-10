@@ -66,6 +66,7 @@ public:
   std::any visitSpecifier(SpiceParser::SpecifierContext *ctx) override { return buildRule(ctx); }
   std::any visitModAttr(SpiceParser::ModAttrContext *ctx) override { return buildRule(ctx); }
   std::any visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *ctx) override { return buildRule(ctx); }
+  std::any visitLambdaAttr(SpiceParser::LambdaAttrContext *ctx) override { return buildRule(ctx); }
   std::any visitAttrLst(SpiceParser::AttrLstContext *ctx) override { return buildRule(ctx); }
   std::any visitAttr(SpiceParser::AttrContext *ctx) override { return buildRule(ctx); }
   std::any visitConstantLst(SpiceParser::ConstantLstContext *ctx) override { return buildRule(ctx); }
