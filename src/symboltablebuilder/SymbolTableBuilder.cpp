@@ -663,6 +663,9 @@ std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
+  // Set to async scope if this is an async lambda
+  if (node->lambdaAttr() && node->lambdaAttr()->attrLst()->hasAttr(ATTR_ASYNC))
+    node->bodyScope->isAsyncScope = node->lambdaAttr()->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue;
 
   // Create symbol for 'result' variable
   currentScope->insert(RETURN_VARIABLE_NAME, node);
@@ -686,6 +689,9 @@ std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
+  // Set to async scope if this is an async lambda
+  if (node->lambdaAttr() && node->lambdaAttr()->attrLst()->hasAttr(ATTR_ASYNC))
+    node->bodyScope->isAsyncScope = node->lambdaAttr()->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue;
 
   // Create symbols for the parameters
   if (node->hasParams)

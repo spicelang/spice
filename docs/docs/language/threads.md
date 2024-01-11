@@ -12,12 +12,15 @@ A simple worker thread can be spawned like this:
 import "std/os/thread";
 
 f<int> main() {
-    Thread thread = Thread(p() {
+    Thread thread = Thread(p() [[async]] {
         // Do something
     });
     thread.run();
 }
 ```
+
+Please always add the `[[async]]` attribute to the thread routine. This will ensure, that the thread routine is executed in a
+thread-safe manner. The `run()` method will start the thread. The thread will run until the thread routine returns.
 
 To join a thread to the main thread, use the `join()` method:
 
@@ -25,11 +28,11 @@ To join a thread to the main thread, use the `join()` method:
 import "std/os/thread";
 
 f<int> main() {
-    Thread thread1 = Thread(p() {
+    Thread thread1 = Thread(p() [[async]] {
         // Do something
     });
     thread1.run();
-    Thread thread2 = Thread(p() {
+    Thread thread2 = Thread(p() [[async]] {
         // Do something
     });
     thread2.run();
@@ -46,10 +49,10 @@ To get the ID of the current thread (i.e. within the thread routine), you can ca
 import "std/os/thread";
 
 f<int> main() {
-    Thread thread1 = Thread(p() {
+    Thread thread1 = Thread(p() [[async]] {
         // Do something
     });
-    Thread thread2 = Thread(p() {
+    Thread thread2 = Thread(p() [[async]] {
         // Do something
     });
     thread2.run();
@@ -72,15 +75,15 @@ import "std/os/threadpool";
 f<int> main() {
     ThreadPool tp = ThreadPool(3s); // Create a thread pool with 3 worker threads
     // Enque tasks to the thread pool, that will run in parallel
-    tp.enqueue(p() {
+    tp.enqueue(p() [[async]] {
         delay(50);
         printf("Hello from task 1\n");
     });
-    tp.enqueue(p() {
+    tp.enqueue(p() [[async]] {
         delay(100);
         printf("Hello from task 2\n");
     });
-    tp.enqueue(p() {
+    tp.enqueue(p() [[async]] {
         delay(150);
         printf("Hello from task 3\n");
     });

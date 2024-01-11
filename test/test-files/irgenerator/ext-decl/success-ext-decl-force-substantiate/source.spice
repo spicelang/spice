@@ -8,11 +8,11 @@ f<int> main() {
     long tid2;
     int i = 123;
     double d = 123.456;
-    pthread_create(&tid1, nil<byte*>, p() {
+    pthread_create(&tid1, nil<byte*>, p() [[async]] {
         i++;
         printf("Hello from thread 1\n");
     }, nil<byte*>);
-    pthread_create(&tid2, nil<byte*>, p() {
+    pthread_create(&tid2, nil<byte*>, p() [[async]] {
         i++;
         d += 1.23;
         printf("Hello from thread 2\n");

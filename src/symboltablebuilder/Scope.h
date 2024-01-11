@@ -83,6 +83,7 @@ public:
   [[nodiscard]] bool hasRefFields();
   [[nodiscard]] size_t getLoopNestingDepth() const;
   [[nodiscard]] bool isInCaseBranch() const;
+  [[nodiscard]] bool isInAsyncScope() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
   [[nodiscard]] bool isImportedBy(const Scope *askingScope) const;
   const StructRegistry &getStructs() const { return structs; }
@@ -103,6 +104,7 @@ public:
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable, this);
   const CodeLoc *codeLoc = nullptr;
   bool isGenericScope = false;
+  bool isAsyncScope = false;
   bool isDtorScope = false;
 
 private:

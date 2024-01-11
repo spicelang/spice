@@ -52,12 +52,12 @@ define private void @_Z14lambda.L6C18.0v(ptr noundef nonnull dereferenceable(8) 
   %6 = load ptr, ptr %i, align 8
   %7 = load i32, ptr %6, align 4
   %8 = add nsw i32 %7, 1
-  store volatile i32 %8, ptr %6, align 4
+  store i32 %8, ptr %6, align 4
   %9 = load i32, ptr %j, align 4
   %10 = load ptr, ptr %i, align 8
   %11 = load i32, ptr %10, align 4
   %12 = add nsw i32 %11, %9
-  store volatile i32 %12, ptr %10, align 4
+  store i32 %12, ptr %10, align 4
   %13 = load ptr, ptr %i, align 8
   %14 = load i32, ptr %13, align 4
   %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %14)

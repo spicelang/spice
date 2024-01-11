@@ -85,7 +85,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   // Generate debug info
   diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddress, SIZE_MAX);
   // Store the default result value
-  builder.CreateStore(builder.getInt32(0), resultAddress);
+  insertStore(builder.getInt32(0), resultAddress);
 
   // Store function argument values
   for (auto &arg : fct->args()) {
@@ -101,7 +101,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
     // Store the value at the new address
-    builder.CreateStore(&arg, paramAddress);
+    insertStore(&arg, paramAddress);
   }
 
   // Visit function body
@@ -258,7 +258,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       // Generate debug info
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
       // Store the value at the new address
-      builder.CreateStore(&arg, paramAddress);
+      insertStore(&arg, paramAddress);
     }
 
     // Store the default values for optional function args
@@ -418,7 +418,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       // Generate debug info
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
       // Store the value at the new address
-      builder.CreateStore(&arg, paramAddress);
+      insertStore(&arg, paramAddress);
     }
 
     // Store the default values for optional procedure args

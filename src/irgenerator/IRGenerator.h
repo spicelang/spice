@@ -112,14 +112,15 @@ public:
 
   // Public methods
   llvm::Value *insertAlloca(llvm::Type *llvmType, std::string varName = "");
-  llvm::Value *insertLoad(llvm::Type *llvmType, llvm::Value *ptr, std::string varName = "") const;
+  llvm::Value *insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile = false, const std::string &varName = "") const;
+  void insertStore(llvm::Value *val, llvm::Value *ptr, bool isVolatile = false) const;
   llvm::Value *insertInBoundsGEP(llvm::Type *llvmType, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
                                  std::string varName = "") const;
   llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const ASTNode *node, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const SymbolType &symbolType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
-  llvm::Value *resolveAddress(const ASTNode *node, bool storeVolatile = false);
-  llvm::Value *resolveAddress(LLVMExprResult &exprResult, bool storeVolatile = false);
+  llvm::Value *resolveAddress(const ASTNode *node);
+  llvm::Value *resolveAddress(LLVMExprResult &exprResult);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
   [[nodiscard]] llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const SymbolType &type, const ASTNode *node);
   [[nodiscard]] std::string getIRString() const;

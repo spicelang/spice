@@ -127,7 +127,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     if (firstFragEntry->getType().hasLambdaCaptures()) {
       // Load captures struct
       llvm::Value *capturesPtrPtr = builder.CreateStructGEP(fatStructType, fatPtr, 1);
-      llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, CAPTURES_PARAM_NAME);
+      llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
       // Add captures to argument list
       argValues.push_back(capturesPtr);
     }
@@ -205,11 +205,11 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     assert(data.callee->isVirtual);
     assert(thisPtr != nullptr);
     // Load VTable
-    llvm::Value *vtablePtr = insertLoad(builder.getPtrTy(), thisPtr, "vtable.addr");
+    llvm::Value *vtablePtr = insertLoad(builder.getPtrTy(), thisPtr, false, "vtable.addr");
     const size_t vtableIndex = data.callee->vtableIndex;
     // Lookup function pointer in VTable
     fctPtr = insertInBoundsGEP(builder.getPtrTy(), vtablePtr, builder.getInt64(vtableIndex), "vfct.addr");
-    llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, "fct");
+    llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
 
     // Generate function call
     result = builder.CreateCall({fctType, fct}, argValues);
@@ -219,7 +219,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     if (!fctPtr)
       fctPtr = firstFragEntry->getAddress();
     autoDeReferencePtr(fctPtr, firstFragType, currentScope);
-    llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, "fct");
+    llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
 
     // Generate function call
     result = builder.CreateCall({fctType, fct}, argValues);
@@ -250,7 +250,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
         anonymousSymbol->updateAddress(thisPtr);
       } else {
         resultPtr = insertAlloca(result->getType());
-        builder.CreateStore(result, resultPtr);
+        insertStore(result, resultPtr);
         anonymousSymbol->updateAddress(resultPtr);
       }
     }
@@ -321,7 +321,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
         currentItemAddress = insertInBoundsGEP(itemType, currentItemAddress, builder.getInt32(1));
       // Store the item value
       const bool storeVolatile = exprResult.entry != nullptr && exprResult.entry->isVolatile;
-      builder.CreateStore(itemValue, currentItemAddress, storeVolatile);
+      insertStore(itemValue, currentItemAddress, storeVolatile);
     }
 
     return LLVMExprResult{.ptr = arrayAddr};
@@ -385,7 +385,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
       // Get field address
       llvm::Value *currentFieldAddress = builder.CreateStructGEP(structType, structAddr, i);
       // Store the item value
-      builder.CreateStore(itemValue, currentFieldAddress);
+      insertStore(itemValue, currentFieldAddress);
     }
 
     // Store all field values at their corresponding offsets
@@ -397,7 +397,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
       llvm::Value *currentFieldAddress = builder.CreateStructGEP(structType, structAddr, i);
       // Store the item value
       const bool storeVolatile = exprResult.entry != nullptr && exprResult.entry->isVolatile;
-      builder.CreateStore(itemValue, currentFieldAddress, storeVolatile);
+      insertStore(itemValue, currentFieldAddress, storeVolatile);
     }
 
     // Attach address to anonymous symbol to keep track of deallocation
@@ -519,7 +519,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
     }
     // Store the value at the new address
-    builder.CreateStore(&arg, paramAddress);
+    insertStore(&arg, paramAddress);
   }
 
   // Store the default values for optional function args
@@ -678,7 +678,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
     }
     // Store the value at the new address
-    builder.CreateStore(&arg, paramAddress);
+    insertStore(&arg, paramAddress);
   }
 
   // Store the default values for optional function args
@@ -838,7 +838,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
     // Store the value at the new address
-    builder.CreateStore(&arg, paramAddress);
+    insertStore(&arg, paramAddress);
   }
 
   // Store the default values for optional function args
@@ -922,7 +922,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *cap
       }
       // Store it in the capture struct
       llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructAddress, captureIdx);
-      builder.CreateStore(capturedValue, captureAddress);
+      insertStore(capturedValue, captureAddress);
       captureIdx++;
     }
   }
@@ -934,10 +934,10 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *cap
   // Create fat pointer
   llvm::Value *fatFctPtr = insertAlloca(llvmTypes.fatPtrType, "fat.ptr");
   llvm::Value *fctPtr = builder.CreateStructGEP(llvmTypes.fatPtrType, fatFctPtr, 0);
-  builder.CreateStore(lambda, fctPtr);
+  insertStore(lambda, fctPtr);
   if (capturesStructType != nullptr) {
     llvm::Value *capturePtr = builder.CreateStructGEP(llvmTypes.fatPtrType, fatFctPtr, 1);
-    builder.CreateStore(captureStructAddress, capturePtr);
+    insertStore(captureStructAddress, capturePtr);
   }
 
   return fatFctPtr;

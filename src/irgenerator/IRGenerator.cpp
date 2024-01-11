@@ -69,14 +69,14 @@ llvm::Value *IRGenerator::insertAlloca(llvm::Type *llvmType, std::string varName
   return static_cast<llvm::Value *>(allocaInsertInst);
 }
 
-llvm::Value *IRGenerator::insertLoad(llvm::Type *llvmType, llvm::Value *ptr, std::string varName) const {
+llvm::Value *IRGenerator::insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile, const std::string &varName) const {
   assert(ptr->getType()->isPointerTy());
+  return builder.CreateLoad(llvmType, ptr, isVolatile, cliOptions.namesForIRValues ? varName : "");
+}
 
-  if (!cliOptions.namesForIRValues)
-    varName = "";
-
-  // Insert load
-  return builder.CreateLoad(llvmType, ptr, varName);
+void IRGenerator::insertStore(llvm::Value *val, llvm::Value *ptr, bool isVolatile) const {
+  assert(ptr->getType()->isPointerTy());
+  builder.CreateStore(val, ptr, isVolatile);
 }
 
 llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *llvmType, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
@@ -122,40 +122,37 @@ llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, LLVMExprRes
   // De-reference if reference type
   SymbolType referencedType = symbolType.removeReferenceWrapper();
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr)
-    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr);
+    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, exprResult.entry && exprResult.entry->isVolatile);
 
   // Load the value from the pointer
   llvm::Type *valueTy = referencedType.toLLVMType(context, accessScope);
-  exprResult.value = insertLoad(valueTy, exprResult.ptr);
+  exprResult.value = insertLoad(valueTy, exprResult.ptr, exprResult.entry && exprResult.entry->isVolatile);
 
   return exprResult.value;
 }
 
-llvm::Value *IRGenerator::resolveAddress(const ASTNode *node, bool storeVolatile /*=false*/) {
+llvm::Value *IRGenerator::resolveAddress(const ASTNode *node) {
   // Visit the given AST node
   auto exprResult = any_cast<LLVMExprResult>(visit(node));
-  return resolveAddress(exprResult, storeVolatile);
+  return resolveAddress(exprResult);
 }
 
-llvm::Value *IRGenerator::resolveAddress(LLVMExprResult &exprResult, bool storeVolatile /*=false*/) {
+llvm::Value *IRGenerator::resolveAddress(LLVMExprResult &exprResult) {
   // Check if an address is already present
   if (exprResult.ptr != nullptr)
     return exprResult.ptr;
 
   // Check if the reference address is already present
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr) {
-    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr);
+    exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, exprResult.entry && exprResult.entry->isVolatile);
     return exprResult.ptr;
   }
-
-  if (exprResult.entry)
-    storeVolatile |= exprResult.entry->isVolatile;
 
   // If not, store the value or constant
   materializeConstant(exprResult);
   assert(exprResult.value != nullptr);
   exprResult.ptr = insertAlloca(exprResult.value->getType(), exprResult.entry ? exprResult.entry->name : "");
-  builder.CreateStore(exprResult.value, exprResult.ptr, storeVolatile);
+  insertStore(exprResult.value, exprResult.ptr, exprResult.entry && exprResult.entry->isVolatile);
 
   return exprResult.ptr;
 }
@@ -383,7 +380,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
       // Store lhs pointer to rhs
       llvm::Value *refAddress = insertAlloca(builder.getPtrTy());
       lhsEntry->updateAddress(refAddress);
-      builder.CreateStore(rhsAddress, refAddress);
+      insertStore(rhsAddress, refAddress);
 
       return LLVMExprResult{.value = rhsAddress, .ptr = refAddress, .entry = lhsEntry};
     }
@@ -395,7 +392,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
       assert(referencedAddress != nullptr);
 
       // Store the rhs* to the lhs**
-      builder.CreateStore(referencedAddress, lhsAddress);
+      insertStore(referencedAddress, lhsAddress);
 
       return LLVMExprResult{.value = referencedAddress, .ptr = lhsAddress, .entry = lhsEntry};
     }
@@ -449,7 +446,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     lhsEntry->updateAddress(lhsAddress);
   }
   // Store the value to the address
-  builder.CreateStore(rhsValue, lhsAddress);
+  insertStore(rhsValue, lhsAddress);
   return LLVMExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
 }
 

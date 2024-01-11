@@ -2,9 +2,11 @@ import "std/os/thread-pool";
 import "std/time/delay";
 
 f<int> main() {
+    int testVar = 123;
     ThreadPool tp = ThreadPool(3s);
     tp.enqueue(p() [[async]] {
         delay(50);
+        testVar++;
         printf("Hello from task 1\n");
     });
     tp.enqueue(p() [[async]] {

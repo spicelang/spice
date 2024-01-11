@@ -129,94 +129,6 @@ GenericType *Scope::lookupGenericType(const std::string &typeName) { // NOLINT(m
 }
 
 /**
- * Get the number of fields if this is a struct scope
- *
- * @return Number of fields
- */
-size_t Scope::getFieldCount() const {
-  assert(type == ScopeType::STRUCT);
-  size_t fieldCount = 0;
-  for (const auto &symbol : symbolTable.symbols) {
-    const SymbolType &symbolType = symbol.second.getType();
-    if (symbolType.is(TY_IMPORT))
-      continue;
-    const ASTNode *declNode = symbol.second.declNode;
-    if (declNode->isFctOrProcDef() || declNode->isStructDef())
-      continue;
-    fieldCount++;
-  }
-  return fieldCount;
-}
-
-/**
- * Get all virtual methods in this scope, sorted by declaration code location
- *
- * @return List of virtual method pointers
- */
-std::vector<Function *> Scope::getVirtualMethods() {
-  assert(type == ScopeType::STRUCT || type == ScopeType::INTERFACE);
-
-  // Collect all virtual methods
-  std::vector<Function *> methods;
-  for (auto &symbol : functions) {
-    assert(!symbol.second.empty());
-    for (auto &fct : symbol.second)
-      if (fct.second.isVirtualMethod())
-        methods.push_back(&functions.at(symbol.first).at(fct.first));
-  }
-
-  // Sort the list
-  std::ranges::sort(methods, [](const Function *a, const Function *b) { return a->getDeclCodeLoc() < b->getDeclCodeLoc(); });
-
-  return methods;
-}
-
-/**
- * Check if this struct has any reference fields
- *
- * @return Has reference fields or not
- */
-bool Scope::hasRefFields() {
-  assert(type == ScopeType::STRUCT);
-  const size_t fieldCount = getFieldCount();
-  for (size_t i = 0; i < fieldCount; i++) {
-    const SymbolTableEntry *fieldEntry = symbolTable.lookupStrictByIndex(i);
-    if (fieldEntry->getType().isRef())
-      return true;
-  }
-  return false;
-}
-
-/**
- * Get the current number of nested loops
- *
- * @return Number of loops
- */
-size_t Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
-  assert(parent != nullptr);
-  if (parent->parent == nullptr)
-    return 0;
-  size_t loopCount = parent->getLoopNestingDepth();
-  if (type == ScopeType::WHILE_BODY || type == ScopeType::FOR_BODY || type == ScopeType::FOREACH_BODY)
-    loopCount++;
-  return loopCount;
-}
-
-/**
- * Check if this scope is one of the child scopes of a switch statement
- *
- * @return Child scope of switch statement or not
- */
-bool Scope::isInCaseBranch() const { // NOLINT(misc-no-recursion)
-  assert(parent != nullptr);
-  if (parent->parent == nullptr)
-    return false;
-  if (type == ScopeType::CASE_BODY)
-    return true;
-  return parent->isInCaseBranch();
-}
-
-/**
  * Collect all warnings, produced within this scope
  *
  * @param List of warnings
@@ -370,13 +282,103 @@ void Scope::ensureSuccessfulTypeInference() const { // NOLINT(misc-no-recursion)
 }
 
 /**
- * Checks if this scope is imported
+ * Get the number of fields if this is a struct scope
  *
- * @param askingScope Scope, which asks whether the current one is imported from its point of view or not
- *
- * @return Imported / not imported
+ * @return Number of fields
  */
-bool Scope::isImportedBy(const Scope *askingScope) const { return askingScope->sourceFile->imports(sourceFile); }
+size_t Scope::getFieldCount() const {
+  assert(type == ScopeType::STRUCT);
+  size_t fieldCount = 0;
+  for (const auto &symbol : symbolTable.symbols) {
+    const SymbolType &symbolType = symbol.second.getType();
+    if (symbolType.is(TY_IMPORT))
+      continue;
+    const ASTNode *declNode = symbol.second.declNode;
+    if (declNode->isFctOrProcDef() || declNode->isStructDef())
+      continue;
+    fieldCount++;
+  }
+  return fieldCount;
+}
+
+/**
+ * Get all virtual methods in this scope, sorted by declaration code location
+ *
+ * @return List of virtual method pointers
+ */
+std::vector<Function *> Scope::getVirtualMethods() {
+  assert(type == ScopeType::STRUCT || type == ScopeType::INTERFACE);
+
+  // Collect all virtual methods
+  std::vector<Function *> methods;
+  for (auto &symbol : functions) {
+    assert(!symbol.second.empty());
+    for (auto &fct : symbol.second)
+      if (fct.second.isVirtualMethod())
+        methods.push_back(&functions.at(symbol.first).at(fct.first));
+  }
+
+  // Sort the list
+  std::ranges::sort(methods, [](const Function *a, const Function *b) { return a->getDeclCodeLoc() < b->getDeclCodeLoc(); });
+
+  return methods;
+}
+
+/**
+ * Check if this struct has any reference fields
+ *
+ * @return Has reference fields or not
+ */
+bool Scope::hasRefFields() {
+  assert(type == ScopeType::STRUCT);
+  const size_t fieldCount = getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    const SymbolTableEntry *fieldEntry = symbolTable.lookupStrictByIndex(i);
+    if (fieldEntry->getType().isRef())
+      return true;
+  }
+  return false;
+}
+
+/**
+ * Get the current number of nested loops
+ *
+ * @return Number of loops
+ */
+size_t Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
+  assert(parent != nullptr);
+  if (parent->parent == nullptr)
+    return 0;
+  size_t loopCount = parent->getLoopNestingDepth();
+  if (type == ScopeType::WHILE_BODY || type == ScopeType::FOR_BODY || type == ScopeType::FOREACH_BODY)
+    loopCount++;
+  return loopCount;
+}
+
+/**
+ * Check if this scope is one of the child scopes of a switch statement
+ *
+ * @return Child scope of switch statement or not
+ */
+bool Scope::isInCaseBranch() const { // NOLINT(misc-no-recursion)
+  assert(parent != nullptr);
+  if (parent->parent == nullptr)
+    return false;
+  if (type == ScopeType::CASE_BODY)
+    return true;
+  return parent->isInCaseBranch();
+}
+
+/**
+ * Check if this scope is within an async scope
+ *
+ * @return Within async scope or not
+ */
+bool Scope::isInAsyncScope() const { // NOLINT(misc-no-recursion)
+  if (isAsyncScope)
+    return true;
+  return parent != nullptr && parent->isInAsyncScope();
+}
 
 /**
  * Check if unsafe operations are allowed in this scope
@@ -388,6 +390,15 @@ bool Scope::doesAllowUnsafeOperations() const { // NOLINT(misc-no-recursion)
     return true;
   return parent != nullptr && parent->doesAllowUnsafeOperations();
 }
+
+/**
+ * Checks if this scope is imported
+ *
+ * @param askingScope Scope, which asks whether the current one is imported from its point of view or not
+ *
+ * @return Imported / not imported
+ */
+bool Scope::isImportedBy(const Scope *askingScope) const { return askingScope->sourceFile->imports(sourceFile); }
 
 /**
  * Get JSON representation of the symbol table

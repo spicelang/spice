@@ -42,7 +42,7 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, SymbolType dstSTy, Sy
   // Pack the pointers together again
   for (; loadCounter > 0; loadCounter--) {
     llvm::Value *newActualArg = insertAlloca(src->getType());
-    builder.CreateStore(src, newActualArg);
+    insertStore(src, newActualArg);
     src = newActualArg;
   }
   return src;
@@ -190,7 +190,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(THIS_VARIABLE_NAME, thisAddress, 1);
     // Store the value at the new address
-    builder.CreateStore(fct->arg_begin(), thisAddress);
+    insertStore(fct->arg_begin(), thisAddress);
   }
 
   // Generate body
@@ -281,7 +281,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(THIS_VARIABLE_NAME, thisAddress, 1);
     // Store the value at the new address
-    builder.CreateStore(fct->arg_begin(), thisAddress);
+    insertStore(fct->arg_begin(), thisAddress);
   }
 
   // Generate body
@@ -325,7 +325,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
     thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
     llvm::Value *indices[3] = {builder.getInt32(0), builder.getInt32(0), builder.getInt32(2)};
     llvm::Value *gepResult = insertInBoundsGEP(spiceStruct->vtableType, spiceStruct->vtable, indices);
-    builder.CreateStore(gepResult, thisAddressLoaded);
+    insertStore(gepResult, thisAddressLoaded);
   }
 
   const size_t fieldCount = structScope->getFieldCount();
@@ -366,7 +366,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
         value = getDefaultValueForSymbolType(fieldType);
       }
       // Store default value
-      builder.CreateStore(value, fieldAddress);
+      insertStore(value, fieldAddress);
     }
   }
 }
@@ -511,7 +511,7 @@ void IRGenerator::generateTestMain() {
     // Prepare result variable
     llvm::Type *i32Ty = builder.getInt32Ty();
     llvm::Value *overallResult = insertAlloca(i32Ty, RETURN_VARIABLE_NAME);
-    builder.CreateStore(builder.getTrue(), overallResult);
+    insertStore(builder.getTrue(), overallResult);
 
     // Print start message
     const auto accFct = [&](size_t sum, const std::vector<const Function *> *innerVector) { return sum + innerVector->size(); };
@@ -573,7 +573,7 @@ void IRGenerator::generateTestMain() {
         // Update result variable
         llvm::Value *oldResult = insertLoad(i32Ty, overallResult);
         llvm::Value *newResult = builder.CreateAnd(oldResult, builder.CreateZExt(testCaseResult, i32Ty));
-        builder.CreateStore(newResult, overallResult);
+        insertStore(newResult, overallResult);
 
         // Print test case result message
         llvm::Value *message = builder.CreateSelect(testCaseResult, successMsg, errorMsg);

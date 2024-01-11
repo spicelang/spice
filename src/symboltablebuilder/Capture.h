@@ -28,8 +28,6 @@ public:
   // Public methods
   [[nodiscard]] std::string getName() const;
   void setAccessType(CaptureAccessType captureAccessType);
-  [[nodiscard]] CaptureAccessType getAccessType() const;
-  void setMode(CaptureMode captureMode);
   [[nodiscard]] CaptureMode getMode() const;
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 

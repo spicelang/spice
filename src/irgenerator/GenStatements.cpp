@@ -77,7 +77,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
       assert(!node->isCtorCallRequired);
       // Retrieve default value for lhs symbol type and store it
       llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);
-      builder.CreateStore(defaultValue, varAddress);
+      insertStore(defaultValue, varAddress);
     }
   }
   assert(varAddress != nullptr);

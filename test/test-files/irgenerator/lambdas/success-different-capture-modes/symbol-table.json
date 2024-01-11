@@ -45,7 +45,7 @@
         {
           "codeLoc": "L4C5",
           "isGlobal": false,
-          "isVolatile": true,
+          "isVolatile": false,
           "name": "i",
           "orderIndex": 1,
           "state": "initialized",
