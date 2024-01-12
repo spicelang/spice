@@ -59,8 +59,8 @@ define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8)
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
-  %i = getelementptr inbounds { ptr }, ptr %2, i32 0, i32 0
-  %3 = load volatile ptr, ptr %i, align 8
+  %i.addr = getelementptr inbounds { ptr }, ptr %2, i32 0, i32 0
+  %3 = load volatile ptr, ptr %i.addr, align 8
   %4 = load volatile i32, ptr %3, align 4
   %5 = add nsw i32 %4, 1
   store volatile i32 %5, ptr %3, align 4
@@ -75,13 +75,13 @@ define private void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8)
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
-  %d = getelementptr inbounds { ptr, ptr }, ptr %2, i32 0, i32 0
-  %i = getelementptr inbounds { ptr, ptr }, ptr %2, i32 0, i32 1
-  %3 = load volatile ptr, ptr %i, align 8
+  %d.addr = getelementptr inbounds { ptr, ptr }, ptr %2, i32 0, i32 0
+  %i.addr = getelementptr inbounds { ptr, ptr }, ptr %2, i32 0, i32 1
+  %3 = load volatile ptr, ptr %i.addr, align 8
   %4 = load volatile i32, ptr %3, align 4
   %5 = add nsw i32 %4, 1
   store volatile i32 %5, ptr %3, align 4
-  %6 = load volatile ptr, ptr %d, align 8
+  %6 = load volatile ptr, ptr %d.addr, align 8
   %7 = load volatile double, ptr %6, align 8
   %8 = fadd double %7, 1.230000e+00
   store volatile double %8, ptr %6, align 8

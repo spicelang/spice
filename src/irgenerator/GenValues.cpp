@@ -176,7 +176,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   // Function is not defined in the current module -> declare it
-  llvm::FunctionType *fctType = nullptr;
+  llvm::FunctionType *fctType;
   if (llvm::Function *fct = module->getFunction(mangledName)) {
     fctType = fct->getFunctionType();
   } else {
@@ -418,19 +418,12 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
   // If there are captures, we pass them in a struct as the first function argument
-  const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
+  const CaptureMap &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
   llvm::StructType *capturesStructType = nullptr;
   if (hasCaptures) {
     // Create captures struct type
-    std::vector<llvm::Type *> captureTypes;
-    for (const auto &[_, capture] : captures) {
-      llvm::Type *captureType = builder.getPtrTy();
-      if (capture.getMode() == BY_VALUE)
-        captureType = capture.capturedEntry->getType().toLLVMType(context, currentScope);
-      captureTypes.push_back(captureType);
-    }
-    capturesStructType = llvm::StructType::get(context, captureTypes);
+    capturesStructType = buildCapturesStructType(captures);
     // Add the captures struct as first parameter
     paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
     paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
@@ -534,12 +527,12 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     assert(!paramInfoList.empty());
     llvm::Value *captureStructPtr = insertLoad(builder.getPtrTy(), captureStructPtrPtr);
     size_t captureIdx = 0;
-    for (const std::pair<const std::string, Capture> &capture : captures) {
-      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
-      captureAddress->setName(capture.second.getName());
-      capture.second.capturedEntry->pushAddress(captureAddress);
+    for (const auto &[name, capture] : captures) {
+      const std::string valueName = capture.getMode() == BY_REFERENCE ? name + ".addr" : name;
+      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx, valueName);
+      capture.capturedEntry->pushAddress(captureAddress);
       // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(capture.second.getName(), captureAddress);
+      diGenerator.generateLocalVarDebugInfo(capture.getName(), captureAddress);
       captureIdx++;
     }
   }
@@ -554,8 +547,8 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // Pop capture addresses
   if (hasCaptures)
-    for (const std::pair<const std::string, Capture> &capture : captures)
-      capture.second.capturedEntry->popAddress();
+    for (const auto &[_, capture] : captures)
+      capture.capturedEntry->popAddress();
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
@@ -588,7 +581,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
   // If there are captures, we pass them in a struct as the first function argument
-  const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
+  const CaptureMap &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
   llvm::StructType *capturesStructType = nullptr;
   if (hasCaptures) {
@@ -693,12 +686,12 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     assert(!paramInfoList.empty());
     llvm::Value *captureStructPtr = insertLoad(builder.getPtrTy(), captureStructPtrPtr);
     size_t captureIdx = 0;
-    for (const std::pair<const std::string, Capture> &capture : captures) {
-      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
-      captureAddress->setName(capture.second.getName());
-      capture.second.capturedEntry->pushAddress(captureAddress);
+    for (const auto &[name, capture] : captures) {
+      const std::string valueName = capture.getMode() == BY_REFERENCE ? name + ".addr" : name;
+      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx, valueName);
+      capture.capturedEntry->pushAddress(captureAddress);
       // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(capture.second.getName(), captureAddress);
+      diGenerator.generateLocalVarDebugInfo(capture.getName(), captureAddress);
       captureIdx++;
     }
   }
@@ -711,8 +704,8 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
 
   // Pop capture addresses
   if (hasCaptures)
-    for (const std::pair<const std::string, Capture> &capture : captures)
-      capture.second.capturedEntry->popAddress();
+    for (const auto &[_, capture] : captures)
+      capture.capturedEntry->popAddress();
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
@@ -745,19 +738,12 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   Scope *bodyScope = currentScope = currentScope->getChildScope(node->getScopeId());
 
   // If there are captures, we pass them in a struct as the first function argument
-  const std::unordered_map<std::string, Capture> &captures = bodyScope->symbolTable.captures;
+  const CaptureMap &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
   llvm::StructType *capturesStructType = nullptr;
   if (hasCaptures) {
     // Create captures struct type
-    std::vector<llvm::Type *> captureTypes;
-    for (const auto &[_, capture] : captures) {
-      llvm::Type *captureType = builder.getPtrTy();
-      if (capture.getMode() == BY_VALUE)
-        captureType = capture.capturedEntry->getType().toLLVMType(context, currentScope);
-      captureTypes.push_back(captureType);
-    }
-    capturesStructType = llvm::StructType::get(context, captureTypes);
+    capturesStructType = buildCapturesStructType(captures);
     // Add the captures struct as first parameter
     paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
     paramTypes.push_back(builder.getPtrTy()); // The capture struct is always passed as pointer
@@ -905,7 +891,7 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
 
 llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Value *lambda) {
   // Create capture struct if required
-  llvm::Value *captureStructAddress = nullptr;
+  llvm::Value *captureStructAddress;
   if (capturesStructType != nullptr) {
     assert(bodyScope != nullptr);
     captureStructAddress = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
@@ -941,6 +927,18 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::StructType *cap
   }
 
   return fatFctPtr;
+}
+
+llvm::StructType *IRGenerator::buildCapturesStructType(const CaptureMap &captures) {
+  // Create captures struct type
+  std::vector<llvm::Type *> captureTypes;
+  for (const auto &[_, capture] : captures) {
+    if (capture.getMode() == BY_VALUE)
+      captureTypes.push_back(capture.capturedEntry->getType().toLLVMType(context, currentScope));
+    else
+      captureTypes.push_back(builder.getPtrTy());
+  }
+  return llvm::StructType::get(context, captureTypes);
 }
 
 } // namespace spice::compiler

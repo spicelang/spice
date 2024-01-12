@@ -372,6 +372,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   const bool needsCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !rhs.isTemporary();
 
   if (isRefAssign) {
+    assert(lhsEntry != nullptr);
     if (isDecl) { // Reference gets initially assigned
       // Get address of right side
       llvm::Value *rhsAddress = resolveAddress(rhs);
@@ -428,11 +429,11 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   }
 
   if (isDecl && rhsSType.is(TY_STRUCT) && rhs.isTemporary()) {
+    assert(lhsEntry != nullptr);
     // Directly set the address to the lhs entry
     llvm::Value *rhsAddress = resolveAddress(rhs);
     lhsEntry->updateAddress(rhsAddress);
     rhs.entry = lhsEntry;
-
     return rhs;
   }
 
