@@ -83,6 +83,10 @@ llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *type, llvm::Value *baseP
                                             std::string varName) const {
   assert(basePtr->getType()->isPointerTy());
   assert(!indices.empty());
+  assert(std::ranges::all_of(indices, [](llvm::Value *index) {
+    llvm::Type *indexType = index->getType();
+    return indexType->isIntegerTy(32) || indexType->isIntegerTy(64);
+  }));
 
   if (!cliOptions.namesForIRValues)
     varName = "";
