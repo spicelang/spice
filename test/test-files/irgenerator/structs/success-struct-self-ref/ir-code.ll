@@ -17,42 +17,39 @@ define dso_local i32 @main() #0 {
   %curNode = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   store %struct.TreeNode zeroinitializer, ptr %rootNode, align 8
-  %1 = getelementptr inbounds %struct.TreeNode, ptr %_childNode1, i32 0, i32 0
-  store ptr %rootNode, ptr %1, align 8
-  %2 = getelementptr inbounds %struct.TreeNode, ptr %_childNode1, i32 0, i32 1
-  store i32 1, ptr %2, align 4
-  %3 = getelementptr inbounds %struct.TreeNode, ptr %childNode2, i32 0, i32 0
-  store ptr %rootNode, ptr %3, align 8
-  %4 = getelementptr inbounds %struct.TreeNode, ptr %childNode2, i32 0, i32 1
-  store i32 2, ptr %4, align 4
-  %5 = getelementptr inbounds %struct.TreeNode, ptr %childNode21, i32 0, i32 0
-  store ptr %childNode2, ptr %5, align 8
-  %6 = getelementptr inbounds %struct.TreeNode, ptr %childNode21, i32 0, i32 1
-  store i32 3, ptr %6, align 4
+  store ptr %rootNode, ptr %_childNode1, align 8
+  %1 = getelementptr inbounds %struct.TreeNode, ptr %_childNode1, i32 0, i32 1
+  store i32 1, ptr %1, align 4
+  store ptr %rootNode, ptr %childNode2, align 8
+  %2 = getelementptr inbounds %struct.TreeNode, ptr %childNode2, i32 0, i32 1
+  store i32 2, ptr %2, align 4
+  store ptr %childNode2, ptr %childNode21, align 8
+  %3 = getelementptr inbounds %struct.TreeNode, ptr %childNode21, i32 0, i32 1
+  store i32 3, ptr %3, align 4
   store ptr %childNode21, ptr %curNode, align 8
   br label %while.head.L21
 
 while.head.L21:                                   ; preds = %while.body.L21, %0
-  %7 = load ptr, ptr %curNode, align 8
-  %parent_addr = getelementptr inbounds %struct.TreeNode, ptr %7, i32 0, i32 0
-  %8 = load ptr, ptr %parent_addr, align 8
-  %9 = icmp ne ptr %8, null
-  br i1 %9, label %while.body.L21, label %while.exit.L21
+  %4 = load ptr, ptr %curNode, align 8
+  %parent_addr = getelementptr inbounds %struct.TreeNode, ptr %4, i32 0, i32 0
+  %5 = load ptr, ptr %parent_addr, align 8
+  %6 = icmp ne ptr %5, null
+  br i1 %6, label %while.body.L21, label %while.exit.L21
 
 while.body.L21:                                   ; preds = %while.head.L21
-  %10 = load ptr, ptr %curNode, align 8
-  %parent_addr1 = getelementptr inbounds %struct.TreeNode, ptr %10, i32 0, i32 0
-  %11 = load ptr, ptr %parent_addr1, align 8
-  store ptr %11, ptr %curNode, align 8
+  %7 = load ptr, ptr %curNode, align 8
+  %parent_addr1 = getelementptr inbounds %struct.TreeNode, ptr %7, i32 0, i32 0
+  %8 = load ptr, ptr %parent_addr1, align 8
+  store ptr %8, ptr %curNode, align 8
   br label %while.head.L21
 
 while.exit.L21:                                   ; preds = %while.head.L21
-  %12 = load ptr, ptr %curNode, align 8
-  %value_addr = getelementptr inbounds %struct.TreeNode, ptr %12, i32 0, i32 1
-  %13 = load i32, ptr %value_addr, align 4
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %13)
-  %15 = load i32, ptr %result, align 4
-  ret i32 %15
+  %9 = load ptr, ptr %curNode, align 8
+  %value_addr = getelementptr inbounds %struct.TreeNode, ptr %9, i32 0, i32 1
+  %10 = load i32, ptr %value_addr, align 4
+  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %10)
+  %12 = load i32, ptr %result, align 4
+  ret i32 %12
 }
 
 ; Function Attrs: nofree nounwind

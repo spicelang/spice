@@ -27,48 +27,42 @@ define dso_local i32 @main() #0 {
   %callbackWithArgs2 = alloca { ptr, ptr }, align 8
   %2 = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
-  %3 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
-  store ptr @_Z14lambda.L2C39.0v, ptr %3, align 8
-  %4 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
-  store ptr poison, ptr %4, align 8
-  %5 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  store { ptr, ptr } %5, ptr %callbackWithoutArgs, align 8
-  %6 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithoutArgs, i32 0, i32 0
-  %fct = load ptr, ptr %6, align 8
-  %7 = call ptr %fct()
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %7)
-  %9 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 0
-  store ptr @_Z14lambda.L7C50.0R6Stringd, ptr %9, align 8
-  %10 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
-  store ptr poison, ptr %10, align 8
-  %11 = load { ptr, ptr }, ptr %fat.ptr1, align 8
-  store { ptr, ptr } %11, ptr %callbackWithArgs1, align 8
-  %12 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs1, i32 0, i32 0
+  store ptr @_Z14lambda.L2C39.0v, ptr %fat.ptr, align 8
+  %3 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  store ptr poison, ptr %3, align 8
+  %4 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  store { ptr, ptr } %4, ptr %callbackWithoutArgs, align 8
+  %fct = load ptr, ptr %callbackWithoutArgs, align 8
+  %5 = call ptr %fct()
+  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %5)
+  store ptr @_Z14lambda.L7C50.0R6Stringd, ptr %fat.ptr1, align 8
+  %7 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
+  store ptr poison, ptr %7, align 8
+  %8 = load { ptr, ptr }, ptr %fat.ptr1, align 8
+  store { ptr, ptr } %8, ptr %callbackWithArgs1, align 8
   call void @_ZN6String4ctorEPc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr @anon.string.2)
-  %fct2 = load ptr, ptr %12, align 8
-  %13 = call i1 %fct2(ptr %1, double 3.140000e+00)
-  %14 = zext i1 %13 to i32
-  %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %14)
-  %16 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 0
-  store ptr @_Z15lambda.L13C49.06Strings, ptr %16, align 8
-  %17 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 1
-  store ptr poison, ptr %17, align 8
-  %18 = load { ptr, ptr }, ptr %fat.ptr3, align 8
-  store { ptr, ptr } %18, ptr %callbackWithArgs2, align 8
-  %19 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs2, i32 0, i32 0
+  %fct2 = load ptr, ptr %callbackWithArgs1, align 8
+  %9 = call i1 %fct2(ptr %1, double 3.140000e+00)
+  %10 = zext i1 %9 to i32
+  %11 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %10)
+  store ptr @_Z15lambda.L13C49.06Strings, ptr %fat.ptr3, align 8
+  %12 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 1
+  store ptr poison, ptr %12, align 8
+  %13 = load { ptr, ptr }, ptr %fat.ptr3, align 8
+  store { ptr, ptr } %13, ptr %callbackWithArgs2, align 8
   call void @_ZN6String4ctorEPc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.3)
-  %20 = load %struct.String, ptr %2, align 8
-  %fct4 = load ptr, ptr %19, align 8
-  %21 = call i16 %fct4(%struct.String %20, i16 321)
-  %22 = xor i16 %21, 956
-  %23 = sext i16 %22 to i32
-  %24 = icmp eq i32 %23, 1
-  %25 = select i1 %24, i32 9, i32 12
-  %26 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %25)
+  %14 = load %struct.String, ptr %2, align 8
+  %fct4 = load ptr, ptr %callbackWithArgs2, align 8
+  %15 = call i16 %fct4(%struct.String %14, i16 321)
+  %16 = xor i16 %15, 956
+  %17 = sext i16 %16 to i32
+  %18 = icmp eq i32 %17, 1
+  %19 = select i1 %18, i32 9, i32 12
+  %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %19)
   call void @_ZN6String4dtorEv(ptr %1)
   call void @_ZN6String4dtorEv(ptr %2)
-  %27 = load i32, ptr %result, align 4
-  ret i32 %27
+  %21 = load i32, ptr %result, align 4
+  ret i32 %21
 }
 
 define private ptr @_Z14lambda.L2C39.0v() {
@@ -86,22 +80,21 @@ define private i1 @_Z14lambda.L7C50.0R6Stringd(ptr %0, double %1) {
   store ptr %0, ptr %str, align 8
   store double %1, ptr %d, align 8
   %3 = load ptr, ptr %str, align 8
-  %4 = getelementptr inbounds %struct.String, ptr %3, i32 0, i32 0
-  %5 = load ptr, ptr %4, align 8
-  %6 = load double, ptr %d, align 8
-  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %5, double %6)
-  %8 = load ptr, ptr %str, align 8
-  %9 = call ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(8) %8)
-  %10 = call i1 @_Z10isRawEqualPcPc(ptr %9, ptr @anon.string.1)
-  br i1 %10, label %land.1.L9C16, label %land.exit.L9C16
+  %4 = load ptr, ptr %3, align 8
+  %5 = load double, ptr %d, align 8
+  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %4, double %5)
+  %7 = load ptr, ptr %str, align 8
+  %8 = call ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(8) %7)
+  %9 = call i1 @_Z10isRawEqualPcPc(ptr %8, ptr @anon.string.1)
+  br i1 %9, label %land.1.L9C16, label %land.exit.L9C16
 
 land.1.L9C16:                                     ; preds = %2
-  %11 = load double, ptr %d, align 8
-  %12 = fcmp oeq double %11, 3.140000e+00
+  %10 = load double, ptr %d, align 8
+  %11 = fcmp oeq double %10, 3.140000e+00
   br label %land.exit.L9C16
 
 land.exit.L9C16:                                  ; preds = %land.1.L9C16, %2
-  %land_phi = phi i1 [ %10, %2 ], [ %12, %land.1.L9C16 ]
+  %land_phi = phi i1 [ %9, %2 ], [ %11, %land.1.L9C16 ]
   ret i1 %land_phi
 }
 
@@ -118,15 +111,14 @@ define private i16 @_Z15lambda.L13C49.06Strings(%struct.String %0, i16 %1) {
   %3 = alloca i16, align 2
   store %struct.String %0, ptr %str, align 8
   store i16 %1, ptr %b, align 2
-  %4 = getelementptr inbounds %struct.String, ptr %str, i32 0, i32 0
-  %5 = load ptr, ptr %4, align 8
-  %6 = load i16, ptr %b, align 2
-  %7 = sext i16 %6 to i32
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, ptr %5, i32 %7)
-  %9 = load i16, ptr %b, align 2
-  %10 = xor i16 %9, -1
-  store i16 %10, ptr %3, align 2
-  ret i16 %10
+  %4 = load ptr, ptr %str, align 8
+  %5 = load i16, ptr %b, align 2
+  %6 = sext i16 %5 to i32
+  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, ptr %4, i32 %6)
+  %8 = load i16, ptr %b, align 2
+  %9 = xor i16 %8, -1
+  store i16 %9, ptr %3, align 2
+  ret i16 %9
 }
 
 declare void @_ZN6String4dtorEv(ptr)

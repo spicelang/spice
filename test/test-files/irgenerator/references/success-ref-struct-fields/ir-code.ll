@@ -15,23 +15,22 @@ define dso_local i32 @main() #0 {
   %ts = alloca %struct.TestStruct, align 8
   store i32 0, ptr %result, align 4
   store i32 123, ptr %t, align 4
-  %1 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 0
-  store i1 true, ptr %1, align 1
-  %2 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1
-  store ptr %t, ptr %2, align 8
+  store i1 true, ptr %ts, align 1
+  %1 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1
+  store ptr %t, ptr %1, align 8
   %f2_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1
-  %3 = load ptr, ptr %f2_addr, align 8
-  %4 = load i32, ptr %3, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %4)
+  %2 = load ptr, ptr %f2_addr, align 8
+  %3 = load i32, ptr %2, align 4
+  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
   %f2_addr1 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1
-  %6 = load ptr, ptr %f2_addr1, align 8
-  %7 = load i32, ptr %6, align 4
-  %8 = add nsw i32 %7, 1
-  store i32 %8, ptr %6, align 4
-  %9 = load i32, ptr %t, align 4
-  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %9)
-  %11 = load i32, ptr %result, align 4
-  ret i32 %11
+  %5 = load ptr, ptr %f2_addr1, align 8
+  %6 = load i32, ptr %5, align 4
+  %7 = add nsw i32 %6, 1
+  store i32 %7, ptr %5, align 4
+  %8 = load i32, ptr %t, align 4
+  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %8)
+  %10 = load i32, ptr %result, align 4
+  ret i32 %10
 }
 
 ; Function Attrs: nofree nounwind

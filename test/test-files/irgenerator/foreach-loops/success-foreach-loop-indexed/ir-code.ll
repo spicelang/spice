@@ -33,8 +33,7 @@ foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
 foreach.body.L5:                                  ; preds = %foreach.head.L5
   %pair = call %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr %1)
   store %struct.Pair %pair, ptr %pair_addr, align 8
-  %idx_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 0
-  %5 = load i64, ptr %idx_addr, align 8
+  %5 = load i64, ptr %pair_addr, align 8
   store i64 %5, ptr %index, align 8
   %item_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 1
   %6 = load ptr, ptr %item_addr, align 8

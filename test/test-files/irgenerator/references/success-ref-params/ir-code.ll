@@ -58,41 +58,39 @@ define dso_local i32 @main() #1 {
   %2 = alloca %struct.Struct, align 8
   store i32 0, ptr %result, align 4
   store i32 -4321, ptr %i, align 4
-  %3 = getelementptr inbounds %struct.Struct, ptr %1, i32 0, i32 0
-  store ptr %i, ptr %3, align 8
-  %4 = getelementptr inbounds %struct.Struct, ptr %1, i32 0, i32 1
-  store i1 true, ptr %4, align 1
+  store ptr %i, ptr %1, align 8
+  %3 = getelementptr inbounds %struct.Struct, ptr %1, i32 0, i32 1
+  store i1 true, ptr %3, align 1
   call void @_Z4procRiRK6Struct(ptr %i, ptr %1)
-  %5 = load i32, ptr %i, align 4
-  %6 = icmp eq i32 %5, -4309
-  br i1 %6, label %assert.exit.L20, label %assert.then.L20, !prof !0
+  %4 = load i32, ptr %i, align 4
+  %5 = icmp eq i32 %4, -4309
+  br i1 %5, label %assert.exit.L20, label %assert.then.L20, !prof !0
 
 assert.then.L20:                                  ; preds = %0
-  %7 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
+  %6 = call i32 (ptr, ...) @printf(ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L20:                                  ; preds = %0
   store double 6.900000e+01, ptr %d, align 8
-  %8 = getelementptr inbounds %struct.Struct, ptr %2, i32 0, i32 0
-  store ptr %i, ptr %8, align 8
-  %9 = getelementptr inbounds %struct.Struct, ptr %2, i32 0, i32 1
-  store i1 false, ptr %9, align 1
-  %10 = call i32 @_Z4funcRdRK6Struct(ptr %d, ptr %2)
-  store i32 %10, ptr %result, align 4
-  %11 = load double, ptr %d, align 8
-  %12 = fcmp oeq double %11, -1.076400e+02
-  br i1 %12, label %assert.exit.L24, label %assert.then.L24, !prof !0
+  store ptr %i, ptr %2, align 8
+  %7 = getelementptr inbounds %struct.Struct, ptr %2, i32 0, i32 1
+  store i1 false, ptr %7, align 1
+  %8 = call i32 @_Z4funcRdRK6Struct(ptr %d, ptr %2)
+  store i32 %8, ptr %result, align 4
+  %9 = load double, ptr %d, align 8
+  %10 = fcmp oeq double %9, -1.076400e+02
+  br i1 %10, label %assert.exit.L24, label %assert.then.L24, !prof !0
 
 assert.then.L24:                                  ; preds = %assert.exit.L20
-  %13 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
+  %11 = call i32 (ptr, ...) @printf(ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L24:                                  ; preds = %assert.exit.L20
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
-  %15 = load i32, ptr %result, align 4
-  ret i32 %15
+  %12 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %13 = load i32, ptr %result, align 4
+  ret i32 %13
 }
 
 ; Function Attrs: cold noreturn nounwind
