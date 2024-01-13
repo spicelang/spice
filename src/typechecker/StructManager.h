@@ -2,11 +2,13 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include <model/GenericType.h>
+#include <util/CodeLoc.h>
 
 namespace spice::compiler {
 
@@ -15,7 +17,6 @@ class Struct;
 class Scope;
 class SymbolType;
 class ASTNode;
-struct CodeLoc;
 
 // Typedefs
 using StructManifestationList = std::unordered_map</*mangledName=*/std::string, Struct>;

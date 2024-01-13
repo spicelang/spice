@@ -8,6 +8,8 @@
 #include <symboltablebuilder/SymbolType.h>
 #include <symboltablebuilder/TypeSpecifiers.h>
 
+#include <llvm/IR/Function.h>
+
 namespace spice::compiler {
 
 // Forward declarations

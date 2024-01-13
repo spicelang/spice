@@ -2,11 +2,13 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include <model/GenericType.h>
+#include <util/CodeLoc.h>
 
 namespace spice::compiler {
 

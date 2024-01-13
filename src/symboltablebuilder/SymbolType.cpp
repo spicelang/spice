@@ -15,6 +15,20 @@
 
 namespace spice::compiler {
 
+SymbolType::SymbolType(SymbolSuperType superType)
+    : typeChain({TypeChainElement{superType}}), specifiers(TypeSpecifiers::of(superType)) {}
+
+SymbolType::SymbolType(SymbolSuperType superType, const std::string &subType)
+    : typeChain({TypeChainElement{superType, subType}}), specifiers(TypeSpecifiers::of(superType)) {}
+
+SymbolType::SymbolType(SymbolSuperType superType, const std::string &subType, uint64_t typeId,
+                       const SymbolType::TypeChainElementData &data, const std::vector<SymbolType> &templateTypes)
+    : typeChain({TypeChainElement(superType, subType, typeId, data, templateTypes)}), specifiers(TypeSpecifiers::of(superType)) {}
+
+SymbolType::SymbolType(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
+
+SymbolType::SymbolType(TypeChain types, TypeSpecifiers specifiers) : typeChain(std::move(types)), specifiers(specifiers) {}
+
 /**
  * Get the pointer type of the current type as a new type
  *

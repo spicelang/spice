@@ -3,6 +3,7 @@
 #include "TypeChecker.h"
 
 #include <SourceFile.h>
+#include <ast/ASTBuilder.h>
 #include <ast/ASTNodes.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 

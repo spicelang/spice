@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <ast/ASTNodes.h>
+#include <util/CommonUtil.h>
 #include <util/Memory.h>
 
 namespace spice::compiler {

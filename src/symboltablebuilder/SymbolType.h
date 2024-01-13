@@ -2,17 +2,13 @@
 
 #pragma once
 
-#include <stack>
 #include <string>
-#include <utility>
 #include <vector>
 
-#include <ast/ASTBuilder.h>
 #include <symboltablebuilder/TypeSpecifiers.h>
-#include <util/CommonUtil.h>
+#include <util/GlobalDefinitions.h>
 
 #include <llvm/IR/Type.h>
-#include <llvm/IR/Value.h>
 
 #include "../../lib/json/json.hpp"
 
@@ -105,16 +101,12 @@ public:
 
   // Constructors
   SymbolType() = default;
-  explicit SymbolType(SymbolSuperType superType)
-      : typeChain({TypeChainElement{superType}}), specifiers(TypeSpecifiers::of(superType)) {}
-  SymbolType(SymbolSuperType superType, const std::string &subType)
-      : typeChain({TypeChainElement{superType, subType}}), specifiers(TypeSpecifiers::of(superType)) {}
+  explicit SymbolType(SymbolSuperType superType);
+  SymbolType(SymbolSuperType superType, const std::string &subType);
   SymbolType(SymbolSuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
-             const std::vector<SymbolType> &templateTypes)
-      : typeChain({TypeChainElement(superType, subType, typeId, data, templateTypes)}),
-        specifiers(TypeSpecifiers::of(superType)) {}
-  explicit SymbolType(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
-  SymbolType(TypeChain types, TypeSpecifiers specifiers) : typeChain(std::move(types)), specifiers(specifiers) {}
+             const std::vector<SymbolType> &templateTypes);
+  explicit SymbolType(const TypeChain &types);
+  SymbolType(TypeChain types, TypeSpecifiers specifiers);
 
   // Public methods
   [[nodiscard]] SymbolType toPointer(const ASTNode *node) const;

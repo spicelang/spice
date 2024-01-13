@@ -2,6 +2,7 @@
 
 #include "Function.h"
 
+#include <ast/ASTBuilder.h>
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
 
