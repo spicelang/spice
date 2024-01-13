@@ -4,7 +4,7 @@ f<int> main() {
     int testVar = 123;
     ThreadPool tp = ThreadPool(3s);
     dyn proc = p() {
-        testVar++;
+        printf("Test: %d\n", testVar);
     };
     tp.enqueue(proc);
     tp.start();

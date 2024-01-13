@@ -256,6 +256,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       // Update the symbol table entry
       paramSymbol->updateAddress(paramAddress);
       // Generate debug info
+      diGenerator.setSourceLocation(paramSymbol->declNode);
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
       // Store the value at the new address
       insertStore(&arg, paramAddress);
@@ -416,6 +417,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       // Update the symbol table entry
       paramSymbol->updateAddress(paramAddress);
       // Generate debug info
+      diGenerator.setSourceLocation(paramSymbol->declNode);
       diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
       // Store the value at the new address
       insertStore(&arg, paramAddress);

@@ -18,28 +18,26 @@ define dso_local i32 @main() #0 {
   %tid2 = alloca i64, align 8
   %i = alloca i32, align 4
   %d = alloca double, align 8
-  %captures = alloca { ptr }, align 8
   %fat.ptr = alloca { ptr, ptr }, align 8
-  %captures1 = alloca { ptr, ptr }, align 8
-  %fat.ptr2 = alloca { ptr, ptr }, align 8
+  %captures = alloca { ptr, ptr }, align 8
+  %fat.ptr1 = alloca { ptr, ptr }, align 8
   store i32 0, ptr %result, align 4
   store i64 0, ptr %tid1, align 8
   store i64 0, ptr %tid2, align 8
   store i32 123, ptr %i, align 4
   store double 1.234560e+02, ptr %d, align 8
-  store ptr %i, ptr %captures, align 8
   store ptr @_Z15lambda.L11C39.0v, ptr %fat.ptr, align 8
   %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
-  store ptr %captures, ptr %1, align 8
+  store ptr %i, ptr %1, align 8
   %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
   %3 = call i32 @pthread_create(ptr %tid1, ptr null, { ptr, ptr } %2, ptr null)
-  store ptr %d, ptr %captures1, align 8
-  %4 = getelementptr inbounds { ptr, ptr }, ptr %captures1, i32 0, i32 1
+  store ptr %d, ptr %captures, align 8
+  %4 = getelementptr inbounds { ptr, ptr }, ptr %captures, i32 0, i32 1
   store ptr %i, ptr %4, align 8
-  store ptr @_Z15lambda.L15C39.0v, ptr %fat.ptr2, align 8
-  %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
-  store ptr %captures1, ptr %5, align 8
-  %6 = load { ptr, ptr }, ptr %fat.ptr2, align 8
+  store ptr @_Z15lambda.L15C39.0v, ptr %fat.ptr1, align 8
+  %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
+  store ptr %captures, ptr %5, align 8
+  %6 = load { ptr, ptr }, ptr %fat.ptr1, align 8
   %7 = call i32 @pthread_create(ptr %tid2, ptr null, { ptr, ptr } %6, ptr null)
   %8 = load i64, ptr %tid1, align 8
   %9 = call i32 @pthread_join(i64 %8, ptr null)
@@ -54,12 +52,11 @@ define dso_local i32 @main() #0 {
 define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8) %0) {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
-  %2 = load ptr, ptr %captures, align 8
-  %3 = load volatile ptr, ptr %2, align 8
-  %4 = load volatile i32, ptr %3, align 4
-  %5 = add nsw i32 %4, 1
-  store volatile i32 %5, ptr %3, align 4
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %2 = load volatile ptr, ptr %captures, align 8
+  %3 = load volatile i32, ptr %2, align 4
+  %4 = add nsw i32 %3, 1
+  store volatile i32 %4, ptr %2, align 4
+  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
 
