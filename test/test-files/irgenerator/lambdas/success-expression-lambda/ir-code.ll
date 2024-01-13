@@ -113,11 +113,13 @@ define dso_local i32 @main() #0 {
   store [10 x i32] [i32 10, i32 9, i32 8, i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1], ptr %array, align 4
   %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
   store ptr @_Z15lambda.L19C17.0ii, ptr %1, align 8
-  %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  call void @_Z4sortRA10iPFbiiE(ptr %array, { ptr, ptr } %2)
+  %2 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  store ptr poison, ptr %2, align 8
+  %3 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  call void @_Z4sortRA10iPFbiiE(ptr %array, { ptr, ptr } %3)
   call void @_Z10printArrayRA10i(ptr %array)
-  %3 = load i32, ptr %result, align 4
-  ret i32 %3
+  %4 = load i32, ptr %result, align 4
+  ret i32 %4
 }
 
 define private i1 @_Z15lambda.L19C17.0ii(i32 %0, i32 %1) {
