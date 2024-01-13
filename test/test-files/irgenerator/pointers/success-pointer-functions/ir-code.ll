@@ -27,26 +27,25 @@ define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %mike = alloca %struct.Person, align 8
   store i32 0, ptr %result, align 4
-  %1 = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 0
-  store ptr @anon.string.0, ptr %1, align 8
-  %2 = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 1
-  store ptr @anon.string.1, ptr %2, align 8
-  %3 = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 2
-  store i32 32, ptr %3, align 4
+  store ptr @anon.string.0, ptr %mike, align 8
+  %1 = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 1
+  store ptr @anon.string.1, ptr %1, align 8
+  %2 = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 2
+  store i32 32, ptr %2, align 4
   %lastName_addr = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 1
-  %4 = load ptr, ptr %lastName_addr, align 8
+  %3 = load ptr, ptr %lastName_addr, align 8
   %firstName_addr = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 0
-  %5 = load ptr, ptr %firstName_addr, align 8
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %4, ptr %5)
+  %4 = load ptr, ptr %firstName_addr, align 8
+  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %3, ptr %4)
   %age_addr = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 2
-  %7 = load i32, ptr %age_addr, align 4
-  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %7)
+  %6 = load i32, ptr %age_addr, align 4
+  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %6)
   call void @_Z8birthdayP6Person(ptr %mike)
   %age_addr1 = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 2
-  %9 = load i32, ptr %age_addr1, align 4
-  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %9)
-  %11 = load i32, ptr %result, align 4
-  ret i32 %11
+  %8 = load i32, ptr %age_addr1, align 4
+  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %8)
+  %10 = load i32, ptr %result, align 4
+  ret i32 %10
 }
 
 ; Function Attrs: nofree nounwind

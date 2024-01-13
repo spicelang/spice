@@ -36,18 +36,17 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !48 {
   call void @llvm.dbg.declare(metadata ptr %ref, metadata !54, metadata !DIExpression()), !dbg !53
   store ptr %0, ptr %ref, align 8, !dbg !53
   call void @_ZN6String4ctorEPc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.0), !dbg !55
-  %3 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 0, !dbg !56
-  store i64 6, ptr %3, align 8, !dbg !56
-  %4 = load %struct.String, ptr %2, align 8, !dbg !56
-  %5 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !56
-  store %struct.String %4, ptr %5, align 8, !dbg !56
-  %6 = load ptr, ptr %ref, align 8, !dbg !56
-  %7 = load i32, ptr %6, align 4, !dbg !56
-  %8 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 2, !dbg !56
+  store i64 6, ptr %ts, align 8, !dbg !56
+  %3 = load %struct.String, ptr %2, align 8, !dbg !56
+  %4 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !56
+  store %struct.String %3, ptr %4, align 8, !dbg !56
+  %5 = load ptr, ptr %ref, align 8, !dbg !56
+  %6 = load i32, ptr %5, align 4, !dbg !56
+  %7 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 2, !dbg !56
   call void @llvm.dbg.declare(metadata ptr %ts, metadata !57, metadata !DIExpression()), !dbg !58
-  store i32 %7, ptr %8, align 4, !dbg !56
-  %9 = load %struct.TestStruct, ptr %ts, align 8, !dbg !59
-  ret %struct.TestStruct %9, !dbg !59
+  store i32 %6, ptr %7, align 4, !dbg !56
+  %8 = load %struct.TestStruct, ptr %ts, align 8, !dbg !59
+  ret %struct.TestStruct %8, !dbg !59
 }
 
 declare void @_ZN6String4ctorEPc(ptr, ptr)

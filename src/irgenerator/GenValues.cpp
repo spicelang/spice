@@ -123,10 +123,10 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     llvm::Value *fatPtr = firstFragEntry->getAddress();
     // Load fctPtr
     llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
-    fctPtr = builder.CreateStructGEP(fatStructType, fatPtr, 0);
+    fctPtr = insertStructGEP(fatStructType, fatPtr, 0);
     if (firstFragEntry->getType().hasLambdaCaptures()) {
       // Load captures struct
-      llvm::Value *capturesPtrPtr = builder.CreateStructGEP(fatStructType, fatPtr, 1);
+      llvm::Value *capturesPtrPtr = insertStructGEP(fatStructType, fatPtr, 1);
       llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
       // Add captures to argument list
       argValues.push_back(capturesPtr);
@@ -383,7 +383,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
       // Get field value
       llvm::Value *itemValue = getDefaultValueForSymbolType(interfaceType);
       // Get field address
-      llvm::Value *currentFieldAddress = builder.CreateStructGEP(structType, structAddr, i);
+      llvm::Value *currentFieldAddress = insertStructGEP(structType, structAddr, i);
       // Store the item value
       insertStore(itemValue, currentFieldAddress);
     }
@@ -394,7 +394,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
       // Get field value
       llvm::Value *itemValue = fieldTypes.at(i).isRef() ? resolveAddress(exprResult) : resolveValue(exprResult.node, exprResult);
       // Get field address
-      llvm::Value *currentFieldAddress = builder.CreateStructGEP(structType, structAddr, i);
+      llvm::Value *currentFieldAddress = insertStructGEP(structType, structAddr, i);
       // Store the item value
       const bool storeVolatile = exprResult.entry != nullptr && exprResult.entry->isVolatile;
       insertStore(itemValue, currentFieldAddress, storeVolatile);
@@ -882,9 +882,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
           capturedValue = insertLoad(captureType, capturedValue);
         }
         // Store it in the capture struct
-        llvm::Value *captureAddress = capturesPtr;
-        if (captureIdx >= 1)
-          captureAddress = builder.CreateStructGEP(capturesStructType, capturesPtr, captureIdx);
+        llvm::Value *captureAddress = insertStructGEP(capturesStructType, capturesPtr, captureIdx);
         insertStore(capturedValue, captureAddress);
         captureIdx++;
       }
@@ -897,9 +895,9 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
 
   // Create fat pointer
   llvm::Value *fatFctPtr = insertAlloca(llvmTypes.fatPtrType, "fat.ptr");
-  llvm::Value *fctPtr = builder.CreateStructGEP(llvmTypes.fatPtrType, fatFctPtr, 0);
+  llvm::Value *fctPtr = insertStructGEP(llvmTypes.fatPtrType, fatFctPtr, 0);
   insertStore(lambda, fctPtr);
-  llvm::Value *capturePtr = builder.CreateStructGEP(llvmTypes.fatPtrType, fatFctPtr, 1);
+  llvm::Value *capturePtr = insertStructGEP(llvmTypes.fatPtrType, fatFctPtr, 1);
   insertStore(capturesStructType != nullptr ? capturesPtr : llvm::PoisonValue::get(builder.getPtrTy()), capturePtr);
 
   return fatFctPtr;
@@ -941,7 +939,7 @@ void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llv
     size_t captureIdx = 0;
     for (const auto &[name, capture] : captures) {
       const std::string valueName = capture.getMode() == BY_REFERENCE ? name + ".addr" : name;
-      llvm::Value *captureAddress = builder.CreateStructGEP(structType, capturesPtr, captureIdx, valueName);
+      llvm::Value *captureAddress = insertStructGEP(structType, capturesPtr, captureIdx, valueName);
       capture.capturedEntry->pushAddress(captureAddress);
       // Generate debug info
       diGenerator.generateLocalVarDebugInfo(capture.getName(), captureAddress);

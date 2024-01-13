@@ -387,8 +387,7 @@ foreach.head.L63:                                 ; preds = %foreach.tail.L63, %
 foreach.body.L63:                                 ; preds = %foreach.head.L63
   %pair3 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr %13), !dbg !123
   store %struct.Pair %pair3, ptr %pair_addr, align 8, !dbg !123
-  %idx_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 0, !dbg !123
-  %110 = load i64, ptr %idx_addr, align 8, !dbg !123
+  %110 = load i64, ptr %pair_addr, align 8, !dbg !123
   store i64 %110, ptr %idx, align 8, !dbg !123
   %item_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 1, !dbg !123
   %111 = load ptr, ptr %item_addr, align 8, !dbg !123

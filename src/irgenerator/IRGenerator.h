@@ -114,8 +114,9 @@ public:
   llvm::Value *insertAlloca(llvm::Type *llvmType, std::string varName = "");
   llvm::Value *insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile = false, const std::string &varName = "") const;
   void insertStore(llvm::Value *val, llvm::Value *ptr, bool isVolatile = false) const;
-  llvm::Value *insertInBoundsGEP(llvm::Type *llvmType, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
+  llvm::Value *insertInBoundsGEP(llvm::Type *type, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
                                  std::string varName = "") const;
+  llvm::Value *insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned index, std::string varName = "") const;
   llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const ASTNode *node, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const SymbolType &symbolType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);

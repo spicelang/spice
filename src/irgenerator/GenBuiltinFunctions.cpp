@@ -30,7 +30,7 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
     } else if (argSymbolType.getBaseType().isStringObj()) {
       llvm::Value *argValPtr = resolveAddress(arg);
       llvm::Type *argBaseType = argSymbolType.getBaseType().toLLVMType(context, currentScope);
-      argValPtr = builder.CreateStructGEP(argBaseType, argValPtr, 0);
+      argValPtr = insertStructGEP(argBaseType, argValPtr, 0);
       argVal = insertLoad(builder.getPtrTy(), argValPtr);
     } else {
       argVal = resolveValue(arg);

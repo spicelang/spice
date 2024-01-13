@@ -28,37 +28,34 @@ define dso_local i32 @main() #0 {
   store i32 123, ptr %i, align 4
   store double 1.234560e+02, ptr %d, align 8
   store ptr %i, ptr %captures, align 8
-  %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
-  store ptr @_Z15lambda.L11C39.0v, ptr %1, align 8
-  %2 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
-  store ptr %captures, ptr %2, align 8
-  %3 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  %4 = call i32 @pthread_create(ptr %tid1, ptr null, { ptr, ptr } %3, ptr null)
+  store ptr @_Z15lambda.L11C39.0v, ptr %fat.ptr, align 8
+  %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  store ptr %captures, ptr %1, align 8
+  %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  %3 = call i32 @pthread_create(ptr %tid1, ptr null, { ptr, ptr } %2, ptr null)
   store ptr %d, ptr %captures1, align 8
-  %5 = getelementptr inbounds { ptr, ptr }, ptr %captures1, i32 0, i32 1
-  store ptr %i, ptr %5, align 8
-  %6 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 0
-  store ptr @_Z15lambda.L15C39.0v, ptr %6, align 8
-  %7 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
-  store ptr %captures1, ptr %7, align 8
-  %8 = load { ptr, ptr }, ptr %fat.ptr2, align 8
-  %9 = call i32 @pthread_create(ptr %tid2, ptr null, { ptr, ptr } %8, ptr null)
-  %10 = load i64, ptr %tid1, align 8
+  %4 = getelementptr inbounds { ptr, ptr }, ptr %captures1, i32 0, i32 1
+  store ptr %i, ptr %4, align 8
+  store ptr @_Z15lambda.L15C39.0v, ptr %fat.ptr2, align 8
+  %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
+  store ptr %captures1, ptr %5, align 8
+  %6 = load { ptr, ptr }, ptr %fat.ptr2, align 8
+  %7 = call i32 @pthread_create(ptr %tid2, ptr null, { ptr, ptr } %6, ptr null)
+  %8 = load i64, ptr %tid1, align 8
+  %9 = call i32 @pthread_join(i64 %8, ptr null)
+  %10 = load i64, ptr %tid2, align 8
   %11 = call i32 @pthread_join(i64 %10, ptr null)
-  %12 = load i64, ptr %tid2, align 8
-  %13 = call i32 @pthread_join(i64 %12, ptr null)
-  %14 = load volatile i32, ptr %i, align 4
-  %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %14)
-  %16 = load i32, ptr %result, align 4
-  ret i32 %16
+  %12 = load volatile i32, ptr %i, align 4
+  %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %12)
+  %14 = load i32, ptr %result, align 4
+  ret i32 %14
 }
 
 define private void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8) %0) {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
-  %i.addr = getelementptr inbounds { ptr }, ptr %2, i32 0, i32 0
-  %3 = load volatile ptr, ptr %i.addr, align 8
+  %3 = load volatile ptr, ptr %2, align 8
   %4 = load volatile i32, ptr %3, align 4
   %5 = add nsw i32 %4, 1
   store volatile i32 %5, ptr %3, align 4
@@ -73,13 +70,12 @@ define private void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8)
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
-  %d.addr = getelementptr inbounds { ptr, ptr }, ptr %2, i32 0, i32 0
   %i.addr = getelementptr inbounds { ptr, ptr }, ptr %2, i32 0, i32 1
   %3 = load volatile ptr, ptr %i.addr, align 8
   %4 = load volatile i32, ptr %3, align 4
   %5 = add nsw i32 %4, 1
   store volatile i32 %5, ptr %3, align 4
-  %6 = load volatile ptr, ptr %d.addr, align 8
+  %6 = load volatile ptr, ptr %2, align 8
   %7 = load volatile double, ptr %6, align 8
   %8 = fadd double %7, 1.230000e+00
   store volatile double %8, ptr %6, align 8

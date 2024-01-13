@@ -1,65 +1,16 @@
 import "std/os/thread-pool";
-import "std/time/delay";
-
-f<int> main() {
-    ThreadPool tp = ThreadPool(3s);
-    tp.enqueue(p() [[async]] {
-        delay(50);
-        printf("Hello from task 1\n");
-    });
-    tp.enqueue(p() [[async]] {
-        delay(100);
-        printf("Hello from task 2\n");
-    });
-    tp.enqueue(p() [[async]] {
-        delay(150);
-        printf("Hello from task 3\n");
-    });
-    tp.enqueue(p() [[async]] {
-        delay(200);
-        printf("Hello from task 4\n");
-    });
-    tp.enqueue(p() [[async]] {
-        delay(250);
-        printf("Hello from task 5\n");
-    });
-    tp.enqueue(p() [[async]] {
-        delay(300);
-        printf("Hello from task 6\n");
-    });
-    tp.enqueue(p() [[async]] {
-        delay(350);
-        printf("Hello from task 7\n");
-    });
-    tp.enqueue(p() [[async]] {
-        delay(400);
-        printf("Hello from task 8\n");
-    });
-    tp.enqueue(p() [[async]] {
-        delay(450);
-        printf("Hello from task 9\n");
-    });
-    tp.enqueue(p() [[async]] {
-        delay(500);
-        printf("Hello from task 10\n");
-    });
-    tp.start();
-    tp.join();
-}
-
-/*import "std/os/thread-pool";
 
 f<int> main() {
     int testVar = 123;
     ThreadPool tp = ThreadPool(3s);
-    dyn proc = p() [[async]] {
-        printf("Hello from inside: %d\n", testVar);
+    dyn proc = p() {
+        testVar++;
     };
     tp.enqueue(proc);
     tp.start();
     tp.join();
     printf("TestVar: %d\n", testVar);
-}*/
+}
 
 /*f<int> main() {
     int i = 123; // Captured by ref

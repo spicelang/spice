@@ -79,16 +79,34 @@ void IRGenerator::insertStore(llvm::Value *val, llvm::Value *ptr, bool isVolatil
   builder.CreateStore(val, ptr, isVolatile);
 }
 
-llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *llvmType, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
+llvm::Value *IRGenerator::insertInBoundsGEP(llvm::Type *type, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
                                             std::string varName) const {
   assert(basePtr->getType()->isPointerTy());
   assert(!indices.empty());
+  assert(std::ranges::all_of(indices, [](llvm::Value *index) {
+    llvm::Type *indexType = index->getType();
+    return indexType->isIntegerTy(32) || indexType->isIntegerTy(64);
+  }));
 
   if (!cliOptions.namesForIRValues)
     varName = "";
 
   // Insert GEP
-  return builder.CreateInBoundsGEP(llvmType, basePtr, indices, varName);
+  return builder.CreateInBoundsGEP(type, basePtr, indices, varName);
+}
+
+llvm::Value *IRGenerator::insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned int index, std::string varName) const {
+  assert(basePtr->getType()->isPointerTy());
+
+  if (!cliOptions.namesForIRValues)
+    varName = "";
+
+  // If we use index 0 we can use the base pointer directly
+  if (index == 0)
+    return basePtr;
+
+  // Insert GEP
+  return builder.CreateStructGEP(type, basePtr, index, varName);
 }
 
 llvm::Value *IRGenerator::resolveValue(const ASTNode *node, Scope *accessScope /*=nullptr*/) {
