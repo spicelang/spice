@@ -574,17 +574,10 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   // If there are captures, we pass them in a struct as the first function argument
   const CaptureMap &captures = bodyScope->symbolTable.captures;
   const bool hasCaptures = !captures.empty();
-  llvm::StructType *capturesStructType = nullptr;
+  llvm::Type *capturesStructType = nullptr;
   if (hasCaptures) {
     // Create captures struct type
-    std::vector<llvm::Type *> captureTypes;
-    for (const auto &[_, capture] : captures) {
-      llvm::Type *captureType = builder.getPtrTy();
-      if (capture.getMode() == BY_VALUE)
-        captureType = capture.capturedEntry->getType().toLLVMType(context, currentScope);
-      captureTypes.push_back(captureType);
-    }
-    capturesStructType = llvm::StructType::get(context, captureTypes);
+    capturesStructType = buildCapturesContainerType(captures);
     // Add the captures struct as first parameter
     paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
     paramTypes.push_back(builder.getPtrTy()); // The captures struct is always passed as pointer
@@ -819,16 +812,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Extract captures from captures struct
   if (hasCaptures) {
     assert(!paramInfoList.empty());
-    llvm::Value *captureStructPtr = insertLoad(builder.getPtrTy(), captureStructPtrPtr);
-    size_t captureIdx = 0;
-    for (const std::pair<const std::string, Capture> &capture : captures) {
-      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, captureStructPtr, captureIdx);
-      captureAddress->setName(capture.second.getName());
-      capture.second.capturedEntry->pushAddress(captureAddress);
-      // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(capture.second.getName(), captureAddress);
-      captureIdx++;
-    }
+    unpackCapturesToLocalVariables(captures, captureStructPtrPtr, capturesStructType);
   }
 
   // Visit lambda expression
@@ -876,22 +860,34 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
   llvm::Value *capturesPtr;
   if (capturesStructType != nullptr) {
     assert(bodyScope != nullptr);
-    capturesPtr = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
-
-    size_t captureIdx = 0;
-    for (const auto &[_, capture] : bodyScope->symbolTable.captures) {
-      const SymbolTableEntry *capturedEntry = capture.capturedEntry;
-      // Get address or value of captured variable, depending on the capturing mode
-      llvm::Value *capturedValue = capturedEntry->getAddress();
-      assert(capturedValue != nullptr);
-      if (capture.getMode() == BY_VALUE) {
-        llvm::Type *captureType = capturedEntry->getType().toLLVMType(context, currentScope);
-        capturedValue = insertLoad(captureType, capturedValue);
+    // If we have a single capture of ptr type, we can directly store it into the fat ptr. Otherwise, we need a stack allocated
+    // struct to store the captures in a memory-efficient manner and store a pointer to that struct to the fat ptr.
+    if (capturesStructType->isPointerTy()) {
+      const CaptureMap &captures = bodyScope->symbolTable.captures;
+      assert(captures.size() == 1);
+      const Capture &capture = captures.begin()->second;
+      assert(capture.capturedEntry->getType().isPtr());
+      assert(capture.getMode() == BY_VALUE);
+      capturesPtr = insertLoad(builder.getPtrTy(), capture.capturedEntry->getAddress());
+    } else {
+      capturesPtr = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
+      size_t captureIdx = 0;
+      for (const auto &[_, capture] : bodyScope->symbolTable.captures) {
+        const SymbolTableEntry *capturedEntry = capture.capturedEntry;
+        // Get address or value of captured variable, depending on the capturing mode
+        llvm::Value *capturedValue = capturedEntry->getAddress();
+        assert(capturedValue != nullptr);
+        if (capture.getMode() == BY_VALUE) {
+          llvm::Type *captureType = capturedEntry->getType().toLLVMType(context, currentScope);
+          capturedValue = insertLoad(captureType, capturedValue);
+        }
+        // Store it in the capture struct
+        llvm::Value *captureAddress = capturesPtr;
+        if (captureIdx >= 1)
+          captureAddress = builder.CreateStructGEP(capturesStructType, capturesPtr, captureIdx);
+        insertStore(capturedValue, captureAddress);
+        captureIdx++;
       }
-      // Store it in the capture struct
-      llvm::Value *captureAddress = builder.CreateStructGEP(capturesStructType, capturesPtr, captureIdx);
-      insertStore(capturedValue, captureAddress);
-      captureIdx++;
     }
   }
 
@@ -903,17 +899,18 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
   llvm::Value *fatFctPtr = insertAlloca(llvmTypes.fatPtrType, "fat.ptr");
   llvm::Value *fctPtr = builder.CreateStructGEP(llvmTypes.fatPtrType, fatFctPtr, 0);
   insertStore(lambda, fctPtr);
-  if (capturesStructType != nullptr) {
-    llvm::Value *capturePtr = builder.CreateStructGEP(llvmTypes.fatPtrType, fatFctPtr, 1);
-    insertStore(capturesPtr, capturePtr);
-  }
+  llvm::Value *capturePtr = builder.CreateStructGEP(llvmTypes.fatPtrType, fatFctPtr, 1);
+  insertStore(capturesStructType != nullptr ? capturesPtr : llvm::PoisonValue::get(builder.getPtrTy()), capturePtr);
 
   return fatFctPtr;
 }
 
 llvm::Type *IRGenerator::buildCapturesContainerType(const CaptureMap &captures) {
+  assert(!captures.empty());
+
   // If we have only one capture that is a ptr, we can just use that ptr type
-  if (captures.size() == 1 && captures.begin()->second.getMode() == BY_REFERENCE)
+  const Capture &capture = captures.begin()->second;
+  if (captures.size() == 1 && capture.capturedEntry->getType().isPtr() && capture.getMode() == BY_VALUE)
     return builder.getPtrTy();
 
   // Create captures struct type
@@ -928,15 +925,28 @@ llvm::Type *IRGenerator::buildCapturesContainerType(const CaptureMap &captures) 
 }
 
 void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType) {
-  llvm::Value *captureStructPtr = insertLoad(builder.getPtrTy(), val);
-  size_t captureIdx = 0;
-  for (const auto &[name, capture] : captures) {
-    const std::string valueName = capture.getMode() == BY_REFERENCE ? name + ".addr" : name;
-    llvm::Value *captureAddress = builder.CreateStructGEP(structType, captureStructPtr, captureIdx, valueName);
+  assert(!captures.empty());
+  // If we have only one capture that is a ptr, we can just load the ptr
+  const Capture &capture = captures.begin()->second;
+  if (captures.size() == 1 && capture.capturedEntry->getType().isPtr() && capture.getMode() == BY_VALUE) {
+    // Interpret capturesPtr as ptr to the first and only capture
+    llvm::Value *captureAddress = val;
     capture.capturedEntry->pushAddress(captureAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(capture.getName(), captureAddress);
-    captureIdx++;
+  } else {
+    // Interpret capturesPtr as ptr to the captures struct
+    llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), val);
+
+    size_t captureIdx = 0;
+    for (const auto &[name, capture] : captures) {
+      const std::string valueName = capture.getMode() == BY_REFERENCE ? name + ".addr" : name;
+      llvm::Value *captureAddress = builder.CreateStructGEP(structType, capturesPtr, captureIdx, valueName);
+      capture.capturedEntry->pushAddress(captureAddress);
+      // Generate debug info
+      diGenerator.generateLocalVarDebugInfo(capture.getName(), captureAddress);
+      captureIdx++;
+    }
   }
 }
 
