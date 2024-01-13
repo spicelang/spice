@@ -100,16 +100,6 @@ public p SymbolTable.insertAnonymous(const SymbolType symbolType, const AstNode*
 }
 
 /**
- * Add a capture to the capture list manually
- *
- * @param name Capture name
- * @param capture Capture
- */
-public p SymbolTable.insertCapture(const string name, const Capture capture) {
-    this.captures.insert(name, capture);
-}
-
-/**
  * Check if a symbol exists in the current or any parent scope and return it if possible
  *
  * @param name Name of the desired symbol

@@ -127,13 +127,14 @@ private:
   Scope *accessScope = nullptr;
   const TypeCheckerMode typeCheckerMode;
   std::vector<CompilerWarning> &warnings;
-  std::unordered_map<std::string, SymbolType> typeMapping;
+  TypeMapping typeMapping;
   bool typeCheckedMainFct = false;
 
   // Private methods
   bool visitOrdinaryFctCall(FctCallNode *node, const std::vector<SymbolType> &templateTypes, const std::string &fqFunctionName);
   bool visitFctPtrCall(FctCallNode *node, const SymbolType &functionType) const;
   bool visitMethodCall(FctCallNode *node, Scope *structScope, const std::vector<SymbolType> &templateTypes) const;
+  bool checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
   [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;
   [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
   static void autoDeReference(SymbolType &symbolType);

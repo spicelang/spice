@@ -1722,7 +1722,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
     anonymousSymbol = irGenerator->currentScope->symbolTable.lookupAnonymous(node->codeLoc, opIdx);
     if (anonymousSymbol != nullptr) {
       resultPtr = irGenerator->insertAlloca(result->getType());
-      builder.CreateStore(result, resultPtr);
+      irGenerator->insertStore(result, resultPtr);
       anonymousSymbol->updateAddress(resultPtr);
     }
   }

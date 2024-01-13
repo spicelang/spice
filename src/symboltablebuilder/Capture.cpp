@@ -26,28 +26,10 @@ std::string Capture::getName() const { return capturedEntry->name; }
  */
 void Capture::setAccessType(CaptureAccessType captureAccessType) {
   accessType = captureAccessType;
-  // Set the captured symbol table entry to volatile if appropriate
-  capturedEntry->isVolatile = captureAccessType == READ_WRITE;
   // If we write to the captured symbol, we need to set the symbol to be a reference
   if (captureAccessType == READ_WRITE)
     captureMode = BY_REFERENCE;
 }
-
-/**
- * Retrieve the access type of this capture.
- * Possible values are READ_ONLY and READ_WRITE
- *
- * @return Capture access type
- */
-CaptureAccessType Capture::getAccessType() const { return accessType; }
-
-/**
- * Set the mode of this capture.
- * Possible values are BY_VALUE and BY_REFERENCE
- *
- * @param mode Capture mode
- */
-void Capture::setMode(CaptureMode mode) { captureMode = mode; }
 
 /**
  * Retrieve the mode of this capture.

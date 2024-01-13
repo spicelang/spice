@@ -558,6 +558,10 @@ std::any ASTBuilder::visitLambdaAttr(SpiceParser::LambdaAttrContext *ctx) {
   // Visit children
   visitChildren(ctx);
 
+  // Tell the attributes that they are module attributes
+  for (AttrNode *attr : lambdaAttrNode->attrLst()->attributes())
+    attr->target = AttrNode::TARGET_LAMBDA;
+
   return concludeNode(lambdaAttrNode);
 }
 

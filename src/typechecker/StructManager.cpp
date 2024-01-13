@@ -12,7 +12,7 @@ namespace spice::compiler {
 
 Struct *StructManager::insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
-  insertScope->structs.insert({spiceStruct.declNode->codeLoc, std::unordered_map<std::string, Struct>()});
+  insertScope->structs.insert({spiceStruct.declNode->codeLoc, StructManifestationList()});
 
   // Save substantiation in declaration node
   Struct *substantiation = insertSubstantiation(insertScope, spiceStruct, spiceStruct.declNode);

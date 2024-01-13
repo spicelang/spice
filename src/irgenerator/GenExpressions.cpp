@@ -72,7 +72,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       } else if (result.value) { // The operation only updated the value
         // Store the result
         lhs.value = result.value;
-        builder.CreateStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
+        insertStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
       }
       return LLVMExprResult{.value = lhs.value, .ptr = lhs.ptr, .refPtr = lhs.refPtr, .entry = lhs.entry};
     }
@@ -540,7 +540,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     lhs.ptr = insertAlloca(lhs.value->getType());
 
     // Store the new value
-    builder.CreateStore(lhs.value, lhs.ptr);
+    insertStore(lhs.value, lhs.ptr);
 
     break;
   }
@@ -553,14 +553,14 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     // If this operation happens on a volatile variable, store the value directly
     if (lhs.entry && lhs.entry->isVolatile)
-      builder.CreateStore(lhs.value, lhs.ptr, true);
+      insertStore(lhs.value, lhs.ptr, true);
 
     // Save to the existing address if possible, otherwise (e.g. for literals) allocate new space
     if (!lhs.ptr)
       lhs.ptr = insertAlloca(lhs.value->getType());
 
     // Store the new value
-    builder.CreateStore(lhs.value, lhs.ptr);
+    insertStore(lhs.value, lhs.ptr);
 
     break;
   }
@@ -573,14 +573,14 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     // If this operation happens on a volatile variable, store the value directly
     if (lhs.entry && lhs.entry->isVolatile)
-      builder.CreateStore(lhs.value, lhs.ptr, true);
+      insertStore(lhs.value, lhs.ptr, true);
 
     // Save to the existing address if possible, otherwise (e.g. for literals) allocate new space
     if (!lhs.ptr)
       lhs.ptr = insertAlloca(lhs.value->getType());
 
     // Store the new value
-    builder.CreateStore(lhs.value, lhs.ptr);
+    insertStore(lhs.value, lhs.ptr);
 
     break;
   }
@@ -595,7 +595,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     lhs.ptr = insertAlloca(lhs.value->getType());
 
     // Store the new value
-    builder.CreateStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
+    insertStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
 
     break;
   }
@@ -610,7 +610,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
     lhs.ptr = insertAlloca(lhs.value->getType());
 
     // Store the new value
-    builder.CreateStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
+    insertStore(lhs.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
 
     break;
   }
@@ -750,7 +750,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       lhs.value = result.value;
       lhs.ptr = result.ptr;
     } else {
-      builder.CreateStore(result.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
+      insertStore(result.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
       lhs.ptr = nullptr;
     }
     break;
@@ -773,7 +773,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       lhs.value = result.value;
       lhs.ptr = result.ptr;
     } else {
-      builder.CreateStore(result.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
+      insertStore(result.value, lhs.ptr, lhs.entry && lhs.entry->isVolatile);
       lhs.ptr = nullptr;
     }
     break;

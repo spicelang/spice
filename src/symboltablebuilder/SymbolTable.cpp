@@ -97,8 +97,12 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-
       return nullptr;
 
     // Check if this scope requires capturing and capture the variable if appropriate
-    if (capturingRequired && !captures.contains(name) && !entry->getType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE}))
+    if (capturingRequired && !captures.contains(name) && !entry->getType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE})) {
+      // We need to make the symbol volatile if we are in an async scope and try to access a symbol that is not in an async scope
+      entry->isVolatile = scope->isInAsyncScope() && !entry->scope->isInAsyncScope();
+      // Add the capture to the current scope
       captures.insert({name, Capture(entry)});
+    }
   }
 
   return entry;

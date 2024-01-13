@@ -1,0 +1,8 @@
+f<int> main() {
+    int x = 123;
+    int* xPtr = &x;
+    p() proc = p() [[async]] {
+        *xPtr += 36; // Causes invalid capture, because xPtr is captured by-ref
+    };
+    proc();
+}

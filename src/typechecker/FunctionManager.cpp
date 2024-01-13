@@ -13,7 +13,7 @@ namespace spice::compiler {
 Function *FunctionManager::insertFunction(Scope *insertScope, const Function &baseFunction,
                                           std::vector<Function *> *nodeFunctionList) {
   // Open a new manifestation list for the function definition
-  insertScope->functions.insert({baseFunction.declNode->codeLoc, std::unordered_map<std::string, Function>()});
+  insertScope->functions.insert({baseFunction.declNode->codeLoc, FunctionManifestationList()});
 
   // Collect substantiations
   std::vector<Function> manifestations;

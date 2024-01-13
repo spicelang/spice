@@ -77,35 +77,33 @@ define dso_local i32 @main() #2 {
   store i32 2, ptr %z, align 4
   store i32 3, ptr %w, align 4
   %1 = load i32, ptr %w, align 4
-  %2 = getelementptr inbounds { i32, i32 }, ptr %captures, i32 0, i32 0
-  store i32 %1, ptr %2, align 4
-  %3 = load i32, ptr %z, align 4
-  %4 = getelementptr inbounds { i32, i32 }, ptr %captures, i32 0, i32 1
-  store i32 %3, ptr %4, align 4
-  %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
-  store ptr @_Z15lambda.L12C20.0Ri, ptr %5, align 8
-  %6 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
-  store ptr %captures, ptr %6, align 8
-  %7 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  store { ptr, ptr } %7, ptr %foo1, align 8
-  %8 = load i32, ptr %w, align 4
-  %9 = getelementptr inbounds { i32, i32 }, ptr %captures1, i32 0, i32 0
+  store i32 %1, ptr %captures, align 4
+  %2 = load i32, ptr %z, align 4
+  %3 = getelementptr inbounds { i32, i32 }, ptr %captures, i32 0, i32 1
+  store i32 %2, ptr %3, align 4
+  %4 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 0
+  store ptr @_Z15lambda.L12C20.0Ri, ptr %4, align 8
+  %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
+  store ptr %captures, ptr %5, align 8
+  %6 = load { ptr, ptr }, ptr %fat.ptr, align 8
+  store { ptr, ptr } %6, ptr %foo1, align 8
+  %7 = load i32, ptr %w, align 4
+  store i32 %7, ptr %captures1, align 4
+  %8 = load i32, ptr %z, align 4
+  %9 = getelementptr inbounds { i32, i32 }, ptr %captures1, i32 0, i32 1
   store i32 %8, ptr %9, align 4
-  %10 = load i32, ptr %z, align 4
-  %11 = getelementptr inbounds { i32, i32 }, ptr %captures1, i32 0, i32 1
-  store i32 %10, ptr %11, align 4
-  %12 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 0
-  store ptr @_Z15lambda.L15C26.0Ri, ptr %12, align 8
-  %13 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
-  store ptr %captures1, ptr %13, align 8
-  %14 = load { ptr, ptr }, ptr %fat.ptr2, align 8
-  store { ptr, ptr } %14, ptr %foo2, align 8
-  %15 = load { ptr, ptr }, ptr %foo1, align 8
-  %16 = load { ptr, ptr }, ptr %foo2, align 8
-  call void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } %15, { ptr, ptr } %16)
-  %17 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  %18 = load i32, ptr %result, align 4
-  ret i32 %18
+  %10 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 0
+  store ptr @_Z15lambda.L15C26.0Ri, ptr %10, align 8
+  %11 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr2, i32 0, i32 1
+  store ptr %captures1, ptr %11, align 8
+  %12 = load { ptr, ptr }, ptr %fat.ptr2, align 8
+  store { ptr, ptr } %12, ptr %foo2, align 8
+  %13 = load { ptr, ptr }, ptr %foo1, align 8
+  %14 = load { ptr, ptr }, ptr %foo2, align 8
+  call void @_Z4testPFCvRiEPFCbRiE({ ptr, ptr } %13, { ptr, ptr } %14)
+  %15 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %16 = load i32, ptr %result, align 4
+  ret i32 %16
 }
 
 define private void @_Z15lambda.L12C20.0Ri(ptr noundef nonnull dereferenceable(8) %0, ptr %1) {

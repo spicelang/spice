@@ -147,7 +147,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     llvm::Function *getIdxFct = stdFunctionManager.getIteratorGetIdxFct(node->getIdxFct, currentScope);
     llvm::Value *pair = builder.CreateCall(getIdxFct, iterator);
     pair->setName("pair");
-    builder.CreateStore(pair, pairPtr);
+    insertStore(pair, pairPtr);
     // Store idx to idx var
     llvm::Value *idxAddrInPair = builder.CreateStructGEP(pairTy, pairPtr, 0, "idx_addr");
     LLVMExprResult idxResult = {.ptr = idxAddrInPair};

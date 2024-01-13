@@ -47,6 +47,20 @@ f<int> main() {
     tp.join();
 }
 
+/*import "std/os/thread-pool";
+
+f<int> main() {
+    int testVar = 123;
+    ThreadPool tp = ThreadPool(3s);
+    dyn proc = p() [[async]] {
+        printf("Hello from inside: %d\n", testVar);
+    };
+    tp.enqueue(proc);
+    tp.start();
+    tp.join();
+    printf("TestVar: %d\n", testVar);
+}*/
+
 /*f<int> main() {
     int i = 123; // Captured by ref
     int j = 321; // Captured by val

@@ -72,6 +72,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType type) {
     return "Only one type condition";
   case BOOL_ASSIGN_AS_CONDITION:
     return "Bool assignment as condition";
+  case ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION:
+    return "Lambda violates async lambda capture rules";
   case UNINSTALL_FAILED:
     return "Uninstall failed";
   case VERIFIER_DISABLED:

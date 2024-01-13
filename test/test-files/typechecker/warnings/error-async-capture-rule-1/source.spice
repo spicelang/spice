@@ -1,0 +1,7 @@
+f<int> main() {
+    int x = 0;
+    p() proc = p() [[async]] {
+        x++; // Causes invalid capture, because x has non-ptr type
+    };
+    proc();
+}

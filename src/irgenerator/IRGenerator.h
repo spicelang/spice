@@ -112,20 +112,21 @@ public:
 
   // Public methods
   llvm::Value *insertAlloca(llvm::Type *llvmType, std::string varName = "");
-  llvm::Value *insertLoad(llvm::Type *llvmType, llvm::Value *ptr, std::string varName = "") const;
+  llvm::Value *insertLoad(llvm::Type *llvmType, llvm::Value *ptr, bool isVolatile = false, const std::string &varName = "") const;
+  void insertStore(llvm::Value *val, llvm::Value *ptr, bool isVolatile = false) const;
   llvm::Value *insertInBoundsGEP(llvm::Type *llvmType, llvm::Value *basePtr, llvm::ArrayRef<llvm::Value *> indices,
                                  std::string varName = "") const;
   llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const ASTNode *node, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const SymbolType &symbolType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
-  llvm::Value *resolveAddress(const ASTNode *node, bool storeVolatile = false);
-  llvm::Value *resolveAddress(LLVMExprResult &exprResult, bool storeVolatile = false);
+  llvm::Value *resolveAddress(const ASTNode *node);
+  llvm::Value *resolveAddress(LLVMExprResult &exprResult);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
-  [[nodiscard]] llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const SymbolType &type, const ASTNode *node);
   [[nodiscard]] std::string getIRString() const;
 
 private:
   // Private methods
+  llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const SymbolType &type, const ASTNode *node);
   llvm::BasicBlock *createBlock(const std::string &blockName = "");
   void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
   void insertJump(llvm::BasicBlock *targetBlock);
@@ -145,7 +146,9 @@ private:
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   static void materializeConstant(LLVMExprResult &exprResult);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
-  llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Value *lambda);
+  llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda);
+  llvm::Type *buildCapturesContainerType(const CaptureMap &captures);
+  void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType);
 
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);

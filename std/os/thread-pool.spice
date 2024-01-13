@@ -40,7 +40,7 @@ public p ThreadPool.start() {
     p() workerRoutine = p() [[async]] {
         do {
             // Check if there are jobs to run
-            bool hasQueuedJobs = !this.queuedJobs.isEmpty();
+            const bool hasQueuedJobs = !this.queuedJobs.isEmpty();
             // If we are supposed to stop when the queue is empty and there are no more jobs, abort
             if this.stopOnEmptyQueueRequested & !hasQueuedJobs {
                 break;
@@ -63,6 +63,7 @@ public p ThreadPool.start() {
         Thread& workerThread = this.workerThreads.back();
         workerThread.run();
     }
+    sizeof(0);
 }
 
 /**
@@ -94,7 +95,7 @@ public p ThreadPool.join() {
  *
  * @param job The job routine to enqueue.
  */
-public p ThreadPool.enqueue(p() job) {
+public p ThreadPool.enqueue(const p()& job) {
     this.queuedJobs.push(job);
 }
 
