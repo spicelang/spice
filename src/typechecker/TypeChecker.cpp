@@ -3,6 +3,7 @@
 #include "TypeChecker.h"
 
 #include <SourceFile.h>
+#include <ast/Attributes.h>
 #include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
@@ -2049,6 +2050,9 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   node->manifestations.at(manIdx).bodyScope = bodyScope;
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
+  // Check special requirements if this is an async lambda
+  checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
+
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
 
@@ -2088,6 +2092,9 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   node->manifestations.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node);
   node->manifestations.at(manIdx).bodyScope = bodyScope;
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
+
+  // Check special requirements if this is an async lambda
+  checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2404,6 +2411,39 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   functionType.setFunctionParamTypes(paramTypes);
 
   return node->setEvaluatedSymbolType(functionType, manIdx);
+}
+
+/**
+ * Check if the the capture rules for async lambdas are enforced if the async attribute is set
+ *
+ * Only one capture with pointer type, pass-by-val is allowed, since only then we can store it in the second field of the
+ * fat pointer and can ensure, that no stack variable is referenced inside the lambda.
+ *
+ * @param node
+ * @param attrs
+ * @return False if the rules are violated, true otherwise
+ */
+bool TypeChecker::checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const LambdaAttrNode *attrs) const {
+  // If the async attribute is not set, we can return early
+  if (!attrs || !attrs->attrLst()->hasAttr(ATTR_ASYNC) || !attrs->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue)
+    return true; // Not violated
+
+  // If we don't have any captures, we can return early
+  const CaptureMap &captures = node->bodyScope->symbolTable.captures;
+  if (captures.empty())
+    return true; // Not violated
+
+  // Check for the capture rules
+  const Capture &capture = captures.begin()->second;
+  if (captures.size() > 1 || !capture.capturedEntry->getType().isPtr() || capture.getMode() != BY_VALUE) {
+    const char *warningMessage =
+        "Async lambdas can only capture one pointer by value without storing captures in the caller stack frame, which can lead "
+        "to bugs due to references, outliving the validity scope of the referenced variable.";
+    CompilerWarning warning(node->codeLoc, ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION, warningMessage);
+    currentScope->sourceFile->compilerOutput.warnings.push_back(warning);
+  }
+
+  return false; // Not violated
 }
 
 SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const {

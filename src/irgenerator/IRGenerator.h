@@ -146,8 +146,9 @@ private:
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
   static void materializeConstant(LLVMExprResult &exprResult);
   const std::vector<const Function *> &getOpFctPointers(const ASTNode *node) const;
-  llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::StructType *capturesStructType, llvm::Value *lambda);
-  llvm::StructType *buildCapturesStructType(const CaptureMap &captures);
+  llvm::Value *buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda);
+  llvm::Type *buildCapturesContainerType(const CaptureMap &captures);
+  void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType);
 
   // Generate implicit
   llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);

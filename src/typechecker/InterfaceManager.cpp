@@ -13,7 +13,7 @@ namespace spice::compiler {
 Interface *InterfaceManager::insertInterface(Scope *insertScope, Interface &spiceInterface,
                                              std::vector<Interface *> *nodeInterfaceList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
-  insertScope->interfaces.insert({spiceInterface.declNode->codeLoc, std::unordered_map<std::string, Interface>()});
+  insertScope->interfaces.insert({spiceInterface.declNode->codeLoc, InterfaceManifestationList()});
 
   // Save substantiation in declaration node
   Interface *substantiation = insertSubstantiation(insertScope, spiceInterface, spiceInterface.declNode);

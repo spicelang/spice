@@ -21,8 +21,8 @@ class Scope;
 class SymbolType;
 struct CodeLoc;
 
-using CaptureMap = std::unordered_map<std::string, Capture>;
-using SymbolMap = std::unordered_map<std::string, SymbolTableEntry>;
+using CaptureMap = std::unordered_map<std::string /*name*/, Capture /*capture*/>;
+using SymbolMap = std::unordered_map<std::string /*name*/, SymbolTableEntry /*symbol table entry*/>;
 
 /**
  * Class for storing information about symbols of the program.
