@@ -278,10 +278,16 @@ void DebugInfoGenerator::finalize() {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "misc-no-recursion"
 llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, const SymbolType &symbolType) const {
-  // Pointer or reference type
-  if (symbolType.isPtr() || symbolType.isRef()) {
+  // Pointer type
+  if (symbolType.isPtr()) {
     llvm::DIType *pointeeTy = getDITypeForSymbolType(node, symbolType.getContainedTy());
     return diBuilder->createPointerType(pointeeTy, pointerWidth);
+  }
+
+  // Reference type
+  if (symbolType.isRef()) {
+    llvm::DIType *referencedType = getDITypeForSymbolType(node, symbolType.getContainedTy());
+    return diBuilder->createReferenceType(llvm::dwarf::DW_TAG_reference_type, referencedType, pointerWidth);
   }
 
   // Array type

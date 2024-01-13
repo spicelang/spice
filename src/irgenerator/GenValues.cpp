@@ -528,6 +528,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     unpackCapturesToLocalVariables(captures, captureStructPtrPtr, capturesStructType);
   }
 
+  // Visit body
   visit(node->body());
 
   // Create return statement if the block is not terminated yet
@@ -671,6 +672,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     unpackCapturesToLocalVariables(captures, captureStructPtrPtr, capturesStructType);
   }
 
+  // Visit body
   visit(node->body());
 
   // Create return statement if the block is not terminated yet
@@ -866,9 +868,12 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
       const CaptureMap &captures = bodyScope->symbolTable.captures;
       assert(captures.size() == 1);
       const Capture &capture = captures.begin()->second;
-      assert(capture.capturedEntry->getType().isPtr());
-      assert(capture.getMode() == BY_VALUE);
-      capturesPtr = insertLoad(builder.getPtrTy(), capture.capturedEntry->getAddress());
+      if (capture.getMode() == BY_VALUE) {
+        llvm::Type *varType = capture.capturedEntry->getType().toLLVMType(context, currentScope);
+        capturesPtr = insertLoad(varType, capture.capturedEntry->getAddress());
+      } else {
+        capturesPtr = capture.capturedEntry->getAddress();
+      }
     } else {
       capturesPtr = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
       size_t captureIdx = 0;
@@ -908,7 +913,7 @@ llvm::Type *IRGenerator::buildCapturesContainerType(const CaptureMap &captures) 
 
   // If we have only one capture that is a ptr, we can just use that ptr type
   const Capture &capture = captures.begin()->second;
-  if (captures.size() == 1 && capture.capturedEntry->getType().isPtr() && capture.getMode() == BY_VALUE)
+  if (captures.size() == 1 && (capture.capturedEntry->getType().isPtr() || capture.getMode() == BY_REFERENCE))
     return builder.getPtrTy();
 
   // Create captures struct type
@@ -926,7 +931,7 @@ void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llv
   assert(!captures.empty());
   // If we have only one capture that is a ptr, we can just load the ptr
   const Capture &capture = captures.begin()->second;
-  if (captures.size() == 1 && capture.capturedEntry->getType().isPtr() && capture.getMode() == BY_VALUE) {
+  if (captures.size() == 1 && (capture.capturedEntry->getType().isPtr() || capture.getMode() == BY_REFERENCE)) {
     // Interpret capturesPtr as ptr to the first and only capture
     llvm::Value *captureAddress = val;
     capture.capturedEntry->pushAddress(captureAddress);
