@@ -149,11 +149,11 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     pair->setName("pair");
     insertStore(pair, pairPtr);
     // Store idx to idx var
-    llvm::Value *idxAddrInPair = builder.CreateStructGEP(pairTy, pairPtr, 0, "idx_addr");
+    llvm::Value *idxAddrInPair = insertStructGEP(pairTy, pairPtr, 0, "idx_addr");
     LLVMExprResult idxResult = {.ptr = idxAddrInPair};
     doAssignment(idxAddress, idxEntry, idxResult, SymbolType(TY_LONG), true);
     // Store item to item var
-    llvm::Value *itemAddrInPair = builder.CreateStructGEP(pairTy, pairPtr, 1, "item_addr");
+    llvm::Value *itemAddrInPair = insertStructGEP(pairTy, pairPtr, 1, "item_addr");
     LLVMExprResult itemResult = {.refPtr = itemAddrInPair};
     doAssignment(itemAddress, itemEntry, itemResult, itemRefSTy, true);
   } else {
