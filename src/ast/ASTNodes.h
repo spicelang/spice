@@ -29,6 +29,8 @@ union CompileTimeValue {
   bool boolValue;
   size_t stringValueOffset = 0; // Offset into vector of strings in GlobalResourceManager
 };
+
+// Make sure we have no unexpected increases in memory consumption
 static_assert(sizeof(CompileTimeValue) == 8);
 
 // =========================================================== AstNode ===========================================================

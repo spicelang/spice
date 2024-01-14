@@ -14,7 +14,8 @@ static constexpr size_t ERROR_MESSAGE_CONTEXT = 20;
 
 std::string ASTNode::getErrorMessage() const {
   antlr4::CharStream *inputStream = codeLoc.sourceFile->antlrCtx.inputStream.get();
-  antlr4::misc::Interval extSourceInterval(codeLoc.sourceInterval);
+  const antlr4::misc::Interval &sourceInterval = codeLoc.sourceInterval;
+  antlr4::misc::Interval extSourceInterval(sourceInterval);
 
   // If we have a multi-line interval, only use the first line
   if (size_t offset = inputStream->getText(extSourceInterval).find('\n'); offset != std::string::npos)
@@ -53,7 +54,7 @@ std::string ASTNode::getErrorMessage() const {
   std::stringstream ss;
   ss << lineNumberStr << "  " << inputStream->getText(extSourceInterval) << "\n";
   ss << std::string(markerIndentation, ' ');
-  ss << std::string(std::min(codeLoc.sourceInterval.length(), extSourceInterval.length()), '^');
+  ss << std::string(std::min(sourceInterval.length(), extSourceInterval.length()), '^');
   return ss.str();
 }
 

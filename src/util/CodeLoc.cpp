@@ -2,8 +2,10 @@
 
 #include "CodeLoc.h"
 
-#include "SourceFile.h"
-#include <util/CommonUtil.h>
+#include <filesystem>
+#include <string>
+
+#include <SourceFile.h>
 
 namespace spice::compiler {
 

@@ -2,10 +2,6 @@
 
 #pragma once
 
-#include <filesystem>
-#include <string>
-#include <utility>
-
 #include <Token.h>
 #include <misc/Interval.h>
 
@@ -48,5 +44,8 @@ public:
     return a.line == b.line ? a.col > b.col : a.line > b.line;
   }
 };
+
+// Make sure we have no unexpected increases in memory consumption
+static_assert(sizeof(CodeLoc) == 40);
 
 } // namespace spice::compiler
