@@ -22,13 +22,15 @@ define dso_local i32 @main() #0 {
   store ptr poison, ptr %1, align 8
   %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %2, ptr %testFct, align 8
+  %3 = getelementptr inbounds { ptr, ptr }, ptr %testFct, i32 0, i32 1
+  %captures = load ptr, ptr %3, align 8
   %fct = load ptr, ptr %testFct, align 8
-  %3 = call i32 %fct()
-  store i32 %3, ptr %i, align 4
-  %4 = load i32, ptr %i, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %4)
-  %6 = load i32, ptr %result, align 4
-  ret i32 %6
+  %4 = call i32 %fct(ptr %captures)
+  store i32 %4, ptr %i, align 4
+  %5 = load i32, ptr %i, align 4
+  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %5)
+  %7 = load i32, ptr %result, align 4
+  ret i32 %7
 }
 
 ; Function Attrs: nofree nounwind

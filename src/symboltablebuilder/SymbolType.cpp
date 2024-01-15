@@ -502,7 +502,7 @@ std::vector<SymbolType> SymbolType::getFunctionParamTypes() const {
  */
 void SymbolType::setHasLambdaCaptures(bool hasCaptures) {
   assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  typeChain.front().data.hasCaptures = hasCaptures;
+  typeChain.front().data.hasCaptures = hasCaptures ? YES_OR_UNKNOWN : NO;
 }
 
 /**
@@ -512,7 +512,7 @@ void SymbolType::setHasLambdaCaptures(bool hasCaptures) {
  */
 bool SymbolType::hasLambdaCaptures() const {
   assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  return typeChain.front().data.hasCaptures;
+  return typeChain.front().data.hasCaptures == YES_OR_UNKNOWN;
 }
 
 /**

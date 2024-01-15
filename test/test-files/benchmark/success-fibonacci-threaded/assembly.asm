@@ -95,7 +95,7 @@ main:                                   # @main
 	callq	memset
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
-	callq	_ZN6Thread4ctorEPFvE
+	callq	_ZN6Thread4ctorEPFCvE
 	movq	96(%rbp), %rax
 	movq	104(%rbp), %rcx
 	movq	112(%rbp), %rdx
@@ -106,7 +106,7 @@ main:                                   # @main
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
-	callq	_ZN6Thread4ctorEPFvE
+	callq	_ZN6Thread4ctorEPFCvE
 	movq	96(%rbp), %rax
 	movq	104(%rbp), %rcx
 	movq	112(%rbp), %rdx
@@ -117,7 +117,7 @@ main:                                   # @main
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
-	callq	_ZN6Thread4ctorEPFvE
+	callq	_ZN6Thread4ctorEPFCvE
 	movq	96(%rbp), %rax
 	movq	104(%rbp), %rcx
 	movq	112(%rbp), %rdx
@@ -128,7 +128,7 @@ main:                                   # @main
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
-	callq	_ZN6Thread4ctorEPFvE
+	callq	_ZN6Thread4ctorEPFCvE
 	movq	96(%rbp), %rax
 	movq	104(%rbp), %rcx
 	movq	112(%rbp), %rdx
@@ -139,7 +139,7 @@ main:                                   # @main
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
-	callq	_ZN6Thread4ctorEPFvE
+	callq	_ZN6Thread4ctorEPFCvE
 	movq	96(%rbp), %rax
 	movq	104(%rbp), %rcx
 	movq	112(%rbp), %rdx
@@ -150,7 +150,7 @@ main:                                   # @main
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
-	callq	_ZN6Thread4ctorEPFvE
+	callq	_ZN6Thread4ctorEPFCvE
 	movq	96(%rbp), %rax
 	movq	104(%rbp), %rcx
 	movq	112(%rbp), %rdx
@@ -161,7 +161,7 @@ main:                                   # @main
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
-	callq	_ZN6Thread4ctorEPFvE
+	callq	_ZN6Thread4ctorEPFCvE
 	movq	96(%rbp), %rax
 	movq	104(%rbp), %rcx
 	movq	112(%rbp), %rdx
@@ -172,7 +172,7 @@ main:                                   # @main
 	callq	_ZN6Thread3runEv
 	leaq	.L_Z15lambda.L12C29.0v(%rip), %rdx
 	leaq	96(%rbp), %rcx
-	callq	_ZN6Thread4ctorEPFvE
+	callq	_ZN6Thread4ctorEPFCvE
 	movq	96(%rbp), %rax
 	movq	104(%rbp), %rcx
 	movq	112(%rbp), %rdx

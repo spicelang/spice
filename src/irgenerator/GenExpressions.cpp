@@ -659,9 +659,6 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
   case PostfixUnaryExprNode::OP_SUBSCRIPT: {
     lhsSTy = lhsSTy.removeReferenceWrapper();
 
-    // Get the LLVM type of the operand
-    llvm::Type *lhsTy = lhsSTy.toLLVMType(context, currentScope);
-
     // Get the index value
     AssignExprNode *indexExpr = node->assignExpr();
     llvm::Value *indexValue = resolveValue(indexExpr);
@@ -671,19 +668,16 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       resolveAddress(lhs);
 
       // Calculate address of array item
+      llvm::Type *lhsTy = lhsSTy.toLLVMType(context, currentScope);
       llvm::Value *indices[2] = {builder.getInt32(0), indexValue};
       lhs.ptr = insertInBoundsGEP(lhsTy, lhs.ptr, indices);
     } else { // Pointer
       // Make sure the value is present
       resolveValue(lhsNode, lhs);
-      assert(lhs.value != nullptr);
 
-      // Now the pointer is the value
-      lhs.ptr = lhs.value;
-
-      lhsTy = lhsSTy.getContainedTy().toLLVMType(context, currentScope);
+      llvm::Type *lhsTy = lhsSTy.getContainedTy().toLLVMType(context, currentScope);
       // Calculate address of pointer item
-      lhs.ptr = insertInBoundsGEP(lhsTy, lhs.ptr, indexValue);
+      lhs.ptr = insertInBoundsGEP(lhsTy, lhs.value, indexValue);
     }
 
     // Reset value and entry

@@ -423,8 +423,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
     }
 
     // If we have a function/procedure type we need to take care of the information, if it takes captures
-    if (requestedType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
-      candidateParamType.setHasLambdaCaptures(true);
+    if (requestedType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && !requestedType.hasLambdaCaptures()) {
+      candidateParamType.setHasLambdaCaptures(false);
       needsSubstantiation = true;
     }
   }

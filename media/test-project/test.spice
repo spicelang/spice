@@ -1,12 +1,35 @@
-import "bootstrap/lexer/lexer";
-import "bootstrap/parser/parser";
-import "bootstrap/ast/ast-nodes";
+f<int> main() {
+    f<string>() callbackWithoutArgs = f<string>() {
+        return "Callback called!\n";
+    };
+    printf("%s", callbackWithoutArgs());
+
+    f<bool>(String&, double) callbackWithArgs1 = f<bool>(String& str, double d) {
+        printf("Callback called with args: %s, %f\n", str, d);
+        return str.getRaw() == "Hello" && d == 3.14;
+    };
+    printf("%d\n", callbackWithArgs1(String("Hello"), 3.14));
+
+    f<short>(String, short) callbackWithArgs2 = f<short>(String str, short b) {
+        printf("Callback called with args: %s, %d\n", str, b);
+        return ~b;
+    };
+    printf("%d\n", (callbackWithArgs2(String("Hello World!"), 321s) ^ 956s) == 1 ? 9 : 12);
+}
+
+/*import "std/os/thread-pool";
 
 f<int> main() {
-    Lexer lexer = Lexer("./test-file.spice");
-    Parser parser = Parser(lexer);
-    ASTEntryNode* entryNode = parser.parse();
-}
+    int testVar = 123;
+    ThreadPool tp = ThreadPool(3s);
+    dyn proc = p() {
+        printf("Test: %d\n", testVar);
+    };
+    tp.enqueue(proc);
+    tp.start();
+    tp.join();
+    printf("TestVar: %d\n", testVar);
+}*/
 
 /*f<int> main() {
     int i = 123; // Captured by ref

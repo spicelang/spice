@@ -17,9 +17,11 @@ define private i32 @_Z6invokePFiPKcE({ ptr, ptr } %0) {
   %result = alloca i32, align 4
   %fctPtr = alloca { ptr, ptr }, align 8
   store { ptr, ptr } %0, ptr %fctPtr, align 8
+  %2 = getelementptr inbounds { ptr, ptr }, ptr %fctPtr, i32 0, i32 1
+  %captures = load ptr, ptr %2, align 8
   %fct = load ptr, ptr %fctPtr, align 8
-  %2 = call i32 %fct(ptr @anon.string.0)
-  ret i32 %2
+  %3 = call i32 %fct(ptr %captures, ptr @anon.string.0)
+  ret i32 %3
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable

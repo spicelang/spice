@@ -31,7 +31,7 @@
           "name": "lambda",
           "orderIndex": 3,
           "state": "initialized",
-          "type": "p[]()"
+          "type": "p()"
         },
         {
           "codeLoc": "L3C5",

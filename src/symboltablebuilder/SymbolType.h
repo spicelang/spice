@@ -58,11 +58,17 @@ enum SymbolSuperType : uint8_t {
 
 class SymbolType {
 public:
+  // Enums
+  enum HasCaptures : bool {
+    YES_OR_UNKNOWN = false,
+    NO = true,
+  };
+
   // Unions
   union TypeChainElementData {
-    unsigned int arraySize;     // TY_ARRAY
     Scope *bodyScope = nullptr; // TY_STRUCT, TY_INTERFACE, TY_ENUM
-    bool hasCaptures;           // TY_FUNCTION, TY_PROCEDURE (lambdas)
+    unsigned int arraySize;     // TY_ARRAY
+    HasCaptures hasCaptures;    // TY_FUNCTION, TY_PROCEDURE (lambdas)
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
   };
