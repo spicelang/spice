@@ -275,8 +275,6 @@ void DebugInfoGenerator::finalize() {
     diBuilder->finalize();
 }
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "misc-no-recursion"
 llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, const SymbolType &symbolType) const {
   // Pointer type
   if (symbolType.isPtr()) {
@@ -417,6 +415,5 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
 
   return baseDiType;
 }
-#pragma clang diagnostic pop
 
 } // namespace spice::compiler

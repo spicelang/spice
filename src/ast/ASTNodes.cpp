@@ -31,7 +31,8 @@ std::string ASTNode::getErrorMessage() const {
   }
   for (size_t suffixContext = 0; suffixContext < ERROR_MESSAGE_CONTEXT; suffixContext++) {
     extSourceInterval.b++;
-    if (extSourceInterval.b > inputStream->size() || inputStream->getText(extSourceInterval).find('\n') != std::string::npos) {
+    if (static_cast<size_t>(extSourceInterval.b) > inputStream->size() ||
+        inputStream->getText(extSourceInterval).find('\n') != std::string::npos) {
       extSourceInterval.b--;
       break;
     }

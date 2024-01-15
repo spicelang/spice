@@ -29,7 +29,7 @@ class SymbolTableEntry {
 public:
   // Constructors
   SymbolTableEntry(std::string name, SymbolType type, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
-      : name(std::move(name)), type(std::move(type)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global){};
+      : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global), type(std::move(type)){};
 
   // Public methods
   [[nodiscard]] const SymbolType &getType() const;

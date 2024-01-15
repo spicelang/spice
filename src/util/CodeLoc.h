@@ -16,12 +16,12 @@ struct CodeLoc {
 public:
   // Constructors
   explicit CodeLoc(const antlr4::Token *token, SourceFile *sourceFile = nullptr)
-      : sourceInterval(token->getStartIndex(), token->getStopIndex()), line(token->getLine()),
-        col(token->getCharPositionInLine() + 1), sourceFile(sourceFile){};
+      : sourceFile(sourceFile), sourceInterval(token->getStartIndex(), token->getStopIndex()), line(token->getLine()),
+        col(token->getCharPositionInLine() + 1){};
   CodeLoc(const antlr4::Token *token, size_t startIdx, size_t stopIdx, SourceFile *sourceFile = nullptr)
-      : sourceInterval(startIdx, stopIdx), line(token->getLine()), col(token->getCharPositionInLine() + 1),
-        sourceFile(sourceFile){};
-  CodeLoc(size_t line, size_t col, SourceFile *sourceFile = nullptr) : line(line), col(col), sourceFile(sourceFile) {}
+      : sourceFile(sourceFile), sourceInterval(startIdx, stopIdx), line(token->getLine()),
+        col(token->getCharPositionInLine() + 1){};
+  CodeLoc(size_t line, size_t col, SourceFile *sourceFile = nullptr) : sourceFile(sourceFile), line(line), col(col) {}
 
   // Public members
   SourceFile *sourceFile = nullptr;
