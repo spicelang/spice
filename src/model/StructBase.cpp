@@ -2,7 +2,9 @@
 
 #include "StructBase.h"
 
+#include <ast/ASTBuilder.h>
 #include <ast/ASTNodes.h>
+#include <util/CommonUtil.h>
 
 namespace spice::compiler {
 

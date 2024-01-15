@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <stack>
 #include <string>
 #include <utility>
 

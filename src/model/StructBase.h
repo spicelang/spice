@@ -17,6 +17,7 @@ class SymbolType;
 class SymbolTableEntry;
 class Scope;
 class ASTNode;
+struct CodeLoc;
 
 class StructBase {
 public:

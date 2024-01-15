@@ -188,9 +188,9 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     // Get arg types
     std::vector<llvm::Type *> argTypes;
     if (data.isMethodCall() || data.isCtorCall())
-      argTypes.push_back(builder.getPtrTy());
+      argTypes.push_back(builder.getPtrTy()); // This pointer
     if (data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures())
-      argTypes.push_back(builder.getPtrTy());
+      argTypes.push_back(builder.getPtrTy()); // Capture pointer
     for (const SymbolType &paramType : paramSTypes)
       argTypes.push_back(paramType.toLLVMType(context, accessScope));
 
