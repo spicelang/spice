@@ -38,8 +38,8 @@ public:
   // Constructors
   Function(std::string name, SymbolTableEntry *entry, SymbolType thisType, SymbolType returnType, ParamList paramList,
            std::vector<GenericType> templateTypes, ASTNode *declNode)
-      : name(std::move(name)), entry(entry), thisType(std::move(thisType)), returnType(std::move(returnType)),
-        paramList(std::move(paramList)), templateTypes(std::move(templateTypes)), declNode(declNode) {}
+      : name(std::move(name)), thisType(std::move(thisType)), returnType(std::move(returnType)), paramList(std::move(paramList)),
+        templateTypes(std::move(templateTypes)), entry(entry), declNode(declNode) {}
   Function() = default;
 
   // Public methods

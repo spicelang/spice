@@ -319,12 +319,12 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   // Store VTable to first struct field if required
   Struct *spiceStruct = structSymbolType.getStruct(nullptr);
   assert(spiceStruct != nullptr);
-  if (spiceStruct->vtable != nullptr) {
-    assert(spiceStruct->vtableType != nullptr);
+  if (spiceStruct->vTableData.vtable != nullptr) {
+    assert(spiceStruct->vTableData.vtableType != nullptr);
     // Store VTable to field address at index 0
     thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
     llvm::Value *indices[3] = {builder.getInt32(0), builder.getInt32(0), builder.getInt32(2)};
-    llvm::Value *gepResult = insertInBoundsGEP(spiceStruct->vtableType, spiceStruct->vtable, indices);
+    llvm::Value *gepResult = insertInBoundsGEP(spiceStruct->vTableData.vtableType, spiceStruct->vTableData.vtable, indices);
     insertStore(gepResult, thisAddressLoaded);
   }
 

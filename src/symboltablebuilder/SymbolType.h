@@ -74,7 +74,7 @@ public:
     TypeChainElement(SymbolSuperType superType, std::string subType)
         : superType(superType), subType(std::move(subType)), typeId(superType){};
     TypeChainElement(SymbolSuperType superType, TypeChainElementData data)
-        : superType(superType), data(data), typeId(superType){};
+        : superType(superType), typeId(superType), data(data){};
     TypeChainElement(SymbolSuperType superType, std::string subType, uint64_t typeId, TypeChainElementData data,
                      const std::vector<SymbolType> &templateTypes)
         : superType(superType), subType(std::move(subType)), typeId(typeId), data(data), templateTypes(templateTypes){};

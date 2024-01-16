@@ -13,7 +13,7 @@ namespace spice::compiler {
 class ExternalLinkerInterface {
 public:
   // Constructors
-  explicit ExternalLinkerInterface(const CliOptions &cliOptions) : cliOptions(cliOptions), outputPath(cliOptions.outputPath){};
+  explicit ExternalLinkerInterface(const CliOptions &cliOptions) : outputPath(cliOptions.outputPath), cliOptions(cliOptions){};
 
   // Public methods
   void prepare();

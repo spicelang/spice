@@ -13,6 +13,9 @@ set(SOURCES
 
 add_executable(spicetest ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
+# Enable pedantic warnings
+target_compile_options(spicetest PRIVATE -Wpedantic -Wall)
+
 # Include Antlr components
 include_directories(${ANTLR_Spice_OUTPUT_DIR})
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)

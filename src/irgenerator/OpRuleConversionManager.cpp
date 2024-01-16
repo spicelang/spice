@@ -1683,11 +1683,6 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   if constexpr (N == 2)
     argValues[1] = paramTypes[1].isRef() ? opV[3]() : opV[2]();
 
-  // Obtain information about the call
-  const bool isImported = accessScope->isImportedBy(irGenerator->rootScope);
-  const CodeLoc &callLoc = node->codeLoc;
-  const CodeLoc &defLoc = opFct->entry->getDeclCodeLoc();
-
   // Function is not defined in the current module -> declare it
   if (!irGenerator->module->getFunction(mangledName)) {
     // Get returnType

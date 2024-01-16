@@ -87,14 +87,14 @@ public:
     customItemsInitialization(manifestationCount);
   }
 
-  virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {             // LCOV_EXCL_LINE
-    assert_fail("The given node does not overload the getOpFctPointers function");     // LCOV_EXCL_LINE
-    return nullptr;                                                                    // LCOV_EXCL_LINE
-  }                                                                                    // LCOV_EXCL_LINE
-  virtual const std::vector<std::vector<const Function *>> *getOpFctPointers() const { // LCOV_EXCL_LINE
-    assert_fail("The given node does not overload the getOpFctPointers function");     // LCOV_EXCL_LINE
-    return nullptr;                                                                    // LCOV_EXCL_LINE
-  }                                                                                    // LCOV_EXCL_LINE
+  virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {                           // LCOV_EXCL_LINE
+    assert_fail("The given node does not overload the getOpFctPointers function");                   // LCOV_EXCL_LINE
+    return nullptr;                                                                                  // LCOV_EXCL_LINE
+  }                                                                                                  // LCOV_EXCL_LINE
+  [[nodiscard]] virtual const std::vector<std::vector<const Function *>> *getOpFctPointers() const { // LCOV_EXCL_LINE
+    assert_fail("The given node does not overload the getOpFctPointers function");                   // LCOV_EXCL_LINE
+    return nullptr;                                                                                  // LCOV_EXCL_LINE
+  }                                                                                                  // LCOV_EXCL_LINE
 
   virtual void customItemsInitialization(size_t) {} // Noop
 
@@ -130,7 +130,7 @@ public:
     return children.size() == 1 && children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   }
 
-  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &fctName) {          // LCOV_EXCL_LINE
+  [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &) {                 // LCOV_EXCL_LINE
     assert_fail("Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
     return nullptr;                                                                                          // LCOV_EXCL_LINE
   }                                                                                                          // LCOV_EXCL_LINE
@@ -240,7 +240,7 @@ public:
 
   // Other methods
   [[nodiscard]] std::string getSymbolTableEntryName() const { return Function::getSymbolTableEntryName(name->name, codeLoc); }
-  std::vector<Function *> *getFctManifestations(const std::string &_) override { return &manifestations; }
+  std::vector<Function *> *getFctManifestations(const std::string &) override { return &manifestations; }
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
   bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
@@ -469,7 +469,7 @@ public:
   [[nodiscard]] TypeLstNode *argTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Other methods
-  std::vector<Function *> *getFctManifestations(const std::string &_) override { return &extFunctionManifestations; }
+  std::vector<Function *> *getFctManifestations(const std::string &) override { return &extFunctionManifestations; }
   [[nodiscard]] std::string getScopeId() const {
     const char *prefix = hasReturnType ? "func:" : "proc:";
     return prefix + codeLoc.toString();
@@ -908,7 +908,7 @@ public:
   [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(hasTemplateTypes ? 1 : 0); }
 
   // Other methods
-  std::vector<Function *> *getFctManifestations(const std::string &_) override { return &signatureManifestations; }
+  std::vector<Function *> *getFctManifestations(const std::string &) override { return &signatureManifestations; }
 
   // Public members
   Type signatureType = SignatureNode::TYPE_NONE;
@@ -1160,7 +1160,7 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override { return true; }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *) const override { return true; }
   [[nodiscard]] StmtLstNode *getParentScopeNode() const {
     assert(dynamic_cast<StmtLstNode *>(parent->parent) != nullptr);
     return spice_pointer_cast<StmtLstNode *>(parent->parent);
@@ -1332,7 +1332,7 @@ public:
 
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override { return true; }
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *) const override { return true; }
 };
 
 // ======================================================= AssignExprNode ========================================================

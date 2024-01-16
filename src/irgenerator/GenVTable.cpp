@@ -22,7 +22,7 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) {
   global->setLinkage(llvm::GlobalValue::ExternalLinkage);
   global->setComdat(module->getOrInsertComdat(globalName));
 
-  return spiceStruct->typeInfoName = global;
+  return spiceStruct->vTableData.typeInfoName = global;
 }
 
 llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
@@ -43,7 +43,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   std::vector<llvm::Type *> typeInfoFieldTypes = {ptrTy, ptrTy};
   for (size_t i = 0; i < interfaceTypes.size(); i++)
     typeInfoFieldTypes.push_back(ptrTy);
-  spiceStruct->typeInfoType = llvm::StructType::get(context, typeInfoFieldTypes);
+  spiceStruct->vTableData.typeInfoType = llvm::StructType::get(context, typeInfoFieldTypes);
 
   // Generate type info values
   llvm::Constant *typeInfoVTable = llvm::Constant::getNullValue(ptrTy);
@@ -59,15 +59,15 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   fieldValues.push_back(typeInfoName);
   for (const SymbolType &interfaceType : interfaceTypes) {
     Interface *interface = interfaceType.getInterface(nullptr);
-    assert(interface != nullptr && interface->typeInfo != nullptr);
+    assert(interface != nullptr && interface->vTableData.typeInfo != nullptr);
     const std::string interfaceMangledName = NameMangling::mangleTypeInfo(interface);
     llvm::Constant *global = module->getOrInsertGlobal(interfaceMangledName, builder.getPtrTy());
     fieldValues.push_back(global);
   }
-  llvm::Constant *typeInfo = llvm::ConstantStruct::get(spiceStruct->typeInfoType, fieldValues);
+  llvm::Constant *typeInfo = llvm::ConstantStruct::get(spiceStruct->vTableData.typeInfoType, fieldValues);
 
   // Generate global variable
-  module->getOrInsertGlobal(mangledName, spiceStruct->typeInfoType);
+  module->getOrInsertGlobal(mangledName, spiceStruct->vTableData.typeInfoType);
   llvm::GlobalVariable *global = module->getNamedGlobal(mangledName);
   global->setInitializer(typeInfo);
 
@@ -79,7 +79,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   global->setComdat(module->getOrInsertComdat(mangledName));
   global->setAlignment(llvm::MaybeAlign(8));
 
-  return spiceStruct->typeInfo = global;
+  return spiceStruct->vTableData.typeInfo = global;
 }
 
 llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
@@ -94,10 +94,10 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
   // Generate VTable type
   llvm::PointerType *ptrTy = llvm::PointerType::get(context, 0);
   llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(ptrTy, arrayElementCount);
-  spiceStruct->vtableType = llvm::StructType::get(context, vtableArrayTy, false);
+  spiceStruct->vTableData.vtableType = llvm::StructType::get(context, vtableArrayTy, false);
 
   const std::string mangledName = NameMangling::mangleVTable(spiceStruct);
-  module->getOrInsertGlobal(mangledName, spiceStruct->vtableType);
+  module->getOrInsertGlobal(mangledName, spiceStruct->vTableData.vtableType);
   llvm::GlobalVariable *global = module->getNamedGlobal(mangledName);
 
   // Set global attributes
@@ -108,7 +108,7 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
   global->setComdat(module->getOrInsertComdat(mangledName));
   global->setAlignment(llvm::MaybeAlign(8));
 
-  return spiceStruct->vtable = global;
+  return spiceStruct->vTableData.vtable = global;
 }
 
 void IRGenerator::generateVTableInitializer(StructBase *spiceStruct) {
@@ -121,21 +121,21 @@ void IRGenerator::generateVTableInitializer(StructBase *spiceStruct) {
   // Generate VTable type
   llvm::PointerType *ptrTy = llvm::PointerType::get(context, 0);
   llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(ptrTy, arrayElementCount);
-  assert(spiceStruct->vtableType);
+  assert(spiceStruct->vTableData.vtableType);
 
   // Generate VTable values
   std::vector<llvm::Constant *> arrayValues;
   arrayValues.push_back(llvm::Constant::getNullValue(ptrTy)); // nullptr as safety guard
-  arrayValues.push_back(spiceStruct->typeInfo);               // TypeInfo to identify the type for the VTable
+  arrayValues.push_back(spiceStruct->vTableData.typeInfo);    // TypeInfo to identify the type for the VTable
   for (Function *virtualMethod : virtualMethods) {
     assert(spiceStruct->scope->type == ScopeType::INTERFACE || virtualMethod->llvmFunction != nullptr);
-    arrayValues.push_back(virtualMethod->llvmFunction ?: llvm::Constant::getNullValue(ptrTy));
+    arrayValues.push_back(virtualMethod->llvmFunction ? virtualMethod->llvmFunction : llvm::Constant::getNullValue(ptrTy));
   }
 
   // Generate VTable struct
   std::vector<llvm::Constant *> fieldValues;
   fieldValues.push_back(llvm::ConstantArray::get(vtableArrayTy, arrayValues));
-  llvm::Constant *initializer = llvm::ConstantStruct::get(spiceStruct->vtableType, fieldValues);
+  llvm::Constant *initializer = llvm::ConstantStruct::get(spiceStruct->vTableData.vtableType, fieldValues);
 
   const std::string mangledName = NameMangling::mangleVTable(spiceStruct);
   llvm::GlobalVariable *global = module->getNamedGlobal(mangledName);

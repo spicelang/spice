@@ -23,7 +23,7 @@ class StructBase {
 public:
   // Constructors
   StructBase(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<GenericType> templateTypes, ASTNode *declNode)
-      : name(std::move(name)), entry(entry), scope(scope), templateTypes(std::move(templateTypes)), declNode(declNode) {}
+      : name(std::move(name)), templateTypes(std::move(templateTypes)), entry(entry), scope(scope), declNode(declNode) {}
 
   // Public methods
   [[nodiscard]] std::string getSignature() const;
@@ -50,7 +50,7 @@ public:
     llvm::Constant *typeInfoName = nullptr;
     llvm::Constant *typeInfo = nullptr;
     llvm::Constant *vtable = nullptr;
-  };
+  } vTableData;
 };
 
 } // namespace spice::compiler
