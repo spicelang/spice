@@ -6,9 +6,6 @@
 
 namespace spice::compiler {
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "misc-no-recursion"
-
 bool TypeMatcher::matchRequestedToCandidateTypes(const std::vector<SymbolType> &candidateTypes,
                                                  const std::vector<SymbolType> &requestedTypes, TypeMapping &typeMapping,
                                                  ResolverFct &resolverFct, bool strictSpecifiers) {
@@ -137,7 +134,5 @@ void TypeMatcher::substantiateTypeWithTypeMapping(SymbolType &symbolType, const 
     }
   }
 }
-
-#pragma clang diagnostic pop
 
 } // namespace spice::compiler

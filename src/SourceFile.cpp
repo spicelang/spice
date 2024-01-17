@@ -24,8 +24,8 @@ namespace spice::compiler {
 
 SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name,
                        const std::filesystem::path &filePath, bool stdFile)
-    : resourceManager(resourceManager), tout(resourceManager.tout), name(std::move(name)), filePath(filePath), stdFile(stdFile),
-      parent(parent) {
+    : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), resourceManager(resourceManager),
+      tout(resourceManager.tout) {
   // Deduce fileName and fileDir
   fileName = std::filesystem::path(filePath).filename().string();
   fileDir = std::filesystem::path(filePath).parent_path().string();

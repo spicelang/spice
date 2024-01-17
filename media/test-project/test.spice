@@ -1,15 +1,9 @@
-import "std/os/thread-pool";
+f<bool> fn(int& ref) {
+    return false;
+}
 
 f<int> main() {
-    int testVar = 123;
-    ThreadPool tp = ThreadPool(3s);
-    dyn proc = p() {
-        printf("Test: %d\n", testVar);
-    };
-    tp.enqueue(proc);
-    tp.start();
-    tp.join();
-    printf("TestVar: %d\n", testVar);
+    fn(123);
 }
 
 /*f<int> main() {

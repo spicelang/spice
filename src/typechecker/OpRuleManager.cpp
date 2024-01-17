@@ -12,8 +12,8 @@ namespace spice::compiler {
 OpRuleManager::OpRuleManager(TypeChecker *typeChecker)
     : typeChecker(typeChecker), resourceManager(typeChecker->resourceManager) {}
 
-SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx,
-                                              bool isDecl /*=false*/, const char *errorMessagePrefix /*=""*/) {
+SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, bool isDecl,
+                                              const char *errMsgPrefix) {
   // Check if we try to assign a constant value
   if (!isDecl)
     ensureNoConstAssign(node, lhs);
@@ -63,12 +63,13 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, SymbolType lh
     }
   }
   // Check primitive type combinations
-  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhs, rhs, true, errorMessagePrefix);
+  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhs, rhs, true, errMsgPrefix);
 }
 
-SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx, bool imm) {
+SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, bool imm, bool isDecl) {
   // Check if we try to assign a constant value
-  ensureNoConstAssign(node, lhs);
+  if (!isDecl)
+    ensureNoConstAssign(node, lhs);
 
   // Allow pointers and arrays of the same type straight away
   if (lhs.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhs == rhs)
@@ -171,7 +172,7 @@ ExprResult OpRuleManager::getDivEqualResultType(ASTNode *node, SymbolType lhs, S
   return ExprResult(validateBinaryOperation(node, DIV_EQUAL_OP_RULES, ARRAY_LENGTH(DIV_EQUAL_OP_RULES), "/=", lhs, rhs));
 }
 
-SymbolType OpRuleManager::getRemEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getRemEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
 
@@ -182,7 +183,7 @@ SymbolType OpRuleManager::getRemEqualResultType(const ASTNode *node, SymbolType 
   return validateBinaryOperation(node, REM_EQUAL_OP_RULES, ARRAY_LENGTH(REM_EQUAL_OP_RULES), "%=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getSHLEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getSHLEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
 
@@ -193,7 +194,7 @@ SymbolType OpRuleManager::getSHLEqualResultType(const ASTNode *node, SymbolType 
   return validateBinaryOperation(node, SHL_EQUAL_OP_RULES, ARRAY_LENGTH(SHL_EQUAL_OP_RULES), "<<=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getSHREqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getSHREqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
 
@@ -204,7 +205,7 @@ SymbolType OpRuleManager::getSHREqualResultType(const ASTNode *node, SymbolType 
   return validateBinaryOperation(node, SHR_EQUAL_OP_RULES, ARRAY_LENGTH(SHR_EQUAL_OP_RULES), ">>=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getAndEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getAndEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
 
@@ -215,7 +216,7 @@ SymbolType OpRuleManager::getAndEqualResultType(const ASTNode *node, SymbolType 
   return validateBinaryOperation(node, AND_EQUAL_OP_RULES, ARRAY_LENGTH(AND_EQUAL_OP_RULES), "&=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getOrEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getOrEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
 
@@ -226,7 +227,7 @@ SymbolType OpRuleManager::getOrEqualResultType(const ASTNode *node, SymbolType l
   return validateBinaryOperation(node, OR_EQUAL_OP_RULES, ARRAY_LENGTH(OR_EQUAL_OP_RULES), "|=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getXorEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getXorEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
 
@@ -237,7 +238,7 @@ SymbolType OpRuleManager::getXorEqualResultType(const ASTNode *node, SymbolType 
   return validateBinaryOperation(node, XOR_EQUAL_OP_RULES, ARRAY_LENGTH(XOR_EQUAL_OP_RULES), "^=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLogicalOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getLogicalOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -245,7 +246,7 @@ SymbolType OpRuleManager::getLogicalOrResultType(const ASTNode *node, SymbolType
   return validateBinaryOperation(node, LOGICAL_OR_OP_RULES, ARRAY_LENGTH(LOGICAL_OR_OP_RULES), "||", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getLogicalAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -253,7 +254,7 @@ SymbolType OpRuleManager::getLogicalAndResultType(const ASTNode *node, SymbolTyp
   return validateBinaryOperation(node, LOGICAL_AND_OP_RULES, ARRAY_LENGTH(LOGICAL_AND_OP_RULES), "&&", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getBitwiseOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getBitwiseOrResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -261,7 +262,7 @@ SymbolType OpRuleManager::getBitwiseOrResultType(const ASTNode *node, SymbolType
   return validateBinaryOperation(node, BITWISE_OR_OP_RULES, ARRAY_LENGTH(BITWISE_OR_OP_RULES), "|", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -269,7 +270,7 @@ SymbolType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, SymbolTyp
   return validateBinaryOperation(node, BITWISE_XOR_OP_RULES, ARRAY_LENGTH(BITWISE_XOR_OP_RULES), "^", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getBitwiseAndResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -329,7 +330,7 @@ ExprResult OpRuleManager::getNotEqualResultType(ASTNode *node, SymbolType lhs, S
   return ExprResult(validateBinaryOperation(node, NOT_EQUAL_OP_RULES, ARRAY_LENGTH(NOT_EQUAL_OP_RULES), "!=", lhs, rhs));
 }
 
-SymbolType OpRuleManager::getLessResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getLessResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -337,7 +338,7 @@ SymbolType OpRuleManager::getLessResultType(const ASTNode *node, SymbolType lhs,
   return validateBinaryOperation(node, LESS_OP_RULES, ARRAY_LENGTH(LESS_OP_RULES), "<", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getGreaterResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getGreaterResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -345,7 +346,7 @@ SymbolType OpRuleManager::getGreaterResultType(const ASTNode *node, SymbolType l
   return validateBinaryOperation(node, GREATER_OP_RULES, ARRAY_LENGTH(GREATER_OP_RULES), ">", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getLessEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getLessEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -353,7 +354,7 @@ SymbolType OpRuleManager::getLessEqualResultType(const ASTNode *node, SymbolType
   return validateBinaryOperation(node, LESS_EQUAL_OP_RULES, ARRAY_LENGTH(LESS_EQUAL_OP_RULES), "<=", lhs, rhs);
 }
 
-SymbolType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -461,7 +462,7 @@ ExprResult OpRuleManager::getDivResultType(ASTNode *node, SymbolType lhs, Symbol
   return ExprResult(validateBinaryOperation(node, DIV_OP_RULES, ARRAY_LENGTH(DIV_OP_RULES), "/", lhs, rhs));
 }
 
-ExprResult OpRuleManager::getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+ExprResult OpRuleManager::getRemResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -469,14 +470,14 @@ ExprResult OpRuleManager::getRemResultType(const ASTNode *node, SymbolType lhs, 
   return ExprResult(validateBinaryOperation(node, REM_OP_RULES, ARRAY_LENGTH(REM_OP_RULES), "%", lhs, rhs));
 }
 
-SymbolType OpRuleManager::getPrefixMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
+SymbolType OpRuleManager::getPrefixMinusResultType(const ASTNode *node, SymbolType lhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
 
   return validateUnaryOperation(node, PREFIX_MINUS_OP_RULES, ARRAY_LENGTH(PREFIX_MINUS_OP_RULES), "-", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
+SymbolType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, SymbolType lhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
 
@@ -486,7 +487,7 @@ SymbolType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, Symbo
   return validateUnaryOperation(node, PREFIX_PLUS_PLUS_OP_RULES, ARRAY_LENGTH(PREFIX_PLUS_PLUS_OP_RULES), "++", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
+SymbolType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, SymbolType lhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs);
 
@@ -496,21 +497,21 @@ SymbolType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, Sym
   return validateUnaryOperation(node, PREFIX_MINUS_MINUS_OP_RULES, ARRAY_LENGTH(PREFIX_MINUS_MINUS_OP_RULES), "--", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixNotResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
+SymbolType OpRuleManager::getPrefixNotResultType(const ASTNode *node, SymbolType lhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
 
   return validateUnaryOperation(node, PREFIX_NOT_OP_RULES, ARRAY_LENGTH(PREFIX_NOT_OP_RULES), "!", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
+SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const ASTNode *node, SymbolType lhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
 
   return validateUnaryOperation(node, PREFIX_BITWISE_NOT_OP_RULES, ARRAY_LENGTH(PREFIX_BITWISE_NOT_OP_RULES), "~", lhs);
 }
 
-SymbolType OpRuleManager::getPrefixMulResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
+SymbolType OpRuleManager::getPrefixMulResultType(const ASTNode *node, SymbolType lhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
 
@@ -519,7 +520,7 @@ SymbolType OpRuleManager::getPrefixMulResultType(const ASTNode *node, SymbolType
   return lhs.getContainedTy();
 }
 
-SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, SymbolType lhs, size_t opIdx) {
+SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, SymbolType lhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
 
@@ -558,7 +559,7 @@ ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, SymbolTy
       validateUnaryOperation(node, POSTFIX_MINUS_MINUS_OP_RULES, ARRAY_LENGTH(POSTFIX_MINUS_MINUS_OP_RULES), "--", lhs));
 }
 
-SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs, size_t opIdx) {
+SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhs, SymbolType rhs) {
   // Remove reference wrappers
   lhs = lhs.removeReferenceWrapper();
   rhs = rhs.removeReferenceWrapper();
@@ -608,6 +609,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   // Return invalid type if the callee was not found
   if (!callee)
     return ExprResult(SymbolType(TY_INVALID));
+  assert(calleeParentScope != nullptr);
 
   // Save the pointer to the operator function in the AST node
   std::vector<const Function *> &opFctPointers = typeChecker->getOpFctPointers(node);
@@ -671,17 +673,14 @@ SemanticError OpRuleManager::getExceptionUnary(const ASTNode *node, const char *
 SemanticError OpRuleManager::getExceptionBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
                                                 const SymbolType &rhs, const char *messagePrefix) {
   // Build error message
-  std::string errorMsg;
-  if (strlen(messagePrefix) != 0) {
-    errorMsg += messagePrefix;
-    errorMsg += ". Expected " + lhs.getName(true) + " but got " + rhs.getName(true);
-  } else {
-    errorMsg += "Cannot apply '";
-    errorMsg += name;
-    errorMsg += "' operator on types " + lhs.getName(true) + " and " + rhs.getName(true);
-  }
+  std::stringstream errorMsg;
+  if (strlen(messagePrefix) != 0)
+    errorMsg << messagePrefix << ". Expected " << lhs.getName(true) << " but got " << rhs.getName(true);
+  else
+    errorMsg << "Cannot apply '" << name << "' operator on types " << lhs.getName(true) << " and " << rhs.getName(true);
+
   // Return the exception
-  return {node, OPERATOR_WRONG_DATA_TYPE, errorMsg};
+  return {node, OPERATOR_WRONG_DATA_TYPE, errorMsg.str()};
 }
 
 void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs,
@@ -698,8 +697,10 @@ void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, c
 
 void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs) {
   // Check if we try to assign a constant value
-  if (lhs.isConst())
-    throw SemanticError(node, REASSIGN_CONST_VARIABLE, "Trying to assign value to a constant");
+  if (lhs.removeReferenceWrapper().isConst()) {
+    const std::string errorMessage = "Trying to assign value to an immutable variable of type " + lhs.getName(true);
+    throw SemanticError(node, REASSIGN_CONST_VARIABLE, errorMessage);
+  }
 }
 
 } // namespace spice::compiler

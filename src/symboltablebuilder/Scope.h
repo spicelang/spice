@@ -81,7 +81,7 @@ public:
   [[nodiscard]] size_t getFieldCount() const;
   [[nodiscard]] std::vector<Function *> getVirtualMethods();
   [[nodiscard]] bool hasRefFields();
-  [[nodiscard]] size_t getLoopNestingDepth() const;
+  [[nodiscard]] unsigned int getLoopNestingDepth() const;
   [[nodiscard]] bool isInCaseBranch() const;
   [[nodiscard]] bool isInAsyncScope() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
