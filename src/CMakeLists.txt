@@ -154,7 +154,7 @@ set(SOURCES
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 # Enable pedantic warnings
-target_compile_options(spice PRIVATE -Wpedantic -Wall)
+target_compile_options(spice PRIVATE -Wpedantic -Wall -Wno-unknown-pragmas)
 
 # Include Antlr components
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)

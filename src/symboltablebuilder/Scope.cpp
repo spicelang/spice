@@ -345,11 +345,11 @@ bool Scope::hasRefFields() {
  *
  * @return Number of loops
  */
-size_t Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
+unsigned int Scope::getLoopNestingDepth() const { // NOLINT(misc-no-recursion)
   assert(parent != nullptr);
   if (parent->parent == nullptr)
     return 0;
-  size_t loopCount = parent->getLoopNestingDepth();
+  unsigned int loopCount = parent->getLoopNestingDepth();
   if (type == ScopeType::WHILE_BODY || type == ScopeType::FOR_BODY || type == ScopeType::FOREACH_BODY)
     loopCount++;
   return loopCount;

@@ -1,5 +1,5 @@
 [Error|Semantic] ./test-files/typechecker/variables/error-reassign-const-var/source.spice:3:5:
-Cannot re-assign constant variable: Trying to assign value to a constant
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type const int
 
 3  i = 1234;
    ^^^^^^^^

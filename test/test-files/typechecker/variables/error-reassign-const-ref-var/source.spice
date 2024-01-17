@@ -1,0 +1,8 @@
+p test(const bool& b) {
+    b = true;
+}
+
+f<int> main() {
+    bool test = false;
+    test(test);
+}

@@ -362,7 +362,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   llvm::Value *exprValue = resolveValue(node->assignExpr());
 
   // Generate switch instruction
-  llvm::SwitchInst *switchInst = builder.CreateSwitch(exprValue, bDefault ?: bExit, caseBranches.size());
+  llvm::SwitchInst *switchInst = builder.CreateSwitch(exprValue, bDefault ? bDefault : bExit, caseBranches.size());
 
   // Generate case branches
   for (size_t i = 0; i < caseBranches.size(); i++) {

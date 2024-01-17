@@ -1138,7 +1138,7 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   auto dataTypeNode = createNode<DataTypeNode>(ctx);
 
   // Enrich
-  for (int i = 0; i < ctx->children.size(); i++) {
+  for (size_t i = 0; i < ctx->children.size(); i++) {
     antlr4::tree::ParseTree *subTree = ctx->children[i];
     if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL) {
       dataTypeNode->tmQueue.emplace(DataTypeNode::TYPE_PTR, false, 0);

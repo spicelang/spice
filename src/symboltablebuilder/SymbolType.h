@@ -58,9 +58,9 @@ class SymbolType {
 public:
   // Unions
   union TypeChainElementData {
-    size_t arraySize = 0; // TY_ARRAY
-    Scope *bodyScope;     // TY_STRUCT, TY_INTERFACE, TY_ENUM
-    bool hasCaptures;     // TY_FUNCTION, TY_PROCEDURE (lambdas)
+    unsigned int arraySize;     // TY_ARRAY
+    Scope *bodyScope = nullptr; // TY_STRUCT, TY_INTERFACE, TY_ENUM
+    bool hasCaptures;           // TY_FUNCTION, TY_PROCEDURE (lambdas)
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
   };
@@ -112,7 +112,7 @@ public:
   [[nodiscard]] SymbolType toPointer(const ASTNode *node) const;
   [[nodiscard]] SymbolType toReference(const ASTNode *node) const;
   [[nodiscard]] SymbolType toConstReference(const ASTNode *node) const;
-  [[nodiscard]] SymbolType toArray(const ASTNode *node, size_t size = 0, bool skipDynCheck = false) const;
+  [[nodiscard]] SymbolType toArray(const ASTNode *node, unsigned int size = 0, bool skipDynCheck = false) const;
   [[nodiscard]] SymbolType getContainedTy() const;
   [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
@@ -165,7 +165,7 @@ public:
   [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
   [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false) const;
-  [[nodiscard]] ALWAYS_INLINE size_t getArraySize() const {
+  [[nodiscard]] ALWAYS_INLINE unsigned int getArraySize() const {
     assert(getSuperType() == TY_ARRAY);
     return typeChain.back().data.arraySize;
   }

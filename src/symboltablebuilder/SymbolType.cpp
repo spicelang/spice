@@ -85,7 +85,7 @@ SymbolType SymbolType::toConstReference(const ASTNode *node) const {
  * @param size Size of the array
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(const ASTNode *node, size_t size, bool skipDynCheck /*=false*/) const {
+SymbolType SymbolType::toArray(const ASTNode *node, unsigned int size, bool skipDynCheck /*=false*/) const {
   // Do not allow arrays of dyn
   if (!skipDynCheck && typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
