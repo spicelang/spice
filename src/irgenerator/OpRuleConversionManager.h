@@ -5,8 +5,10 @@
 #include <utility>
 
 #include <global/GlobalResourceManager.h>
+#include <irgenerator/LLVMExprResult.h>
 #include <symboltablebuilder/SymbolType.h>
 
+#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
 
 namespace spice::compiler {
@@ -21,18 +23,6 @@ struct CodeLoc;
 using ResolverFct = const std::function<llvm::Value *()>;
 
 #define COMB(en1, en2) (en1 | (en2 << 16))
-
-// For routing through multiple LLVM values at once
-struct LLVMExprResult {
-  llvm::Value *value = nullptr;
-  llvm::Constant *constant = nullptr;
-  llvm::Value *ptr = nullptr;
-  llvm::Value *refPtr = nullptr;
-  SymbolTableEntry *entry = nullptr;
-  const ASTNode *node = nullptr;
-
-  [[nodiscard]] bool isTemporary() const { return entry == nullptr; }
-};
 
 /**
  * Helper class for the IRGenerator to resolve operator instructions for each valid operator/type combination
@@ -52,21 +42,21 @@ public:
   LLVMExprResult getDivEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
                                  SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
   LLVMExprResult getRemEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+                                 SymbolType rhsSTy, Scope *accessScope);
   LLVMExprResult getSHLEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+                                 SymbolType rhsSTy, Scope *accessScope);
   LLVMExprResult getSHREqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+                                 SymbolType rhsSTy, Scope *accessScope);
   LLVMExprResult getAndEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+                                 SymbolType rhsSTy, Scope *accessScope);
   LLVMExprResult getOrEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+                                SymbolType rhsSTy, Scope *accessScope);
   LLVMExprResult getXorEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                 SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+                                 SymbolType rhsSTy, Scope *accessScope);
   LLVMExprResult getBitwiseOrInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
                                   SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
   LLVMExprResult getBitwiseXorInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                   SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+                                   SymbolType rhsSTy, Scope *accessScope);
   LLVMExprResult getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
                                    SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
   LLVMExprResult getEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs, SymbolType rhsSTy,
@@ -74,13 +64,13 @@ public:
   LLVMExprResult getNotEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
                                  SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
   LLVMExprResult getLessInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs, SymbolType rhsSTy,
-                             Scope *accessScope, size_t opIdx);
+                             Scope *accessScope);
   LLVMExprResult getGreaterInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+                                SymbolType rhsSTy, Scope *accessScope);
   LLVMExprResult getLessEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                  SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+                                  SymbolType rhsSTy, Scope *accessScope);
   LLVMExprResult getGreaterEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                     SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
+                                     SymbolType rhsSTy, Scope *accessScope);
   LLVMExprResult getShiftLeftInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
                                   SymbolType rhsSTy, Scope *accessScope, size_t opIdx);
   LLVMExprResult getShiftRightInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs,
@@ -94,22 +84,17 @@ public:
   LLVMExprResult getDivInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs, SymbolType rhsSTy,
                             Scope *accessScope, size_t opIdx);
   LLVMExprResult getRemInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, LLVMExprResult &rhs, SymbolType rhsSTy,
-                            Scope *accessScope, size_t opIdx);
-  LLVMExprResult getPrefixMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope,
-                                    size_t opIdx);
-  LLVMExprResult getPrefixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope,
-                                       size_t opIdx);
-  LLVMExprResult getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope,
-                                         size_t opIdx);
-  LLVMExprResult getPrefixNotInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope, size_t opIdx);
-  LLVMExprResult getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope,
-                                         size_t opIdx);
+                            Scope *accessScope);
+  LLVMExprResult getPrefixMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope);
+  LLVMExprResult getPrefixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope);
+  LLVMExprResult getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope);
+  LLVMExprResult getPrefixNotInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope);
+  LLVMExprResult getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope);
   LLVMExprResult getPostfixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope,
                                         size_t opIdx);
   LLVMExprResult getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy, Scope *accessScope,
                                           size_t opIdx);
-  LLVMExprResult getCastInst(const ASTNode *node, SymbolType lhsSTy, LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
-                             size_t opIdx);
+  LLVMExprResult getCastInst(const ASTNode *node, SymbolType lhsSTy, LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope);
 
   // Util methods
   bool callsOverloadedOpFct(const ASTNode *node, size_t opIdx) const;

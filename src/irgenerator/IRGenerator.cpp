@@ -208,17 +208,8 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
   if (symbolType.isOneOf({TY_PTR, TY_REF}))
     return llvm::Constant::getNullValue(builder.getPtrTy());
 
-  // Function or procedure
-  if (symbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-    if (!llvmTypes.fatPtrType)
-      llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
-
-    llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(SymbolType(TY_PTR));
-    return llvm::ConstantStruct::get(llvmTypes.fatPtrType, {ptrDefaultValue, ptrDefaultValue});
-  }
-
   // Array
-  if (symbolType.is(TY_ARRAY)) {
+  if (symbolType.isArray()) {
     // Get array size
     const size_t arraySize = symbolType.getArraySize();
 
@@ -232,6 +223,15 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     // Create a constant array with n times the default value
     std::vector<llvm::Constant *> itemConstants(arraySize, defaultItemValue);
     return llvm::ConstantArray::get(arrayType, itemConstants);
+  }
+
+  // Function or procedure
+  if (symbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    if (!llvmTypes.fatPtrType)
+      llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
+
+    llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(SymbolType(TY_PTR));
+    return llvm::ConstantStruct::get(llvmTypes.fatPtrType, {ptrDefaultValue, ptrDefaultValue});
   }
 
   // Struct
@@ -428,8 +428,8 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
 
     // Check if we have a copy ctor
     Scope *structScope = rhsSType.getBodyScope();
-    const std::vector<SymbolType> paramTypes = {rhsSType.toConstReference(nullptr)};
-    auto copyCtor = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, rhsSType, paramTypes, {}, true, nullptr);
+    const ArgList args = {{rhsSType.toConstReference(nullptr), rhs.isTemporary()}};
+    auto copyCtor = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, rhsSType, args, {}, true, nullptr);
     if (copyCtor != nullptr) {
       // Call copy ctor
       generateCtorOrDtorCall(lhsEntry, copyCtor, {rhsAddress});

@@ -39,7 +39,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
   // Do not allow pointers of dyn
   if (is(TY_DYN))
     throw SemanticError(node, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
-  if (is(TY_REF))
+  if (isRef())
     throw SemanticError(node, REF_POINTERS_ARE_NOT_ALLOWED, "Pointers to references are not allowed. Use pointer instead");
 
   TypeChain newTypeChain = typeChain;
@@ -58,7 +58,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
   if (is(TY_DYN))
     throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
   // Do not allow references of references
-  if (is(TY_REF))
+  if (isRef())
     return *this;
 
   TypeChain newTypeChain = typeChain;
@@ -305,7 +305,7 @@ bool SymbolType::isBaseType(SymbolSuperType superType) const {
  * @return Same container type or not
  */
 bool SymbolType::isSameContainerTypeAs(const SymbolType &otherType) const {
-  return (is(TY_PTR) && otherType.is(TY_PTR)) || (is(TY_REF) && otherType.is(TY_REF)) || (is(TY_ARRAY) && otherType.is(TY_ARRAY));
+  return (isPtr() && otherType.isPtr()) || (isRef() && otherType.isRef()) || (isArray() && otherType.isArray());
 }
 
 /**

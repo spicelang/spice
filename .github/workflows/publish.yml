@@ -410,3 +410,4 @@ jobs:
           version: ${{ github.ref_name }}
           release-tag: ${{ github.ref_name }}
           token: ${{ secrets.CR_PAT }}
+          max-versions-to-keep: 10

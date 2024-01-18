@@ -96,6 +96,9 @@ public:
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, typeId, data, templateTypes, paramTypes)
   };
 
+  // Make sure we have no unexpected increases in memory consumption
+  static_assert(sizeof(TypeChainElement) == 104);
+
   // Typedefs
   using TypeChain = std::vector<TypeChainElement>;
 
@@ -119,6 +122,7 @@ public:
   [[nodiscard]] ALWAYS_INLINE bool isPtr() const { return getSuperType() == TY_PTR; }
   [[nodiscard]] ALWAYS_INLINE bool isPtrOf(SymbolSuperType superType) const { return isPtr() && getContainedTy().is(superType); }
   [[nodiscard]] ALWAYS_INLINE bool isRef() const { return getSuperType() == TY_REF; }
+  [[nodiscard]] ALWAYS_INLINE bool isConstRef() const { return getSuperType() == TY_REF && removeReferenceWrapper().isConst(); }
   [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isRefOf(SymbolSuperType superType) const {
     return isRef() && getContainedTy().is(superType);
   }
@@ -216,5 +220,8 @@ public:
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolType, typeChain);
 };
+
+// Make sure we have no unexpected increases in memory consumption
+static_assert(sizeof(SymbolType) == 32);
 
 } // namespace spice::compiler

@@ -402,8 +402,8 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
     if (fieldType.is(TY_STRUCT)) {
       // Lookup copy ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
-      std::vector<SymbolType> paramTypes = {fieldType.toConstReference(nullptr)};
-      const Function *ctorFct = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, paramTypes, false);
+      const ArgList args = {{fieldType.toConstReference(nullptr), false /* we have the field as storage */}};
+      const Function *ctorFct = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false);
       if (ctorFct) {
         // Retrieve field address
         if (!thisAddressLoaded)

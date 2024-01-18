@@ -26,7 +26,8 @@ bool TypeMatcher::matchRequestedToCandidateTypes(const std::vector<SymbolType> &
 }
 
 bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
-                                                ResolverFct &resolverFct, bool strictSpecifierMatching) {
+                                                ResolverFct &resolverFct, bool strictSpecifierMatching,
+                                                bool isRequestedValueTemporary) {
   // Unwrap as far as possible and remove reference wrappers if possible
   SymbolType::unwrapBoth(candidateType, requestedType);
 

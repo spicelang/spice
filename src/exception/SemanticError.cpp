@@ -176,6 +176,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Dyn arrays not allowed";
   case REFERENCE_WITHOUT_INITIALIZER:
     return "Reference without initializer";
+  case TEMP_TO_NON_CONST_REF:
+    return "Temporary bound to non-const reference";
   case GENERIC_TYPE_NOT_IN_TEMPLATE:
     return "Generic type not contained in template";
   case GENERIC_TYPE_NOT_USED:
