@@ -39,7 +39,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /home/runner/work/spice/spice/llvm
           key: llvm-17.0.6-linux-x64
@@ -106,7 +106,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /home/runner/work/spice/spice/llvm
           key: llvm-17.0.6-linux-aarch64
@@ -184,7 +184,7 @@ jobs:
 
       - name: Cache LLVM
         id: cache-llvm
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: D:/a/spice/spice/llvm
           key: llvm-17.0.6-win-x64
@@ -250,7 +250,7 @@ jobs:
           go-version: '1.21'
 
       - name: Restore Go modules cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
