@@ -422,7 +422,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &requeste
       TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType, typeMapping);
 
     // Check if we try to bind a non-ref temporary to a non-const ref parameter
-    if (isArgTemporary && !requestedType.isRef() && candidateParamType.isRef() && !candidateParamType.isConstRef()) {
+    if (!candidateParamType.canBind(requestedType, isArgTemporary)) {
       if (callNode)
         throw SemanticError(callNode, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
       return false;

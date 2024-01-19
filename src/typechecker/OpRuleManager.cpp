@@ -29,8 +29,11 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprRes
   if (lhsType.isOneOf({TY_PTR, TY_REF}) && lhsType.matches(rhsType, false, false, true))
     return rhsType;
   // Allow type to ref type of the same contained type straight away
-  if (lhsType.isRef() && lhsType.getContainedTy().matches(rhsType, false, false, true))
+  if (lhsType.isRef() && lhsType.getContainedTy().matches(rhsType, false, false, true)) {
+    if (isDecl && !lhsType.canBind(rhsType, rhs.isTemporary()))
+      throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
     return lhsType;
+  }
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
@@ -89,8 +92,11 @@ SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Ex
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
     return rhsType;
   // Allow type to ref type of the same contained type straight away
-  if (lhsType.isRef() && lhsType.getContainedTy().matches(rhsType, false, false, true))
-    return rhsType;
+  if (lhsType.isRef() && lhsType.getContainedTy().matches(rhsType, false, false, true)) {
+    if (isDecl && !lhsType.canBind(rhsType, rhs.isTemporary()))
+      throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
+    return lhsType;
+  }
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef() && lhsType.matches(rhsType.getContainedTy(), false, false, true))
     return lhsType;

@@ -172,6 +172,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Ref pointers not allowed";
   case DYN_REFERENCES_NOT_ALLOWED:
     return "Dyn references not allowed";
+  case MULTI_REF_NOT_ALLOWED:
+    return "Multi references not allowed";
   case DYN_ARRAYS_NOT_ALLOWED:
     return "Dyn arrays not allowed";
   case REFERENCE_WITHOUT_INITIALIZER:

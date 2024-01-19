@@ -59,7 +59,7 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
     throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
   // Do not allow references of references
   if (isRef())
-    return *this;
+    throw SemanticError(node, MULTI_REF_NOT_ALLOWED, "References to references are not allowed");
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.emplace_back(TY_REF);
@@ -586,6 +586,17 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
 
   // Ignore or compare specifiers
   return ignoreSpecifiers || specifiers.match(otherType.specifiers, allowConstify);
+}
+
+/**
+ * Check if a certain input type can be bound (assigned) to the current type.
+ *
+ * @param inputType Type, which should be bound to the current type
+ * @param isTemporary Is the input type a temporary type
+ * @return Can be bound or not
+ */
+bool SymbolType::canBind(const SymbolType &inputType, bool isTemporary) const {
+  return !isTemporary || inputType.isRef() || !isRef() || isConstRef();
 }
 
 /**

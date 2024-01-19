@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/variables/error-temporary-to-non-const-ref/source.spice:2:5:
+Temporary bound to non-const reference: Temporary values can only be bound to const reference parameters
+
+2  int& i = 123;
+   ^^^^^^^^^^^^

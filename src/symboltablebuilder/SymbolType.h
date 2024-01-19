@@ -130,9 +130,6 @@ public:
   [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isArrayOf(SymbolSuperType superType) const {
     return isArray() && getContainedTy().is(superType);
   }
-  [[nodiscard]] ALWAYS_INLINE bool isArrayOf(const SymbolType &symbolType) const {
-    return isArray() && getContainedTy() == symbolType;
-  }
   [[nodiscard]] ALWAYS_INLINE bool is(SymbolSuperType superType) const { return getSuperType() == superType; }
   [[nodiscard]] ALWAYS_INLINE bool is(SymbolSuperType superType, const std::string &subType) const {
     return getSuperType() == superType && getSubType() == subType;
@@ -208,6 +205,7 @@ public:
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
   [[nodiscard]] bool matches(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
+  [[nodiscard]] bool canBind(const SymbolType &otherType, bool isTemporary) const;
 
   // Static util methods
   static void unwrapBoth(SymbolType &typeA, SymbolType &typeB);
