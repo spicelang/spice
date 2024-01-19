@@ -922,7 +922,7 @@ std::any TypeChecker::visitLogicalOrExpr(LogicalOrExprNode *node) {
   }
 
   node->setEvaluatedSymbolType(currentOperand.type, manIdx);
-  return currentOperand; // ToDo: Do everywhere
+  return currentOperand;
 }
 
 std::any TypeChecker::visitLogicalAndExpr(LogicalAndExprNode *node) {
@@ -1170,7 +1170,8 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   // Get result type
   SymbolType resultType = opRuleManager.getCastResultType(node, dstType, src);
 
-  return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx)};
+  SymbolTableEntry *entry = src.type.isSameContainerTypeAs(dstType) ? src.entry : nullptr;
+  return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx), entry};
 }
 
 std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {

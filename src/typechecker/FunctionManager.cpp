@@ -412,13 +412,6 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &requeste
     const SymbolType &requestedType = requestedParamType.first;
     const bool isArgTemporary = requestedParamType.second;
 
-    // Check if we try to bind a temporary to a non-const ref parameter
-    if (isArgTemporary && candidateParamType.isRef() && !candidateParamType.isConstRef()) {
-      if (callNode)
-        throw SemanticError(callNode, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
-      return false;
-    }
-
     // Check if the requested param type matches the candidate param type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateParamType, requestedType, typeMapping, genericTypeResolver,
                                                     strictSpecifierMatching, isArgTemporary))
@@ -427,6 +420,13 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &requeste
     // Substantiate the candidate param type, based on the type mapping
     if (candidateParamType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType, typeMapping);
+
+    // Check if we try to bind a non-ref temporary to a non-const ref parameter
+    if (isArgTemporary && !requestedType.isRef() && candidateParamType.isRef() && !candidateParamType.isConstRef()) {
+      if (callNode)
+        throw SemanticError(callNode, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
+      return false;
+    }
 
     // If we have a function/procedure type we need to take care of the information, if it takes captures
     if (requestedType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
