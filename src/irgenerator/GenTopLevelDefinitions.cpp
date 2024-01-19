@@ -498,8 +498,8 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
       generateDefaultCtor(ctorFunc);
 
     // Generate default copy ctor if required
-    const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
-    const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, paramTypes, true);
+    const ArgList args = {{thisType.toConstReference(node), false /* always non-temporary */}};
+    const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, args, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
       generateDefaultCopyCtor(copyCtorFunc);
 

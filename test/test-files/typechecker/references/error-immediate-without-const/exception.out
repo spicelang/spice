@@ -1,0 +1,5 @@
+[Error|Semantic] ./test-files/typechecker/references/error-immediate-without-const/source.spice:6:5:
+Temporary bound to non-const reference: Temporary values can only be bound to const reference parameters
+
+6  fn(123);
+   ^^^^^^^

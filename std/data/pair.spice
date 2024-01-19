@@ -10,7 +10,7 @@ public type Pair<V1, V2> struct {
     V2 second
 }
 
-public inline p Pair.ctor(V1& first, V2& second) {
+public inline p Pair.ctor(V1 first, V2 second) {
     this.first = first;
     this.second = second;
 }

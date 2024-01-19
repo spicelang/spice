@@ -146,9 +146,8 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
     if (fieldSymbol->getType().is(TY_STRUCT)) {
       Scope *fieldScope = fieldSymbol->getType().getBodyScope();
       // Lookup ctor function
-      const std::vector<SymbolType> paramTypes = {thisType.toConstReference(node)};
-      const Function *ctorFct =
-          FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, paramTypes, {}, true, node);
+      const ArgList args = {{thisType.toConstReference(node), false /* we always have the field as storage */}};
+      const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
       hasFieldsToCopyConstruct |= ctorFct != nullptr;
       requestRevisitIfRequired(ctorFct);
     }
@@ -214,8 +213,8 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     const SymbolType thisType(TY_DYN);
     SymbolType bytePtrRefType = SymbolType(TY_BYTE).toPointer(node).toReference(node);
     bytePtrRefType.specifiers.isHeap = true;
-    const std::vector<SymbolType> paramTypes = {bytePtrRefType};
-    Function *deallocFct = FunctionManager::matchFunction(matchScope, FCT_NAME_DEALLOC, thisType, paramTypes, {}, true, node);
+    const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
+    Function *deallocFct = FunctionManager::matchFunction(matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
     assert(deallocFct != nullptr);
     deallocFct->used = true;
   }
@@ -226,11 +225,11 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
  *
  * @param entry Symbol entry to use as 'this' pointer for the method call
  * @param methodName Name of the method to call
- * @param paramTypes Parameter types of the method to call
+ * @param args Provided arguments by the caller
  * @param node AST node
  */
-Function *TypeChecker::implicitlyCallStructMethod(SymbolTableEntry *entry, const std::string &methodName,
-                                                  const std::vector<SymbolType> &paramTypes, const ASTNode *node) {
+Function *TypeChecker::implicitlyCallStructMethod(SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
+                                                  const ASTNode *node) {
   SymbolType thisType = entry->getType();
   assert(thisType.is(TY_STRUCT));
   Scope *matchScope = thisType.getBodyScope();
@@ -240,7 +239,7 @@ Function *TypeChecker::implicitlyCallStructMethod(SymbolTableEntry *entry, const
   const bool isImported = matchScope->isImportedBy(rootScope);
   if (isImported)
     thisType = mapLocalTypeToImportedScopeType(matchScope, thisType);
-  return FunctionManager::matchFunction(matchScope, methodName, thisType, paramTypes, {}, true, node);
+  return FunctionManager::matchFunction(matchScope, methodName, thisType, args, {}, true, node);
 }
 
 /**
@@ -250,7 +249,9 @@ Function *TypeChecker::implicitlyCallStructMethod(SymbolTableEntry *entry, const
  * @param node Current AST node
  */
 void TypeChecker::implicitlyCallStructCopyCtor(SymbolTableEntry *entry, const ASTNode *node) {
-  implicitlyCallStructMethod(entry, CTOR_FUNCTION_NAME, {entry->getType().toConstReference(node)}, node);
+  assert(entry != nullptr);
+  const ArgList args = {{entry->getType().toConstReference(node), false /* we always have an entry here */}};
+  implicitlyCallStructMethod(entry, CTOR_FUNCTION_NAME, args, node);
 }
 
 /**

@@ -75,6 +75,7 @@ set(SOURCES
         typechecker/InterfaceManager.h
         typechecker/TypeMatcher.cpp
         typechecker/TypeMatcher.h
+        typechecker/ExprResult.h
         typechecker/MacroDefs.h
         # IR generator
         irgenerator/IRGenerator.cpp
@@ -95,6 +96,7 @@ set(SOURCES
         irgenerator/DebugInfoGenerator.h
         irgenerator/NameMangling.cpp
         irgenerator/NameMangling.h
+        irgenerator/LLVMExprResult.h
         # IR optimizer
         iroptimizer/IROptimizer.cpp
         iroptimizer/IROptimizer.h

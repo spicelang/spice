@@ -96,6 +96,9 @@ public:
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, typeId, data, templateTypes, paramTypes)
   };
 
+  // Make sure we have no unexpected increases in memory consumption
+  static_assert(sizeof(TypeChainElement) == 104);
+
   // Typedefs
   using TypeChain = std::vector<TypeChainElement>;
 
@@ -119,15 +122,13 @@ public:
   [[nodiscard]] ALWAYS_INLINE bool isPtr() const { return getSuperType() == TY_PTR; }
   [[nodiscard]] ALWAYS_INLINE bool isPtrOf(SymbolSuperType superType) const { return isPtr() && getContainedTy().is(superType); }
   [[nodiscard]] ALWAYS_INLINE bool isRef() const { return getSuperType() == TY_REF; }
+  [[nodiscard]] ALWAYS_INLINE bool isConstRef() const { return getSuperType() == TY_REF && isConst(); }
   [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isRefOf(SymbolSuperType superType) const {
     return isRef() && getContainedTy().is(superType);
   }
   [[nodiscard]] ALWAYS_INLINE bool isArray() const { return getSuperType() == TY_ARRAY; }
   [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isArrayOf(SymbolSuperType superType) const {
     return isArray() && getContainedTy().is(superType);
-  }
-  [[nodiscard]] ALWAYS_INLINE bool isArrayOf(const SymbolType &symbolType) const {
-    return isArray() && getContainedTy() == symbolType;
   }
   [[nodiscard]] ALWAYS_INLINE bool is(SymbolSuperType superType) const { return getSuperType() == superType; }
   [[nodiscard]] ALWAYS_INLINE bool is(SymbolSuperType superType, const std::string &subType) const {
@@ -169,7 +170,7 @@ public:
     assert(getSuperType() == TY_ARRAY);
     return typeChain.back().data.arraySize;
   }
-  [[nodiscard]] ALWAYS_INLINE bool isConst() const { return typeChain.size() == 1 && specifiers.isConst; }
+  [[nodiscard]] ALWAYS_INLINE bool isConst() const { return specifiers.isConst; }
   [[nodiscard]] ALWAYS_INLINE bool isSigned() const {
     assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
     return specifiers.isSigned;
@@ -204,6 +205,7 @@ public:
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
   [[nodiscard]] bool matches(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
+  [[nodiscard]] bool canBind(const SymbolType &otherType, bool isTemporary) const;
 
   // Static util methods
   static void unwrapBoth(SymbolType &typeA, SymbolType &typeB);
@@ -216,5 +218,8 @@ public:
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolType, typeChain);
 };
+
+// Make sure we have no unexpected increases in memory consumption
+static_assert(sizeof(SymbolType) == 32);
 
 } // namespace spice::compiler

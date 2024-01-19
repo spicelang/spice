@@ -1,9 +1,20 @@
-f<bool> fn(int& ref) {
-    return false;
+type TestStruct struct {
+    long lng
+    String str
+    int i
+}
+
+f<TestStruct> fct(int& ref) {
+    TestStruct ts = TestStruct{ 6l, String("test string"), ref };
+    return ts;
 }
 
 f<int> main() {
-    fn(123);
+    int test = 987654;
+    const TestStruct res = fct(test);
+    printf("Long: %d\n", res.lng);
+    printf("String: %s\n", res.str.getRaw());
+    printf("Int: %d\n", res.i);
 }
 
 /*f<int> main() {

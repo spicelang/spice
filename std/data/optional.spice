@@ -24,7 +24,7 @@ public p Optional.ctor() {
  *
  * @param data Initial data value
  */
-public p Optional.ctor(T& data) {
+public p Optional.ctor(const T& data) {
     this.data = data;
     this.isPresent = true;
 }
@@ -34,7 +34,7 @@ public p Optional.ctor(T& data) {
  *
  * @param data New data value
  */
-public inline p Optional.set(T& data) {
+public inline p Optional.set(const T& data) {
     this.data = data;
     this.isPresent = true;
 }

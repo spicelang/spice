@@ -13,6 +13,7 @@
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/TypeSpecifiers.h>
+#include <typechecker/ExprResult.h>
 #include <util/CodeLoc.h>
 
 namespace spice::compiler {
@@ -1874,7 +1875,7 @@ public:
     FctCallType callType = TYPE_ORDINARY;
     bool isImported = false;
     SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
-    std::vector<SymbolType> argTypes;
+    std::vector<ExprResult> argResults;
     Function *callee = nullptr;
     Scope *calleeParentScope = nullptr;
 
