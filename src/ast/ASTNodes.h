@@ -176,7 +176,7 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<ModAttrNode *> modAttrs() const { return getChildren<ModAttrNode>(); }
-  [[nodiscard]] std::vector<ImportDefNode *> importStmts() const { return getChildren<ImportDefNode>(); }
+  [[nodiscard]] std::vector<ImportDefNode *> importDefs() const { return getChildren<ImportDefNode>(); }
 };
 
 // ======================================================== MainFctDefNode =======================================================

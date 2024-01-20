@@ -17,8 +17,8 @@ std::any ImportCollector::visitEntry(EntryNode *node) {
     visit(attr);
 
   // Visit all import defs
-  for (ImportDefNode *importStmt : node->importStmts())
-    visit(importStmt);
+  for (ImportDefNode *importDef : node->importDefs())
+    visit(importDef);
 
   return nullptr;
 }

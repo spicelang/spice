@@ -385,6 +385,21 @@ f<ASTExtDeclNode*> Parser.parseExtDecl() {
     return this.concludeNode(extDeclNode);
 }
 
+f<ASTImportDefNode*> Parser.parseImportDef() {
+    dyn importDefNode = this.createNode<ASTImportDefNode>();
+
+    this.lexer.expect(TokenType::IMPORT);
+    this.lexer.expect(TokenType::STRING_LIT);
+
+    if this.currentTokenIs(TokenType::AS) {
+        this.lexer.expect(TokenType::AS);
+        this.lexer.expect(TokenType::IDENTIFIER);
+    }
+    this.lexer.expect(TokenType::SEMICOLON);
+
+    return this.concludeNode(importDefNode);
+}
+
 f<ASTUnsafeBlockNode*> Parser.parseUnsafeBlock() {
     dyn unsafeBlockNode = this.createNode<ASTUnsafeBlockNode>();
 
@@ -856,21 +871,6 @@ f<ASTAttrNode*> Parser.parseAttr() {
     }
 
     return this.concludeNode(attrNode);
-}
-
-f<ASTImportStmtNode*> Parser.parseImportStmt() {
-    dyn importStmtNode = this.createNode<ASTImportStmtNode>();
-
-    this.lexer.expect(TokenType::IMPORT);
-    this.lexer.expect(TokenType::STRING_LIT);
-
-    if this.currentTokenIs(TokenType::AS) {
-        this.lexer.expect(TokenType::AS);
-        this.lexer.expect(TokenType::IDENTIFIER);
-    }
-    this.lexer.expect(TokenType::SEMICOLON);
-
-    return this.concludeNode(importStmtNode);
 }
 
 f<ASTReturnStmtNode*> Parser.parseReturnStmt() {

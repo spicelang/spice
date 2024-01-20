@@ -235,16 +235,16 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 }
 
 std::any ASTBuilder::visitImportDef(SpiceParser::ImportDefContext *ctx) {
-  auto importStmtNode = createNode<ImportDefNode>(ctx);
+  auto importDefNode = createNode<ImportDefNode>(ctx);
 
   // Extract path
   const std::string pathStr = ctx->STRING_LIT()->getText();
-  importStmtNode->importPath = pathStr.substr(1, pathStr.size() - 2);
+  importDefNode->importPath = pathStr.substr(1, pathStr.size() - 2);
 
   // If no name is given, use the path as name
-  importStmtNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER()) : importStmtNode->importPath;
+  importDefNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER()) : importDefNode->importPath;
 
-  return concludeNode(importStmtNode);
+  return concludeNode(importDefNode);
 }
 
 std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {

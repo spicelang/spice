@@ -149,6 +149,13 @@ public type ASTExtDeclNode struct /*: IVisitable*/ {
 
 }
 
+// ========================================================= ImportDefNode =======================================================
+
+public type ASTImportDefNode struct /*: IVisitable*/ {
+    compose public ASTNode node
+
+}
+
 // ========================================================== UnsafeBlockNode ========================================================
 
 public type ASTUnsafeBlockNode struct /*: IVisitable*/ {
@@ -339,13 +346,6 @@ public type ASTAttrLstNode struct /*: IVisitable*/ {
 // ============================================================ AttrNode =========================================================
 
 public type ASTAttrNode struct /*: IVisitable*/ {
-    compose public ASTNode node
-
-}
-
-// ========================================================= ImportStmtNode ======================================================
-
-public type ASTImportStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
