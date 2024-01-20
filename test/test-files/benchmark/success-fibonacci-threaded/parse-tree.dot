@@ -2,14 +2,14 @@ digraph {
  rankdir="TB";
  label="./test-files/benchmark/success-fibonacci-threaded/source.spice";
  L1C0_entry [color="lightgreen",label="entry"];
- L1C0_importStmt [color="lightgreen",label="importStmt"];
- L1C0_entry -> L1C0_importStmt;
+ L1C0_importDef [color="lightgreen",label="importDef"];
+ L1C0_entry -> L1C0_importDef;
  L1C0 [color="lightblue",label="IMPORT: import"];
- L1C0_importStmt -> L1C0
+ L1C0_importDef -> L1C0
  L1C7 [color="lightblue",label="STRING_LIT: \"std/os/thread\""];
- L1C0_importStmt -> L1C7
+ L1C0_importDef -> L1C7
  L1C22 [color="lightblue",label="SEMICOLON: ;"];
- L1C0_importStmt -> L1C22
+ L1C0_importDef -> L1C22
  L3C0_functionDef [color="lightgreen",label="functionDef"];
  L1C0_entry -> L3C0_functionDef;
  L3C0 [color="lightblue",label="F: f"];

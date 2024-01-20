@@ -16,14 +16,14 @@ std::any ImportCollector::visitEntry(EntryNode *node) {
   for (ModAttrNode *attr : node->modAttrs())
     visit(attr);
 
-  // Visit all import statements
-  for (ImportStmtNode *importStmt : node->importStmts())
+  // Visit all import defs
+  for (ImportDefNode *importStmt : node->importStmts())
     visit(importStmt);
 
   return nullptr;
 }
 
-std::any ImportCollector::visitImportStmt(ImportStmtNode *node) {
+std::any ImportCollector::visitImportDef(ImportDefNode *node) {
   const bool isStd = node->importPath.starts_with("std/");
 
   std::filesystem::path basePath;

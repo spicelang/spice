@@ -690,7 +690,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   return nullptr;
 }
 
-std::any TypeChecker::visitImportStmtPrepare(ImportStmtNode *node) {
+std::any TypeChecker::visitImportDefPrepare(ImportDefNode *node) {
   // Set entry to import type
   const SymbolType importType(TY_IMPORT, node->importName);
   assert(node->entry != nullptr);

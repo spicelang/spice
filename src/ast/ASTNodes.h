@@ -176,7 +176,7 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<ModAttrNode *> modAttrs() const { return getChildren<ModAttrNode>(); }
-  [[nodiscard]] std::vector<ImportStmtNode *> importStmts() const { return getChildren<ImportStmtNode>(); }
+  [[nodiscard]] std::vector<ImportDefNode *> importStmts() const { return getChildren<ImportDefNode>(); }
 };
 
 // ======================================================== MainFctDefNode =======================================================
@@ -484,6 +484,23 @@ public:
   bool hasArgs = false;
   bool isVarArg = false;
   bool hasReturnType = false;
+};
+
+// ======================================================== ImportDefNode ========================================================
+
+class ImportDefNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitImportDef(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitImportDef(this); }
+
+  // Public members
+  std::string importPath;
+  std::string importName;
+  SymbolTableEntry *entry = nullptr;
 };
 
 // ======================================================== UnsafeBlockNode ======================================================
@@ -1128,23 +1145,6 @@ public:
 
   // Public get methods
   [[nodiscard]] std::vector<ConstantNode *> constants() const { return getChildren<ConstantNode>(); }
-};
-
-// ======================================================== ImportStmtNode =======================================================
-
-class ImportStmtNode : public ASTNode {
-public:
-  // Constructors
-  using ASTNode::ASTNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitImportStmt(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitImportStmt(this); }
-
-  // Public members
-  std::string importPath;
-  std::string importName;
-  SymbolTableEntry *entry = nullptr;
 };
 
 // ======================================================== ReturnStmtNode =======================================================

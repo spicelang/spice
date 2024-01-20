@@ -51,7 +51,7 @@ class LambdaAttrNode;
 class AttrLstNode;
 class AttrNode;
 class ConstantLstNode;
-class ImportStmtNode;
+class ImportDefNode;
 class ReturnStmtNode;
 class BreakStmtNode;
 class ContinueStmtNode;
@@ -109,6 +109,7 @@ public:
   virtual std::any visitAliasDef(const AliasDefNode *node);
   virtual std::any visitGlobalVarDef(const GlobalVarDefNode *node);
   virtual std::any visitExtDecl(const ExtDeclNode *node);
+  virtual std::any visitImportDef(const ImportDefNode *node);
   virtual std::any visitUnsafeBlockDef(const UnsafeBlockNode *node);
   virtual std::any visitForLoop(const ForLoopNode *node);
   virtual std::any visitForeachLoop(const ForeachLoopNode *node);
@@ -139,7 +140,6 @@ public:
   virtual std::any visitAttrLst(const AttrLstNode *node);
   virtual std::any visitAttr(const AttrNode *node);
   virtual std::any visitConstantLst(const ConstantLstNode *node);
-  virtual std::any visitImportStmt(const ImportStmtNode *node);
   virtual std::any visitReturnStmt(const ReturnStmtNode *node);
   virtual std::any visitBreakStmt(const BreakStmtNode *node);
   virtual std::any visitContinueStmt(const ContinueStmtNode *node);

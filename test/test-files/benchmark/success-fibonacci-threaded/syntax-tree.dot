@@ -2,8 +2,8 @@ digraph {
  rankdir="TB";
  label="./test-files/benchmark/success-fibonacci-threaded/source.spice";
  L1C1_EntryNode [color="lightgreen",label="EntryNode"];
- L1C1_ImportStmtNode [color="lightgreen",label="ImportStmtNode"];
- L1C1_EntryNode -> L1C1_ImportStmtNode;
+ L1C1_ImportDefNode [color="lightgreen",label="ImportDefNode"];
+ L1C1_EntryNode -> L1C1_ImportDefNode;
  L3C1_FctDefNode [color="lightgreen",label="FctDefNode"];
  L1C1_EntryNode -> L3C1_FctDefNode;
  L3C3_DataTypeNode [color="lightgreen",label="DataTypeNode"];
