@@ -43,7 +43,7 @@ f<int> main() {
     assert !it.isValid();
 
     // Test foreach value
-    foreach int item : vi.getIterator() {
+    foreach int item : vi {
         item++;
     }
     assert vi.get(0) == 123;
@@ -58,7 +58,7 @@ f<int> main() {
     assert vi.get(1) == 4322;
     assert vi.get(2) == 9877;
 
-    foreach long idx, int& item : vi.getIterator() {
+    foreach long idx, int& item : vi {
         item += idx;
     }
     assert vi.get(0) == 124;

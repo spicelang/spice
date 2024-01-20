@@ -52,7 +52,7 @@ public p ASTNode.addChild(ASTNode *child) {
 
 /*public f<T*> ASTNode.getChild<T>(int index) {
     unsigned long j = 0l;
-    foreach ASTNode *child : children.getIterator() {
+    foreach ASTNode *child : children {
       if (T* typedChild = dynamic_cast<T *>(child)) {
         if (j++ == i)
           return typedChild;

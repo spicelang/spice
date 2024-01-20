@@ -143,12 +143,25 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Change to foreach body scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
 
+  // Visit iterator assignment
+  SymbolType iteratorOrIterableType = std::any_cast<ExprResult>(visit(node->iteratorAssign())).type;
+  HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
+
+  // Retrieve iterator type
+  SymbolType iteratorType = iteratorOrIterableType;
+  if (iteratorOrIterableType.isIterable(node)) {
+    const SymbolType &iterableType = iteratorOrIterableType;
+    Scope *matchScope = iterableType.getBodyScope();
+    node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, node);
+    assert(node->getIteratorFct != nullptr); // At this point we are sure to implement IIterable, so we also have getIterator()
+    iteratorType = node->getIteratorFct->returnType;
+  }
+
   // Check iterator type
-  SymbolType iteratorType = std::any_cast<ExprResult>(visit(node->iteratorAssign())).type;
-  HANDLE_UNRESOLVED_TYPE_PTR(iteratorType)
   if (!iteratorType.isIterator(node)) {
-    softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE,
-              "Can only apply foreach loop on an iterator type. You provided " + iteratorType.getName());
+    const std::string errMsg =
+        "Can only iterate over data structures, inheriting from IIterator or IIterable. You provided " + iteratorType.getName();
+    softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }
   const std::vector<SymbolType> &iteratorTemplateTypes = iteratorType.getTemplateTypes();

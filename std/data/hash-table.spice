@@ -20,7 +20,7 @@ public p HashTable.ctor(unsigned long bucketCount = 100l) {
 public p HashTable.insert(const K& key, const V& value) {
     const unsigned long index = this.hash(key);
     LinkedList<Pair<K, V>>& bucket = this.table.get(index);
-    foreach Pair<K, V>& pair : bucket.getIterator() {
+    foreach Pair<K, V>& pair : bucket {
         if pair.getFirst() == key {
             pair.setSecond(value);
             return;

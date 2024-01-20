@@ -1,12 +1,16 @@
-f<int> test() { return 123; }
-
-type Test struct {
-    int i = test()
-}
+import "std/data/vector";
 
 f<int> main() {
-    Test t;
-    printf("%d\n", t.i);
+    Vector<string> v = Vector<string>();
+    v.pushBack("Hello");
+    v.pushBack("World");
+    v.pushBack("!");
+    v.pushBack("!");
+    v.pushBack("!");
+
+    foreach string s : v {
+        printf("%s\n", s);
+    }
 }
 
 /*f<int> main() {
