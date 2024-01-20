@@ -1,7 +1,6 @@
 // Std imports
-import "std/type/Any";
-import "std/data/Vector";
-import "std/runtime/iterator_rt";
+import "std/type/any";
+import "std/data/vector";
 
 // Own imports
 //import "../ast/abstract-ast-visitor";
@@ -53,7 +52,7 @@ public p ASTNode.addChild(ASTNode *child) {
 
 /*public f<T*> ASTNode.getChild<T>(int index) {
     unsigned long j = 0l;
-    foreach ASTNode *child : iterate(children) {
+    foreach ASTNode *child : children.getIterator() {
       if (T* typedChild = dynamic_cast<T *>(child)) {
         if (j++ == i)
           return typedChild;

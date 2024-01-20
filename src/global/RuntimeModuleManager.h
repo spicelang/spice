@@ -15,13 +15,11 @@ class Scope;
 const char *const STRING_RT_IMPORT_NAME = "__rt_string";
 const char *const MEMORY_RT_IMPORT_NAME = "__rt_memory";
 const char *const RTTI_RT_IMPORT_NAME = "__rt_rtti";
-const char *const ITERATOR_RT_IMPORT_NAME = "__rt_iterator";
 
 enum RuntimeModule : uint8_t {
   STRING_RT = 1 << 0,
   MEMORY_RT = 1 << 1,
   RTTI_RT = 1 << 2,
-  ITERATOR_RT = 1 << 3,
 };
 
 struct ModuleNamePair {

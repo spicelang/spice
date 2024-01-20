@@ -3,7 +3,6 @@ import "std/data/vector";
 import "std/type/error";
 import "std/text/format";
 import "std/text/analysis";
-import "std/runtime/iterator_rt";
 
 // Own imports
 //import "../source-file";
@@ -51,7 +50,7 @@ public p Lexer.expect(TokenType expectedType) {
 }
 
 public p Lexer.expectOneOf(Vector<TokenType> expectedTypes) {
-    foreach TokenType expectedType : iterate(expectedTypes) {
+    foreach TokenType expectedType : expectedTypes.getIterator() {
         if (this.curTok.tokenType == expectedType) {
             return;
         }

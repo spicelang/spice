@@ -4,7 +4,6 @@ import "std/data/queue";
 import "std/os/atomic";
 import "std/os/cpu";
 import "std/os/system";
-import "std/runtime/iterator_rt";
 
 /**
  * A thread pool that can be used to run multiple jobs in parallel.

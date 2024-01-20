@@ -105,3 +105,10 @@ public inline p operator-=<N>(NumberIterator<N>& it, N offset) {
 public inline f<NumberIterator<N>> range<N>(N begin, N end) {
     return NumberIterator<N>(begin, end);
 }
+
+/**
+ * Convenience wrapper for creating a simple number iterator
+ */
+public inline f<NumberIterator<N>> iterate<N>(N lowerBound, N upperBound) {
+    return NumberIterator<N>(lowerBound, upperBound);
+}
