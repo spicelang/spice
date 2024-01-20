@@ -1,3 +1,14 @@
+type SpecifierType enum {
+    NONE,
+    CONST,
+    SIGNED,
+    UNSIGNED,
+    INLINE,
+    PUBLIC,
+    HEAP,
+    COMPOSE
+}
+
 type Test struct {
     int f1 = false ? 1 : 2
     bool f2 = false || false || true
@@ -18,6 +29,7 @@ type Test struct {
     int f17 = 13--
     int f18 = ++13
     int f19 = --13
+    SpecifierType f20 = SpecifierType::COMPOSE
 }
 
 f<int> main() {
@@ -41,6 +53,7 @@ f<int> main() {
     assert t.f17 == 13;
     assert t.f18 == 14;
     assert t.f19 == 12;
+    assert t.f20 == SpecifierType::COMPOSE;
 
     printf("All assertions passed!\n");
 }

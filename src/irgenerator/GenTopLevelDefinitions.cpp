@@ -465,7 +465,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
   std::vector<Struct *> manifestations = node->structManifestations;
 
   // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
-  auto comp = [](const Struct *lhs, Struct *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
+  const auto comp = [](const Struct *lhs, Struct *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
   std::sort(manifestations.begin(), manifestations.end(), comp);
 
   for (Struct *spiceStruct : manifestations) {
@@ -521,7 +521,7 @@ std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
   std::vector<Interface *> manifestations = node->interfaceManifestations;
 
   // Sort the manifestations to prevent generating the struct types in the wrong order (in case of dependencies between structs)
-  auto comp = [](const Interface *lhs, Interface *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
+  const auto comp = [](const Interface *lhs, Interface *rhs) { return lhs->manifestationIndex < rhs->manifestationIndex; };
   std::sort(manifestations.begin(), manifestations.end(), comp);
 
   for (Interface *spiceInterface : manifestations) {
