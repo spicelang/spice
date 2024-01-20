@@ -94,8 +94,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   continueBlocks.push_back(bTail);
 
   // Resolve iterator
-  AssignExprNode *iteratorAssignNode = node->iteratorAssign;
-  SymbolType iteratorOrIterableType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
+  SymbolType iteratorOrIterableType = node->iteratorExpr->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
   SymbolType iteratorType = iteratorOrIterableType;
   llvm::Value *iteratorPtr;
   if (node->getIteratorFct != nullptr) { // The iteratorAssignExpr is of type Iterable
@@ -103,14 +102,14 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
     // Call .getIterator() on iterable
     llvm::Function *getIteratorFct = stdFunctionManager.getIteratorFct(node->getIteratorFct);
-    llvm::Value *iterablePtr = resolveAddress(iteratorAssignNode);
+    llvm::Value *iterablePtr = resolveAddress(node->iteratorExpr);
     llvm::Value *iterator = builder.CreateCall(getIteratorFct, iterablePtr);
 
     // Resolve address of iterator
-    LLVMExprResult callResult = {.value = iterator, .node = iteratorAssignNode};
+    LLVMExprResult callResult = {.value = iterator, .node = node->iteratorExpr};
     iteratorPtr = resolveAddress(callResult);
   } else { // The iteratorAssignExpr is of type Iterator
-    iteratorPtr = resolveAddress(iteratorAssignNode);
+    iteratorPtr = resolveAddress(node->iteratorExpr);
   }
 
   const SymbolType itemSTy = iteratorType.getTemplateTypes().front();
@@ -375,7 +374,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   breakBlocks.push_back(bExit);
 
   // Visit switch expression
-  llvm::Value *exprValue = resolveValue(node->assignExpr);
+  llvm::Value *exprValue = resolveValue(node->expr);
 
   // Generate switch instruction
   llvm::SwitchInst *switchInst = builder.CreateSwitch(exprValue, bDefault ? bDefault : bExit, caseBranches.size());

@@ -606,7 +606,7 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
 
   // Visit the right side
   if (node->hasAssignment)
-    visit(node->assignExpr);
+    visit(node->expr);
 
   // Add variable entry to symbol table
   SymbolTableEntry *varEntry = currentScope->insert(node->varName, node);

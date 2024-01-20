@@ -44,6 +44,7 @@ public:
   std::any visitSignature(SignatureNode *node) override;
   std::any visitStmt(StmtNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
+  std::any visitExprStmt(ExprStmtNode *node) override;
   std::any visitSpecifierLst(SpecifierLstNode *node) override;
   std::any visitSpecifier(SpecifierNode *node) override;
   std::any visitModAttr(ModAttrNode *node) override;

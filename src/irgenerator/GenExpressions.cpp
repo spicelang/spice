@@ -15,20 +15,17 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
 
   // Assign or compound assign operation
   if (node->op != AssignExprNode::OP_NONE) {
-    const PrefixUnaryExprNode *lhsNode = node->lhs;
-    const AssignExprNode *rhsNode = node->rhs;
-
     if (node->op == AssignExprNode::OP_ASSIGN) { // Normal assignment
-      return doAssignment(lhsNode, rhsNode);
+      return doAssignment(node->lhs, node->rhs);
     } else { // Compound assignment
       // Get symbol types of left and right side
-      const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
-      const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
+      const SymbolType lhsSTy = node->lhs->getEvaluatedSymbolType(manIdx);
+      const SymbolType rhsSTy = node->rhs->getEvaluatedSymbolType(manIdx);
 
       // Retrieve rhs
-      auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
+      auto rhs = std::any_cast<LLVMExprResult>(visit(node->rhs));
       // Retrieve lhs
-      auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
+      auto lhs = std::any_cast<LLVMExprResult>(visit(node->lhs));
 
       LLVMExprResult result;
       switch (node->op) {
@@ -218,14 +215,14 @@ std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
 
   // It is a bitwise or expression
   // Evaluate first operand
-  BitwiseXorExprNode *lhsNode = node->operands.front();
+  ExprNode *lhsNode = node->operands.front();
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
-    BitwiseXorExprNode *rhsNode = node->operands[i];
+    ExprNode *rhsNode = node->operands[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseOrInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
@@ -244,14 +241,14 @@ std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
 
   // It is a bitwise xor expression
   // Evaluate first operand
-  BitwiseAndExprNode *lhsNode = node->operands.front();
+  ExprNode *lhsNode = node->operands.front();
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
-    BitwiseAndExprNode *rhsNode = node->operands[i];
+    ExprNode *rhsNode = node->operands[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseXorInst(node, result, lhsSTy, rhs, rhsSTy, currentScope);
@@ -270,14 +267,14 @@ std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
 
   // It is a bitwise and expression
   // Evaluate first operand
-  EqualityExprNode *lhsNode = node->operands.front();
+  ExprNode *lhsNode = node->operands.front();
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
-    EqualityExprNode *rhsNode = node->operands[i];
+    ExprNode *rhsNode = node->operands[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseAndInst(rhsNode, result, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
@@ -296,12 +293,12 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
 
   // It is an equality expression
   // Evaluate lhs
-  RelationalExprNode *lhsNode = node->lhs;
+  ExprNode *lhsNode = node->lhs;
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
-  RelationalExprNode *rhsNode = node->rhs;
+  ExprNode *rhsNode = node->rhs;
   const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -330,12 +327,12 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
 
   // It is a relational expression
   // Evaluate lhs
-  ShiftExprNode *lhsNode = node->lhs;
+  ExprNode *lhsNode = node->lhs;
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
-  ShiftExprNode *rhsNode = node->rhs;
+  ExprNode *rhsNode = node->rhs;
   const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -370,12 +367,12 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
 
   // It is a shift expression
   // Evaluate lhs
-  AdditiveExprNode *lhsNode = node->lhs;
+  ExprNode *lhsNode = node->lhs;
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
-  AdditiveExprNode *rhsNode = node->rhs;
+  ExprNode *rhsNode = node->rhs;
   const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -404,7 +401,7 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
 
   // It is an additive expression
   // Evaluate first operand
-  MultiplicativeExprNode *lhsNode = node->operands[0];
+  ExprNode *lhsNode = node->operands[0];
   SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -413,7 +410,7 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
   while (!opQueue.empty()) {
     const size_t operatorIndex = operandIndex - 1;
     // Evaluate next operand
-    MultiplicativeExprNode *rhsNode = node->operands[operandIndex++];
+    ExprNode *rhsNode = node->operands[operandIndex++];
     assert(rhsNode != nullptr);
     const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
@@ -449,7 +446,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
 
   // It is an additive expression
   // Evaluate first operand
-  CastExprNode *lhsNode = node->operands[0];
+  ExprNode *lhsNode = node->operands[0];
   SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -458,7 +455,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
   while (!opQueue.empty()) {
     const size_t operatorIndex = operandIndex - 1;
     // Evaluate next operand
-    CastExprNode *rhsNode = node->operands[operandIndex++];
+    ExprNode *rhsNode = node->operands[operandIndex++];
     assert(rhsNode != nullptr);
     const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
@@ -656,8 +653,8 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     llvm::Type *lhsTy = lhsSTy.toLLVMType(context, currentScope);
 
     // Get the index value
-    AssignExprNode *indexExpr = node->assignExpr;
-    llvm::Value *indexValue = resolveValue(indexExpr);
+    ExprNode *idxExpr = node->subscriptIdxExpr;
+    llvm::Value *indexValue = resolveValue(idxExpr);
     // Come up with the address
     if (lhsSTy.isArray() && lhsSTy.getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array
       // Make sure the address is present
@@ -790,8 +787,8 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
     return visit(node->value);
 
   // Is assign expression
-  if (node->assignExpr)
-    return visit(node->assignExpr);
+  if (node->expr)
+    return visit(node->expr);
 
   // Check for builtin calls
   if (node->printfCall)

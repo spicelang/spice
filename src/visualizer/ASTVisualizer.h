@@ -60,6 +60,7 @@ public:
   std::any visitSignature(SignatureNode *ctx) override { return buildNode(ctx); }
   std::any visitStmt(StmtNode *ctx) override { return buildNode(ctx); }
   std::any visitDeclStmt(DeclStmtNode *ctx) override { return buildNode(ctx); }
+  std::any visitExprStmt(ExprStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitSpecifierLst(SpecifierLstNode *ctx) override { return buildNode(ctx); }
   std::any visitSpecifier(SpecifierNode *ctx) override { return buildNode(ctx); }
   std::any visitModAttr(ModAttrNode *ctx) override { return buildNode(ctx); }

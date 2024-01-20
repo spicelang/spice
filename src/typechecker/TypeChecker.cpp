@@ -150,7 +150,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
 
   // Visit iterator assignment
-  SymbolType iteratorOrIterableType = std::any_cast<ExprResult>(visit(node->iteratorAssign)).type;
+  SymbolType iteratorOrIterableType = std::any_cast<ExprResult>(visit(node->iteratorExpr)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
 
   // Retrieve iterator type
@@ -167,12 +167,12 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   if (!iteratorType.isIterator(node)) {
     const std::string errMsg =
         "Can only iterate over data structures, inheriting from IIterator or IIterable. You provided " + iteratorType.getName();
-    softError(node->iteratorAssign, OPERATOR_WRONG_DATA_TYPE, errMsg);
+    softError(node->iteratorExpr, OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }
   const std::vector<SymbolType> &iteratorTemplateTypes = iteratorType.getTemplateTypes();
   if (iteratorTemplateTypes.empty())
-    SOFT_ERROR_ER(node->iteratorAssign, INVALID_ITERATOR,
+    SOFT_ERROR_ER(node->iteratorExpr, INVALID_ITERATOR,
                   "Iterator has no generic arguments so that the item type could not be inferred")
 
   const bool hasIdx = node->idxVarDecl;
@@ -270,7 +270,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY);
 
   // Visit condition
-  AssignExprNode *condition = node->condition;
+  ExprNode *condition = node->condition;
   SymbolType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
@@ -278,7 +278,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
     SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
 
   // Warning for bool assignment
-  if (condition->op == AssignExprNode::OP_ASSIGN)
+  if (condition->isAssignExpr() && spice_pointer_cast<AssignExprNode *>(condition)->op == AssignExprNode::OP_ASSIGN)
     sourceFile->compilerOutput.warnings.emplace_back(condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
                                                      "If you want to compare the values, use '=='");
 
@@ -313,11 +313,10 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
 
 std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   // Check expression type
-  AssignExprNode *expr = node->assignExpr;
-  SymbolType exprType = std::any_cast<ExprResult>(visit(expr)).type;
+  SymbolType exprType = std::any_cast<ExprResult>(visit(node->expr)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(exprType)
   if (!exprType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}))
-    SOFT_ERROR_ER(node->assignExpr, SWITCH_EXPR_MUST_BE_PRIMITIVE,
+    SOFT_ERROR_ER(node->expr, SWITCH_EXPR_MUST_BE_PRIMITIVE,
                   "Switch expression must be of int, short, long, byte, char or bool type")
 
   // Visit children
@@ -527,7 +526,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   SymbolType localVarType;
   if (node->hasAssignment) {
     // Visit the right side
-    auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
+    auto rhs = std::any_cast<ExprResult>(visit(node->expr));
     auto [rhsTy, rhsEntry] = rhs;
 
     // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
@@ -609,7 +608,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   // Check if procedure with return value
   if (!isFunction) {
     if (node->hasReturnValue)
-      SOFT_ERROR_ER(node->assignExpr, RETURN_WITH_VALUE_IN_PROCEDURE, "Return with value in procedure is not allowed")
+      SOFT_ERROR_ER(node->returnExpr, RETURN_WITH_VALUE_IN_PROCEDURE, "Return with value in procedure is not allowed")
     return nullptr;
   }
 
@@ -620,12 +619,12 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
     return nullptr;
 
   // Visit right side
-  auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
+  auto rhs = std::any_cast<ExprResult>(visit(node->returnExpr));
   HANDLE_UNRESOLVED_TYPE_ST(rhs.type)
 
   // Check if types match
   const ExprResult returnResult = {returnType, returnVar};
-  OpRuleManager::getAssignResultType(node->assignExpr, returnResult, rhs, true, ERROR_MSG_RETURN);
+  OpRuleManager::getAssignResultType(node->returnExpr, returnResult, rhs, true, ERROR_MSG_RETURN);
 
   // Manager dtor call
   if (rhs.entry != nullptr) {
@@ -679,12 +678,12 @@ std::any TypeChecker::visitFallthroughStmt(FallthroughStmtNode *node) {
 
 std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   // Visit condition
-  SymbolType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
+  SymbolType conditionType = std::any_cast<ExprResult>(visit(node->expr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->assignExpr, ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool")
+    SOFT_ERROR_ER(node->expr, ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool")
 
   return nullptr;
 }
@@ -698,17 +697,17 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     if (node->args.size() <= placeholderCount)
       SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains more placeholders than arguments")
 
-    // Get next assignment
-    AssignExprNode *assignment = node->args.at(placeholderCount);
+    // Get next expression
+    ExprNode *expr = node->args.at(placeholderCount);
     // Visit assignment
-    SymbolType argType = std::any_cast<ExprResult>(visit(assignment)).type;
+    SymbolType argType = std::any_cast<ExprResult>(visit(expr)).type;
     HANDLE_UNRESOLVED_TYPE_ER(argType)
     argType = argType.removeReferenceWrapper();
 
     switch (node->templatedString.at(index + 1)) {
     case 'c': {
       if (!argType.is(TY_CHAR))
-        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects char, but got " + argType.getName())
+        SOFT_ERROR_ER(expr, PRINTF_TYPE_ERROR, "The placeholder string expects char, but got " + argType.getName())
       placeholderCount++;
       break;
     }
@@ -720,7 +719,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     case 'x':
     case 'X': {
       if (!argType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_BOOL}))
-        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
+        SOFT_ERROR_ER(expr, PRINTF_TYPE_ERROR,
                       "The placeholder string expects int, short, long, byte or bool, but got " + argType.getName())
       placeholderCount++;
       break;
@@ -734,20 +733,20 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     case 'g':
     case 'G': {
       if (!argType.is(TY_DOUBLE))
-        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects double, but got " + argType.getName())
+        SOFT_ERROR_ER(expr, PRINTF_TYPE_ERROR, "The placeholder string expects double, but got " + argType.getName())
       placeholderCount++;
       break;
     }
     case 's': {
       if (!argType.is(TY_STRING) && !argType.isStringObj() && !argType.isPtrOf(TY_CHAR) && !argType.isArrayOf(TY_CHAR))
-        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
+        SOFT_ERROR_ER(expr, PRINTF_TYPE_ERROR,
                       "The placeholder string expects string, String, char* or char[], but got " + argType.getName())
       placeholderCount++;
       break;
     }
     case 'p': {
       if (!argType.isPtr() && !argType.isArray() && !argType.is(TY_STRING))
-        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
+        SOFT_ERROR_ER(expr, PRINTF_TYPE_ERROR,
                       "The placeholder string expects pointer, array or string, but got " + argType.getName())
       placeholderCount++;
       break;
@@ -769,7 +768,7 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
   if (node->isType) { // Size of type
     visit(node->dataType);
   } else { // Size of value
-    visit(node->assignExpr);
+    visit(node->expr);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
@@ -779,20 +778,20 @@ std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
   if (node->isType) { // Align of type
     visit(node->dataType);
   } else { // Align of value
-    visit(node->assignExpr);
+    visit(node->expr);
   }
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
-  SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
+  SymbolType argType = std::any_cast<ExprResult>(visit(node->expr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
   argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.isArray() && !argType.is(TY_STRING))
-    SOFT_ERROR_ER(node->assignExpr, EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
+    SOFT_ERROR_ER(node->expr, EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
 
   // If we want to use the len builtin on a string, we need to import the string runtime module
   if (argType.is(TY_STRING) && !sourceFile->isStringRT())
@@ -802,13 +801,13 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
 }
 
 std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
-  SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
+  SymbolType argType = std::any_cast<ExprResult>(visit(node->expr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
   argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.isErrorObj())
-    SOFT_ERROR_ER(node->assignExpr, EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
+    SOFT_ERROR_ER(node->expr, EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
 
   return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_DYN), manIdx)};
 }
@@ -1097,7 +1096,7 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
-    MultiplicativeExprNode *operand = node->operands[i + 1];
+    ExprNode *operand = node->operands[i + 1];
     auto operandResult = std::any_cast<ExprResult>(visit(operand));
     HANDLE_UNRESOLVED_TYPE_ER(operandResult.type)
 
@@ -1130,7 +1129,7 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
   // Loop through remaining operands
   for (size_t i = 0; i < node->opQueue.size(); i++) {
     // Visit next operand
-    CastExprNode *operand = node->operands[i + 1];
+    ExprNode *operand = node->operands[i + 1];
     auto operandResult = std::any_cast<ExprResult>(visit(operand));
     HANDLE_UNRESOLVED_TYPE_ER(operandResult.type)
 
@@ -1263,8 +1262,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
                     "Can only apply subscript operator on array type, got " + lhsType.getName(true))
 
     // Visit index assignment
-    AssignExprNode *indexAssignExpr = node->assignExpr;
-    SymbolType indexType = std::any_cast<ExprResult>(visit(indexAssignExpr)).type;
+    ExprNode *idxExpr = node->subscriptIdxExpr;
+    SymbolType indexType = std::any_cast<ExprResult>(visit(idxExpr)).type;
     HANDLE_UNRESOLVED_TYPE_ER(indexType)
     // Check if the index is of the right type
     if (!indexType.isOneOf({TY_INT, TY_LONG}))
@@ -1277,8 +1276,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.")
 
     // Check if we have a hardcoded array index
-    if (lhsType.isArray() && lhsType.getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
-      const int32_t constIndex = indexAssignExpr->getCompileTimeValue().intValue;
+    if (lhsType.isArray() && lhsType.getArraySize() != ARRAY_SIZE_UNKNOWN && idxExpr->hasCompileTimeValue()) {
+      const int32_t constIndex = idxExpr->getCompileTimeValue().intValue;
       const unsigned int constSize = lhsType.getArraySize();
       // Check if we are accessing out-of-bounds memory
       if (constIndex >= static_cast<int32_t>(constSize)) {
@@ -1402,8 +1401,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     return visit(node->panicCall);
 
   // Check for assign expression within parentheses
-  if (node->assignExpr)
-    return visit(node->assignExpr);
+  if (node->expr)
+    return visit(node->expr);
 
   // Identifier (local or global variable access)
   assert(!node->fqIdentifier.empty());
@@ -1566,7 +1565,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   data.argResults.clear();
   if (node->hasArgs) {
     data.argResults.reserve(node->argLst->args.size());
-    for (AssignExprNode *arg : node->argLst->args) {
+    for (ExprNode *arg : node->argLst->args) {
       // Visit argument
       const auto argResult = std::any_cast<ExprResult>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_ER(argResult.type)
@@ -1878,7 +1877,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   // Check if all values have the same type
   if (node->itemLst) {
     node->actualSize = static_cast<long>(node->itemLst->args.size());
-    for (AssignExprNode *arg : node->itemLst->args) {
+    for (ExprNode *arg : node->itemLst->args) {
       const SymbolType itemType = std::any_cast<ExprResult>(visit(arg)).type;
       HANDLE_UNRESOLVED_TYPE_ER(itemType)
       if (actualItemType.is(TY_DYN)) // Perform type inference
@@ -1975,17 +1974,17 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     const size_t explicitFieldsStartIdx = structScope->getFieldCount() - fieldCount;
     for (size_t i = 0; i < node->fieldLst->args.size(); i++) {
       // Get actual type
-      AssignExprNode *assignExpr = node->fieldLst->args.at(i);
-      auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
+      ExprNode *expr = node->fieldLst->args.at(i);
+      auto fieldResult = std::any_cast<ExprResult>(visit(expr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
       SymbolTableEntry *expectedField = structScope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
       assert(expectedField != nullptr);
       const ExprResult expected = {expectedField->getType(), expectedField};
-      const bool rhsIsImmediate = assignExpr->hasCompileTimeValue();
+      const bool rhsIsImmediate = expr->hasCompileTimeValue();
 
       // Check if actual type matches expected type
-      OpRuleManager::getFieldAssignResultType(assignExpr, expected, fieldResult, rhsIsImmediate, true);
+      OpRuleManager::getFieldAssignResultType(expr, expected, fieldResult, rhsIsImmediate, true);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
       if (fieldResult.entry != nullptr && fieldResult.entry->anonymous) {
@@ -2007,7 +2006,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
   SymbolTableEntry *anonymousEntry = nullptr;
   if (node->fieldLst != nullptr)
-    if (std::ranges::any_of(node->fieldLst->args, [](AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
+    if (std::ranges::any_of(node->fieldLst->args, [](const ExprNode *field) { return !field->hasCompileTimeValue(); }))
       anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables

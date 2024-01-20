@@ -25,8 +25,8 @@ ASTBuilder::ASTBuilder(GlobalResourceManager &resourceManager, SourceFile *sourc
 std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
   auto entryNode = createNode<EntryNode>(ctx);
 
-  // Visit children
-  visitChildren(ctx);
+  for (ParserRuleContext::ParseTree *subTree : ctx->children)
+    entryNode->topLevelDefs.push_back(std::any_cast<TopLevelDefinitionNode *>(visit(subTree)));
 
   return concludeNode(entryNode);
 }
@@ -48,7 +48,7 @@ std::any ASTBuilder::visitMainFunctionDef(SpiceParser::MainFunctionDefContext *c
 
   mainFctDefNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
-  return concludeNode(mainFctDefNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(mainFctDefNode));
 }
 
 std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
@@ -81,7 +81,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
     fctDefNode->hasParams = true;
   }
 
-  return concludeNode(fctDefNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(fctDefNode));
 }
 
 std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
@@ -110,7 +110,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
     procDefNode->hasParams = true;
   }
 
-  return concludeNode(procDefNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(procDefNode));
 }
 
 std::any ASTBuilder::visitFctName(SpiceParser::FctNameContext *ctx) {
@@ -172,7 +172,7 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
   for (SpiceParser::FieldContext *fieldCtx : ctx->field())
     structDefNode->fields.push_back(std::any_cast<FieldNode *>(visit(fieldCtx)));
 
-  return concludeNode(structDefNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(structDefNode));
 }
 
 std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
@@ -202,7 +202,7 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
   for (SpiceParser::SignatureContext *signatureCtx : ctx->signature())
     interfaceDefNode->signatures.push_back(std::any_cast<SignatureNode *>(visit(signatureCtx)));
 
-  return concludeNode(interfaceDefNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(interfaceDefNode));
 }
 
 std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
@@ -219,7 +219,7 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   for (EnumItemNode *enumItem : enumDefNode->itemLst->items)
     enumItem->enumDef = enumDefNode;
 
-  return concludeNode(enumDefNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(enumDefNode));
 }
 
 std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) {
@@ -229,7 +229,7 @@ std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx
 
   genericTypeDefNode->typeAltsLst = std::any_cast<TypeAltsLstNode *>(visit(ctx->typeAltsLst()));
 
-  return concludeNode(genericTypeDefNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(genericTypeDefNode));
 }
 
 std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
@@ -243,7 +243,7 @@ std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
 
   aliasDefNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
 
-  return concludeNode(aliasDefNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(aliasDefNode));
 }
 
 std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
@@ -255,9 +255,9 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
   globalVarDefNode->varName = getIdentifier(ctx->TYPE_IDENTIFIER());
 
   if (ctx->ASSIGN())
-    globalVarDefNode->constant = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+    globalVarDefNode->constant = std::any_cast<ExprNode *>(visit(ctx->constant()));
 
-  return concludeNode(globalVarDefNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(globalVarDefNode));
 }
 
 std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
@@ -281,7 +281,7 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   extDeclNode->isVarArg = ctx->ELLIPSIS();
 
-  return concludeNode(extDeclNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(extDeclNode));
 }
 
 std::any ASTBuilder::visitImportDef(SpiceParser::ImportDefContext *ctx) {
@@ -294,7 +294,7 @@ std::any ASTBuilder::visitImportDef(SpiceParser::ImportDefContext *ctx) {
   // If no name is given, use the path as name
   importDefNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER()) : importDefNode->importPath;
 
-  return concludeNode(importDefNode);
+  return static_cast<TopLevelDefinitionNode *>(concludeNode(importDefNode));
 }
 
 std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
@@ -302,17 +302,17 @@ std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
 
   unsafeBlockDefNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
-  return concludeNode(unsafeBlockDefNode);
+  return static_cast<StmtNode *>(concludeNode(unsafeBlockDefNode));
 }
 
 std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   auto forLoopNode = createNode<ForLoopNode>(ctx);
 
   forLoopNode->initDecl = std::any_cast<DeclStmtNode *>(visit(ctx->forHead()->declStmt()));
-  forLoopNode->condAssign = std::any_cast<AssignExprNode *>(visit(ctx->forHead()->assignExpr(0)));
+  forLoopNode->condAssign = std::any_cast<ExprNode *>(visit(ctx->forHead()->assignExpr(0)));
   forLoopNode->incAssign = std::any_cast<AssignExprNode *>(visit(ctx->forHead()->assignExpr(1)));
 
-  return concludeNode(forLoopNode);
+  return static_cast<StmtNode *>(concludeNode(forLoopNode));
 }
 
 std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
@@ -330,9 +330,9 @@ std::any ASTBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
   foreachLoopNode->itemVarDecl = std::any_cast<DeclStmtNode *>(visit(ctx->foreachHead()->declStmt(hasIdxDecl ? 1 : 0)));
   foreachLoopNode->itemVarDecl->isForEachItem = true; // Tell the foreach item that it is one
 
-  foreachLoopNode->iteratorAssign = std::any_cast<AssignExprNode *>(visit(ctx->foreachHead()->assignExpr()));
+  foreachLoopNode->iteratorExpr = std::any_cast<AssignExprNode *>(visit(ctx->foreachHead()->assignExpr()));
 
-  return concludeNode(foreachLoopNode);
+  return static_cast<StmtNode *>(concludeNode(foreachLoopNode));
 }
 
 std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
@@ -346,7 +346,7 @@ std::any ASTBuilder::visitWhileLoop(SpiceParser::WhileLoopContext *ctx) {
   whileLoopNode->condition = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
   whileLoopNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
-  return concludeNode(whileLoopNode);
+  return static_cast<StmtNode *>(concludeNode(whileLoopNode));
 }
 
 std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {
@@ -355,7 +355,7 @@ std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {
   doWhileLoopNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
   doWhileLoopNode->condition = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
-  return concludeNode(doWhileLoopNode);
+  return static_cast<StmtNode *>(concludeNode(doWhileLoopNode));
 }
 
 std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
@@ -366,7 +366,7 @@ std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   if (ctx->elseStmt())
     ifStmtNode->elseStmt = std::any_cast<ElseStmtNode *>(visit(ctx->elseStmt()));
 
-  return concludeNode(ifStmtNode);
+  return static_cast<StmtNode *>(concludeNode(ifStmtNode));
 }
 
 std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
@@ -379,13 +379,13 @@ std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
     elseStmtNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
   }
 
-  return concludeNode(elseStmtNode);
+  return static_cast<StmtNode *>(concludeNode(elseStmtNode));
 }
 
 std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
   auto switchStmtNode = createNode<SwitchStmtNode>(ctx);
 
-  switchStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  switchStmtNode->expr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   for (SpiceParser::CaseBranchContext *caseBranchCtx : ctx->caseBranch())
     switchStmtNode->caseBranches.push_back(std::any_cast<CaseBranchNode *>(visit(caseBranchCtx)));
@@ -395,7 +395,7 @@ std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
     switchStmtNode->hasDefaultBranch = true;
   }
 
-  return concludeNode(switchStmtNode);
+  return static_cast<StmtNode *>(concludeNode(switchStmtNode));
 }
 
 std::any ASTBuilder::visitCaseBranch(SpiceParser::CaseBranchContext *ctx) {
@@ -420,7 +420,7 @@ std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtCont
 
   anonymousBlockStmtNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
-  return concludeNode(anonymousBlockStmtNode);
+  return static_cast<StmtNode *>(concludeNode(anonymousBlockStmtNode));
 }
 
 std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
@@ -535,9 +535,19 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
 }
 
 std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
-  auto stmtNode = createNode<StmtNode>(ctx);
-  visitChildren(ctx);
-  return concludeNode(stmtNode);
+  if (ctx->declStmt())
+    return visit(ctx->declStmt());
+  if (ctx->exprStmt())
+    return visit(ctx->exprStmt());
+  if (ctx->returnStmt())
+    return visit(ctx->returnStmt());
+  if (ctx->breakStmt())
+    return visit(ctx->breakStmt());
+  if (ctx->continueStmt())
+    return visit(ctx->continueStmt());
+  if (ctx->fallthroughStmt())
+    return visit(ctx->fallthroughStmt());
+  assert_fail("Unknown statement type"); // GCOV_EXCL_LINE
 }
 
 std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
@@ -545,11 +555,19 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 
   declStmtNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
   if (ctx->assignExpr())
-    declStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    declStmtNode->expr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   declStmtNode->varName = getIdentifier(ctx->IDENTIFIER());
   declStmtNode->hasAssignment = ctx->ASSIGN();
 
-  return concludeNode(declStmtNode);
+  return static_cast<StmtNode *>(concludeNode(declStmtNode));
+}
+
+std::any ASTBuilder::visitExprStmt(SpiceParser::ExprStmtContext *context) {
+  auto exprStmtNode = createNode<ExprStmtNode>(context);
+
+  exprStmtNode->expr = std::any_cast<ExprNode *>(visit(context->assignExpr()));
+
+  return static_cast<StmtNode *>(concludeNode(exprStmtNode));
 }
 
 std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
@@ -674,9 +692,9 @@ std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   auto returnStmtNode = createNode<ReturnStmtNode>(ctx);
 
   if (ctx->assignExpr())
-    returnStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    returnStmtNode->returnExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
-  return concludeNode(returnStmtNode);
+  return static_cast<StmtNode *>(concludeNode(returnStmtNode));
 }
 
 std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
@@ -686,7 +704,7 @@ std::any ASTBuilder::visitBreakStmt(SpiceParser::BreakStmtContext *ctx) {
   if (ctx->INT_LIT())
     breakStmtNode->breakTimes = std::stoi(ctx->INT_LIT()->toString());
 
-  return concludeNode(breakStmtNode);
+  return static_cast<StmtNode *>(concludeNode(breakStmtNode));
 }
 
 std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
@@ -696,12 +714,12 @@ std::any ASTBuilder::visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) {
   if (ctx->INT_LIT())
     continueStmtNode->continueTimes = std::stoi(ctx->INT_LIT()->toString());
 
-  return concludeNode(continueStmtNode);
+  return static_cast<StmtNode *>(concludeNode(continueStmtNode));
 }
 
 std::any ASTBuilder::visitFallthroughStmt(SpiceParser::FallthroughStmtContext *ctx) {
   auto fallthroughStmtNode = createNode<FallthroughStmtNode>(ctx);
-  return concludeNode(fallthroughStmtNode);
+  return static_cast<StmtNode *>(concludeNode(fallthroughStmtNode));
 }
 
 std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
@@ -711,9 +729,9 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
   antlr4::misc::Interval interval(ctx->assignExpr()->start->getStartIndex(), ctx->assignExpr()->stop->getStopIndex());
   assertStmtNode->expressionString = inputStream->getText(interval);
 
-  assertStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  assertStmtNode->expr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
-  return concludeNode(assertStmtNode);
+  return static_cast<StmtNode *>(concludeNode(assertStmtNode));
 }
 
 std::any ASTBuilder::visitBuiltinCall(SpiceParser::BuiltinCallContext *ctx) {
@@ -732,7 +750,7 @@ std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   for (SpiceParser::AssignExprContext *argCtx : ctx->assignExpr())
     printfCallNode->args.push_back(std::any_cast<AssignExprNode *>(visit(argCtx)));
 
-  return concludeNode(printfCallNode);
+  return static_cast<ExprNode *>(concludeNode(printfCallNode));
 }
 
 std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
@@ -742,11 +760,11 @@ std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
     sizeofCallNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
     sizeofCallNode->isType = true;
   } else {
-    sizeofCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    sizeofCallNode->expr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
     sizeofCallNode->isType = false;
   }
 
-  return concludeNode(sizeofCallNode);
+  return static_cast<ExprNode *>(concludeNode(sizeofCallNode));
 }
 
 std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
@@ -756,27 +774,27 @@ std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
     alignofCallNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
     alignofCallNode->isType = true;
   } else {
-    alignofCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    alignofCallNode->expr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
     alignofCallNode->isType = false;
   }
 
-  return concludeNode(alignofCallNode);
+  return static_cast<ExprNode *>(concludeNode(alignofCallNode));
 }
 
 std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
   auto lenCallNode = createNode<LenCallNode>(ctx);
 
-  lenCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  lenCallNode->expr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
-  return concludeNode(lenCallNode);
+  return static_cast<ExprNode *>(concludeNode(lenCallNode));
 }
 
 std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {
   auto panicCallNode = createNode<PanicCallNode>(ctx);
 
-  panicCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  panicCallNode->expr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
-  return concludeNode(panicCallNode);
+  return static_cast<ExprNode *>(concludeNode(panicCallNode));
 }
 
 std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
@@ -787,7 +805,7 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   assignExprNode->op = std::any_cast<AssignExprNode::AssignOp>(visit(ctx->assignOp()));
   assignExprNode->rhs = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
-  return concludeNode(assignExprNode);
+  return static_cast<ExprNode *>(concludeNode(assignExprNode));
 }
 
 std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
@@ -795,15 +813,15 @@ std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   auto ternaryExprNode = createNode<TernaryExprNode>(ctx);
 
   ternaryExprNode->isShortened = ctx->logicalOrExpr().size() == 2;
-  ternaryExprNode->condition = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(0)));
+  ternaryExprNode->condition = std::any_cast<ExprNode *>(visit(ctx->logicalOrExpr(0)));
   if (ternaryExprNode->isShortened) {
-    ternaryExprNode->falseValue = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(0)));
+    ternaryExprNode->falseValue = std::any_cast<ExprNode *>(visit(ctx->logicalOrExpr(0)));
   } else {
-    ternaryExprNode->trueValue = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(0)));
-    ternaryExprNode->falseValue = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(1)));
+    ternaryExprNode->trueValue = std::any_cast<ExprNode *>(visit(ctx->logicalOrExpr(0)));
+    ternaryExprNode->falseValue = std::any_cast<ExprNode *>(visit(ctx->logicalOrExpr(1)));
   }
 
-  return concludeNode(ternaryExprNode);
+  return static_cast<ExprNode *>(concludeNode(ternaryExprNode));
 }
 
 std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) {
@@ -813,7 +831,7 @@ std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) 
   for (SpiceParser::LogicalAndExprContext *logicalAndExprCtx : ctx->logicalAndExpr())
     logicalOrExprNode->operands.push_back(std::any_cast<LogicalAndExprNode *>(visit(logicalAndExprCtx)));
 
-  return concludeNode(logicalOrExprNode);
+  return static_cast<ExprNode *>(concludeNode(logicalOrExprNode));
 }
 
 std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx) {
@@ -823,7 +841,7 @@ std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx
   for (SpiceParser::BitwiseOrExprContext *bitwiseOrExprCtx : ctx->bitwiseOrExpr())
     logicalAndExprNode->operands.push_back(std::any_cast<BitwiseOrExprNode *>(visit(bitwiseOrExprCtx)));
 
-  return concludeNode(logicalAndExprNode);
+  return static_cast<ExprNode *>(concludeNode(logicalAndExprNode));
 }
 
 std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) {
@@ -833,7 +851,7 @@ std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) 
   for (SpiceParser::BitwiseXorExprContext *bitwiseXorExprCtx : ctx->bitwiseXorExpr())
     bitwiseOrExprNode->operands.push_back(std::any_cast<BitwiseXorExprNode *>(visit(bitwiseXorExprCtx)));
 
-  return concludeNode(bitwiseOrExprNode);
+  return static_cast<ExprNode *>(concludeNode(bitwiseOrExprNode));
 }
 
 std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx) {
@@ -843,7 +861,7 @@ std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx
   for (SpiceParser::BitwiseAndExprContext *bitwiseAndExprCtx : ctx->bitwiseAndExpr())
     bitwiseXorExprNode->operands.push_back(std::any_cast<BitwiseAndExprNode *>(visit(bitwiseAndExprCtx)));
 
-  return concludeNode(bitwiseXorExprNode);
+  return static_cast<ExprNode *>(concludeNode(bitwiseXorExprNode));
 }
 
 std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx) {
@@ -853,7 +871,7 @@ std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx
   for (SpiceParser::EqualityExprContext *equalityExprCtx : ctx->equalityExpr())
     bitwiseAndExprNode->operands.push_back(std::any_cast<EqualityExprNode *>(visit(equalityExprCtx)));
 
-  return concludeNode(bitwiseAndExprNode);
+  return static_cast<ExprNode *>(concludeNode(bitwiseAndExprNode));
 }
 
 std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
@@ -870,7 +888,7 @@ std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
   else if (ctx->NOT_EQUAL())
     equalityExprNode->op = EqualityExprNode::OP_NOT_EQUAL;
 
-  return concludeNode(equalityExprNode);
+  return static_cast<ExprNode *>(concludeNode(equalityExprNode));
 }
 
 std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
@@ -891,7 +909,7 @@ std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx
   else if (ctx->GREATER_EQUAL())
     relationalExprNode->op = RelationalExprNode::OP_GREATER_EQUAL;
 
-  return concludeNode(relationalExprNode);
+  return static_cast<ExprNode *>(concludeNode(relationalExprNode));
 }
 
 std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
@@ -908,7 +926,7 @@ std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   else if (!ctx->GREATER().empty())
     shiftExprNode->op = ShiftExprNode::OP_SHIFT_RIGHT;
 
-  return concludeNode(shiftExprNode);
+  return static_cast<ExprNode *>(concludeNode(shiftExprNode));
 }
 
 std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
@@ -925,7 +943,7 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
       additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, SymbolType(TY_INVALID));
   }
 
-  return concludeNode(additiveExprNode);
+  return static_cast<ExprNode *>(concludeNode(additiveExprNode));
 }
 
 std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprContext *ctx) {
@@ -944,7 +962,7 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, SymbolType(TY_INVALID));
   }
 
-  return concludeNode(multiplicativeExprNode);
+  return static_cast<ExprNode *>(concludeNode(multiplicativeExprNode));
 }
 
 std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
@@ -954,7 +972,7 @@ std::any ASTBuilder::visitCastExpr(SpiceParser::CastExprContext *ctx) {
   if (ctx->LPAREN())
     castExprNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
 
-  return concludeNode(castExprNode);
+  return static_cast<ExprNode *>(concludeNode(castExprNode));
 }
 
 std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *ctx) {
@@ -978,7 +996,7 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
   else if (ctx->BITWISE_AND())
     prefixUnaryExprNode->op = PrefixUnaryExprNode::OP_ADDRESS_OF;
 
-  return concludeNode(prefixUnaryExprNode);
+  return static_cast<ExprNode *>(concludeNode(prefixUnaryExprNode));
 }
 
 std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
@@ -988,7 +1006,7 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
   postfixUnaryExprNode->postfixUnaryExpr = std::any_cast<PostfixUnaryExprNode *>(visit(ctx->postfixUnaryExpr()));
 
   if (ctx->LBRACKET()) {
-    postfixUnaryExprNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    postfixUnaryExprNode->subscriptIdxExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
     postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_SUBSCRIPT;
   } else if (ctx->DOT()) {
     postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MEMBER_ACCESS;
@@ -999,7 +1017,7 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
     postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MINUS_MINUS;
   }
 
-  return concludeNode(postfixUnaryExprNode);
+  return static_cast<ExprNode *>(concludeNode(postfixUnaryExprNode));
 }
 
 std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
@@ -1023,7 +1041,7 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
     }
   }
 
-  return concludeNode(atomicExprNode);
+  return static_cast<ExprNode *>(concludeNode(atomicExprNode));
 }
 
 std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
@@ -1033,7 +1051,7 @@ std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
   if (ctx->NIL())
     valueNode->nilType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
 
-  return concludeNode(valueNode);
+  return static_cast<ExprNode *>(concludeNode(valueNode));
 }
 
 std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
@@ -1072,7 +1090,7 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
     assert_fail("Unknown constant type"); // GCOV_EXCL_LINE
   }
 
-  return concludeNode(constantNode);
+  return static_cast<ExprNode *>(concludeNode(constantNode));
 }
 
 std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
@@ -1100,7 +1118,7 @@ std::any ASTBuilder::visitFctCall(SpiceParser::FctCallContext *ctx) {
     }
   }
 
-  return concludeNode(fctCallNode);
+  return static_cast<ExprNode *>(concludeNode(fctCallNode));
 }
 
 std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationContext *ctx) {
@@ -1109,7 +1127,7 @@ std::any ASTBuilder::visitArrayInitialization(SpiceParser::ArrayInitializationCo
   if (ctx->argLst())
     arrayInitializationNode->itemLst = std::any_cast<ArgLstNode *>(visit(ctx->argLst()));
 
-  return concludeNode(arrayInitializationNode);
+  return static_cast<ExprNode *>(concludeNode(arrayInitializationNode));
 }
 
 std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationContext *ctx) {
@@ -1134,7 +1152,7 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
   if (ctx->argLst())
     structInstantiationNode->fieldLst = std::any_cast<ArgLstNode *>(visit(ctx->argLst()));
 
-  return concludeNode(structInstantiationNode);
+  return static_cast<ExprNode *>(concludeNode(structInstantiationNode));
 }
 
 std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
@@ -1149,7 +1167,7 @@ std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
 
   lambdaFuncNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
-  return concludeNode(lambdaFuncNode);
+  return static_cast<ExprNode *>(concludeNode(lambdaFuncNode));
 }
 
 std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
@@ -1162,7 +1180,7 @@ std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
 
   lambdaProcNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
-  return concludeNode(lambdaProcNode);
+  return static_cast<ExprNode *>(concludeNode(lambdaProcNode));
 }
 
 std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
@@ -1175,7 +1193,7 @@ std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
 
   lambdaExprNode->lambdaExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
-  return concludeNode(lambdaExprNode);
+  return static_cast<ExprNode *>(concludeNode(lambdaExprNode));
 }
 
 std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
@@ -1371,8 +1389,11 @@ template <typename T> T *ASTBuilder::createNode(const ParserRuleContext *ctx) {
 
   // Create the new node
   T *node = resourceManager.astNodeAlloc.allocate<T>(getCodeLoc(ctx));
-  node->parent = parent;
   resourceManager.astNodes.push_back(node);
+
+  // If this is not the entry node, we need to add the new node to its parent
+  if constexpr (!std::is_same_v<T, EntryNode>)
+    parent->addChild(node);
 
   // This node is the parent for its children
   parentStack.push(node);

@@ -16,7 +16,7 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   printfArgs.push_back(templateString);
 
   // Collect replacement arguments
-  for (AssignExprNode *arg : node->args) {
+  for (ExprNode *arg : node->args) {
     // Retrieve type of argument
     const SymbolType argSymbolType = arg->getEvaluatedSymbolType(manIdx);
     llvm::Type *argType = argSymbolType.toLLVMType(context, currentScope);
@@ -62,7 +62,7 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
   if (node->isType) { // Size of type
     type = any_cast<llvm::Type *>(visit(node->dataType));
   } else { // Size of value
-    type = node->assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
+    type = node->expr->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
   }
   // Calculate size at compile-time
   const llvm::TypeSize sizeInBits = module->getDataLayout().getTypeSizeInBits(type);
@@ -77,7 +77,7 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
   if (node->isType) { // Align of type
     type = any_cast<llvm::Type *>(visit(node->dataType));
   } else { // Align of value
-    type = node->assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
+    type = node->expr->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
   }
   // Calculate size at compile-time
   const llvm::Align align = module->getDataLayout().getABITypeAlign(type);
@@ -89,13 +89,13 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
-  SymbolType symbolType = node->assignExpr->getEvaluatedSymbolType(manIdx);
+  SymbolType symbolType = node->expr->getEvaluatedSymbolType(manIdx);
   symbolType = symbolType.removeReferenceWrapper();
 
   llvm::Value *lengthValue;
   if (symbolType.is(TY_STRING)) {
     llvm::Function *getRawLengthFct = stdFunctionManager.getStringGetRawLengthStringFct();
-    lengthValue = builder.CreateCall(getRawLengthFct, resolveValue(node->assignExpr));
+    lengthValue = builder.CreateCall(getRawLengthFct, resolveValue(node->expr));
   } else {
     assert(symbolType.isArray() && symbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
     // Return length value

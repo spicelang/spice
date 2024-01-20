@@ -44,6 +44,7 @@ class FieldNode;
 class SignatureNode;
 class StmtNode;
 class DeclStmtNode;
+class ExprStmtNode;
 class SpecifierLstNode;
 class SpecifierNode;
 class ModAttrNode;
@@ -132,6 +133,7 @@ public:
   virtual std::any visitSignature(const SignatureNode *node);
   virtual std::any visitStmt(const StmtNode *node);
   virtual std::any visitDeclStmt(const DeclStmtNode *node);
+  virtual std::any visitExprStmt(const ExprStmtNode *node);
   virtual std::any visitSpecifierLst(const SpecifierLstNode *node);
   virtual std::any visitSpecifier(const SpecifierNode *node);
   virtual std::any visitModAttr(const ModAttrNode *node);

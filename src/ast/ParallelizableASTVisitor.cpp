@@ -87,6 +87,8 @@ std::any ParallelizableASTVisitor::visitStmt(const StmtNode *node) { return visi
 
 std::any ParallelizableASTVisitor::visitDeclStmt(const DeclStmtNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitExprStmt(const ExprStmtNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitSpecifierLst(const SpecifierLstNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitSpecifier(const SpecifierNode *node) { return visitChildren(node); }
