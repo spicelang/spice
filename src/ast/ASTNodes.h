@@ -148,8 +148,11 @@ public:
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
+  [[nodiscard]] virtual bool isTopLevelDefNode() const { return false; }
   [[nodiscard]] virtual bool isStmtNode() const { return false; }
+  [[nodiscard]] virtual bool isExprNode() const { return false; }
   [[nodiscard]] virtual bool isParamNode() const { return false; }
+  [[nodiscard]] virtual bool isStmtLstNode() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
 
   // Public members
@@ -189,6 +192,24 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override = 0;
   std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
+
+  // Other methods
+  [[nodiscard]] bool isTopLevelDefNode() const override { return true; }
+};
+
+// =========================================================== StmtNode ==========================================================
+
+class StmtNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override = 0;
+  std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
+
+  // Other methods
+  [[nodiscard]] bool isStmtNode() const override { return true; }
 };
 
 // ========================================================== ExprNode ===========================================================
@@ -201,6 +222,9 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override = 0;
   std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
+
+  // Other methods
+  [[nodiscard]] bool isExprNode() const override { return true; }
 };
 
 // ======================================================== MainFctDefNode =======================================================
@@ -529,10 +553,10 @@ public:
 
 // ======================================================== UnsafeBlockNode ======================================================
 
-class UnsafeBlockNode : public ASTNode {
+class UnsafeBlockNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitUnsafeBlock(this); }
@@ -550,10 +574,10 @@ public:
 
 // ========================================================== ForLoopNode ========================================================
 
-class ForLoopNode : public ASTNode {
+class ForLoopNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitForLoop(this); }
@@ -575,10 +599,10 @@ public:
 
 // ======================================================== ForeachLoopNode ======================================================
 
-class ForeachLoopNode : public ASTNode {
+class ForeachLoopNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitForeachLoop(this); }
@@ -607,10 +631,10 @@ public:
 
 // ========================================================= WhileLoopNode =======================================================
 
-class WhileLoopNode : public ASTNode {
+class WhileLoopNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitWhileLoop(this); }
@@ -630,10 +654,10 @@ public:
 
 // ======================================================== DoWhileLoopNode ======================================================
 
-class DoWhileLoopNode : public ASTNode {
+class DoWhileLoopNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDoWhileLoop(this); }
@@ -653,10 +677,10 @@ public:
 
 // ========================================================== IfStmtNode =========================================================
 
-class IfStmtNode : public ASTNode {
+class IfStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitIfStmt(this); }
@@ -677,10 +701,10 @@ public:
 
 // ========================================================= ElseStmtNode ========================================================
 
-class ElseStmtNode : public ASTNode {
+class ElseStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitElseStmt(this); }
@@ -701,10 +725,10 @@ public:
 
 // ======================================================== SwitchStmtNode =======================================================
 
-class SwitchStmtNode : public ASTNode {
+class SwitchStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSwitchStmt(this); }
@@ -769,10 +793,10 @@ public:
 
 // ==================================================== AnonymousBlockStmtNode ===================================================
 
-class AnonymousBlockStmtNode : public ASTNode {
+class AnonymousBlockStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAnonymousBlockStmt(this); }
@@ -803,8 +827,9 @@ public:
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   void resizeToNumberOfManifestations(size_t manifestationCount) override {
     ASTNode::resizeToNumberOfManifestations(manifestationCount);
-    dtorFunctions.resize(manifestationCount, std::vector<std::pair<SymbolTableEntry *, Function *>>());
+    dtorFunctions.resize(manifestationCount);
   }
+  [[nodiscard]] bool isStmtLstNode() const override { return true; }
 
   // Public members
   size_t complexity = 0;
@@ -963,27 +988,12 @@ public:
   std::vector<Function *> signatureManifestations;
 };
 
-// =========================================================== StmtNode ==========================================================
-
-class StmtNode : public ASTNode {
-public:
-  // Constructors
-  using ASTNode::ASTNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStmt(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStmt(this); }
-
-  // Other methods
-  [[nodiscard]] bool isStmtNode() const override { return true; }
-};
-
 // ========================================================= DeclStmtNode ========================================================
 
-class DeclStmtNode : public ASTNode {
+class DeclStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDeclStmt(this); }
@@ -994,7 +1004,7 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount, nullptr); }
+  void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount); }
   [[nodiscard]] bool isParamNode() const override { return isParam; }
 
   // Public members
@@ -1173,10 +1183,10 @@ public:
 
 // ======================================================== ReturnStmtNode =======================================================
 
-class ReturnStmtNode : public ASTNode {
+class ReturnStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitReturnStmt(this); }
@@ -1187,10 +1197,7 @@ public:
 
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *) const override { return true; }
-  [[nodiscard]] StmtLstNode *getParentScopeNode() const {
-    assert(dynamic_cast<StmtLstNode *>(parent->parent) != nullptr);
-    return spice_pointer_cast<StmtLstNode *>(parent->parent);
-  }
+  [[nodiscard]] StmtLstNode *getParentScopeNode() const { return spice_pointer_cast<StmtLstNode *>(parent); }
 
   // Public members
   bool hasReturnValue = false;
@@ -1198,10 +1205,10 @@ public:
 
 // ======================================================== BreakStmtNode ========================================================
 
-class BreakStmtNode : public ASTNode {
+class BreakStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBreakStmt(this); }
@@ -1213,10 +1220,10 @@ public:
 
 // ======================================================= ContinueStmtNode ======================================================
 
-class ContinueStmtNode : public ASTNode {
+class ContinueStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitContinueStmt(this); }
@@ -1228,10 +1235,10 @@ public:
 
 // ====================================================== FallthroughStmtNode ====================================================
 
-class FallthroughStmtNode : public ASTNode {
+class FallthroughStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFallthroughStmt(this); }
@@ -1243,10 +1250,10 @@ public:
 
 // ======================================================== AssertStmtNode =======================================================
 
-class AssertStmtNode : public ASTNode {
+class AssertStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAssertStmt(this); }
@@ -1970,7 +1977,7 @@ public:
   [[nodiscard]] ArgLstNode *fieldLst() const { return getChild<ArgLstNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override { instantiatedStructs.resize(manifestationCount, nullptr); }
+  void customItemsInitialization(size_t manifestationCount) override { instantiatedStructs.resize(manifestationCount); }
 
   // Public members
   std::string fqStructName;
@@ -2144,7 +2151,7 @@ public:
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount, nullptr); }
+  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount); }
 
   // Public members
   std::string fqTypeName;
@@ -2168,7 +2175,7 @@ public:
   [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount, nullptr); }
+  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount); }
 
   // Public members
   std::vector<SymbolTableEntry *> customTypes;

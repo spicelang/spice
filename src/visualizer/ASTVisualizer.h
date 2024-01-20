@@ -58,7 +58,6 @@ public:
   std::any visitEnumItem(EnumItemNode *ctx) override { return buildNode(ctx); }
   std::any visitField(FieldNode *ctx) override { return buildNode(ctx); }
   std::any visitSignature(SignatureNode *ctx) override { return buildNode(ctx); }
-  std::any visitStmt(StmtNode *ctx) override { return buildNode(ctx); }
   std::any visitDeclStmt(DeclStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitSpecifierLst(SpecifierLstNode *ctx) override { return buildNode(ctx); }
   std::any visitSpecifier(SpecifierNode *ctx) override { return buildNode(ctx); }
