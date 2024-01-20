@@ -565,7 +565,7 @@
           "name": "this.Iterable",
           "orderIndex": 0,
           "state": "declared",
-          "type": "public Iterable<short>"
+          "type": "public IIterator<short>"
         }
       ]
     }
@@ -620,7 +620,7 @@
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "std/iterator/iterable",
+      "name": "std/iterator/iterator",
       "orderIndex": 0,
       "state": "declared",
       "type": "import"

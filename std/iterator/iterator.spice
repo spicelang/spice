@@ -8,7 +8,7 @@ type T dyn;
  * all elements, implementing the Iterable interface can be looped over by a standard foreach loop.
  */
 #[core.compiler.fixedTypeId = 255]
-public type Iterable<T> interface {
+public type IIterator<T> interface {
     f<T&> get<T>();                         // Get the current item
     f<Pair<unsigned long, T&>> getIdx<T>(); // Get the current index and item
     f<bool> isValid();                      // Check if the iterator is still valid

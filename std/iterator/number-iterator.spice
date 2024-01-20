@@ -1,4 +1,4 @@
-import "std/iterator/iterable";
+import "std/iterator/iterator";
 import "std/data/pair";
 import "std/type/error";
 
@@ -8,7 +8,7 @@ type N int|long|short;
 /**
  * A NumberIterator in Spice can be used to iterate over a range of numbers
  */
-public type NumberIterator<N> struct : Iterable<N> {
+public type NumberIterator<N> struct : IIterator<N> {
     N currentNumber
     N lowerBound // Inclusive
     N upperBound // Inclusive

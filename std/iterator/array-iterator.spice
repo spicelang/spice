@@ -1,4 +1,4 @@
-import "std/iterator/iterable";
+import "std/iterator/iterator";
 import "std/data/pair";
 import "std/type/error";
 
@@ -9,7 +9,7 @@ type Numeric int|long|short;
 /**
  * A ArrayIterator in Spice can be used to iterate over an arbitrary array
  */
-public type ArrayIterator<I> struct : Iterable<I> {
+public type ArrayIterator<I> struct : IIterator<I> {
     I* array
     unsigned long size
     unsigned long cursor

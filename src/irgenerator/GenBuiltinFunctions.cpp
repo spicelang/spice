@@ -65,10 +65,10 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
     type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
   }
   // Calculate size at compile-time
-  const unsigned int size = module->getDataLayout().getTypeSizeInBits(type);
+  const llvm::TypeSize sizeInBits = module->getDataLayout().getTypeSizeInBits(type);
 
   // Return size value
-  llvm::Value *sizeValue = builder.getInt64(size);
+  llvm::Value *sizeValue = builder.getInt64(sizeInBits);
   return LLVMExprResult{.value = sizeValue};
 }
 

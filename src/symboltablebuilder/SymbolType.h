@@ -26,8 +26,9 @@ class Interface;
 const char *const STROBJ_NAME = "String";
 const char *const ERROBJ_NAME = "Error";
 const char *const TIOBJ_NAME = "TypeInfo";
+const char *const IITERATOR_NAME = "IIterator";
 const long ARRAY_SIZE_UNKNOWN = 0;
-const uint64_t TYPE_ID_ITERABLE = 255;
+const uint64_t TYPE_ID_ITERATOR_INTERFACE = 255;
 
 enum SymbolSuperType : uint8_t {
   TY_INVALID,

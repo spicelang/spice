@@ -1,4 +1,4 @@
-import "std/iterator/iterable";
+import "std/iterator/iterator";
 import "std/data/vector";
 import "std/data/pair";
 import "std/type/error";
@@ -10,7 +10,7 @@ type Numeric int|long|short;
 /**
  * Iterator to iterate over a vector data structure
  */
-public type VectorIterator<I> struct : Iterable<I> {
+public type VectorIterator<I> struct : IIterator<I> {
     Vector<I>& vector
     unsigned long cursor
 }

@@ -2,11 +2,12 @@ import "std/type/result";
 import "std/type/error";
 
 // Constants
-const unsigned long INITIAL_ALLOC_COUNT = 5l;
+const unsigned long INITIAL_CAPACITY = 5l;
 const unsigned int RESIZE_FACTOR = 2;
 
-// Add generic type definition
+// Add generic type definitions
 type T dyn;
+type UIntOrULong unsigned int|unsigned long;
 
 /**
  * A vector in Spice is a commonly used data structure, which can be used to represent a list of items.
@@ -25,20 +26,20 @@ public type Vector<T> struct {
     unsigned long size      // Current number of items
 }
 
-public p Vector.ctor(unsigned long initAllocItems = INITIAL_ALLOC_COUNT) {
+public p Vector.ctor(unsigned long initialCapacity = INITIAL_CAPACITY) {
     // Allocate space for the initial number of elements
     const long itemSize = sizeof(type T) / 8l;
     assert itemSize != 0l;
     unsafe {
-        Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
+        Result<heap byte*> allocResult = sAlloc(itemSize * initialCapacity);
         this.contents = (heap T*) allocResult.unwrap();
     }
     this.size = 0l;
-    this.capacity = initAllocItems;
+    this.capacity = initialCapacity;
 }
 
-public p Vector.ctor(unsigned int initAllocItems) {
-    this.ctor((long) initAllocItems);
+public p Vector.ctor(unsigned int initialCapacity) {
+    this.ctor((long) initialCapacity);
 }
 
 public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
@@ -105,6 +106,32 @@ public f<T&> Vector.get(unsigned long index) {
  */
 public f<T&> Vector.get(unsigned int index) {
     return this.get((unsigned long) index);
+}
+
+/**
+ * Remove an item at a certain index
+ *
+ * @param index Index of the item to remove
+ */
+public p Vector.removeAt(unsigned long index) {
+    if index >= this.size { panic(Error("Access index out of bounds")); }
+    // Move all elements after the index one to the front
+    for unsigned long i = index; i < this.size - 1; i++ {
+        unsafe {
+            this.contents[i] = this.contents[i + 1];
+        }
+    }
+    // Decrement the size
+    this.size--;
+}
+
+/**
+ * Remove an item at a certain index
+ *
+ * @param index Index of the item to remove
+ */
+public p Vector.removeAt(unsigned int index) {
+    this.removeAt((unsigned long) index);
 }
 
 /**

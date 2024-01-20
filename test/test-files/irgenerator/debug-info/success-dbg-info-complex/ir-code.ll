@@ -4,8 +4,8 @@ target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16
 target triple = "x86_64-w64-windows-gnu"
 
 %struct.Vector = type { ptr, i64, i64 }
-%struct.VectorIterator = type { %interface.Iterable, ptr, i64 }
-%interface.Iterable = type { ptr }
+%struct.VectorIterator = type { %interface.IIterator, ptr, i64 }
+%interface.IIterator = type { ptr }
 %struct.Pair = type { i64, ptr }
 
 @anon.string.0 = private unnamed_addr constant [68 x i8] c"Assertion failed: Condition 'vi.getSize() == 3' evaluated to false.\00", align 1
@@ -522,14 +522,14 @@ attributes #3 = { cold noreturn nounwind }
 !25 = !DILocalVariable(name: "_argc", arg: 1, scope: !15, file: !5, line: 6, type: !18)
 !26 = !DILocalVariable(name: "_argv", arg: 2, scope: !15, file: !5, line: 6, type: !19)
 !27 = !DILocalVariable(name: "vi", scope: !15, file: !5, line: 8, type: !28)
-!28 = !DICompositeType(tag: DW_TAG_structure_type, name: "Vector", scope: !29, file: !29, line: 22, size: 192, align: 8, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !30, identifier: "struct.Vector")
+!28 = !DICompositeType(tag: DW_TAG_structure_type, name: "Vector", scope: !29, file: !29, line: 23, size: 192, align: 8, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !30, identifier: "struct.Vector")
 !29 = !DIFile(filename: "vector.spice", directory: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\std\\data")
 !30 = !{!31, !33, !35}
-!31 = !DIDerivedType(tag: DW_TAG_member, name: "contents", scope: !28, file: !29, line: 23, baseType: !32, size: 64)
+!31 = !DIDerivedType(tag: DW_TAG_member, name: "contents", scope: !28, file: !29, line: 24, baseType: !32, size: 64)
 !32 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !18, size: 64)
-!33 = !DIDerivedType(tag: DW_TAG_member, name: "capacity", scope: !28, file: !29, line: 24, baseType: !34, size: 64, offset: 64)
+!33 = !DIDerivedType(tag: DW_TAG_member, name: "capacity", scope: !28, file: !29, line: 25, baseType: !34, size: 64, offset: 64)
 !34 = !DIBasicType(name: "unsigned long", size: 64, encoding: DW_ATE_unsigned)
-!35 = !DIDerivedType(tag: DW_TAG_member, name: "size", scope: !28, file: !29, line: 25, baseType: !34, size: 64, offset: 128)
+!35 = !DIDerivedType(tag: DW_TAG_member, name: "size", scope: !28, file: !29, line: 26, baseType: !34, size: 64, offset: 128)
 !36 = !DILocation(line: 8, column: 5, scope: !15)
 !37 = !DILocation(line: 8, column: 22, scope: !15)
 !38 = !DILocation(line: 9, column: 17, scope: !15)

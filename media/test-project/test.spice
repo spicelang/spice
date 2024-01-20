@@ -1,20 +1,7 @@
-type TestStruct struct {
-    long lng
-    String str
-    int i
-}
-
-f<TestStruct> fct(int& ref) {
-    TestStruct ts = TestStruct{ 6l, String("test string"), ref };
-    return ts;
-}
-
 f<int> main() {
-    int test = 987654;
-    const TestStruct res = fct(test);
-    printf("Long: %d\n", res.lng);
-    printf("String: %s\n", res.str.getRaw());
-    printf("Int: %d\n", res.i);
+    foreach dyn item : [ 1, 2, 3, 4, 5 ] {
+        printf("Item %d: %d\n", idx, item);
+    }
 }
 
 /*f<int> main() {
