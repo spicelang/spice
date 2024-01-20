@@ -49,7 +49,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         string arg = argv[argNo];
 
         // Check for subcommands
-        foreach const CliSubcommand& subcommand : iterate(this.subcommands) {
+        foreach const CliSubcommand& subcommand : this.subcommands.getIterator() {
             if arg == subcommand.getName() {
                 return subcommand.parse(argc, argv, layer + 1);
             }
@@ -66,7 +66,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         }
 
         // Check for options
-        foreach const CliOption<bool>& boolOption : iterate(this.boolOptions) {
+        foreach const CliOption<bool>& boolOption : this.boolOptions.getIterator() {
             if arg == boolOption.getName() {
                 bool value = true;
                 boolOption.setTargetValue(value);
@@ -74,7 +74,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
                 continue 2; // Continue with next argument
             }
         }
-        foreach const CliOption<string>& stringOption : iterate(this.stringOptions) {
+        foreach const CliOption<string>& stringOption : this.stringOptions.getIterator() {
             if arg == stringOption.getName() {
                 // get the argument value
                 arg = argv[++argNo];
@@ -84,7 +84,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
                 continue 2; // Continue with next argument
             }
         }
-        foreach const CliOption<int>& intOption : iterate(this.intOptions) {
+        foreach const CliOption<int>& intOption : this.intOptions.getIterator() {
             if arg == intOption.getName() {
                 // get the argument value
                 arg = argv[++argNo];
@@ -128,7 +128,7 @@ public p CliSubcommand.setCallback(p() callback) {
 
 public p CliSubcommand.allowUnknownOptions() {
     this.allowUnknownOptions = true;
-    foreach CliSubcommand& subcommand : iterate(this.subcommands) {
+    foreach CliSubcommand& subcommand : this.subcommands.getIterator() {
         subcommand.allowUnknownOptions();
     }
 }
@@ -191,23 +191,23 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
     // Print subcommands
     if !this.subcommands.isEmpty() {
         printf("\nSubcommands:\n");
-        foreach const CliSubcommand& subCommand : iterate(this.subcommands) {
+        foreach const CliSubcommand& subCommand : this.subcommands.getIterator() {
             printHelpItem(subCommand.getName(), subCommand.getDescription());
         }
     }
 
     // Print options
     printf("\nOptions:\n");
-    foreach const CliOption<string>& option : iterate(this.stringOptions) {
+    foreach const CliOption<string>& option : this.stringOptions.getIterator() {
         printHelpItemWithValue(option.getName(), option.getDescription());
     }
-    foreach const CliOption<int>& option : iterate(this.intOptions) {
+    foreach const CliOption<int>& option : this.intOptions.getIterator() {
         printHelpItemWithValue(option.getName(), option.getDescription());
     }
 
     // Print flags
     printf("\nFlags:\n");
-    foreach const CliOption<bool>& flag : iterate(this.boolOptions) {
+    foreach const CliOption<bool>& flag : this.boolOptions.getIterator() {
         printHelpItem(flag.getName(), flag.getDescription());
     }
     printHelpItem("--help,-h", "Print this help message");

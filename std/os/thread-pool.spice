@@ -145,7 +145,7 @@ public f<unsigned short> ThreadPool.getWorkerThreadCount() {
  * Wait for all worker threads to terminate.
  */
 p ThreadPool.joinWorkerThreads() {
-    foreach const Thread& workerThread : iterate(this.workerThreads) {
+    foreach const Thread& workerThread : this.workerThreads.getIterator() {
         workerThread.join();
     }
 }
