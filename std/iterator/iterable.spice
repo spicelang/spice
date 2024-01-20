@@ -1,0 +1,13 @@
+import "std/iterator/iterator";
+
+// Generic type definitions
+type T dyn;
+
+/**
+ * The IIterable interface must be implemented in order to be handled as a data structure that can be iterated over
+ * by Spice.
+ */
+#[core.compiler.fixedTypeId = 256]
+public type IIterable<T> interface {
+    f<IIterator<T>> getIterator<T>();
+}

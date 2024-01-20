@@ -252,6 +252,20 @@ bool SymbolType::isIterator(const ASTNode *node) const {
 }
 
 /**
+ * Check if the current type is an iterable
+ *
+ * @param node ASTNode
+ * @return Iterable or not
+ */
+bool SymbolType::isIterable(const ASTNode *node) const {
+  if (!is(TY_STRUCT))
+    return false;
+  SymbolType genericType(TY_GENERIC, "T");
+  SymbolType iteratorType(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERABLE_INTERFACE, {.bodyScope = nullptr}, {genericType});
+  return implements(iteratorType, node);
+}
+
+/**
  * Check if the current type is a string object
  *
  * @return String object or not

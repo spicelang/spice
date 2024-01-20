@@ -1,5 +1,8 @@
 import "std/type/result";
 import "std/type/error";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
 // Constants
 const unsigned long INITIAL_CAPACITY = 5l;
@@ -8,6 +11,7 @@ const unsigned int RESIZE_FACTOR = 2;
 // Add generic type definitions
 type T dyn;
 type UIntOrULong unsigned int|unsigned long;
+type Numeric int|long|short;
 
 /**
  * A vector in Spice is a commonly used data structure, which can be used to represent a list of items.
@@ -20,7 +24,7 @@ type UIntOrULong unsigned int|unsigned long;
  * Vectors pre-allocate space using an initial size and a resize factor to not have to re-allocate
  * with every item pushed.
  */
-public type Vector<T> struct {
+public type Vector<T> struct : IIterable<T> {
     heap T* contents        // Pointer to the first data element
     unsigned long capacity  // Allocated number of items
     unsigned long size      // Current number of items
@@ -243,4 +247,101 @@ p Vector.resize(unsigned long itemCount) {
     }
     // Set new capacity
     this.capacity = itemCount;
+}
+
+/**
+ * Iterator to iterate over a vector data structure
+ */
+public type VectorIterator<T> struct : IIterator<T> {
+    Vector<T>& vector
+    unsigned long cursor
+}
+
+public p VectorIterator.ctor<T>(Vector<T>& vector) {
+    this.vector = vector;
+    this.cursor = 0l;
+}
+
+/**
+ * Returns the current item of the vector
+ *
+ * @return Reference to the current item
+ */
+public inline f<T&> VectorIterator.get() {
+    return this.vector.get(this.cursor);
+}
+
+/**
+ * Returns the current index and the current item of the vector
+ *
+ * @return Pair of current index and reference to current item
+ */
+public inline f<Pair<unsigned long, T&>> VectorIterator.getIdx() {
+    return Pair<unsigned long, T&>(this.cursor, this.vector.get(this.cursor));
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> VectorIterator.isValid() {
+    return this.cursor < this.vector.getSize();
+}
+
+/**
+ * Returns the current item of the vector iterator and moves the cursor to the next item
+ */
+public inline p VectorIterator.next() {
+    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
+    this.cursor++;
+}
+
+/**
+ * Advances the cursor by one
+ *
+ * @param it VectorIterator
+ */
+public inline p operator++<T>(VectorIterator<T>& it) {
+    if it.cursor >= it.vector.getSize() { panic(Error("Iterator out of bounds")); }
+    it.cursor++;
+}
+
+/**
+ * Move the cursor back by one
+ *
+ * @param it VectorIterator
+ */
+public inline p operator--<T>(VectorIterator<T>& it) {
+    if it.cursor <= 0 { panic(Error("Iterator out of bounds")); }
+    it.cursor--;
+}
+
+/**
+ * Advances the cursor by the given offset
+ *
+ * @param it VectorIterator
+ * @param offset Offset
+ */
+public inline p operator+=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
+    if it.cursor + offset >= it.vector.getSize() || it.cursor + offset < 0 { panic(Error("Iterator out of bounds")); }
+    it.cursor += offset;
+}
+
+/**
+ * Move the cursor back by the given offset
+ *
+ * @param it VectorIterator
+ * @param offset Offset
+ */
+public inline p operator-=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
+    if it.cursor - offset >= it.vector.getSize() || it.cursor - offset < 0 { panic(Error("Iterator out of bounds")); }
+    it.cursor -= offset;
+}
+
+/**
+ * Retrieve an forward iterator for the vector
+ */
+public f<VectorIterator<T>> Vector.getIterator() {
+    return VectorIterator<T>(*this);
 }

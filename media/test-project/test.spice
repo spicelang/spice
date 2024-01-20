@@ -1,7 +1,12 @@
+f<int> test() { return 123; }
+
+type Test struct {
+    int i = test()
+}
+
 f<int> main() {
-    foreach dyn item : [ 1, 2, 3, 4, 5 ] {
-        printf("Item %d: %d\n", idx, item);
-    }
+    Test t;
+    printf("%d\n", t.i);
 }
 
 /*f<int> main() {

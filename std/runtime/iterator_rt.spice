@@ -1,7 +1,6 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
 import "std/iterator/array-iterator";
-import "std/iterator/vector-iterator";
 import "std/data/vector";
 import "std/iterator/linked-list-iterator";
 import "std/data/linked-list";

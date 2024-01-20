@@ -6,15 +6,3 @@ Specifier at illegal context: The compose specifier can only be used on plain st
 
 3  compose A* f2
    ^^^^^^^
-
-[Error|Semantic] ./test-files/typechecker/structs/error-circular-composed-fields-lookup/source.spice:9:5:
-Referenced undefined variable: Variable 'f2' was referenced before declared
-
-9  a.f2 = &a;
-   ^^^^
-
-[Error|Semantic] ./test-files/typechecker/structs/error-circular-composed-fields-lookup/source.spice:10:5:
-Referenced undefined variable: Field 'f3' not found in struct A
-
-10  a.f3 = 1;
-    ^^^^

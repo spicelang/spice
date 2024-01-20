@@ -1,5 +1,3 @@
-import "std/runtime/iterator_rt";
-import "std/iterator/vector-iterator";
 import "std/data/vector";
 import "std/data/pair";
 
@@ -12,7 +10,7 @@ f<int> main() {
     assert vi.getSize() == 3;
 
     // Test base functionality
-    dyn it = iterate(vi);
+    dyn it = vi.getIterator();
     assert it.isValid();
     assert it.get() == 123;
     assert it.get() == 123;
@@ -45,7 +43,7 @@ f<int> main() {
     assert !it.isValid();
 
     // Test foreach value
-    foreach int item : iterate(vi) {
+    foreach int item : vi.getIterator() {
         item++;
     }
     assert vi.get(0) == 123;
@@ -53,14 +51,14 @@ f<int> main() {
     assert vi.get(2) == 9876;
 
     // Test foreach ref
-    foreach int& item : iterate(vi) {
+    foreach int& item : vi.getIterator() {
         item++;
     }
     assert vi.get(0) == 124;
     assert vi.get(1) == 4322;
     assert vi.get(2) == 9877;
 
-    foreach long idx, int& item : iterate(vi) {
+    foreach long idx, int& item : vi.getIterator() {
         item += idx;
     }
     assert vi.get(0) == 124;

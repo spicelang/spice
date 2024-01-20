@@ -29,6 +29,7 @@ const char *const TIOBJ_NAME = "TypeInfo";
 const char *const IITERATOR_NAME = "IIterator";
 const long ARRAY_SIZE_UNKNOWN = 0;
 const uint64_t TYPE_ID_ITERATOR_INTERFACE = 255;
+const uint64_t TYPE_ID_ITERABLE_INTERFACE = 256;
 
 enum SymbolSuperType : uint8_t {
   TY_INVALID,
@@ -139,6 +140,7 @@ public:
     return isOneOf({TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL});
   }
   [[nodiscard]] bool isIterator(const ASTNode *node) const;
+  [[nodiscard]] bool isIterable(const ASTNode *node) const;
   [[nodiscard]] bool isStringObj() const;
   [[nodiscard]] bool isErrorObj() const;
   [[nodiscard]] bool implements(const SymbolType &symbolType, const ASTNode *node) const;
