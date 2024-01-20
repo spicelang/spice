@@ -1,5 +1,0 @@
-f<int> main() {
-    foreach dyn item : [ 1, 2, 3, 4, 5 ] {
-        printf("Item %d: %d\n", idx, item);
-    }
-}
