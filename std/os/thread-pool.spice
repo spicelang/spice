@@ -4,7 +4,6 @@ import "std/data/queue";
 import "std/os/atomic";
 import "std/os/cpu";
 import "std/os/system";
-import "std/runtime/iterator_rt";
 
 /**
  * A thread pool that can be used to run multiple jobs in parallel.
@@ -145,7 +144,7 @@ public f<unsigned short> ThreadPool.getWorkerThreadCount() {
  * Wait for all worker threads to terminate.
  */
 p ThreadPool.joinWorkerThreads() {
-    foreach const Thread& workerThread : iterate(this.workerThreads) {
+    foreach const Thread& workerThread : this.workerThreads {
         workerThread.join();
     }
 }

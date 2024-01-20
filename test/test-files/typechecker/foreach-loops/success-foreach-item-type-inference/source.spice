@@ -1,9 +1,9 @@
-import "std/iterator/iterable";
+import "std/iterator/iterator";
 import "std/data/pair";
 
 type T short|int|long;
 
-type MockIterator<T> struct : Iterable<T> {
+type MockIterator<T> struct : IIterator<T> {
     T item
     unsigned long cursor
 }

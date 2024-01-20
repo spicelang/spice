@@ -1,0 +1,16 @@
+import "std/data/pair";
+
+// Generic type definitions
+type T dyn;
+
+/**
+ * The IIterator interface must be implemented in order to be handled as an iterator by Spice. For instance,
+ * all elements, implementing the IIterator interface can be looped over by a standard foreach loop.
+ */
+#[core.compiler.fixedTypeId = 255]
+public type IIterator<T> interface {
+    f<T&> get<T>();                         // Get the current item
+    f<Pair<unsigned long, T&>> getIdx<T>(); // Get the current index and item
+    f<bool> isValid();                      // Check if the iterator is still valid
+    p next();                               // Advance the cursor by one
+}

@@ -1,4 +1,4 @@
-import "std/iterator/iterable";
+import "std/iterator/iterator";
 import "std/data/pair";
 import "std/type/error";
 
@@ -9,7 +9,7 @@ type Numeric int|long|short;
 /**
  * A ArrayIterator in Spice can be used to iterate over an arbitrary array
  */
-public type ArrayIterator<I> struct : Iterable<I> {
+public type ArrayIterator<I> struct : IIterator<I> {
     I* array
     unsigned long size
     unsigned long cursor
@@ -95,4 +95,11 @@ public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
 public inline p operator-=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
     if it.cursor - offset >= it.size || it.cursor - offset < 0 { panic(Error("Iterator out of bounds")); }
     it.cursor -= offset;
+}
+
+/**
+ * Convenience wrapper for creating a simple array iterator
+ */
+public inline f<ArrayIterator<I>> iterate<I>(I[] array, unsigned long size) {
+    return ArrayIterator<I>(array, size);
 }

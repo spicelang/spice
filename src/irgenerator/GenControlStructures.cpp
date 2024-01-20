@@ -95,12 +95,28 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Resolve iterator
   AssignExprNode *iteratorAssignNode = node->iteratorAssign();
-  SymbolType iteratorType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
+  SymbolType iteratorOrIterableType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
+  SymbolType iteratorType = iteratorOrIterableType;
+  llvm::Value *iteratorPtr;
+  if (node->getIteratorFct != nullptr) { // The iteratorAssignExpr is of type Iterable
+    iteratorType = node->getIteratorFct->returnType;
+
+    // Call .getIterator() on iterable
+    llvm::Function *getIteratorFct = stdFunctionManager.getIteratorFct(node->getIteratorFct);
+    llvm::Value *iterablePtr = resolveAddress(iteratorAssignNode);
+    llvm::Value *iterator = builder.CreateCall(getIteratorFct, iterablePtr);
+
+    // Resolve address of iterator
+    LLVMExprResult callResult = {.value = iterator, .node = iteratorAssignNode};
+    iteratorPtr = resolveAddress(callResult);
+  } else { // The iteratorAssignExpr is of type Iterator
+    iteratorPtr = resolveAddress(iteratorAssignNode);
+  }
+
   const SymbolType itemSTy = iteratorType.getTemplateTypes().front();
   const SymbolType itemRefSTy = itemSTy.toReference(node);
   assert(!node->getFct || itemRefSTy == node->getFct->returnType);
   assert(!node->getIdxFct || itemRefSTy == node->getIdxFct->returnType.getTemplateTypes().back());
-  llvm::Value *iterator = resolveAddress(iteratorAssignNode);
 
   // Visit idx variable declaration if required
   const DeclStmtNode *idxDeclNode = node->idxVarDecl();
@@ -131,7 +147,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Call .isValid() on iterator
   assert(node->isValidFct);
   llvm::Function *isValidFct = stdFunctionManager.getIteratorIsValidFct(node->isValidFct);
-  llvm::Value *isValid = builder.CreateCall(isValidFct, iterator);
+  llvm::Value *isValid = builder.CreateCall(isValidFct, iteratorPtr);
   // Create conditional jump from head to body or exit block
   insertCondJump(isValid, bBody, bExit);
 
@@ -145,7 +161,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     // Call .getIdx() on iterator
     assert(node->getIdxFct);
     llvm::Function *getIdxFct = stdFunctionManager.getIteratorGetIdxFct(node->getIdxFct, currentScope);
-    llvm::Value *pair = builder.CreateCall(getIdxFct, iterator);
+    llvm::Value *pair = builder.CreateCall(getIdxFct, iteratorPtr);
     pair->setName("pair");
     insertStore(pair, pairPtr);
     // Store idx to idx var
@@ -160,7 +176,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     // Call .get() on iterator
     assert(node->getFct);
     llvm::Function *getFct = stdFunctionManager.getIteratorGetFct(node->getFct);
-    llvm::Value *getItemPtr = builder.CreateCall(getFct, iterator);
+    llvm::Value *getItemPtr = builder.CreateCall(getFct, iteratorPtr);
     LLVMExprResult getResult = {.ptr = getItemPtr};
     doAssignment(itemAddress, itemEntry, getResult, itemRefSTy, true);
   }
@@ -174,7 +190,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Call .next() on iterator
   assert(node->nextFct);
   llvm::Function *nextFct = stdFunctionManager.getIteratorNextFct(node->nextFct);
-  builder.CreateCall(nextFct, iterator);
+  builder.CreateCall(nextFct, iteratorPtr);
   // Create jump from tail to head block
   insertJump(bHead);
 

@@ -1,8 +1,12 @@
 import "std/type/result";
 import "std/type/error";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
 // Add generic type definitions
 type T dyn;
+type Numeric int|long|short;
 
 /**
  * Node of a LinkedList
@@ -32,7 +36,7 @@ p Node.ctor(const T& value) {
  *
  * Beware that each add operation allocates memory and every remove operation frees memory.
  */
-public type LinkedList<T> struct {
+public type LinkedList<T> struct : IIterable<T> {
     heap Node<T>* tail
     heap Node<T>* head
     unsigned long size = 0l
@@ -213,4 +217,101 @@ f<heap Node<T>*> LinkedList.createNode(const T& value) {
     newNode.value = value;
     newNode.next = nil<heap Node<T>*>;
     return newNode;
+}
+
+/**
+ * Iterator to iterate over a vector data structure
+ */
+public type LinkedListIterator<T> struct : IIterator<T> {
+    LinkedList<T>& list
+    unsigned long cursor
+}
+
+public p LinkedListIterator.ctor<T>(LinkedList<T>& list) {
+    this.list = list;
+    this.cursor = 0l;
+}
+
+/**
+ * Returns the current item of the vector
+ *
+ * @return Reference to the current item
+ */
+public inline f<T&> LinkedListIterator.get() {
+    return this.list.get(this.cursor);
+}
+
+/**
+ * Returns the current index and the current item of the vector
+ *
+ * @return Pair of current index and reference to current item
+ */
+public inline f<Pair<unsigned long, T&>> LinkedListIterator.getIdx() {
+    return Pair<unsigned long, T&>(this.cursor, this.list.get(this.cursor));
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> LinkedListIterator.isValid() {
+    return this.cursor < this.list.getSize();
+}
+
+/**
+ * Returns the current item of the vector iterator and moves the cursor to the next item
+ */
+public inline p LinkedListIterator.next() {
+    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
+    this.cursor++;
+}
+
+/**
+ * Advances the cursor by one
+ *
+ * @param it LinkedListIterator
+ */
+public inline p operator++<T>(LinkedListIterator<T>& it) {
+    if it.cursor >= it.list.getSize() { panic(Error("Iterator out of bounds")); }
+    it.cursor++;
+}
+
+/**
+ * Move the cursor back by one
+ *
+ * @param it LinkedListIterator
+ */
+public inline p operator--<T>(LinkedListIterator<T>& it) {
+    if it.cursor <= 0 { panic(Error("Iterator out of bounds")); }
+    it.cursor--;
+}
+
+/**
+ * Advances the cursor by the given offset
+ *
+ * @param it LinkedListIterator
+ * @param offset Offset
+ */
+public inline p operator+=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset) {
+    if it.cursor + offset >= it.list.getSize() || it.cursor + offset < 0 { panic(Error("Iterator out of bounds")); }
+    it.cursor += offset;
+}
+
+/**
+ * Move the cursor back by the given offset
+ *
+ * @param it LinkedListIterator
+ * @param offset Offset
+ */
+public inline p operator-=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset) {
+    if it.cursor - offset >= it.list.getSize() || it.cursor - offset < 0 { panic(Error("Iterator out of bounds")); }
+    it.cursor -= offset;
+}
+
+/**
+ * Retrieve an forward iterator for the linked list
+ */
+public f<LinkedListIterator<T>> LinkedList.getIterator() {
+    return LinkedListIterator<T>(*this);
 }

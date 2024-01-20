@@ -1,7 +1,7 @@
-import "std/data/stack" as stc;
+import "std/data/stack";
 
 f<int> main() {
-    stc::Stack<int> s1 = stc::Stack<int>{};
+    Stack<int> s1 = Stack<int>{};
     s1.ctor();
     s1.push(123);
     s1.push(456);

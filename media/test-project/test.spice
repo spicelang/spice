@@ -1,20 +1,16 @@
-type TestStruct struct {
-    long lng
-    String str
-    int i
-}
-
-f<TestStruct> fct(int& ref) {
-    TestStruct ts = TestStruct{ 6l, String("test string"), ref };
-    return ts;
-}
+import "std/data/vector";
 
 f<int> main() {
-    int test = 987654;
-    const TestStruct res = fct(test);
-    printf("Long: %d\n", res.lng);
-    printf("String: %s\n", res.str.getRaw());
-    printf("Int: %d\n", res.i);
+    Vector<string> v = Vector<string>();
+    v.pushBack("Hello");
+    v.pushBack("World");
+    v.pushBack("!");
+    v.pushBack("!");
+    v.pushBack("!");
+
+    foreach string s : v {
+        printf("%s\n", s);
+    }
 }
 
 /*f<int> main() {

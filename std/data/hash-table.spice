@@ -1,6 +1,5 @@
 import "std/data/vector";
 import "std/data/linked-list";
-import "std/runtime/iterator_rt";
 import "std/data/pair";
 import "std/math/hash";
 
@@ -20,7 +19,8 @@ public p HashTable.ctor(unsigned long bucketCount = 100l) {
 
 public p HashTable.insert(const K& key, const V& value) {
     const unsigned long index = this.hash(key);
-    foreach Pair<K, V>& pair : iterate(this.table.get(index)) {
+    LinkedList<Pair<K, V>>& bucket = this.table.get(index);
+    foreach Pair<K, V>& pair : bucket {
         if pair.getFirst() == key {
             pair.setSecond(value);
             return;

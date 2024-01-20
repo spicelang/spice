@@ -6,9 +6,3 @@ Field default value no compile time constant: Default values must be computable 
 
 4  int i = test()
    ^^^^^^^^^^^^^^
-
-[Error|Semantic] ./test-files/typechecker/structs/error-default-value-not-compiletime/source.spice:9:20:
-Referenced undefined variable: Variable 'i' was referenced before declared
-
-9  printf("%d/n", t.i);
-                  ^^^

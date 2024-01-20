@@ -62,8 +62,6 @@ ModuleNamePair RuntimeModuleManager::resolveNamePair(RuntimeModule runtimeModule
     return {MEMORY_RT_IMPORT_NAME, "memory_rt"};
   case RTTI_RT:
     return {RTTI_RT_IMPORT_NAME, "rtti_rt"};
-  case ITERATOR_RT:
-    return {ITERATOR_RT_IMPORT_NAME, "iterator_rt"};
   default:
     throw CompilerError(INTERNAL_ERROR, "Requested unknown runtime module");
   }

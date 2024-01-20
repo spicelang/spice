@@ -1,5 +1,9 @@
 import "std/os/os" as os;
 
 f<int> main() {
-    printf("OS name: %s", os::OS_NAME);
+    if isLinux() {
+        assert os::OS_NAME == "linux";
+    } else if isWindows() {
+        assert os::OS_NAME == "windows";
+    }
 }

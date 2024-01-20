@@ -258,6 +258,15 @@
           "type": "p()"
         },
         {
+          "codeLoc": "L15C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "get:L15C1",
+          "orderIndex": 4,
+          "state": "declared",
+          "type": "f<T&>()"
+        },
+        {
           "codeLoc": "L19C1",
           "isGlobal": false,
           "isVolatile": false,
@@ -321,22 +330,13 @@
           "type": "short"
         },
         {
-          "codeLoc": "L15C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "get:L15C1",
-          "orderIndex": 4,
-          "state": "declared",
-          "type": "f<T&>()"
-        },
-        {
           "codeLoc": "L6C31",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "this.Iterable",
+          "name": "this.IIterator",
           "orderIndex": 0,
           "state": "declared",
-          "type": "public Iterable<short>"
+          "type": "public IIterator<short>"
         }
       ]
     },
@@ -505,6 +505,15 @@
           "type": "p()"
         },
         {
+          "codeLoc": "L15C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "get:L15C1",
+          "orderIndex": 4,
+          "state": "declared",
+          "type": "f<T&>()"
+        },
+        {
           "codeLoc": "L19C1",
           "isGlobal": false,
           "isVolatile": false,
@@ -550,22 +559,13 @@
           "type": "T"
         },
         {
-          "codeLoc": "L15C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "get:L15C1",
-          "orderIndex": 4,
-          "state": "declared",
-          "type": "f<T&>()"
-        },
-        {
           "codeLoc": "L6C31",
           "isGlobal": false,
           "isVolatile": false,
-          "name": "this.Iterable",
+          "name": "this.IIterator",
           "orderIndex": 0,
           "state": "declared",
-          "type": "public Iterable<short>"
+          "type": "public IIterator<short>"
         }
       ]
     }
@@ -620,7 +620,7 @@
       "codeLoc": "L1C1",
       "isGlobal": true,
       "isVolatile": false,
-      "name": "std/iterator/iterable",
+      "name": "std/iterator/iterator",
       "orderIndex": 0,
       "state": "declared",
       "type": "import"

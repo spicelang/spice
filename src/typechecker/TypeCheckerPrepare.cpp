@@ -385,7 +385,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     // Visit field type
     auto fieldType = std::any_cast<SymbolType>(visit(field));
     if (fieldType.is(TY_UNRESOLVED))
-      continue;
+      sourceFile->checkForSoftErrors(); // We get into trouble if we continue without the field type -> abort
 
     // Check for struct with infinite size.
     // This can happen if the struct A has a field with type A

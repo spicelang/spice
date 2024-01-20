@@ -4,7 +4,7 @@ set print thread-events off
 set print inferior-events off
 
 # Preparation
-break source.spice:44
+break source.spice:42
 run
 
 # Runtime

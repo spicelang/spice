@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./test-files/typechecker/foreach-loops/error-foreach-wrong-iterator-type/source.spice:3:27:
-Wrong data type for operator: Can only apply foreach loop on an iterator type. You provided bool
+Wrong data type for operator: Can only iterate over data structures, inheriting from IIterator or IIterable. You provided bool
 
 3  reach string item : b {
                        ^

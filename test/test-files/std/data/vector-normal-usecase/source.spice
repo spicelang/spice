@@ -1,15 +1,48 @@
-import "std/data/vector" as vec;
+import "std/data/vector";
 
 f<int> main() {
-    vec::Vector<double> v1 = vec::Vector<double>(3);
+    Vector<double> v1 = Vector<double>(3);
+    assert v1.getSize() == 0;
+    assert v1.getCapacity() == 3;
     v1.pushBack(1.2);
     v1.pushBack(7.4964598);
     v1.pushBack(5.3);
+    assert v1.getSize() == 3;
+    assert v1.getCapacity() == 3;
     v1.pushBack(-238974.23);
+    assert v1.getSize() == 4;
+    assert v1.getCapacity() == 6;
     v1.pushBack(23234.2);
     v1.pushBack(-1234.9);
+    assert v1.getSize() == 6;
+    assert v1.getCapacity() == 6;
     v1.pushBack(0.0);
-    printf("Vector size: %d\n", v1.getSize());
-    printf("Vector capacity: %d\n", v1.getCapacity());
-    printf("Vector item 5: %f\n", v1.get(5));
+    assert v1.getSize() == 7;
+    assert v1.getCapacity() == 12;
+    assert v1.get(0) == 1.2;
+    assert v1.get(1) == 7.4964598;
+    assert v1.get(2) == 5.3;
+    assert v1.get(3) == -238974.23;
+    assert v1.get(4) == 23234.2;
+    assert v1.get(5) == -1234.9;
+    assert v1.get(6) == 0.0;
+    v1.removeAt(4);
+    assert v1.getSize() == 6;
+    assert v1.getCapacity() == 12;
+    assert v1.get(0) == 1.2;
+    assert v1.get(1) == 7.4964598;
+    assert v1.get(2) == 5.3;
+    assert v1.get(3) == -238974.23;
+    assert v1.get(4) == -1234.9;
+    assert v1.get(5) == 0.0;
+    v1.removeAt(0);
+    assert v1.getSize() == 5;
+    assert v1.getCapacity() == 12;
+    assert v1.get(0) == 7.4964598;
+    assert v1.get(1) == 5.3;
+    assert v1.get(2) == -238974.23;
+    assert v1.get(3) == -1234.9;
+    assert v1.get(4) == 0.0;
+
+    printf("All assertions passed!\n");
 }

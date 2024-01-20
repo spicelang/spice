@@ -557,6 +557,7 @@ public:
 
   // Public members
   Scope *bodyScope = nullptr;
+  Function *getIteratorFct = nullptr;
   Function *getFct = nullptr;
   Function *getIdxFct = nullptr;
   Function *isValidFct = nullptr;
