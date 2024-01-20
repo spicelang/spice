@@ -106,6 +106,12 @@ std::any TypeChecker::visitExtDecl(ExtDeclNode *node) {
   return nullptr;
 }
 
+std::any TypeChecker::visitImportDef(ImportDefNode *node) {
+  if (typeCheckerMode == TC_MODE_PRE)
+    return visitImportDefPrepare(node);
+  return nullptr;
+}
+
 std::any TypeChecker::visitUnsafeBlock(UnsafeBlockNode *node) {
   // Change to unsafe block body scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY);
@@ -592,12 +598,6 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   localVarEntry->updateState(INITIALIZED, node, true);
 
   return node->setEvaluatedSymbolType(localVarType, manIdx);
-}
-
-std::any TypeChecker::visitImportStmt(ImportStmtNode *node) {
-  if (typeCheckerMode == TC_MODE_PRE)
-    return visitImportStmtPrepare(node);
-  return nullptr;
 }
 
 std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {

@@ -234,6 +234,19 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
   return concludeNode(extDeclNode);
 }
 
+std::any ASTBuilder::visitImportDef(SpiceParser::ImportDefContext *ctx) {
+  auto importDefNode = createNode<ImportDefNode>(ctx);
+
+  // Extract path
+  const std::string pathStr = ctx->STRING_LIT()->getText();
+  importDefNode->importPath = pathStr.substr(1, pathStr.size() - 2);
+
+  // If no name is given, use the path as name
+  importDefNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER()) : importDefNode->importPath;
+
+  return concludeNode(importDefNode);
+}
+
 std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
   auto unsafeBlockDefNode = createNode<UnsafeBlockNode>(ctx);
 
@@ -612,19 +625,6 @@ std::any ASTBuilder::visitConstantLst(SpiceParser::ConstantLstContext *ctx) {
   visitChildren(ctx);
 
   return concludeNode(constantLstNode);
-}
-
-std::any ASTBuilder::visitImportStmt(SpiceParser::ImportStmtContext *ctx) {
-  auto importStmtNode = createNode<ImportStmtNode>(ctx);
-
-  // Extract path
-  const std::string pathStr = ctx->STRING_LIT()->getText();
-  importStmtNode->importPath = pathStr.substr(1, pathStr.size() - 2);
-
-  // If no name is given, use the path as name
-  importStmtNode->importName = ctx->AS() ? getIdentifier(ctx->IDENTIFIER()) : importStmtNode->importPath;
-
-  return concludeNode(importStmtNode);
 }
 
 std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {

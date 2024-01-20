@@ -38,13 +38,14 @@ public:
   std::any visitFunctionDef(SpiceParser::FunctionDefContext *ctx) override;
   std::any visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) override;
   std::any visitFctName(SpiceParser::FctNameContext *ctx) override;
-  std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
   std::any visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx) override;
   std::any visitAliasDef(SpiceParser::AliasDefContext *ctx) override;
   std::any visitStructDef(SpiceParser::StructDefContext *ctx) override;
   std::any visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) override;
   std::any visitEnumDef(SpiceParser::EnumDefContext *ctx) override;
   std::any visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) override;
+  std::any visitExtDecl(SpiceParser::ExtDeclContext *ctx) override;
+  std::any visitImportDef(SpiceParser::ImportDefContext *ctx) override;
   std::any visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) override;
   std::any visitForLoop(SpiceParser::ForLoopContext *ctx) override;
   std::any visitForHead(SpiceParser::ForHeadContext *ctx) override;
@@ -77,7 +78,6 @@ public:
   std::any visitAttrLst(SpiceParser::AttrLstContext *ctx) override;
   std::any visitAttr(SpiceParser::AttrContext *ctx) override;
   std::any visitConstantLst(SpiceParser::ConstantLstContext *ctx) override;
-  std::any visitImportStmt(SpiceParser::ImportStmtContext *ctx) override;
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
   std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override;

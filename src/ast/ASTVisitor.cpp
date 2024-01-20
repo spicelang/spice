@@ -32,6 +32,8 @@ std::any ASTVisitor::visitGlobalVarDef(GlobalVarDefNode *node) { return visitChi
 
 std::any ASTVisitor::visitExtDecl(ExtDeclNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitImportDef(ImportDefNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitUnsafeBlock(UnsafeBlockNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitForLoop(ForLoopNode *node) { return visitChildren(node); }
@@ -91,8 +93,6 @@ std::any ASTVisitor::visitAttrLst(AttrLstNode *node) { return visitChildren(node
 std::any ASTVisitor::visitAttr(AttrNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitConstantLst(ConstantLstNode *node) { return visitChildren(node); }
-
-std::any ASTVisitor::visitImportStmt(ImportStmtNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitReturnStmt(ReturnStmtNode *node) { return visitChildren(node); }
 
