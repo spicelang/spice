@@ -146,8 +146,6 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Missing attribute value";
   case NUMBER_OF_FIELDS_NOT_MATCHING:
     return "Number of struct fields not matching declaration";
-  case FIELD_DEFAULT_VALUE_NO_COMPILE_TIME_CONST:
-    return "Field default value no compile time constant";
   case FIELD_TYPE_NOT_MATCHING:
     return "The type of a field value does not match the declaration";
   case ARRAY_SIZE_INVALID:

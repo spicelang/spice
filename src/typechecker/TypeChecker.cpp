@@ -420,12 +420,8 @@ std::any TypeChecker::visitField(FieldNode *node) {
   auto fieldType = std::any_cast<SymbolType>(visit(node->dataType()));
   HANDLE_UNRESOLVED_TYPE_ST(fieldType)
 
-  if (TernaryExprNode *defaultValueNode = node->defaultValue(); defaultValueNode != nullptr) {
-    if (!defaultValueNode->hasCompileTimeValue())
-      SOFT_ERROR_ST(node, FIELD_DEFAULT_VALUE_NO_COMPILE_TIME_CONST, "Default values must be computable at compile time")
-
+  if (TernaryExprNode *defaultValueNode = node->defaultValue()) {
     const SymbolType defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
-    HANDLE_UNRESOLVED_TYPE_ST(fieldType)
     if (!fieldType.matches(defaultValueType, false, true, true))
       SOFT_ERROR_ST(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
   }

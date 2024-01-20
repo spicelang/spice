@@ -358,9 +358,11 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       // Retrieve default value
       llvm::Value *value;
       if (fieldNode->defaultValue() != nullptr) {
-        assert(fieldNode->defaultValue()->hasCompileTimeValue());
-        const CompileTimeValue compileTimeValue = fieldNode->defaultValue()->getCompileTimeValue();
-        value = getConst(compileTimeValue, fieldType, fieldNode->defaultValue());
+        // To resolve the default value, we need to temporarily change to the manifestation of the current struct instantiation
+        const size_t oldManIdx = manIdx; // Save manifestation index
+        manIdx = spiceStruct->manifestationIndex;
+        value = resolveValue(fieldNode->defaultValue());
+        manIdx = oldManIdx; // Restore manifestation index
       } else {
         assert(cliOptions.buildMode == BuildMode::DEBUG);
         value = getDefaultValueForSymbolType(fieldType);

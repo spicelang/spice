@@ -1820,7 +1820,7 @@ public:
   [[nodiscard]] LenCallNode *lenCall() const { return getChild<LenCallNode>(); }
   [[nodiscard]] PanicCallNode *panicCall() const { return getChild<PanicCallNode>(); }
 
-  // Util methods
+  // Other methods
   void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
 
   // Public members
