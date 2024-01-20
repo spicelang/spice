@@ -148,8 +148,11 @@ public:
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
+  [[nodiscard]] virtual bool isTopLevelDefNode() const { return false; }
   [[nodiscard]] virtual bool isStmtNode() const { return false; }
+  [[nodiscard]] virtual bool isExprNode() const { return false; }
   [[nodiscard]] virtual bool isParamNode() const { return false; }
+  [[nodiscard]] virtual bool isStmtLstNode() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
 
   // Public members
@@ -179,12 +182,57 @@ public:
   [[nodiscard]] std::vector<ImportDefNode *> importDefs() const { return getChildren<ImportDefNode>(); }
 };
 
-// ======================================================== MainFctDefNode =======================================================
+// ======================================================= TopLevelDefNode =======================================================
 
-class MainFctDefNode : public ASTNode {
+class TopLevelDefNode : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override = 0;
+  std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
+
+  // Other methods
+  [[nodiscard]] bool isTopLevelDefNode() const override { return true; }
+};
+
+// =========================================================== StmtNode ==========================================================
+
+class StmtNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override = 0;
+  std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
+
+  // Other methods
+  [[nodiscard]] bool isStmtNode() const override { return true; }
+};
+
+// ========================================================== ExprNode ===========================================================
+
+class ExprNode : public ASTNode {
+public:
+  // Constructors
+  using ASTNode::ASTNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override = 0;
+  std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
+
+  // Other methods
+  [[nodiscard]] bool isExprNode() const override { return true; }
+};
+
+// ======================================================== MainFctDefNode =======================================================
+
+class MainFctDefNode : public TopLevelDefNode {
+public:
+  // Constructors
+  using TopLevelDefNode::TopLevelDefNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitMainFctDef(this); }
@@ -227,10 +275,10 @@ public:
 
 // ======================================================== FctDefBaseNode =======================================================
 
-class FctDefBaseNode : public ASTNode {
+class FctDefBaseNode : public TopLevelDefNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using TopLevelDefNode::TopLevelDefNode;
 
   // Public get methods
   [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
@@ -295,10 +343,10 @@ public:
 
 // ========================================================= StructDefNode =======================================================
 
-class StructDefNode : public ASTNode {
+class StructDefNode : public TopLevelDefNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using TopLevelDefNode::TopLevelDefNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStructDef(this); }
@@ -335,10 +383,10 @@ public:
 
 // ======================================================= InterfaceDefNode ======================================================
 
-class InterfaceDefNode : public ASTNode {
+class InterfaceDefNode : public TopLevelDefNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using TopLevelDefNode::TopLevelDefNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitInterfaceDef(this); }
@@ -365,10 +413,10 @@ public:
 
 // ========================================================== EnumDefNode ========================================================
 
-class EnumDefNode : public ASTNode {
+class EnumDefNode : public TopLevelDefNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using TopLevelDefNode::TopLevelDefNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEnumDef(this); }
@@ -388,10 +436,10 @@ public:
 
 // ====================================================== GenericTypeDefNode =====================================================
 
-class GenericTypeDefNode : public ASTNode {
+class GenericTypeDefNode : public TopLevelDefNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using TopLevelDefNode::TopLevelDefNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitGenericTypeDef(this); }
@@ -407,10 +455,10 @@ public:
 
 // ========================================================= AliasDefNode ========================================================
 
-class AliasDefNode : public ASTNode {
+class AliasDefNode : public TopLevelDefNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using TopLevelDefNode::TopLevelDefNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAliasDef(this); }
@@ -430,10 +478,10 @@ public:
 
 // ======================================================= GlobalVarDefNode ======================================================
 
-class GlobalVarDefNode : public ASTNode {
+class GlobalVarDefNode : public TopLevelDefNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using TopLevelDefNode::TopLevelDefNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitGlobalVarDef(this); }
@@ -455,10 +503,10 @@ public:
 
 // ========================================================== ExtDeclNode ========================================================
 
-class ExtDeclNode : public ASTNode {
+class ExtDeclNode : public TopLevelDefNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using TopLevelDefNode::TopLevelDefNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitExtDecl(this); }
@@ -488,10 +536,10 @@ public:
 
 // ======================================================== ImportDefNode ========================================================
 
-class ImportDefNode : public ASTNode {
+class ImportDefNode : public TopLevelDefNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using TopLevelDefNode::TopLevelDefNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitImportDef(this); }
@@ -505,10 +553,10 @@ public:
 
 // ======================================================== UnsafeBlockNode ======================================================
 
-class UnsafeBlockNode : public ASTNode {
+class UnsafeBlockNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitUnsafeBlock(this); }
@@ -526,10 +574,10 @@ public:
 
 // ========================================================== ForLoopNode ========================================================
 
-class ForLoopNode : public ASTNode {
+class ForLoopNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitForLoop(this); }
@@ -551,10 +599,10 @@ public:
 
 // ======================================================== ForeachLoopNode ======================================================
 
-class ForeachLoopNode : public ASTNode {
+class ForeachLoopNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitForeachLoop(this); }
@@ -583,10 +631,10 @@ public:
 
 // ========================================================= WhileLoopNode =======================================================
 
-class WhileLoopNode : public ASTNode {
+class WhileLoopNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitWhileLoop(this); }
@@ -606,10 +654,10 @@ public:
 
 // ======================================================== DoWhileLoopNode ======================================================
 
-class DoWhileLoopNode : public ASTNode {
+class DoWhileLoopNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDoWhileLoop(this); }
@@ -629,10 +677,10 @@ public:
 
 // ========================================================== IfStmtNode =========================================================
 
-class IfStmtNode : public ASTNode {
+class IfStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitIfStmt(this); }
@@ -653,10 +701,10 @@ public:
 
 // ========================================================= ElseStmtNode ========================================================
 
-class ElseStmtNode : public ASTNode {
+class ElseStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitElseStmt(this); }
@@ -677,10 +725,10 @@ public:
 
 // ======================================================== SwitchStmtNode =======================================================
 
-class SwitchStmtNode : public ASTNode {
+class SwitchStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSwitchStmt(this); }
@@ -745,10 +793,10 @@ public:
 
 // ==================================================== AnonymousBlockStmtNode ===================================================
 
-class AnonymousBlockStmtNode : public ASTNode {
+class AnonymousBlockStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAnonymousBlockStmt(this); }
@@ -779,8 +827,9 @@ public:
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
   void resizeToNumberOfManifestations(size_t manifestationCount) override {
     ASTNode::resizeToNumberOfManifestations(manifestationCount);
-    dtorFunctions.resize(manifestationCount, std::vector<std::pair<SymbolTableEntry *, Function *>>());
+    dtorFunctions.resize(manifestationCount);
   }
+  [[nodiscard]] bool isStmtLstNode() const override { return true; }
 
   // Public members
   size_t complexity = 0;
@@ -939,27 +988,12 @@ public:
   std::vector<Function *> signatureManifestations;
 };
 
-// =========================================================== StmtNode ==========================================================
-
-class StmtNode : public ASTNode {
-public:
-  // Constructors
-  using ASTNode::ASTNode;
-
-  // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStmt(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStmt(this); }
-
-  // Other methods
-  [[nodiscard]] bool isStmtNode() const override { return true; }
-};
-
 // ========================================================= DeclStmtNode ========================================================
 
-class DeclStmtNode : public ASTNode {
+class DeclStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDeclStmt(this); }
@@ -970,7 +1004,7 @@ public:
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount, nullptr); }
+  void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount); }
   [[nodiscard]] bool isParamNode() const override { return isParam; }
 
   // Public members
@@ -1149,10 +1183,10 @@ public:
 
 // ======================================================== ReturnStmtNode =======================================================
 
-class ReturnStmtNode : public ASTNode {
+class ReturnStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitReturnStmt(this); }
@@ -1163,10 +1197,7 @@ public:
 
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *) const override { return true; }
-  [[nodiscard]] StmtLstNode *getParentScopeNode() const {
-    assert(dynamic_cast<StmtLstNode *>(parent->parent) != nullptr);
-    return spice_pointer_cast<StmtLstNode *>(parent->parent);
-  }
+  [[nodiscard]] StmtLstNode *getParentScopeNode() const { return spice_pointer_cast<StmtLstNode *>(parent); }
 
   // Public members
   bool hasReturnValue = false;
@@ -1174,10 +1205,10 @@ public:
 
 // ======================================================== BreakStmtNode ========================================================
 
-class BreakStmtNode : public ASTNode {
+class BreakStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBreakStmt(this); }
@@ -1189,10 +1220,10 @@ public:
 
 // ======================================================= ContinueStmtNode ======================================================
 
-class ContinueStmtNode : public ASTNode {
+class ContinueStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitContinueStmt(this); }
@@ -1204,10 +1235,10 @@ public:
 
 // ====================================================== FallthroughStmtNode ====================================================
 
-class FallthroughStmtNode : public ASTNode {
+class FallthroughStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFallthroughStmt(this); }
@@ -1219,10 +1250,10 @@ public:
 
 // ======================================================== AssertStmtNode =======================================================
 
-class AssertStmtNode : public ASTNode {
+class AssertStmtNode : public StmtNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using StmtNode::StmtNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAssertStmt(this); }
@@ -1237,10 +1268,10 @@ public:
 
 // ======================================================== PrintfCallNode =======================================================
 
-class PrintfCallNode : public ASTNode {
+class PrintfCallNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPrintfCall(this); }
@@ -1258,10 +1289,10 @@ public:
 
 // ======================================================== SizeofCallNode =======================================================
 
-class SizeofCallNode : public ASTNode {
+class SizeofCallNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSizeofCall(this); }
@@ -1280,10 +1311,10 @@ public:
 
 // ======================================================== AlignofCallNode ======================================================
 
-class AlignofCallNode : public ASTNode {
+class AlignofCallNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAlignofCall(this); }
@@ -1302,10 +1333,10 @@ public:
 
 // ========================================================= LenCallNode =========================================================
 
-class LenCallNode : public ASTNode {
+class LenCallNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLenCall(this); }
@@ -1320,10 +1351,10 @@ public:
 
 // ======================================================== PanicCallNode ========================================================
 
-class PanicCallNode : public ASTNode {
+class PanicCallNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPanicCall(this); }
@@ -1339,7 +1370,7 @@ public:
 
 // ======================================================= AssignExprNode ========================================================
 
-class AssignExprNode : public ASTNode {
+class AssignExprNode : public ExprNode {
 public:
   // Enums
   enum AssignOp : uint8_t {
@@ -1358,7 +1389,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAssignExpr(this); }
@@ -1383,10 +1414,10 @@ public:
 
 // ======================================================= TernaryExprNode =======================================================
 
-class TernaryExprNode : public ASTNode {
+class TernaryExprNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTernaryExpr(this); }
@@ -1404,10 +1435,10 @@ public:
 
 // ===================================================== LogicalOrExprNode =======================================================
 
-class LogicalOrExprNode : public ASTNode {
+class LogicalOrExprNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLogicalOrExpr(this); }
@@ -1423,10 +1454,10 @@ public:
 
 // ===================================================== LogicalAndExprNode ======================================================
 
-class LogicalAndExprNode : public ASTNode {
+class LogicalAndExprNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLogicalAndExpr(this); }
@@ -1442,10 +1473,10 @@ public:
 
 // ===================================================== BitwiseOrExprNode =======================================================
 
-class BitwiseOrExprNode : public ASTNode {
+class BitwiseOrExprNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBitwiseOrExpr(this); }
@@ -1461,10 +1492,10 @@ public:
 
 // ==================================================== BitwiseXorExprNode =======================================================
 
-class BitwiseXorExprNode : public ASTNode {
+class BitwiseXorExprNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBitwiseXorExpr(this); }
@@ -1480,10 +1511,10 @@ public:
 
 // ==================================================== BitwiseAndExprNode =======================================================
 
-class BitwiseAndExprNode : public ASTNode {
+class BitwiseAndExprNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBitwiseAndExpr(this); }
@@ -1499,7 +1530,7 @@ public:
 
 // ===================================================== EqualityExprNode ========================================================
 
-class EqualityExprNode : public ASTNode {
+class EqualityExprNode : public ExprNode {
 public:
   // Enums
   enum EqualityOp : uint8_t {
@@ -1509,7 +1540,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEqualityExpr(this); }
@@ -1532,7 +1563,7 @@ public:
 
 // ==================================================== RelationalExprNode =======================================================
 
-class RelationalExprNode : public ASTNode {
+class RelationalExprNode : public ExprNode {
 public:
   // Enums
   enum RelationalOp : uint8_t {
@@ -1544,7 +1575,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitRelationalExpr(this); }
@@ -1563,7 +1594,7 @@ public:
 
 // ====================================================== ShiftExprNode ==========================================================
 
-class ShiftExprNode : public ASTNode {
+class ShiftExprNode : public ExprNode {
 public:
   // Enums
   enum ShiftOp : uint8_t {
@@ -1573,7 +1604,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitShiftExpr(this); }
@@ -1596,7 +1627,7 @@ public:
 
 // ==================================================== AdditiveExprNode =========================================================
 
-class AdditiveExprNode : public ASTNode {
+class AdditiveExprNode : public ExprNode {
 public:
   // Enums
   enum AdditiveOp : uint8_t {
@@ -1608,7 +1639,7 @@ public:
   typedef std::queue<std::pair<AdditiveOp, SymbolType>> OpQueue;
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAdditiveExpr(this); }
@@ -1631,7 +1662,7 @@ public:
 
 // ================================================== MultiplicativeExprNode =====================================================
 
-class MultiplicativeExprNode : public ASTNode {
+class MultiplicativeExprNode : public ExprNode {
 public:
   // Enums
   enum MultiplicativeOp : uint8_t {
@@ -1644,7 +1675,7 @@ public:
   typedef std::queue<std::pair<MultiplicativeOp, SymbolType>> OpQueue;
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitMultiplicativeExpr(this); }
@@ -1667,10 +1698,10 @@ public:
 
 // ======================================================= CastExprNode ==========================================================
 
-class CastExprNode : public ASTNode {
+class CastExprNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCastExpr(this); }
@@ -1690,7 +1721,7 @@ public:
 
 // ==================================================== PrefixUnaryExprNode ======================================================
 
-class PrefixUnaryExprNode : public ASTNode {
+class PrefixUnaryExprNode : public ExprNode {
 public:
   // Enums
   enum PrefixUnaryOp : uint8_t {
@@ -1705,7 +1736,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPrefixUnaryExpr(this); }
@@ -1725,7 +1756,7 @@ public:
 
 // =================================================== PostfixUnaryExprNode ======================================================
 
-class PostfixUnaryExprNode : public ASTNode {
+class PostfixUnaryExprNode : public ExprNode {
 public:
   // Enums
   enum PostfixUnaryOp : uint8_t {
@@ -1737,7 +1768,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPostfixUnaryExpr(this); }
@@ -1763,7 +1794,7 @@ public:
 
 // ====================================================== AtomicExprNode =========================================================
 
-class AtomicExprNode : public ASTNode {
+class AtomicExprNode : public ExprNode {
 public:
   // Structs
   struct VarAccessData {
@@ -1773,7 +1804,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAtomicExpr(this); }
@@ -1800,10 +1831,10 @@ public:
 
 // ======================================================== ValueNode ============================================================
 
-class ValueNode : public ASTNode {
+class ValueNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitValue(this); }
@@ -1827,7 +1858,7 @@ public:
 
 // ====================================================== ConstantNode ===========================================================
 
-class ConstantNode : public ASTNode {
+class ConstantNode : public ExprNode {
 public:
   // Enum
   enum PrimitiveValueType : uint8_t {
@@ -1843,7 +1874,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitConstant(this); }
@@ -1860,7 +1891,7 @@ public:
 
 // ====================================================== FctCallNode ============================================================
 
-class FctCallNode : public ASTNode {
+class FctCallNode : public ExprNode {
 public:
   // Enums
   enum FctCallType : uint8_t {
@@ -1889,7 +1920,7 @@ public:
   };
 
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctCall(this); }
@@ -1914,10 +1945,10 @@ public:
 
 // ================================================= ArrayInitializationNode =====================================================
 
-class ArrayInitializationNode : public ASTNode {
+class ArrayInitializationNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitArrayInitialization(this); }
@@ -1932,10 +1963,10 @@ public:
 
 // ================================================= StructInstantiationNode =====================================================
 
-class StructInstantiationNode : public ASTNode {
+class StructInstantiationNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStructInstantiation(this); }
@@ -1946,7 +1977,7 @@ public:
   [[nodiscard]] ArgLstNode *fieldLst() const { return getChild<ArgLstNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override { instantiatedStructs.resize(manifestationCount, nullptr); }
+  void customItemsInitialization(size_t manifestationCount) override { instantiatedStructs.resize(manifestationCount); }
 
   // Public members
   std::string fqStructName;
@@ -1956,10 +1987,10 @@ public:
 
 // ====================================================== LambdaBaseNode =========================================================
 
-class LambdaBaseNode : public ASTNode {
+class LambdaBaseNode : public ExprNode {
 public:
   // Constructors
-  using ASTNode::ASTNode;
+  using ExprNode::ExprNode;
 
   // Public get methods
   [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
@@ -2120,7 +2151,7 @@ public:
   [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount, nullptr); }
+  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount); }
 
   // Public members
   std::string fqTypeName;
@@ -2144,7 +2175,7 @@ public:
   [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
 
   // Util methods
-  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount, nullptr); }
+  void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount); }
 
   // Public members
   std::vector<SymbolTableEntry *> customTypes;

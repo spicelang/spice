@@ -6,10 +6,8 @@ digraph {
  L1C1_EntryNode -> L1C1_MainFctDefNode;
  L1C15_StmtLstNode [color="lightgreen",label="StmtLstNode"];
  L1C1_MainFctDefNode -> L1C15_StmtLstNode;
- L2C5_StmtNode [color="lightgreen",label="StmtNode"];
- L1C15_StmtLstNode -> L2C5_StmtNode;
  L2C5_AssignExprNode [color="lightgreen",label="AssignExprNode"];
- L2C5_StmtNode -> L2C5_AssignExprNode;
+ L1C15_StmtLstNode -> L2C5_AssignExprNode;
  L2C5_TernaryExprNode [color="lightgreen",label="TernaryExprNode"];
  L2C5_AssignExprNode -> L2C5_TernaryExprNode;
  L2C5_LogicalOrExprNode [color="lightgreen",label="LogicalOrExprNode"];

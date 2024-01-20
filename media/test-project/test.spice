@@ -1,16 +1,9 @@
-import "std/data/vector";
+f<string> unusedReturnValue() {
+    return "unused";
+}
 
 f<int> main() {
-    Vector<string> v = Vector<string>();
-    v.pushBack("Hello");
-    v.pushBack("World");
-    v.pushBack("!");
-    v.pushBack("!");
-    v.pushBack("!");
-
-    foreach string s : v {
-        printf("%s\n", s);
-    }
+    unusedReturnValue();
 }
 
 /*f<int> main() {

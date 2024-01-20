@@ -74,8 +74,6 @@ std::any ASTVisitor::visitField(FieldNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitSignature(SignatureNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitStmt(StmtNode *node) { return visitChildren(node); }
-
 std::any ASTVisitor::visitDeclStmt(DeclStmtNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitSpecifierLst(SpecifierLstNode *node) { return visitChildren(node); }

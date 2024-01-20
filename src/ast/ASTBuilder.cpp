@@ -475,14 +475,7 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   return concludeNode(signatureNode);
 }
 
-std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
-  auto stmtNode = createNode<StmtNode>(ctx);
-
-  // Visit children
-  visitChildren(ctx);
-
-  return concludeNode(stmtNode);
-}
+std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) { return visitChildren(ctx); }
 
 std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   auto declStmtNode = createNode<DeclStmtNode>(ctx);
