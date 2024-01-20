@@ -21,7 +21,7 @@ Function *FunctionManager::insertFunction(Scope *insertScope, const Function &ba
   assert(!manifestations.empty());
 
   // Save substantiations in declaration node
-  Function *manifestationPtr;
+  Function *manifestationPtr = nullptr;
   for (const Function &manifestation : manifestations) {
     manifestationPtr = insertSubstantiation(insertScope, manifestation, baseFunction.declNode);
     assert(manifestationPtr != nullptr);

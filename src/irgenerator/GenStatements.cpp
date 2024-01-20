@@ -62,7 +62,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
       // Assign rhs to lhs
       LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
       assert(assignResult.entry == varEntry);
-      varAddress = varEntry->getAddress();
+      varAddress = assignResult.entry->getAddress();
       varEntry->updateAddress(varAddress);
     }
   } else { // Default value

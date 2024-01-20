@@ -29,7 +29,7 @@ public:
 
 private:
   // Private methods
-  [[nodiscard]] static Interface *insertSubstantiation(Scope *insertScope, Interface &newManifestation, const ASTNode *declNode);
+  [[nodiscard]] static Interface *insertSubstantiation(Scope *m, Interface &newManifestation, const ASTNode *declNode);
   [[nodiscard]] static bool matchName(const Interface &candidate, const std::string &requestedName);
   [[nodiscard]] static bool matchTemplateTypes(Interface &candidate, const std::vector<SymbolType> &requestedTemplateTypes,
                                                TypeMapping &typeMapping);

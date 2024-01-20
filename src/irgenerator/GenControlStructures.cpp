@@ -121,8 +121,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Visit idx variable declaration if required
   const DeclStmtNode *idxDeclNode = node->idxVarDecl();
   const bool hasIdx = idxDeclNode != nullptr;
-  SymbolTableEntry *idxEntry;
-  llvm::Value *idxAddress;
+  SymbolTableEntry *idxEntry = nullptr;
+  llvm::Value *idxAddress = nullptr;
   if (hasIdx) {
     visit(idxDeclNode);
     // Get address of idx variable
@@ -405,8 +405,8 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     // Add case to switch instruction
     const std::vector<ConstantNode *> constantNodes = caseBranch->constantLst()->constants();
     for (ConstantNode *constNode : constantNodes) {
-      const ConstantNode::PrimitiveValueType type = constNode->type;
-      assert(type != ConstantNode::TYPE_NONE && type != ConstantNode::TYPE_DOUBLE && type != ConstantNode::TYPE_STRING);
+      assert(constNode->type != ConstantNode::TYPE_NONE && constNode->type != ConstantNode::TYPE_DOUBLE &&
+             constNode->type != ConstantNode::TYPE_STRING);
       llvm::Constant *constant = getConst(constNode->getCompileTimeValue(), constNode->getEvaluatedSymbolType(manIdx), constNode);
       switchInst->addCase(llvm::cast<llvm::ConstantInt>(constant), bCases.at(i));
     }
