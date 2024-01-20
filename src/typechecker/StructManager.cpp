@@ -25,7 +25,7 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
   const std::string signature = newManifestation.getSignature();
 
   // Make sure that the manifestation does not exist already
-  assert(std::ranges::none_of(insertScope->structs, [&](const auto &m) { return manifestations.second.contains(signature); }));
+  assert(std::ranges::none_of(insertScope->structs, [&](const auto &m) { return m.second.contains(signature); }));
 
   // Retrieve the matching manifestation list of the scope
   assert(insertScope->structs.contains(declNode->codeLoc));

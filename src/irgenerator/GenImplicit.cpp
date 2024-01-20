@@ -349,7 +349,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
     }
 
     // Store default field values
-    if (fieldNode->defaultValue() != nullptr || cliOptions.buildMode == BuildMode::DEBUG) {
+    if (fieldNode->defaultValue != nullptr || cliOptions.buildMode == BuildMode::DEBUG) {
       // Retrieve field address
       if (!thisAddressLoaded)
         thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
@@ -357,10 +357,10 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisAddressLoaded, indices);
       // Retrieve default value
       llvm::Value *value;
-      if (fieldNode->defaultValue() != nullptr) {
-        assert(fieldNode->defaultValue()->hasCompileTimeValue());
-        const CompileTimeValue compileTimeValue = fieldNode->defaultValue()->getCompileTimeValue();
-        value = getConst(compileTimeValue, fieldType, fieldNode->defaultValue());
+      if (fieldNode->defaultValue != nullptr) {
+        assert(fieldNode->defaultValue->hasCompileTimeValue());
+        const CompileTimeValue compileTimeValue = fieldNode->defaultValue->getCompileTimeValue();
+        value = getConst(compileTimeValue, fieldType, fieldNode->defaultValue);
       } else {
         assert(cliOptions.buildMode == BuildMode::DEBUG);
         value = getDefaultValueForSymbolType(fieldType);
@@ -532,8 +532,8 @@ void IRGenerator::generateTestMain() {
         // Retrieve attribute list for the test function
         assert(testFunction->declNode->isFctOrProcDef());
         auto fctDefNode = spice_pointer_cast<FctDefBaseNode *>(testFunction->declNode);
-        assert(fctDefNode->attrs() != nullptr);
-        const AttrLstNode *attrs = fctDefNode->attrs()->attrLst();
+        assert(fctDefNode->attrs != nullptr);
+        const AttrLstNode *attrs = fctDefNode->attrs->attrLst;
         assert(attrs->getAttrValueByName(ATTR_TEST)->boolValue); // The test attribute must be present
         const CompileTimeValue *testSkipAttr = attrs->getAttrValueByName(ATTR_TEST_SKIP);
         const bool skipTest = testSkipAttr && testSkipAttr->boolValue;

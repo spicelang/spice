@@ -60,6 +60,8 @@ public:
   std::any visitGlobalVarDef(GlobalVarDefNode *node) override;
   std::any visitGlobalVarDefPrepare(GlobalVarDefNode *node);
   std::any visitExtDecl(ExtDeclNode *node) override;
+  std::any visitImportDef(ImportDefNode *node) override;
+  std::any visitImportDefPrepare(ImportDefNode *node);
   std::any visitExtDeclPrepare(ExtDeclNode *node);
   std::any visitUnsafeBlock(UnsafeBlockNode *node) override;
   std::any visitForLoop(ForLoopNode *node) override;
@@ -77,8 +79,6 @@ public:
   std::any visitField(FieldNode *node) override;
   std::any visitSignature(SignatureNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
-  std::any visitImportStmt(ImportStmtNode *node) override;
-  std::any visitImportStmtPrepare(ImportStmtNode *node);
   std::any visitReturnStmt(ReturnStmtNode *node) override;
   std::any visitBreakStmt(BreakStmtNode *node) override;
   std::any visitContinueStmt(ContinueStmtNode *node) override;

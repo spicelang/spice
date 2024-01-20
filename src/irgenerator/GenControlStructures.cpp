@@ -16,7 +16,7 @@ std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY, node);
 
   // Visit instructions in the block
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -39,28 +39,28 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   continueBlocks.push_back(bTail);
 
   // Init statement
-  visit(node->initDecl());
+  visit(node->initDecl);
   // Create jump from original to head block
   insertJump(bHead);
 
   // Switch to head block
   switchToBlock(bHead);
   // Condition evaluation
-  llvm::Value *condValue = resolveValue(node->condAssign());
+  llvm::Value *condValue = resolveValue(node->condAssign);
   // Create conditional jump from head to body or exit block
   insertCondJump(condValue, bBody, bExit);
 
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump from body to tail block
   insertJump(bTail);
 
   // Switch to tail block
   switchToBlock(bTail);
   // Inc statement
-  visit(node->incAssign());
+  visit(node->incAssign);
   // Create jump from tail to head
   insertJump(bHead);
 
@@ -94,7 +94,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   continueBlocks.push_back(bTail);
 
   // Resolve iterator
-  AssignExprNode *iteratorAssignNode = node->iteratorAssign();
+  AssignExprNode *iteratorAssignNode = node->iteratorAssign;
   SymbolType iteratorOrIterableType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
   SymbolType iteratorType = iteratorOrIterableType;
   llvm::Value *iteratorPtr;
@@ -119,7 +119,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   assert(!node->getIdxFct || itemRefSTy == node->getIdxFct->returnType.getTemplateTypes().back());
 
   // Visit idx variable declaration if required
-  const DeclStmtNode *idxDeclNode = node->idxVarDecl();
+  const DeclStmtNode *idxDeclNode = node->idxVarDecl;
   const bool hasIdx = idxDeclNode != nullptr;
   SymbolTableEntry *idxEntry = nullptr;
   llvm::Value *idxAddress = nullptr;
@@ -132,7 +132,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   }
 
   // Visit item variable declaration
-  const DeclStmtNode *itemDeclNode = node->itemVarDecl();
+  const DeclStmtNode *itemDeclNode = node->itemVarDecl;
   visit(itemDeclNode);
   // Get address of item variable
   SymbolTableEntry *itemEntry = itemDeclNode->entries.at(manIdx);
@@ -181,7 +181,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     doAssignment(itemAddress, itemEntry, getResult, itemRefSTy, true);
   }
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump from body to tail block
   insertJump(bTail);
 
@@ -228,14 +228,14 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   // Switch to head block
   switchToBlock(bHead);
   // Evaluate condition
-  llvm::Value *condValue = resolveValue(node->condition());
+  llvm::Value *condValue = resolveValue(node->condition);
   // Jump to body or exit block, depending on the condition
   insertCondJump(condValue, bBody, bExit);
 
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump to head block
   insertJump(bHead);
 
@@ -273,14 +273,14 @@ std::any IRGenerator::visitDoWhileLoop(const DoWhileLoopNode *node) {
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump to foot block
   insertJump(bFoot);
 
   // Switch to head block
   switchToBlock(bFoot);
   // Evaluate condition
-  llvm::Value *condValue = resolveValue(node->condition());
+  llvm::Value *condValue = resolveValue(node->condition);
   // Jump to body or exit block, depending on the condition
   insertCondJump(condValue, bBody, bExit);
 
@@ -302,32 +302,32 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   // Create blocks
   const std::string codeLine = node->codeLoc.toPrettyLine();
   llvm::BasicBlock *bThen = createBlock("if.then." + codeLine);
-  llvm::BasicBlock *bElse = node->elseStmt() ? createBlock("if.else." + codeLine) : nullptr;
+  llvm::BasicBlock *bElse = node->elseStmt ? createBlock("if.else." + codeLine) : nullptr;
   llvm::BasicBlock *bExit = createBlock("if.exit." + codeLine);
 
   // Change scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY, node);
 
   // Retrieve condition value
-  llvm::Value *condValue = resolveValue(node->condition());
+  llvm::Value *condValue = resolveValue(node->condition);
   // Check if condition is fulfilled
-  insertCondJump(condValue, bThen, node->elseStmt() ? bElse : bExit);
+  insertCondJump(condValue, bThen, node->elseStmt ? bElse : bExit);
 
   // Switch to then block
   switchToBlock(bThen);
   // Visit then body
-  visit(node->thenBody());
+  visit(node->thenBody);
   // Create jump from then to end block
   insertJump(bExit);
 
   // Change scope back
   scopeHandle.leaveScopeEarly();
 
-  if (node->elseStmt()) {
+  if (node->elseStmt) {
     // Switch to else block
     switchToBlock(bElse);
     // Visit else block
-    visit(node->elseStmt());
+    visit(node->elseStmt);
     // Create jump from else to end block
     insertJump(bExit);
   }
@@ -342,14 +342,14 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
 std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
-  if (node->ifStmt()) { // It is an else if branch
-    visit(node->ifStmt());
+  if (node->ifStmt) { // It is an else if branch
+    visit(node->ifStmt);
   } else { // It is an else branch
     // Change scope
     ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY, node);
 
     // Generate IR for nested statements
-    visit(node->body());
+    visit(node->body);
   }
 
   return nullptr;
@@ -357,8 +357,8 @@ std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
 
 std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   diGenerator.setSourceLocation(node);
-  const std::vector<CaseBranchNode *> caseBranches = node->caseBranches();
-  const DefaultBranchNode *defaultBranch = node->defaultBranch();
+  const std::vector<CaseBranchNode *> caseBranches = node->caseBranches;
+  const DefaultBranchNode *defaultBranch = node->defaultBranch;
 
   // Create blocks
   std::vector<llvm::BasicBlock *> bCases;
@@ -375,7 +375,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   breakBlocks.push_back(bExit);
 
   // Visit switch expression
-  llvm::Value *exprValue = resolveValue(node->assignExpr());
+  llvm::Value *exprValue = resolveValue(node->assignExpr);
 
   // Generate switch instruction
   llvm::SwitchInst *switchInst = builder.CreateSwitch(exprValue, bDefault ? bDefault : bExit, caseBranches.size());
@@ -394,7 +394,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     switchToBlock(bCases.at(i));
 
     // Visit case body
-    visit(caseBranch->body());
+    visit(caseBranch->body);
 
     // Create jump from case to exit block
     insertJump(bExit);
@@ -403,8 +403,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     fallthroughBlocks.pop();
 
     // Add case to switch instruction
-    const std::vector<ConstantNode *> constantNodes = caseBranch->constantLst()->constants();
-    for (ConstantNode *constNode : constantNodes) {
+    for (ConstantNode *constNode : caseBranch->constantLst->constants) {
       assert(constNode->type != ConstantNode::TYPE_NONE && constNode->type != ConstantNode::TYPE_DOUBLE &&
              constNode->type != ConstantNode::TYPE_STRING);
       llvm::Constant *constant = getConst(constNode->getCompileTimeValue(), constNode->getEvaluatedSymbolType(manIdx), constNode);
@@ -418,7 +417,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     switchToBlock(bDefault);
 
     // Visit default body
-    visit(defaultBranch->body());
+    visit(defaultBranch->body);
 
     // Create jump from default to exit block
     insertJump(bExit);
@@ -441,7 +440,7 @@ std::any IRGenerator::visitCaseBranch(const CaseBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::CASE_BODY);
 
   // Visit case body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -453,7 +452,7 @@ std::any IRGenerator::visitDefaultBranch(const DefaultBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::DEFAULT_BODY);
 
   // Visit case body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -467,7 +466,7 @@ std::any IRGenerator::visitAnonymousBlockStmt(const AnonymousBlockStmtNode *node
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, node);
 
   // Visit instructions in the block
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }

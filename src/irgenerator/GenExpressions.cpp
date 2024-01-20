@@ -10,13 +10,13 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Visit ternary expression
-  if (node->ternaryExpr())
-    return visit(node->ternaryExpr());
+  if (node->ternaryExpr)
+    return visit(node->ternaryExpr);
 
   // Assign or compound assign operation
   if (node->op != AssignExprNode::OP_NONE) {
-    const PrefixUnaryExprNode *lhsNode = node->lhs();
-    const AssignExprNode *rhsNode = node->rhs();
+    const PrefixUnaryExprNode *lhsNode = node->lhs;
+    const AssignExprNode *rhsNode = node->rhs;
 
     if (node->op == AssignExprNode::OP_ASSIGN) { // Normal assignment
       return doAssignment(lhsNode, rhsNode);
@@ -86,23 +86,16 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (!node->falseValue)
+    return visit(node->condition);
 
   // It is a ternary
   // Retrieve the condition value
-  llvm::Value *condValue = resolveValue(node->operands()[0]);
+  llvm::Value *condValue = resolveValue(node->condition);
 
   // Get the values of true and false
-  llvm::Value *trueValue;
-  llvm::Value *falseValue;
-  if (node->isShortened) {
-    trueValue = condValue;
-    falseValue = resolveValue(node->operands()[1]);
-  } else {
-    trueValue = resolveValue(node->operands()[1]);
-    falseValue = resolveValue(node->operands()[2]);
-  }
+  llvm::Value *trueValue = resolveValue(node->trueValue);
+  llvm::Value *falseValue = resolveValue(node->falseValue);
 
   llvm::Value *resultValue = builder.CreateSelect(condValue, trueValue, falseValue);
   return LLVMExprResult{.value = resultValue};
@@ -112,8 +105,8 @@ std::any IRGenerator::visitLogicalOrExpr(const LogicalOrExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (node->operands.size() == 1)
+    return visit(node->operands.front());
 
   // It is a logical or expression
   // Create exit block for short-circuiting
@@ -121,29 +114,29 @@ std::any IRGenerator::visitLogicalOrExpr(const LogicalOrExprNode *node) {
   llvm::BasicBlock *bExit = createBlock("lor.exit." + codeLoc);
 
   // Visit the first operand
-  llvm::Value *firstOperandValue = resolveValue(node->operands().front());
+  llvm::Value *firstOperandValue = resolveValue(node->operands.front());
 
   // Prepare an array for value-to-block-mapping
   std::vector<std::pair<llvm::BasicBlock *, llvm::Value *>> shortCircuitBlocks;
-  shortCircuitBlocks.reserve(node->operands().size());
+  shortCircuitBlocks.reserve(node->operands.size());
   // The first element is the first operand value with the original block
   shortCircuitBlocks.emplace_back(builder.GetInsertBlock(), firstOperandValue);
   // Create a block for each additional operand and save it to the mapping
-  for (size_t i = 1; i < node->operands().size(); i++)
+  for (size_t i = 1; i < node->operands.size(); i++)
     shortCircuitBlocks.emplace_back(createBlock("lor." + std::to_string(i) + "." + codeLoc), nullptr);
   // Create conditional jump to the exit block if the first operand was true, otherwise to the next block
   insertCondJump(firstOperandValue, bExit, shortCircuitBlocks.at(1).first);
 
   // Create block for each operand
-  for (size_t i = 1; i < node->operands().size(); i++) {
+  for (size_t i = 1; i < node->operands.size(); i++) {
     // Switch to the next block
     switchToBlock(shortCircuitBlocks.at(i).first);
     // Evaluate operand and save the result in the mapping
-    shortCircuitBlocks.at(i).second = resolveValue(node->operands()[i]);
+    shortCircuitBlocks.at(i).second = resolveValue(node->operands[i]);
     // Replace the array entry with the current insert block, since the insert block could have changed in the meantime
     shortCircuitBlocks.at(i).first = builder.GetInsertBlock();
     // Check if there are more blocks to process
-    if (i == node->operands().size() - 1) {
+    if (i == node->operands.size() - 1) {
       // Insert a simple jump to the exit block for the last block
       insertJump(bExit);
     } else {
@@ -154,7 +147,7 @@ std::any IRGenerator::visitLogicalOrExpr(const LogicalOrExprNode *node) {
 
   // Get the result with the phi node
   switchToBlock(bExit);
-  llvm::PHINode *result = builder.CreatePHI(firstOperandValue->getType(), node->operands().size(), "lor_phi");
+  llvm::PHINode *result = builder.CreatePHI(firstOperandValue->getType(), node->operands.size(), "lor_phi");
   for (const auto &[incomingBlock, value] : shortCircuitBlocks)
     result->addIncoming(value, incomingBlock);
 
@@ -166,8 +159,8 @@ std::any IRGenerator::visitLogicalAndExpr(const LogicalAndExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (node->operands.size() == 1)
+    return visit(node->operands.front());
 
   // It is a logical and expression
   // Create exit block for short-circuiting
@@ -175,29 +168,29 @@ std::any IRGenerator::visitLogicalAndExpr(const LogicalAndExprNode *node) {
   llvm::BasicBlock *bExit = createBlock("land.exit." + codeLoc);
 
   // Visit the first operand
-  llvm::Value *firstOperandValue = resolveValue(node->operands().front());
+  llvm::Value *firstOperandValue = resolveValue(node->operands.front());
 
   // Prepare an array for value-to-block-mapping
   std::vector<std::pair<llvm::BasicBlock *, llvm::Value *>> shortCircuitBlocks;
-  shortCircuitBlocks.reserve(node->operands().size());
+  shortCircuitBlocks.reserve(node->operands.size());
   // The first element is the first operand value with the original block
   shortCircuitBlocks.emplace_back(builder.GetInsertBlock(), firstOperandValue);
   // Create a block for each additional operand and save it to the mapping
-  for (size_t i = 1; i < node->operands().size(); i++)
+  for (size_t i = 1; i < node->operands.size(); i++)
     shortCircuitBlocks.emplace_back(createBlock("land." + std::to_string(i) + "." + codeLoc), nullptr);
   // Create conditional jump to the exit block if the first operand was true, otherwise to the next block
   insertCondJump(firstOperandValue, shortCircuitBlocks.at(1).first, bExit);
 
   // Create block for each operand
-  for (size_t i = 1; i < node->operands().size(); i++) {
+  for (size_t i = 1; i < node->operands.size(); i++) {
     // Switch to the next block
     switchToBlock(shortCircuitBlocks.at(i).first);
     // Evaluate operand and save the result in the mapping
-    shortCircuitBlocks.at(i).second = resolveValue(node->operands()[i]);
+    shortCircuitBlocks.at(i).second = resolveValue(node->operands[i]);
     // Replace the array entry with the current insert block, since the insert block could have changed in the meantime
     shortCircuitBlocks.at(i).first = builder.GetInsertBlock();
     // Check if there are more blocks to process
-    if (i == node->operands().size() - 1) {
+    if (i == node->operands.size() - 1) {
       // Insert a simple jump to the exit block for the last block
       insertJump(bExit);
     } else {
@@ -208,7 +201,7 @@ std::any IRGenerator::visitLogicalAndExpr(const LogicalAndExprNode *node) {
 
   // Get the result with the phi node
   switchToBlock(bExit);
-  llvm::PHINode *result = builder.CreatePHI(firstOperandValue->getType(), node->operands().size(), "land_phi");
+  llvm::PHINode *result = builder.CreatePHI(firstOperandValue->getType(), node->operands.size(), "land_phi");
   for (const auto &[incomingBlock, value] : shortCircuitBlocks)
     result->addIncoming(value, incomingBlock);
 
@@ -220,19 +213,19 @@ std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (node->operands.size() == 1)
+    return visit(node->operands.front());
 
   // It is a bitwise or expression
   // Evaluate first operand
-  BitwiseXorExprNode *lhsNode = node->operands().front();
+  BitwiseXorExprNode *lhsNode = node->operands.front();
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
-  for (size_t i = 1; i < node->operands().size(); i++) {
+  for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
-    BitwiseXorExprNode *rhsNode = node->operands()[i];
+    BitwiseXorExprNode *rhsNode = node->operands[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseOrInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
@@ -246,19 +239,19 @@ std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (node->operands.size() == 1)
+    return visit(node->operands.front());
 
   // It is a bitwise xor expression
   // Evaluate first operand
-  BitwiseAndExprNode *lhsNode = node->operands().front();
+  BitwiseAndExprNode *lhsNode = node->operands.front();
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
-  for (size_t i = 1; i < node->operands().size(); i++) {
+  for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
-    BitwiseAndExprNode *rhsNode = node->operands()[i];
+    BitwiseAndExprNode *rhsNode = node->operands[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseXorInst(node, result, lhsSTy, rhs, rhsSTy, currentScope);
@@ -272,19 +265,19 @@ std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (node->operands.size() == 1)
+    return visit(node->operands.front());
 
   // It is a bitwise and expression
   // Evaluate first operand
-  EqualityExprNode *lhsNode = node->operands().front();
+  EqualityExprNode *lhsNode = node->operands.front();
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
-  for (size_t i = 1; i < node->operands().size(); i++) {
+  for (size_t i = 1; i < node->operands.size(); i++) {
     // Evaluate the operand
-    EqualityExprNode *rhsNode = node->operands()[i];
+    EqualityExprNode *rhsNode = node->operands[i];
     const SymbolType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseAndInst(rhsNode, result, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
@@ -298,17 +291,17 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (!node->rhs)
+    return visit(node->lhs);
 
   // It is an equality expression
   // Evaluate lhs
-  RelationalExprNode *lhsNode = node->operands()[0];
+  RelationalExprNode *lhsNode = node->lhs;
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
-  RelationalExprNode *rhsNode = node->operands()[1];
+  RelationalExprNode *rhsNode = node->rhs;
   const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -332,17 +325,17 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (!node->rhs)
+    return visit(node->lhs);
 
   // It is a relational expression
   // Evaluate lhs
-  ShiftExprNode *lhsNode = node->operands()[0];
+  ShiftExprNode *lhsNode = node->lhs;
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
-  ShiftExprNode *rhsNode = node->operands()[1];
+  ShiftExprNode *rhsNode = node->rhs;
   const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -372,17 +365,17 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (!node->rhs)
+    return visit(node->lhs);
 
   // It is a shift expression
   // Evaluate lhs
-  AdditiveExprNode *lhsNode = node->operands()[0];
+  AdditiveExprNode *lhsNode = node->lhs;
   const SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
-  AdditiveExprNode *rhsNode = node->operands()[1];
+  AdditiveExprNode *rhsNode = node->rhs;
   const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -406,12 +399,12 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (node->operands.size() == 1)
+    return visit(node->operands.front());
 
   // It is an additive expression
   // Evaluate first operand
-  MultiplicativeExprNode *lhsNode = node->operands()[0];
+  MultiplicativeExprNode *lhsNode = node->operands[0];
   SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -420,7 +413,7 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
   while (!opQueue.empty()) {
     const size_t operatorIndex = operandIndex - 1;
     // Evaluate next operand
-    MultiplicativeExprNode *rhsNode = node->operands()[operandIndex++];
+    MultiplicativeExprNode *rhsNode = node->operands[operandIndex++];
     assert(rhsNode != nullptr);
     const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
@@ -451,12 +444,12 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
   diGenerator.setSourceLocation(node);
 
   // Check if only one operand is present -> loop through
-  if (node->operands().size() == 1)
-    return visit(node->operands().front());
+  if (node->operands.size() == 1)
+    return visit(node->operands.front());
 
   // It is an additive expression
   // Evaluate first operand
-  CastExprNode *lhsNode = node->operands()[0];
+  CastExprNode *lhsNode = node->operands[0];
   SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -465,7 +458,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
   while (!opQueue.empty()) {
     const size_t operatorIndex = operandIndex - 1;
     // Evaluate next operand
-    CastExprNode *rhsNode = node->operands()[operandIndex++];
+    CastExprNode *rhsNode = node->operands[operandIndex++];
     assert(rhsNode != nullptr);
     const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
@@ -499,14 +492,14 @@ std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
 
   // Check if only one operand is present -> loop through
   if (!node->isCast)
-    return visit(node->prefixUnaryExpr());
+    return visit(node->prefixUnaryExpr);
 
   // It is a cast expression
   // Retrieve target symbol type
   const SymbolType targetSTy = node->getEvaluatedSymbolType(manIdx);
 
   // Evaluate rhs
-  PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr();
+  PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr;
   const SymbolType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -522,10 +515,10 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PrefixUnaryExprNode::OP_NONE)
-    return visit(node->postfixUnaryExpr());
+    return visit(node->postfixUnaryExpr);
 
   // Evaluate lhs
-  PrefixUnaryExprNode *lhsNode = node->prefixUnary();
+  PrefixUnaryExprNode *lhsNode = node->prefixUnaryExpr;
   SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -648,10 +641,10 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PostfixUnaryExprNode::OP_NONE)
-    return visit(node->atomicExpr());
+    return visit(node->atomicExpr);
 
   // Evaluate lhs
-  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
+  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
   SymbolType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -663,7 +656,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     llvm::Type *lhsTy = lhsSTy.toLLVMType(context, currentScope);
 
     // Get the index value
-    AssignExprNode *indexExpr = node->assignExpr();
+    AssignExprNode *indexExpr = node->assignExpr;
     llvm::Value *indexValue = resolveValue(indexExpr);
     // Come up with the address
     if (lhsSTy.isArray() && lhsSTy.getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array
@@ -787,30 +780,30 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // If constant
-  if (node->constant()) {
-    auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
+  if (node->constant) {
+    auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant));
     return LLVMExprResult{.constant = constantValue};
   }
 
   // If value
-  if (node->value())
-    return visit(node->value());
+  if (node->value)
+    return visit(node->value);
 
   // Is assign expression
-  if (node->assignExpr())
-    return visit(node->assignExpr());
+  if (node->assignExpr)
+    return visit(node->assignExpr);
 
   // Check for builtin calls
-  if (node->printfCall())
-    return visit(node->printfCall());
-  if (node->sizeofCall())
-    return visit(node->sizeofCall());
-  if (node->alignofCall())
-    return visit(node->alignofCall());
-  if (node->lenCall())
-    return visit(node->lenCall());
-  if (node->panicCall())
-    return visit(node->panicCall());
+  if (node->printfCall)
+    return visit(node->printfCall);
+  if (node->sizeofCall)
+    return visit(node->sizeofCall);
+  if (node->alignofCall)
+    return visit(node->alignofCall);
+  if (node->lenCall)
+    return visit(node->lenCall);
+  if (node->panicCall)
+    return visit(node->panicCall);
 
   // Identifier (local or global variable access)
   assert(!node->identifierFragments.empty());

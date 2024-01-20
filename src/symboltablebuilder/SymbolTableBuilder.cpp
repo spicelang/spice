@@ -29,8 +29,8 @@ std::any SymbolTableBuilder::visitEntry(EntryNode *node) {
 
 std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Check if the function is already defined
   if (rootScope->lookupStrict(node->getSignature()))
@@ -50,10 +50,10 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
 
   // Visit arguments in new scope
   if (node->takesArgs)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit function body in new scope
-  visit(node->body());
+  visit(node->body);
 
   // Return to root scope
   currentScope = rootScope;
@@ -64,12 +64,12 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
 
 std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Build function specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+  if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->specifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
@@ -101,10 +101,10 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Create symbols for the parameters
   if (node->hasParams)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit the function body
-  visit(node->body());
+  visit(node->body);
 
   // Leave function body scope
   currentScope = node->scope->parent;
@@ -127,12 +127,12 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
 std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Build procedure specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+  if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->specifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
@@ -162,10 +162,10 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Create symbols for the parameters
   if (node->hasParams)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit the procedure body
-  visit(node->body());
+  visit(node->body);
 
   // Leave procedure body scope
   currentScope = node->scope->parent;
@@ -191,8 +191,8 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
 std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Check if this name already exists
   if (rootScope->lookupStrict(node->structName))
@@ -205,8 +205,8 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 
   // Insert implicit field for each interface type
   if (node->hasInterfaces) {
-    for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes()) {
-      const std::string &interfaceName = interfaceNode->baseDataType()->customDataType()->typeNameFragments.back();
+    for (DataTypeNode *interfaceNode : node->interfaceTypeLst->dataTypes) {
+      const std::string &interfaceName = interfaceNode->baseDataType->customDataType->typeNameFragments.back();
       SymbolTableEntry *interfaceFieldEntry = currentScope->insert("this." + interfaceName, interfaceNode);
       interfaceFieldEntry->used = true;
       interfaceFieldEntry->isImplicitField = true;
@@ -220,8 +220,8 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   currentScope = node->structScope->parent;
 
   // Build struct specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+  if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->structSpecifiers.isPublic = true;
       else
@@ -239,8 +239,8 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 
 std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Check if this name already exists
   if (rootScope->lookupStrict(node->interfaceName))
@@ -251,15 +251,15 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
       rootScope->createChildScope(INTERFACE_SCOPE_PREFIX + node->interfaceName, ScopeType::INTERFACE, &node->codeLoc);
 
   // Visit signatures
-  for (SignatureNode *signature : node->signatures())
+  for (SignatureNode *signature : node->signatures)
     visit(signature);
 
   // Leave the interface scope
   currentScope = node->interfaceScope->parent;
 
   // Build interface specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+  if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->interfaceSpecifiers.isPublic = true;
       else
@@ -285,14 +285,14 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
       rootScope->createChildScope(ENUM_SCOPE_PREFIX + node->enumName, ScopeType::ENUM, &node->codeLoc);
 
   // Visit items
-  visit(node->itemLst());
+  visit(node->itemLst);
 
   // Leave the enum scope
   currentScope = node->enumScope->parent;
 
   // Build enum specifiers
-  if (node->specifierLst()) {
-    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
+  if (node->specifierLst) {
+    for (const SpecifierNode *specifier : node->specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->enumSpecifiers.isPublic = true;
       else
@@ -326,8 +326,8 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->aliasName + "'");
 
   // Build alias specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+  if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->aliasSpecifiers.isPublic = true;
       else
@@ -365,8 +365,8 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
 
 std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Check if this name already exists
   if (rootScope->lookupStrict(node->extFunctionName))
@@ -378,7 +378,7 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   // Add the external declaration to the symbol table
   node->entry = rootScope->insert(node->extFunctionName, node);
   // Register the name in the exported name registry
-  const uint64_t typeId = node->returnType() ? TY_FUNCTION : TY_PROCEDURE;
+  const uint64_t typeId = node->returnType ? TY_FUNCTION : TY_PROCEDURE;
   sourceFile->addNameRegistryEntry(node->extFunctionName, typeId, node->entry, rootScope, /*keepNewOnCollision=*/true);
 
   return nullptr;
@@ -387,10 +387,10 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
 std::any SymbolTableBuilder::visitUnsafeBlock(UnsafeBlockNode *node) {
   // Create scope for the unsafe block body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::UNSAFE_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::UNSAFE_BODY, &node->body->codeLoc);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave thread body scope
   currentScope = node->bodyScope->parent;
@@ -400,14 +400,13 @@ std::any SymbolTableBuilder::visitUnsafeBlock(UnsafeBlockNode *node) {
 
 std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
   // Create scope for the loop body
-  node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body()->codeLoc);
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body->codeLoc);
 
   // Visit loop variable declaration
-  visit(node->initDecl());
+  visit(node->initDecl);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave for body scope
   currentScope = node->bodyScope->parent;
@@ -418,17 +417,17 @@ std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
 std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
   // Create scope for the loop body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::FOREACH_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::FOREACH_BODY, &node->body->codeLoc);
 
   // Visit index variable declaration
-  if (node->idxVarDecl())
-    visit(node->idxVarDecl());
+  if (node->idxVarDecl)
+    visit(node->idxVarDecl);
 
   // Visit item variable declaration
-  visit(node->itemVarDecl());
+  visit(node->itemVarDecl);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave foreach body scope
   currentScope = node->bodyScope->parent;
@@ -439,13 +438,13 @@ std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
 std::any SymbolTableBuilder::visitWhileLoop(WhileLoopNode *node) {
   // Create scope for the loop body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body->codeLoc);
 
   // Visit condition
-  visit(node->condition());
+  visit(node->condition);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave while body scope
   currentScope = node->bodyScope->parent;
@@ -456,13 +455,13 @@ std::any SymbolTableBuilder::visitWhileLoop(WhileLoopNode *node) {
 std::any SymbolTableBuilder::visitDoWhileLoop(DoWhileLoopNode *node) {
   // Create scope for the loop body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body->codeLoc);
 
   // Visit condition
-  visit(node->condition());
+  visit(node->condition);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave do-while body scope
   currentScope = node->bodyScope->parent;
@@ -473,20 +472,20 @@ std::any SymbolTableBuilder::visitDoWhileLoop(DoWhileLoopNode *node) {
 std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
   // Create scope for the then body
   node->thenBodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->thenBody()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->thenBody->codeLoc);
 
   // Visit condition
-  visit(node->condition());
+  visit(node->condition);
 
   // Visit then body
-  visit(node->thenBody());
+  visit(node->thenBody);
 
   // Leave then body scope
   currentScope = node->thenBodyScope->parent;
 
   // Visit else stmt
-  if (node->elseStmt())
-    visit(node->elseStmt());
+  if (node->elseStmt)
+    visit(node->elseStmt);
 
   return nullptr;
 }
@@ -494,16 +493,16 @@ std::any SymbolTableBuilder::visitIfStmt(IfStmtNode *node) {
 std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
   // Visit if statement in the case of an else if branch
   if (node->isElseIf) {
-    visit(node->ifStmt());
+    visit(node->ifStmt);
     return nullptr;
   }
 
   // Create scope for the else body
   node->elseBodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::IF_ELSE_BODY, &node->body->codeLoc);
 
   // Visit else body
-  visit(node->body());
+  visit(node->body);
 
   // Leave else body scope
   currentScope = node->elseBodyScope->parent;
@@ -513,11 +512,10 @@ std::any SymbolTableBuilder::visitElseStmt(ElseStmtNode *node) {
 
 std::any SymbolTableBuilder::visitCaseBranch(CaseBranchNode *node) {
   // Create scope for the case branch
-  node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::CASE_BODY, &node->body()->codeLoc);
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::CASE_BODY, &node->body->codeLoc);
 
   // Visit case body
-  visit(node->body());
+  visit(node->body);
 
   // Leave case body scope
   currentScope = node->bodyScope->parent;
@@ -528,10 +526,10 @@ std::any SymbolTableBuilder::visitCaseBranch(CaseBranchNode *node) {
 std::any SymbolTableBuilder::visitDefaultBranch(DefaultBranchNode *node) {
   // Create scope for the default branch
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::DEFAULT_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::DEFAULT_BODY, &node->body->codeLoc);
 
   // Visit default body
-  visit(node->body());
+  visit(node->body);
 
   // Leave default body scope
   currentScope = node->bodyScope->parent;
@@ -542,10 +540,10 @@ std::any SymbolTableBuilder::visitDefaultBranch(DefaultBranchNode *node) {
 std::any SymbolTableBuilder::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Create scope for the anonymous block body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, &node->body->codeLoc);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;
@@ -582,8 +580,8 @@ std::any SymbolTableBuilder::visitField(FieldNode *node) {
 
 std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
   // Build signature specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+  if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->signatureSpecifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
@@ -608,7 +606,7 @@ std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
 
   // Visit the right side
   if (node->hasAssignment)
-    visit(node->assignExpr());
+    visit(node->assignExpr);
 
   // Add variable entry to symbol table
   SymbolTableEntry *varEntry = currentScope->insert(node->varName, node);
@@ -622,7 +620,7 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   visitChildren(node);
 
   // Retrieve attributes
-  const AttrLstNode *attrs = node->attrLst();
+  const AttrLstNode *attrs = node->attrLst;
 
   // core.linker.flag
   for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG)) {
@@ -651,7 +649,7 @@ std::any SymbolTableBuilder::visitAttr(AttrNode *node) {
     throw SemanticError(node, INVALID_ATTR_TARGET, "Attribute '" + node->key + "' cannot be used on this target");
 
   // Check if a value is present
-  if (!node->value() && config.type != AttrNode::TYPE_BOOL)
+  if (!node->value && config.type != AttrNode::TYPE_BOOL)
     throw SemanticError(node, MISSING_ATTR_VALUE, "Attribute '" + node->key + "' requires a value");
 
   return nullptr;
@@ -659,23 +657,23 @@ std::any SymbolTableBuilder::visitAttr(AttrNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
   // Create scope for the lambda body
-  const CodeLoc &codeLoc = node->body()->codeLoc;
+  const CodeLoc &codeLoc = node->body->codeLoc;
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
   // Set to async scope if this is an async lambda
-  if (node->lambdaAttr() && node->lambdaAttr()->attrLst()->hasAttr(ATTR_ASYNC))
-    node->bodyScope->isAsyncScope = node->lambdaAttr()->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue;
+  if (node->lambdaAttr && node->lambdaAttr->attrLst->hasAttr(ATTR_ASYNC))
+    node->bodyScope->isAsyncScope = node->lambdaAttr->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue;
 
   // Create symbol for 'result' variable
   currentScope->insert(RETURN_VARIABLE_NAME, node);
 
   // Create symbols for the parameters
   if (node->hasParams)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;
@@ -685,20 +683,20 @@ std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
   // Create scope for the lambda body
-  const CodeLoc &codeLoc = node->body()->codeLoc;
+  const CodeLoc &codeLoc = node->body->codeLoc;
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
   // Set to async scope if this is an async lambda
-  if (node->lambdaAttr() && node->lambdaAttr()->attrLst()->hasAttr(ATTR_ASYNC))
-    node->bodyScope->isAsyncScope = node->lambdaAttr()->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue;
+  if (node->lambdaAttr && node->lambdaAttr->attrLst->hasAttr(ATTR_ASYNC))
+    node->bodyScope->isAsyncScope = node->lambdaAttr->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue;
 
   // Create symbols for the parameters
   if (node->hasParams)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;
@@ -708,17 +706,17 @@ std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaExpr(LambdaExprNode *node) {
   // Create scope for the anonymous block body
-  const CodeLoc &codeLoc = node->lambdaExpr()->codeLoc;
+  const CodeLoc &codeLoc = node->lambdaExpr->codeLoc;
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
 
   // Create symbols for the parameters
   if (node->hasParams)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit lambda expression
-  visit(node->lambdaExpr());
+  visit(node->lambdaExpr);
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;

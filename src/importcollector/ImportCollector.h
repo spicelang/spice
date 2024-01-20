@@ -19,7 +19,7 @@ public:
 
   // Public methods
   std::any visitEntry(EntryNode *node) override;
-  std::any visitImportStmt(ImportStmtNode *node) override;
+  std::any visitImportDef(ImportDefNode *node) override;
   std::any visitModAttr(ModAttrNode *node) override;
 };
 

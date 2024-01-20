@@ -3,7 +3,7 @@
 grammar Spice;
 
 // Top level definitions and declarations
-entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importStmt | extDecl | modAttr)*;
+entry: (mainFunctionDef | functionDef | procedureDef | structDef | interfaceDef | enumDef | genericTypeDef | aliasDef | globalVarDef | importDef | extDecl | modAttr)*;
 mainFunctionDef: topLevelDefAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN stmtLst;
 functionDef: topLevelDefAttr? specifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
 procedureDef: topLevelDefAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
@@ -15,6 +15,7 @@ genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: specifierLst? TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON;
 globalVarDef: dataType TYPE_IDENTIFIER (ASSIGN constant)? SEMICOLON;
 extDecl: topLevelDefAttr? EXT (F LESS dataType GREATER | P) (IDENTIFIER | TYPE_IDENTIFIER) LPAREN (typeLst ELLIPSIS?)? RPAREN SEMICOLON;
+importDef: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;
 
 // Control structures
 unsafeBlock: UNSAFE stmtLst;
@@ -51,7 +52,6 @@ lambdaAttr: LBRACKET LBRACKET attrLst RBRACKET RBRACKET;
 attrLst: attr (COMMA attr)*;
 attr: IDENTIFIER (DOT IDENTIFIER)* (ASSIGN constant)?;
 constantLst: constant (COMMA constant)*;
-importStmt: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;
 returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INT_LIT?;
 continueStmt: CONTINUE INT_LIT?;

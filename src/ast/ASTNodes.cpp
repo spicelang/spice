@@ -60,65 +60,57 @@ std::string ASTNode::getErrorMessage() const {
 }
 
 bool MainFctDefNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool FctDefBaseNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool ForLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const AssignExprNode *cond = condAssign();
-  return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
+  return condAssign->hasCompileTimeValue() && condAssign->getCompileTimeValue().boolValue;
 }
 
 bool WhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const AssignExprNode *cond = condition();
-  return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
+  return condition->hasCompileTimeValue() && condition->getCompileTimeValue().boolValue;
 }
 
 bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const AssignExprNode *cond = condition();
-  return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
+  return condition->hasCompileTimeValue() && condition->getCompileTimeValue().boolValue;
 }
 
 bool IfStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
   // An if statement returns on all control paths, if then and else block return on all control paths
-  const AssignExprNode *cond = condition();
-  if (!cond->hasCompileTimeValue())
-    return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable) && elseStmt() != nullptr &&
-           elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  if (!condition->hasCompileTimeValue())
+    return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable) && elseStmt != nullptr &&
+           elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   // If the condition always evaluates to 'true' only the then block must return and vice versa
-  const CompileTimeValue &compileTimeValue = cond->getCompileTimeValue();
+  const CompileTimeValue &compileTimeValue = condition->getCompileTimeValue();
   if (compileTimeValue.boolValue)
-    return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
-  return elseStmt() != nullptr && elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+    return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return elseStmt != nullptr && elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool ElseStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
-  return isElseIf ? ifStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable)
-                  : body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return isElseIf ? ifStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable)
+                  : body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool SwitchStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const std::vector<CaseBranchNode *> caseNodes = caseBranches();
-  const DefaultBranchNode *defaultBranchNode = defaultBranch();
-
   const bool allCaseBranchesReturn = std::ranges::all_of(
-      caseNodes, [=](CaseBranchNode *node) { return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable); });
-  const bool defaultBranchReturns =
-      !defaultBranchNode || defaultBranchNode->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+      caseBranches, [=](const CaseBranchNode *node) { return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable); });
+  const bool defaultBranchReturns = !defaultBranch || defaultBranch->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   return allCaseBranchesReturn && defaultBranchReturns;
 }
 
 bool CaseBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool DefaultBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
@@ -143,10 +135,9 @@ bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
 
 std::vector<const CompileTimeValue *> AttrLstNode::getAttrValuesByName(const std::string &key) const {
   assert(ATTR_CONFIGS.contains(key));
-  const std::vector<AttrNode *> attrNodes = attributes();
 
   std::vector<const CompileTimeValue *> attributeValues;
-  for (AttrNode *attrNode : attrNodes) {
+  for (const AttrNode *attrNode : attributes) {
     // Skip attributes with different keys
     if (attrNode->key != key)
       continue;
@@ -171,11 +162,10 @@ const CompileTimeValue *AttrLstNode::getAttrValueByName(const std::string &key) 
 }
 
 bool AttrLstNode::hasAttr(const std::string &key) const {
-  const std::vector<AttrNode *> attrs = attributes();
-  return std::ranges::any_of(attrs, [&](AttrNode *attr) { return attr->key == key; });
+  return std::ranges::any_of(attributes, [&](AttrNode *attr) { return attr->key == key; });
 }
 
-const CompileTimeValue *AttrNode::getValue() const { return value() ? &value()->compileTimeValue : nullptr; }
+const CompileTimeValue *AttrNode::getValue() const { return value ? &value->compileTimeValue : nullptr; }
 
 bool FallthroughStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { return true; }
 
@@ -183,8 +173,8 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
   if (op == OP_NONE) {
     return children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   } else {
-    bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr() &&
-                   lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
+    bool returns = op == OP_ASSIGN && lhs->postfixUnaryExpr && lhs->postfixUnaryExpr->atomicExpr &&
+                   lhs->postfixUnaryExpr->atomicExpr->fqIdentifier == RETURN_VARIABLE_NAME;
 
     // If we assign the result variable, we technically return from the function, but at the end of the function.
     // Therefore, the following code is not unreachable, but will be executed in any case.
@@ -196,34 +186,25 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
 }
 
 bool TernaryExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const LogicalOrExprNode *node) { return node->hasCompileTimeValue(); });
+  return condition->hasCompileTimeValue() && trueValue->hasCompileTimeValue() && falseValue->hasCompileTimeValue();
 }
 
-CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant()->getCompileTimeValue(); }
+CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant->getCompileTimeValue(); }
 
 CompileTimeValue TernaryExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  const std::vector<LogicalOrExprNode *> &ops = operands();
-
   // If the condition has no compile time value, we do not need to evaluate the true and false values
-  const LogicalOrExprNode *condition = ops[0];
   if (!condition->hasCompileTimeValue())
     return {};
 
   // Check if condition always evaluates to 'true'
-  if (condition->getCompileTimeValue().boolValue) {
-    const LogicalOrExprNode *trueValue = isShortened ? condition : ops[1];
-    return trueValue->getCompileTimeValue();
-  } else {
-    const LogicalOrExprNode *falseValue = isShortened ? operands()[1] : ops[2];
-    return falseValue->getCompileTimeValue();
-  }
+  return condition->getCompileTimeValue().boolValue ? trueValue->getCompileTimeValue() : falseValue->getCompileTimeValue();
 }
 
 bool LogicalOrExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const LogicalAndExprNode *node) { return node->hasCompileTimeValue(); });
+  return std::ranges::all_of(operands, [](const LogicalAndExprNode *node) { return node->hasCompileTimeValue(); });
 }
 
 CompileTimeValue LogicalOrExprNode::getCompileTimeValue() const {
@@ -231,7 +212,7 @@ CompileTimeValue LogicalOrExprNode::getCompileTimeValue() const {
     return children.front()->getCompileTimeValue();
 
   // Check if one expression evaluates to 'true'
-  for (const LogicalAndExprNode *op : operands()) {
+  for (const LogicalAndExprNode *op : operands) {
     assert(op->hasCompileTimeValue());
     // If one operand evaluates to 'true' the whole expression is 'true'
     CompileTimeValue opCompileTimeValue = op->getCompileTimeValue();
@@ -244,7 +225,7 @@ CompileTimeValue LogicalOrExprNode::getCompileTimeValue() const {
 }
 
 bool LogicalAndExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const BitwiseOrExprNode *node) { return node->hasCompileTimeValue(); });
+  return std::ranges::all_of(operands, [](const BitwiseOrExprNode *node) { return node->hasCompileTimeValue(); });
 }
 
 CompileTimeValue LogicalAndExprNode::getCompileTimeValue() const {
@@ -252,7 +233,7 @@ CompileTimeValue LogicalAndExprNode::getCompileTimeValue() const {
     return children.front()->getCompileTimeValue();
 
   // Check if all expressions evaluate to 'true'
-  for (const BitwiseOrExprNode *op : operands()) {
+  for (const BitwiseOrExprNode *op : operands) {
     assert(op->hasCompileTimeValue());
     // If one operand evaluates to 'false' the whole expression is 'false'
     CompileTimeValue opCompileTimeValue = op->getCompileTimeValue();
@@ -265,18 +246,17 @@ CompileTimeValue LogicalAndExprNode::getCompileTimeValue() const {
 }
 
 bool BitwiseOrExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const BitwiseXorExprNode *node) { return node->hasCompileTimeValue(); });
+  return std::ranges::all_of(operands, [](const BitwiseXorExprNode *node) { return node->hasCompileTimeValue(); });
 }
 
 CompileTimeValue BitwiseOrExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  const std::vector<BitwiseXorExprNode *> ops = operands();
-  CompileTimeValue result = ops.front()->getCompileTimeValue();
-  for (size_t i = 1; i < ops.size(); i++) {
-    assert(ops.at(i)->hasCompileTimeValue());
-    CompileTimeValue opCompileTimeValue = ops.at(i)->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue();
+  for (size_t i = 1; i < operands.size(); i++) {
+    assert(operands.at(i)->hasCompileTimeValue());
+    CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     result.longValue |= opCompileTimeValue.longValue;
   }
 
@@ -284,18 +264,17 @@ CompileTimeValue BitwiseOrExprNode::getCompileTimeValue() const {
 }
 
 bool BitwiseXorExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const BitwiseAndExprNode *node) { return node->hasCompileTimeValue(); });
+  return std::ranges::all_of(operands, [](const BitwiseAndExprNode *node) { return node->hasCompileTimeValue(); });
 }
 
 CompileTimeValue BitwiseXorExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  const std::vector<BitwiseAndExprNode *> ops = operands();
-  CompileTimeValue result = ops.front()->getCompileTimeValue();
-  for (size_t i = 1; i < ops.size(); i++) {
-    assert(ops.at(i)->hasCompileTimeValue());
-    CompileTimeValue opCompileTimeValue = ops.at(i)->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue();
+  for (size_t i = 1; i < operands.size(); i++) {
+    assert(operands.at(i)->hasCompileTimeValue());
+    CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     result.longValue ^= opCompileTimeValue.longValue;
   }
 
@@ -303,99 +282,88 @@ CompileTimeValue BitwiseXorExprNode::getCompileTimeValue() const {
 }
 
 bool BitwiseAndExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const EqualityExprNode *node) { return node->hasCompileTimeValue(); });
+  return std::ranges::all_of(operands, [](const EqualityExprNode *node) { return node->hasCompileTimeValue(); });
 }
 
 CompileTimeValue BitwiseAndExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  const std::vector<EqualityExprNode *> ops = operands();
-  CompileTimeValue result = ops.front()->getCompileTimeValue();
-  for (size_t i = 1; i < ops.size(); i++) {
-    assert(ops.at(i)->hasCompileTimeValue());
-    CompileTimeValue opCompileTimeValue = ops.at(i)->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue();
+  for (size_t i = 1; i < operands.size(); i++) {
+    assert(operands.at(i)->hasCompileTimeValue());
+    CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     result.longValue &= opCompileTimeValue.longValue;
   }
 
   return result;
 }
 
-bool EqualityExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const RelationalExprNode *node) { return node->hasCompileTimeValue(); });
-}
+bool EqualityExprNode::hasCompileTimeValue() const { return lhs->hasCompileTimeValue() && rhs->hasCompileTimeValue(); }
 
 CompileTimeValue EqualityExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  const std::vector<RelationalExprNode *> ops = operands();
-  CompileTimeValue op0Value = ops.at(0)->getCompileTimeValue();
-  CompileTimeValue op1Value = ops.at(1)->getCompileTimeValue();
+  const CompileTimeValue lhsValue = lhs->getCompileTimeValue();
+  const CompileTimeValue rhsValue = rhs->getCompileTimeValue();
   if (op == OP_EQUAL)
-    return CompileTimeValue{.boolValue = op0Value.longValue == op1Value.longValue};
+    return CompileTimeValue{.boolValue = lhsValue.longValue == rhsValue.longValue};
   if (op == OP_NOT_EQUAL)
-    return CompileTimeValue{.boolValue = op0Value.longValue != op1Value.longValue};
+    return CompileTimeValue{.boolValue = lhsValue.longValue != rhsValue.longValue};
 
   throw CompilerError(UNHANDLED_BRANCH, "EqualityExprNode::getCompileTimeValue()");
 }
 
-bool RelationalExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const ShiftExprNode *node) { return node->hasCompileTimeValue(); });
-}
+bool RelationalExprNode::hasCompileTimeValue() const { return lhs->hasCompileTimeValue() && rhs->hasCompileTimeValue(); }
 
 CompileTimeValue RelationalExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  const std::vector<ShiftExprNode *> ops = operands();
-  CompileTimeValue op0Value = ops.at(0)->getCompileTimeValue();
-  CompileTimeValue op1Value = ops.at(1)->getCompileTimeValue();
+  const CompileTimeValue lhsValue = lhs->getCompileTimeValue();
+  const CompileTimeValue rhsValue = rhs->getCompileTimeValue();
   if (op == OP_LESS)
-    return CompileTimeValue{.boolValue = op0Value.longValue < op1Value.longValue};
+    return CompileTimeValue{.boolValue = lhsValue.longValue < rhsValue.longValue};
   if (op == OP_GREATER)
-    return CompileTimeValue{.boolValue = op0Value.longValue > op1Value.longValue};
+    return CompileTimeValue{.boolValue = lhsValue.longValue > rhsValue.longValue};
   if (op == OP_LESS_EQUAL)
-    return CompileTimeValue{.boolValue = op0Value.longValue <= op1Value.longValue};
+    return CompileTimeValue{.boolValue = lhsValue.longValue <= rhsValue.longValue};
   if (op == OP_GREATER_EQUAL)
-    return CompileTimeValue{.boolValue = op0Value.longValue >= op1Value.longValue};
+    return CompileTimeValue{.boolValue = lhsValue.longValue >= rhsValue.longValue};
 
   throw CompilerError(UNHANDLED_BRANCH, "RelationalExprNode::getCompileTimeValue()");
 }
 
-bool ShiftExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const AdditiveExprNode *node) { return node->hasCompileTimeValue(); });
-}
+bool ShiftExprNode::hasCompileTimeValue() const { return lhs->hasCompileTimeValue() && rhs->hasCompileTimeValue(); }
 
 CompileTimeValue ShiftExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  const std::vector<AdditiveExprNode *> ops = operands();
-  CompileTimeValue op0Value = ops.at(0)->getCompileTimeValue();
-  CompileTimeValue op1Value = ops.at(1)->getCompileTimeValue();
+  const CompileTimeValue lhsValue = lhs->getCompileTimeValue();
+  const CompileTimeValue rhsValue = rhs->getCompileTimeValue();
   if (op == OP_SHIFT_LEFT)
-    return CompileTimeValue{.longValue = op0Value.longValue << op1Value.longValue};
+    return CompileTimeValue{.longValue = lhsValue.longValue << rhsValue.longValue};
   if (op == OP_SHIFT_RIGHT)
-    return CompileTimeValue{.longValue = op0Value.longValue >> op1Value.longValue};
+    return CompileTimeValue{.longValue = lhsValue.longValue >> rhsValue.longValue};
 
   throw CompilerError(UNHANDLED_BRANCH, "ShiftExprNode::getCompileTimeValue()");
 }
 
 bool AdditiveExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const MultiplicativeExprNode *node) { return node->hasCompileTimeValue(); });
+  return std::ranges::all_of(operands, [](const MultiplicativeExprNode *node) { return node->hasCompileTimeValue(); });
 }
 
 CompileTimeValue AdditiveExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  const std::vector<MultiplicativeExprNode *> ops = operands();
-  CompileTimeValue result = ops.front()->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue();
   OpQueue opQueueCopy = opQueue;
-  for (size_t i = 1; i < ops.size(); i++) {
-    assert(ops.at(i)->hasCompileTimeValue());
-    CompileTimeValue opCompileTimeValue = ops.at(i)->getCompileTimeValue();
+  for (size_t i = 1; i < operands.size(); i++) {
+    assert(operands.at(i)->hasCompileTimeValue());
+    CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     const AdditiveOp op = opQueueCopy.front().first;
     opQueueCopy.pop();
     if (op == OP_PLUS)
@@ -409,26 +377,25 @@ CompileTimeValue AdditiveExprNode::getCompileTimeValue() const {
 }
 
 bool MultiplicativeExprNode::hasCompileTimeValue() const {
-  return std::ranges::all_of(operands(), [](const CastExprNode *node) { return node->hasCompileTimeValue(); });
+  return std::ranges::all_of(operands, [](const CastExprNode *node) { return node->hasCompileTimeValue(); });
 }
 
 CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  const std::vector<CastExprNode *> ops = operands();
-  CompileTimeValue result = ops.front()->getCompileTimeValue();
+  CompileTimeValue result = operands.front()->getCompileTimeValue();
   OpQueue opQueueCopy = opQueue;
-  for (size_t i = 1; i < ops.size(); i++) {
-    assert(ops.at(i)->hasCompileTimeValue());
-    CompileTimeValue opCompileTimeValue = ops.at(i)->getCompileTimeValue();
+  for (size_t i = 1; i < operands.size(); i++) {
+    assert(operands.at(i)->hasCompileTimeValue());
+    CompileTimeValue opCompileTimeValue = operands.at(i)->getCompileTimeValue();
     const MultiplicativeOp op = opQueueCopy.front().first;
     opQueueCopy.pop();
     if (op == OP_MUL) {
       result.longValue *= opCompileTimeValue.longValue;
     } else if (op == OP_DIV) {
       if (opCompileTimeValue.longValue == 0)
-        throw SemanticError(ops.at(i), DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
+        throw SemanticError(operands.at(i), DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
       result.longValue /= opCompileTimeValue.longValue;
     } else if (op == OP_REM) {
       result.longValue %= opCompileTimeValue.longValue;
@@ -439,29 +406,29 @@ CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
   return result;
 }
 
-bool CastExprNode::hasCompileTimeValue() const { return prefixUnaryExpr()->hasCompileTimeValue(); }
+bool CastExprNode::hasCompileTimeValue() const { return prefixUnaryExpr->hasCompileTimeValue(); }
 
 CompileTimeValue CastExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  return prefixUnaryExpr()->getCompileTimeValue();
+  return prefixUnaryExpr->getCompileTimeValue();
 }
 
 bool PrefixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursion)
-  if (postfixUnaryExpr())
-    return postfixUnaryExpr()->hasCompileTimeValue();
+  if (postfixUnaryExpr)
+    return postfixUnaryExpr->hasCompileTimeValue();
 
   bool isOperatorSupported =
       op == OP_NONE || op == OP_MINUS || op == OP_PLUS_PLUS || op == OP_MINUS_MINUS || op == OP_NOT || op == OP_BITWISE_NOT;
-  return isOperatorSupported && prefixUnary()->hasCompileTimeValue();
+  return isOperatorSupported && prefixUnaryExpr->hasCompileTimeValue();
 }
 
 CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-no-recursion)
-  if (postfixUnaryExpr())
-    return postfixUnaryExpr()->getCompileTimeValue();
+  if (postfixUnaryExpr)
+    return postfixUnaryExpr->getCompileTimeValue();
 
-  CompileTimeValue opValue = prefixUnary()->getCompileTimeValue();
+  CompileTimeValue opValue = prefixUnaryExpr->getCompileTimeValue();
   if (op == OP_MINUS)
     return CompileTimeValue{.longValue = -opValue.longValue};
   if (op == OP_PLUS_PLUS)
@@ -477,18 +444,18 @@ CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-
 }
 
 bool PostfixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursion)
-  if (atomicExpr())
-    return atomicExpr()->hasCompileTimeValue();
+  if (atomicExpr)
+    return atomicExpr->hasCompileTimeValue();
 
   bool isOperatorSupported = op == OP_NONE || op == OP_PLUS_PLUS || op == OP_MINUS_MINUS;
-  return isOperatorSupported && postfixUnaryExpr()->hasCompileTimeValue();
+  return isOperatorSupported && postfixUnaryExpr->hasCompileTimeValue();
 }
 
 CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-no-recursion)
-  if (atomicExpr())
-    return atomicExpr()->getCompileTimeValue();
+  if (atomicExpr)
+    return atomicExpr->getCompileTimeValue();
 
-  CompileTimeValue opValue = postfixUnaryExpr()->getCompileTimeValue();
+  CompileTimeValue opValue = postfixUnaryExpr->getCompileTimeValue();
   if (op == OP_PLUS_PLUS)
     return CompileTimeValue{.longValue = opValue.longValue++};
   if (op == OP_MINUS_MINUS)
@@ -515,21 +482,20 @@ bool FctCallNode::hasReturnValueReceiver() const {
 }
 
 bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body()->returnsOnAllControlPaths(overrideUnreachable);
+  return body->returnsOnAllControlPaths(overrideUnreachable);
 }
 
 bool LambdaProcNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body()->returnsOnAllControlPaths(overrideUnreachable);
+  return body->returnsOnAllControlPaths(overrideUnreachable);
 }
 
 void DataTypeNode::setFieldTypeRecursive() { // NOLINT(*-no-recursion)
   // Set the current node to field type
   isFieldType = true;
   // Do the same for all template nodes
-  BaseDataTypeNode *baseType = baseDataType();
-  CustomDataTypeNode *customType = baseType->customDataType();
-  if (customType != nullptr && customType->templateTypeLst())
-    for (DataTypeNode *templateNode : customType->templateTypeLst()->dataTypes())
+  CustomDataTypeNode *customType = baseDataType->customDataType;
+  if (customType != nullptr && customType->templateTypeLst)
+    for (DataTypeNode *templateNode : customType->templateTypeLst->dataTypes)
       templateNode->setFieldTypeRecursive();
 }
 

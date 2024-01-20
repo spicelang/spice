@@ -87,7 +87,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
       return;
 
     if (auto fieldNode = dynamic_cast<FieldNode *>(fieldSymbol->declNode)) {
-      hasFieldsWithDefaultValue |= fieldNode->defaultValue() != nullptr;
+      hasFieldsWithDefaultValue |= fieldNode->defaultValue != nullptr;
       if (fieldSymbol->getType().is(TY_STRUCT)) {
         Scope *fieldScope = fieldSymbol->getType().getBodyScope();
         // Lookup ctor function
