@@ -49,8 +49,9 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
   }
 
   // Create target machine
-  llvm::TargetMachine *targetMachineRaw =
-      target->createTargetMachine(cliOptions.targetTriple, cpuName, featureString.str(), opt, llvm::Reloc::PIC_);
+  const std::string features = featureString.str();
+  const std::string &targetTriple = cliOptions.targetTriple;
+  llvm::TargetMachine *targetMachineRaw = target->createTargetMachine(targetTriple, cpuName, features, opt, llvm::Reloc::PIC_);
   targetMachine = std::unique_ptr<llvm::TargetMachine>(targetMachineRaw);
 
   // Create lto module

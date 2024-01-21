@@ -20,6 +20,7 @@ public const string LTO_FILE_NAME = "lto-module";
 
 /**
  * The GlobalResourceManager is instantiated at startup of the compiler and serves as distribution point for globally used assets.
+ * This component owns all SourceFile instances and AST nodes and therefore is the resource root of the compiler.
  * Other components of the compiler can request the required global resources from the GlobalResourceManager.
  */
 public type GlobalResourceManager struct {
@@ -43,7 +44,36 @@ public type GlobalResourceManager struct {
 
 public p GlobalResourceManager.ctor(const CliOptions& cliOptions) {
     this.cliOptions = cliOptions;
-    // ToDo: extend
+
+    // Initialize the required LLVM targets
+    if cliOptions.isNativeTarget {
+        llvm::initializeNativeTarget();
+        llvm::initializeNativeAsmPrinter();
+    } else {
+        llvm::initializeAllTargets();
+        llvm::initializeAllTargetMCs();
+        llvm::initializeAllAsmPrinters();
+    }
+
+    // Search after selected target
+    String error;
+    // ToDo: Lookup target
+
+    // Create target machine for LLVM
+    String cpuName = String("generic");
+    if cliOptions.isNativeTarget & cliOptions.usesCPUFeatures {
+        // Retrieve native CPU name and the supported CPU features
+        cpuName = llvm::sys::getHostCPUName();
+
+    }
+
+    // Create target machine
+    this.targetMachine = target.createTargetMachine(cpuName, cpuName.getRaw(), "", opt, llvm::Reloc::PIC_);
+
+    // Create lto module
+  if cliOptions.useLTO {
+    this.ltoModule = llvm::Module(LTO_FILE_NAME, context);
+  }
 }
 
 public p GlobalResourceManager.dtor() {
@@ -51,15 +81,19 @@ public p GlobalResourceManager.dtor() {
     llvm::llvm_shutdown();
 }
 
-public f<SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent, const String& dependencyName, const FilePath& path, bool isStdFile) {
+public f<heap SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent, const String& depName, const FilePath& path, bool isStdFile) {
     // Check if the source file was already added (e.g. by another source file that imports it)
     const String filePathStr = path.toString();
-    if sourceFiles.contains(filePathStr) {
-        return sourceFiles.get[filePathStr];
+
+    // Create the new source file if it does not exist yet
+    if !sourceFiles.contains(filePathStr) {
+        //heap SourceFile* newSourceFile = new SourceFile(*this, parent, depName, path, isStdFile);
+        //this.sourceFiles.insert(filePathStr, newSourceFile);
     }
 
-    // Create the new source file
-    heap SourceFile* newSourceFile = new SourceFile(parent, dependencyName, path, isStdFile);
-    newSourceFile.insert(filePathStr, newSourceFile);
-    return newSourceFile;
+    return this.sourceFiles.get(filePathStr);
+}
+
+public f<unsigned long> GlobalResourceManager.getNextCustomTypeId() {
+    return nextCustomTypeId++;
 }
