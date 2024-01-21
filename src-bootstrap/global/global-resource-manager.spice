@@ -1,8 +1,14 @@
+// Std imports
+import "std/data/vector";
+import "std/data/unordered-map";
+
 // Own imports
 import "../global/runtime-module-manager";
 import "../linker/external-linker-interface";
 import "../reader/code-loc";
 import "../util/timer";
+import "../util/block-allocator";
+import "../source-file";
 import "../driver";
 
 // Constants
@@ -34,13 +40,8 @@ public p GlobalResourceManager.ctor(const CliOptions& cliOptions) {
 }
 
 public p GlobalResourceManager.dtor() {
-    // Delete all source files
-    foreach (const Pair<string, SourceFile *>& sourceFile : sourceFiles) {
-        //delete sourceFile.second;
-    }
-
-    // Delete target machine
-    //delete targetMachine;
+    // Shutdown LLVM
+    llvm::llvm_shutdown();
 }
 
 public f<SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent, const String& dependencyName, const FilePath& path, bool isStdFile) {
@@ -51,7 +52,7 @@ public f<SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent,
     }
 
     // Create the new source file
-    SourceFile* newSourceFile = new SourceFile(parent, dependencyName, path, isStdFile);
+    heap SourceFile* newSourceFile = new SourceFile(parent, dependencyName, path, isStdFile);
     newSourceFile.insert(filePathStr, newSourceFile);
     return newSourceFile;
 }

@@ -79,6 +79,17 @@ public f<T&> Stack.pop() {
 }
 
 /**
+ * Retrieve topmost without removing it from the stack
+ */
+public f<T&> Stack.top() {
+    if this.isEmpty() { panic(Error("The stack is empty")); }
+    // Peek the element from the stack
+    unsafe {
+        return this.contents[(int) this.size - 1l];
+    }
+}
+
+/**
  * Retrieve the current size of the stack
  *
  * @return Current size of the stack
