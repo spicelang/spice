@@ -19,7 +19,7 @@ type T dyn;
   */
 public f<Result<heap byte*>> sAlloc(unsigned long size) {
     heap byte* ptr = malloc(size);
-    return ptr != nil<heap byte*> ? ok(ptr) : err(nil<heap byte*>, "Out of memory occurred!");
+    return ptr != nil<heap byte*> ? ok(ptr) : err<heap byte*>("Out of memory occurred!");
 }
 
 /**
@@ -31,7 +31,7 @@ public f<Result<heap byte*>> sAlloc(unsigned long size) {
   */
 public f<Result<heap byte*>> sRealloc(heap byte* ptr, unsigned long size) {
     heap byte* newPtr = realloc(ptr, size);
-    return newPtr != nil<heap byte*> ? ok(newPtr) : err(nil<heap byte*>, "Out of memory occurred!");
+    return newPtr != nil<heap byte*> ? ok(newPtr) : err<heap byte*>("Out of memory occurred!");
 }
 
 /**
@@ -44,7 +44,7 @@ public f<Result<heap byte*>> sRealloc(heap byte* ptr, unsigned long size) {
   */
 public f<Result<heap byte*>> sCopy(heap byte* oldPtr, heap byte* newPtr, unsigned long size) {
     if oldPtr == nil<heap byte*> | newPtr == nil<heap byte*> {
-        return err(nil<heap byte*>, "Cannot copy from or to nil pointer!");
+        return err<heap byte*>("Cannot copy from or to nil pointer!");
     }
     memcpy(newPtr, oldPtr, size);
     return ok(newPtr);
@@ -91,6 +91,21 @@ public f<heap T*> sNew<T>(const T& val) {
         // Copy the value into the heap-allocated memory
         sCopy((heap byte*) &val, (heap byte*) result, sizeof(type T));
     }
+}
+
+/**
+ * Allocates memory for a new instance of the given type on the heap.
+ *
+ * @param ptr The pointer to the heap-allocated memory
+ * @param val The value to put into the heap-allocated memory
+ * @return A pointer to the heap-allocated instance
+ */
+public f<heap T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
+    unsafe {
+        // Copy the value into the heap-allocated memory
+        sCopy((heap byte*) &val, (heap byte*) ptr, sizeof(type T));
+    }
+    return ptr;
 }
 
 /**

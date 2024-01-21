@@ -106,7 +106,7 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
 void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
   // In case of string runtime, call free manually. Otherwise, use the memory_rt implementation of sDealloc()
   if (sourceFile->isStringRT()) {
-    llvm::Function *freeFct = stdFunctionManager.getFreeFctPtr();
+    llvm::Function *freeFct = stdFunctionManager.getFreeFct();
     builder.CreateCall(freeFct, variableAddress);
   } else {
     llvm::Function *deallocFct = stdFunctionManager.getDeallocBytePtrRefFct();

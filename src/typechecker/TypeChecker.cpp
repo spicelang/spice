@@ -1749,8 +1749,14 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, const std::vector<Symb
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if this is a ctor call to the String type
-  if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !sourceFile->isStringRT())
-    sourceFile->requestRuntimeModule(STRING_RT);
+  if (node->functionNameFragments.size() == 1) {
+    for (const auto &[typeName, runtimeModule] : TYPE_NAME_TO_RT_MODULE_MAPPING)
+      if (fqFunctionName == typeName && !sourceFile->isRT(runtimeModule))
+        sourceFile->requestRuntimeModule(runtimeModule);
+    for (const auto &[fctName, runtimeModule] : FCT_NAME_TO_RT_MODULE_MAPPING)
+      if (fqFunctionName == fctName && !sourceFile->isRT(runtimeModule))
+        sourceFile->requestRuntimeModule(runtimeModule);
+  }
 
   // Check if the exported name registry contains that function name
   const NameRegistryEntry *functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName);
@@ -2302,14 +2308,16 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   // It is a struct type -> get the access scope
   Scope *localAccessScope = accessScope ? accessScope : currentScope;
 
-  const bool isImported = node->typeNameFragments.size() > 1;
   const std::string firstFragment = node->typeNameFragments.front();
 
-  // Check if it is a String type
-  if (!isImported && firstFragment == STROBJ_NAME && !sourceFile->isStringRT())
-    sourceFile->requestRuntimeModule(STRING_RT);
+  // Check this type requires a runtime module
+  if (node->typeNameFragments.size() == 1)
+    for (const auto &[typeName, runtimeModule] : TYPE_NAME_TO_RT_MODULE_MAPPING)
+      if (firstFragment == typeName && !sourceFile->isRT(runtimeModule))
+        sourceFile->requestRuntimeModule(runtimeModule);
 
   // Check if it is a generic type
+  const bool isImported = node->typeNameFragments.size() > 1;
   const SymbolType *genericType = rootScope->lookupGenericType(firstFragment);
   if (!isImported && genericType) {
     // Take the concrete replacement type for the name of this generic type if available

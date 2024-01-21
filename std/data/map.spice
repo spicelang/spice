@@ -33,7 +33,7 @@ public p Map.insert(const K& key, const V& value) {
  * @param key The key to remove.
  */
 public p Map.remove(const K& key) {
-    this.tree.delete(key);
+    this.tree.remove(key);
 }
 
 /**
@@ -53,7 +53,7 @@ public f<V&> Map.get(const K& key) {
  * @param key The key to get.
  * @return The value associated with the key, or an error if the key does not exist.
  */
-public f<Result<V&>> Map.getSafe(const K& key) {
+public f<Result<V>> Map.getSafe(const K& key) {
     return this.tree.findSafe(key);
 }
 
@@ -65,4 +65,29 @@ public f<Result<V&>> Map.getSafe(const K& key) {
  */
 public f<bool> Map.contains(const K& key) {
     return this.tree.contains(key);
+}
+
+/**
+ * Gets the number of elements in the map.
+ *
+ * @return The number of elements in the map.
+ */
+public f<unsigned long> Map.getSize() {
+    return this.tree.getSize();
+}
+
+/**
+ * Checks if the map is empty.
+ *
+ * @return True if the map is empty, false otherwise.
+ */
+public f<bool> Map.isEmpty() {
+    return this.tree.getSize() == 0l;
+}
+
+/**
+ * Removes all elements from the map.
+ */
+public p Map.clear() {
+    this.tree.clear();
 }

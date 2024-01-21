@@ -1,4 +1,5 @@
 import "std/type/result";
+import "std/type/error";
 
 // Add generic type definitions
 type K dyn;
@@ -49,6 +50,7 @@ inline f<bool> Node.isBlack() {
  */
 public type RedBlackTree<K, V> struct {
     heap Node<K, V>* rootNode
+    unsigned long size = 0l
 }
 
 public p RedBlackTree.ctor() {
@@ -89,6 +91,7 @@ public p RedBlackTree.insert(const K& key, const V& value) {
         y.childRight = newNode;
     }
     this.insertFixup(newNode);
+    this.size++;
 }
 
 /**
@@ -103,7 +106,7 @@ public p RedBlackTree.remove(const K& key) {
     }
     heap Node<K, V>* y = z;
     heap Node<K, V>* x;
-    bool wasYBlack = y.color.isBlack();
+    bool wasYBlack = y.isBlack();
     if !z.hasLeftChild() {
         x = z.childRight;
         this.transplant(z, z.childRight);
@@ -112,7 +115,7 @@ public p RedBlackTree.remove(const K& key) {
         this.transplant(z, z.childLeft);
     } else {
         y = this.minimum(z.childRight);
-        wasYBlack = y.color.isBlack();
+        wasYBlack = y.isBlack();
         x = y.childRight;
         if y.parent == z {
             x.parent = y;
@@ -126,10 +129,11 @@ public p RedBlackTree.remove(const K& key) {
         y.childLeft.parent = y;
         y.color = z.color;
     }
-    sDelete(z);
+    sDelete<Node<K, V>>(z);
     if wasYBlack {
-        deleteFixup(x);
+        this.deleteFixup(x);
     }
+    this.size--;
 }
 
 /**
@@ -149,11 +153,41 @@ public f<V&> RedBlackTree.find(const K& key) {
  * @param key The key to search for
  * @return The value for the given key, or an error if the key was not found
  */
-public f<Result<V&>> RedBlackTree.findSafe(const K& key) {
+public f<Result<V>> RedBlackTree.findSafe(const K& key) {
     heap Node<K, V>* node = this.search(key);
-    return node != nil<heap Node<K, V>*> ? ok(node.value) : err(Error("The provided key was not found"));
+    return node != nil<heap Node<K, V>*> ? ok<V>(node.value) : err<V>(Error("The provided key was not found"));
 }
 
+/**
+ * Check if the tree contains a given key.
+ *
+ * @param key The key to search for
+ * @return True if the key was found, false otherwise
+ */
+public f<bool> RedBlackTree.contains(const K& key) {
+    return this.search(key) != nil<heap Node<K, V>*>;
+}
+
+/**
+ * Get the number of elements in the tree.
+ *
+ * @return The number of elements in the tree
+ */
+public f<unsigned long> RedBlackTree.getSize() {
+    return this.size;
+}
+
+public p RedBlackTree.clear() {
+    this.clearRecursive(this.rootNode);
+    this.rootNode = nil<heap Node<K, V>*>;
+    this.size = 0l;
+}
+
+/**
+ * Rotate the tree left around the given node.
+ *
+ * @param x The node to rotate around
+ */
 p RedBlackTree.rotateLeft(heap Node<K, V>* x) {
     heap Node<K, V>* y = x.childRight;
     x.childRight = y.childLeft;
@@ -172,6 +206,11 @@ p RedBlackTree.rotateLeft(heap Node<K, V>* x) {
     x.parent = y;
 }
 
+/**
+ * Rotate the tree right around the given node.
+ *
+ * @param y The node to rotate around
+ */
 p RedBlackTree.rotateRight(heap Node<K, V>* y) {
     heap Node<K, V>* x = y.childLeft;
     y.childLeft = x.childRight;
@@ -245,7 +284,7 @@ p RedBlackTree.transplant(heap Node<K, V>* u, heap Node<K, V>* v) {
 p RedBlackTree.deleteFixup(heap Node<K, V>* x) {
     while x != this.rootNode && (x == nil<Node<K, V>*> || x.isBlack()) {
         if x == x.parent.childLeft {
-            Node<K, V>* w = x.parent.childRight;
+            heap Node<K, V>* w = x.parent.childRight;
             if w != nil<Node<K, V>*> && w.isRed() {
                 w.color = NodeColor::BLACK;
                 x.parent.color = NodeColor::RED;
@@ -273,7 +312,7 @@ p RedBlackTree.deleteFixup(heap Node<K, V>* x) {
                 x = this.rootNode;
             }
         } else {
-            Node<K, V>* w = x.parent.childLeft;
+            heap Node<K, V>* w = x.parent.childLeft;
             if w != nil<Node<K, V>*> && w.isRed() {
                 w.color = NodeColor::BLACK;
                 x.parent.color = NodeColor::RED;
@@ -307,6 +346,12 @@ p RedBlackTree.deleteFixup(heap Node<K, V>* x) {
     }
 }
 
+/**
+ * Find the node with the given key.
+ *
+ * @param key The key to search for
+ * @return The node with the given key, or nil if the key was not found
+ */
 f<heap Node<K, V>*> RedBlackTree.search(const K& key) {
     heap Node<K, V>* currentNode = this.rootNode;
     while currentNode != nil<heap Node<K, V>*> {
@@ -321,9 +366,24 @@ f<heap Node<K, V>*> RedBlackTree.search(const K& key) {
     return nil<heap Node<K, V>*>;
 }
 
+/**
+ * Find the node with the minimum key in the subtree rooted at x.
+ */
 f<heap Node<K, V>*> RedBlackTree.minimum(heap Node<K, V>* x) {
     while x.hasLeftChild() {
         x = x.childLeft;
     }
     return x;
+}
+
+/**
+ * Clear the subtree rooted at the input node recursively.
+ */
+p RedBlackTree.clearRecursive(heap Node<K, V>* node) {
+    // Skip if node is nil
+    if node == nil<heap Node<K, V>*> { return; }
+    // Otherwise, clear children and delete node
+    this.clearRecursive(node.childLeft);
+    this.clearRecursive(node.childRight);
+    sDelete(node);
 }
