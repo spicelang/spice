@@ -8,6 +8,9 @@ ext f<heap byte*> realloc(heap byte*, unsigned long);
 ext p free(heap byte*);
 ext p memcpy(heap byte*, heap byte*, unsigned long);
 
+// Generic type defs
+type T dyn;
+
 /**
   * Allocates a new block of memory of the given size.
   *
@@ -57,4 +60,49 @@ public p sDealloc(heap byte*& ptr) {
     if ptr == nil<heap byte*> { return; }
     free(ptr);
     ptr = nil<heap byte*>; // Zero out to prevent accidental double frees
+}
+
+/**
+ * Allocates memory for a new instance of the given type on the heap.
+ * Note: This function panics if the allocation fails.
+ *
+ * @return A pointer to the heap-allocated instance
+ */
+public f<heap T*> sNew<T>() {
+    unsafe {
+        // Allocate memory for the instance
+        Result<heap byte*> res = sAlloc(sizeof(type T));
+        return (heap T*) res.unwrap();
+    }
+}
+
+/**
+ * Allocates memory for a new instance of the given type on the heap.
+ * Note: This function panics if the allocation fails.
+ *
+ * @param val The value to put into the heap-allocated memory
+ * @return A pointer to the heap-allocated instance
+ */
+public f<heap T*> sNew<T>(const T& val) {
+    unsafe {
+        // Allocate memory for the instance
+        Result<heap byte*> res = sAlloc(sizeof(type T));
+        result = (heap T*) res.unwrap();
+        // Copy the value into the heap-allocated memory
+        sCopy((heap byte*) &val, (heap byte*) result, sizeof(type T));
+    }
+}
+
+/**
+ * Destroys the given heap-allocated instance and frees the memory.
+ *
+ * @param ptr The pointer to the heap-allocated instance
+ */
+public p sDelete<T>(heap T*& ptr) {
+    unsafe {
+        // Destruct the object
+        ptr.dtor();
+        // Deallocate the memory
+        sDealloc((heap byte*&) ptr);
+    }
 }

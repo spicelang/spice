@@ -1,6 +1,5 @@
-// Constants
-const unsigned long INITIAL_ALLOC_COUNT = 5l;
-const unsigned int RESIZE_FACTOR = 2;
+import "std/data/red-black-tree";
+import "std/type/result";
 
 // Add generic type definitions
 type K dyn;
@@ -10,14 +9,30 @@ type V dyn;
  * A map in Spice is a commonly used data structure, which can be used to represent a list of key value pairs.
  *
  * Time complexity:
- * Insert: O(1)
- * Delete:
- * Search: O(1)
+ * Insert: O(log n)
+ * Delete: O(log n)
+ * Lookup: O(log n)
  */
 public type Map<K, V> struct {
-
+    RedBlackTree<K, V> tree
 }
 
-public p Map.ctor() {
+public p Map.insert(const K& key, const V& value) {
+    this.tree.insert(key, value);
+}
 
+public p Map.remove(const K& key) {
+    this.tree.delete(key);
+}
+
+public f<V&> Map.get(const K& key) {
+    return this.tree.find(key);
+}
+
+public f<Result<V&>> Map.getSafe(const K& key) {
+    return this.tree.findSafe(key);
+}
+
+public f<bool> Map.contains(const K& key) {
+    return this.tree.contains(key);
 }
