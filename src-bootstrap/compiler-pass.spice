@@ -6,7 +6,7 @@ type ICompilerPass interface {
     p changeToParentScope(ScopeType);
 }
 
-type CompilerPass struct : ICompilerPass {
+type CompilerPass struct {
     GlobalResourceManager& globalResourceManager
     const CliOptions& cliOptions
     SourceFile* sourceFile

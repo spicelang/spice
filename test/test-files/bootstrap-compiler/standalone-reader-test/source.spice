@@ -1,6 +1,5 @@
 import "std/os/env";
-import "../../../../../src-bootstrap/ast/ast-nodes";
-import "../../../../../src-bootstrap/reader/reader";
+import "../../../bootstrap/reader/reader";
 
 f<int> main() {
     String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-reader-test/test-file.spice";

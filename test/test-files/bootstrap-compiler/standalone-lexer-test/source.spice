@@ -1,5 +1,5 @@
 import "std/os/env";
-import "../../../../../src-bootstrap/lexer/lexer";
+import "../../../bootstrap/lexer/lexer";
 
 f<int> main() {
     String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-lexer-test/test-file.spice";

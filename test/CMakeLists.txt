@@ -23,8 +23,11 @@ include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
 add_test(NAME spicetest COMMAND spicetest)
 target_link_libraries(spicetest PUBLIC spicelib gtest gmock antlr4_static ${LLVM_LIBS})
 
-# Test files
+# Test files symlink
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/test-files ${CMAKE_CURRENT_BINARY_DIR}/test-files SYMBOLIC)
+
+# Bootstrap compiler symlink
+file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/../src-bootstrap ${CMAKE_CURRENT_BINARY_DIR}/bootstrap SYMBOLIC)
 
 # Add leak check target
 add_custom_target(spicetestleakcheck COMMAND valgrind --leak-check=full --error-exitcode=1 ./spicetest DEPENDS spicetest)
