@@ -57,8 +57,9 @@ public p Reader.advance() {
     if this.curChar == '\n' {
         this.curCodeLoc.line++;
         this.curCodeLoc.col = 0l;
+    } else {
+        this.curCodeLoc.col++;
     }
-    this.curCodeLoc.col++;
 }
 
 /**

@@ -303,6 +303,11 @@ TEST_P(BenchmarkTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, BenchmarkTests, ::testing::ValuesIn(TestUtil::collectTestCases("benchmark", false)),
                          TestUtil::NameResolver());
 
+class BootstrapCompilerTests : public ::testing::TestWithParam<TestCase> {};
+TEST_P(BootstrapCompilerTests, ) { execTestCase(GetParam()); }
+INSTANTIATE_TEST_SUITE_P(, BootstrapCompilerTests, ::testing::ValuesIn(TestUtil::collectTestCases("bootstrap-compiler", false)),
+                         TestUtil::NameResolver());
+
 } // namespace spice::testing
 
 // GCOV_EXCL_STOP

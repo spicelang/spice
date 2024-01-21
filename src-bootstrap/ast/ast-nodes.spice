@@ -311,8 +311,7 @@ type SpecifierType enum {
 
 public type ASTSpecifierNode struct /*: IVisitable*/ {
     compose public ASTNode node
-
-    public SpecifierType specifierType = SpecifierType::TY_NONE
+    public SpecifierType specifierType = SpecifierType::NONE
 }
 
 // ========================================================== ModAttrNode ========================================================

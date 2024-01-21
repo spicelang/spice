@@ -1,0 +1,15 @@
+import "std/os/env";
+import "../../../../../src-bootstrap/lexer/lexer";
+
+f<int> main() {
+    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-lexer-test/test-file.spice";
+    Lexer lexer = Lexer(filePath.getRaw());
+    unsigned long tokenCount = 0l;
+    while (!lexer.isEOF()) {
+        Token token = lexer.getToken();
+        token.print();
+        lexer.advance();
+        tokenCount++;
+    }
+    printf("\nLexed tokens: %d\n", tokenCount);
+}
