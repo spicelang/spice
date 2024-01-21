@@ -45,6 +45,8 @@ std::string CompilerError::getMessagePrefix(CompilerErrorType type) {
     return "I/O Error";
   case STD_NOT_FOUND:
     return "Std lib not found";
+  case BOOTSTRAP_NOT_FOUND:
+    return "Bootstrap compiler not found";
   case UNHANDLED_BRANCH:
     return "Unhandled code branch";
   case TYPE_CHECKER_RUNS_EXCEEDED:

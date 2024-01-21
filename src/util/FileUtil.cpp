@@ -98,6 +98,21 @@ std::filesystem::path FileUtil::getStdDir() {
 }
 
 /**
+ * Retrieve the dir, where the bootstrap compiler lives.
+ * Returns an empty string if the bootstrap compiler was not found.
+ *
+ * @return
+ */
+std::filesystem::path FileUtil::getBootstrapDir() {
+  if (std::getenv("SPICE_BOOTSTRAP_DIR")) {
+    std::filesystem::path stdPath(std::getenv("SPICE_BOOTSTRAP_DIR"));
+    if (std::filesystem::exists(stdPath))
+      return stdPath;
+  }
+  return ""; // GCOV_EXCL_LINE
+}
+
+/**
  * Retrieve the dir, where output binaries should go when installing them
  *
  * @return Installation directory
