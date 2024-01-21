@@ -1,4 +1,5 @@
 // Std imports
+import "std/type/byte";
 import "std/data/vector";
 import "std/data/unordered-map";
 
@@ -7,7 +8,9 @@ import "../global/runtime-module-manager";
 import "../linker/external-linker-interface";
 import "../reader/code-loc";
 import "../util/timer";
+import "../util/memory";
 import "../util/block-allocator";
+import "../bindings/llvm/llvm";
 import "../source-file";
 import "../driver";
 
@@ -20,18 +23,22 @@ public const string LTO_FILE_NAME = "lto-module";
  * Other components of the compiler can request the required global resources from the GlobalResourceManager.
  */
 public type GlobalResourceManager struct {
-    UnorderedMap<String, SourceFile*> sourceFiles
-    Vector<ASTNode> astNodes
-    const CliOptions& cliOptions
-    ExternalLinkerInterface linker
-    CacheManager cacheManager
-    RuntimeModuleManager runtimeModuleManager
-    llvm::Context context
-    llvm::IRBuilder builder
-    llvm::Module* ltoModule
-    llvm::TargetMachine* targetMachine
-    Timer totalTimer
-    ErrorManager errorManager
+    public llvm::Context context
+    public llvm::IRBuilder builder
+    public llvm::Module ltoModule
+    public llvm::TargetMachine targetMachine
+    public DefaultMemoryManager memoryManager
+    public Vector<String> compileTimeStringValues
+    public BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>(memoryManager) // Used to allocate all AST nodes
+    public UnorderedMap<String, heap SourceFile*> sourceFiles // The GlobalResourceManager owns all source files
+    public Vector<ASTNode*> astNodes
+    public const CliOptions& cliOptions
+    public ExternalLinkerInterface linker
+    public CacheManager cacheManager
+    public RuntimeModuleManager runtimeModuleManager
+    public Timer totalTimer
+    public ErrorManager errorManager
+    unsigned long nextCustomTypeId = BYTE_MAX_VALUE + 1 // Start at 256 because all primitive types come first
 }
 
 public p GlobalResourceManager.ctor(const CliOptions& cliOptions) {

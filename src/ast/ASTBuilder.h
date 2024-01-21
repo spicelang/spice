@@ -26,7 +26,7 @@ private:
   // Private type defs
   using TerminalNode = antlr4::tree::TerminalNode;
   using ParserRuleContext = antlr4::ParserRuleContext;
-  template <typename T> using NumericParserCallback = std::function<T(const std::string &, int, bool)>;
+  template <typename T> using NumericParserCallback = std::function<T(const std::string &, short, bool)>;
 
 public:
   // Constructors
@@ -131,12 +131,12 @@ private:
   ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) {
     return {ctx->start, ctx->start->getStartIndex(), ctx->stop->getStopIndex(), sourceFile};
   }
-  int32_t parseInt(ConstantNode *constantNode, TerminalNode *terminal);
-  int16_t parseShort(ConstantNode *constantNode, TerminalNode *terminal);
-  int64_t parseLong(ConstantNode *constantNode, TerminalNode *terminal);
+  int32_t parseInt(TerminalNode *terminal);
+  int16_t parseShort(TerminalNode *terminal);
+  int64_t parseLong(TerminalNode *terminal);
   int8_t parseChar(TerminalNode *terminal);
   static std::string parseString(std::string input);
-  template <typename T> T parseNumeric(ConstantNode *constantNode, TerminalNode *terminal, NumericParserCallback<T> cb);
+  template <typename T> T parseNumeric(TerminalNode *terminal, const NumericParserCallback<T> &cb);
   static void replaceEscapeChars(std::string &string);
   std::string getIdentifier(TerminalNode *terminal);
 };

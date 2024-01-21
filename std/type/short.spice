@@ -1,6 +1,8 @@
-public const int SIZE = 16;
-public const short MIN_VALUE = -32768s;
-public const short MAX_VALUE = 32767s;
+public const unsigned int SHORT_SIZE = 16;
+public const short SHORT_MIN_VALUE = -32768s;
+public const short SHORT_MAX_VALUE = 32767s;
+public const unsigned short USHORT_MIN_VALUE = 0s;
+public const unsigned short USHORT_MAX_VALUE = 65535s;
 
 // External functions
 ext f<unsigned int> snprintf(char*, unsigned long, string, short);

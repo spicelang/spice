@@ -7,7 +7,7 @@ type ICompilerPass interface {
 }
 
 type CompilerPass struct {
-    GlobalResourceManager& globalResourceManager
+    GlobalResourceManager& resourceManager
     const CliOptions& cliOptions
     SourceFile* sourceFile
     Scope* rootScope

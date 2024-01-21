@@ -1,22 +1,12 @@
-f<int> main() {
-    Lexer lexer = Lexer("./test-file.spice");
-    while (!lexer.isEOF()) {
-        Token token = lexer.getToken();
-        printf("Token: ");
-        token.print();
-        lexer.advance();
-    }
-}
-
-/*import "../../src-bootstrap/lexer/lexer";
-import "../../src-bootstrap/parser/parser";
-import "../../src-bootstrap/ast/ast-nodes";
+import "bootstrap/lexer/lexer";
+import "bootstrap/parser/parser";
+import "bootstrap/ast/ast-nodes";
 
 f<int> main() {
     Lexer lexer = Lexer("./test-file.spice");
     Parser parser = Parser(lexer);
     ASTEntryNode* entryNode = parser.parse();
-}*/
+}
 
 /*f<int> main() {
     int i = 123; // Captured by ref

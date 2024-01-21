@@ -1,6 +1,6 @@
-public const int SIZE = 8;
-public const int MIN_VALUE = 0;
-public const int MAX_VALUE = 255;
+public const unsigned int BYTE_SIZE = 8;
+public const unsigned int BYTE_MIN_VALUE = 0;
+public const unsigned int BYTE_MAX_VALUE = 255;
 
 // External functions
 ext f<unsigned int> snprintf(char*, unsigned long, string, byte);

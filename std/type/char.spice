@@ -1,6 +1,6 @@
-public const int SIZE = 8;
-public const int MIN_VALUE = 0;
-public const int MAX_VALUE = 255;
+public const unsigned int CHAR_SIZE = 8;
+public const unsigned int CHAR_MIN_VALUE = 0;
+public const unsigned int CHAR_MAX_VALUE = 255;
 
 // Converts a char to a double
 public f<double> toDouble(char input) {

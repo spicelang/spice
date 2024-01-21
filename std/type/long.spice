@@ -1,6 +1,8 @@
-public const int SIZE = 64;
+public const unsigned int SIZE = 64;
 public const long MIN_VALUE = -9223372036854775808l;
 public const long MAX_VALUE = 9223372036854775807l;
+public const unsigned long ULONG_MIN_VALUE = 0ul;
+public const unsigned long ULONG_MAX_VALUE = 18446744073709551615ul;
 
 // External functions
 ext f<unsigned int> snprintf(char*, unsigned long, string, long);
