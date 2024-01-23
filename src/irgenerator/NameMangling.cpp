@@ -190,7 +190,7 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     out << (signedness ? "c" : "h");
     break;
   case TY_STRING:
-    out << "Pc";
+    out << "PKc";
     break;
   case TY_BOOL:
     assert(!signedness && "Signed bool types are forbidden");

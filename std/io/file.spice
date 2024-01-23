@@ -214,7 +214,7 @@ public f<bool> deleteFile(string path) {
 public f<Result<File>> openFile(string path, string mode = MODE_READ) {
     FilePtr fp = fopen(path, mode);
     File file = File{fp, false};
-    return fp != nil<FilePtr> ? ok(file) : err(file, Error("Failed to open file"));
+    return fp != nil<FilePtr> ? ok(file) : err<File>(Error("Failed to open file"));
 }
 
 /**
@@ -227,7 +227,7 @@ public f<Result<String>> readFile(string path) {
     Result<File> fileResult = openFile(path, MODE_READ);
     // Check for errors
     if !fileResult.isOk() {
-        return err(String(), fileResult.getErr());
+        return err<String>(fileResult.getErr());
     }
     File file = fileResult.unwrap();
     // Read from the file char by char
@@ -251,7 +251,7 @@ public f<Result<bool>> writeFile(string path, string content) {
     Result<File> fileResult = openFile(path, MODE_WRITE);
     // Check for errors
     if !fileResult.isOk() {
-        return err(false, fileResult.getErr());
+        return err<bool>(fileResult.getErr());
     }
     File file = fileResult.unwrap();
     // Write the string to the file
@@ -271,7 +271,7 @@ public f<Result<unsigned long>> getFileSize(string path) {
     Result<File> fileResult = openFile(path, MODE_READ);
     // Check for errors
     if !fileResult.isOk() {
-        return err((unsigned long) 0l, fileResult.getErr());
+        return err<unsigned long>(fileResult.getErr());
     }
     File file = fileResult.unwrap();
     // Get the file file

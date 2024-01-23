@@ -1,51 +1,35 @@
-import "std/data/map";
+import "std/iterator/iterator";
+import "std/data/pair";
+
+type T short|int|long;
+
+type MockIterator<T> struct : IIterator<T> {
+    T item
+    unsigned long cursor
+}
+
+p MockIterator.ctor() {
+    this.cursor = 0l;
+}
+
+f<T&> MockIterator.get() {
+    return this.item;
+}
+
+f<Pair<unsigned long, T>> MockIterator.getIdx() {
+    return Pair<unsigned long, T>(0l, this.item);
+}
+
+f<bool> MockIterator.isValid() {
+    return true;
+}
+
+p MockIterator.next() {}
 
 f<int> main() {
-    Map<int, string> map;
-    assert map.getSize() == 0l;
-    assert map.isEmpty();
-    map.insert(1, "Hello");
-    assert map.getSize() == 1l;
-    assert !map.isEmpty();
-    map.insert(2, "World");
-    assert map.getSize() == 2l;
-    map.insert(3, "Foo");
-    assert map.getSize() == 3l;
-    map.insert(4, "Bar");
-    assert map.getSize() == 4l;
-    assert map.contains(1);
-    assert map.contains(2);
-    assert map.contains(3);
-    assert map.contains(4);
-    assert map.get(1) == "Hello";
-    assert map.get(2) == "World";
-    assert map.get(3) == "Foo";
-    assert map.get(4) == "Bar";
-    map.remove(2);
-    assert map.getSize() == 3l;
-    assert !map.contains(2);
-    assert !map.isEmpty();
-    map.remove(1);
-    assert map.getSize() == 2l;
-    assert !map.contains(1);
-    assert !map.isEmpty();
-    string& foo = map.get(3);
-    assert foo == "Foo";
-    foo = "Baz";
-    assert map.get(3) == "Baz";
-    Result<string> bar = map.getSafe(4);
-    assert bar.isOk();
-    assert bar.unwrap() == "Bar";
-    Result<string> baz = map.getSafe(5);
-    assert !baz.isOk();
-    map.remove(3);
-    assert map.getSize() == 1l;
-    assert !map.contains(3);
-    assert !map.isEmpty();
-    map.remove(4);
-    assert map.getSize() == 0l;
-    assert !map.contains(4);
-    assert map.isEmpty();
+    foreach dyn item : MockIterator<short>() {
+        printf("Demo item: %d\n", item);
+    }
 }
 
 /*import "../../src-bootstrap/lexer/lexer";

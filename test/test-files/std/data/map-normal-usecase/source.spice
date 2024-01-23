@@ -33,10 +33,10 @@ f<int> main() {
     assert foo == "Foo";
     foo = "Baz";
     assert map.get(3) == "Baz";
-    Result<string&> bar = map.getSafe(4);
+    Result<string> bar = map.getSafe(4);
     assert bar.isOk();
     assert bar.unwrap() == "Bar";
-    Result<string&> baz = map.getSafe(5);
+    Result<string> baz = map.getSafe(5);
     assert baz.isErr();
     map.remove(3);
     assert map.getSize() == 1l;

@@ -17,7 +17,7 @@ define private i32 @_Z8testFuncv() {
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
 
-define private i32 @_Z8testFuncPc(ptr %0) {
+define private i32 @_Z8testFuncPKc(ptr %0) {
   %result = alloca i32, align 4
   %param = alloca ptr, align 8
   store ptr %0, ptr %param, align 8
@@ -35,7 +35,7 @@ define dso_local i32 @main() #1 {
   store i32 %1, ptr %res, align 4
   %2 = load i32, ptr %res, align 4
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %2)
-  %4 = call i32 @_Z8testFuncPc(ptr @anon.string.0)
+  %4 = call i32 @_Z8testFuncPKc(ptr @anon.string.0)
   store i32 %4, ptr %res, align 4
   %5 = load i32, ptr %result, align 4
   ret i32 %5

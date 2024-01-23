@@ -24,7 +24,9 @@ enum RuntimeModule : uint8_t {
   RTTI_RT = 1 << 2,
 };
 
-const std::unordered_map<const char *, RuntimeModule> TYPE_NAME_TO_RT_MODULE_MAPPING = {{STROBJ_NAME, STRING_RT}};
+const std::unordered_map<const char *, RuntimeModule> TYPE_NAME_TO_RT_MODULE_MAPPING = {
+    {STROBJ_NAME, STRING_RT},
+};
 
 const std::unordered_map<const char *, RuntimeModule> FCT_NAME_TO_RT_MODULE_MAPPING = {
     {"sAlloc", MEMORY_RT}, {"sRealloc", MEMORY_RT},      {"sCopy", MEMORY_RT},   {"sDealloc", MEMORY_RT},

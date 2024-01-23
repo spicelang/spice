@@ -35,7 +35,7 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !48 {
   call void @llvm.dbg.declare(metadata ptr %result, metadata !52, metadata !DIExpression()), !dbg !53
   call void @llvm.dbg.declare(metadata ptr %ref, metadata !54, metadata !DIExpression()), !dbg !55
   store ptr %0, ptr %ref, align 8, !dbg !55
-  call void @_ZN6String4ctorEPc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.0), !dbg !56
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.0), !dbg !56
   store i64 6, ptr %ts, align 8, !dbg !57
   %3 = load %struct.String, ptr %2, align 8, !dbg !57
   %4 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !57
@@ -49,7 +49,7 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !48 {
   ret %struct.TestStruct %8, !dbg !60
 }
 
-declare void @_ZN6String4ctorEPc(ptr, ptr)
+declare void @_ZN6String4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #2 !dbg !61 {

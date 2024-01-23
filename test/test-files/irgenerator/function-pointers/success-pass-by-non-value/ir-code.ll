@@ -8,14 +8,14 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.0 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
-define private i32 @_Z4testPc(ptr %0) {
+define private i32 @_Z4testPKc(ptr %0) {
   %result = alloca i32, align 4
   %_input = alloca ptr, align 8
   store ptr %0, ptr %_input, align 8
   ret i32 12
 }
 
-define private i32 @_Z6invokePPPFiPcE(ptr %0) {
+define private i32 @_Z6invokePPPFiPKcE(ptr %0) {
   %result = alloca i32, align 4
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
@@ -26,7 +26,7 @@ define private i32 @_Z6invokePPPFiPcE(ptr %0) {
   ret i32 %4
 }
 
-define private i32 @_Z6invokeRPFiPcE(ptr %0) {
+define private i32 @_Z6invokeRPFiPKcE(ptr %0) {
   %result = alloca i32, align 4
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
@@ -43,15 +43,15 @@ define dso_local i32 @main() #0 {
   %testFct = alloca { ptr, ptr }, align 8
   %testFctPtr = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  store ptr @_Z4testPc, ptr %fat.ptr, align 8
+  store ptr @_Z4testPKc, ptr %fat.ptr, align 8
   %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %1, align 8
   %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %2, ptr %testFct, align 8
   store ptr %testFct, ptr %testFctPtr, align 8
-  %3 = call i32 @_Z6invokePPPFiPcE(ptr %testFctPtr)
+  %3 = call i32 @_Z6invokePPPFiPKcE(ptr %testFctPtr)
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
-  %5 = call i32 @_Z6invokeRPFiPcE(ptr %testFct)
+  %5 = call i32 @_Z6invokeRPFiPKcE(ptr %testFct)
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %5)
   %7 = load i32, ptr %result, align 4
   ret i32 %7

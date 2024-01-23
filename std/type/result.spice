@@ -45,6 +45,13 @@ public inline f<bool> Result.isOk() {
 }
 
 /**
+ * Checks if the result contains an error.
+ */
+public inline f<bool> Result.isErr() {
+    return this.error.code != 0;
+}
+
+/**
  * Returns a result object with a value and no error.
  */
 public inline f<Result<T>> ok<T>(const T& data) {
