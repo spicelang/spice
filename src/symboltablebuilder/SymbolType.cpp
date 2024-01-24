@@ -158,7 +158,7 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
     return llvm::Type::getInt8Ty(context);
 
   if (is(TY_STRING))
-    return llvm::Type::getInt8PtrTy(context);
+    return llvm::PointerType::get(context, 0);
 
   if (is(TY_BOOL))
     return llvm::Type::getInt1Ty(context);
