@@ -44,15 +44,10 @@
 	cmpl	$2, %ecx
 	jl	.LBB0_6
 # %bb.1:                                # %if.exit.L2.preheader
-	xorl	%eax, %eax
-	movl	%ecx, %edx
-	subl	$2, %edx
-	cmovbl	%eax, %edx
-	movl	$1, %eax
-	cmpl	$7, %edx
+	cmpl	$9, %ecx
 	jb	.LBB0_5
 # %bb.2:                                # %vector.ph
-	incl	%edx
+	leal	-1(%rcx), %edx
 	movl	%edx, %r8d
 	andl	$-8, %r8d
 	movd	%ecx, %xmm0
@@ -62,14 +57,14 @@
 	movl	%r8d, %eax
 	negl	%eax
 	movdqa	.LCPI0_1(%rip), %xmm1           # xmm1 = [1,1,1,1]
-	movdqa	.LCPI0_2(%rip), %xmm3           # xmm3 = [4294967292,4294967292,4294967292,4294967292]
+	movdqa	.LCPI0_2(%rip), %xmm2           # xmm2 = [4294967292,4294967292,4294967292,4294967292]
 	movdqa	.LCPI0_3(%rip), %xmm4           # xmm4 = [4294967288,4294967288,4294967288,4294967288]
-	movdqa	%xmm1, %xmm2
+	movdqa	%xmm1, %xmm3
 	.p2align	4, 0x90
 .LBB0_3:                                # %vector.body
                                         # =>This Inner Loop Header: Depth=1
 	movdqa	%xmm0, %xmm5
-	paddd	%xmm3, %xmm5
+	paddd	%xmm2, %xmm5
 	movdqa	%xmm0, %xmm6
 	pmuludq	%xmm1, %xmm6
 	pshufd	$245, %xmm1, %xmm1              # xmm1 = xmm1[1,1,3,3]
@@ -80,25 +75,25 @@
 	movdqa	%xmm6, %xmm1
 	punpckldq	%xmm7, %xmm1            # xmm1 = xmm1[0],xmm7[0],xmm1[1],xmm7[1]
 	pshufd	$245, %xmm5, %xmm6              # xmm6 = xmm5[1,1,3,3]
-	pmuludq	%xmm2, %xmm5
-	pshufd	$245, %xmm2, %xmm2              # xmm2 = xmm2[1,1,3,3]
+	pmuludq	%xmm3, %xmm5
+	pshufd	$245, %xmm3, %xmm3              # xmm3 = xmm3[1,1,3,3]
 	pshufd	$232, %xmm5, %xmm5              # xmm5 = xmm5[0,2,2,3]
-	pmuludq	%xmm6, %xmm2
-	pshufd	$232, %xmm2, %xmm6              # xmm6 = xmm2[0,2,2,3]
-	movdqa	%xmm5, %xmm2
-	punpckldq	%xmm6, %xmm2            # xmm2 = xmm2[0],xmm6[0],xmm2[1],xmm6[1]
+	pmuludq	%xmm6, %xmm3
+	pshufd	$232, %xmm3, %xmm6              # xmm6 = xmm3[0,2,2,3]
+	movdqa	%xmm5, %xmm3
+	punpckldq	%xmm6, %xmm3            # xmm3 = xmm3[0],xmm6[0],xmm3[1],xmm6[1]
 	paddd	%xmm4, %xmm0
 	addl	$8, %eax
 	jne	.LBB0_3
 # %bb.4:                                # %middle.block
 	pshufd	$245, %xmm1, %xmm0              # xmm0 = xmm1[1,1,3,3]
-	pshufd	$245, %xmm2, %xmm3              # xmm3 = xmm2[1,1,3,3]
-	pmuludq	%xmm0, %xmm3
-	pmuludq	%xmm1, %xmm2
-	pshufd	$238, %xmm2, %xmm0              # xmm0 = xmm2[2,3,2,3]
-	pmuludq	%xmm2, %xmm0
-	pshufd	$170, %xmm3, %xmm1              # xmm1 = xmm3[2,2,2,2]
-	pmuludq	%xmm3, %xmm1
+	pshufd	$245, %xmm3, %xmm2              # xmm2 = xmm3[1,1,3,3]
+	pmuludq	%xmm0, %xmm2
+	pmuludq	%xmm1, %xmm3
+	pshufd	$238, %xmm3, %xmm0              # xmm0 = xmm3[2,3,2,3]
+	pmuludq	%xmm3, %xmm0
+	pshufd	$170, %xmm2, %xmm1              # xmm1 = xmm2[2,2,2,2]
+	pmuludq	%xmm2, %xmm1
 	pmuludq	%xmm0, %xmm1
 	movd	%xmm1, %eax
 	cmpl	%r8d, %edx

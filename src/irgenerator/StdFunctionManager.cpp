@@ -8,7 +8,7 @@
 namespace spice::compiler {
 
 llvm::Function *StdFunctionManager::getPrintfFct() const {
-  llvm::Function *printfFct = getFunction("printf", builder.getInt32Ty(), builder.getInt8PtrTy(), true);
+  llvm::Function *printfFct = getFunction("printf", builder.getInt32Ty(), builder.getPtrTy(), true);
   // Set attributes
   printfFct->addFnAttr(llvm::Attribute::NoFree);
   printfFct->addFnAttr(llvm::Attribute::NoUnwind);

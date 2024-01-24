@@ -1,6 +1,6 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
-target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-w64-windows-gnu"
 
 %struct.Timer = type { i64, i64, i32, ptr }
@@ -16,7 +16,7 @@ target triple = "x86_64-w64-windows-gnu"
 define private fastcc i1 @_Z9isInRangemmj(i64 %0, i64 %1, i32 %2) unnamed_addr #0 {
 land.exit.L6C12:
   %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i64 %1, i32 %2, i64 %0)
-  %4 = zext i32 %2 to i64
+  %4 = zext nneg i32 %2 to i64
   %5 = sub nsw i64 %1, %4
   %.not = icmp ule i64 %5, %0
   %6 = add nuw nsw i64 %4, %1
