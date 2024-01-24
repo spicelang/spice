@@ -32,7 +32,7 @@ class Interface;
  * - a: byte
  * - h: unsigned byte / unsigned char
  * - c: char
- * - Pc: string (char*)
+ * - PKc: string (const char*)
  * - b: bool
  * - v: void
  * - K: const
