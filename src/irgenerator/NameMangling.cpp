@@ -7,6 +7,7 @@
 #include <model/Interface.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
+#include <util/CommonUtil.h>
 
 namespace spice::compiler {
 
@@ -26,7 +27,6 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   if (!spiceFunc.mangleFunctionName)
     return spiceFunc.name;
 
-  bool needsEndMarker = false;
   std::stringstream mangledName;
   mangledName << "_Z";
 
@@ -34,7 +34,6 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   if (spiceFunc.isMethod()) {
     mangledName << "N";
     mangleType(mangledName, spiceFunc.thisType);
-    needsEndMarker = true;
   }
 
   // Function name
@@ -42,7 +41,10 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   mangledName << name.length() << name;
 
   // Template types
-  if (!spiceFunc.templateTypes.empty()) {
+  bool isSelfGeneric = !spiceFunc.templateTypes.empty();
+  if (spiceFunc.isMethod())
+    isSelfGeneric = spiceFunc.templateTypes.size() > spiceFunc.thisType.getTemplateTypes().size();
+  if (isSelfGeneric) {
     mangledName << "I";
     // Template types themselves
     for (const GenericType &genericTemplateType : spiceFunc.templateTypes) {
@@ -52,12 +54,17 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
     }
     mangledName << "E";
 
+    // Insert second end marker to end the nested type
+    if (spiceFunc.isMethod())
+      mangledName << "E";
+
     // Return type
     if (spiceFunc.isFunction())
       mangleType(mangledName, spiceFunc.returnType);
     else
       mangledName << "v";
-  } else if (needsEndMarker) {
+
+  } else if (spiceFunc.isMethod()) {
     mangledName << "E";
   }
 
@@ -69,6 +76,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   if (spiceFunc.paramList.empty())
     mangledName << "v";
 
+  // assert(CommonUtil::isValidMangledName(mangledName.str())); // ToDo: Enable
   return mangledName.str();
 }
 
@@ -158,14 +166,9 @@ void NameMangling::mangleType(std::stringstream &out, const SymbolType &type) { 
  */
 void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, bool signedness) {
   switch (chainElement.superType) {
-  case TY_PTR:
-    out << "P";
-    break;
+  case TY_PTR: // fall-through
   case TY_ARRAY:
-    if (chainElement.data.arraySize == 0)
-      out << "P";
-    else
-      out << "A" << chainElement.data.arraySize;
+    out << "P";
     break;
   case TY_REF:
     out << "R";
@@ -213,6 +216,8 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
   case TY_ENUM: {
     bool nestedType = false;
     mangleName(out, chainElement.subType, nestedType);
+    if (nestedType)
+      out << "E";
     break;
   }
   case TY_FUNCTION: {

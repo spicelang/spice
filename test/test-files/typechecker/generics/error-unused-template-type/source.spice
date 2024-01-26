@@ -1,9 +1,0 @@
-type T dyn;
-
-f<int> test<T>(int test) {
-    return 1 + test;
-}
-
-f<int> main() {
-    test(0);
-}

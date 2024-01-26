@@ -1,5 +1,10 @@
-import "test3" as s2;
+type A dyn;
 
-p test() {
-    printf("p: %f", s2.getDouble());
+public p printFormat<A>(A element) {
+    printf("Sizeof output: %d\n", sizeof(element));
+}
+
+public f<A*> getAInc<A>(A* number) {
+    (*number)++;
+    return number;
 }

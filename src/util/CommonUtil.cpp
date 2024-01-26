@@ -3,6 +3,7 @@
 #include "CommonUtil.h"
 
 #ifdef OS_WINDOWS
+#include <cxxabi.h>
 #include <windows.h>
 #elif OS_UNIX
 #include <unistd.h>
@@ -85,6 +86,18 @@ size_t CommonUtil::getSystemPageSize() {
 #else
 #error "Unsupported platform"
 #endif
+}
+
+/**
+ * Check if the given string is a valid mangled name
+ *
+ * @return
+ */
+bool CommonUtil::isValidMangledName(const std::string &mangledName) {
+  int status;
+  char *demangled = abi::__cxa_demangle(mangledName.c_str(), nullptr, nullptr, &status);
+  free(demangled);
+  return status == 0;
 }
 
 /**

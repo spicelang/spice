@@ -7,19 +7,10 @@
         {
           "captures": [],
           "children": [],
-          "name": "ctor(const unsigned long)",
+          "name": "printLength<long>()",
           "symbols": [
             {
-              "codeLoc": "L8C19",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "initialLength",
-              "orderIndex": 1,
-              "state": "initialized",
-              "type": "const unsigned long"
-            },
-            {
-              "codeLoc": "L8C1",
+              "codeLoc": "L12C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",
@@ -32,10 +23,19 @@
         {
           "captures": [],
           "children": [],
-          "name": "printLength()",
+          "name": "ctor<long>(const unsigned long)",
           "symbols": [
             {
-              "codeLoc": "L12C1",
+              "codeLoc": "L8C19",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "initialLength",
+              "orderIndex": 1,
+              "state": "initialized",
+              "type": "const unsigned long"
+            },
+            {
+              "codeLoc": "L8C1",
               "isGlobal": false,
               "isVolatile": false,
               "name": "this",

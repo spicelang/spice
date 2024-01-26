@@ -33,8 +33,14 @@ std::vector<SymbolType> Function::getParamTypes() const {
 std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePublic /*=false*/) const {
   std::vector<SymbolType> templateSymbolTypes;
   templateSymbolTypes.reserve(templateTypes.size());
-  for (const GenericType &genericType : templateTypes)
-    templateSymbolTypes.push_back(genericType);
+  for (const GenericType &genericType : templateTypes) {
+    if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
+      assert(typeMapping.contains(genericType.getSubType()));
+      templateSymbolTypes.push_back(typeMapping.at(genericType.getSubType()));
+    } else {
+      templateSymbolTypes.push_back(genericType);
+    }
+  }
 
   return Function::getSignature(name, thisType, returnType, paramList, templateSymbolTypes, withThisType, ignorePublic);
 }
@@ -134,10 +140,8 @@ bool Function::hasSubstantiatedParams() const {
  * @return Substantiated generics or not
  */
 bool Function::hasSubstantiatedGenerics() const {
-  for (const SymbolType &templateType : thisType.getTemplateTypes())
-    if (templateType.hasAnyGenericParts())
-      return false;
-  return templateTypes.empty() && !thisType.hasAnyGenericParts() && !returnType.hasAnyGenericParts();
+  const auto predicate = [this](const GenericType &genericType) { return typeMapping.contains(genericType.getSubType()); };
+  return std::ranges::all_of(templateTypes, predicate);
 }
 
 /**

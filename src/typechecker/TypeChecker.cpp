@@ -150,7 +150,8 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
 
   // Visit iterator assignment
-  SymbolType iteratorOrIterableType = std::any_cast<ExprResult>(visit(node->iteratorAssign())).type;
+  AssignExprNode *iteratorNode = node->iteratorAssign();
+  SymbolType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
 
   // Retrieve iterator type
@@ -158,9 +159,11 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   if (iteratorOrIterableType.isIterable(node)) {
     const SymbolType &iterableType = iteratorOrIterableType;
     Scope *matchScope = iterableType.getBodyScope();
-    node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, node);
+    node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
     assert(node->getIteratorFct != nullptr); // At this point we are sure to implement IIterable, so we also have getIterator()
     iteratorType = node->getIteratorFct->returnType;
+    // Create anonymous entry for the iterator
+    currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
   }
 
   // Check iterator type
@@ -484,12 +487,6 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
       paramTypes.push_back(paramType);
       paramList.push_back({paramType, false});
     }
-  }
-
-  // Check if all template types were used in the function parameters or in the return type
-  if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; })) {
-    softError(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters");
-    return static_cast<std::vector<Function *> *>(nullptr);
   }
 
   // Build signature object

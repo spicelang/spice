@@ -151,7 +151,7 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
       Function candidate = presetFunction;
 
       // Create empty type mapping
-      TypeMapping typeMapping;
+      TypeMapping typeMapping = candidate.typeMapping;
 
       bool forceSubstantiation = false;
       MatchResult matchResult = matchManifestation(candidate, matchScope, requestedName, requestedThisType, requestedArgs,
@@ -328,9 +328,6 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
     }
     candidate.thisType.setBodyScope(matchScope);
   }
-
-  // Clear template types of candidate, since they are not needed anymore
-  candidate.templateTypes.clear();
 
   return MatchResult::MATCHED;
 }
