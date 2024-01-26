@@ -15,13 +15,13 @@ define dso_local i32 @main() #0 {
   %i = alloca i32, align 4
   %iPtr = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  call void @_Z11printFormatd(double 1.123000e+00)
-  call void @_Z11printFormati(i32 543)
-  call void @_Z11printFormatA2PKc([2 x ptr] [ptr @anon.string.0, ptr @anon.string.1])
+  call void @_Z11printFormatIdEvd(double 1.123000e+00)
+  call void @_Z11printFormatIiEvi(i32 543)
+  call void @_Z11printFormatIPPKcEvPPKc([2 x ptr] [ptr @anon.string.0, ptr @anon.string.1])
   store i32 1234, ptr %test, align 4
-  call void @_Z11printFormatPi(ptr %test)
+  call void @_Z11printFormatIPiEvPi(ptr %test)
   store i32 12, ptr %i, align 4
-  %1 = call ptr @_Z7getAIncPi(ptr %i)
+  %1 = call ptr @_Z7getAIncIiEPiPi(ptr %i)
   store ptr %1, ptr %iPtr, align 8
   %2 = load ptr, ptr %iPtr, align 8
   %3 = load i32, ptr %2, align 4
@@ -38,15 +38,15 @@ assert.exit.L12:                                  ; preds = %0
   ret i32 %6
 }
 
-declare void @_Z11printFormatd(double)
+declare void @_Z11printFormatIdEvd(double)
 
-declare void @_Z11printFormati(i32)
+declare void @_Z11printFormatIiEvi(i32)
 
-declare void @_Z11printFormatA2PKc([2 x ptr])
+declare void @_Z11printFormatIPPKcEvPPKc([2 x ptr])
 
-declare void @_Z11printFormatPi(ptr)
+declare void @_Z11printFormatIPiEvPi(ptr)
 
-declare ptr @_Z7getAIncPi(ptr)
+declare ptr @_Z7getAIncIiEPiPi(ptr)
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1

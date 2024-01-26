@@ -20,7 +20,7 @@ define dso_local i32 @main() #0 {
   %l = alloca ptr, align 8
   %2 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
-  %3 = call %struct.NumberIterator @_Z5rangess(i16 3, i16 8)
+  %3 = call %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16 3, i16 8)
   store %struct.NumberIterator %3, ptr %shortIterator, align 8
   br label %foreach.head.L5
 
@@ -42,7 +42,7 @@ foreach.body.L5:                                  ; preds = %foreach.head.L5
   br i1 %13, label %if.then.L7, label %if.exit.L7
 
 if.then.L7:                                       ; preds = %foreach.body.L5
-  %14 = call %struct.NumberIterator.1 @_Z5rangell(i64 1, i64 2)
+  %14 = call %struct.NumberIterator.1 @_Z5rangeIlE14NumberIteratorIlEll(i64 1, i64 2)
   store %struct.NumberIterator.1 %14, ptr %1, align 8
   br label %foreach.head.L8
 
@@ -78,7 +78,7 @@ foreach.exit.L5:                                  ; preds = %foreach.head.L5
   ret i32 %21
 }
 
-declare %struct.NumberIterator @_Z5rangess(i16, i16)
+declare %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16, i16)
 
 declare i1 @_ZN14NumberIteratorIsE7isValidEv(ptr)
 
@@ -87,7 +87,7 @@ declare ptr @_ZN14NumberIteratorIsE3getEv(ptr)
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-declare %struct.NumberIterator.1 @_Z5rangell(i64, i64)
+declare %struct.NumberIterator.1 @_Z5rangeIlE14NumberIteratorIlEll(i64, i64)
 
 declare i1 @_ZN14NumberIteratorIlE7isValidEv(ptr)
 

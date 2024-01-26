@@ -68,14 +68,14 @@ define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !15 {
   call void @llvm.dbg.declare(metadata ptr %_argv, metadata !26, metadata !DIExpression()), !dbg !24
   store ptr %1, ptr %_argv, align 8, !dbg !24
   call void @llvm.dbg.declare(metadata ptr %vi, metadata !27, metadata !DIExpression()), !dbg !36
-  call void @_ZN6VectorIiE4ctorIiEvv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !37
+  call void @_ZN6VectorIiE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !37
   store i32 123, ptr %3, align 4, !dbg !38
-  call void @_ZN6VectorIiE8pushBackIiEvRKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %3), !dbg !38
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %3), !dbg !38
   store i32 4321, ptr %4, align 4, !dbg !39
-  call void @_ZN6VectorIiE8pushBackIiEvRKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %4), !dbg !39
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %4), !dbg !39
   store i32 9876, ptr %5, align 4, !dbg !40
-  call void @_ZN6VectorIiE8pushBackIiEvRKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %5), !dbg !40
-  %15 = call i64 @_ZN6VectorIiE7getSizeIiElv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !41
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %5), !dbg !40
+  %15 = call i64 @_ZN6VectorIiE7getSizeEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !41
   %16 = icmp eq i64 %15, 3, !dbg !42
   br i1 %16, label %assert.exit.L10, label %assert.then.L10, !dbg !42, !prof !43
 
@@ -85,10 +85,10 @@ assert.then.L10:                                  ; preds = %2
   unreachable, !dbg !42
 
 assert.exit.L10:                                  ; preds = %2
-  %18 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorIiE14VectorIteratorIiEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !44
+  %18 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !44
   call void @llvm.dbg.declare(metadata ptr %it, metadata !45, metadata !DIExpression()), !dbg !51
   store %struct.VectorIterator %18, ptr %it, align 8, !dbg !44
-  %19 = call i1 @_ZN14VectorIteratorIiE7isValidIiEbv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !52
+  %19 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !52
   br i1 %19, label %assert.exit.L14, label %assert.then.L14, !dbg !52, !prof !43
 
 assert.then.L14:                                  ; preds = %assert.exit.L10
@@ -97,7 +97,7 @@ assert.then.L14:                                  ; preds = %assert.exit.L10
   unreachable, !dbg !52
 
 assert.exit.L14:                                  ; preds = %assert.exit.L10
-  %21 = call ptr @_ZN14VectorIteratorIiE3getIiERiv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !53
+  %21 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !53
   %22 = load i32, ptr %21, align 4, !dbg !54
   %23 = icmp eq i32 %22, 123, !dbg !54
   br i1 %23, label %assert.exit.L15, label %assert.then.L15, !dbg !54, !prof !43
@@ -108,7 +108,7 @@ assert.then.L15:                                  ; preds = %assert.exit.L14
   unreachable, !dbg !54
 
 assert.exit.L15:                                  ; preds = %assert.exit.L14
-  %25 = call ptr @_ZN14VectorIteratorIiE3getIiERiv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !55
+  %25 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !55
   %26 = load i32, ptr %25, align 4, !dbg !56
   %27 = icmp eq i32 %26, 123, !dbg !56
   br i1 %27, label %assert.exit.L16, label %assert.then.L16, !dbg !56, !prof !43
@@ -119,8 +119,8 @@ assert.then.L16:                                  ; preds = %assert.exit.L15
   unreachable, !dbg !56
 
 assert.exit.L16:                                  ; preds = %assert.exit.L15
-  call void @_ZN14VectorIteratorIiE4nextIiEvv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !57
-  %29 = call ptr @_ZN14VectorIteratorIiE3getIiERiv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !58
+  call void @_ZN14VectorIteratorIiE4nextEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !57
+  %29 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !58
   %30 = load i32, ptr %29, align 4, !dbg !59
   %31 = icmp eq i32 %30, 4321, !dbg !59
   br i1 %31, label %assert.exit.L18, label %assert.then.L18, !dbg !59, !prof !43
@@ -131,7 +131,7 @@ assert.then.L18:                                  ; preds = %assert.exit.L16
   unreachable, !dbg !59
 
 assert.exit.L18:                                  ; preds = %assert.exit.L16
-  %33 = call i1 @_ZN14VectorIteratorIiE7isValidIiEbv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !60
+  %33 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !60
   br i1 %33, label %assert.exit.L19, label %assert.then.L19, !dbg !60, !prof !43
 
 assert.then.L19:                                  ; preds = %assert.exit.L18
@@ -140,11 +140,11 @@ assert.then.L19:                                  ; preds = %assert.exit.L18
   unreachable, !dbg !60
 
 assert.exit.L19:                                  ; preds = %assert.exit.L18
-  call void @_ZN14VectorIteratorIiE4nextIiEvv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !61
-  %35 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxIiE4PairImRiEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !62
+  call void @_ZN14VectorIteratorIiE4nextEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !61
+  %35 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !62
   call void @llvm.dbg.declare(metadata ptr %pair, metadata !63, metadata !DIExpression()), !dbg !70
   store %struct.Pair %35, ptr %pair, align 8, !dbg !62
-  %36 = call ptr @_ZN4PairImRiE8getFirstImRiERmv(ptr noundef nonnull align 8 dereferenceable(16) %pair), !dbg !71
+  %36 = call ptr @_ZN4PairImRiE8getFirstEv(ptr noundef nonnull align 8 dereferenceable(16) %pair), !dbg !71
   %37 = load i64, ptr %36, align 8, !dbg !72
   %38 = icmp eq i64 %37, 2, !dbg !72
   br i1 %38, label %assert.exit.L22, label %assert.then.L22, !dbg !72, !prof !43
@@ -155,7 +155,7 @@ assert.then.L22:                                  ; preds = %assert.exit.L19
   unreachable, !dbg !72
 
 assert.exit.L22:                                  ; preds = %assert.exit.L19
-  %40 = call ptr @_ZN4PairImRiE9getSecondImRiERiv(ptr noundef nonnull align 8 dereferenceable(16) %pair), !dbg !73
+  %40 = call ptr @_ZN4PairImRiE9getSecondEv(ptr noundef nonnull align 8 dereferenceable(16) %pair), !dbg !73
   %41 = load i32, ptr %40, align 4, !dbg !74
   %42 = icmp eq i32 %41, 9876, !dbg !74
   br i1 %42, label %assert.exit.L23, label %assert.then.L23, !dbg !74, !prof !43
@@ -166,8 +166,8 @@ assert.then.L23:                                  ; preds = %assert.exit.L22
   unreachable, !dbg !74
 
 assert.exit.L23:                                  ; preds = %assert.exit.L22
-  call void @_ZN14VectorIteratorIiE4nextIiEvv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !75
-  %44 = call i1 @_ZN14VectorIteratorIiE7isValidIiEbv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !76
+  call void @_ZN14VectorIteratorIiE4nextEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !75
+  %44 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !76
   %45 = xor i1 %44, true, !dbg !76
   store i1 %45, ptr %6, align 1, !dbg !76
   br i1 %45, label %assert.exit.L25, label %assert.then.L25, !dbg !76, !prof !43
@@ -179,10 +179,10 @@ assert.then.L25:                                  ; preds = %assert.exit.L23
 
 assert.exit.L25:                                  ; preds = %assert.exit.L23
   store i32 321, ptr %7, align 4, !dbg !77
-  call void @_ZN6VectorIiE8pushBackIiEvRKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %7), !dbg !77
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %7), !dbg !77
   store i32 -99, ptr %8, align 4, !dbg !78
-  call void @_ZN6VectorIiE8pushBackIiEvRKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %8), !dbg !78
-  %47 = call i1 @_ZN14VectorIteratorIiE7isValidIiEbv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !79
+  call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %8), !dbg !78
+  %47 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !79
   br i1 %47, label %assert.exit.L30, label %assert.then.L30, !dbg !79, !prof !43
 
 assert.then.L30:                                  ; preds = %assert.exit.L25
@@ -192,7 +192,7 @@ assert.then.L30:                                  ; preds = %assert.exit.L25
 
 assert.exit.L30:                                  ; preds = %assert.exit.L25
   call void @_Z13op.minusequalIiiEvR14VectorIteratorIiEi(ptr %it, i32 3), !dbg !80
-  %49 = call ptr @_ZN14VectorIteratorIiE3getIiERiv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !81
+  %49 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !81
   %50 = load i32, ptr %49, align 4, !dbg !82
   %51 = icmp eq i32 %50, 123, !dbg !82
   br i1 %51, label %assert.exit.L34, label %assert.then.L34, !dbg !82, !prof !43
@@ -203,7 +203,7 @@ assert.then.L34:                                  ; preds = %assert.exit.L30
   unreachable, !dbg !82
 
 assert.exit.L34:                                  ; preds = %assert.exit.L30
-  %53 = call i1 @_ZN14VectorIteratorIiE7isValidIiEbv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !83
+  %53 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !83
   br i1 %53, label %assert.exit.L35, label %assert.then.L35, !dbg !83, !prof !43
 
 assert.then.L35:                                  ; preds = %assert.exit.L34
@@ -214,7 +214,7 @@ assert.then.L35:                                  ; preds = %assert.exit.L34
 assert.exit.L35:                                  ; preds = %assert.exit.L34
   %55 = load %struct.VectorIterator, ptr %it, align 8, !dbg !84
   call void @_Z16op.plusplus.postIiEvR14VectorIteratorIiE(ptr %it), !dbg !84
-  %56 = call ptr @_ZN14VectorIteratorIiE3getIiERiv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !85
+  %56 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !85
   %57 = load i32, ptr %56, align 4, !dbg !86
   %58 = icmp eq i32 %57, 4321, !dbg !86
   br i1 %58, label %assert.exit.L37, label %assert.then.L37, !dbg !86, !prof !43
@@ -227,7 +227,7 @@ assert.then.L37:                                  ; preds = %assert.exit.L35
 assert.exit.L37:                                  ; preds = %assert.exit.L35
   %60 = load %struct.VectorIterator, ptr %it, align 8, !dbg !87
   call void @_Z18op.minusminus.postIiEvR14VectorIteratorIiE(ptr %it), !dbg !87
-  %61 = call ptr @_ZN14VectorIteratorIiE3getIiERiv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !88
+  %61 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !88
   %62 = load i32, ptr %61, align 4, !dbg !89
   %63 = icmp eq i32 %62, 123, !dbg !89
   br i1 %63, label %assert.exit.L39, label %assert.then.L39, !dbg !89, !prof !43
@@ -239,7 +239,7 @@ assert.then.L39:                                  ; preds = %assert.exit.L37
 
 assert.exit.L39:                                  ; preds = %assert.exit.L37
   call void @_Z12op.plusequalIiiEvR14VectorIteratorIiEi(ptr %it, i32 4), !dbg !90
-  %65 = call ptr @_ZN14VectorIteratorIiE3getIiERiv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !91
+  %65 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !91
   %66 = load i32, ptr %65, align 4, !dbg !92
   %67 = icmp eq i32 %66, -99, !dbg !92
   br i1 %67, label %assert.exit.L41, label %assert.then.L41, !dbg !92, !prof !43
@@ -250,8 +250,8 @@ assert.then.L41:                                  ; preds = %assert.exit.L39
   unreachable, !dbg !92
 
 assert.exit.L41:                                  ; preds = %assert.exit.L39
-  call void @_ZN14VectorIteratorIiE4nextIiEvv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !93
-  %69 = call i1 @_ZN14VectorIteratorIiE7isValidIiEbv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !94
+  call void @_ZN14VectorIteratorIiE4nextEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !93
+  %69 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !94
   %70 = xor i1 %69, true, !dbg !94
   store i1 %70, ptr %9, align 1, !dbg !94
   br i1 %70, label %assert.exit.L43, label %assert.then.L43, !dbg !94, !prof !43
@@ -262,17 +262,17 @@ assert.then.L43:                                  ; preds = %assert.exit.L41
   unreachable, !dbg !94
 
 assert.exit.L43:                                  ; preds = %assert.exit.L41
-  %72 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorIiE14VectorIteratorIiEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !95
+  %72 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !95
   call void @llvm.dbg.declare(metadata ptr %item, metadata !97, metadata !DIExpression()), !dbg !98
   store %struct.VectorIterator %72, ptr %10, align 8, !dbg !95
   br label %foreach.head.L46, !dbg !98
 
 foreach.head.L46:                                 ; preds = %foreach.tail.L46, %assert.exit.L43
-  %73 = call i1 @_ZN14VectorIteratorIiE7isValidIiEbv(ptr %10), !dbg !98
+  %73 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %10), !dbg !98
   br i1 %73, label %foreach.body.L46, label %foreach.exit.L46, !dbg !98
 
 foreach.body.L46:                                 ; preds = %foreach.head.L46
-  %74 = call ptr @_ZN14VectorIteratorIiE3getIiERiv(ptr %10), !dbg !98
+  %74 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %10), !dbg !98
   %75 = load i32, ptr %74, align 4, !dbg !98
   store i32 %75, ptr %item, align 4, !dbg !98
   %76 = load i32, ptr %item, align 4, !dbg !99
@@ -281,11 +281,11 @@ foreach.body.L46:                                 ; preds = %foreach.head.L46
   br label %foreach.tail.L46, !dbg !99
 
 foreach.tail.L46:                                 ; preds = %foreach.body.L46
-  call void @_ZN14VectorIteratorIiE4nextIiEvv(ptr %10), !dbg !99
+  call void @_ZN14VectorIteratorIiE4nextEv(ptr %10), !dbg !99
   br label %foreach.head.L46, !dbg !99
 
 foreach.exit.L46:                                 ; preds = %foreach.head.L46
-  %78 = call ptr @_ZN6VectorIiE3getIiERij(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 0), !dbg !100
+  %78 = call ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 0), !dbg !100
   %79 = load i32, ptr %78, align 4, !dbg !101
   %80 = icmp eq i32 %79, 123, !dbg !101
   br i1 %80, label %assert.exit.L49, label %assert.then.L49, !dbg !101, !prof !43
@@ -296,7 +296,7 @@ assert.then.L49:                                  ; preds = %foreach.exit.L46
   unreachable, !dbg !101
 
 assert.exit.L49:                                  ; preds = %foreach.exit.L46
-  %82 = call ptr @_ZN6VectorIiE3getIiERij(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 1), !dbg !102
+  %82 = call ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 1), !dbg !102
   %83 = load i32, ptr %82, align 4, !dbg !103
   %84 = icmp eq i32 %83, 4321, !dbg !103
   br i1 %84, label %assert.exit.L50, label %assert.then.L50, !dbg !103, !prof !43
@@ -307,7 +307,7 @@ assert.then.L50:                                  ; preds = %assert.exit.L49
   unreachable, !dbg !103
 
 assert.exit.L50:                                  ; preds = %assert.exit.L49
-  %86 = call ptr @_ZN6VectorIiE3getIiERij(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 2), !dbg !104
+  %86 = call ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 2), !dbg !104
   %87 = load i32, ptr %86, align 4, !dbg !105
   %88 = icmp eq i32 %87, 9876, !dbg !105
   br i1 %88, label %assert.exit.L51, label %assert.then.L51, !dbg !105, !prof !43
@@ -318,17 +318,17 @@ assert.then.L51:                                  ; preds = %assert.exit.L50
   unreachable, !dbg !105
 
 assert.exit.L51:                                  ; preds = %assert.exit.L50
-  %90 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorIiE14VectorIteratorIiEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !106
+  %90 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !106
   call void @llvm.dbg.declare(metadata ptr %item1, metadata !108, metadata !DIExpression()), !dbg !109
   store %struct.VectorIterator %90, ptr %11, align 8, !dbg !106
   br label %foreach.head.L54, !dbg !109
 
 foreach.head.L54:                                 ; preds = %foreach.tail.L54, %assert.exit.L51
-  %91 = call i1 @_ZN14VectorIteratorIiE7isValidIiEbv(ptr %11), !dbg !109
+  %91 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %11), !dbg !109
   br i1 %91, label %foreach.body.L54, label %foreach.exit.L54, !dbg !109
 
 foreach.body.L54:                                 ; preds = %foreach.head.L54
-  %92 = call ptr @_ZN14VectorIteratorIiE3getIiERiv(ptr %11), !dbg !109
+  %92 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %11), !dbg !109
   store ptr %92, ptr %12, align 8, !dbg !109
   %93 = load ptr, ptr %12, align 8, !dbg !110
   %94 = load i32, ptr %93, align 4, !dbg !110
@@ -337,11 +337,11 @@ foreach.body.L54:                                 ; preds = %foreach.head.L54
   br label %foreach.tail.L54, !dbg !110
 
 foreach.tail.L54:                                 ; preds = %foreach.body.L54
-  call void @_ZN14VectorIteratorIiE4nextIiEvv(ptr %11), !dbg !110
+  call void @_ZN14VectorIteratorIiE4nextEv(ptr %11), !dbg !110
   br label %foreach.head.L54, !dbg !110
 
 foreach.exit.L54:                                 ; preds = %foreach.head.L54
-  %96 = call ptr @_ZN6VectorIiE3getIiERij(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 0), !dbg !111
+  %96 = call ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 0), !dbg !111
   %97 = load i32, ptr %96, align 4, !dbg !112
   %98 = icmp eq i32 %97, 124, !dbg !112
   br i1 %98, label %assert.exit.L57, label %assert.then.L57, !dbg !112, !prof !43
@@ -352,7 +352,7 @@ assert.then.L57:                                  ; preds = %foreach.exit.L54
   unreachable, !dbg !112
 
 assert.exit.L57:                                  ; preds = %foreach.exit.L54
-  %100 = call ptr @_ZN6VectorIiE3getIiERij(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 1), !dbg !113
+  %100 = call ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 1), !dbg !113
   %101 = load i32, ptr %100, align 4, !dbg !114
   %102 = icmp eq i32 %101, 4322, !dbg !114
   br i1 %102, label %assert.exit.L58, label %assert.then.L58, !dbg !114, !prof !43
@@ -363,7 +363,7 @@ assert.then.L58:                                  ; preds = %assert.exit.L57
   unreachable, !dbg !114
 
 assert.exit.L58:                                  ; preds = %assert.exit.L57
-  %104 = call ptr @_ZN6VectorIiE3getIiERij(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 2), !dbg !115
+  %104 = call ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 2), !dbg !115
   %105 = load i32, ptr %104, align 4, !dbg !116
   %106 = icmp eq i32 %105, 9877, !dbg !116
   br i1 %106, label %assert.exit.L59, label %assert.then.L59, !dbg !116, !prof !43
@@ -374,7 +374,7 @@ assert.then.L59:                                  ; preds = %assert.exit.L58
   unreachable, !dbg !116
 
 assert.exit.L59:                                  ; preds = %assert.exit.L58
-  %108 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorIiE14VectorIteratorIiEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !117
+  %108 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !117
   store %struct.VectorIterator %108, ptr %13, align 8, !dbg !117
   call void @llvm.dbg.declare(metadata ptr %idx, metadata !119, metadata !DIExpression()), !dbg !121
   call void @llvm.dbg.declare(metadata ptr %item2, metadata !122, metadata !DIExpression()), !dbg !123
@@ -382,11 +382,11 @@ assert.exit.L59:                                  ; preds = %assert.exit.L58
   br label %foreach.head.L61, !dbg !123
 
 foreach.head.L61:                                 ; preds = %foreach.tail.L61, %assert.exit.L59
-  %109 = call i1 @_ZN14VectorIteratorIiE7isValidIiEbv(ptr %13), !dbg !123
+  %109 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %13), !dbg !123
   br i1 %109, label %foreach.body.L61, label %foreach.exit.L61, !dbg !123
 
 foreach.body.L61:                                 ; preds = %foreach.head.L61
-  %pair3 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxIiE4PairImRiEv(ptr %13), !dbg !123
+  %pair3 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr %13), !dbg !123
   store %struct.Pair %pair3, ptr %pair_addr, align 8, !dbg !123
   %110 = load i64, ptr %pair_addr, align 8, !dbg !123
   store i64 %110, ptr %idx, align 8, !dbg !123
@@ -402,11 +402,11 @@ foreach.body.L61:                                 ; preds = %foreach.head.L61
   br label %foreach.tail.L61, !dbg !124
 
 foreach.tail.L61:                                 ; preds = %foreach.body.L61
-  call void @_ZN14VectorIteratorIiE4nextIiEvv(ptr %13), !dbg !124
+  call void @_ZN14VectorIteratorIiE4nextEv(ptr %13), !dbg !124
   br label %foreach.head.L61, !dbg !124
 
 foreach.exit.L61:                                 ; preds = %foreach.head.L61
-  %117 = call ptr @_ZN6VectorIiE3getIiERij(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 0), !dbg !125
+  %117 = call ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 0), !dbg !125
   %118 = load i32, ptr %117, align 4, !dbg !126
   %119 = icmp eq i32 %118, 124, !dbg !126
   br i1 %119, label %assert.exit.L64, label %assert.then.L64, !dbg !126, !prof !43
@@ -417,7 +417,7 @@ assert.then.L64:                                  ; preds = %foreach.exit.L61
   unreachable, !dbg !126
 
 assert.exit.L64:                                  ; preds = %foreach.exit.L61
-  %121 = call ptr @_ZN6VectorIiE3getIiERij(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 1), !dbg !127
+  %121 = call ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 1), !dbg !127
   %122 = load i32, ptr %121, align 4, !dbg !128
   %123 = icmp eq i32 %122, 4323, !dbg !128
   br i1 %123, label %assert.exit.L65, label %assert.then.L65, !dbg !128, !prof !43
@@ -428,7 +428,7 @@ assert.then.L65:                                  ; preds = %assert.exit.L64
   unreachable, !dbg !128
 
 assert.exit.L65:                                  ; preds = %assert.exit.L64
-  %125 = call ptr @_ZN6VectorIiE3getIiERij(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 2), !dbg !129
+  %125 = call ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 2), !dbg !129
   %126 = load i32, ptr %125, align 4, !dbg !130
   %127 = icmp eq i32 %126, 9879, !dbg !130
   br i1 %127, label %assert.exit.L66, label %assert.then.L66, !dbg !130, !prof !43
@@ -440,7 +440,7 @@ assert.then.L66:                                  ; preds = %assert.exit.L65
 
 assert.exit.L66:                                  ; preds = %assert.exit.L65
   %129 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !131
-  call void @_ZN6VectorIiE4dtorIiEvv(ptr %vi), !dbg !131
+  call void @_ZN6VectorIiE4dtorEv(ptr %vi), !dbg !131
   %130 = load i32, ptr %result, align 4, !dbg !131
   ret i32 %130, !dbg !131
 }
@@ -448,11 +448,11 @@ assert.exit.L66:                                  ; preds = %assert.exit.L65
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
-declare void @_ZN6VectorIiE4ctorIiEvv(ptr)
+declare void @_ZN6VectorIiE4ctorEv(ptr)
 
-declare void @_ZN6VectorIiE8pushBackIiEvRKi(ptr, ptr)
+declare void @_ZN6VectorIiE8pushBackERKi(ptr, ptr)
 
-declare i64 @_ZN6VectorIiE7getSizeIiElv(ptr)
+declare i64 @_ZN6VectorIiE7getSizeEv(ptr)
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
@@ -460,19 +460,19 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #3
 
-declare %struct.VectorIterator @_ZN6VectorIiE11getIteratorIiE14VectorIteratorIiEv(ptr)
+declare %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr)
 
-declare i1 @_ZN14VectorIteratorIiE7isValidIiEbv(ptr)
+declare i1 @_ZN14VectorIteratorIiE7isValidEv(ptr)
 
-declare ptr @_ZN14VectorIteratorIiE3getIiERiv(ptr)
+declare ptr @_ZN14VectorIteratorIiE3getEv(ptr)
 
-declare void @_ZN14VectorIteratorIiE4nextIiEvv(ptr)
+declare void @_ZN14VectorIteratorIiE4nextEv(ptr)
 
-declare %struct.Pair @_ZN14VectorIteratorIiE6getIdxIiE4PairImRiEv(ptr)
+declare %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr)
 
-declare ptr @_ZN4PairImRiE8getFirstImRiERmv(ptr)
+declare ptr @_ZN4PairImRiE8getFirstEv(ptr)
 
-declare ptr @_ZN4PairImRiE9getSecondImRiERiv(ptr)
+declare ptr @_ZN4PairImRiE9getSecondEv(ptr)
 
 declare void @_Z13op.minusequalIiiEvR14VectorIteratorIiEi(ptr, i32)
 
@@ -482,9 +482,9 @@ declare void @_Z18op.minusminus.postIiEvR14VectorIteratorIiE(ptr)
 
 declare void @_Z12op.plusequalIiiEvR14VectorIteratorIiEi(ptr, i32)
 
-declare ptr @_ZN6VectorIiE3getIiERij(ptr, i32)
+declare ptr @_ZN6VectorIiE3getEj(ptr, i32)
 
-declare void @_ZN6VectorIiE4dtorIiEvv(ptr)
+declare void @_ZN6VectorIiE4dtorEv(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
