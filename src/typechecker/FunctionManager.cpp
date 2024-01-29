@@ -179,13 +179,13 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * @param reqName Function name requirement
  * @param reqThisType This type requirement
  * @param reqArgs Argument requirement
- * @param reqTemplateTypes Template type requirement
+ * @param templateTypeHints Template type requirement
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &reqName, const SymbolType &reqThisType,
-                                         const ArgList &reqArgs, const std::vector<SymbolType> &reqTemplateTypes,
+                                         const ArgList &reqArgs, const std::vector<SymbolType> &templateTypeHints,
                                          bool strictSpecifierMatching, const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
 
@@ -209,9 +209,9 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       // Prepare type mapping, based on the given initial type mapping
       TypeMapping &typeMapping = candidate.typeMapping;
       typeMapping.clear();
-      for (size_t i = 0; i < std::min(reqTemplateTypes.size(), candidate.templateTypes.size()); i++) {
+      for (size_t i = 0; i < std::min(templateTypeHints.size(), candidate.templateTypes.size()); i++) {
         const std::string &typeName = candidate.templateTypes.at(i).getSubType();
-        const SymbolType &templateType = reqTemplateTypes.at(i);
+        const SymbolType &templateType = templateTypeHints.at(i);
         typeMapping.insert({typeName, templateType});
       }
 

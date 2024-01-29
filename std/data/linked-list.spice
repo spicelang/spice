@@ -13,12 +13,11 @@ type Numeric int|long|short;
  */
 type Node<T> struct {
     T value
-    heap Node<T>* next
+    heap Node<T>* next = nil<heap Node<T>*>
 }
 
 p Node.ctor(const T& value) {
     this.value = value;
-    this.next = nil<heap Node<T>*>;
 }
 
 /**
@@ -37,14 +36,9 @@ p Node.ctor(const T& value) {
  * Beware that each add operation allocates memory and every remove operation frees memory.
  */
 public type LinkedList<T> struct : IIterable<T> {
-    heap Node<T>* tail
-    heap Node<T>* head
+    heap Node<T>* tail = nil<heap Node<T>*>
+    heap Node<T>* head = nil<heap Node<T>*>
     unsigned long size = 0l
-}
-
-public p LinkedList.ctor() {
-    this.tail = nil<heap Node<T>*>;
-    this.head = nil<heap Node<T>*>;
 }
 
 public p LinkedList.pushBack(const T& value) {

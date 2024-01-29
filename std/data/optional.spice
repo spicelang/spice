@@ -9,14 +9,7 @@ type T dyn;
  */
 public type Optional<T> struct {
     T data
-    bool isPresent
-}
-
-/**
- * Initialize optional without a value
- */
-public p Optional.ctor() {
-    this.isPresent = false;
+    bool isPresent = false
 }
 
 /**

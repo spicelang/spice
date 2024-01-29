@@ -49,12 +49,8 @@ inline f<bool> Node.isBlack() {
  * Lookup: O(log n)
  */
 public type RedBlackTree<K, V> struct {
-    heap Node<K, V>* rootNode
+    heap Node<K, V>* rootNode = nil<heap Node<K, V>*>
     unsigned long size = 0l
-}
-
-public p RedBlackTree.ctor() {
-    this.rootNode = nil<heap Node<K, V>*>;
 }
 
 /**

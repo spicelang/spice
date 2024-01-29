@@ -425,6 +425,7 @@ std::any TypeChecker::visitField(FieldNode *node) {
 
   if (TernaryExprNode *defaultValueNode = node->defaultValue()) {
     const SymbolType defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
+    HANDLE_UNRESOLVED_TYPE_ST(defaultValueType)
     if (!fieldType.matches(defaultValueType, false, true, true))
       SOFT_ERROR_ST(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
   }
@@ -2360,7 +2361,6 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
     const DataTypeNode *dataTypeNode = dynamic_cast<DataTypeNode *>(node->parent->parent);
     assert(dataTypeNode != nullptr);
-    const bool isParamOrFieldOrReturnType = dataTypeNode->isParamType || dataTypeNode->isFieldType || dataTypeNode->isReturnType;
 
     // Collect the concrete template types
     bool allTemplateTypesConcrete = true;
@@ -2370,9 +2370,6 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
         auto templateType = std::any_cast<SymbolType>(visit(dataType));
         HANDLE_UNRESOLVED_TYPE_ST(templateType)
-        // Generic types are only allowed for parameters and fields at this point
-        if (entryType.is(TY_STRUCT) && templateType.is(TY_GENERIC) && !isParamOrFieldOrReturnType)
-          SOFT_ERROR_ST(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here")
         if (entryType.is(TY_GENERIC))
           allTemplateTypesConcrete = false;
         templateTypes.push_back(templateType);
@@ -2387,7 +2384,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       if (declCodeLoc.sourceFile->filePath == codeLoc.sourceFile->filePath && declCodeLoc > codeLoc)
         SOFT_ERROR_ST(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage")
 
-      if (allTemplateTypesConcrete || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
+      if (allTemplateTypesConcrete) { // Only do the next step, if we have concrete template types
         // Set the struct instance to used, if found
         // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
         const std::string structName = node->typeNameFragments.back();

@@ -48,7 +48,7 @@ public:
                                                       const SymbolType &reqThisType, const ArgList &reqArgs,
                                                       bool strictSpecifierMatching);
   static Function *matchFunction(Scope *matchScope, const std::string &reqName, const SymbolType &reqThisType,
-                                 const ArgList &reqArgs, const std::vector<SymbolType> &reqTemplateTypes,
+                                 const ArgList &reqArgs, const std::vector<SymbolType> &templateTypeHints,
                                  bool strictSpecifierMatching, const ASTNode *callNode);
 
 private:
