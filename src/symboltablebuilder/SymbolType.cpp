@@ -621,12 +621,6 @@ bool SymbolType::canBind(const SymbolType &inputType, bool isTemporary) const {
  * @param typeB Requested type
  */
 void SymbolType::unwrapBoth(SymbolType &typeA, SymbolType &typeB) {
-  // Unwrap both types as far as possible
-  while (typeA.isSameContainerTypeAs(typeB)) {
-    typeB = typeB.getContainedTy();
-    typeA = typeA.getContainedTy();
-  }
-
   // Remove reference wrapper of front type if required
   if (typeA.isRef() && !typeB.isRef())
     typeA = typeA.removeReferenceWrapper();
@@ -634,6 +628,12 @@ void SymbolType::unwrapBoth(SymbolType &typeA, SymbolType &typeB) {
   // Remove reference wrapper of requested type if required
   if (!typeA.isRef() && typeB.isRef() && !typeA.getBaseType().is(TY_GENERIC))
     typeB = typeB.removeReferenceWrapper();
+
+  // Unwrap both types as far as possible
+  while (typeA.isSameContainerTypeAs(typeB)) {
+    typeB = typeB.getContainedTy();
+    typeA = typeA.getContainedTy();
+  }
 }
 
 } // namespace spice::compiler

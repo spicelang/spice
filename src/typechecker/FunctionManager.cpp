@@ -122,16 +122,15 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  * Checks if a function exists by matching it, but not setting it to used
  *
  * @param matchScope Scope to match against
- * @param requestedName Function name requirement
- * @param requestedThisType This type requirement
- * @param requestedArgs Argument requirement
+ * @param reqName Function name requirement
+ * @param reqThisType This type requirement
+ * @param reqArgs Argument requirement
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @return Found function or nullptr
  */
-const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &requestedName,
-                                                const SymbolType &requestedThisType, const ArgList &requestedArgs,
-                                                bool strictSpecifierMatching) {
-  assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT}));
+const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &reqName, const SymbolType &reqThisType,
+                                                const ArgList &reqArgs, bool strictSpecifierMatching) {
+  assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT}));
 
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
@@ -151,11 +150,11 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
       Function candidate = presetFunction;
 
       // Create empty type mapping
-      TypeMapping typeMapping = candidate.typeMapping;
+      TypeMapping &typeMapping = candidate.typeMapping;
 
       bool forceSubstantiation = false;
-      MatchResult matchResult = matchManifestation(candidate, matchScope, requestedName, requestedThisType, requestedArgs,
-                                                   typeMapping, strictSpecifierMatching, forceSubstantiation, nullptr);
+      MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, typeMapping,
+                                                   strictSpecifierMatching, forceSubstantiation, nullptr);
       if (matchResult == MatchResult::SKIP_FUNCTION)
         break; // Leave the whole function
       if (matchResult == MatchResult::SKIP_MANIFESTATION)
@@ -177,18 +176,18 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * If more than one function matches the requirement, an error gets thrown.
  *
  * @param matchScope Scope to match against
- * @param requestedName Function name requirement
- * @param requestedThisType This type requirement
- * @param requestedArgs Argument requirement
- * @param requestedTemplateTypes Template type requirement
+ * @param reqName Function name requirement
+ * @param reqThisType This type requirement
+ * @param reqArgs Argument requirement
+ * @param reqTemplateTypes Template type requirement
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
-Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &requestedName, const SymbolType &requestedThisType,
-                                         const ArgList &requestedArgs, const std::vector<SymbolType> &requestedTemplateTypes,
+Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &reqName, const SymbolType &reqThisType,
+                                         const ArgList &reqArgs, const std::vector<SymbolType> &reqTemplateTypes,
                                          bool strictSpecifierMatching, const ASTNode *callNode) {
-  assert(requestedThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
+  assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
 
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
@@ -210,15 +209,15 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       // Prepare type mapping, based on the given initial type mapping
       TypeMapping &typeMapping = candidate.typeMapping;
       typeMapping.clear();
-      for (size_t i = 0; i < std::min(requestedTemplateTypes.size(), candidate.templateTypes.size()); i++) {
+      for (size_t i = 0; i < std::min(reqTemplateTypes.size(), candidate.templateTypes.size()); i++) {
         const std::string &typeName = candidate.templateTypes.at(i).getSubType();
-        const SymbolType &templateType = requestedTemplateTypes.at(i);
+        const SymbolType &templateType = reqTemplateTypes.at(i);
         typeMapping.insert({typeName, templateType});
       }
 
       bool forceSubstantiation = false;
-      MatchResult matchResult = matchManifestation(candidate, matchScope, requestedName, requestedThisType, requestedArgs,
-                                                   typeMapping, strictSpecifierMatching, forceSubstantiation, callNode);
+      MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, typeMapping,
+                                                   strictSpecifierMatching, forceSubstantiation, callNode);
       if (matchResult == MatchResult::SKIP_FUNCTION)
         break; // Leave the whole function
       if (matchResult == MatchResult::SKIP_MANIFESTATION)
@@ -247,7 +246,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       Function *substantiatedFunction = insertSubstantiation(matchScope, candidate, presetFunction.declNode);
       substantiatedFunction->genericSubstantiation = true;
       substantiatedFunction->alreadyTypeChecked = false;
-      substantiatedFunction->declNode->getFctManifestations(requestedName)->push_back(substantiatedFunction);
+      substantiatedFunction->declNode->getFctManifestations(reqName)->push_back(substantiatedFunction);
 
       // Copy function entry
       const std::string newSignature = substantiatedFunction->getSignature(false);
@@ -293,20 +292,20 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
   return matches.front();
 }
 
-MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&matchScope, const std::string &requestedName,
-                                                const SymbolType &requestedThisType, const ArgList &requestedArgs,
-                                                TypeMapping &typeMapping, bool strictSpecifierMatching, bool &forceSubstantiation,
+MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&matchScope, const std::string &reqName,
+                                                const SymbolType &reqThisType, const ArgList &reqArgs, TypeMapping &typeMapping,
+                                                bool strictSpecifierMatching, bool &forceSubstantiation,
                                                 const ASTNode *callNode) {
   // Check name requirement
-  if (!matchName(candidate, requestedName))
+  if (!matchName(candidate, reqName))
     return MatchResult::SKIP_FUNCTION; // Leave the whole manifestation list, because all have the same name
 
   // Check 'this' type requirement
-  if (!matchThisType(candidate, requestedThisType, typeMapping, strictSpecifierMatching))
+  if (!matchThisType(candidate, reqThisType, typeMapping, strictSpecifierMatching))
     return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
 
   // Check arg types requirement
-  if (!matchArgTypes(candidate, requestedArgs, typeMapping, strictSpecifierMatching, forceSubstantiation, callNode))
+  if (!matchArgTypes(candidate, reqArgs, typeMapping, strictSpecifierMatching, forceSubstantiation, callNode))
     return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
 
   // Check if there are unresolved generic types
@@ -336,28 +335,26 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
  * Checks if the matching candidate fulfills the name requirement
  *
  * @param candidate Matching candidate function
- * @param requestedName Requested function name
+ * @param reqName Requested function name
  * @return Fulfilled or not
  */
-bool FunctionManager::matchName(const Function &candidate, const std::string &requestedName) {
-  return candidate.name == requestedName;
-}
+bool FunctionManager::matchName(const Function &candidate, const std::string &reqName) { return candidate.name == reqName; }
 
 /**
  * Checks if the matching candidate fulfills the 'this' type requirement
  *
  * @param candidate Matching candidate function
- * @param requestedThisType Requested 'this' type
+ * @param reqThisType Requested 'this' type
  * @param typeMapping Concrete template type mapping
  * @param strictSpecifierMatching Match specifiers strictly
  * @return Fulfilled or not
  */
-bool FunctionManager::matchThisType(Function &candidate, const SymbolType &requestedThisType, TypeMapping &typeMapping,
+bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reqThisType, TypeMapping &typeMapping,
                                     bool strictSpecifierMatching) {
   SymbolType &candidateThisType = candidate.thisType;
 
   // Shortcut for procedures
-  if (candidateThisType.is(TY_DYN) && requestedThisType.is(TY_DYN))
+  if (candidateThisType.is(TY_DYN) && reqThisType.is(TY_DYN))
     return true;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
@@ -366,7 +363,7 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
   };
 
   // Check if the requested 'this' type matches the candidate 'this' type. The type mapping may be extended
-  if (!TypeMatcher::matchRequestedToCandidateType(candidateThisType, requestedThisType, typeMapping, genericTypeResolver,
+  if (!TypeMatcher::matchRequestedToCandidateType(candidateThisType, reqThisType, typeMapping, genericTypeResolver,
                                                   strictSpecifierMatching))
     return false;
 
@@ -381,18 +378,18 @@ bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reque
  * Checks if the matching candidate fulfills the argument types requirement
  *
  * @param candidate Matching candidate function
- * @param requestedArgs Requested argument types
+ * @param reqArgs Requested argument types
  * @param typeMapping Concrete template type mapping
  * @param strictSpecifierMatching Match specifiers strictly
  * @param callNode Call AST node for printing error messages
  * @return Fulfilled or not
  */
-bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &requestedArgs, TypeMapping &typeMapping,
+bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs, TypeMapping &typeMapping,
                                     bool strictSpecifierMatching, bool &needsSubstantiation, const ASTNode *callNode) {
   std::vector<Param> &candidateParamList = candidate.paramList;
 
   // If the number of arguments does not match with the number of params, the matching fails
-  if (requestedArgs.size() != candidateParamList.size())
+  if (reqArgs.size() != candidateParamList.size())
     return false;
 
   // Give the type matcher a way to retrieve instances of GenericType by their name
@@ -401,11 +398,11 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &requeste
   };
 
   // Loop over all parameters
-  for (size_t i = 0; i < requestedArgs.size(); i++) {
+  for (size_t i = 0; i < reqArgs.size(); i++) {
     // Retrieve actual and requested types
     assert(!candidateParamList.at(i).isOptional);
     SymbolType &candidateParamType = candidateParamList.at(i).type;
-    const Arg &requestedParamType = requestedArgs.at(i);
+    const Arg &requestedParamType = reqArgs.at(i);
     const SymbolType &requestedType = requestedParamType.first;
     const bool isArgTemporary = requestedParamType.second;
 

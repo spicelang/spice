@@ -20,7 +20,7 @@ public:
 
   // Public methods
   static bool matchRequestedToCandidateTypes(const std::vector<SymbolType> &candidateType,
-                                             const std::vector<SymbolType> &requestedType, TypeMapping &typeMapping,
+                                             const std::vector<SymbolType> &reqTypes, TypeMapping &typeMapping,
                                              ResolverFct &resolverFct, bool strictSpecifiers);
   static bool matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
                                             ResolverFct &resolverFct, bool strictSpecifierMatching,

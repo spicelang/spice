@@ -129,7 +129,7 @@ public p RedBlackTree.remove(const K& key) {
         y.childLeft.parent = y;
         y.color = z.color;
     }
-    sDelete<Node<K, V>>(z);
+    sDelete(z);
     if wasYBlack {
         this.deleteFixup(x);
     }

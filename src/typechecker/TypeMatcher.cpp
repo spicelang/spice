@@ -7,19 +7,19 @@
 namespace spice::compiler {
 
 bool TypeMatcher::matchRequestedToCandidateTypes(const std::vector<SymbolType> &candidateTypes,
-                                                 const std::vector<SymbolType> &requestedTypes, TypeMapping &typeMapping,
+                                                 const std::vector<SymbolType> &reqTypes, TypeMapping &typeMapping,
                                                  ResolverFct &resolverFct, bool strictSpecifiers) {
   // Check if the size of template types matches
-  if (requestedTypes.size() != candidateTypes.size())
+  if (reqTypes.size() != candidateTypes.size())
     return false;
 
   // Loop through both lists at the same time and match each pair of template types individually
   for (size_t i = 0; i < candidateTypes.size(); i++) {
-    const SymbolType &requestedType = requestedTypes.at(i);
+    const SymbolType &reqType = reqTypes.at(i);
     const SymbolType &candidateType = candidateTypes.at(i);
 
     // Match the pair of template types
-    if (!matchRequestedToCandidateType(candidateType, requestedType, typeMapping, resolverFct, strictSpecifiers))
+    if (!matchRequestedToCandidateType(candidateType, reqType, typeMapping, resolverFct, strictSpecifiers))
       return false;
   }
   return true;
@@ -67,6 +67,7 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
 
       // Add to type mapping
       const SymbolType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : requestedType;
+      assert(newMappingType.is(TY_GENERIC) || newMappingType.specifiers.isSigned != newMappingType.specifiers.isUnsigned);
       typeMapping.insert({genericTypeName, newMappingType});
 
       return true; // The type was successfully matched, by enriching the type mapping

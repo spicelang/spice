@@ -1,55 +1,51 @@
+import "std/data/map";
+
 f<int> main() {
-    // Plus
-    printf("Result: %s\n", String("Hello ") + String("World!"));
-    String s1 = String("Hello ") + String("World!");
-    printf("Result: %s\n", s1);
-    printf("Result: %s\n", s1 + " Hi!");
-    printf("Result: %s\n", String("Hi! ") + s1);
-    printf("Result: %s\n", s1 + s1);
-    printf("Result: %s\n", s1 + " " + s1);
-    printf("Result: %s\n", String("Prefix ") + s1 + " Suffix");
-
-    // Mul
-    printf("Result: %s\n", 4s * String("Hi"));
-    String s2 = String("Hello ") * 5;
-    printf("Result: %s\n", s2);
-    printf("Result: %s\n", 20 * String('a'));
-    String s3 = 2 * String('c') * 7;
-    printf("Result: %s\n", s3);
-    printf("Result: %s\n", String("One") * 1);
-
-    // Equals raw
-    printf("Equal raw: %d\n", "Hello World!" == "Hello Programmers!");
-    printf("Equal raw: %d\n", "Hello" == "Hell2");
-    printf("Equal raw: %d\n", "Hello" == "Hello");
-
-    // Equals
-    printf("Equal: %d\n", String("Hello World!") == String("Hello Programmers!"));
-    printf("Equal: %d\n", String("Hello") == String("Hell2"));
-    printf("Equal: %d\n", String("Hello") == String("Hello"));
-
-    // Not equals raw
-    printf("Non-equal raw: %d\n", "Hello World!" != "Hello Programmers!");
-    printf("Non-equal raw: %d\n", "Hello" != "Hell2");
-    printf("Non-equal raw: %d\n", "Hello" != "Hello");
-
-    // Not equals
-    printf("Non-equal: %d\n", String("Hello World!") != String("Hello Programmers!"));
-    printf("Non-equal: %d\n", String("Hello") != String("Hell2"));
-    printf("Non-equal: %d\n", String("Hello") != String("Hello"));
-
-    // PlusEquals
-    String s4 = String("Hello");
-    s4 += 'l';
-    printf("Result: %s\n", s4);
-    String s5 = String("Hi");
-    s5 += " World!";
-    printf("Result: %s\n", s5);
-
-    // MulEquals
-    String s6 = String("Hi");
-    s6 *= 3;
-    printf("Result: %s\n", s6);
+    Map<int, string> map;
+    assert map.getSize() == 0l;
+    assert map.isEmpty();
+    map.insert(1, "Hello");
+    assert map.getSize() == 1l;
+    assert !map.isEmpty();
+    map.insert(2, "World");
+    assert map.getSize() == 2l;
+    map.insert(3, "Foo");
+    assert map.getSize() == 3l;
+    map.insert(4, "Bar");
+    assert map.getSize() == 4l;
+    assert map.contains(1);
+    assert map.contains(2);
+    assert map.contains(3);
+    assert map.contains(4);
+    assert map.get(1) == "Hello";
+    assert map.get(2) == "World";
+    assert map.get(3) == "Foo";
+    assert map.get(4) == "Bar";
+    map.remove(2);
+    assert map.getSize() == 3l;
+    assert !map.contains(2);
+    assert !map.isEmpty();
+    map.remove(1);
+    assert map.getSize() == 2l;
+    assert !map.contains(1);
+    assert !map.isEmpty();
+    string& foo = map.get(3);
+    assert foo == "Foo";
+    foo = "Baz";
+    assert map.get(3) == "Baz";
+    Result<string> bar = map.getSafe(4);
+    assert bar.isOk();
+    assert bar.unwrap() == "Bar";
+    Result<string> baz = map.getSafe(5);
+    assert baz.isErr();
+    map.remove(3);
+    assert map.getSize() == 1l;
+    assert !map.contains(3);
+    assert !map.isEmpty();
+    map.remove(4);
+    assert map.getSize() == 0l;
+    assert !map.contains(4);
+    assert map.isEmpty();
 }
 
 /*import "../../src-bootstrap/lexer/lexer";
