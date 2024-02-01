@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.2 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 1, !dbg !12
 
 ; Function Attrs: norecurse
-define private void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %0) #0 !dbg !24 {
+define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %0) #0 !dbg !24 {
   %this = alloca ptr, align 8
   call void @llvm.dbg.declare(metadata ptr %this, metadata !45, metadata !DIExpression()), !dbg !47
   store ptr %0, ptr %this, align 8, !dbg !47
@@ -115,7 +115,7 @@ attributes #3 = { nofree nounwind }
 !21 = !{i32 7, !"uwtable", i32 2}
 !22 = !{i32 7, !"frame-pointer", i32 2}
 !23 = !{!"spice version dev (https://github.com/spicelang/spice)"}
-!24 = distinct !DISubprogram(name: "dtor", linkageName: "_ZN10TestStruct4dtorEv", scope: !7, file: !7, line: 1, type: !25, scopeLine: 1, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !44)
+!24 = distinct !DISubprogram(name: "dtor", linkageName: "_ZN10TestStruct4dtorEv", scope: !7, file: !7, line: 1, type: !25, scopeLine: 1, flags: DIFlagPublic | DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !44)
 !25 = !DISubroutineType(types: !26)
 !26 = !{!27, !28}
 !27 = !DIBasicType(name: "void", encoding: DW_ATE_unsigned)
