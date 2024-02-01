@@ -2,8 +2,9 @@
 
 #include "CommonUtil.h"
 
-#ifdef OS_WINDOWS
 #include <cxxabi.h>
+
+#ifdef OS_WINDOWS
 #include <windows.h>
 #elif OS_UNIX
 #include <unistd.h>
