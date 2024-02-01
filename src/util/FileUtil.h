@@ -19,7 +19,7 @@ class FileUtil {
 public:
   static void writeToFile(const std::filesystem::path &fileName, const std::string &fileContent);
   static std::string getFileContent(const std::filesystem::path &filePath);
-  static ExecResult exec(const std::string &cmd);
+  static ExecResult exec(const std::string &command);
   static bool isCommandAvailable(const std::string &cmd);
   static std::filesystem::path getStdDir();
   static std::filesystem::path getSpiceBinDir();

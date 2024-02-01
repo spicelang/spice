@@ -13,6 +13,11 @@ public type Optional<T> struct {
 }
 
 /**
+ * Initialize optional without a value
+ */
+public p Optional.ctor() {}
+
+/**
  * Initialize optional with an initial value
  *
  * @param data Initial data value

@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="spice" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="run -O0 -d -ir --disable-verifier ../../media/test-project/test.spice" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="spice" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="spice">
+  <configuration default="false" name="spice" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="build -O0 -d -ir -g ../../media/test-project/test.spice" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="spice" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="spice">
     <envs>
       <env name="LLVM_LIB_DIR" value="D:/LLVM/build-release/lib" />
       <env name="LLVM_INCLUDE_DIR" value="D:/LLVM/llvm/include" />

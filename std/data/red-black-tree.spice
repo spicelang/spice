@@ -60,6 +60,7 @@ public type RedBlackTree<K, V> struct {
  * @param value The value of the new element
  */
 public p RedBlackTree.insert(const K& key, const V& value) {
+    // Create the new node
     heap Node<K, V>* newNode = sNew<Node<K, V>>(Node<K, V>{
         key,
         value,
@@ -68,6 +69,8 @@ public p RedBlackTree.insert(const K& key, const V& value) {
         nil<heap Node<K, V>*>,
         nil<heap Node<K, V>*>
     });
+
+    // Search for the correct position
     heap Node<K, V>* y = nil<heap Node<K, V>*>;
     heap Node<K, V>* x = this.rootNode;
     while x != nil<heap Node<K, V>*> {
@@ -78,6 +81,8 @@ public p RedBlackTree.insert(const K& key, const V& value) {
             x = x.childRight;
         }
     }
+
+    // Insert the new node at the correct position
     newNode.parent = y;
     if y == nil<heap Node<K, V>*> {
         this.rootNode = newNode;
@@ -86,7 +91,10 @@ public p RedBlackTree.insert(const K& key, const V& value) {
     } else {
         y.childRight = newNode;
     }
+
+    // Fixup the tree
     this.insertFixup(newNode);
+
     this.size++;
 }
 
@@ -96,10 +104,12 @@ public p RedBlackTree.insert(const K& key, const V& value) {
  * @param key The key of the element to remove
  */
 public p RedBlackTree.remove(const K& key) {
+    // Search for the node to remove
     heap Node<K, V>* z = this.search(key);
     if z == nil<heap Node<K, V>*> {
         return;
     }
+
     heap Node<K, V>* y = z;
     heap Node<K, V>* x;
     bool wasYBlack = y.isBlack();
@@ -125,10 +135,18 @@ public p RedBlackTree.remove(const K& key) {
         y.childLeft.parent = y;
         y.color = z.color;
     }
-    sDelete(z);
+
+    // Use dealloc, because we don't want to call the destructor.
+    // The destructor would delete children and parent.
+    unsafe {
+        sDealloc((byte*) z);
+    }
+
+    // Do a fixup if required
     if wasYBlack {
         this.deleteFixup(x);
     }
+
     this.size--;
 }
 
@@ -225,6 +243,28 @@ p RedBlackTree.rotateRight(heap Node<K, V>* y) {
     y.parent = x;
 }
 
+/**
+ * Replace the subtree rooted at node u with the subtree rooted at node v.
+ *
+ * @param u The node to replace
+ * @param v The node to replace with
+ */
+p RedBlackTree.transplant(heap Node<K, V>* u, heap Node<K, V>* v) {
+    // Set v to the correct pointer
+    if u.isRoot() {
+        this.rootNode = v;
+    } else if u == u.parent.childLeft {
+        u.parent.childLeft = v;
+    } else {
+        u.parent.childRight = v;
+    }
+
+    // Update the parent
+    if v != nil<heap Node<K, V>*> {
+        v.parent = u.parent;
+    }
+}
+
 p RedBlackTree.insertFixup(heap Node<K, V>* z) {
     while !z.isRoot() && z.parent.isRed() {
         if z.parent == z.parent.parent.childLeft {
@@ -262,19 +302,6 @@ p RedBlackTree.insertFixup(heap Node<K, V>* z) {
         }
     }
     this.rootNode.color = NodeColor::BLACK;
-}
-
-p RedBlackTree.transplant(heap Node<K, V>* u, heap Node<K, V>* v) {
-    if u.isRoot() {
-        this.rootNode = v;
-    } else if u == u.parent.childLeft {
-        u.parent.childLeft = v;
-    } else {
-        u.parent.childRight = v;
-    }
-    if v != nil<heap Node<K, V>*> {
-        v.parent = u.parent;
-    }
 }
 
 p RedBlackTree.deleteFixup(heap Node<K, V>* x) {

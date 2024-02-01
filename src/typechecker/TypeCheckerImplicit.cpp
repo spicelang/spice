@@ -28,7 +28,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
 
   // Procedure type
   SymbolType procedureType(TY_PROCEDURE);
-  procedureType.specifiers.isPublic = structEntry->getType().specifiers.isPublic;
+  procedureType.specifiers.isPublic = true; // Always public
 
   // Insert symbol for function into the symbol table
   const std::string entryName = Function::getSymbolTableEntryName(methodName, node->codeLoc);

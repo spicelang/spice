@@ -132,7 +132,16 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
         // Replace field type with concrete template type
         SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
         assert(fieldEntry != nullptr && fieldEntry->isField());
-        fieldEntry->updateType(substantiatedStruct->fieldTypes.at(i), /*overwriteExistingType=*/true);
+        SymbolType &fieldType = substantiatedStruct->fieldTypes.at(i);
+        SymbolType baseType = fieldType.getBaseType();
+
+        // Set the body scope of fields that are of type <candidate-struct>*
+        if (baseType.matches(substantiatedStruct->entry->getType(), false, true, true)) {
+          baseType.setBodyScope(substantiatedStruct->scope);
+          fieldType = fieldType.replaceBaseType(baseType);
+        }
+
+        fieldEntry->updateType(fieldType, /*overwriteExistingType=*/true);
       }
 
       // Instantiate implemented interfaces if required
