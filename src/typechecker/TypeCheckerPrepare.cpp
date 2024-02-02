@@ -134,11 +134,6 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     SOFT_ERROR_BOOL(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                     "Generic return type not included in the template type list of the function")
 
-  // Check if all template types were used by at least one parameter or the return type
-  if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; }))
-    SOFT_ERROR_BOOL(node->templateTypeLst(), GENERIC_TYPE_NOT_USED,
-                    "Generic type was not used by the function parameters or the return type")
-
   // Leave function body scope
   currentScope = node->scope->parent;
   assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
@@ -270,10 +265,6 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     }
   }
 
-  // Check if all template types were used by at least one parameter
-  if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; }))
-    SOFT_ERROR_BOOL(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the procedure parameters")
-
   // Leave procedure body scope
   currentScope = node->scope->parent;
   assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
@@ -404,10 +395,6 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     if (!fieldType.isCoveredByGenericTypeList(templateTypesGeneric))
       throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
   }
-
-  // Check if all template types were used by at least one field
-  if (std::ranges::any_of(templateTypesGeneric, [&](const GenericType &genericType) { return !genericType.used; }))
-    softError(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the struct fields");
 
   // Change to the root scope
   currentScope = rootScope;

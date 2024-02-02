@@ -28,7 +28,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 1
 
 ; Function Attrs: norecurse
-define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(72) %0) #0 {
+define void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable(72) %0) #0 {
   %this = alloca ptr, align 8
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4

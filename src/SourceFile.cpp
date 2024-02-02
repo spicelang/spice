@@ -614,9 +614,13 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
     warning.print();
 }
 
-bool SourceFile::isStringRT() const { return globalScope->lookupStrict(STROBJ_NAME) != nullptr; }
-
-bool SourceFile::isRttiRT() const { return globalScope->lookupStrict(TIOBJ_NAME) != nullptr; }
+bool SourceFile::isRT(RuntimeModule runtimeModule) const {
+  assert(IDENTIFYING_TOP_LEVEL_NAMES.contains(runtimeModule));
+  const char *topLevelName = IDENTIFYING_TOP_LEVEL_NAMES.at(runtimeModule);
+  if (!exportedNameRegistry.contains(topLevelName))
+    return false;
+  return exportedNameRegistry.at(topLevelName).targetEntry->scope == globalScope.get();
+}
 
 bool SourceFile::haveAllDependantsBeenTypeChecked() const {
   return std::ranges::all_of(dependants, [](const SourceFile *dependant) { return dependant->totalTypeCheckerRuns >= 1; });

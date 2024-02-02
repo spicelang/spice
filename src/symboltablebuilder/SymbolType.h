@@ -159,6 +159,11 @@ public:
     return typeChain.back().subType;
   }
   [[nodiscard]] ALWAYS_INLINE SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
+  [[nodiscard]] ALWAYS_INLINE SymbolType getNonConst() const {
+    SymbolType type = *this;
+    type.specifiers.isConst = false;
+    return type;
+  }
   [[nodiscard]] SymbolType getBaseType() const {
     assert(!typeChain.empty());
     return SymbolType({typeChain.front()}, specifiers);

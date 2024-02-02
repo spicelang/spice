@@ -94,8 +94,17 @@ bool TypeSpecifiers::match(TypeSpecifiers otherSpecifiers, bool allowConstify) c
 void TypeSpecifiers::eraseWithMask(const TypeSpecifiers &mask) {
   // Zero out all bits that are set in the mask
   for (uint8_t i = 0; i <= BIT_INDEX_MAX; i++) {
-    if (mask.getBit(i))
+    if (mask.getBit(i)) {
+      // Zero out the bit
       setBit(i, false);
+
+      // If we set the signed/unsigned bit to zero, we need to set the other to one
+      if (i == BIT_INDEX_SIGNED) {
+        setBit(BIT_INDEX_UNSIGNED, true);
+      } else if (i == BIT_INDEX_UNSIGNED) {
+        setBit(BIT_INDEX_SIGNED, true);
+      }
+    }
   }
 }
 

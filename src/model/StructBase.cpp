@@ -4,6 +4,7 @@
 
 #include <ast/ASTBuilder.h>
 #include <ast/ASTNodes.h>
+#include <typechecker/TypeMatcher.h>
 #include <util/CommonUtil.h>
 
 namespace spice::compiler {
@@ -15,8 +16,16 @@ namespace spice::compiler {
  */
 std::string StructBase::getSignature() const {
   std::vector<SymbolType> templateSymbolTypes;
-  for (const auto &templateType : templateTypes)
-    templateSymbolTypes.push_back(templateType);
+  templateSymbolTypes.reserve(templateTypes.size());
+  for (const GenericType &genericType : templateTypes) {
+    if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
+      assert(typeMapping.contains(genericType.getSubType()));
+      templateSymbolTypes.push_back(typeMapping.at(genericType.getSubType()));
+    } else {
+      templateSymbolTypes.push_back(genericType);
+    }
+  }
+
   return getSignature(name, templateSymbolTypes);
 }
 

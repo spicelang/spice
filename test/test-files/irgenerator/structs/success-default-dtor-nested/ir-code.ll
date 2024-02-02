@@ -45,7 +45,7 @@ define private void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceabl
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
 
 ; Function Attrs: norecurse
-define private void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
+define void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -55,7 +55,7 @@ define private void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceab
 }
 
 ; Function Attrs: norecurse
-define private void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
+define void @_ZN5Outer4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8

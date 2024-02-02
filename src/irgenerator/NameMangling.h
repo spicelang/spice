@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include <model/GenericType.h>
 #include <symboltablebuilder/SymbolType.h>
 
 namespace spice::compiler {
@@ -32,7 +33,7 @@ class Interface;
  * - a: byte
  * - h: unsigned byte / unsigned char
  * - c: char
- * - Pc: string (char*)
+ * - PKc: string (const char*)
  * - b: bool
  * - v: void
  * - K: const
@@ -60,8 +61,9 @@ private:
 
   // Private methods
   static void mangleName(std::stringstream &out, const std::string &name, bool &nestedType);
-  static void mangleType(std::stringstream &out, const SymbolType &type);
-  static void mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, bool signedness);
+  static void mangleType(std::stringstream &out, SymbolType type, const TypeMapping &typeMapping);
+  static void mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, const TypeMapping &typeMapping,
+                                     bool signedness);
 };
 
 } // namespace spice::compiler

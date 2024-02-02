@@ -150,7 +150,8 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
 
   // Visit iterator assignment
-  SymbolType iteratorOrIterableType = std::any_cast<ExprResult>(visit(node->iteratorAssign())).type;
+  AssignExprNode *iteratorNode = node->iteratorAssign();
+  SymbolType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
 
   // Retrieve iterator type
@@ -158,9 +159,11 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   if (iteratorOrIterableType.isIterable(node)) {
     const SymbolType &iterableType = iteratorOrIterableType;
     Scope *matchScope = iterableType.getBodyScope();
-    node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, node);
+    node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
     assert(node->getIteratorFct != nullptr); // At this point we are sure to implement IIterable, so we also have getIterator()
     iteratorType = node->getIteratorFct->returnType;
+    // Create anonymous entry for the iterator
+    currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
   }
 
   // Check iterator type
@@ -422,6 +425,7 @@ std::any TypeChecker::visitField(FieldNode *node) {
 
   if (TernaryExprNode *defaultValueNode = node->defaultValue()) {
     const SymbolType defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
+    HANDLE_UNRESOLVED_TYPE_ST(defaultValueType)
     if (!fieldType.matches(defaultValueType, false, true, true))
       SOFT_ERROR_ST(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
   }
@@ -484,12 +488,6 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
       paramTypes.push_back(paramType);
       paramList.push_back({paramType, false});
     }
-  }
-
-  // Check if all template types were used in the function parameters or in the return type
-  if (std::ranges::any_of(usedGenericTypes, [](const GenericType &genericType) { return !genericType.used; })) {
-    softError(node->templateTypeLst(), GENERIC_TYPE_NOT_USED, "Generic type was not used by the function parameters");
-    return static_cast<std::vector<Function *> *>(nullptr);
   }
 
   // Build signature object
@@ -1749,8 +1747,14 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, const std::vector<Symb
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if this is a ctor call to the String type
-  if (node->functionNameFragments.size() == 1 && node->fqFunctionName == STROBJ_NAME && !sourceFile->isStringRT())
-    sourceFile->requestRuntimeModule(STRING_RT);
+  if (node->functionNameFragments.size() == 1) {
+    for (const auto &[typeName, runtimeModule] : TYPE_NAME_TO_RT_MODULE_MAPPING)
+      if (fqFunctionName == typeName && !sourceFile->isRT(runtimeModule))
+        sourceFile->requestRuntimeModule(runtimeModule);
+    for (const auto &[fctName, runtimeModule] : FCT_NAME_TO_RT_MODULE_MAPPING)
+      if (fqFunctionName == fctName && !sourceFile->isRT(runtimeModule))
+        sourceFile->requestRuntimeModule(runtimeModule);
+  }
 
   // Check if the exported name registry contains that function name
   const NameRegistryEntry *functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName);
@@ -2302,14 +2306,16 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   // It is a struct type -> get the access scope
   Scope *localAccessScope = accessScope ? accessScope : currentScope;
 
-  const bool isImported = node->typeNameFragments.size() > 1;
   const std::string firstFragment = node->typeNameFragments.front();
 
-  // Check if it is a String type
-  if (!isImported && firstFragment == STROBJ_NAME && !sourceFile->isStringRT())
-    sourceFile->requestRuntimeModule(STRING_RT);
+  // Check this type requires a runtime module
+  if (node->typeNameFragments.size() == 1)
+    for (const auto &[typeName, runtimeModule] : TYPE_NAME_TO_RT_MODULE_MAPPING)
+      if (firstFragment == typeName && !sourceFile->isRT(runtimeModule))
+        sourceFile->requestRuntimeModule(runtimeModule);
 
   // Check if it is a generic type
+  const bool isImported = node->typeNameFragments.size() > 1;
   const SymbolType *genericType = rootScope->lookupGenericType(firstFragment);
   if (!isImported && genericType) {
     // Take the concrete replacement type for the name of this generic type if available
@@ -2355,7 +2361,6 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
     const DataTypeNode *dataTypeNode = dynamic_cast<DataTypeNode *>(node->parent->parent);
     assert(dataTypeNode != nullptr);
-    const bool isParamOrFieldOrReturnType = dataTypeNode->isParamType || dataTypeNode->isFieldType || dataTypeNode->isReturnType;
 
     // Collect the concrete template types
     bool allTemplateTypesConcrete = true;
@@ -2365,9 +2370,6 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
         auto templateType = std::any_cast<SymbolType>(visit(dataType));
         HANDLE_UNRESOLVED_TYPE_ST(templateType)
-        // Generic types are only allowed for parameters and fields at this point
-        if (entryType.is(TY_STRUCT) && templateType.is(TY_GENERIC) && !isParamOrFieldOrReturnType)
-          SOFT_ERROR_ST(dataType, EXPECTED_NON_GENERIC_TYPE, "Only concrete template types are allowed here")
         if (entryType.is(TY_GENERIC))
           allTemplateTypesConcrete = false;
         templateTypes.push_back(templateType);
@@ -2382,7 +2384,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       if (declCodeLoc.sourceFile->filePath == codeLoc.sourceFile->filePath && declCodeLoc > codeLoc)
         SOFT_ERROR_ST(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage")
 
-      if (allTemplateTypesConcrete || !isParamOrFieldOrReturnType) { // Only do the next step, if we have concrete template types
+      if (allTemplateTypesConcrete) { // Only do the next step, if we have concrete template types
         // Set the struct instance to used, if found
         // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
         const std::string structName = node->typeNameFragments.back();

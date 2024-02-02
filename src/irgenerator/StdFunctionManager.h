@@ -21,13 +21,12 @@ public:
 
   // Public methods for function retrieval
   [[nodiscard]] llvm::Function *getPrintfFct() const;
-  [[nodiscard]] llvm::Function *getFreeFctPtr() const;
   [[nodiscard]] llvm::Function *getExitFct() const;
+  [[nodiscard]] llvm::Function *getFreeFct() const;
+  [[nodiscard]] llvm::Function *getMemcmpFct() const;
   [[nodiscard]] llvm::Function *getMemcpyIntrinsic() const;
-  [[nodiscard]] llvm::Function *getMemcmpIntrinsic() const;
   [[nodiscard]] llvm::Function *getStringGetRawLengthStringFct() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
-  [[nodiscard]] llvm::Function *getAllocLongFct() const;
   [[nodiscard]] llvm::Function *getDeallocBytePtrRefFct() const;
   [[nodiscard]] llvm::Function *getIteratorFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorGetFct(const Function *spiceFunc) const;

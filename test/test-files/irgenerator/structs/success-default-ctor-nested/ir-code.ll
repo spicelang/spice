@@ -11,7 +11,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.0 = private unnamed_addr constant [13 x i8] c"Message: %s\0A\00", align 1
 
 ; Function Attrs: norecurse
-define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -21,7 +21,7 @@ define private void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceabl
 }
 
 ; Function Attrs: norecurse
-define private void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -31,7 +31,7 @@ define private void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceab
 }
 
 ; Function Attrs: norecurse
-define private void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8

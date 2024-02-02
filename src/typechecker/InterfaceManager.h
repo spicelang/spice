@@ -24,14 +24,14 @@ class InterfaceManager {
 public:
   // Public methods
   static Interface *insertInterface(Scope *insertScope, Interface &spiceInterface, std::vector<Interface *> *nodeInterfaceList);
-  [[nodiscard]] static Interface *matchInterface(Scope *matchScope, const std::string &requestedName,
-                                                 const std::vector<SymbolType> &requestedTemplateTypes, const ASTNode *node);
+  [[nodiscard]] static Interface *matchInterface(Scope *matchScope, const std::string &reqName,
+                                                 const std::vector<SymbolType> &reqTemplateTypes, const ASTNode *node);
 
 private:
   // Private methods
   [[nodiscard]] static Interface *insertSubstantiation(Scope *insertScope, Interface &newManifestation, const ASTNode *declNode);
-  [[nodiscard]] static bool matchName(const Interface &candidate, const std::string &requestedName);
-  [[nodiscard]] static bool matchTemplateTypes(Interface &candidate, const std::vector<SymbolType> &requestedTemplateTypes,
+  [[nodiscard]] static bool matchName(const Interface &candidate, const std::string &reqName);
+  [[nodiscard]] static bool matchTemplateTypes(Interface &candidate, const std::vector<SymbolType> &reqTemplateTypes,
                                                TypeMapping &typeMapping);
   static void substantiateSignatures(Interface &candidate, TypeMapping &typeMapping);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Interface &candidate,

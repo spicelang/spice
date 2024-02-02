@@ -9,13 +9,12 @@ type T dyn;
  */
 type Node<T> struct {
     T value
-    heap Node<T>* prev
-    heap Node<T>* next
+    heap Node<T>* prev = nil<heap Node<T>*>
+    heap Node<T>* next = nil<heap Node<T>*>
 }
 
 p Node.ctor(const T& value) {
     this.value = value;
-    this.next = nil<heap Node<T>*>;
 }
 
 /**
@@ -24,14 +23,9 @@ p Node.ctor(const T& value) {
  * to the previous one.
  */
 public type DoublyLinkedList<T> struct {
-    heap Node<T>* head
-    heap Node<T>* tail
+    heap Node<T>* head = nil<heap Node<T>*>
+    heap Node<T>* tail = nil<heap Node<T>*>
     unsigned long size = 0l
-}
-
-public p DoublyLinkedList.ctor() {
-    this.tail = nil<heap Node<T>*>;
-    this.head = nil<heap Node<T>*>;
 }
 
 public p DoublyLinkedList.pushBack(const T& value) {

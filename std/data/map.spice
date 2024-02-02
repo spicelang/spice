@@ -1,6 +1,5 @@
-// Constants
-const unsigned long INITIAL_ALLOC_COUNT = 5l;
-const unsigned int RESIZE_FACTOR = 2;
+import "std/data/red-black-tree";
+import "std/type/result";
 
 // Add generic type definitions
 type K dyn;
@@ -10,14 +9,85 @@ type V dyn;
  * A map in Spice is a commonly used data structure, which can be used to represent a list of key value pairs.
  *
  * Time complexity:
- * Insert: O(1)
- * Delete:
- * Search: O(1)
+ * Insert: O(log n)
+ * Delete: O(log n)
+ * Lookup: O(log n)
  */
 public type Map<K, V> struct {
-
+    RedBlackTree<K, V> tree
 }
 
-public p Map.ctor() {
+/**
+ * Inserts a key value pair into the map.
+ *
+ * @param key The key to insert.
+ * @param value The value to insert.
+ */
+public p Map.insert(const K& key, const V& value) {
+    this.tree.insert(key, value);
+}
 
+/**
+ * Removes a key value pair from the map.
+ *
+ * @param key The key to remove.
+ */
+public p Map.remove(const K& key) {
+    this.tree.remove(key);
+}
+
+/**
+ * Gets a value from the map.
+ * Note: If the key is not found in the map, this function will panic. To avoid this, use getSafe instead.
+ *
+ * @param key The key to get.
+ * @return The value associated with the key.
+ */
+public f<V&> Map.get(const K& key) {
+    return this.tree.find(key);
+}
+
+/**
+ * Gets a value from the map, returning a result.
+ *
+ * @param key The key to get.
+ * @return The value associated with the key, or an error if the key does not exist.
+ */
+public f<Result<V>> Map.getSafe(const K& key) {
+    return this.tree.findSafe(key);
+}
+
+/**
+ * Checks if the map contains a key.
+ *
+ * @param key The key to check.
+ * @return True if the map contains the key, false otherwise.
+ */
+public f<bool> Map.contains(const K& key) {
+    return this.tree.contains(key);
+}
+
+/**
+ * Gets the number of elements in the map.
+ *
+ * @return The number of elements in the map.
+ */
+public f<unsigned long> Map.getSize() {
+    return this.tree.getSize();
+}
+
+/**
+ * Checks if the map is empty.
+ *
+ * @return True if the map is empty, false otherwise.
+ */
+public f<bool> Map.isEmpty() {
+    return this.tree.getSize() == 0l;
+}
+
+/**
+ * Removes all elements from the map.
+ */
+public p Map.clear() {
+    this.tree.clear();
 }

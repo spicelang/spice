@@ -29,7 +29,7 @@ define private void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 2 derefer
 }
 
 ; Function Attrs: norecurse
-define private void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
+define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
@@ -41,7 +41,7 @@ define private void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 2 deref
 }
 
 ; Function Attrs: norecurse
-define private void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
+define void @_ZN5Outer4ctorERK5Outer(ptr noundef nonnull align 2 dereferenceable(2) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8

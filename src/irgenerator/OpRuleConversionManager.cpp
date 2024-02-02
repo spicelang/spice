@@ -611,7 +611,7 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
   case COMB(TY_FUNCTION, TY_FUNCTION): // fallthrough
   case COMB(TY_PROCEDURE, TY_PROCEDURE): {
     const uint64_t typeSize = irGenerator->module->getDataLayout().getTypeSizeInBits(lhsT) / 8;
-    llvm::Function *memcmpFct = stdFunctionManager.getMemcmpIntrinsic();
+    llvm::Function *memcmpFct = stdFunctionManager.getMemcmpFct();
     llvm::Value *memcmpResult = builder.CreateCall(memcmpFct, {lhsP(), rhsP(), builder.getInt64(typeSize)});
     return {.value = builder.CreateICmpEQ(memcmpResult, llvm::ConstantInt::get(context, llvm::APInt(32, 0)))};
   }
@@ -747,7 +747,7 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
   case COMB(TY_FUNCTION, TY_FUNCTION): // fallthrough
   case COMB(TY_PROCEDURE, TY_PROCEDURE): {
     const uint64_t typeSize = irGenerator->module->getDataLayout().getTypeSizeInBits(lhsT) / 8;
-    llvm::Function *memcmpFct = stdFunctionManager.getMemcmpIntrinsic();
+    llvm::Function *memcmpFct = stdFunctionManager.getMemcmpFct();
     llvm::Value *memcmpResult = builder.CreateCall(memcmpFct, {lhsP(), rhsP(), builder.getInt64(typeSize)});
     return {.value = builder.CreateICmpNE(memcmpResult, llvm::ConstantInt::get(context, llvm::APInt(32, 0)))};
   }

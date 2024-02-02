@@ -180,8 +180,6 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Temporary bound to non-const reference";
   case GENERIC_TYPE_NOT_IN_TEMPLATE:
     return "Generic type not contained in template";
-  case GENERIC_TYPE_NOT_USED:
-    return "Template types not used";
   case SPECIFIER_AT_ILLEGAL_CONTEXT:
     return "Specifier at illegal context";
   case INSUFFICIENT_VISIBILITY:
