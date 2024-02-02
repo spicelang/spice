@@ -67,7 +67,7 @@ ExecResult FileUtil::exec(const std::string &command) {
 #ifdef _WIN32
   const int exitCode = _pclose(pipe);
 #else
-  const int exitCode = pclose(pipe);
+  const int exitCode = pclose(pipe) / 256;
 #endif
   return {result.str(), exitCode};
 }
