@@ -143,7 +143,7 @@ public p RedBlackTree.remove(const K& key) {
     }
 
     // Do a fixup if required
-    if wasYBlack {
+    if wasYBlack && x != nil<heap Node<K, V>*> {
         this.deleteFixup(x);
     }
 
@@ -169,7 +169,10 @@ public f<V&> RedBlackTree.find(const K& key) {
  */
 public f<Result<V>> RedBlackTree.findSafe(const K& key) {
     heap Node<K, V>* node = this.search(key);
-    return node != nil<heap Node<K, V>*> ? ok<V>(node.value) : err<V>(Error("The provided key was not found"));
+    if node == nil<heap Node<K, V>*> {
+        return err<V>(Error("The provided key was not found"));
+    }
+    return ok<V>(node.value);
 }
 
 /**

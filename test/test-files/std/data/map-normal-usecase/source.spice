@@ -46,4 +46,5 @@ f<int> main() {
     assert map.getSize() == 0l;
     assert !map.contains(4);
     assert map.isEmpty();
+    printf("All assertions passed!\n");
 }
