@@ -19,7 +19,16 @@ llvm::Function *StdFunctionManager::getPrintfFct() const {
   return printfFct;
 }
 
-llvm::Function *StdFunctionManager::getFreeFctPtr() const {
+llvm::Function *StdFunctionManager::getExitFct() const {
+  llvm::Function *exitFct = getProcedure("exit", builder.getInt32Ty());
+  // Set attributes
+  exitFct->addFnAttr(llvm::Attribute::Cold);
+  exitFct->addFnAttr(llvm::Attribute::NoReturn);
+  exitFct->addFnAttr(llvm::Attribute::NoUnwind);
+  return exitFct;
+}
+
+llvm::Function *StdFunctionManager::getFreeFct() const {
   llvm::Function *freeFct = getProcedure("free", builder.getPtrTy());
   // Set attributes
   freeFct->addFnAttr(llvm::Attribute::NoUnwind);
@@ -29,13 +38,12 @@ llvm::Function *StdFunctionManager::getFreeFctPtr() const {
   return freeFct;
 }
 
-llvm::Function *StdFunctionManager::getExitFct() const {
-  llvm::Function *exitFct = getProcedure("exit", builder.getInt32Ty());
+llvm::Function *StdFunctionManager::getMemcmpFct() const {
+  llvm::Type *ptrTy = builder.getPtrTy();
+  llvm::Function *memcmpFct = getFunction("memcmp", builder.getInt32Ty(), {ptrTy, ptrTy, builder.getInt64Ty()});
   // Set attributes
-  exitFct->addFnAttr(llvm::Attribute::Cold);
-  exitFct->addFnAttr(llvm::Attribute::NoReturn);
-  exitFct->addFnAttr(llvm::Attribute::NoUnwind);
-  return exitFct;
+  memcmpFct->addFnAttr(llvm::Attribute::NoUnwind);
+  return memcmpFct;
 }
 
 llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
@@ -47,14 +55,6 @@ llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
   memcpyFct->addFnAttr(llvm::Attribute::NoUnwind);
   memcpyFct->addFnAttr(llvm::Attribute::WillReturn);
   return memcpyFct;
-}
-
-llvm::Function *StdFunctionManager::getMemcmpIntrinsic() const {
-  llvm::Type *ptrTy = builder.getPtrTy();
-  llvm::Function *memcmpFct = getFunction("memcmp", builder.getInt32Ty(), {ptrTy, ptrTy, builder.getInt64Ty()});
-  // Set attributes
-  memcmpFct->addFnAttr(llvm::Attribute::NoUnwind);
-  return memcmpFct;
 }
 
 llvm::Function *StdFunctionManager::getStringGetRawLengthStringFct() const {
@@ -69,14 +69,6 @@ llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
   const Function function("isRawEqual", nullptr, SymbolType(TY_DYN), SymbolType(TY_BOOL), paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
   return getFunction(mangledName.c_str(), builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
-}
-
-llvm::Function *StdFunctionManager::getAllocLongFct() const {
-  const ParamList paramLst = {{SymbolType(TY_LONG), false}};
-  const SymbolType bytePtrSTy = SymbolType(TY_BYTE).toPointer(nullptr);
-  const Function function("sAlloc", nullptr, SymbolType(TY_DYN), bytePtrSTy, paramLst, {}, nullptr);
-  const std::string mangledName = NameMangling::mangleFunction(function);
-  return getFunction(mangledName.c_str(), builder.getPtrTy(), {builder.getInt64Ty()});
 }
 
 llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {

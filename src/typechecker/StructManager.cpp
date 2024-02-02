@@ -43,13 +43,13 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  * If more than one struct matches the requirement, an error gets thrown
  *
  * @param matchScope Scope to match against
- * @param requestedName Struct name requirement
- * @param requestedTemplateTypes Template types to substantiate generic types
+ * @param reqName Struct name requirement
+ * @param reqTemplateTypes Template types to substantiate generic types
  * @param node Instantiation AST node for printing error messages
  * @return Matched struct or nullptr
  */
-Struct *StructManager::matchStruct(Scope *matchScope, const std::string &requestedName,
-                                   const std::vector<SymbolType> &requestedTemplateTypes, const ASTNode *node) {
+Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const std::vector<SymbolType> &reqTemplateTypes,
+                                   const ASTNode *node) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   StructRegistry structRegistry = matchScope->structs;
   // Loop over struct registry to find structs, that match the requirements of the instantiation
@@ -66,7 +66,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
         continue;
 
       // Check name requirement
-      if (!matchName(candidate, requestedName))
+      if (!matchName(candidate, reqName))
         break; // Leave the whole manifestation list, because all manifestations in this list have the same name
 
       // Prepare mapping table from generic type name to concrete type
@@ -75,7 +75,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
       typeMapping.reserve(candidate.templateTypes.size());
 
       // Check template types requirement
-      if (!matchTemplateTypes(candidate, requestedTemplateTypes, typeMapping))
+      if (!matchTemplateTypes(candidate, reqTemplateTypes, typeMapping))
         continue; // Leave this manifestation and continue with the next one
 
       // Map field types from generic to concrete
@@ -132,7 +132,16 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
         // Replace field type with concrete template type
         SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
         assert(fieldEntry != nullptr && fieldEntry->isField());
-        fieldEntry->updateType(substantiatedStruct->fieldTypes.at(i), /*overwriteExistingType=*/true);
+        SymbolType &fieldType = substantiatedStruct->fieldTypes.at(i);
+        SymbolType baseType = fieldType.getBaseType();
+
+        // Set the body scope of fields that are of type <candidate-struct>*
+        if (baseType.matches(substantiatedStruct->entry->getType(), false, true, true)) {
+          baseType.setBodyScope(substantiatedStruct->scope);
+          fieldType = fieldType.replaceBaseType(baseType);
+        }
+
+        fieldEntry->updateType(fieldType, /*overwriteExistingType=*/true);
       }
 
       // Instantiate implemented interfaces if required
@@ -174,24 +183,22 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &request
  * Checks if the matching candidate fulfills the name requirement
  *
  * @param candidate Matching candidate struct
- * @param requestedName Requested struct name
+ * @param reqName Requested struct name
  * @return Fulfilled or not
  */
-bool StructManager::matchName(const Struct &candidate, const std::string &requestedName) {
-  return candidate.name == requestedName;
-}
+bool StructManager::matchName(const Struct &candidate, const std::string &reqName) { return candidate.name == reqName; }
 
 /**
  * Checks if the matching candidate fulfills the template types requirement
  *
  * @param candidate Matching candidate struct
- * @param requestedTemplateTypes Requested struct template types
+ * @param reqTemplateTypes Requested struct template types
  * @return Fulfilled or not
  */
-bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<SymbolType> &requestedTemplateTypes,
+bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<SymbolType> &reqTemplateTypes,
                                        TypeMapping &typeMapping) {
   // Check if the number of types match
-  const size_t typeCount = requestedTemplateTypes.size();
+  const size_t typeCount = reqTemplateTypes.size();
   if (typeCount != candidate.templateTypes.size())
     return false;
 
@@ -202,11 +209,11 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
 
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
-    const SymbolType &requestedType = requestedTemplateTypes.at(i);
+    const SymbolType &reqType = reqTemplateTypes.at(i);
     SymbolType &candidateType = candidate.templateTypes.at(i);
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
-    if (!TypeMatcher::matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver, false))
+    if (!TypeMatcher::matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false))
       return false;
 
     // Substantiate the candidate param type, based on the type mapping

@@ -301,6 +301,9 @@ llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, 
   if (type.is(TY_BOOL))
     return builder.getInt1(compileTimeValue.boolValue);
 
+  if (type.is(TY_PTR))
+    return llvm::Constant::getNullValue(builder.getPtrTy());
+
   throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
 }
 

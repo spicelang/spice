@@ -3,6 +3,7 @@
 #include "FileUtil.h"
 #include "exception/CompilerError.h"
 
+#include <array>
 #include <filesystem>
 #include <iostream>
 
@@ -47,17 +48,27 @@ std::string FileUtil::getFileContent(const std::filesystem::path &filePath) {
  * @param cmd Command to execute
  * @return Result struct
  */
-ExecResult FileUtil::exec(const std::string &cmd) {
-  FILE *pipe = popen(cmd.c_str(), "r");
-  if (!pipe)                                                            // GCOV_EXCL_LINE
-    throw CompilerError(IO_ERROR, "Failed to execute command: " + cmd); // GCOV_EXCL_LINE
-  char buffer[128];
+ExecResult FileUtil::exec(const std::string &command) {
+#ifdef _WIN32
+  const std::string quotedCommand = "\"" + command + "\"";
+  FILE *pipe = _popen(quotedCommand.c_str(), "r");
+#else
+  FILE *pipe = popen(command.c_str(), "r");
+#endif
+
+  if (!pipe)                                                                // GCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Failed to execute command: " + command); // GCOV_EXCL_LINE
+
+  std::array<char, 128> buffer{};
   std::stringstream result;
-  while (!feof(pipe)) {
-    if (fgets(buffer, 128, pipe) != nullptr)
-      result << buffer;
-  }
-  int exitCode = pclose(pipe) / 256;
+  while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
+    result << buffer.data();
+
+#ifdef _WIN32
+  const int exitCode = _pclose(pipe);
+#else
+  const int exitCode = pclose(pipe) / 256;
+#endif
   return {result.str(), exitCode};
 }
 

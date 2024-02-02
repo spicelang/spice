@@ -44,13 +44,13 @@ Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface 
  * If more than one interface matches the requirement, an error gets thrown
  *
  * @param matchScope Scope to match against
- * @param requestedName Interface name requirement
- * @param requestedTemplateTypes Template types to substantiate generic types
+ * @param reqName Interface name requirement
+ * @param reqTemplateTypes Template types to substantiate generic types
  * @param node Instantiation AST node for printing error messages
  * @return Matched interface or nullptr
  */
-Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string &requestedName,
-                                            const std::vector<SymbolType> &requestedTemplateTypes, const ASTNode *node) {
+Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string &reqName,
+                                            const std::vector<SymbolType> &reqTemplateTypes, const ASTNode *node) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   InterfaceRegistry interfaceRegistry = matchScope->interfaces;
   // Loop over interface registry to find interfaces, that match the requirements of the instantiation
@@ -67,7 +67,7 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
         continue;
 
       // Check name requirement
-      if (!matchName(candidate, requestedName))
+      if (!matchName(candidate, reqName))
         break; // Leave the whole manifestation list, because all manifestations in this list have the same name
 
       // Prepare mapping table from generic type name to concrete type
@@ -76,7 +76,7 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
       typeMapping.reserve(candidate.templateTypes.size());
 
       // Check template types requirement
-      if (!matchTemplateTypes(candidate, requestedTemplateTypes, typeMapping))
+      if (!matchTemplateTypes(candidate, reqTemplateTypes, typeMapping))
         continue; // Leave this manifestation and continue with the next one
 
       // Map signatures from generic to concrete
@@ -154,24 +154,22 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
  * Checks if the matching candidate fulfills the name requirement
  *
  * @param candidate Matching candidate interface
- * @param requestedName Requested interface name
+ * @param reqName Requested interface name
  * @return Fulfilled or not
  */
-bool InterfaceManager::matchName(const Interface &candidate, const std::string &requestedName) {
-  return candidate.name == requestedName;
-}
+bool InterfaceManager::matchName(const Interface &candidate, const std::string &reqName) { return candidate.name == reqName; }
 
 /**
  * Checks if the matching candidate fulfills the template types requirement
  *
  * @param candidate Matching candidate interface
- * @param requestedTemplateTypes Requested interface template types
+ * @param reqTemplateTypes Requested interface template types
  * @return Fulfilled or not
  */
-bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vector<SymbolType> &requestedTemplateTypes,
+bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vector<SymbolType> &reqTemplateTypes,
                                           TypeMapping &typeMapping) {
   // Check if the number of types match
-  const size_t typeCount = requestedTemplateTypes.size();
+  const size_t typeCount = reqTemplateTypes.size();
   if (typeCount != candidate.templateTypes.size())
     return false;
 
@@ -182,11 +180,11 @@ bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vecto
 
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
-    const SymbolType &requestedType = requestedTemplateTypes.at(i);
+    const SymbolType &reqType = reqTemplateTypes.at(i);
     SymbolType &candidateType = candidate.templateTypes.at(i);
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
-    if (!TypeMatcher::matchRequestedToCandidateType(candidateType, requestedType, typeMapping, genericTypeResolver, false))
+    if (!TypeMatcher::matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false))
       return false;
 
     // Substantiate the candidate param type, based on the type mapping

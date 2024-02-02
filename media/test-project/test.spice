@@ -1,31 +1,51 @@
-import "std/io/cli-parser";
+import "std/data/map";
 
-type CliOptions struct {
-    bool sayHi = false
-}
-
-p callback(bool& value) {
-    printf("Callback called with value %d\n", value);
-}
-
-f<int> main(int argc, string[] argv) {
-    CliParser parser = CliParser("Test Program", "This is a simple test program");
-    parser.setVersion("v0.1.0");
-    parser.setFooter("Copyright (c) Marc Auberer 2021-2024");
-
-    CliOptions options;
-    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
-    parser.addFlag("--callback", callback, "Call a callback function");
-    parser.addFlag("-cb", p(bool& value) {
-        printf("CB called with value %d\n", value);
-    }, "Call a callback function");
-
-    parser.parse(argc, argv);
-
-    // Print hi if requested
-    if options.sayHi {
-        printf("Hi!\n");
-    }
+f<int> main() {
+    Map<int, string> map;
+    assert map.getSize() == 0l;
+    assert map.isEmpty();
+    map.insert(1, "Hello");
+    assert map.getSize() == 1l;
+    assert !map.isEmpty();
+    map.insert(2, "World");
+    assert map.getSize() == 2l;
+    map.insert(3, "Foo");
+    assert map.getSize() == 3l;
+    map.insert(4, "Bar");
+    assert map.getSize() == 4l;
+    assert map.contains(1);
+    assert map.contains(2);
+    assert map.contains(3);
+    assert map.contains(4);
+    assert map.get(1) == "Hello";
+    assert map.get(2) == "World";
+    assert map.get(3) == "Foo";
+    assert map.get(4) == "Bar";
+    map.remove(2);
+    assert map.getSize() == 3l;
+    assert !map.contains(2);
+    assert !map.isEmpty();
+    map.remove(1);
+    assert map.getSize() == 2l;
+    assert !map.contains(1);
+    assert !map.isEmpty();
+    string& foo = map.get(3);
+    assert foo == "Foo";
+    foo = "Baz";
+    assert map.get(3) == "Baz";
+    Result<string> bar = map.getSafe(4);
+    assert bar.isOk();
+    assert bar.unwrap() == "Bar";
+    Result<string> baz = map.getSafe(5);
+    assert baz.isErr();
+    map.remove(3);
+    assert map.getSize() == 1l;
+    assert !map.contains(3);
+    assert !map.isEmpty();
+    map.remove(4);
+    assert map.getSize() == 0l;
+    assert !map.contains(4);
+    assert map.isEmpty();
 }
 
 /*import "../../src-bootstrap/lexer/lexer";

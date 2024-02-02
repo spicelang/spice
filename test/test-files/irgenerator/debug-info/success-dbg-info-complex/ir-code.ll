@@ -191,7 +191,7 @@ assert.then.L30:                                  ; preds = %assert.exit.L25
   unreachable, !dbg !79
 
 assert.exit.L30:                                  ; preds = %assert.exit.L25
-  call void @_Z13op.minusequalR14VectorIteratorIiEi(ptr %it, i32 3), !dbg !80
+  call void @_Z13op.minusequalIiiEvR14VectorIteratorIiEi(ptr %it, i32 3), !dbg !80
   %49 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !81
   %50 = load i32, ptr %49, align 4, !dbg !82
   %51 = icmp eq i32 %50, 123, !dbg !82
@@ -213,7 +213,7 @@ assert.then.L35:                                  ; preds = %assert.exit.L34
 
 assert.exit.L35:                                  ; preds = %assert.exit.L34
   %55 = load %struct.VectorIterator, ptr %it, align 8, !dbg !84
-  call void @_Z16op.plusplus.postR14VectorIteratorIiE(ptr %it), !dbg !84
+  call void @_Z16op.plusplus.postIiEvR14VectorIteratorIiE(ptr %it), !dbg !84
   %56 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !85
   %57 = load i32, ptr %56, align 4, !dbg !86
   %58 = icmp eq i32 %57, 4321, !dbg !86
@@ -226,7 +226,7 @@ assert.then.L37:                                  ; preds = %assert.exit.L35
 
 assert.exit.L37:                                  ; preds = %assert.exit.L35
   %60 = load %struct.VectorIterator, ptr %it, align 8, !dbg !87
-  call void @_Z18op.minusminus.postR14VectorIteratorIiE(ptr %it), !dbg !87
+  call void @_Z18op.minusminus.postIiEvR14VectorIteratorIiE(ptr %it), !dbg !87
   %61 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !88
   %62 = load i32, ptr %61, align 4, !dbg !89
   %63 = icmp eq i32 %62, 123, !dbg !89
@@ -238,7 +238,7 @@ assert.then.L39:                                  ; preds = %assert.exit.L37
   unreachable, !dbg !89
 
 assert.exit.L39:                                  ; preds = %assert.exit.L37
-  call void @_Z12op.plusequalR14VectorIteratorIiEi(ptr %it, i32 4), !dbg !90
+  call void @_Z12op.plusequalIiiEvR14VectorIteratorIiEi(ptr %it, i32 4), !dbg !90
   %65 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !91
   %66 = load i32, ptr %65, align 4, !dbg !92
   %67 = icmp eq i32 %66, -99, !dbg !92
@@ -474,13 +474,13 @@ declare ptr @_ZN4PairImRiE8getFirstEv(ptr)
 
 declare ptr @_ZN4PairImRiE9getSecondEv(ptr)
 
-declare void @_Z13op.minusequalR14VectorIteratorIiEi(ptr, i32)
+declare void @_Z13op.minusequalIiiEvR14VectorIteratorIiEi(ptr, i32)
 
-declare void @_Z16op.plusplus.postR14VectorIteratorIiE(ptr)
+declare void @_Z16op.plusplus.postIiEvR14VectorIteratorIiE(ptr)
 
-declare void @_Z18op.minusminus.postR14VectorIteratorIiE(ptr)
+declare void @_Z18op.minusminus.postIiEvR14VectorIteratorIiE(ptr)
 
-declare void @_Z12op.plusequalR14VectorIteratorIiEi(ptr, i32)
+declare void @_Z12op.plusequalIiiEvR14VectorIteratorIiEi(ptr, i32)
 
 declare ptr @_ZN6VectorIiE3getEj(ptr, i32)
 
@@ -497,7 +497,7 @@ attributes #3 = { cold noreturn nounwind }
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "printf.str.0", linkageName: "printf.str.0", scope: !2, file: !5, line: 68, type: !6, isLocal: true, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_20, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
 !3 = !DIFile(filename: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
 !4 = !{!0}
 !5 = !DIFile(filename: "source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-complex")
@@ -510,7 +510,7 @@ attributes #3 = { cold noreturn nounwind }
 !12 = !{i32 7, !"uwtable", i32 2}
 !13 = !{i32 7, !"frame-pointer", i32 2}
 !14 = !{!"spice version dev (https://github.com/spicelang/spice)"}
-!15 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainiPPc", scope: !5, file: !5, line: 4, type: !16, scopeLine: 4, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !22)
+!15 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainiPPKc", scope: !5, file: !5, line: 4, type: !16, scopeLine: 4, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !22)
 !16 = !DISubroutineType(types: !17)
 !17 = !{!18, !18, !19}
 !18 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)

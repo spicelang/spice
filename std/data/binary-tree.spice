@@ -9,8 +9,8 @@ type T dyn;
  * Node of a BinaryTree
  */
 public type Node<T> struct {
-    heap Node<T>* childLeft
-    heap Node<T>* childRight
+    heap Node<T>* childLeft = nil<heap Node<T>*>
+    heap Node<T>* childRight = nil<heap Node<T>*>
     T value
 }
 
@@ -24,31 +24,8 @@ public type Node<T> struct {
  * Search: O(log n)
  */
 public type BinaryTree<T> struct {
-    heap Node<T>* rootNode
-    bool isBalanced
-}
-
-public p BinaryTree.ctor() {
-    this.rootNode = nil<heap Node<T>*>;
-    this.isBalanced = false;
-}
-
-public p BinaryTree.dtor() {
-    if this.rootNode != nil<heap Node<T>*> {
-        this.rootNode.dtor();
-        free((heap byte*) this.rootNode);
-    }
-}
-
-public p Node.dtor() {
-    if this.childLeft != nil<heap Node<T>*> {
-        this.childLeft.dtor();
-        free((heap byte*) this.childLeft);
-    }
-    if this.childRight != nil<heap Node<T>*> {
-        this.childRight.dtor();
-        free((heap byte*) this.childRight);
-    }
+    heap Node<T>* rootNode = nil<heap Node<T>*>
+    bool isBalanced = false
 }
 
 public p BinaryTree.insert<T>(T newValue, heap Node<T>* baseNode = nil<heap Node<T>*>) {

@@ -100,6 +100,9 @@ SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Ex
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef() && lhsType.matches(rhsType.getContainedTy(), false, false, true))
     return lhsType;
+  // Allow const ref type to type of the same contained type straight away
+  if (rhsType.isConstRef() && lhsType.matches(rhsType.getContainedTy().getNonConst(), false, false, true))
+    return lhsType;
   // Allow immediate value to const ref of the same contained type straight away
   if (lhsType.isRef() && lhsType.getContainedTy().isConst() && imm)
     return rhsType;

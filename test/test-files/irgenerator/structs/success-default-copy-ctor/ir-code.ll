@@ -9,7 +9,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.1 = private unnamed_addr constant [7 x i8] c"%d %d\0A\00", align 1
 
 ; Function Attrs: norecurse
-define private void @_ZN12StructToCopy4ctorEv(ptr noundef nonnull align 4 dereferenceable(8) %0) #0 {
+define void @_ZN12StructToCopy4ctorEv(ptr noundef nonnull align 4 dereferenceable(8) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8

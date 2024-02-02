@@ -6,14 +6,14 @@ target triple = "x86_64-w64-windows-gnu"
 @anon.string.0 = private unnamed_addr constant [7 x i8] c"string\00", align 1
 @printf.str.0 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 
-define private i32 @_Z4testPc(ptr %0) {
+define private i32 @_Z4testPKc(ptr %0) {
   %result = alloca i32, align 4
   %_input = alloca ptr, align 8
   store ptr %0, ptr %_input, align 8
   ret i32 12
 }
 
-define private i32 @_Z6invokePFiPcE({ ptr, ptr } %0) {
+define private i32 @_Z6invokePFiPKcE({ ptr, ptr } %0) {
   %result = alloca i32, align 4
   %fctPtr = alloca { ptr, ptr }, align 8
   store { ptr, ptr } %0, ptr %fctPtr, align 8
@@ -29,13 +29,13 @@ define dso_local i32 @main() #0 {
   %testFct = alloca { ptr, ptr }, align 8
   %i = alloca i32, align 4
   store i32 0, ptr %result, align 4
-  store ptr @_Z4testPc, ptr %fat.ptr, align 8
+  store ptr @_Z4testPKc, ptr %fat.ptr, align 8
   %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %1, align 8
   %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %2, ptr %testFct, align 8
   %3 = load { ptr, ptr }, ptr %testFct, align 8
-  %4 = call i32 @_Z6invokePFiPcE({ ptr, ptr } %3)
+  %4 = call i32 @_Z6invokePFiPKcE({ ptr, ptr } %3)
   store i32 %4, ptr %i, align 4
   %5 = load i32, ptr %i, align 4
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %5)

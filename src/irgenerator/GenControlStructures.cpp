@@ -109,6 +109,11 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     // Resolve address of iterator
     LLVMExprResult callResult = {.value = iterator, .node = iteratorAssignNode};
     iteratorPtr = resolveAddress(callResult);
+
+    // Attach address to anonymous symbol to keep track of deallocation
+    SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(iteratorAssignNode->codeLoc);
+    assert(returnSymbol != nullptr);
+    returnSymbol->updateAddress(iteratorPtr);
   } else { // The iteratorAssignExpr is of type Iterator
     iteratorPtr = resolveAddress(iteratorAssignNode);
   }

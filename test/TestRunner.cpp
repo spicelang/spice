@@ -260,6 +260,10 @@ void execTestCase(const TestCase &testCase) {
     TestUtil::handleError(testCase, error);
   } catch (CompilerError &error) {
     TestUtil::handleError(testCase, error);
+  } catch (LinkerError &error) {
+    TestUtil::handleError(testCase, error);
+  } catch (std::exception &error) {
+    TestUtil::handleError(testCase, error);
   }
 
   SUCCEED();

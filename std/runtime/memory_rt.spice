@@ -8,6 +8,9 @@ ext f<heap byte*> realloc(heap byte*, unsigned long);
 ext p free(heap byte*);
 ext p memcpy(heap byte*, heap byte*, unsigned long);
 
+// Generic type defs
+type T dyn;
+
 /**
   * Allocates a new block of memory of the given size.
   *
@@ -16,7 +19,7 @@ ext p memcpy(heap byte*, heap byte*, unsigned long);
   */
 public f<Result<heap byte*>> sAlloc(unsigned long size) {
     heap byte* ptr = malloc(size);
-    return ptr != nil<heap byte*> ? ok(ptr) : err(nil<heap byte*>, "Out of memory occurred!");
+    return ptr != nil<heap byte*> ? ok(ptr) : err<heap byte*>("Out of memory occurred!");
 }
 
 /**
@@ -28,7 +31,7 @@ public f<Result<heap byte*>> sAlloc(unsigned long size) {
   */
 public f<Result<heap byte*>> sRealloc(heap byte* ptr, unsigned long size) {
     heap byte* newPtr = realloc(ptr, size);
-    return newPtr != nil<heap byte*> ? ok(newPtr) : err(nil<heap byte*>, "Out of memory occurred!");
+    return newPtr != nil<heap byte*> ? ok(newPtr) : err<heap byte*>("Out of memory occurred!");
 }
 
 /**
@@ -41,7 +44,7 @@ public f<Result<heap byte*>> sRealloc(heap byte* ptr, unsigned long size) {
   */
 public f<Result<heap byte*>> sCopy(heap byte* oldPtr, heap byte* newPtr, unsigned long size) {
     if oldPtr == nil<heap byte*> | newPtr == nil<heap byte*> {
-        return err(nil<heap byte*>, "Cannot copy from or to nil pointer!");
+        return err<heap byte*>("Cannot copy from or to nil pointer!");
     }
     memcpy(newPtr, oldPtr, size);
     return ok(newPtr);
@@ -57,4 +60,64 @@ public p sDealloc(heap byte*& ptr) {
     if ptr == nil<heap byte*> { return; }
     free(ptr);
     ptr = nil<heap byte*>; // Zero out to prevent accidental double frees
+}
+
+/**
+ * Allocates memory for a new instance of the given type on the heap.
+ * Note: This function panics if the allocation fails.
+ *
+ * @return A pointer to the heap-allocated instance
+ */
+public f<heap T*> sNew<T>() {
+    unsafe {
+        // Allocate memory for the instance
+        Result<heap byte*> res = sAlloc(sizeof(type T));
+        return (heap T*) res.unwrap();
+    }
+}
+
+/**
+ * Allocates memory for a new instance of the given type on the heap.
+ * Note: This function panics if the allocation fails.
+ *
+ * @param val The value to put into the heap-allocated memory
+ * @return A pointer to the heap-allocated instance
+ */
+public f<heap T*> sNew<T>(const T& val) {
+    unsafe {
+        // Allocate memory for the instance
+        Result<heap byte*> res = sAlloc(sizeof(type T));
+        result = (heap T*) res.unwrap();
+        // Copy the value into the heap-allocated memory
+        sCopy((heap byte*) &val, (heap byte*) result, sizeof(type T));
+    }
+}
+
+/**
+ * Allocates memory for a new instance of the given type on the heap.
+ *
+ * @param ptr The pointer to the heap-allocated memory
+ * @param val The value to put into the heap-allocated memory
+ * @return A pointer to the heap-allocated instance
+ */
+public f<heap T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
+    unsafe {
+        // Copy the value into the heap-allocated memory
+        sCopy((heap byte*) &val, (heap byte*) ptr, sizeof(type T));
+    }
+    return ptr;
+}
+
+/**
+ * Destroys the given heap-allocated instance and frees the memory.
+ *
+ * @param ptr The pointer to the heap-allocated instance
+ */
+public p sDelete<T>(heap T*& ptr) {
+    unsafe {
+        // Destruct the object
+        ptr.dtor();
+        // Deallocate the memory
+        sDealloc((heap byte*&) ptr);
+    }
 }

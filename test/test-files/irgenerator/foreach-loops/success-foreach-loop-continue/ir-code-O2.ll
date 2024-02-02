@@ -15,7 +15,7 @@ target triple = "x86_64-w64-windows-gnu"
 define dso_local i32 @main() local_unnamed_addr #0 {
   %shortIterator = alloca %struct.NumberIterator, align 8
   %1 = alloca %struct.NumberIterator.1, align 8
-  %2 = tail call %struct.NumberIterator @_Z5rangess(i16 3, i16 8) #2
+  %2 = tail call %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16 3, i16 8) #2
   %.fca.0.0.extract2 = extractvalue %struct.NumberIterator %2, 0, 0
   store ptr %.fca.0.0.extract2, ptr %shortIterator, align 8
   %.fca.1.extract4 = extractvalue %struct.NumberIterator %2, 1
@@ -46,7 +46,7 @@ foreach.body.L5:                                  ; preds = %foreach.body.L5.lr.
   br i1 %.not, label %foreach.tail.L5, label %if.then.L7
 
 if.then.L7:                                       ; preds = %foreach.body.L5
-  %9 = call %struct.NumberIterator.1 @_Z5rangell(i64 1, i64 2) #2
+  %9 = call %struct.NumberIterator.1 @_Z5rangeIlE14NumberIteratorIlEll(i64 1, i64 2) #2
   %.fca.0.0.extract = extractvalue %struct.NumberIterator.1 %9, 0, 0
   store ptr %.fca.0.0.extract, ptr %1, align 8
   %.fca.1.extract = extractvalue %struct.NumberIterator.1 %9, 1
@@ -74,7 +74,7 @@ foreach.exit.L5:                                  ; preds = %foreach.tail.L5, %0
   ret i32 0
 }
 
-declare %struct.NumberIterator @_Z5rangess(i16, i16) local_unnamed_addr
+declare %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16, i16) local_unnamed_addr
 
 declare i1 @_ZN14NumberIteratorIsE7isValidEv(ptr) local_unnamed_addr
 
@@ -83,7 +83,7 @@ declare ptr @_ZN14NumberIteratorIsE3getEv(ptr) local_unnamed_addr
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_addr #1
 
-declare %struct.NumberIterator.1 @_Z5rangell(i64, i64) local_unnamed_addr
+declare %struct.NumberIterator.1 @_Z5rangeIlE14NumberIteratorIlEll(i64, i64) local_unnamed_addr
 
 declare i1 @_ZN14NumberIteratorIlE7isValidEv(ptr) local_unnamed_addr
 

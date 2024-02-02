@@ -12,7 +12,7 @@ target triple = "x86_64-w64-windows-gnu"
 @printf.str.2 = private unnamed_addr constant [9 x i8] c"Int: %d\0A\00", align 1, !dbg !12
 
 ; Function Attrs: norecurse
-define private void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %0) #0 !dbg !24 {
+define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %0) #0 !dbg !24 {
   %this = alloca ptr, align 8
   call void @llvm.dbg.declare(metadata ptr %this, metadata !45, metadata !DIExpression()), !dbg !47
   store ptr %0, ptr %this, align 8, !dbg !47
@@ -35,7 +35,7 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !48 {
   call void @llvm.dbg.declare(metadata ptr %result, metadata !52, metadata !DIExpression()), !dbg !53
   call void @llvm.dbg.declare(metadata ptr %ref, metadata !54, metadata !DIExpression()), !dbg !55
   store ptr %0, ptr %ref, align 8, !dbg !55
-  call void @_ZN6String4ctorEPc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.0), !dbg !56
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.0), !dbg !56
   store i64 6, ptr %ts, align 8, !dbg !57
   %3 = load %struct.String, ptr %2, align 8, !dbg !57
   %4 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !57
@@ -49,7 +49,7 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !48 {
   ret %struct.TestStruct %8, !dbg !60
 }
 
-declare void @_ZN6String4ctorEPc(ptr, ptr)
+declare void @_ZN6String4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #2 !dbg !61 {
@@ -93,7 +93,7 @@ attributes #3 = { nofree nounwind }
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "anon.string.0", linkageName: "anon.string.0", scope: !2, file: !7, line: 8, type: !15, isLocal: true, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_20, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
 !3 = !DIFile(filename: "C:\\Users\\Marc\\Documents\\JustForFunGitHubClonesFast\\spice\\cmake-build-debug\\test\\test-files\\irgenerator\\debug-info\\success-dbg-info-simple\\source.spice", directory: ".\\test-files\\irgenerator\\debug-info\\success-dbg-info-simple")
 !4 = !{!0, !5, !9, !12}
 !5 = !DIGlobalVariableExpression(var: !6, expr: !DIExpression())
@@ -115,7 +115,7 @@ attributes #3 = { nofree nounwind }
 !21 = !{i32 7, !"uwtable", i32 2}
 !22 = !{i32 7, !"frame-pointer", i32 2}
 !23 = !{!"spice version dev (https://github.com/spicelang/spice)"}
-!24 = distinct !DISubprogram(name: "dtor", linkageName: "_ZN10TestStruct4dtorEv", scope: !7, file: !7, line: 1, type: !25, scopeLine: 1, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !44)
+!24 = distinct !DISubprogram(name: "dtor", linkageName: "_ZN10TestStruct4dtorEv", scope: !7, file: !7, line: 1, type: !25, scopeLine: 1, flags: DIFlagPublic | DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !44)
 !25 = !DISubroutineType(types: !26)
 !26 = !{!27, !28}
 !27 = !DIBasicType(name: "void", encoding: DW_ATE_unsigned)

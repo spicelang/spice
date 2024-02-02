@@ -16,7 +16,7 @@ Type "apropos word" to search for commands related to "word"...
 Reading symbols from .\source.exe...
 Breakpoint 1: file source.spice, line 42.
 
-Thread 1 hit Breakpoint 1, _Z4mainiPPc (_argc=1, _argv=...) at source.spice:42
+Thread 1 hit Breakpoint 1, main (_argc=1, _argv=...) at source.spice:42
 42	    it.next();
 result = 0
 vi = {contents = , capacity = 5, size = 5}
@@ -25,4 +25,4 @@ pair = {first = 2, second = }
 $1 = {contents = , capacity = 5, size = 5}
 $2 = 5
 All assertions passed!
-[Inferior 1 (process 28044) exited normally]
+[Inferior 1 (process 23144) exited normally]

@@ -33,7 +33,7 @@ assert.exit.L8:                                   ; preds = %1
   %8 = load ptr, ptr %this, align 8
   %field2_addr = getelementptr inbounds %struct.Vector, ptr %8, i32 0, i32 1
   %9 = load ptr, ptr %field2_addr, align 8
-  %10 = call i1 @_Z10isRawEqualPcPc(ptr %9, ptr @anon.string.1)
+  %10 = call i1 @_Z10isRawEqualPKcPKc(ptr %9, ptr @anon.string.1)
   br i1 %10, label %assert.exit.L9, label %assert.then.L9, !prof !0
 
 assert.then.L9:                                   ; preds = %assert.exit.L8
@@ -54,7 +54,7 @@ declare i32 @memcmp(ptr, ptr, i64) #1
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2
 
-declare i1 @_Z10isRawEqualPcPc(ptr, ptr)
+declare i1 @_Z10isRawEqualPKcPKc(ptr, ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #3 {
