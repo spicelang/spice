@@ -105,7 +105,6 @@ void Driver::init() {
  */
 void Driver::enrich() {
   // Make path of given main source file canonical and relative
-  cliOptions.mainSourceFile = std::filesystem::canonical(cliOptions.mainSourceFile);
   cliOptions.mainSourceFile = std::filesystem::relative(cliOptions.mainSourceFile);
 
   // Propagate llvm args to llvm
