@@ -534,8 +534,13 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
 void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, const std::string &dependencyName,
                                const std::string &path) {
   // Check if this would cause a circular dependency
-  if (isAlreadyImported(path))
-    throw SemanticError(declNode, CIRCULAR_DEPENDENCY, "Circular import detected while importing '" + sourceFile->fileName + "'");
+  std::vector<const SourceFile *> dependencyCircle;
+  if (isAlreadyImported(path, dependencyCircle)) {
+    std::stringstream errorMessage;
+    errorMessage << "Circular import detected while importing '" << sourceFile->fileName << "':\n\n";
+    errorMessage << CommonUtil::getCircularImportMessage(dependencyCircle);
+    throw SemanticError(declNode, CIRCULAR_DEPENDENCY, errorMessage.str());
+  }
 
   // Add the dependency
   sourceFile->mainFile = false;
@@ -549,12 +554,14 @@ bool SourceFile::imports(const SourceFile *sourceFile) const {
   return std::ranges::any_of(dependencies, [=](const auto &dependency) { return dependency.second == sourceFile; });
 }
 
-bool SourceFile::isAlreadyImported(const std::string &filePathSearch) const { // NOLINT(misc-no-recursion)
+bool SourceFile::isAlreadyImported(const std::string &filePathSearch,
+                                   std::vector<const SourceFile *> &circle) const { // NOLINT(misc-no-recursion)
+  circle.push_back(this);
   // Check if the current source file corresponds to the path to search
   if (std::filesystem::equivalent(filePath, filePathSearch))
     return true;
   // Check parent recursively
-  return parent != nullptr && parent->isAlreadyImported(filePathSearch);
+  return parent != nullptr && parent->isAlreadyImported(filePathSearch, circle);
 }
 
 SourceFile *SourceFile::requestRuntimeModule(RuntimeModule runtimeModule) {

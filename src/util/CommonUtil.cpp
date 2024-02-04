@@ -4,6 +4,8 @@
 
 #include <cxxabi.h>
 
+#include <SourceFile.h>
+
 #ifdef OS_WINDOWS
 #include <windows.h>
 #elif OS_UNIX
@@ -99,6 +101,26 @@ bool CommonUtil::isValidMangledName(const std::string &mangledName) {
   char *demangled = abi::__cxa_demangle(mangledName.c_str(), nullptr, nullptr, &status);
   free(demangled);
   return status == 0;
+}
+
+/**
+ * Generate a circular import message from the given source files
+ *
+ * @param sourceFiles Source files building the circular dependency chain
+ * @return Error message
+ */
+std::string CommonUtil::getCircularImportMessage(const std::vector<const SourceFile *> &sourceFiles) {
+  std::stringstream message;
+  message << "*-----*\n";
+  message << "|     |\n";
+  for (size_t i = 0; i < sourceFiles.size(); i++) {
+    if (i != 0)
+      message << "|     |\n";
+    message << "|  " << sourceFiles.at(i)->fileName.c_str() << "\n";
+  }
+  message << "|     |\n";
+  message << "*-----*";
+  return message.str();
 }
 
 /**
