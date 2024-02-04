@@ -2,7 +2,7 @@
 import "std/data/stack";
 
 // Own imports
-//import "../compiler-pass";
+import "../compiler-pass";
 import "../lexer/lexer";
 import "../lexer/token";
 import "../ast/ast-nodes";
@@ -10,7 +10,7 @@ import "../ast/ast-nodes";
 // Generic types
 type T dyn;
 
-public type Parser struct /*: ICompilerPass*/ {
+public type Parser struct : ICompilerPass {
     //compose CompilerPass
     Lexer& lexer
     Stack<ASTNode*> parentStack

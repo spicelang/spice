@@ -2,12 +2,12 @@
 import "std/type/byte";
 import "std/data/vector";
 import "std/data/unordered-map";
+import "std/time/timer";
 
 // Own imports
 import "../global/runtime-module-manager";
 import "../linker/external-linker-interface";
 import "../reader/code-loc";
-import "../util/timer";
 import "../util/memory";
 import "../util/block-allocator";
 import "../bindings/llvm/llvm";
