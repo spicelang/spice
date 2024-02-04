@@ -8,6 +8,9 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+class SourceFile;
+
 /**
  * Util for general simplification of tasks
  */
@@ -19,6 +22,7 @@ public:
   static std::vector<std::string> split(const std::string &input);
   static size_t getSystemPageSize();
   static bool isValidMangledName(const std::string &mangledName);
+  static std::string getCircularImportMessage(const std::vector<const SourceFile *> &sourceFiles);
   static std::string getVersionInfo();
 };
 

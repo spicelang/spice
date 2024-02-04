@@ -1,5 +1,15 @@
 [Error|Semantic] ../source2.spice:1:1:
-Circular import detected: Circular import detected while importing 'source.spice'
+Circular import detected: Circular import detected while importing 'source.spice':
+
+*-----*
+|     |
+|  source2.spice
+|     |
+|  source1.spice
+|     |
+|  source.spice
+|     |
+*-----*
 
 1  import "source" as s;
    ^^^^^^^^^^^^^^^^^^^^^

@@ -26,7 +26,7 @@ Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface 
   const std::string signature = newManifestation.getSignature();
 
   // Make sure that the manifestation does not exist already
-  for (const auto &manifestations : insertScope->interfaces)
+  for ([[maybe_unused]] const auto &manifestations : insertScope->interfaces)
     assert(!manifestations.second.contains(newManifestation.getSignature()));
 
   // Retrieve the matching manifestation list of the scope
