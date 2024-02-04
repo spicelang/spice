@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/builtins/error-printf-wrong-type2/source.spice:2:18:
+[Error|Semantic] ./source.spice:2:18:
 Types of printf call not matching: The placeholder string expects double, but got bool
 
 2  printf("%f", true);

@@ -1,1 +1,1 @@
-[Warning] ./test-files/typechecker/warnings/warning-unused-struct/source.spice:1:1: Unused struct: The struct 'UnusedStruct' is unused
+[Warning] ./source.spice:1:1: Unused struct: The struct 'UnusedStruct' is unused

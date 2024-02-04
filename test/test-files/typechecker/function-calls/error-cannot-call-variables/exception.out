@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/function-calls/error-cannot-call-variables/source.spice:3:22:
+[Error|Semantic] ./source.spice:3:22:
 Referenced undefined function: Function/procedure/struct 'variable' could not be found
 
 3  int calcResult = variable();

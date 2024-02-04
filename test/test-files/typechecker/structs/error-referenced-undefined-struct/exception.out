@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/structs/error-referenced-undefined-struct/source.spice:7:20:
+[Error|Semantic] ./source.spice:7:20:
 Referenced undefined struct: Cannot find struct 'TestStructTypo'
 
 7  TestStruct a = TestStructTypo { 1, 2 };

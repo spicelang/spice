@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/function-pointers/error-type-mismatch1/source.spice:6:5:
+[Error|Semantic] ./source.spice:6:5:
 Wrong data type for operator: Cannot apply '=' operator on types f<int>(bool,double) and f<int>(bool,string)
 
 6  f<int>(bool, double) fct = test;

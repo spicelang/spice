@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/symboltablebuilder/interfaces/error-duplicate-interface-def/source.spice:5:1:
+[Error|Semantic] ./source.spice:5:1:
 Duplicate symbol: Duplicate symbol 'Person'
 
 5  type Person interface {

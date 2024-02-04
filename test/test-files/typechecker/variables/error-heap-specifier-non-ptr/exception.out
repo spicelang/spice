@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/variables/error-heap-specifier-non-ptr/source.spice:3:5:
+[Error|Semantic] ./source.spice:3:5:
 Specifier at illegal context: The heap specifier can only be applied to symbols of pointer type, you provided int
 
 3  heap int test = t;

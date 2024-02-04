@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/symboltablebuilder/functions/error-duplicate-main-function-def/source.spice:5:1:
+[Error|Semantic] ./source.spice:5:1:
 Multiple declarations of a function/procedure: Main function is declared twice
 
 5  f<int> main() {

@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/variables/error-dyn-pointer/source.spice:3:5:
+[Error|Semantic] ./source.spice:3:5:
 Dyn pointers not allowed: Just use the dyn type without '*' instead
 
 3  dyn* dynPointer = &s;

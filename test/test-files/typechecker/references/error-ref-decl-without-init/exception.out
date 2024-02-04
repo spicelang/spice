@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/references/error-ref-decl-without-init/source.spice:2:5:
+[Error|Semantic] ./source.spice:2:5:
 Reference without initializer: References must always be initialized directly
 
 2  int& ref;

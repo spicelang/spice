@@ -1,2 +1,2 @@
-[Warning] ./test-files/typechecker/warnings/warning-unused-method/source.spice:9:1: Unused method: The method 'string TestStruct.unusedFunction()' is unused
-[Warning] ./test-files/typechecker/warnings/warning-unused-method/source.spice:5:1: Unused method: The method 'TestStruct.unusedProcedure()' is unused
+[Warning] ./source.spice:9:1: Unused method: The method 'string TestStruct.unusedFunction()' is unused
+[Warning] ./source.spice:5:1: Unused method: The method 'TestStruct.unusedProcedure()' is unused

@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/for-loops/error-for-condition-bool/source.spice:2:20:
+[Error|Semantic] ./source.spice:2:20:
 Condition must be bool: For loop condition must be of type bool
 
 2  for int i = 0; "No bool"; i++ {

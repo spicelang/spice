@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/lambdas/error-dyn-return-type/source.spice:2:28:
+[Error|Semantic] ./source.spice:2:28:
 Unexpected dyn type: Dyn return types are not allowed
 
 2  f<dyn>(int x, int y) {

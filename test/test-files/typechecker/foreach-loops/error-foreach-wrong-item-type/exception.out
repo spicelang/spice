@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/foreach-loops/error-foreach-wrong-item-type/source.spice:4:13:
+[Error|Semantic] ./source.spice:4:13:
 Wrong data type for operator: Passed wrong data type to foreach item. Expected double but got int&
 
 4  foreach double item : range(1, 5) {
