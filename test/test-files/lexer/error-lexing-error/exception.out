@@ -1,1 +1,1 @@
-[Error|Lexer] ./test-files/lexer/error-lexing-error/source.spice:1:0: Tokenizing failed: token recognition error at: '"test'
+[Error|Lexer] ./source.spice:1:0: Tokenizing failed: token recognition error at: '"test'

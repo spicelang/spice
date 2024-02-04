@@ -1,1 +1,1 @@
-[Error|Parser] ./test-files/parser/error-wrong-attribute-value-type/source.spice:1:29: Invalid attribute value type: Invalid attribute value type
+[Error|Parser] ./source.spice:1:29: Invalid attribute value type: Invalid attribute value type

@@ -614,6 +614,10 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
     warning.print();
 }
 
+const SourceFile *SourceFile::getRootSourceFile() const { // NOLINT(misc-no-recursion)
+  return parent == nullptr ? this : parent->getRootSourceFile();
+}
+
 bool SourceFile::isRT(RuntimeModule runtimeModule) const {
   assert(IDENTIFYING_TOP_LEVEL_NAMES.contains(runtimeModule));
   const char *topLevelName = IDENTIFYING_TOP_LEVEL_NAMES.at(runtimeModule);

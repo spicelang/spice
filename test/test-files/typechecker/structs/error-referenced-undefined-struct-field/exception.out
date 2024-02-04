@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/structs/error-referenced-undefined-struct-field/source.spice:8:27:
+[Error|Semantic] ./source.spice:8:27:
 Referenced undefined variable: Field 'f3' not found in struct TestStruct
 
 8  intf("Field 1: %d", a.f3);

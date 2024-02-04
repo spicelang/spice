@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/procedures/error-non-generic-template-type/source.spice:1:8:
+[Error|Semantic] ./source.spice:1:8:
 Expected a generic type: A template list can only contain generic types
 
 1  p test<byte>() {}

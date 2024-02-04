@@ -1,1 +1,1 @@
-[Warning] ./test-files/typechecker/warnings/warning-unreachable-code/source.spice:4:5: Unreachable code detected: This statement is unreachable
+[Warning] ./source.spice:4:5: Unreachable code detected: This statement is unreachable

@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/structs/error-custom-type-unknown/source.spice:8:5:
+[Error|Semantic] ./source.spice:8:5:
 Unknown datatype: Unknown datatype 'NonExisting'
 
 8  NonExisting instance = Test { "

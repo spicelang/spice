@@ -22,7 +22,10 @@ std::string CodeLoc::toString() const { return "L" + std::to_string(line) + "C" 
  * @return Pretty code location
  */
 std::string CodeLoc::toPrettyString() const {
-  const std::filesystem::path &sourceFilePath = sourceFile->filePath;
+  const std::filesystem::path &rootSourceFilePath = sourceFile->getRootSourceFile()->filePath;
+  std::filesystem::path sourceFilePath = std::filesystem::relative(sourceFile->filePath, rootSourceFilePath);
+  if (sourceFilePath == ".")
+    sourceFilePath /= sourceFile->fileName;
   const std::string prefix = sourceFilePath.empty() ? "" : sourceFilePath.generic_string() + ":";
   return prefix + std::to_string(line) + ":" + std::to_string(col);
 }

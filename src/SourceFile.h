@@ -148,6 +148,7 @@ public:
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(const std::string &symbolName) const;
   void checkForSoftErrors();
   void collectAndPrintWarnings();
+  const SourceFile *getRootSourceFile() const;
   bool isRT(RuntimeModule runtimeModule) const;
   ALWAYS_INLINE bool isStringRT() const { return isRT(STRING_RT); }
   ALWAYS_INLINE bool isRttiRT() const { return isRT(RTTI_RT); }

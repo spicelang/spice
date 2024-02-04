@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/builtins/error-printf-type-incompatibility/source.spice:6:36:
+[Error|Semantic] ./source.spice:6:36:
 Types of printf call not matching: The placeholder string expects char, but got string
 
 6  s is a string: %c", "test");

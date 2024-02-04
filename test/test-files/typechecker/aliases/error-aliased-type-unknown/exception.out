@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/aliases/error-aliased-type-unknown/source.spice:2:22:
+[Error|Semantic] ./source.spice:2:22:
 Unknown datatype: Unknown datatype 'UnknownStruct'
 
 2  ype TestAlias alias UnknownStruct<T>;

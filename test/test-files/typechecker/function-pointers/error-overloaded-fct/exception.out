@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/function-pointers/error-overloaded-fct/source.spice:4:21:
+[Error|Semantic] ./source.spice:4:21:
 Referenced overloaded function: Overloaded functions or functions with optional parameters cannot be referenced
 
 4  p(double) fct = overloadedFct;

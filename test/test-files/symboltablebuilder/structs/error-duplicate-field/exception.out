@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/symboltablebuilder/structs/error-duplicate-field/source.spice:4:5:
+[Error|Semantic] ./source.spice:4:5:
 Multiple declarations of the same variable: The field 'a' was declared more than once
 
 4  string a

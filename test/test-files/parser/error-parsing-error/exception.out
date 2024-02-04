@@ -1,1 +1,1 @@
-[Error|Parser] ./test-files/parser/error-parsing-error/source.spice:1:1: Parsing failed: no viable alternative at input 'f'
+[Error|Parser] ./source.spice:1:1: Parsing failed: no viable alternative at input 'f'

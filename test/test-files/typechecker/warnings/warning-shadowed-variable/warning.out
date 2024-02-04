@@ -1,1 +1,1 @@
-[Warning] ./test-files/typechecker/warnings/warning-shadowed-variable/source.spice:4:9: Shadowed variable: Variable 'test' shadows a variable in a parent scope
+[Warning] ./source.spice:4:9: Shadowed variable: Variable 'test' shadows a variable in a parent scope

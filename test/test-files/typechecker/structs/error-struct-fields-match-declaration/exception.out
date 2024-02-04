@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/structs/error-struct-fields-match-declaration/source.spice:8:37:
+[Error|Semantic] ./source.spice:8:37:
 Wrong data type for operator: Given type of the field value does not match declaration. Expected double* but got double
 
 8  ance = TestStruct { 6.987, "Hello!", false };

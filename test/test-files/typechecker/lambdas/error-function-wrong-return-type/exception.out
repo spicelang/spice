@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/lambdas/error-function-wrong-return-type/source.spice:3:16:
+[Error|Semantic] ./source.spice:3:16:
 Wrong data type for operator: Passed wrong data type to return statement. Expected int but got string
 
 3  return "String";

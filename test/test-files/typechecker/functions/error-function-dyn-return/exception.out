@@ -1,13 +1,13 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/functions/error-function-dyn-return/source.spice:1:1:
+[Error|Semantic] ./source.spice:1:1:
 Unexpected dyn type: Dyn return types are not allowed
 
 1  f<dyn> test() {
    ^^^^^^^^^^^^^^^
 
-[Error|Semantic] ./test-files/typechecker/functions/error-function-dyn-return/source.spice:6:13:
+[Error|Semantic] ./source.spice:6:13:
 Referenced undefined function: Function/procedure 'test()' could not be found
 
 6  dyn t = test();

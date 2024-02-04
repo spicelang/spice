@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/methods/error-method-on-field-without-this/source.spice:12:5:
+[Error|Semantic] ./source.spice:12:5:
 Referenced undefined variable: The symbol 'a' could not be found. Missing 'this.' prefix?
 
 12  a.foo();
