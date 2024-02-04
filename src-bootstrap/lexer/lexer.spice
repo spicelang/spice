@@ -69,23 +69,24 @@ public f<CodeLoc> Lexer.getCodeLoc() {
 f<Token> Lexer.consumeToken() {
     // Get the current char from the reader instance
     char curChar = this.reader.getChar();
+    const CodeLoc codeLoc = this.reader.getCodeLoc();
 
     // Check if EOF
     if this.reader.isEOF() {
-        return Token(TokenType::EOF, "EOF", this.reader.getCodeLoc());
+        return Token(TokenType::EOF, "EOF", codeLoc);
     }
     // Check if identifier
     if isAlpha(curChar) || curChar == '_' {
         if isUpper(curChar) { // Type identifier
-            return this.consumeTypeIdentifier();
+            return this.consumeTypeIdentifier(codeLoc);
         } else { // Normal identifier or keyword
-            return this.consumeKeywordOrIdentifier();
+            return this.consumeKeywordOrIdentifier(codeLoc);
         }
     }
     // Check if number
     if isDigit(curChar) {
         // Consume number literal
-        Token numericLiteral = this.consumeNumberLiteral();
+        Token numericLiteral = this.consumeNumberLiteral(codeLoc);
 
         // Patch token type if suffix is present
         const char literalSuffix = this.reader.getChar();
@@ -99,46 +100,46 @@ f<Token> Lexer.consumeToken() {
     }
     // Check if char literal
     if curChar == '\'' {
-        return this.consumeCharLiteral();
+        return this.consumeCharLiteral(codeLoc);
     }
     // Check if string literal
     if curChar == '"' {
-        return this.consumeStringLiteral();
+        return this.consumeStringLiteral(codeLoc);
     }
 
     // Check if operator can consumed
     if curChar == '{' {
         this.reader.advance(); // Consume '{'
-        return Token(TokenType::LBRACE, "{", this.reader.getCodeLoc());
+        return Token(TokenType::LBRACE, "{", codeLoc);
     }
     if curChar == '}' {
         this.reader.advance(); // Consume '}'
-        return Token(TokenType::RBRACE, "}", this.reader.getCodeLoc());
+        return Token(TokenType::RBRACE, "}", codeLoc);
     }
     if curChar == '(' {
         this.reader.advance(); // Consume '('
-        return Token(TokenType::LPAREN, "(", this.reader.getCodeLoc());
+        return Token(TokenType::LPAREN, "(", codeLoc);
     }
     if curChar == ')' {
         this.reader.advance(); // Consume ')'
-        return Token(TokenType::RPAREN, ")", this.reader.getCodeLoc());
+        return Token(TokenType::RPAREN, ")", codeLoc);
     }
     if curChar == '[' {
         this.reader.advance(); // Consume '['
-        return Token(TokenType::LBRACKET, "[", this.reader.getCodeLoc());
+        return Token(TokenType::LBRACKET, "[", codeLoc);
     }
     if curChar == ']' {
         this.reader.advance(); // Consume ']'
-        return Token(TokenType::RBRACKET, "]", this.reader.getCodeLoc());
+        return Token(TokenType::RBRACKET, "]", codeLoc);
     }
     if curChar == '|' {
         this.reader.advance(); // Consume '|'
         curChar = this.reader.getChar();
         if this.reader.getChar() == '|' { // "||"
             this.reader.advance(); // Consume '|'
-            return Token(TokenType::LOGICAL_OR, "||", this.reader.getCodeLoc());
+            return Token(TokenType::LOGICAL_OR, "||", codeLoc);
         } else { // '|'
-            return Token(TokenType::BITWISE_OR, "||", this.reader.getCodeLoc());
+            return Token(TokenType::BITWISE_OR, "||", codeLoc);
         }
     }
     if curChar == '&' {
@@ -146,89 +147,89 @@ f<Token> Lexer.consumeToken() {
         curChar = this.reader.getChar();
         if this.reader.getChar() == '&' { // "&&"
             this.reader.advance(); // Consume '&'
-            return Token(TokenType::LOGICAL_AND, "&&", this.reader.getCodeLoc());
+            return Token(TokenType::LOGICAL_AND, "&&", codeLoc);
         } else { // '&'
-            return Token(TokenType::BITWISE_AND, "&&", this.reader.getCodeLoc());
+            return Token(TokenType::BITWISE_AND, "&&", codeLoc);
         }
     }
     if curChar == '^' {
         this.reader.advance(); // Consume '^'
         if this.reader.getChar() == '=' { // "^="
             this.reader.advance(); // Consume '='
-            return Token(TokenType::XOR_EQUAL, "^=", this.reader.getCodeLoc());
+            return Token(TokenType::XOR_EQUAL, "^=", codeLoc);
         } else { // '^'
-            return Token(TokenType::BITWISE_XOR, "^", this.reader.getCodeLoc());
+            return Token(TokenType::BITWISE_XOR, "^", codeLoc);
         }
     }
     if curChar == '~' {
         this.reader.advance(); // Consume '~'
-        return Token(TokenType::BITWISE_NOT, "~", this.reader.getCodeLoc());
+        return Token(TokenType::BITWISE_NOT, "~", codeLoc);
     }
     if curChar == '!' {
         this.reader.advance(); // Consume '!'
         if this.reader.getChar() == '=' { // "!="
             this.reader.advance(); // Consume '='
-            return Token(TokenType::NOT_EQUAL, "!=", this.reader.getCodeLoc());
+            return Token(TokenType::NOT_EQUAL, "!=", codeLoc);
         } else { // '!'
-            return Token(TokenType::NOT, "!", this.reader.getCodeLoc());
+            return Token(TokenType::NOT, "!", codeLoc);
         }
     }
     if curChar == '+' {
         this.reader.advance(); // Consume '+'
         if this.reader.getChar() == '+' { // "++"
             this.reader.advance(); // Consume '+'
-            return Token(TokenType::PLUS_PLUS, "++", this.reader.getCodeLoc());
+            return Token(TokenType::PLUS_PLUS, "++", codeLoc);
         } else if this.reader.getChar() == '=' { // "+="
             this.reader.advance(); // Consume '='
-            return Token(TokenType::PLUS_EQUAL, "+=", this.reader.getCodeLoc());
+            return Token(TokenType::PLUS_EQUAL, "+=", codeLoc);
         } else { // '+'
-            return Token(TokenType::PLUS, "+", this.reader.getCodeLoc());
+            return Token(TokenType::PLUS, "+", codeLoc);
         }
     }
     if curChar == '-' {
         this.reader.advance(); // Consume '-'
         if this.reader.getChar() == '-' { // "--"
             this.reader.advance(); // Consume '-'
-            return Token(TokenType::MINUS_MINUS, "--", this.reader.getCodeLoc());
+            return Token(TokenType::MINUS_MINUS, "--", codeLoc);
         } else if this.reader.getChar() == '=' { // "-="
             this.reader.advance(); // Consume '='
-            return Token(TokenType::MINUS_EQUAL, "-=", this.reader.getCodeLoc());
+            return Token(TokenType::MINUS_EQUAL, "-=", codeLoc);
         } else if this.reader.getChar() == '>' { // "->"
             this.reader.advance(); // Consume '>'
-            return Token(TokenType::ARROW, "->", this.reader.getCodeLoc());
+            return Token(TokenType::ARROW, "->", codeLoc);
         } else { // '-'
-            return Token(TokenType::MINUS, "-", this.reader.getCodeLoc());
+            return Token(TokenType::MINUS, "-", codeLoc);
         }
     }
     if curChar == '*' {
         this.reader.advance(); // Consume '*'
         if this.reader.getChar() == '=' { // "*="
             this.reader.advance(); // Consume '='
-            return Token(TokenType::MUL_EQUAL, "*=", this.reader.getCodeLoc());
+            return Token(TokenType::MUL_EQUAL, "*=", codeLoc);
         } else { // '*'
-            return Token(TokenType::MUL, "*", this.reader.getCodeLoc());
+            return Token(TokenType::MUL, "*", codeLoc);
         }
     }
     if curChar == '/' {
         this.reader.advance(); // Consume '/'
         if this.reader.getChar() == '=' { // "/="
             this.reader.advance(); // Consume '='
-            return Token(TokenType::DIV_EQUAL, "/=", this.reader.getCodeLoc());
+            return Token(TokenType::DIV_EQUAL, "/=", codeLoc);
         } else if this.reader.getChar() == '/' { // "//"
-            return this.consumeLineComment();
+            return this.consumeLineComment(codeLoc);
         } else if this.reader.getChar() == '*' { // "/*"
-            return this.consumeBlockOrDocComment();
+            return this.consumeBlockOrDocComment(codeLoc);
         } else { // '/'
-            return Token(TokenType::DIV, "/", this.reader.getCodeLoc());
+            return Token(TokenType::DIV, "/", codeLoc);
         }
     }
     if curChar == '%' {
         this.reader.advance(); // Consume '%'
         if this.reader.getChar() == '=' { // "%="
             this.reader.advance(); // Consume '='
-            return Token(TokenType::REM_EQUAL, "%=", this.reader.getCodeLoc());
+            return Token(TokenType::REM_EQUAL, "%=", codeLoc);
         } else { // '%'
-            return Token(TokenType::REM, "%", this.reader.getCodeLoc());
+            return Token(TokenType::REM, "%", codeLoc);
         }
     }
     if curChar == '=' {
@@ -236,9 +237,9 @@ f<Token> Lexer.consumeToken() {
         curChar = this.reader.getChar();
         if this.reader.getChar() == '=' { // "=="
             this.reader.advance(); // Consume '='
-            return Token(TokenType::EQUAL, "==", this.reader.getCodeLoc());
+            return Token(TokenType::EQUAL, "==", codeLoc);
         } else { // '='
-            return Token(TokenType::ASSIGN, "=", this.reader.getCodeLoc());
+            return Token(TokenType::ASSIGN, "=", codeLoc);
         }
     }
     if curChar == '<' {
@@ -246,17 +247,17 @@ f<Token> Lexer.consumeToken() {
         curChar = this.reader.getChar();
         if this.reader.getChar() == '=' { // "<="
             this.reader.advance(); // Consume '='
-            return Token(TokenType::LESS_EQUAL, "<=", this.reader.getCodeLoc());
+            return Token(TokenType::LESS_EQUAL, "<=", codeLoc);
         } else if this.reader.getChar() == '<' { // "<<"
             this.reader.advance(); // Consume '<'
             if this.reader.getChar() == '=' { // "<<="
                 this.reader.advance(); // Consume '='
-                return Token(TokenType::SHL_EQUAL, "<<=", this.reader.getCodeLoc());
+                return Token(TokenType::SHL_EQUAL, "<<=", codeLoc);
             } else { // "<<"
-                return Token(TokenType::SHL, "<<", this.reader.getCodeLoc());
+                return Token(TokenType::SHL, "<<", codeLoc);
             }
         } else { // '<'
-            return Token(TokenType::LESS, "<", this.reader.getCodeLoc());
+            return Token(TokenType::LESS, "<", codeLoc);
         }
     }
     if curChar == '>' {
@@ -264,66 +265,65 @@ f<Token> Lexer.consumeToken() {
         curChar = this.reader.getChar();
         if this.reader.getChar() == '=' { // ">="
             this.reader.advance(); // Consume '='
-            return Token(TokenType::GREATER_EQUAL, ">=", this.reader.getCodeLoc());
+            return Token(TokenType::GREATER_EQUAL, ">=", codeLoc);
         } else if this.reader.getChar() == '>' { // ">>"
             this.reader.advance(); // Consume '>'
             if this.reader.getChar() == '=' { // ">>="
                 this.reader.advance(); // Consume '='
-                return Token(TokenType::SHR_EQUAL, ">>=", this.reader.getCodeLoc());
+                return Token(TokenType::SHR_EQUAL, ">>=", codeLoc);
             } else { // ">>"
-                return Token(TokenType::SHR, ">>", this.reader.getCodeLoc());
+                return Token(TokenType::SHR, ">>", codeLoc);
             }
         } else { // '>'
-            return Token(TokenType::GREATER, ">", this.reader.getCodeLoc());
+            return Token(TokenType::GREATER, ">", codeLoc);
         }
     }
     if curChar == '?' {
         this.reader.advance(); // Consume '?'
-        return Token(TokenType::QUESTION_MARK, "?", this.reader.getCodeLoc());
+        return Token(TokenType::QUESTION_MARK, "?", codeLoc);
     }
     if curChar == ':' {
         this.reader.advance(); // Consume ':'
         if this.reader.getChar() == ':' { // "::"
             this.reader.advance(); // Consume ':'
-            return Token(TokenType::SCOPE_ACCESS, "::", this.reader.getCodeLoc());
+            return Token(TokenType::SCOPE_ACCESS, "::", codeLoc);
         } else { // ':'
-            return Token(TokenType::COLON, ":", this.reader.getCodeLoc());
+            return Token(TokenType::COLON, ":", codeLoc);
         }
     }
     if curChar == ';' {
         this.reader.advance(); // Consume ';'
-        return Token(TokenType::SEMICOLON, ";", this.reader.getCodeLoc());
+        return Token(TokenType::SEMICOLON, ";", codeLoc);
     }
     if curChar == ',' {
         this.reader.advance(); // Consume ','
-        return Token(TokenType::COMMA, ",", this.reader.getCodeLoc());
+        return Token(TokenType::COMMA, ",", codeLoc);
     }
     if curChar == '.' {
         this.reader.advance(); // Consume '.'
         if this.reader.getChar() == '.' { // ".."
             this.reader.advance(); // Consume second '.'
             this.reader.expect('.'); // Consume third '.'
-            return Token(TokenType::ELLIPSIS, "...", this.reader.getCodeLoc());
+            return Token(TokenType::ELLIPSIS, "...", codeLoc);
         } else { // '.'
-            return Token(TokenType::DOT, ".", this.reader.getCodeLoc());
+            return Token(TokenType::DOT, ".", codeLoc);
         }
     }
     if curChar == '#' {
         this.reader.advance(); // Consume '#'
         if this.reader.getChar() == '!' { // "#!"
             this.reader.advance(); // Consume '!'
-            return Token(TokenType::MOD_ATTR_PREAMBLE, "#!", this.reader.getCodeLoc());
+            return Token(TokenType::MOD_ATTR_PREAMBLE, "#!", codeLoc);
         } else { // '#'
-            return Token(TokenType::FCT_ATTR_PREAMBLE, "#", this.reader.getCodeLoc());
+            return Token(TokenType::FCT_ATTR_PREAMBLE, "#", codeLoc);
         }
     }
 
     panic(Error("Got unexpected character"));
 }
 
-f<Token> Lexer.consumeNumberLiteral() {
+f<Token> Lexer.consumeNumberLiteral(const CodeLoc& codeLoc) {
     String numberStr;
-    const CodeLoc codeLoc = this.reader.getCodeLoc();
 
     // Check for optional minus sign
     if this.reader.getChar() == '-' {
@@ -378,10 +378,9 @@ f<Token> Lexer.consumeNumberLiteral() {
     return Token(TokenType::INT_LIT, numberStr, codeLoc);
 }
 
-f<Token> Lexer.consumeCharLiteral() {
+f<Token> Lexer.consumeCharLiteral(const CodeLoc& codeLoc) {
     // Parse the following ANTLR regex: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\''
     String charStr;
-    const CodeLoc codeLoc = this.reader.getCodeLoc();
     this.reader.expect('\''); // Consume '\''
     if this.reader.getChar() == '\\' { // Escape sequence
         this.reader.advance(); // Consume '\\'
@@ -400,10 +399,9 @@ f<Token> Lexer.consumeCharLiteral() {
     return Token(TokenType::CHAR_LIT, charStr, codeLoc);
 }
 
-f<Token> Lexer.consumeStringLiteral() {
+f<Token> Lexer.consumeStringLiteral(const CodeLoc& codeLoc) {
     // Parse the following ANTLR regex: '"' (~["\\\r\n] | '\\' (. | EOF))* '"'
     String stringStr;
-    const CodeLoc codeLoc = this.reader.getCodeLoc();
     this.reader.expect('"'); // Consume '"'
     while this.reader.getChar() != '"' {
         if this.reader.getChar() == '\\' { // Escape sequence
@@ -424,9 +422,8 @@ f<Token> Lexer.consumeStringLiteral() {
     return Token(TokenType::STRING_LIT, stringStr, codeLoc);
 }
 
-f<Token> Lexer.consumeKeywordOrIdentifier() {
+f<Token> Lexer.consumeKeywordOrIdentifier(const CodeLoc& codeLoc) {
     String identifier;
-    const CodeLoc codeLoc = this.reader.getCodeLoc();
     do {
         identifier += this.reader.getChar();
         this.reader.advance();
@@ -579,9 +576,8 @@ f<Token> Lexer.consumeKeywordOrIdentifier() {
     return Token(TokenType::IDENTIFIER, identifier, codeLoc);
 }
 
-f<Token> Lexer.consumeTypeIdentifier() {
+f<Token> Lexer.consumeTypeIdentifier(const CodeLoc& codeLoc) {
     String identifier;
-    const CodeLoc codeLoc = this.reader.getCodeLoc();
     do {
         identifier += this.reader.getChar();
         this.reader.advance();
@@ -589,11 +585,10 @@ f<Token> Lexer.consumeTypeIdentifier() {
     return Token(TokenType::TYPE_IDENTIFIER, identifier, codeLoc);
 }
 
-f<Token> Lexer.consumeLineComment() {
-    String comment;
-    const CodeLoc codeLoc = this.reader.getCodeLoc();
+f<Token> Lexer.consumeLineComment(const CodeLoc& codeLoc) {
     this.reader.expect('/'); // Consume second '/' (first '/' is consumed by the caller)
 
+    String comment = String("//");
     while !this.reader.isEOF() {
         // Check for comment end
         if this.reader.getChar() == '\n' {
@@ -608,28 +603,28 @@ f<Token> Lexer.consumeLineComment() {
     return Token(TokenType::LINE_COMMENT, comment, codeLoc);
 }
 
-f<Token> Lexer.consumeBlockOrDocComment() {
-    String comment;
-    const CodeLoc codeLoc = this.reader.getCodeLoc();
+f<Token> Lexer.consumeBlockOrDocComment(const CodeLoc& codeLoc) {
     this.reader.expect('*'); // Consume '*' ('/' is consumed by the caller)
+    String comment = String("/*");
 
     // Check if doc comment
     bool isDocComment = false;
     if this.reader.getChar() == '*' {
         isDocComment = true;
         this.reader.advance(); // Consume '*'
+        comment += '*';
     }
 
     while !this.reader.isEOF() {
         // Check for comment end
         if this.reader.getChar() == '*' {
             this.reader.advance(); // Consume '*'
+            comment += '*';
             if this.reader.getChar() == '/' {
-                comment += this.reader.getChar();
                 this.reader.advance(); // Consume '/'
+                comment += '/';
                 break;
             }
-            comment += this.reader.getChar();
         }
 
         comment += this.reader.getChar();
@@ -637,4 +632,8 @@ f<Token> Lexer.consumeBlockOrDocComment() {
     }
 
     return Token(isDocComment ? TokenType::DOC_COMMENT : TokenType::BLOCK_COMMENT, comment, codeLoc);
+}
+
+f<bool> Lexer.isCurrentTokenIgnored() {
+    return this.curTok.tokenType == TokenType::LINE_COMMENT || this.curTok.tokenType == TokenType::BLOCK_COMMENT || this.curTok.tokenType == TokenType::DOC_COMMENT;
 }

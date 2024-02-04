@@ -2,7 +2,7 @@
 import "std/data/stack";
 
 // Own imports
-//import "../compiler-pass";
+import "../compiler-pass";
 import "../lexer/lexer";
 import "../lexer/token";
 import "../ast/ast-nodes";
@@ -10,7 +10,7 @@ import "../ast/ast-nodes";
 // Generic types
 type T dyn;
 
-public type Parser struct /*: ICompilerPass*/ {
+public type Parser struct : ICompilerPass {
     //compose CompilerPass
     Lexer& lexer
     Stack<ASTNode*> parentStack
@@ -32,10 +32,10 @@ f<T*> Parser.createNode<T>() {
     }
 
     // Create the new node
-    sourceFile.astNodes.pushBack(SourceFile());
-    T* node = &sourceFile.astNodes.back();
+    T* node = this.resourceManager.astNodeAlloc.allocate<T>(this.lexer.getCodeLoc());
+    this.resourceManager.astNodes.pushBack(node);
 
-    // If this is not the root node, add it to the parent
+    // If this is not the entry node, we need to add the new node to its parent
     if !isRootNode {
         parent.addChild(node);
     }
@@ -871,6 +871,18 @@ f<ASTAttrNode*> Parser.parseAttr() {
     }
 
     return this.concludeNode(attrNode);
+}
+
+f<ASTConstantLstNode*> Parser.parseConstantLst() {
+    dyn constantLstNode = this.createNode<ASTConstantLstNode>();
+
+    this.parseConstant();
+    while this.currentTokenIs(TokenType::COMMA) {
+        this.lexer.expect(TokenType::COMMA);
+        this.parseConstant();
+    }
+
+    return this.concludeNode(constantLstNode);
 }
 
 f<ASTReturnStmtNode*> Parser.parseReturnStmt() {

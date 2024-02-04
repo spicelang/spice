@@ -9,6 +9,7 @@ f<int> main() {
     printf("Stack size: %d\n", s1.getSize());
     printf("Stack capacity: %d\n", s1.getCapacity());
     printf("Stack item 3: %d\n", s1.pop());
+    printf("Stack item 2 (peek without popping): %d\n", s1.top());
     printf("Stack item 2: %d\n", s1.pop());
     printf("Stack item 1: %d\n", s1.pop());
 }

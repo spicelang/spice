@@ -1,0 +1,13 @@
+import "std/os/env";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/lexer/lexer";
+import "bootstrap/parser/parser";
+
+f<int> main() {
+    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-parser-test/test-file.spice";
+    Lexer lexer = Lexer(filePath.getRaw());
+    Parser parser = Parser(lexer);
+    ASTEntryNode* ast = parser.parse();
+    assert ast != nil<ASTEntryNode*>;
+    printf("All assertions passed!\n");
+}

@@ -1,0 +1,50 @@
+import "std/os/os";
+
+// Generic types
+type T bool|string|int|long|short;
+
+// Enums
+type CliOptionMode enum { SET_VALUE, CALL_CALLBACK }
+
+public type CliOption<T> struct {
+    string name
+    string description
+    CliOptionMode mode
+    T& targetVariable
+    p(T&) callback
+}
+
+public p CliOption.ctor(string name, T& targetVariable, string description) {
+    this.name = name;
+    this.description = description;
+    this.mode = CliOptionMode::SET_VALUE;
+    this.targetVariable = targetVariable;
+}
+
+public p CliOption.ctor(string name, p(T&) callback, string description) {
+    this.name = name;
+    this.description = description;
+    this.mode = CliOptionMode::CALL_CALLBACK;
+    this.callback = callback;
+}
+
+public f<string> CliOption.getName() {
+    return this.name;
+}
+
+public f<string> CliOption.getDescription() {
+    return this.description;
+}
+
+public p CliOption.setTargetValue(T value) {
+    if this.mode == CliOptionMode::SET_VALUE {
+        this.targetVariable = value;
+    }
+}
+
+public p CliOption.callCallback(T& value) {
+    if this.mode == CliOptionMode::CALL_CALLBACK {
+        p(T&) cb = this.callback;
+        cb(value);
+    }
+}

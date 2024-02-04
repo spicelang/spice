@@ -435,7 +435,7 @@ std::any ASTBuilder::visitEnumItem(SpiceParser::EnumItemContext *ctx) {
   // Enrich
   enumItemNode->itemName = getIdentifier(ctx->TYPE_IDENTIFIER());
   if (ctx->ASSIGN()) {
-    enumItemNode->itemValue = parseInt(nullptr, ctx->INT_LIT());
+    enumItemNode->itemValue = parseInt(ctx->INT_LIT());
     enumItemNode->hasValue = true;
   }
 
@@ -999,13 +999,13 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
     value.doubleValue = std::stod(ctx->DOUBLE_LIT()->toString());
   } else if (ctx->INT_LIT()) {
     constantNode->type = ConstantNode::TYPE_INT;
-    value.intValue = parseInt(constantNode, ctx->INT_LIT());
+    value.intValue = parseInt(ctx->INT_LIT());
   } else if (ctx->SHORT_LIT()) {
     constantNode->type = ConstantNode::TYPE_SHORT;
-    value.shortValue = parseShort(constantNode, ctx->SHORT_LIT());
+    value.shortValue = parseShort(ctx->SHORT_LIT());
   } else if (ctx->LONG_LIT()) {
     constantNode->type = ConstantNode::TYPE_LONG;
-    value.longValue = parseLong(constantNode, ctx->LONG_LIT());
+    value.longValue = parseLong(ctx->LONG_LIT());
   } else if (ctx->CHAR_LIT()) {
     constantNode->type = ConstantNode::TYPE_CHAR;
     value.charValue = parseChar(ctx->CHAR_LIT());
@@ -1334,8 +1334,8 @@ template <typename T> T *ASTBuilder::concludeNode(T *node) {
   return node;
 }
 
-int32_t ASTBuilder::parseInt(ConstantNode *constantNode, TerminalNode *terminal) {
-  NumericParserCallback<int32_t> cb = [](const std::string &substr, int base, bool isSigned) -> int32_t {
+int32_t ASTBuilder::parseInt(TerminalNode *terminal) {
+  NumericParserCallback<int32_t> cb = [](const std::string &substr, short base, bool isSigned) -> int32_t {
     // Prepare limits
     const int64_t upperLimit = isSigned ? INT32_MAX : UINT32_MAX;
     const int64_t lowerLimit = isSigned ? INT32_MIN : 0;
@@ -1345,11 +1345,11 @@ int32_t ASTBuilder::parseInt(ConstantNode *constantNode, TerminalNode *terminal)
       throw std::out_of_range("Number out of range");
     return static_cast<int32_t>(number);
   };
-  return parseNumeric(constantNode, terminal, cb);
+  return parseNumeric(terminal, cb);
 }
 
-int16_t ASTBuilder::parseShort(ConstantNode *constantNode, TerminalNode *terminal) {
-  NumericParserCallback<int16_t> cb = [](const std::string &substr, int base, bool isSigned) -> int16_t {
+int16_t ASTBuilder::parseShort(TerminalNode *terminal) {
+  NumericParserCallback<int16_t> cb = [](const std::string &substr, short base, bool isSigned) -> int16_t {
     // Prepare limits
     const int64_t upperLimit = isSigned ? INT16_MAX : UINT16_MAX;
     const int64_t lowerLimit = isSigned ? INT16_MIN : 0;
@@ -1359,14 +1359,17 @@ int16_t ASTBuilder::parseShort(ConstantNode *constantNode, TerminalNode *termina
       throw std::out_of_range("Number out of range");
     return static_cast<int16_t>(number);
   };
-  return parseNumeric(constantNode, terminal, cb);
+  return parseNumeric(terminal, cb);
 }
 
-int64_t ASTBuilder::parseLong(ConstantNode *constantNode, TerminalNode *terminal) {
-  NumericParserCallback<int64_t> cb = [](const std::string &substr, int base, bool isSigned) -> int64_t {
-    return std::stoll(substr, nullptr, base);
+int64_t ASTBuilder::parseLong(TerminalNode *terminal) {
+  const NumericParserCallback<int64_t> cb = [](const std::string &substr, short base, bool isSigned) -> int64_t {
+    if (isSigned)
+      return static_cast<int64_t>(std::stoll(substr, nullptr, base));
+    else
+      return static_cast<int64_t>(std::stoull(substr, nullptr, base));
   };
-  return parseNumeric(constantNode, terminal, cb);
+  return parseNumeric(terminal, cb);
 }
 
 int8_t ASTBuilder::parseChar(TerminalNode *terminal) {
@@ -1411,13 +1414,11 @@ std::string ASTBuilder::parseString(std::string input) {
   return input;
 }
 
-template <typename T>
-T ASTBuilder::parseNumeric(ConstantNode *constantNode, TerminalNode *terminal,
-                           std::function<T(const std::string &, int, bool)> cb) {
+template <typename T> T ASTBuilder::parseNumeric(TerminalNode *terminal, const NumericParserCallback<T> &cb) {
   const std::string input = terminal->toString();
 
   // Set to signed if the input string does not end with 'u'
-  const bool isSigned = !input.ends_with('u');
+  const bool isUnsigned = input.ends_with('u') || input.ends_with("us") || input.ends_with("ul");
 
   try {
     if (input.length() >= 3) {
@@ -1426,21 +1427,21 @@ T ASTBuilder::parseNumeric(ConstantNode *constantNode, TerminalNode *terminal,
         switch (input[1]) {
         case 'b':
         case 'B':
-          return cb(subStr, 2, isSigned);
+          return cb(subStr, 2, !isUnsigned);
         case 'h':
         case 'H':
         case 'x':
         case 'X':
-          return cb(subStr, 16, isSigned);
+          return cb(subStr, 16, !isUnsigned);
         case 'o':
         case 'O':
-          return cb(subStr, 8, isSigned);
+          return cb(subStr, 8, !isUnsigned);
         default:
-          return cb(input, 10, isSigned);
+          return cb(input, 10, !isUnsigned);
         }
       }
     }
-    return cb(input, 10, isSigned);
+    return cb(input, 10, !isUnsigned);
   } catch (std::out_of_range &e) {
     const CodeLoc codeLoc(terminal->getSymbol(), sourceFile);
     throw ParserError(codeLoc, NUMBER_OUT_OF_RANGE, "The provided number is out of range");

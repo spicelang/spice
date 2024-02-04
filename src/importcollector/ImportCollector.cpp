@@ -25,6 +25,7 @@ std::any ImportCollector::visitEntry(EntryNode *node) {
 
 std::any ImportCollector::visitImportDef(ImportDefNode *node) {
   const bool isStd = node->importPath.starts_with("std/");
+  const bool isBootstrap = node->importPath.starts_with("bootstrap/");
 
   std::filesystem::path basePath;
   if (isStd) { // Include source file from standard library
@@ -34,6 +35,14 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
       throw CompilerError(STD_NOT_FOUND, "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
     // Format: /dir/to/path/file
     basePath = stdPath / node->importPath.substr(node->importPath.find("std/") + 4);
+  } else if (isBootstrap) { // Include source file from bootstrap library
+    // Find bootstrap library
+    const std::filesystem::path bootstrapPath = FileUtil::getBootstrapDir();
+    if (bootstrapPath.empty())
+      throw CompilerError(BOOTSTRAP_NOT_FOUND,
+                          "Bootstrap compiler could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists");
+    // Format: /dir/to/path/file
+    basePath = bootstrapPath / node->importPath.substr(node->importPath.find("bootstrap/") + 10);
   } else { // Include own source file
     // Format: /dir/to/path/file
     basePath = sourceFile->filePath.parent_path() / node->importPath;

@@ -1,0 +1,83 @@
+
+const string STRING_RT_IMPORT_NAME = "__rt_string";
+const string MEMORY_RT_IMPORT_NAME = "__rt_memory";
+const string RTTI_RT_IMPORT_NAME = "__rt_rtti";
+
+public type RuntimeModule enum {
+    STRING_RT = 1,
+    ARRAY_RT = 2,
+    OBJECT_RT = 4
+}
+
+type ModuleNamePair struct {
+    string importName
+    string fileName
+}
+
+public type RuntimeModuleManager struct {
+    GlobalResourceManager &resourceManager
+    UnorderedMap<RuntimeModule, SourceFile *> modules
+}
+
+public p RuntimeModuleManager.ctor(GlobalResourceManager &resourceManager) {
+    this.resourceManager = resourceManager;
+}
+
+public f<SourceFile *> RuntimeModuleManager.requestModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
+    const string importName = resolveNamePair(requestedModule).importName;
+
+    // Check if the requested module is available already, if not load it
+    dyn rtFile = isModuleAvailable(requestedModule) ? getModule(requestedModule) : loadModule(parentSourceFile, requestedModule);
+
+    // Add the dependency to the parent source file
+    parentSourceFile.addDependency(rtFile, parentSourceFile.ast, importName, rtFile.filePath.str());
+    assert parentSourceFile.dependencies.contains(importName);
+    SourceFile* runtimeFile = parentSourceFile.dependencies.get(importName);
+    modules.insert(requestedModule, runtimeFile);
+
+    // Merge the module name registry with the one of the source file
+    parentSourceFile.mergeNameRegistries(*rtFile, importName);
+
+    // Tell the source file, that the requested runtime has been imported
+    parentSourceFile.importedRuntimeModules |= requestedModule;
+
+    return runtimeFile;
+}
+
+public f<SourceFile *> RuntimeModuleManager.getModule(RuntimeModule requestedModule) {
+    assert modules.contains(requestedModule);
+    return modules.get(requestedModule);
+}
+
+public f<bool> RuntimeModuleManager.isModuleAvailable(RuntimeModule requestedModule) {
+    return modules.contains(requestedModule);
+}
+
+public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
+    const ModuleNamePair namePair = resolveNamePair(requestedModule);
+    const string filePath = FileUtil::getStdDir() / "runtime" / fileName / ".spice";
+    assert filePath != parentSourceFile.filePath;
+
+    // Instruct the global resource manager to create a new source file
+    SourceFile* moduleSourceFile = resourceManager.createSourceFile(parentSourceFile, importName, filrPath, true);
+    moduleSourceFile.mainFile = false;
+
+    // Run frontend and first type checker run for the loaded source file
+    moduleSourceFile.runFrontEnd();
+    moduleSourceFile.runTypeCheckerPre();
+
+    return moduleSourceFile;
+}
+
+public f<ModuleNamePair> RuntimeModuleManager.resolveNamePair(RuntimeModule requestedModule) {
+    switch requestedModule {
+        case RuntimeModule::STRING_RT:
+            return ModuleNamePair{STRING_RT_IMPORT_NAME, "string_rt"};
+        case RuntimeModule::ARRAY_RT:
+            return ModuleNamePair{MEMORY_RT_IMPORT_NAME, "memory_rt"};
+        case RuntimeModule::OBJECT_RT:
+            return ModuleNamePair{RTTI_RT_IMPORT_NAME, "rtti_rt"};
+        default:
+            panic(Error("Requested unknown runtime module"));
+    }
+}

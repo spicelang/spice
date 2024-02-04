@@ -1,6 +1,6 @@
-public const int SIZE = 64;
-public const double MIN_VALUE = -1.7976931348623157e+308;
-public const double MAX_VALUE = 1.7976931348623157e+308;
+public const unsigned int DOUBLE_SIZE = 64;
+public const double DOUBLE_MIN_VALUE = -1.7976931348623157e+308;
+public const double DOUBLE_MAX_VALUE = 1.7976931348623157e+308;
 
 ext f<unsigned int> snprintf(char*, unsigned long, string, double);
 

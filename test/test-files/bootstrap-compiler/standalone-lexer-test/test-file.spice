@@ -1,0 +1,60 @@
+#![core.compiler.alwaysKeepOnNameCollision = true]
+
+import "std/type/result";
+
+// Link external functions
+ext f<heap byte*> malloc(unsigned long);
+ext f<heap byte*> realloc(heap byte*, unsigned long);
+ext p free(heap byte*);
+ext p memcpy(heap byte*, heap byte*, unsigned long);
+
+/**
+  * Allocates a new block of memory of the given size.
+  *
+  * @param size The size of the block to allocate.
+  * @return A pointer to the allocated block, or an error if the allocation failed.
+  */
+public f<Result<heap byte*>> sAlloc(unsigned long size) {
+    heap byte* ptr = malloc(size);
+    return ptr != nil<heap byte*> ? ok(ptr) : err(nil<heap byte*>, "Out of memory occurred!");
+}
+
+/**
+  * Reallocates a block of memory to the given size.
+  *
+  * @param ptr The pointer to the block to reallocate.
+  * @param size The new size of the block.
+  * @return A pointer to the reallocated block, or an error if the reallocation failed.
+  */
+public f<Result<heap byte*>> sRealloc(heap byte* ptr, unsigned long size) {
+    heap byte* newPtr = realloc(ptr, size);
+    return newPtr != nil<heap byte*> ? ok(newPtr) : err(nil<heap byte*>, "Out of memory occurred!");
+}
+
+/**
+  * Copies a block of memory to a new block of memory.
+  *
+  * @param oldPtr The pointer to the block to copy.
+  * @param newPtr The pointer to the new block to copy to.
+  * @param size The size of the block to copy.
+  * @return A pointer to the copied block, or an error if the copy failed.
+  */
+public f<Result<heap byte*>> sCopy(heap byte* oldPtr, heap byte* newPtr, unsigned long size) {
+    if oldPtr == nil<heap byte*> | newPtr == nil<heap byte*> {
+        return err(nil<heap byte*>, "Cannot copy from or to nil pointer!");
+    }
+    memcpy(newPtr, oldPtr, size);
+    return ok(newPtr);
+}
+
+/**
+  * Frees a block of memory.
+  * The pointer is zeroed out after freeing the memory to prevent accidental double frees.
+  *
+  * @param ptr The pointer to the block to free.
+  */
+public p sDealloc(heap byte*& ptr) {
+    if ptr == nil<heap byte*> { return; }
+    free(ptr);
+    ptr = nil<heap byte*>; // Zero out to prevent accidental double frees
+}

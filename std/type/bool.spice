@@ -1,4 +1,4 @@
-public const int SIZE = 1;
+public const int BOOL_SIZE = 1;
 public const bool TRUE = true;
 public const bool FALSE = false;
 

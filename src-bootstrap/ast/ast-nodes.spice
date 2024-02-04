@@ -205,6 +205,27 @@ public type ASTElseStmtNode struct /*: IVisitable*/ {
 
 }
 
+// ========================================================= SwitchStmtNode ======================================================
+
+public type ASTSwitchStmtNode struct /*: IVisitable*/ {
+    compose public ASTNode node
+
+}
+
+// ========================================================= CaseBranchNode ======================================================
+
+public type ASTCaseBranchNode struct /*: IVisitable*/ {
+    compose public ASTNode node
+
+}
+
+// ======================================================== DefaultBranchNode ====================================================
+
+public type ASTDefaultBranchNode struct /*: IVisitable*/ {
+    compose public ASTNode node
+
+}
+
 // ===================================================== AnonymousBlockStmtNode ==================================================
 
 public type ASTAnonymousBlockStmtNode struct /*: IVisitable*/ {
@@ -311,8 +332,7 @@ type SpecifierType enum {
 
 public type ASTSpecifierNode struct /*: IVisitable*/ {
     compose public ASTNode node
-
-    public SpecifierType specifierType = SpecifierType::TY_NONE
+    public SpecifierType specifierType = SpecifierType::NONE
 }
 
 // ========================================================== ModAttrNode ========================================================
@@ -350,6 +370,13 @@ public type ASTAttrNode struct /*: IVisitable*/ {
 
 }
 
+// ========================================================= ConstantLstNode =====================================================
+
+public type ASTConstantLstNode struct /*: IVisitable*/ {
+    compose public ASTNode node
+
+}
+
 // ========================================================= ReturnStmtNode ======================================================
 
 public type ASTReturnStmtNode struct /*: IVisitable*/ {
@@ -367,6 +394,13 @@ public type ASTBreakStmtNode struct /*: IVisitable*/ {
 // ======================================================== ContinueStmtNode =====================================================
 
 public type ASTContinueStmtNode struct /*: IVisitable*/ {
+    compose public ASTNode node
+
+}
+
+// ======================================================= FallthroughStmtNode ===================================================
+
+public type ASTFallthroughStmtNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }

@@ -1,0 +1,17 @@
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "../util/memory";
+
+type Base dyn;
+
+public type BlockAllocator<Base> struct {
+    const MemoryManager& memoryManager
+    Vector<byte*> memoryBlocks
+    Vector<Base*> allocatedObjects
+}
+
+public p BlockAllocator.allocateNewBlock() {
+
+}

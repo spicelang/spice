@@ -1,0 +1,33 @@
+import "std/os/env";
+import "bootstrap/reader/reader";
+
+f<int> main() {
+    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-reader-test/test-file.spice";
+    Reader reader = Reader(filePath.getRaw());
+    assert !reader.isEOF();
+    assert reader.getCodeLoc().line == 1 && reader.getCodeLoc().col == 1;
+    reader.expect('f');
+    reader.expect('<');
+    reader.expect('i');
+    reader.expect('n');
+    reader.expect('t');
+    reader.expect('>');
+    assert reader.getCodeLoc().line == 1 && reader.getCodeLoc().col == 7;
+    for unsigned int i = 0; i < 14; i = i + 1 {
+        reader.advance();
+    }
+    assert !reader.isEOF();
+    assert reader.getCodeLoc().line == 2 && reader.getCodeLoc().col == 5;
+    reader.expect('p');
+    reader.expect('r');
+    reader.expect('i');
+    reader.expect('n');
+    reader.expect('t');
+    reader.expect('f');
+    assert reader.getCodeLoc().line == 2 && reader.getCodeLoc().col == 11;
+    for unsigned int i = 0; i < 21; i = i + 1 {
+        reader.advance();
+    }
+    assert reader.isEOF();
+    printf("All assertions passed!\n");
+}

@@ -14,7 +14,7 @@ SourceFile *RuntimeModuleManager::requestModule(SourceFile *parentSourceFile, Ru
   const std::string importName = resolveNamePair(requestedModule).importName;
 
   // Check if the requested module is available already, if not load it
-  auto rtFile = isModuleAvailable(requestedModule) ? modules.at(requestedModule) : loadModule(parentSourceFile, requestedModule);
+  auto rtFile = isModuleAvailable(requestedModule) ? getModule(requestedModule) : loadModule(parentSourceFile, requestedModule);
 
   // Add the dependency to the parent source file
   parentSourceFile->addDependency(rtFile, parentSourceFile->ast, importName, rtFile->filePath.string());
@@ -40,7 +40,8 @@ bool RuntimeModuleManager::isModuleAvailable(RuntimeModule requestedModule) cons
 
 SourceFile *RuntimeModuleManager::loadModule(SourceFile *parentSourceFile, RuntimeModule requestedModule) {
   const auto [importName, fileName] = resolveNamePair(requestedModule);
-  const std::filesystem::path filePath = FileUtil::getStdDir() / "runtime" / (std::string(fileName) + ".spice");
+  const std::string fileNameWithExt = std::string(fileName) + ".spice";
+  const std::filesystem::path filePath = FileUtil::getStdDir() / "runtime" / fileNameWithExt;
   assert(filePath != parentSourceFile->filePath);
 
   // Instruct the global resource manager to create a new source file

@@ -22,6 +22,7 @@ public:
   static ExecResult exec(const std::string &command);
   static bool isCommandAvailable(const std::string &cmd);
   static std::filesystem::path getStdDir();
+  static std::filesystem::path getBootstrapDir();
   static std::filesystem::path getSpiceBinDir();
 };
 

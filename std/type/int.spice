@@ -1,6 +1,8 @@
-public const int SIZE = 32;
-public const int MIN_VALUE = -2147483648;
-public const int MAX_VALUE = 2147483647;
+public const int INT_SIZE = 32;
+public const int INT_MIN_VALUE = -2147483648;
+public const int INT_MAX_VALUE = 2147483647;
+public const unsigned int UINT_MIN_VALUE = 0;
+public const unsigned int UINT_MAX_VALUE = 4294967295u;
 
 // External functions
 ext f<unsigned int> snprintf(char*, unsigned long, string, int);
