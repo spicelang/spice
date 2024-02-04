@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/assertions/error-assert-condition-bool/source.spice:2:12:
+[Error|Semantic] ./source.spice:2:12:
 Assertion condition must be bool: The asserted condition must be of type bool
 
 2  assert "Test";

@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/symboltablebuilder/variables/error-variable-declared-before-referenced/source.spice:2:26:
+[Error|Semantic] ./source.spice:2:26:
 Referenced undefined variable: The variable 'test' could not be found
 
 2  rintf("Output: %s", test);

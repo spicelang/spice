@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/foreach-loops/error-foreach-wrong-index-type/source.spice:4:13:
+[Error|Semantic] ./source.spice:4:13:
 Foreach index not of type long: Index in foreach loop must be of type long. You provided double
 
 4  foreach double i, int item : range(1

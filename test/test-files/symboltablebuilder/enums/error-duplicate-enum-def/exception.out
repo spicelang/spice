@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/symboltablebuilder/enums/error-duplicate-enum-def/source.spice:7:1:
+[Error|Semantic] ./source.spice:7:1:
 Duplicate symbol: Duplicate symbol 'Fruit'
 
 7  type Fruit enum {

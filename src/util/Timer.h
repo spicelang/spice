@@ -7,7 +7,7 @@
 
 namespace spice::compiler {
 
-struct Timer {
+class Timer {
 public:
   // Constructors
   explicit Timer(uint64_t *const timerOutput = nullptr) : timerOutput(timerOutput) {}

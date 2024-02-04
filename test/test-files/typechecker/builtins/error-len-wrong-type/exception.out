@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/builtins/error-len-wrong-type/source.spice:3:9:
+[Error|Semantic] ./source.spice:3:9:
 Expected array type: The len builtin can only work on arrays or strings
 
 3  len(d);

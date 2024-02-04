@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/structs/error-struct-passed-too-many-less-values/source.spice:9:37:
+[Error|Semantic] ./source.spice:9:37:
 Number of struct fields not matching declaration: You've passed too less/many field values. Pass either none or all of them
 
 9  ance = TestStruct { &str, false };

@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/generics/error-not-in-template4/source.spice:7:13:
+[Error|Semantic] ./source.spice:7:13:
 Generic type not contained in template: Generic param type not included in the template type list of the function
 
 7  f<int> test(Node<T>* test) {

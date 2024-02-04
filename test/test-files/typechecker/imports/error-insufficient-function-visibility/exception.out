@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/imports/error-insufficient-function-visibility/source.spice:4:15:
+[Error|Semantic] ./source.spice:4:15:
 Insufficient symbol visibility: Function/procedure 'int testFunc()' has insufficient visibility
 
 4  int res = src1::testFunc();

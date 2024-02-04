@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/arrays/error-size-global-var-invalid-type/source.spice:4:5:
+[Error|Semantic] ./source.spice:4:5:
 Wrong data type for operator: Expected variable of type int
 
 4  short[SIZE] test;

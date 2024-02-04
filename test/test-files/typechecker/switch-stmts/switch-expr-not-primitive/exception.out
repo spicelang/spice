@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/switch-stmts/switch-expr-not-primitive/source.spice:8:12:
+[Error|Semantic] ./source.spice:8:12:
 Switch expression of wrong type: Switch expression must be of int, short, long, byte, char or bool type
 
 8  switch s {}

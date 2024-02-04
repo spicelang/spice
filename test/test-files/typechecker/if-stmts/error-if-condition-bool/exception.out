@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/if-stmts/error-if-condition-bool/source.spice:2:8:
+[Error|Semantic] ./source.spice:2:8:
 Condition must be bool: If condition must be of type bool
 
 2  if 7 {

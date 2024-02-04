@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/methods/error-method-not-existing/source.spice:12:14:
+[Error|Semantic] ./source.spice:12:14:
 Referenced undefined function: Function/procedure 'Test.getInt()' could not be found
 
 12  result = test.getInt();

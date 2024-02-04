@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/variables/error-reassign-const-ref-var/source.spice:2:5:
+[Error|Semantic] ./source.spice:2:5:
 Cannot re-assign constant variable: Trying to assign value to an immutable variable of type const bool&
 
 2  b = true;

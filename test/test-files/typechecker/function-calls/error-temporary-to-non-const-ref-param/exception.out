@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/function-calls/error-temporary-to-non-const-ref-param/source.spice:4:5:
+[Error|Semantic] ./source.spice:4:5:
 Temporary bound to non-const reference: Temporary values can only be bound to const reference parameters
 
 4  test(543210);

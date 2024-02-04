@@ -1,7 +1,7 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./test-files/typechecker/builtins/error-printf-too-less-args/source.spice:2:5:
+[Error|Semantic] ./source.spice:2:5:
 Printf arg number not matching template string: The placeholder string contains more placeholders than arguments
 
 2  printf("Test: %d, %f", 3);

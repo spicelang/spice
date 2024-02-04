@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/symboltablebuilder/globals/error-global-var-decl-twice/source.spice:3:1:
+[Error|Semantic] ./source.spice:3:1:
 Duplicate symbol: Duplicate symbol 'GLOBAL_VAR'
 
 3  double GLOBAL_VAR = 4.567;

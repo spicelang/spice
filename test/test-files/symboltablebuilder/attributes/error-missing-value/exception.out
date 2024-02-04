@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/symboltablebuilder/attributes/error-missing-value/source.spice:1:4:
+[Error|Semantic] ./source.spice:1:4:
 Missing attribute value: Attribute 'core.linker.flag' requires a value
 
 1  #![core.linker.flag]

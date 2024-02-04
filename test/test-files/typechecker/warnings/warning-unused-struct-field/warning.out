@@ -1,1 +1,1 @@
-[Warning] ./test-files/typechecker/warnings/warning-unused-struct-field/source.spice:2:5: Unused field: The field 'f1' is unused
+[Warning] ./source.spice:2:5: Unused field: The field 'f1' is unused

@@ -1,4 +1,4 @@
-[Error|Semantic] ./test-files/typechecker/references/error-reference-invalid-assign1/source.spice:8:5:
+[Error|Semantic] ./source.spice:8:5:
 Wrong data type for operator: Cannot apply '=' operator on types int& and const int&
 
 8  int& _1 = getConstIntRef(t);

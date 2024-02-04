@@ -1,1 +1,1 @@
-[Warning] ./test-files/typechecker/warnings/warning-unused-alias/source.spice:1:1: Unused type alias: The type alias 'Size' is unused
+[Warning] ./source.spice:1:1: Unused type alias: The type alias 'Size' is unused
