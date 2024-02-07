@@ -408,12 +408,18 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     fallthroughBlocks.pop();
 
     // Add case to switch instruction
-    const std::vector<ConstantNode *> constantNodes = caseBranch->constantLst()->constants();
-    for (ConstantNode *constNode : constantNodes) {
-      const ConstantNode::PrimitiveValueType type = constNode->type;
-      assert(type != ConstantNode::TYPE_NONE && type != ConstantNode::TYPE_DOUBLE && type != ConstantNode::TYPE_STRING);
-      llvm::Constant *constant = getConst(constNode->getCompileTimeValue(), constNode->getEvaluatedSymbolType(manIdx), constNode);
-      switchInst->addCase(llvm::cast<llvm::ConstantInt>(constant), bCases.at(i));
+    const std::vector<CaseConstantNode *> caseConstantNodes = caseBranch->caseConstants();
+    for (CaseConstantNode *caseConstantNode : caseConstantNodes) {
+      const ConstantNode *constNode = caseConstantNode->constant();
+      if (constNode) {
+        const ConstantNode::PrimitiveValueType type = constNode->type;
+        assert(type != ConstantNode::TYPE_NONE && type != ConstantNode::TYPE_DOUBLE && type != ConstantNode::TYPE_STRING);
+        llvm::Constant *constant =
+            getConst(constNode->getCompileTimeValue(), constNode->getEvaluatedSymbolType(manIdx), constNode);
+        switchInst->addCase(llvm::cast<llvm::ConstantInt>(constant), bCases.at(i));
+      } else {
+        assert(caseConstantNode->getEvaluatedSymbolType(manIdx).is(TY_INT));
+      }
     }
   }
 

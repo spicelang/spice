@@ -758,7 +758,7 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCaseBranch(this); }
 
   // Public get methods
-  [[nodiscard]] ConstantLstNode *constantLst() const { return getChild<ConstantLstNode>(); }
+  [[nodiscard]] std::vector<CaseConstantNode *> caseConstants() const { return getChildren<CaseConstantNode>(); }
   [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
 
   // Other methods
@@ -1166,19 +1166,23 @@ public:
   AttrTarget target = TARGET_INVALID;
 };
 
-// ======================================================== ConstantLstNode ======================================================
+// ======================================================== CaseConstantNode =====================================================
 
-class ConstantLstNode : public ASTNode {
+class CaseConstantNode : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitConstantLst(this); }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitConstantLst(this); }
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCaseConstant(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCaseConstant(this); }
 
   // Public get methods
-  [[nodiscard]] std::vector<ConstantNode *> constants() const { return getChildren<ConstantNode>(); }
+  [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
+
+  // Public members
+  std::vector<std::string> identifierFragments;
+  std::string fqIdentifier;
 };
 
 // ======================================================== ReturnStmtNode =======================================================

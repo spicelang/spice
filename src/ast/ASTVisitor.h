@@ -50,7 +50,7 @@ public:
   std::any visitLambdaAttr(LambdaAttrNode *node) override;
   std::any visitAttrLst(AttrLstNode *node) override;
   std::any visitAttr(AttrNode *node) override;
-  std::any visitConstantLst(ConstantLstNode *node) override;
+  std::any visitCaseConstant(CaseConstantNode *node) override;
   std::any visitReturnStmt(ReturnStmtNode *node) override;
   std::any visitBreakStmt(BreakStmtNode *node) override;
   std::any visitContinueStmt(ContinueStmtNode *node) override;

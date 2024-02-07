@@ -77,7 +77,7 @@ public:
   std::any visitModAttr(SpiceParser::ModAttrContext *ctx) override;
   std::any visitAttrLst(SpiceParser::AttrLstContext *ctx) override;
   std::any visitAttr(SpiceParser::AttrContext *ctx) override;
-  std::any visitConstantLst(SpiceParser::ConstantLstContext *ctx) override;
+  std::any visitCaseConstant(SpiceParser::CaseConstantContext *ctx) override;
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override;
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override;
   std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override;

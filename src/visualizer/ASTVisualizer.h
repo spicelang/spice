@@ -66,7 +66,7 @@ public:
   std::any visitLambdaAttr(LambdaAttrNode *ctx) override { return buildNode(ctx); }
   std::any visitAttrLst(AttrLstNode *ctx) override { return buildNode(ctx); }
   std::any visitAttr(AttrNode *ctx) override { return buildNode(ctx); }
-  std::any visitConstantLst(ConstantLstNode *ctx) override { return buildNode(ctx); }
+  std::any visitCaseConstant(CaseConstantNode *ctx) override { return buildNode(ctx); }
   std::any visitReturnStmt(ReturnStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitBreakStmt(BreakStmtNode *ctx) override { return buildNode(ctx); }
   std::any visitContinueStmt(ContinueStmtNode *ctx) override { return buildNode(ctx); }

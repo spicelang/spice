@@ -101,7 +101,7 @@ std::any ParallelizableASTVisitor::visitAttrLst(const AttrLstNode *node) { retur
 
 std::any ParallelizableASTVisitor::visitAttr(const AttrNode *node) { return visitChildren(node); }
 
-std::any ParallelizableASTVisitor::visitConstantLst(const ConstantLstNode *node) { return visitChildren(node); }
+std::any ParallelizableASTVisitor::visitCaseConstant(const CaseConstantNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitReturnStmt(const ReturnStmtNode *node) { return visitChildren(node); }
 
