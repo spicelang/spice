@@ -1,0 +1,2 @@
+[Error|Semantic] ./source.spice:1:1:
+Spice programs must contain a main function: No main function found

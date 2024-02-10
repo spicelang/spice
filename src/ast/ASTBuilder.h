@@ -129,7 +129,9 @@ private:
   template <typename T> T *createNode(const ParserRuleContext *ctx);
   template <typename T> T *concludeNode(T *node);
   ALWAYS_INLINE CodeLoc getCodeLoc(const ParserRuleContext *ctx) {
-    return {ctx->start, ctx->start->getStartIndex(), ctx->stop->getStopIndex(), sourceFile};
+    const size_t startIdx = ctx->start->getStartIndex();
+    const size_t stopIdx = ctx->stop ? ctx->stop->getStopIndex() : startIdx;
+    return {ctx->start, startIdx, stopIdx, sourceFile};
   }
   int32_t parseInt(TerminalNode *terminal);
   int16_t parseShort(TerminalNode *terminal);
