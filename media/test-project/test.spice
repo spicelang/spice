@@ -1,31 +1,18 @@
-p isBiggerThan(int input) {
-    switch (input) {
-        case 5: {
-            printf("Input is at least 5.\n");
-            fallthrough;
-        }
-        case 4: {
-            printf("Input is at least 4.\n");
-            fallthrough;
-        }
-        case 3: {
-            printf("Input is at least 3.\n");
-            fallthrough;
-        }
-        case 2: {
-            printf("Input is at least 2.\n");
-            fallthrough;
-        }
-        case 1: {
-            printf("Input is at least 1.\n");
-        }
-    }
+type Test struct {
+    int f1
+    int f2
 }
 
 f<int> main() {
-    isBiggerThan(3);
-    isBiggerThan(5);
-    isBiggerThan(1);
+    int t = 123;
+    switch (t) {
+        case 1: {
+            printf("1");
+        }
+        case Test: {
+            printf("t");
+        }
+    }
 }
 
 /*f<int> main() {
