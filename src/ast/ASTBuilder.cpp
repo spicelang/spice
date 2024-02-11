@@ -611,13 +611,30 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
   return concludeNode(attrNode);
 }
 
-std::any ASTBuilder::visitConstantLst(SpiceParser::ConstantLstContext *ctx) {
-  auto constantLstNode = createNode<ConstantLstNode>(ctx);
+std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
+  auto caseConstantNode = createNode<CaseConstantNode>(ctx);
 
   // Visit children
   visitChildren(ctx);
 
-  return concludeNode(constantLstNode);
+  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+      const std::string fragment = getIdentifier(t1);
+      caseConstantNode->identifierFragments.push_back(fragment);
+      if (!caseConstantNode->fqIdentifier.empty())
+        caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+      caseConstantNode->fqIdentifier += fragment;
+    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+      const std::string fragment = getIdentifier(t2);
+      caseConstantNode->identifierFragments.push_back(fragment);
+      if (!caseConstantNode->fqIdentifier.empty())
+        caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+      caseConstantNode->fqIdentifier += fragment;
+    }
+  }
+
+  return concludeNode(caseConstantNode);
 }
 
 std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {

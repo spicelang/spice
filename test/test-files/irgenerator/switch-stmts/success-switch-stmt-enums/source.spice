@@ -1,0 +1,20 @@
+type Fruit enum {
+    Apple,
+    Banana,
+    Orange
+}
+
+f<string> getName(Fruit input) {
+    switch input {
+        case Fruit::Apple: { return "Apple"; }
+        case Fruit::Banana: { return "Banana"; }
+        case Fruit::Orange: { return "Orange"; }
+    }
+}
+
+f<int> main() {
+    printf("%s\n", getName(Fruit::Apple));
+    printf("%s\n", getName(Fruit::Banana));
+    printf("%s\n", getName(Fruit::Orange));
+    return 0;
+}

@@ -79,6 +79,7 @@ public:
   std::any visitField(FieldNode *node) override;
   std::any visitSignature(SignatureNode *node) override;
   std::any visitDeclStmt(DeclStmtNode *node) override;
+  std::any visitCaseConstant(CaseConstantNode *node) override;
   std::any visitReturnStmt(ReturnStmtNode *node) override;
   std::any visitBreakStmt(BreakStmtNode *node) override;
   std::any visitContinueStmt(ContinueStmtNode *node) override;

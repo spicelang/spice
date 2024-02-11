@@ -94,6 +94,10 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   return nullptr;
 }
 
+std::any IRGenerator::visitSpecifierLst(const SpecifierLstNode *node) {
+  return nullptr; // Noop
+}
+
 std::any IRGenerator::visitModAttr(const ModAttrNode *node) {
   return nullptr; // Noop
 }
@@ -102,8 +106,16 @@ std::any IRGenerator::visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNo
   return nullptr; // Noop
 }
 
-std::any IRGenerator::visitSpecifierLst(const SpecifierLstNode *node) {
-  return nullptr; // Noop
+std::any IRGenerator::visitCaseConstant(const spice::compiler::CaseConstantNode *node) {
+  if (node->constant())
+    return visit(node->constant());
+
+  // Get constant for enum item
+  Scope *enumScope = node->enumItemEntry->scope;
+  assert(enumScope->type == ScopeType::ENUM);
+  auto itemNode = spice_pointer_cast<const EnumItemNode *>(node->enumItemEntry->declNode);
+  llvm::Constant *constant = llvm::ConstantInt::get(builder.getInt32Ty(), itemNode->itemValue);
+  return constant;
 }
 
 std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {

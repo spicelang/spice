@@ -70,7 +70,7 @@ public:
   std::any visitLambdaAttr(SpiceParser::LambdaAttrContext *ctx) override { return buildRule(ctx); }
   std::any visitAttrLst(SpiceParser::AttrLstContext *ctx) override { return buildRule(ctx); }
   std::any visitAttr(SpiceParser::AttrContext *ctx) override { return buildRule(ctx); }
-  std::any visitConstantLst(SpiceParser::ConstantLstContext *ctx) override { return buildRule(ctx); }
+  std::any visitCaseConstant(SpiceParser::CaseConstantContext *ctx) override { return buildRule(ctx); }
   std::any visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitBreakStmt(SpiceParser::BreakStmtContext *ctx) override { return buildRule(ctx); }
   std::any visitContinueStmt(SpiceParser::ContinueStmtContext *ctx) override { return buildRule(ctx); }

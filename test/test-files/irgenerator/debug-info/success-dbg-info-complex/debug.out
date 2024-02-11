@@ -1,4 +1,4 @@
-GNU gdb (GDB for MinGW-W64 x86_64, built by Brecht Sanders) 13.2
+GNU gdb (GDB for MinGW-W64 x86_64, built by Brecht Sanders, r5) 14.1
 Copyright (C) 2023 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
@@ -25,4 +25,4 @@ pair = {first = 2, second = }
 $1 = {contents = , capacity = 5, size = 5}
 $2 = 5
 All assertions passed!
-[Inferior 1 (process 23144) exited normally]
+[Inferior 1 (process 5992) exited normally]

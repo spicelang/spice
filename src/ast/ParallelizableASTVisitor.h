@@ -49,7 +49,7 @@ class TopLevelDefinitionAttrNode;
 class LambdaAttrNode;
 class AttrLstNode;
 class AttrNode;
-class ConstantLstNode;
+class CaseConstantNode;
 class ImportDefNode;
 class ReturnStmtNode;
 class BreakStmtNode;
@@ -137,7 +137,7 @@ public:
   virtual std::any visitLambdaAttr(const LambdaAttrNode *node);
   virtual std::any visitAttrLst(const AttrLstNode *node);
   virtual std::any visitAttr(const AttrNode *node);
-  virtual std::any visitConstantLst(const ConstantLstNode *node);
+  virtual std::any visitCaseConstant(const CaseConstantNode *node);
   virtual std::any visitReturnStmt(const ReturnStmtNode *node);
   virtual std::any visitBreakStmt(const BreakStmtNode *node);
   virtual std::any visitContinueStmt(const ContinueStmtNode *node);

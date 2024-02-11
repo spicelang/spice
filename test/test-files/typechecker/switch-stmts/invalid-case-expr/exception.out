@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:12:14:
+Case constant not of enum type: Case constants must be of type enum
+
+12  case Test: {
+         ^^^^

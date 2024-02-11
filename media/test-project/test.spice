@@ -1,11 +1,18 @@
-import "bootstrap/lexer/lexer";
-import "bootstrap/parser/parser";
-import "bootstrap/ast/ast-nodes";
+type Test struct {
+    int f1
+    int f2
+}
 
 f<int> main() {
-    Lexer lexer = Lexer("./test-file.spice");
-    Parser parser = Parser(lexer);
-    ASTEntryNode* entryNode = parser.parse();
+    int t = 123;
+    switch (t) {
+        case 1: {
+            printf("1");
+        }
+        case Test: {
+            printf("t");
+        }
+    }
 }
 
 /*f<int> main() {

@@ -90,7 +90,7 @@ std::any ASTVisitor::visitAttrLst(AttrLstNode *node) { return visitChildren(node
 
 std::any ASTVisitor::visitAttr(AttrNode *node) { return visitChildren(node); }
 
-std::any ASTVisitor::visitConstantLst(ConstantLstNode *node) { return visitChildren(node); }
+std::any ASTVisitor::visitCaseConstant(CaseConstantNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitReturnStmt(ReturnStmtNode *node) { return visitChildren(node); }
 
