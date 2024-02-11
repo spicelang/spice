@@ -903,7 +903,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     return ExprResult{node->setEvaluatedSymbolType(rhsType, manIdx)};
   }
 
-  throw CompilerError(UNHANDLED_BRANCH, "AssignStmt fall-through"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "AssignExpr fall-through"); // GCOV_EXCL_LINE
 }
 
 std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
@@ -1992,6 +1992,11 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found")
   }
   node->instantiatedStructs.at(manIdx) = spiceStruct;
+
+  // Struct instantiation for an inheriting struct is forbidden, because the vtable needs to be initialized and this is done in
+  // the ctor of the struct, which is never called in case of struct instantiation
+  if (!spiceStruct->interfaceTypes.empty())
+    SOFT_ERROR_ER(node, INVALID_STRUCT_INSTANTIATION, "Struct instantiations for inheriting structs are forbidden")
 
   // Use scope of concrete substantiation and not the scope of the generic type
   structScope = spiceStruct->scope;

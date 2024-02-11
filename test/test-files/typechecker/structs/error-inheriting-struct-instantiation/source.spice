@@ -1,0 +1,17 @@
+type Visitable interface {
+    p print();
+}
+
+type Test1 struct : Visitable {
+    int f1 = 123
+}
+
+p Test1.print() {
+    printf("Foo: %d", this.f1);
+}
+
+f<int> main() {
+    Test1 t1 = Test1{123};
+    Visitable* v = &t1;
+    v.print();
+}

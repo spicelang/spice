@@ -166,6 +166,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Return without initialization of result variable";
   case RETURN_WITH_VALUE_IN_PROCEDURE:
     return "Return with value in procedure";
+  case INVALID_STRUCT_INSTANTIATION:
+    return "Invalid struct instantiation";
   case DYN_POINTERS_NOT_ALLOWED:
     return "Dyn pointers not allowed";
   case REF_POINTERS_ARE_NOT_ALLOWED:

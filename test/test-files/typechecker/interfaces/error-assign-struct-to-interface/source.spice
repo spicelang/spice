@@ -6,11 +6,15 @@ type A struct : Iterable {
     int a
 }
 
+p A.ctor(int a) {
+    this.a = a;
+}
+
 p A.print() {
     printf("A: %d\n", this.a);
 }
 
 f<int> main() {
-    Iterable a = A{5};
+    Iterable a = A(5);
     a.print();
 }
