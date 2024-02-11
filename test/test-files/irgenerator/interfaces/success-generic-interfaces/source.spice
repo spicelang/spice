@@ -11,9 +11,15 @@ type Compareable<T> interface {
 }
 
 type Person struct : Compareable<long> {
-    string _firstName
-    string _lastName
-    unsigned int _age
+    string firstName
+    string lastName
+    unsigned int age
+}
+
+p Person.ctor(string firstName, string lastName, unsigned int age) {
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.age = age;
 }
 
 f<CompareResult> Person.compare(const long& a, const long& b) {
@@ -23,7 +29,7 @@ f<CompareResult> Person.compare(const long& a, const long& b) {
 }
 
 f<int> main() {
-    Person mike = Person{ "Mike", "Miller", 43 };
+    Person mike = Person("Mike", "Miller", 43);
     const bool isEqual = mike.compare(22l, 22l) == CompareResult::EQUAL;
     printf("%d", isEqual);
 }

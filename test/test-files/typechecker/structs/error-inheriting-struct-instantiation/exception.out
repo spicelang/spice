@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:14:16:
+Invalid struct instantiation: Struct instantiations for inheriting structs are forbidden
+
+14  Test1 t1 = Test1{123};
+               ^^^^^^^^^^

@@ -1,5 +1,5 @@
-[Error|Semantic] ./source.spice:14:5:
+[Error|Semantic] ./source.spice:18:5:
 Wrong data type for operator: Cannot apply '=' operator on types Iterable and A
 
-14  Iterable a = A{5};
+18  Iterable a = A(5);
     ^^^^^^^^^^^^^^^^^

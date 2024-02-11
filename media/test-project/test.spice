@@ -1,50 +1,38 @@
-type Test struct {
-    int f1
-    int f2
+type T int|long|short;
+
+type CompareResult enum {
+    LESS,
+    EQUAL,
+    GREATER
+}
+
+type Compareable<T> interface {
+    f<CompareResult> compare<T>(const T&, const T&);
+}
+
+type Person struct : Compareable<long> {
+    string firstName
+    string lastName
+    unsigned int age
+}
+
+p Person.ctor(string firstName, string lastName, unsigned int age) {
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.age = age;
+}
+
+f<CompareResult> Person.compare(const long& a, const long& b) {
+    if a > b { return CompareResult::GREATER; }
+    if a < b { return CompareResult::LESS; }
+    return CompareResult::EQUAL;
 }
 
 f<int> main() {
-    int t = 123;
-    switch (t) {
-        case 1: {
-            printf("1");
-        }
-        case Test: {
-            printf("t");
-        }
-    }
+    Person mike = Person("Mike", "Miller", 43);
+    const bool isEqual = mike.compare(22l, 22l) == CompareResult::EQUAL;
+    printf("%d", isEqual);
 }
-
-/*f<int> main() {
-    int i = 123; // Captured by ref
-    int j = 321; // Captured by val
-    dyn lambda = p() {
-        printf("Hello from inside: %d\n", i);
-        i++;
-        i += j;
-        printf("Hello from inside: %d\n", i);
-    };
-    lambda();
-    printf("Hello from outside: %d\n", i);
-}*/
-
-/*type Visitable interface {
-    p print();
-}
-
-type Test1 struct : Visitable {
-    int f1
-}
-
-p Test1.print() {
-    printf("Foo: %d", this.f1);
-}
-
-f<int> main() {
-    Test1 t1 = Test1{123};
-    Visitable* v = &t1;
-    v.print();
-}*/
 
 /*import "../../src-bootstrap/lexer/lexer";
 import "../../src-bootstrap/parser/parser";
@@ -53,23 +41,4 @@ f<int> main() {
     Lexer lexer = Lexer("./file.spice");
     Parser parser = Parser(lexer);
     parser.parse();
-}*/
-
-/*import "../../src-bootstrap/lexer/lexer";
-import "std/time/timer";
-
-f<int> main() {
-    Timer timer = Timer();
-    timer.start();
-    Lexer lexer = Lexer("./file.spice");
-    unsigned long i = 1l;
-    while (!lexer.isEOF()) {
-        Token token = lexer.getToken();
-        //printf("Token %d: ", i);
-        //token.print();
-        lexer.advance();
-        i++;
-    }
-    timer.stop();
-    printf("Tokens: %d, Time: %d\n", i, timer.getDurationInMillis());
 }*/
