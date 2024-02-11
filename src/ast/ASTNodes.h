@@ -1183,6 +1183,7 @@ public:
   // Public members
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
+  const SymbolTableEntry *enumItemEntry = nullptr;
 };
 
 // ======================================================== ReturnStmtNode =======================================================

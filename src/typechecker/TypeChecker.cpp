@@ -328,9 +328,11 @@ std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
 
   // Check if case constant types match switch expression type
   for (CaseBranchNode *caseBranchNode : node->caseBranches())
-    for (CaseConstantNode *constantNode : caseBranchNode->caseConstants())
-      if (!constantNode->getEvaluatedSymbolType(manIdx).matches(exprType, false, true, true))
+    for (CaseConstantNode *constantNode : caseBranchNode->caseConstants()) {
+      const SymbolType constantType = std::any_cast<ExprResult>(visit(constantNode)).type;
+      if (!constantType.matches(exprType, false, true, true))
         SOFT_ERROR_ER(constantNode, SWITCH_CASE_TYPE_MISMATCH, "Case value type does not match the switch expression type")
+    }
 
   return nullptr;
 }
@@ -593,6 +595,33 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   localVarEntry->updateState(INITIALIZED, node, true);
 
   return node->setEvaluatedSymbolType(localVarType, manIdx);
+}
+
+std::any TypeChecker::visitCaseConstant(CaseConstantNode *node) {
+  // If we have a normal constant, we can take the symbol type from there
+  if (node->constant())
+    return visit(node->constant());
+
+  // Check if a local or global variable can be found by searching for the name
+  if (node->identifierFragments.size() == 1)
+    node->enumItemEntry = currentScope->lookup(node->identifierFragments.back());
+
+  // If no local or global was found, search in the name registry
+  if (!node->enumItemEntry) {
+    const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqIdentifier);
+    if (!registryEntry)
+      SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found")
+    node->enumItemEntry = registryEntry->targetEntry;
+  }
+  assert(node->enumItemEntry != nullptr);
+
+  // Check for the correct type
+  if (node->enumItemEntry->scope->type != ScopeType::ENUM)
+    SOFT_ERROR_ER(node, CASE_CONSTANT_NOT_ENUM, "Case constants must be of type enum")
+
+  const SymbolType varType = node->enumItemEntry->getType();
+  assert(varType.is(TY_INT));
+  return ExprResult{node->setEvaluatedSymbolType(varType, manIdx)};
 }
 
 std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
