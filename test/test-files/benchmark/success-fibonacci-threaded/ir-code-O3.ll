@@ -143,9 +143,9 @@ for.body.L11:
 }
 
 ; Function Attrs: nofree nounwind
-define private void @_Z15lambda.L12C29.0v() #2 {
-  %1 = tail call fastcc i32 @_Z3fibi(i32 30)
-  %2 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %1)
+define private void @_Z15lambda.L12C29.0v(ptr nocapture nonnull readnone %0) #2 {
+  %2 = tail call fastcc i32 @_Z3fibi(i32 30)
+  %3 = tail call i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.0, i32 %2)
   ret void
 }
 

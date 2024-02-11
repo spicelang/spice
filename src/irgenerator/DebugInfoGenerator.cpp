@@ -241,7 +241,13 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
 
   // Get symbol table entry
   SymbolTableEntry *variableEntry = irGenerator->currentScope->lookupStrict(varName);
-  assert(variableEntry != nullptr);
+
+  // Some parameters are implicitly added by the compiler. Do not generate debug info for those.
+  if (!variableEntry) {
+    assert(argNumber != SIZE_MAX); // Ensure that we are dealing with a parameter
+    return;
+  }
+
   // Build debug info
   llvm::DIScope *scope = lexicalBlocks.top();
   llvm::DIType *diType = getDITypeForSymbolType(variableEntry->declNode, variableEntry->getType());

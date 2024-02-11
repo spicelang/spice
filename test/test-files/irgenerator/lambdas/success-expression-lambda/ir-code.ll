@@ -26,7 +26,7 @@ define private void @_Z4swapRiRi(ptr %0, ptr %1) {
   ret void
 }
 
-define private void @_Z4sortRA10iPFCbiiE(ptr %0, { ptr, ptr } %1) {
+define private void @_Z4sortRPiPFCbiiE(ptr %0, { ptr, ptr } %1) {
   %array = alloca ptr, align 8
   %sortFct = alloca { ptr, ptr }, align 8
   %i = alloca i32, align 4
@@ -116,21 +116,23 @@ define dso_local i32 @main() #0 {
   %1 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr, i32 0, i32 1
   store ptr poison, ptr %1, align 8
   %2 = load { ptr, ptr }, ptr %fat.ptr, align 8
-  call void @_Z4sortRA10iPFCbiiE(ptr %array, { ptr, ptr } %2)
-  call void @_Z10printArrayRA10i(ptr %array)
+  call void @_Z4sortRPiPFCbiiE(ptr %array, { ptr, ptr } %2)
+  call void @_Z10printArrayRPi(ptr %array)
   %3 = load i32, ptr %result, align 4
   ret i32 %3
 }
 
-define private i1 @_Z15lambda.L19C17.0ii(i32 %0, i32 %1) {
+define private i1 @_Z15lambda.L19C17.0ii(ptr noundef nonnull dereferenceable(8) %0, i32 %1, i32 %2) {
+  %captures = alloca ptr, align 8
   %a = alloca i32, align 4
   %b = alloca i32, align 4
-  store i32 %0, ptr %a, align 4
-  store i32 %1, ptr %b, align 4
-  %3 = load i32, ptr %b, align 4
-  %4 = load i32, ptr %a, align 4
-  %5 = icmp sgt i32 %4, %3
-  ret i1 %5
+  store ptr %0, ptr %captures, align 8
+  store i32 %1, ptr %a, align 4
+  store i32 %2, ptr %b, align 4
+  %4 = load i32, ptr %b, align 4
+  %5 = load i32, ptr %a, align 4
+  %6 = icmp sgt i32 %5, %4
+  ret i1 %6
 }
 
 define private void @_Z10printArrayRPi(ptr %0) {

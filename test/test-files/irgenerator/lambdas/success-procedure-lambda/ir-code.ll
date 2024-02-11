@@ -19,7 +19,7 @@ define dso_local i32 @main() #0 {
   %fat.ptr1 = alloca { ptr, ptr }, align 8
   %callbackWithArgs1 = alloca { ptr, ptr }, align 8
   %1 = alloca %struct.String, align 8
-  %fat.ptr3 = alloca { ptr, ptr }, align 8
+  %fat.ptr4 = alloca { ptr, ptr }, align 8
   %callbackWithArgs2 = alloca { ptr, ptr }, align 8
   %2 = alloca %struct.String, align 8
   store i32 0, ptr %result, align 4
@@ -28,62 +28,74 @@ define dso_local i32 @main() #0 {
   store ptr poison, ptr %3, align 8
   %4 = load { ptr, ptr }, ptr %fat.ptr, align 8
   store { ptr, ptr } %4, ptr %callbackWithoutArgs, align 8
+  %5 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithoutArgs, i32 0, i32 1
+  %captures = load ptr, ptr %5, align 8
   %fct = load ptr, ptr %callbackWithoutArgs, align 8
-  call void %fct()
+  call void %fct(ptr %captures)
   store ptr @_Z14lambda.L7C44.0R6Stringd, ptr %fat.ptr1, align 8
-  %5 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
-  store ptr poison, ptr %5, align 8
-  %6 = load { ptr, ptr }, ptr %fat.ptr1, align 8
-  store { ptr, ptr } %6, ptr %callbackWithArgs1, align 8
+  %6 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr1, i32 0, i32 1
+  store ptr poison, ptr %6, align 8
+  %7 = load { ptr, ptr }, ptr %fat.ptr1, align 8
+  store { ptr, ptr } %7, ptr %callbackWithArgs1, align 8
+  %8 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs1, i32 0, i32 1
+  %captures2 = load ptr, ptr %8, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr @anon.string.0)
-  %fct2 = load ptr, ptr %callbackWithArgs1, align 8
-  call void %fct2(ptr %1, double 3.140000e+00)
-  store ptr @_Z15lambda.L12C41.06Stringb, ptr %fat.ptr3, align 8
-  %7 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr3, i32 0, i32 1
-  store ptr poison, ptr %7, align 8
-  %8 = load { ptr, ptr }, ptr %fat.ptr3, align 8
-  store { ptr, ptr } %8, ptr %callbackWithArgs2, align 8
+  %fct3 = load ptr, ptr %callbackWithArgs1, align 8
+  call void %fct3(ptr %captures2, ptr %1, double 3.140000e+00)
+  store ptr @_Z15lambda.L12C41.06Stringb, ptr %fat.ptr4, align 8
+  %9 = getelementptr inbounds { ptr, ptr }, ptr %fat.ptr4, i32 0, i32 1
+  store ptr poison, ptr %9, align 8
+  %10 = load { ptr, ptr }, ptr %fat.ptr4, align 8
+  store { ptr, ptr } %10, ptr %callbackWithArgs2, align 8
+  %11 = getelementptr inbounds { ptr, ptr }, ptr %callbackWithArgs2, i32 0, i32 1
+  %captures5 = load ptr, ptr %11, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.1)
-  %9 = load %struct.String, ptr %2, align 8
-  %fct4 = load ptr, ptr %callbackWithArgs2, align 8
-  call void %fct4(%struct.String %9, i1 false)
+  %12 = load %struct.String, ptr %2, align 8
+  %fct6 = load ptr, ptr %callbackWithArgs2, align 8
+  call void %fct6(ptr %captures5, %struct.String %12, i1 false)
   call void @_ZN6String4dtorEv(ptr %1)
   call void @_ZN6String4dtorEv(ptr %2)
-  %10 = load i32, ptr %result, align 4
-  ret i32 %10
+  %13 = load i32, ptr %result, align 4
+  ret i32 %13
 }
 
-define private void @_Z14lambda.L2C31.0v() {
-  %1 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+define private void @_Z14lambda.L2C31.0v(ptr noundef nonnull dereferenceable(8) %0) {
+  %captures = alloca ptr, align 8
+  store ptr %0, ptr %captures, align 8
+  %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-define private void @_Z14lambda.L7C44.0R6Stringd(ptr %0, double %1) {
+define private void @_Z14lambda.L7C44.0R6Stringd(ptr noundef nonnull dereferenceable(8) %0, ptr %1, double %2) {
+  %captures = alloca ptr, align 8
   %str = alloca ptr, align 8
   %d = alloca double, align 8
-  store ptr %0, ptr %str, align 8
-  store double %1, ptr %d, align 8
-  %3 = load ptr, ptr %str, align 8
-  %4 = load ptr, ptr %3, align 8
-  %5 = load double, ptr %d, align 8
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %4, double %5)
+  store ptr %0, ptr %captures, align 8
+  store ptr %1, ptr %str, align 8
+  store double %2, ptr %d, align 8
+  %4 = load ptr, ptr %str, align 8
+  %5 = load ptr, ptr %4, align 8
+  %6 = load double, ptr %d, align 8
+  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %5, double %6)
   ret void
 }
 
 declare void @_ZN6String4ctorEPKc(ptr, ptr)
 
-define private void @_Z15lambda.L12C41.06Stringb(%struct.String %0, i1 %1) {
+define private void @_Z15lambda.L12C41.06Stringb(ptr noundef nonnull dereferenceable(8) %0, %struct.String %1, i1 %2) {
+  %captures = alloca ptr, align 8
   %str = alloca %struct.String, align 8
   %b = alloca i1, align 1
-  store %struct.String %0, ptr %str, align 8
-  store i1 %1, ptr %b, align 1
-  %3 = load ptr, ptr %str, align 8
-  %4 = load i1, ptr %b, align 1
-  %5 = zext i1 %4 to i32
-  %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %3, i32 %5)
+  store ptr %0, ptr %captures, align 8
+  store %struct.String %1, ptr %str, align 8
+  store i1 %2, ptr %b, align 1
+  %4 = load ptr, ptr %str, align 8
+  %5 = load i1, ptr %b, align 1
+  %6 = zext i1 %5 to i32
+  %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, ptr %4, i32 %6)
   ret void
 }
 

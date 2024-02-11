@@ -124,13 +124,11 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     // Load fctPtr
     llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
     fctPtr = insertStructGEP(fatStructType, fatPtr, 0);
-    if (firstFragEntry->getType().hasLambdaCaptures()) {
-      // Load captures struct
-      llvm::Value *capturesPtrPtr = insertStructGEP(fatStructType, fatPtr, 1);
-      llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
-      // Add captures to argument list
-      argValues.push_back(capturesPtr);
-    }
+    // Load captures struct
+    llvm::Value *capturesPtrPtr = insertStructGEP(fatStructType, fatPtr, 1);
+    llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
+    // Add captures to argument list
+    argValues.push_back(capturesPtr);
   }
 
   // Get arg values
@@ -189,7 +187,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     std::vector<llvm::Type *> argTypes;
     if (data.isMethodCall() || data.isCtorCall())
       argTypes.push_back(builder.getPtrTy()); // This pointer
-    if (data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures())
+    if (data.isFctPtrCall())
       argTypes.push_back(builder.getPtrTy()); // Capture pointer
     for (const SymbolType &paramType : paramSTypes)
       argTypes.push_back(paramType.toLLVMType(context, accessScope));
