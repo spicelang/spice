@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:7:5:
-Member access is only allowed on structs and Strings: Cannot call a method on 'thisIsNotAStruct', since it is no struct
+Member access is only allowed on structs and Strings: Cannot call a method on 'thisIsNotAStruct', since it is no struct or interface
 
 7  ts.thisIsNotAStruct.testFunc();
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

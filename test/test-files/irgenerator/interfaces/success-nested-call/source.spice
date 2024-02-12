@@ -25,12 +25,3 @@ f<int> main() {
     test2.test();
     test.test.test();
 }
-
-/*import "bootstrap/util/block-allocator";
-import "bootstrap/util/memory";
-
-f<int> main() {
-    DefaultMemoryManager defaultMemoryManager;
-    IMemoryManager* memoryManager = &defaultMemoryManager;
-    BlockAllocator<int> allocator = BlockAllocator<int>(memoryManager, 10);
-}*/
