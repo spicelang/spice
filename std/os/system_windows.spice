@@ -11,8 +11,8 @@ type SystemInfo struct {
     unsigned short wProcessorArchitecture
     unsigned short wReserved
     unsigned int dwPageSize
-    long* lpMinimumApplicationAddress
-    long* lpMaximumApplicationAddress
+    byte* lpMinimumApplicationAddress
+    byte* lpMaximumApplicationAddress
     int* dwActiveProcessorMask
     unsigned int dwNumberOfProcessors
     int dwProcessorType
@@ -62,4 +62,15 @@ public f<string> getArchName() {
         return "intel";
     }
     return "unknown";
+}
+
+/**
+ * Returns the system page size of the host system.
+ *
+ * return Page size
+ */
+public f<unsigned int> getPageSize() {
+    SystemInfo info = SystemInfo{};
+    GetSystemInfo(&info);
+    return info.dwPageSize;
 }
