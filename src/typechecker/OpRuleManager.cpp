@@ -18,7 +18,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprRes
   if (!isDecl)
     ensureNoConstAssign(node, lhs.type);
 
-  // Remove reference wrappers
+  // Retrieve types
   SymbolType lhsType = lhs.type;
   SymbolType rhsType = rhs.type;
 
@@ -28,12 +28,6 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprRes
   // Allow pointers and arrays of the same type straight away
   if (lhsType.isOneOf({TY_PTR, TY_REF}) && lhsType.matches(rhsType, false, false, true))
     return rhsType;
-  // Allow type to ref type of the same contained type straight away
-  if (lhsType.isRef() && lhsType.getContainedTy().matches(rhsType, false, false, true)) {
-    if (isDecl && !lhsType.canBind(rhsType, rhs.isTemporary()))
-      throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
-    return lhsType;
-  }
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
@@ -47,14 +41,73 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprRes
   if (lhsType.isOneOf({TY_ARRAY, TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE}) &&
       lhsType.matches(rhsType, false, true, true))
     return rhsType;
-  // Allow array to pointer
-  if (lhsType.isPtr() && rhsType.isArray() && lhsType.getContainedTy().matches(rhsType.getContainedTy(), false, false, true))
+
+  // Check common type combinations
+  SymbolType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl);
+  if (!resultType.is(TY_INVALID))
+    return resultType;
+
+  // Check primitive type combinations
+  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhsType, rhsType, true, errMsgPrefix);
+}
+
+SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
+                                                   bool isDecl) {
+  // Check if we try to assign a constant value
+  if (!isDecl)
+    ensureNoConstAssign(node, lhs.type);
+
+  // Retrieve types
+  SymbolType lhsType = lhs.type;
+  SymbolType rhsType = rhs.type;
+  assert(!lhsType.is(TY_DYN));
+
+  // Allow pointers and arrays of the same type straight away
+  if (lhsType.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhsType == rhsType)
+    return rhsType;
+  // Allow struct of the same type straight away
+  if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
+    return rhsType;
+  // Allow ref type to type of the same contained type straight away
+  if (rhsType.isRef() && lhsType.matches(rhsType.getContainedTy(), false, false, true))
     return lhsType;
+  // Allow const ref type to type of the same contained type straight away
+  if (rhsType.isConstRef() && lhsType.matches(rhsType.getContainedTy().getNonConst(), false, false, true))
+    return lhsType;
+  // Allow immediate value to const ref of the same contained type straight away
+  if (lhsType.isRef() && lhsType.getContainedTy().isConst() && imm)
+    return rhsType;
+
+  // Check common type combinations
+  SymbolType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl);
+  if (!resultType.is(TY_INVALID))
+    return resultType;
+
+  // Check primitive type combinations
+  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhsType, rhsType, true,
+                                 ERROR_FIELD_ASSIGN);
+}
+
+SymbolType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+                                                    bool isDecl) {
+  // Retrieve types
+  SymbolType lhsType = lhs.type;
+  SymbolType rhsType = rhs.type;
+
+  // Allow type to ref type of the same contained type straight away
+  if (lhsType.isRef() && lhsType.getContainedTy().matches(rhsType, false, false, true)) {
+    if (isDecl && !lhsType.canBind(rhsType, rhs.isTemporary()))
+      throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
+    return lhsType;
+  }
   // Allow dyn[] (empty array literal) to any array
   if (lhsType.isArray() && rhsType.isArrayOf(TY_DYN))
     return lhsType;
   // Allow char* = string
   if (lhsType.isPtrOf(TY_CHAR) && rhsType.is(TY_STRING) && lhsType.specifiers == rhsType.specifiers)
+    return lhsType;
+  // Allow array to pointer
+  if (lhsType.isPtr() && rhsType.isArray() && lhsType.getContainedTy().matches(rhsType.getContainedTy(), false, false, true))
     return lhsType;
   // Allow interface* = struct* that implements this interface
   const bool sameChainDepth = lhsType.typeChain.size() == rhsType.typeChain.size();
@@ -71,53 +124,9 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprRes
         return lhsType;
     }
   }
-  // Check primitive type combinations
-  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhsType, rhsType, true, errMsgPrefix);
-}
 
-SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
-                                                   bool isDecl) {
-  // Check if we try to assign a constant value
-  if (!isDecl)
-    ensureNoConstAssign(node, lhs.type);
-
-  // Remove reference wrappers
-  SymbolType lhsType = lhs.type;
-  SymbolType rhsType = rhs.type;
-
-  // Allow pointers and arrays of the same type straight away
-  if (lhsType.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhsType == rhsType)
-    return rhsType;
-  // Allow struct of the same type straight away
-  if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
-    return rhsType;
-  // Allow type to ref type of the same contained type straight away
-  if (lhsType.isRef() && lhsType.getContainedTy().matches(rhsType, false, false, true)) {
-    if (isDecl && !lhsType.canBind(rhsType, rhs.isTemporary()))
-      throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
-    return lhsType;
-  }
-  // Allow ref type to type of the same contained type straight away
-  if (rhsType.isRef() && lhsType.matches(rhsType.getContainedTy(), false, false, true))
-    return lhsType;
-  // Allow const ref type to type of the same contained type straight away
-  if (rhsType.isConstRef() && lhsType.matches(rhsType.getContainedTy().getNonConst(), false, false, true))
-    return lhsType;
-  // Allow immediate value to const ref of the same contained type straight away
-  if (lhsType.isRef() && lhsType.getContainedTy().isConst() && imm)
-    return rhsType;
-  // Allow array to pointer
-  if (lhsType.isPtr() && rhsType.isArray() && lhsType.getContainedTy().matches(rhsType.getContainedTy(), false, false, true))
-    return lhsType;
-  // Allow dyn[] (empty array literal) to any array
-  if (lhsType.isArray() && rhsType.isArrayOf(TY_DYN))
-    return lhsType;
-  // Allow char* = string
-  if (lhsType.isPtrOf(TY_CHAR) && rhsType.is(TY_STRING) && lhsType.specifiers == rhsType.specifiers)
-    return lhsType;
-  // Check primitive type combinations
-  return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhsType, rhsType, true,
-                                 ERROR_FIELD_ASSIGN);
+  // Nothing matched
+  return SymbolType(TY_INVALID);
 }
 
 ExprResult OpRuleManager::getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {

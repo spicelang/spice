@@ -91,7 +91,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
       assert(fieldEntry != nullptr);
       SymbolType fieldEntryType = fieldEntry->getType();
-      assert(fieldEntryType.isBaseType(TY_STRUCT));
+      assert(fieldEntryType.getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}));
       // Get struct type and scope
       structScope = fieldEntryType.getBaseType().getBodyScope();
       assert(structScope != nullptr);

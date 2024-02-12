@@ -1880,16 +1880,21 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, const s
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
     if (!fieldEntry)
       SOFT_ERROR_BOOL(node, ACCESS_TO_NON_EXISTING_MEMBER,
-                      "The type " + data.thisType.getName() + " does not have a member with the name '" + identifier + "'")
-    if (!fieldEntry->getType().isBaseType(TY_STRUCT))
-      SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS, "Cannot call a method on '" + identifier + "', since it is no struct")
+                      "The type " + data.thisType.getBaseType().getName() + " does not have a member with the name '" +
+                          identifier + "'")
+    if (!fieldEntry->getType().getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}))
+      SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS,
+                      "Cannot call a method on '" + identifier + "', since it is no struct or interface")
     fieldEntry->used = true;
 
     // Get struct type and scope
-    data.thisType = fieldEntry->getType().getBaseType();
-    structScope = data.thisType.getBodyScope();
+    data.thisType = fieldEntry->getType();
+    structScope = data.thisType.getBaseType().getBodyScope();
     assert(structScope != nullptr);
   }
+
+  if (data.thisType.is(TY_INTERFACE))
+    SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS, "Cannot call a method on an interface")
 
   // Map local types to imported types
   Scope *matchScope = data.calleeParentScope = structScope;
@@ -1901,9 +1906,6 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, const s
   SymbolType localThisType = data.thisType;
   autoDeReference(localThisType);
   localThisType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localThisType);
-
-  if (data.thisType.is(TY_INTERFACE))
-    SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS, "Cannot call a method on an interface")
 
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
