@@ -1,5 +1,7 @@
 // Std imports
 import "std/data/vector";
+import "std/type/error";
+import "std/os/system";
 
 // Own imports
 import "../util/memory";
@@ -7,11 +9,43 @@ import "../util/memory";
 type Base dyn;
 
 public type BlockAllocator<Base> struct {
-    const MemoryManager& memoryManager
+    IMemoryManager* memoryManager
     Vector<byte*> memoryBlocks
     Vector<Base*> allocatedObjects
+    unsigned int blockSize
+    unsigned int offsetInBlock = 0
+}
+
+public p BlockAllocator.ctor(IMemoryManager* memoryManager, unsigned int blockSize = 0) {
+    this.memoryManager = memoryManager;
+    this.blockSize = blockSize == 0 ? getPageSize() : blockSize;
+    // Allocate the first block
+    this.allocateNewBlock();
+}
+
+public p BlockAllocator.dtor() {
+    // Destruct all objects
+    foreach Base* ptr : this.allocatedObjects {
+        sDelete(ptr);
+    }
+    this.allocatedObjects.clear();
+
+    // Free all memory blocks
+    foreach byte* block : this.memoryBlocks {
+        this.memoryManager.deallocate(block);
+    }
+    this.memoryBlocks.clear();
 }
 
 public p BlockAllocator.allocateNewBlock() {
+    // Allocate new block
+    byte* ptr = this.memoryManager.allocate(this.blockSize);
+    if ptr != nil<byte*> {
+        String msg = "Could not allocate memory block for BlockAllocator. Already allocated " + this.memoryBlocks.size() + " blocks.";
+        panic(Error(msg));
+    }
 
+    // Store pointer and reset offset
+    this.memoryBlocks.push(ptr);
+    this.offsetInBlock = 0;
 }

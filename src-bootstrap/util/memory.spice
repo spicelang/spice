@@ -1,12 +1,13 @@
 public type IMemoryManager interface {
-    f<heap byte*> allocate(unsigned long);
-    p deallocate(heap byte*&);
+    public f<heap byte*> allocate(unsigned long);
+    public p deallocate(heap byte*&);
 }
 
 public type DefaultMemoryManager struct : IMemoryManager {}
 
 public f<heap byte*> DefaultMemoryManager.allocate(unsigned long size) {
-    return sAlloc(size);
+    Result<heap byte*> allocation = sAlloc(size);
+    return allocation.unwrap();
 }
 
 public p DefaultMemoryManager.deallocate(heap byte*& ptr) {
