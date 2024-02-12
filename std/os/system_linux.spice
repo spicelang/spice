@@ -1,5 +1,6 @@
 // External functions
 ext f<long> get_nprocs();
+ext f<unsigned int> getpagesize();
 
 /**
  * Returns the number of CPU cores of the host system.
@@ -8,4 +9,13 @@ ext f<long> get_nprocs();
  */
 public f<long> getCPUCoreCount() {
     return get_nprocs();
+}
+
+/**
+ * Returns the system page size of the host system.
+ *
+ * return Page size
+ */
+public f<unsigned int> getPageSize() {
+    return getpagesize();
 }
