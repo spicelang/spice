@@ -553,7 +553,11 @@ f<ASTCaseBranchNode*> Parser.parseCaseBranch() {
     dyn caseBranchNode = this.createNode<ASTCaseBranchNode>();
 
     this.lexer.expect(TokenType::CASE);
-    this.parseConstantLst();
+    this.parseCaseConstant();
+    while this.currentTokenIs(TokenType::COMMA) {
+        this.lexer.expect(TokenType::COMMA);
+        this.parseCaseConstant();
+    }
     this.lexer.expect(TokenType::COLON);
     this.parseStmtLst();
 
@@ -873,16 +877,25 @@ f<ASTAttrNode*> Parser.parseAttr() {
     return this.concludeNode(attrNode);
 }
 
-f<ASTConstantLstNode*> Parser.parseConstantLst() {
-    dyn constantLstNode = this.createNode<ASTConstantLstNode>();
+f<ASTCaseConstantNode*> Parser.parseCaseConstant() {
+    dyn caseConstantNode = this.createNode<ASTCaseConstantNode>();
 
-    this.parseConstant();
-    while this.currentTokenIs(TokenType::COMMA) {
-        this.lexer.expect(TokenType::COMMA);
+    const dyn optionsVarExpr = [TokenType::IDENTIFIER, TokenType::TYPE_IDENTIFIER];
+    if this.currentTokenIsOneOf(optionsVarExpr, sizeof(optionsVarExpr)) {
+        if this.currentTokenIs(TokenType::TYPE_IDENTIFIER) {
+            this.lexer.advance();
+            this.lexer.expect(TokenType::SCOPE_ACCESS);
+        }
+        this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+        while this.currentTokenIs(TokenType::SCOPE_ACCESS) {
+            this.lexer.expect(TokenType::SCOPE_ACCESS);
+            this.lexer.expect(TokenType::TYPE_IDENTIFIER);
+        }
+    } else {
         this.parseConstant();
     }
 
-    return this.concludeNode(constantLstNode);
+    return this.concludeNode(caseConstantNode);
 }
 
 f<ASTReturnStmtNode*> Parser.parseReturnStmt() {

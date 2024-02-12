@@ -370,9 +370,9 @@ public type ASTAttrNode struct /*: IVisitable*/ {
 
 }
 
-// ========================================================= ConstantLstNode =====================================================
+// ========================================================= CaseConstantNode ====================================================
 
-public type ASTConstantLstNode struct /*: IVisitable*/ {
+public type ASTCaseConstantNode struct /*: IVisitable*/ {
     compose public ASTNode node
 
 }
