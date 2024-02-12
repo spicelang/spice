@@ -664,6 +664,7 @@ private:
   GlobalResourceManager &resourceManager;
 
   // Private methods
+  static SymbolType getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl);
   template <size_t N>
   ExprResult isOperatorOverloadingFctAvailable(ASTNode *node, const char *fctName, const std::array<ExprResult, N> &op,
                                                size_t opIdx);
