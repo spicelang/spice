@@ -46,6 +46,8 @@ bool compileProject(CliOptions &cliOptions) {
     std::cout << e.what() << "\n";
   } catch (CompilerError &e) {
     std::cout << e.what() << "\n";
+  } catch (LinkerError &e) {
+    std::cout << e.what() << "\n";
   }
   return false;
 }
