@@ -11,7 +11,10 @@
 namespace spice::compiler {
 
 void IROptimizer::prepare() {
-  passBuilder = std::make_unique<llvm::PassBuilder>(resourceManager.targetMachine.get());
+  llvm::PipelineTuningOptions lto;
+  llvm::TargetMachine *targetMachine = resourceManager.targetMachine.get();
+  standardInstrumentations.registerCallbacks(passInstrumentationCallbacks);
+  passBuilder = std::make_unique<llvm::PassBuilder>(targetMachine, lto, std::nullopt, &passInstrumentationCallbacks);
 
   functionAnalysisMgr.registerPass([&] { return passBuilder->buildDefaultAAPipeline(); });
 

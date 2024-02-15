@@ -7,6 +7,7 @@
 #include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/Passes/OptimizationLevel.h>
 #include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/StandardInstrumentations.h>
 
 #include <CompilerPass.h>
 #include <SourceFile.h>
@@ -18,7 +19,8 @@ class IROptimizer : private CompilerPass {
 public:
   // Constructors
   IROptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
-      : CompilerPass(resourceManager, sourceFile), module(sourceFile->llvmModule.get()) {}
+      : CompilerPass(resourceManager, sourceFile), standardInstrumentations(sourceFile->llvmModule->getContext(), false),
+        module(sourceFile->llvmModule.get()) {}
 
   // Public methods
   void prepare();
@@ -33,6 +35,8 @@ private:
   llvm::FunctionAnalysisManager functionAnalysisMgr;
   llvm::CGSCCAnalysisManager cgsccAnalysisMgr;
   llvm::ModuleAnalysisManager moduleAnalysisMgr;
+  llvm::PassInstrumentationCallbacks passInstrumentationCallbacks;
+  llvm::StandardInstrumentations standardInstrumentations;
   std::unique_ptr<llvm::PassBuilder> passBuilder;
   llvm::Module *module;
 
