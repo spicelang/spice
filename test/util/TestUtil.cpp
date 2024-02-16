@@ -61,7 +61,8 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
  * Check if the expected output matches the actual output
  *
  * @param refPath Path to the reference file
- * @param callback Callback to execute the required steps to get the actual test output
+ * @param getActualOutput Callback to execute the required steps to get the actual test output
+ * @aaram modifyOutputFct Callback to modify the output before comparing it with the reference
  *
  * @return True, if the ref file was found
  */

@@ -146,6 +146,8 @@ void execTestCase(const TestCase &testCase) {
             } else {
               mainSourceFile->runDefaultIROptimizer();
             }
+
+            // mainSourceFile->previousStage = CompileStageType::IR_GENERATOR; // ToDo: Uncomment
             return mainSourceFile->compilerOutput.irOptString;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {

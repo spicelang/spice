@@ -124,7 +124,7 @@ public:
   llvm::Value *resolveAddress(const ASTNode *node);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
-  [[nodiscard]] std::string getIRString() const;
+  [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule);
 
 private:
   // Private methods
