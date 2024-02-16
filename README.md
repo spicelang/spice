@@ -28,7 +28,7 @@ If you like Spice, please consider a GitHub star! ⭐
 
 ## Documentation
 Please visit the documentation at [spicelang.com](https://www.spicelang.com). <br>
-We also have a Spice playground where you can try things: [play.spicelang.com](https://play.spicelang.com) <br>
+We also have a Spice playground where you can try things: [spice.compiler-explorer.com](https://spice.compiler-explorer.com) <br>
 Code coverage can be found at [coverage.spicelang.com](http://coverage.spicelang.com).
 
 ## Supported host systems & file downloads
