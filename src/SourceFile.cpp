@@ -312,7 +312,7 @@ void SourceFile::runDefaultIROptimizer() {
   assert(!resourceManager.cliOptions.useLTO);
 
   // Skip if restored from cache or this stage has already been done
-  if (restoredFromCache || previousStage >= IR_OPTIMIZER)
+  if (restoredFromCache || (previousStage >= IR_OPTIMIZER && !resourceManager.cliOptions.testMode))
     return;
 
   // Skip this stage if optimization is disabled
