@@ -546,11 +546,14 @@ void IRGenerator::materializeConstant(LLVMExprResult &exprResult) {
   exprResult.value = exprResult.constant;
 }
 
-std::string IRGenerator::getIRString() const {
+std::string IRGenerator::getIRString(llvm::Module *llvmModule) {
+  assert(llvmModule != nullptr); // Make sure the module hasn't been moved away
+
   std::string output;
   llvm::raw_string_ostream oss(output);
-  module->print(oss, nullptr);
-  return oss.str();
+  llvmModule->print(oss, nullptr);
+
+  return output;
 }
 
 /**

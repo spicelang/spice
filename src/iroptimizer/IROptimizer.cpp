@@ -11,7 +11,10 @@
 namespace spice::compiler {
 
 void IROptimizer::prepare() {
-  passBuilder = std::make_unique<llvm::PassBuilder>(resourceManager.targetMachine.get());
+  llvm::PipelineTuningOptions pto;
+  if (!resourceManager.cliOptions.testMode)
+    si.registerCallbacks(pic, &moduleAnalysisMgr);
+  passBuilder = std::make_unique<llvm::PassBuilder>(resourceManager.targetMachine.get(), pto, std::nullopt, &pic);
 
   functionAnalysisMgr.registerPass([&] { return passBuilder->buildDefaultAAPipeline(); });
 
@@ -27,10 +30,10 @@ void IROptimizer::optimizeDefault() {
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " ...\n"; // GCOV_EXCL_LINE
 
   // Run passes
-  llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
+  const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
   llvm::ModulePassManager modulePassMgr = passBuilder->buildPerModuleDefaultPipeline(llvmOptLevel);
   modulePassMgr.addPass(llvm::AlwaysInlinerPass());
-  modulePassMgr.run(*module, moduleAnalysisMgr);
+  modulePassMgr.run(*sourceFile->llvmModule, moduleAnalysisMgr);
 }
 
 void IROptimizer::optimizePreLink() {
@@ -38,19 +41,20 @@ void IROptimizer::optimizePreLink() {
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (pre-link) ...\n";      // GCOV_EXCL_LINE
 
   // Run passes
-  llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
+  const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
   llvm::ModulePassManager modulePassMgr = passBuilder->buildLTOPreLinkDefaultPipeline(llvmOptLevel);
   modulePassMgr.addPass(llvm::AlwaysInlinerPass());
-  modulePassMgr.run(*module, moduleAnalysisMgr);
+  modulePassMgr.run(*sourceFile->llvmModule, moduleAnalysisMgr);
 
   // Generate module summary index
   llvm::ModuleSummaryIndexAnalysis moduleSummaryIndexAnalysis;
   moduleSummaryIndexAnalysis.run(*sourceFile->llvmModule, moduleAnalysisMgr);
 }
 
-void IROptimizer::optimizePostLink(llvm::Module &ltoModule) {
+void IROptimizer::optimizePostLink() {
   if (cliOptions.printDebugOutput && cliOptions.dumpSettings.dumpIR && !cliOptions.dumpSettings.dumpToFiles) // GCOV_EXCL_LINE
     std::cout << "\nOptimizing on level " + std::to_string(cliOptions.optLevel) << " (post-link) ...\n";     // GCOV_EXCL_LINE
+  llvm::Module &ltoModule = *resourceManager.ltoModule;
 
   // Compute module summary index
   llvm::ModuleSummaryIndexAnalysis moduleSummaryIndexAnalysis;
@@ -58,20 +62,10 @@ void IROptimizer::optimizePostLink(llvm::Module &ltoModule) {
   moduleSummaryIndex.setWithWholeProgramVisibility();
 
   // Run passes
-  llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
+  const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
   llvm::ModulePassManager modulePassMgr = passBuilder->buildLTODefaultPipeline(llvmOptLevel, &moduleSummaryIndex);
   modulePassMgr.addPass(llvm::AlwaysInlinerPass());
   modulePassMgr.run(ltoModule, moduleAnalysisMgr);
-}
-
-std::string IROptimizer::getOptimizedIRString(llvm::Module *llvmModule) const {
-  if (!llvmModule)
-    llvmModule = module;
-  assert(llvmModule != nullptr); // Ensure that the module was not moved away
-  std::string output;
-  llvm::raw_string_ostream oss(output);
-  llvmModule->print(oss, nullptr);
-  return oss.str();
 }
 
 llvm::OptimizationLevel IROptimizer::getLLVMOptLevelFromSpiceOptLevel() const {

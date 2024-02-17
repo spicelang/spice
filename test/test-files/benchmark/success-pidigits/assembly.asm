@@ -37,91 +37,89 @@ main:                                   # @main
 	.seh_setframe %rbp, 48
 	.seh_endprologue
 	callq	__main
-	xorl	%ebx, %ebx
-	movl	$1, %esi
-	movl	$3, %r11d
-	xorl	%r13d, %r13d
-	xorl	%r10d, %r10d
-	movl	$3, %r15d
+	xorl	%edi, %edi
+	movl	$1, %r14d
+	movl	$3, %r10d
+	xorl	%r12d, %r12d
+	xorl	%r11d, %r11d
+	movl	$3, %esi
 	movl	$1, %edx
-	movl	$1, %r12d
+	movl	$1, %ebx
 	jmp	.LBB0_1
 .LBB0_1:                                # %for.body.L19
                                         # =>This Inner Loop Header: Depth=1
-	movq	%rsi, %rax
+	movq	%r14, %rax
 	shlq	$2, %rax
-	movq	%r13, %rcx
-	subq	%r12, %rcx
-	addq	%rax, %rcx
-	movq	%r15, %rdi
-	imulq	%r12, %rdi
-	cmpq	%rdi, %rcx
+	subq	%rbx, %rax
+	addq	%r12, %rax
+	movq	%rbx, %r15
+	imulq	%rsi, %r15
+	cmpq	%r15, %rax
 	jge	.LBB0_5
 # %bb.2:                                # %if.then.L20
                                         #   in Loop: Header=BB0_1 Depth=1
 	movq	%rdx, (%rbp)                    # 8-byte Spill
-	movq	%r11, -8(%rbp)                  # 8-byte Spill
+	movq	%r10, -8(%rbp)                  # 8-byte Spill
 	leaq	.Lprintf.str.0(%rip), %rcx
-	movq	%r15, %rdx
-	movl	%r10d, %r14d
+	movq	%rsi, %rdx
+	movl	%r11d, %r13d
 	callq	printf
-	movl	%r14d, %r10d
-	cmpl	$0, %r10d
+	movl	%r13d, %r11d
+	cmpl	$0, %r11d
 	jne	.LBB0_4
 # %bb.3:                                # %if.then.L22
                                         #   in Loop: Header=BB0_1 Depth=1
 	movl	$46, %ecx
 	callq	putchar
-	movl	%r14d, %r10d
+	movl	%r13d, %r11d
 .LBB0_4:                                # %if.exit.L22
                                         #   in Loop: Header=BB0_1 Depth=1
-	addl	$1, %r10d
-	imulq	$10, %rsi, %rcx
-	movq	%r13, %rax
-	subq	%rdi, %rax
+	addl	$1, %r11d
+	imulq	$10, %r14, %rcx
+	movq	%r12, %rax
+	subq	%r15, %rax
 	imulq	$10, %rax, %r8
-	imulq	$3, %rsi, %rax
-	addq	%r13, %rax
-	imulq	$10, %rax, %rax
+	imulq	$3, %r14, %rax
+	addq	%rax, %r12
+	imulq	$10, %r12, %rax
 	cqto
-	idivq	%r12
-	imulq	$-10, %r15, %rdx
+	idivq	%rbx
+	imulq	$-10, %rsi, %rdx
 	addq	%rdx, %rax
-	movq	%r8, %r13
-	movq	%rax, %r15
-	movq	%rcx, %rsi
-	movq	-8(%rbp), %r11                  # 8-byte Reload
+	movq	%r8, %r12
+	movq	%rax, %rsi
+	movq	%rcx, %r14
+	movq	-8(%rbp), %r10                  # 8-byte Reload
 	movq	(%rbp), %rdx                    # 8-byte Reload
 	jmp	.LBB0_6
 .LBB0_5:                                # %if.else.L20
                                         #   in Loop: Header=BB0_1 Depth=1
-	movq	%rsi, %rcx
-	imulq	%rdx, %rcx
-	movq	%rsi, %r8
-	shlq	%r8
-	addq	%r13, %r8
-	imulq	%r11, %r8
-	imulq	%r11, %r12
+	movq	%rdx, %rcx
+	imulq	%r14, %rcx
+	movq	%r14, %rax
+	shlq	%rax
+	movq	%r12, %r8
+	addq	%rax, %r8
+	imulq	%r10, %r8
+	imulq	%r10, %rbx
 	movq	%rdx, %r9
 	addq	$1, %r9
 	imulq	$7, %rdx, %rax
 	addq	$2, %rax
-	imulq	%rax, %rsi
-	movq	%r11, %rax
-	imulq	%r13, %rax
-	addq	%rax, %rsi
-	movq	%rsi, %rax
+	imulq	%r14, %rax
+	imulq	%r10, %r12
+	addq	%r12, %rax
 	cqto
-	idivq	%r12
-	movq	%rax, %r15
-	addq	$2, %r11
-	movq	%r8, %r13
+	idivq	%rbx
+	movq	%rax, %rsi
+	addq	$2, %r10
+	movq	%r8, %r12
 	movq	%r9, %rdx
-	movq	%rcx, %rsi
+	movq	%rcx, %r14
 .LBB0_6:                                # %for.tail.L19
                                         #   in Loop: Header=BB0_1 Depth=1
-	addl	$1, %ebx
-	cmpl	$20, %ebx
+	addl	$1, %edi
+	cmpl	$20, %edi
 	jne	.LBB0_1
 # %bb.7:                                # %for.exit.L19
 	xorl	%eax, %eax

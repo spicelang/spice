@@ -297,7 +297,7 @@ void SourceFile::runIRGenerator() {
   irGenerator.visit(ast);
 
   // Save the ir string in the compiler output
-  compilerOutput.irString = irGenerator.getIRString();
+  compilerOutput.irString = IRGenerator::getIRString(llvmModule.get());
 
   // Dump unoptimized IR code
   if (resourceManager.cliOptions.dumpSettings.dumpIR)
@@ -312,11 +312,11 @@ void SourceFile::runDefaultIROptimizer() {
   assert(!resourceManager.cliOptions.useLTO);
 
   // Skip if restored from cache or this stage has already been done
-  if (restoredFromCache || previousStage >= IR_OPTIMIZER)
+  if (restoredFromCache || (previousStage >= IR_OPTIMIZER && !resourceManager.cliOptions.testMode))
     return;
 
   // Skip this stage if optimization is disabled
-  OptLevel optLevel = resourceManager.cliOptions.optLevel;
+  const OptLevel optLevel = resourceManager.cliOptions.optLevel;
   if (optLevel < OptLevel::O1 || optLevel > OptLevel::Oz)
     return;
 
@@ -329,7 +329,7 @@ void SourceFile::runDefaultIROptimizer() {
   irOptimizer.optimizeDefault();
 
   // Save the optimized ir string in the compiler output
-  compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
+  compilerOutput.irOptString = IRGenerator::getIRString(llvmModule.get());
 
   // Dump optimized IR code
   if (resourceManager.cliOptions.dumpSettings.dumpIR)
@@ -360,7 +360,7 @@ void SourceFile::runPreLinkIROptimizer() {
   irOptimizer.optimizePreLink();
 
   // Save the optimized ir string in the compiler output
-  compilerOutput.irOptString = irOptimizer.getOptimizedIRString();
+  compilerOutput.irOptString = IRGenerator::getIRString(llvmModule.get());
 
   // Dump optimized IR code
   if (resourceManager.cliOptions.dumpSettings.dumpIR)
@@ -411,11 +411,11 @@ void SourceFile::runPostLinkIROptimizer() {
   // Optimize LTO module
   IROptimizer irOptimizer(resourceManager, this);
   irOptimizer.prepare();
-  irOptimizer.optimizePostLink(*resourceManager.ltoModule);
+  irOptimizer.optimizePostLink();
 
   // Save the optimized ir string in the compiler output
   llvm::Module *module = resourceManager.ltoModule.get();
-  compilerOutput.irOptString = irOptimizer.getOptimizedIRString(module);
+  compilerOutput.irOptString = IRGenerator::getIRString(module);
 
   // Dump optimized IR code
   if (resourceManager.cliOptions.dumpSettings.dumpIR)

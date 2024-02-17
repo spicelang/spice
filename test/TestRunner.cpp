@@ -32,8 +32,8 @@ void execTestCase(const TestCase &testCase) {
     GTEST_SKIP();
 
   // Create fake cli options
-  std::filesystem::path sourceFilePath = testCase.testPath / REF_NAME_SOURCE;
-  llvm::Triple targetTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
+  const std::filesystem::path sourceFilePath = testCase.testPath / REF_NAME_SOURCE;
+  const llvm::Triple targetTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
   CliOptions cliOptions = {
       /* mainSourceFile= */ sourceFilePath,
       /* targetTriple= */ targetTriple.getTriple(),
@@ -146,6 +146,7 @@ void execTestCase(const TestCase &testCase) {
             } else {
               mainSourceFile->runDefaultIROptimizer();
             }
+
             return mainSourceFile->compilerOutput.irOptString;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {

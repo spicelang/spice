@@ -7,10 +7,12 @@
 #include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/Passes/OptimizationLevel.h>
 #include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/StandardInstrumentations.h>
 
 #include <CompilerPass.h>
 #include <SourceFile.h>
 #include <ast/ASTVisitor.h>
+#include <global/GlobalResourceManager.h>
 
 namespace spice::compiler {
 
@@ -18,14 +20,14 @@ class IROptimizer : private CompilerPass {
 public:
   // Constructors
   IROptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
-      : CompilerPass(resourceManager, sourceFile), module(sourceFile->llvmModule.get()) {}
+      : CompilerPass(resourceManager, sourceFile),
+        si(resourceManager.context, false, resourceManager.cliOptions.testMode, llvm::PrintPassOptions(false, true, false)) {}
 
   // Public methods
   void prepare();
   void optimizeDefault();
   void optimizePreLink();
-  void optimizePostLink(llvm::Module &ltoModule);
-  [[nodiscard]] std::string getOptimizedIRString(llvm::Module *llvmModule = nullptr) const;
+  void optimizePostLink();
 
 private:
   // Private members
@@ -33,8 +35,9 @@ private:
   llvm::FunctionAnalysisManager functionAnalysisMgr;
   llvm::CGSCCAnalysisManager cgsccAnalysisMgr;
   llvm::ModuleAnalysisManager moduleAnalysisMgr;
+  llvm::StandardInstrumentations si;
+  llvm::PassInstrumentationCallbacks pic;
   std::unique_ptr<llvm::PassBuilder> passBuilder;
-  llvm::Module *module;
 
   // Private methods
   [[nodiscard]] llvm::OptimizationLevel getLLVMOptLevelFromSpiceOptLevel() const;
