@@ -1,10 +1,15 @@
 import "std/os/os";
+import "std/io/file";
 
 /**
  * Represents a path to a file or directory on the local file system
  */
 public type FilePath struct {
     String path
+}
+
+public p FilePath.ctor() {
+    this.path = String();
 }
 
 public p FilePath.ctor(string pathStr) {
@@ -61,4 +66,8 @@ public f<FilePath> operator/(const FilePath& lhs, const String& rhs) {
 public f<FilePath> operator/(const FilePath& lhs, const FilePath& rhs) {
     result = FilePath(lhs);
     result /= rhs.path.getRaw();
+}
+
+public f<bool> FilePath.exists() {
+    return fileExists(this.path.getRaw());
 }
