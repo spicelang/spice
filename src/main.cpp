@@ -7,6 +7,7 @@
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
+#include <typechecker/MacroDefs.h>
 #include <util/FileUtil.h>
 
 using namespace spice::compiler;
@@ -27,8 +28,11 @@ bool compileProject(CliOptions &cliOptions) {
 
     // Run compile pipeline for main source file. All dependent source files are triggered by their parents
     mainSourceFile->runFrontEnd();
+    CHECK_ABORT_FLAG_B()
     mainSourceFile->runMiddleEnd();
+    CHECK_ABORT_FLAG_B()
     mainSourceFile->runBackEnd();
+    CHECK_ABORT_FLAG_B()
 
     // Link the target executable (link object files to executable)
     resourceManager.linker.prepare();

@@ -28,7 +28,6 @@ You can apply following options to the `install` subcommand:
 | `-ir`        | `--dump-ir`          | Dump LLVM-IR                                                                         |
 | `-s`, `-asm` | `--dump-assembly`    | Dump Assembly code                                                                   |
 | `-b`, `-obj` | `--dump-object-file` | Dump object files                                                                    |
-| -            | `--dump-to-files`    | Redirect all dumps to files instead of printing them to the screen                   |
 | `-d`         | `--debug-output`     | Print compiler output for debugging.                                                 |
 | `-j <n>`     | `--jobs <n>`         | Set number of jobs to parallelize compilation (Default is auto)                      |
 | `-o`         | `--output`           | Set path for executable output.                                                      |

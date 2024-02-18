@@ -46,4 +46,11 @@
       return nullptr;                                                                                                            \
   }
 
+#define CHECK_ABORT_FLAG_V()                                                                                                     \
+  if (resourceManager.abortCompilation)                                                                                          \
+    return;
+
+#define CHECK_ABORT_FLAG_B()                                                                                                     \
+  if (resourceManager.abortCompilation)                                                                                          \
+    return true;
 #pragma warning(default : 4129)

@@ -13,6 +13,7 @@
 #include <objectemitter/ObjectEmitter.h>
 #include <symboltablebuilder/SymbolTable.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/MacroDefs.h>
 #include <typechecker/TypeChecker.h>
 #include <util/CompilerWarning.h>
 #include <util/FileUtil.h>
@@ -487,17 +488,26 @@ void SourceFile::concludeCompilation() {
 
 void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
   runLexer();
+  CHECK_ABORT_FLAG_V()
   runParser();
+  CHECK_ABORT_FLAG_V()
   runCSTVisualizer();
+  CHECK_ABORT_FLAG_V()
   runASTBuilder();
+  CHECK_ABORT_FLAG_V()
   runASTVisualizer();
+  CHECK_ABORT_FLAG_V()
   runImportCollector();
+  CHECK_ABORT_FLAG_V()
   runSymbolTableBuilder();
+  CHECK_ABORT_FLAG_V()
 }
 
 void SourceFile::runMiddleEnd() {
   runTypeCheckerPre();
+  CHECK_ABORT_FLAG_V()
   runTypeCheckerPost();
+  CHECK_ABORT_FLAG_V()
 }
 
 void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
@@ -508,14 +518,20 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   // Submit source file compilation to the task queue
   resourceManager.threadPool.detach_task([&]() {
     runIRGenerator();
+    CHECK_ABORT_FLAG_V()
     if (resourceManager.cliOptions.useLTO) {
       runPreLinkIROptimizer();
+      CHECK_ABORT_FLAG_V()
       runBitcodeLinker();
+      CHECK_ABORT_FLAG_V()
       runPostLinkIROptimizer();
+      CHECK_ABORT_FLAG_V()
     } else {
       runDefaultIROptimizer();
+      CHECK_ABORT_FLAG_V()
     }
     runObjectEmitter();
+    CHECK_ABORT_FLAG_V()
     concludeCompilation();
   });
 
@@ -525,6 +541,7 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   if (mainFile) {
     resourceManager.totalTimer.stop();
     if (resourceManager.cliOptions.printDebugOutput) {
+      CHECK_ABORT_FLAG_V()
       std::cout << "\nSuccessfully compiled " << std::to_string(resourceManager.sourceFiles.size()) << " source file(s).\n";
       std::cout << "Total compile time: " << std::to_string(resourceManager.totalTimer.getDurationMilliseconds()) << " ms\n";
     }
@@ -677,6 +694,17 @@ void SourceFile::dumpOutput(const std::string &content, const std::string &capti
     // Dump to console
     tout.println("\n" + caption + ":\n" + content);
   }
+
+  // If the abort after dump is requested, set the abort compilation flag
+  if (resourceManager.cliOptions.dumpSettings.abortAfterDump) {
+    // If this is an IR dump whilst having optimization enabled, we may not abort when dumping unoptimized IR,
+    // because we also have to dump the optimized IR
+    if (resourceManager.cliOptions.dumpSettings.dumpIR && fileSuffix == "ir-code.ll") {
+      resourceManager.abortCompilation = resourceManager.cliOptions.optLevel == OptLevel::O0;
+    } else {
+      resourceManager.abortCompilation = true;
+    }
+  }
 }
 
 void SourceFile::visualizerPreamble(std::stringstream &output) const {
@@ -689,7 +717,7 @@ void SourceFile::visualizerPreamble(std::stringstream &output) const {
 
 void SourceFile::visualizerOutput(std::string outputName, const std::string &output) const {
   if (resourceManager.cliOptions.dumpSettings.dumpToFiles) {
-    // Check if the dot command exists
+    // Check if graphviz is installed
     // GCOV_EXCL_START
     if (FileUtil::isCommandAvailable("dot"))
       throw CompilerError(IO_ERROR, "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable");
@@ -713,6 +741,10 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
     // Dump to console
     std::cout << "\nSerialized " << outputName << ":\n\n" << output << "\n";
   }
+
+  // If the abort after dump is requested, set the abort compilation flag
+  if (resourceManager.cliOptions.dumpSettings.abortAfterDump)
+    resourceManager.abortCompilation = true;
 }
 
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,

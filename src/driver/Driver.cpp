@@ -205,6 +205,11 @@ void Driver::addBuildSubcommand() {
   subCmd->add_flag<bool>("--no-entry", cliOptions.noEntryFct, "Do not generate main function");
   // --static
   subCmd->add_flag<bool>("--static", cliOptions.staticLinking, "Link statically");
+  // --dump-to-files
+  subCmd->add_flag<bool>("--dump-to-files", cliOptions.dumpSettings.dumpToFiles, "Redirect dumps to files instead of printing");
+  // --abort-after-dump
+  subCmd->add_flag<bool>("--abort-after-dump", cliOptions.dumpSettings.abortAfterDump,
+                         "Abort the compilation process after dumping the first requested resource");
 }
 
 /**
@@ -343,8 +348,6 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   subCmd->add_flag<bool>("--dump-assembly,-asm,-s", cliOptions.dumpSettings.dumpAssembly, "Dump Assembly code");
   // --dump-object-file
   subCmd->add_flag<bool>("--dump-object-file,-obj", cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
-  // --dump-to-files
-  subCmd->add_flag<bool>("--dump-to-files", cliOptions.dumpSettings.dumpToFiles, "Redirect dumps to files instead of printing");
 
   // Source file
   subCmd->add_option<std::filesystem::path>("<main-source-file>", cliOptions.mainSourceFile, "Main source file")
