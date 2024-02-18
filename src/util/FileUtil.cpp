@@ -1,12 +1,13 @@
 // Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
 #include "FileUtil.h"
-#include "exception/CompilerError.h"
 
 #include <array>
 #include <filesystem>
 #include <iostream>
 
+#include <exception/CompilerError.h>
+#include <exception/LinkerError.h>
 #include <util/CommonUtil.h>
 
 namespace spice::compiler {
@@ -86,7 +87,54 @@ bool FileUtil::isCommandAvailable(const std::string &cmd) {
 #else
 #error "Unsupported platform"
 #endif
-  return std::system(checkCmd.c_str()) != 0;
+  return std::system(checkCmd.c_str()) == 0;
+}
+
+/**
+ * Checks if Graphviz is installed on the system
+ *
+ * @return Present or not
+ */
+bool FileUtil::isGraphvizInstalled() { return std::system("dot -V") == 0; }
+
+/**
+ * Search for a supported linker invoker on the system and return the executable name or path.
+ * This function may throw a LinkerError if no linker invoker is found.
+ *
+ * @return Name of path to the linker invoker executable
+ */
+std::string FileUtil::findLinkerInvoker() {
+#ifdef OS_UNIX
+  for (const std::string linkerInvokerName : {"clang", "gcc"})
+    for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
+      if (std::filesystem::exists(path + linkerInvokerName))
+        return path + linkerInvokerName;
+#elif OS_WINDOWS
+  for (const std::string linkerInvokerName : {"clang", "gcc"})
+    if (isCommandAvailable(linkerInvokerName + " -v"))
+      return linkerInvokerName;
+#endif
+  throw LinkerError(LINKER_NOT_FOUND, "No supported linker invoker was found on the system. Supported are: clang and gcc");
+}
+
+/**
+ * Search for a supported linker on the system and return the executable name or path.
+ * This function may throw a LinkerError if no linker is found.
+ *
+ * @return Name of path to the linker executable
+ */
+std::string FileUtil::findLinker() {
+#ifdef OS_UNIX
+  for (const std::string linkerName : {"mold", "lld", "gold", "ld"})
+    for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
+      if (std::filesystem::exists(path + linkerName))
+        return path + linkerName;
+#elif OS_WINDOWS
+  for (const std::string linkerName : {"lld", "ld"})
+    if (isCommandAvailable(linkerName + " -v"))
+      return linkerName;
+#endif
+  throw LinkerError(LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: mold, lld, gold and ld");
 }
 
 /**
@@ -101,7 +149,7 @@ std::filesystem::path FileUtil::getStdDir() {
     return std::filesystem::path("/usr/lib/spice/std/");
 #endif
   if (std::getenv("SPICE_STD_DIR")) {
-    std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR"));
+    const std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR"));
     if (std::filesystem::exists(stdPath))
       return stdPath;
   }
@@ -116,7 +164,7 @@ std::filesystem::path FileUtil::getStdDir() {
  */
 std::filesystem::path FileUtil::getBootstrapDir() {
   if (std::getenv("SPICE_BOOTSTRAP_DIR")) {
-    std::filesystem::path stdPath(std::getenv("SPICE_BOOTSTRAP_DIR"));
+    const std::filesystem::path stdPath(std::getenv("SPICE_BOOTSTRAP_DIR"));
     if (std::filesystem::exists(stdPath))
       return stdPath;
   }

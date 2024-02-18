@@ -10,8 +10,6 @@
 
 namespace spice::compiler {
 
-const char *const LINKER_EXECUTABLE_NAME = "clang";
-
 void ExternalLinkerInterface::prepare() {
   // Set target to linker
   addLinkerFlag("--target=" + cliOptions.targetTriple);
@@ -36,20 +34,12 @@ void ExternalLinkerInterface::prepare() {
  * Start the linking process
  */
 void ExternalLinkerInterface::link() const {
-  std::string linkerCmd(LINKER_EXECUTABLE_NAME);
-  // LCOV_EXCL_START
-  if (FileUtil::isCommandAvailable(linkerCmd))
-    throw LinkerError(LINKER_NOT_FOUND, "Please check if you have installed " + linkerCmd + " and added it to the PATH variable");
-  // LCOV_EXCL_STOP
-
-  // Check if the output path was set
-  if (outputPath.empty())                                                    // GCOV_EXCL_LINE
-    throw CompilerError(IO_ERROR, "Output path for the linker was not set"); // GCOV_EXCL_LINE
+  assert(!outputPath.empty());
 
   // Build the linker command
   std::stringstream linkerCommandBuilder;
-  linkerCommandBuilder << linkerCmd;
-  // linkerCommandBuilder << " -###"; // For debugging purposes
+  linkerCommandBuilder << FileUtil::findLinkerInvoker();
+  linkerCommandBuilder << " -fuse-ld=" << FileUtil::findLinker(); // Select linker
   // Append linker flags
   for (const std::string &linkerFlag : linkerFlags)
     linkerCommandBuilder << " " << linkerFlag;
