@@ -28,6 +28,7 @@ enum CompilerErrorType : uint8_t {
   REFERENCED_UNDEFINED_FUNCTION_IR,
   PRINTF_NULL_TYPE,
   OOM,
+  ABORTED_BY_DUMP,
   INVALID_FUNCTION,
   INVALID_MODULE
 };
@@ -46,6 +47,7 @@ public:
   [[nodiscard]] static std::string getMessagePrefix(CompilerErrorType errorType);
 
   // Public members
+  CompilerErrorType type;
   std::string errorMessage;
 };
 

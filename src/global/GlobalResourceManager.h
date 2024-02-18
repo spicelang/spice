@@ -62,6 +62,7 @@ public:
   BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
   BS::synced_stream tout;
   ErrorManager errorManager;
+  bool abortCompilation = false;
 
 private:
   // Private members

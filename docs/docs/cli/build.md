@@ -29,6 +29,7 @@ You can apply following options to the `build` subcommand:
 | `-s`, `-asm` | `--dump-assembly`    | Dump Assembly code                                                                                              |
 | `-b`, `-obj` | `--dump-object-file` | Dump object files                                                                                               |
 | -            | `--dump-to-files`    | Redirect all dumps to files instead of printing them to the screen                                              |
+| -            | `--abort-after-dump` | Abort the compilation process after dumping the first requested resource                                        |
 | `-j <n>`     | `--jobs <n>`         | Set number of jobs to parallelize compilation (default is auto)                                                 |
 | `-t`         | `--target`           | Target triple for the emitted executable (for cross-compiling). <br> Format: `<arch><sub>-<vendor>-<sys>-<abi>` |
 | `-o`         | `--output`           | Set path for executable output.                                                                                 |

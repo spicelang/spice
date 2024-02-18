@@ -6,12 +6,12 @@
 
 namespace spice::compiler {
 
-CompilerError::CompilerError(const CompilerErrorType &type, const std::string &message) {
+CompilerError::CompilerError(const CompilerErrorType &type, const std::string &message) : type(type) {
   errorMessage = "[Error|Compiler]:\n";
   errorMessage += getMessagePrefix(type) + ": " + message;
 }
 
-CompilerError::CompilerError(const CodeLoc &codeLoc, const CompilerErrorType &type, const std::string &message) {
+CompilerError::CompilerError(const CodeLoc &codeLoc, const CompilerErrorType &type, const std::string &message) : type(type) {
   errorMessage = "[Error|Compiler] " + codeLoc.toPrettyString() + ":\n";
   errorMessage += getMessagePrefix(type) + ": " + message;
 }
@@ -61,6 +61,8 @@ std::string CompilerError::getMessagePrefix(CompilerErrorType type) {
     return "Printf has null type";
   case OOM:
     return "An out of memory error occurred";
+  case ABORTED_BY_DUMP:
+    return "Aborted by dump";
   case INVALID_FUNCTION:
     return "Invalid function";
   case INVALID_MODULE:
