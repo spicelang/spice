@@ -59,7 +59,7 @@ void execTestCase(const TestCase &testCase) {
           /* dumpAssembly= */ false,
           /* dumpObjectFile= */ false,
           /* dumpToFiles= */ false,
-          /* abortWhenAllDumped */ false,
+          /* abortAfterDump */ false,
       },
       /* namesForIRValues= */ true,
       /* optLevel= */ OptLevel::O0,
