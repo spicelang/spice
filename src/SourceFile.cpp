@@ -719,8 +719,8 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
   if (resourceManager.cliOptions.dumpSettings.dumpToFiles) {
     // Check if graphviz is installed
     // GCOV_EXCL_START
-    if (FileUtil::isCommandAvailable("dot"))
-      throw CompilerError(IO_ERROR, "Please check if you have installed 'Graphviz Dot' and added it to the PATH variable");
+    if (!FileUtil::isGraphvizInstalled())
+      throw CompilerError(IO_ERROR, "Please check if you have installed Graphviz and added it to the PATH variable");
     // GCOV_EXCL_STOP
 
     // Write to dot file

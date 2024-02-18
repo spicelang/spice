@@ -21,6 +21,9 @@ public:
   static std::string getFileContent(const std::filesystem::path &filePath);
   static ExecResult exec(const std::string &command);
   static bool isCommandAvailable(const std::string &cmd);
+  static bool isGraphvizInstalled();
+  static std::string findLinkerInvoker();
+  static std::string findLinker();
   static std::filesystem::path getStdDir();
   static std::filesystem::path getBootstrapDir();
   static std::filesystem::path getSpiceBinDir();

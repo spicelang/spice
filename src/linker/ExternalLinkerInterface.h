@@ -30,8 +30,7 @@ private:
   const CliOptions &cliOptions;
   std::vector<std::string> objectFilePaths;
   std::vector<std::string> linkerFlags = {
-      "-fuse-ld=lld", // Use LLD linker
-      "-flto",        // Enable LTO
+      "-flto", // Enable LTO
   };
 };
 
