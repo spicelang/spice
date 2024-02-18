@@ -105,13 +105,13 @@ bool FileUtil::isGraphvizInstalled() { return std::system("dot -V") == 0; }
  */
 std::string FileUtil::findLinkerInvoker() {
 #ifdef OS_UNIX
-  for (const char *linkerInvokerName : {"clang", "gcc"})
-    for (const char *path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
+  for (const std::string linkerInvokerName : {"clang", "gcc"})
+    for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
       if (std::filesystem::exists(path + linkerInvokerName))
         return path + linkerInvokerName;
 #elif OS_WINDOWS
-  for (const char *linkerInvokerName : {"clang", "gcc"})
-    if (isCommandAvailable(std::string(linkerInvokerName) + " -v"))
+  for (const std::string linkerInvokerName : {"clang", "gcc"})
+    if (isCommandAvailable(linkerInvokerName + " -v"))
       return linkerInvokerName;
 #endif
   throw LinkerError(LINKER_NOT_FOUND, "No supported linker invoker was found on the system. Supported are: clang and gcc");
@@ -125,13 +125,13 @@ std::string FileUtil::findLinkerInvoker() {
  */
 std::string FileUtil::findLinker() {
 #ifdef OS_UNIX
-  for (const char *linkerName : {"mold", "lld", "gold", "ld"})
-    for (const char *path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
+  for (const std::string linkerName : {"mold", "lld", "gold", "ld"})
+    for (const std::string path : {"/usr/bin/", "/usr/local/bin/", "/bin/"})
       if (std::filesystem::exists(path + linkerName))
         return path + linkerName;
 #elif OS_WINDOWS
-  for (const char *linkerName : {"lld", "ld"})
-    if (isCommandAvailable(std::string(linkerName) + " -v"))
+  for (const std::string linkerName : {"lld", "ld"})
+    if (isCommandAvailable(linkerName + " -v"))
       return linkerName;
 #endif
   throw LinkerError(LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: mold, lld, gold and ld");
@@ -149,7 +149,7 @@ std::filesystem::path FileUtil::getStdDir() {
     return std::filesystem::path("/usr/lib/spice/std/");
 #endif
   if (std::getenv("SPICE_STD_DIR")) {
-    std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR"));
+    const std::filesystem::path stdPath(std::getenv("SPICE_STD_DIR"));
     if (std::filesystem::exists(stdPath))
       return stdPath;
   }
@@ -164,7 +164,7 @@ std::filesystem::path FileUtil::getStdDir() {
  */
 std::filesystem::path FileUtil::getBootstrapDir() {
   if (std::getenv("SPICE_BOOTSTRAP_DIR")) {
-    std::filesystem::path stdPath(std::getenv("SPICE_BOOTSTRAP_DIR"));
+    const std::filesystem::path stdPath(std::getenv("SPICE_BOOTSTRAP_DIR"));
     if (std::filesystem::exists(stdPath))
       return stdPath;
   }
