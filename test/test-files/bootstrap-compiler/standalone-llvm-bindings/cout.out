@@ -1,0 +1,11 @@
+; ModuleID = 'test'
+source_filename = "test"
+
+@helloWorldStr = private unnamed_addr constant [15 x i8] c"Hello, world!\0A\00", align 1
+
+define i32 @main() {
+  %1 = call i32 (ptr, i32, ...) @printf(ptr @helloWorldStr, i32 3)
+  ret i32 0
+}
+
+declare i32 @printf(ptr, i32, ...)

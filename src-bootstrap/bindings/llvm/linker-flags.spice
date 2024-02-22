@@ -1,12 +1,18 @@
 #![
     // Paths - Linux
-    core.linker.flag = "-L$LLVM_LIB_DIR",
-    core.linker.flag = "-I$LLVM_INCLUDE_DIR",
-    core.linker.flag = "-I$LLVM_BUILD_INCLUDE_DIR",
+    core.linux.linker.flag = "-L$LLVM_LIB_DIR",
+    core.linux.linker.flag = "-I$LLVM_INCLUDE_DIR",
+    core.linux.linker.flag = "-I$LLVM_BUILD_INCLUDE_DIR",
+    core.linux.linker.flag = "-lm", // math
+    core.linux.linker.flag = "-lz", // zlib
+    core.linux.linker.flag = "-ltinfo", // ncurses
+    core.linux.linker.flag = "-lzstd", // zstd
     // Paths - Windows
-    core.linker.flag = "-L%LLVM_LIB_DIR%",           // e.g.: D:/LLVM/build-release/lib
-    core.linker.flag = "-I%LLVM_INCLUDE_DIR%",       // e.g.: D:/LLVM/llvm/include
-    core.linker.flag = "-I%LLVM_BUILD_INCLUDE_DIR%", // e.g.: D:/LLVM/build-release/include
+    core.windows.linker.flag = "-L%LLVM_LIB_DIR%",           // e.g.: D:/LLVM/build-release/lib
+    core.windows.linker.flag = "-I%LLVM_INCLUDE_DIR%",       // e.g.: D:/LLVM/llvm/include
+    core.windows.linker.flag = "-I%LLVM_BUILD_INCLUDE_DIR%", // e.g.: D:/LLVM/build-release/include
+    core.windows.linker.flag = "-lole32", // COM
+    core.windows.linker.flag = "-lws2_32", // WinSock
     // LLVM libs
     core.linker.flag = "-lLLVMAArch64AsmParser",
     core.linker.flag = "-lLLVMAArch64CodeGen",
@@ -83,7 +89,9 @@
     core.linker.flag = "-lLLVMExegesisX86",
     core.linker.flag = "-lLLVMExtensions",
     core.linker.flag = "-lLLVMFileCheck",
+    core.linker.flag = "-lLLVMFrontendDriver",
     core.linker.flag = "-lLLVMFrontendHLSL",
+    core.linker.flag = "-lLLVMFrontendOffloading",
     core.linker.flag = "-lLLVMFrontendOpenACC",
     core.linker.flag = "-lLLVMFrontendOpenMP",
     core.linker.flag = "-lLLVMFuzzerCLI",
@@ -94,6 +102,7 @@
     core.linker.flag = "-lLLVMHexagonDesc",
     core.linker.flag = "-lLLVMHexagonDisassembler",
     core.linker.flag = "-lLLVMHexagonInfo",
+    core.linker.flag = "-lLLVMHipStdPar",
     core.linker.flag = "-lLLVMInstCombine",
     core.linker.flag = "-lLLVMInstrumentation",
     core.linker.flag = "-lLLVMInterfaceStub",
@@ -205,7 +214,6 @@
     core.linker.flag = "-lLLVMXCoreInfo",
     core.linker.flag = "-lLLVMXRay",
     core.linker.flag = "-lstdc++",
-    core.linker.flag = "-lole32",
     core.linker.flag = "-luuid",
     core.linker.flag = "-pthread",
     // Wrapper around target macro definitions
