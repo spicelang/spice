@@ -26,31 +26,162 @@ type LLVMErrorRef alias VoidPtr;
 type ShortIntLong unsigned short|unsigned int|unsigned long;
 
 // ===== Enums =====
+public type LLVMOpcode enum {
+    // Terminator Instructions
+    Return = 1,
+    Br = 2,
+    Switch = 3,
+    IndirectBr = 4,
+    Invoke = 5,
+    // removed 6 due to API changes
+    Unreachable = 7,
+    CallBr = 67,
+
+    // Standard Unary Operators
+    FNeg = 66,
+
+    // Standard Binary Operators
+    Add = 8,
+    FAdd = 9,
+    Sub = 10,
+    FSub = 11,
+    Mul = 12,
+    FMul = 13,
+    UDiv = 14,
+    SDiv = 15,
+    FDiv = 16,
+    URem = 17,
+    SRem = 18,
+    FRem = 19,
+
+    // Logical Operators
+    Shl = 20,
+    LShr = 21,
+    AShr = 22,
+    And = 23,
+    Or = 24,
+    Xor = 25,
+
+    // Memory Operators
+    Alloca = 26,
+    Load = 27,
+    Store = 28,
+    GetElementPtr = 29,
+
+    // Cast Operators
+    Trunc = 30,
+    ZExt = 31,
+    SExt = 32,
+    FPToUI = 33,
+    FPToSI = 34,
+    UIToFP = 35,
+    SIToFP = 36,
+    FPTrunc = 37,
+    FPExt = 38,
+    PtrToInt = 39,
+    IntToPtr = 40,
+    BitCast = 41,
+    AddrSpaceCast = 60,
+
+    // Other Operators
+    ICmp = 42,
+    FCmp = 43,
+    PHI = 44,
+    Call = 45,
+    Select = 46,
+    UserOp1 = 47,
+    UserOp2 = 48,
+    VAArg = 49,
+    ExtractElement = 50,
+    InsertElement = 51,
+    ShuffleVector = 52,
+    ExtractValue = 53,
+    InsertValue = 54,
+    Freeze = 68,
+
+    // Atomic operators
+    Fence = 55,
+    AtomicCmpXchg = 56,
+    AtomicRMW = 57,
+
+    // Exception Handling Operators
+    Resume = 58,
+    LandingPad = 59,
+    CleanupRet = 61,
+    CatchRet = 62,
+    CatchPad = 63,
+    CleanupPad = 64,
+    CatchSwitch = 65
+}
+
+public type LLVMTypeKind enum {
+    VoidTypeKind,
+    HalfTypeKind,
+    FloatTypeKind,
+    DoubleTypeKind,
+    X86_FP80TypeKind,
+    FP128TypeKind,
+    PPC_FP128TypeKind,
+    LabelTypeKind,
+    IntegerTypeKind,
+    FunctionTypeKind,
+    StructTypeKind,
+    ArrayTypeKind,
+    PointerTypeKind,
+    VectorTypeKind,
+    MetadataTypeKind,
+    X86_MMXTypeKind,
+    TokenTypeKind,
+    ScalableVectorTypeKind,
+    BFloatTypeKind,
+    X86AMXTypeKind,
+    TargetExtTypeKind
+}
+
 public type LLVMLinkage enum {
-    ExternalLinkage = 0,
-    AvailableExternallyLinkage = 1,
-    LinkOnceAnyLinkage = 2,
-    LinkOnceODRLinkage = 3,
-    LinkOnceODRAutoHideLinkage = 4,
-    WeakAnyLinkage = 5,
-    WeakODRLinkage = 6,
-    AppendingLinkage = 7,
-    InternalLinkage = 8,
-    PrivateLinkage = 9,
-    DLLImportLinkage = 10,
-    DLLExportLinkage = 11,
-    ExternalWeakLinkage = 12,
-    GhostLinkage = 13,
-    CommonLinkage = 14,
-    LinkerPrivateLinkage = 15,
-    LinkerPrivateWeakLinkage = 16
+    ExternalLinkage,
+    AvailableExternallyLinkage,
+    LinkOnceAnyLinkage,
+    LinkOnceODRLinkage,
+    LinkOnceODRAutoHideLinkage,
+    WeakAnyLinkage,
+    WeakODRLinkage,
+    AppendingLinkage,
+    InternalLinkage,
+    PrivateLinkage,
+    DLLImportLinkage,
+    DLLExportLinkage,
+    ExternalWeakLinkage,
+    GhostLinkage,
+    CommonLinkage,
+    LinkerPrivateLinkage,
+    LinkerPrivateWeakLinkage
+}
+
+public type LLVMVisibility enum {
+    DefaultVisibility,
+    HiddenVisibility,
+    ProtectedVisibility
+}
+
+public type LLVMUnnamedAddr enum {
+    NoUnnamedAddr,
+    LocalUnnamedAddr,
+    GlobalUnnamedAddr
+}
+
+public type LLVMDLLStorageClass enum {
+    Default = 0,
+    DLLImport = 1,
+    DLLExport = 2
 }
 
 public type LLVMCallConv enum {
     CCallConv = 0,
     FastCallConv = 8,
     ColdCallConv = 9,
-    WebKitJSCallConv = 12,
+    GHCALLCallConv = 10,
+    HiPECallConv = 11,
     AnyRegCallConv = 13,
     PreserveMostCallConv = 14,
     PreserveAllCallConv = 15,
@@ -89,64 +220,167 @@ public type LLVMCallConv enum {
     AMDGPUESCallConv = 96
 }
 
+public type LLVMValueKind enum {
+    ArgumentValue,
+    BasicBlockValue,
+    MemoryUseValue,
+    MemoryDefValue,
+    MemoryPhiValue,
+
+    FunctionValue,
+    GlobalAliasValue,
+    GlobalIFuncValue,
+    GlobalVariableValue,
+    BlockAddressValue,
+    ConstantExprValue,
+    ConstantArrayValue,
+    ConstantStructValue,
+    ConstantVectorValue,
+
+    UndefValueValue,
+    ConstantAggregateZeroValue,
+    ConstantDataArrayValue,
+    ConstantDataVectorValue,
+    ConstantIntValue,
+    ConstantFPValue,
+    ConstantPointerNullValue,
+    ConstantTokenNoneValue,
+
+    MetadataAsValueValue,
+    InlineAsmValue,
+
+    InstructionValue,
+    PoisonValue,
+    ConstantTargetNoneValue
+}
+
+public type LLVMIntPredicate enum {
+    EQ = 32,
+    NE,
+    UGT,
+    UGE,
+    ULT,
+    ULE,
+    SGT,
+    SGE,
+    SLT,
+    SLE
+}
+
+public type LLVMRealPredicate enum {
+    PredicateFalse,
+    OEQ,
+    OGT,
+    OGE,
+    OLT,
+    OLE,
+    ONE,
+    ORD,
+    UNO,
+    UEQ,
+    UGT,
+    UGE,
+    ULT,
+    ULE,
+    UNE,
+    PredicateTrue
+}
+
+public type LLVMLandingPadClauseTy enum {
+    Catch,
+    Filter
+}
+
+public type LLVMThreadLocalMode enum {
+    NotThreadLocal = 0,
+    GeneralDynamicTLSModel,
+    LocalDynamicTLSModel,
+    InitialExecTLSModel,
+    LocalExecTLSModel
+}
+
+public type LLVMAtomicOrdering enum {
+    NotAtomic = 0,
+    Unordered = 1,
+    Monotonic = 2,
+    Acquire = 4,
+    Release = 5,
+    AcquireRelease = 6,
+    SequentiallyConsistent = 7
+}
+
+public type LLVMAtomicRMWBinOp enum {
+    Xchg,
+    Add,
+    Sub,
+    And,
+    Nand,
+    Or,
+    Xor,
+    Max,
+    Min,
+    UMax,
+    UMin,
+    FAdd,
+    FSub,
+    FMax,
+    FMin
+}
+
+public type LLVMDiagnosticSeverity enum {
+    Error,
+    Warning,
+    Remark,
+    Note
+}
+
+public type LLVMInlineAsmDialect enum {
+    ATT,
+    Intel
+}
+
+public type LLVMModuleFlagBehaviour enum {
+    Error,
+    Warning,
+    Require,
+    Override,
+    Append,
+    AppendUnique
+}
+
+public type LLVMTailCallKind enum {
+    None,
+    Tail,
+    MustTail,
+    NoTail
+}
+
 public type LLVMCodeGenOptLevel enum {
-    CodeGenLevelNone = 0,
-    CodeGenLevelLess = 1,
-    CodeGenLevelDefault = 2,
-    CodeGenLevelAggressive = 3
+    None = 0,
+    Less = 1,
+    Default = 2,
+    Aggressive = 3
 }
 
 public type LLVMRelocMode enum {
-    RelocDefault = 0,
-    RelocStatic = 1,
-    RelocPIC = 2,
-    RelocDynamicNoPic = 3
+    Default = 0,
+    Static = 1,
+    PIC = 2,
+    DynamicNoPic = 3
 }
 
 public type LLVMCodeModel enum {
-    CodeModelDefault = 0,
-    CodeModelJITDefault = 1,
-    CodeModelSmall = 2,
-    CodeModelKernel = 3,
-    CodeModelMedium = 4,
-    CodeModelLarge = 5
+    Default = 0,
+    JITDefault = 1,
+    Small = 2,
+    Kernel = 3,
+    Medium = 4,
+    Large = 5
 }
 
 public type LLVMCodeGenFileType enum {
     AssemblyFile = 0,
     ObjectFile = 1
-}
-
-public type LLVMIntPredicate enum {
-    IntEQ = 32,
-    IntNE = 33,
-    IntUGT = 34,
-    IntUGE = 35,
-    IntULT = 36,
-    IntULE = 37,
-    IntSGT = 38,
-    IntSGE = 39,
-    IntSLT = 40,
-    IntSLE = 41
-}
-
-public type LLVMRealPredicate enum {
-    RealPredicateFalse = 0,
-    RealOEQ = 1,
-    RealOGT = 2,
-    RealOGE = 3,
-    RealOLT = 4,
-    RealOLE = 5,
-    RealONE = 6,
-    RealORD = 7,
-    RealUNO = 8,
-    RealUEQ = 9,
-    RealUGT = 10,
-    RealUGE = 11,
-    RealULT = 12,
-    RealULE = 13,
-    RealUNE = 14,
-    RealPredicateTrue = 15
 }
 
 public type LLVMVerifierFailureAction enum {
@@ -227,9 +461,19 @@ ext f<LLVMValueRef> LLVMBuildFNeg(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/, stri
 ext f<LLVMValueRef> LLVMBuildNot(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/, string /*Name*/);
 ext p LLVMSetVolatile(LLVMValueRef /*MemoryAccessInst*/);
 ext f<LLVMValueRef> LLVMBuildCall2(LLVMBuilderRef /*B*/, LLVMTypeRef /*FctTy*/, LLVMValueRef /*Fn*/, LLVMValueRef* /*Args*/, unsigned int /*NumArgs*/, string /*Name*/);
+ext f<LLVMBool> LLVMPrintModuleToFile(LLVMModuleRef /*M*/, string /*Filename*/, string& /*ErrorMessage*/);
 ext f<string> LLVMPrintModuleToString(LLVMModuleRef /*M*/);
 ext f<LLVMPassBuilderOptionsRef> LLVMCreatePassBuilderOptions();
 ext p LLVMDisposePassBuilderOptions(LLVMPassBuilderOptionsRef /*Options*/);
+ext p LLVMPassBuilderOptionsSetDebugLogging(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
+ext p LLVMPassBuilderOptionsSetLoopInterleaving(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
+ext p LLVMPassBuilderOptionsSetLoopVectorization(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
+ext p LLVMPassBuilderOptionsSetSLPVectorization(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
+ext p LLVMPassBuilderOptionsSetLoopUnrolling(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
+ext p LLVMPassBuilderOptionsSetLicmMssaNoAccForPromotionCap(LLVMPassBuilderOptionsRef /*Options*/, unsigned int /*LicmMssaNoAccForPromotionCap*/);
+ext p LLVMPassBuilderOptionsSetCallGraphProfile(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
+ext p LLVMPassBuilderOptionsSetMergeFunctions(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
+ext p LLVMPassBuilderOptionsSetInlinerThreshold(LLVMPassBuilderOptionsRef /*Options*/, int /*InlinerThreshold*/);
 ext f<LLVMErrorRef> LLVMRunPasses(LLVMModuleRef /*M*/, LLVMTargetMachineRef /*TM*/, string /*Passes*/, LLVMPassBuilderOptionsRef /*Options*/);
 ext p LLVM_InitializeNativeTarget();
 ext p LLVM_InitializeNativeAsmPrinter();
@@ -342,6 +586,14 @@ public p Module.dump() {
 
 public f<string> Module.print() {
     return LLVMPrintModuleToString(this.self);
+}
+
+public f<string> Module.printToFile(string filename) {
+    string errorMessage;
+    if LLVMPrintModuleToFile(this.self, filename, errorMessage) {
+        return errorMessage;
+    }
+    return "";
 }
 
 public p Module.setTargetTriple(string triple) {
@@ -711,6 +963,42 @@ public p PassBuilderOptions.ctor() {
 
 public p PassBuilderOptions.dtor() {
     LLVMDisposePassBuilderOptions(this.internalOptions);
+}
+
+public p PassBuilderOptions.setDebugLogging(bool enabled) {
+    LLVMPassBuilderOptionsSetDebugLogging(this.internalOptions, enabled);
+}
+
+public p PassBuilderOptions.setLoopInterleaving(bool enabled) {
+    LLVMPassBuilderOptionsSetLoopInterleaving(this.internalOptions, enabled);
+}
+
+public p PassBuilderOptions.setLoopVectorization(bool enabled) {
+    LLVMPassBuilderOptionsSetLoopVectorization(this.internalOptions, enabled);
+}
+
+public p PassBuilderOptions.setSLPVectorization(bool enabled) {
+    LLVMPassBuilderOptionsSetSLPVectorization(this.internalOptions, enabled);
+}
+
+public p PassBuilderOptions.setLoopUnrolling(bool enabled) {
+    LLVMPassBuilderOptionsSetLoopUnrolling(this.internalOptions, enabled);
+}
+
+public p PassBuilderOptions.setLicmMssaNoAccForPromotionCap(unsigned int licmMssaNoAccForPromotionCap) {
+    LLVMPassBuilderOptionsSetLicmMssaNoAccForPromotionCap(this.internalOptions, licmMssaNoAccForPromotionCap);
+}
+
+public p PassBuilderOptions.setCallGraphProfile(bool enabled) {
+    LLVMPassBuilderOptionsSetCallGraphProfile(this.internalOptions, enabled);
+}
+
+public p PassBuilderOptions.setMergeFunctions(bool enabled) {
+    LLVMPassBuilderOptionsSetMergeFunctions(this.internalOptions, enabled);
+}
+
+public p PassBuilderOptions.setInlinerThreshold(int threshold) {
+    LLVMPassBuilderOptionsSetInlinerThreshold(this.internalOptions, threshold);
 }
 
 // ===== Static functions =====

@@ -8,7 +8,7 @@ f<int> main() {
     heap string targetTriple = llvm::getDefaultTargetTriple();
     string error;
     llvm::Target target = llvm::getTargetFromTriple(targetTriple, &error);
-    llvm::TargetMachine targetMachine = target.createTargetMachine(targetTriple, "generic", "", llvm::LLVMCodeGenOptLevel::CodeGenLevelDefault, llvm::LLVMRelocMode::RelocDefault, llvm::LLVMCodeModel::CodeModelDefault);
+    llvm::TargetMachine targetMachine = target.createTargetMachine(targetTriple, "generic", "", llvm::LLVMCodeGenOptLevel::Default, llvm::LLVMRelocMode::Default, llvm::LLVMCodeModel::Default);
 
     llvm::LLVMContext context;
     llvm::Module module = llvm::Module("test", context);
