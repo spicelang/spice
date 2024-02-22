@@ -13,7 +13,7 @@ f<int> main() {
     llvm::LLVMContext context;
     llvm::Module module = llvm::Module("test", context);
     module.setDataLayout(targetMachine.createDataLayout());
-    module.setTargetTriple(targetTriple);
+    //module.setTargetTriple(targetTriple); // This emits target dependent information in the IR, which is not what we want here.
     llvm::Builder builder = llvm::Builder(context);
 
     llvm::Type returnType = builder.getInt32Ty();
@@ -47,15 +47,4 @@ f<int> main() {
     assert !llvm::verifyModule(module, &output);
 
     printf("%s", module.print());
-
-    //llvm::PassBuilderOptions passBuilderOptions;
 }
-
-/*import "bootstrap/util/block-allocator";
-import "bootstrap/util/memory";
-
-f<int> main() {
-    DefaultMemoryManager defaultMemoryManager;
-    IMemoryManager* memoryManager = &defaultMemoryManager;
-    BlockAllocator<int> allocator = BlockAllocator<int>(memoryManager, 10);
-}*/

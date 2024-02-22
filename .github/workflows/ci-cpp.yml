@@ -103,6 +103,9 @@ jobs:
       - name: Run Test target
 #        if: github.event_name != 'pull_request'
         env:
+          LLVM_LIB_DIR: /home/runner/work/spice/llvm/build/lib
+          LLVM_INCLUDE_DIR: /home/runner/work/spice/llvm/llvm/include
+          LLVM_BUILD_INCLUDE_DIR: /home/runner/work/spice/llvm/build/include
           SPICE_STD_DIR: /home/runner/work/spice/spice/std
           SPICE_BOOTSTRAP_DIR: /home/runner/work/spice/spice/src-bootstrap
         run: |
@@ -112,6 +115,9 @@ jobs:
 #      - name: Run Test target with Valgrind
 #        if: github.event_name == 'pull_request'
 #        env:
+#          LLVM_LIB_DIR: /home/runner/work/spice/llvm/build/lib
+#          LLVM_INCLUDE_DIR: /home/runner/work/spice/llvm/llvm/include
+#          LLVM_BUILD_INCLUDE_DIR: /home/runner/work/spice/llvm/build/include
 #          SPICE_STD_DIR: /home/runner/work/spice/spice/std
 #          SPICE_BOOTSTRAP_DIR: /home/runner/work/spice/spice/src-bootstrap
 #        run: |

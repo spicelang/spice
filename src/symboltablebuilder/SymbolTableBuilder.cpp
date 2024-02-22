@@ -624,11 +624,23 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   // Retrieve attributes
   const AttrLstNode *attrs = node->attrLst();
 
+  // Collect linker flags
+  std::vector<const CompileTimeValue *> linkerFlagValues;
   // core.linker.flag
-  for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG)) {
-    const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
-    resourceManager.linker.addLinkerFlag(stringValue);
+  std::vector<const CompileTimeValue *> values = attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG);
+  linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
+  // core.linux.linker.flag
+  if (resourceManager.targetMachine->getTargetTriple().isOSLinux()) {
+    values = attrs->getAttrValuesByName(ATTR_CORE_LINUX_LINKER_FLAG);
+    linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   }
+  // core.windows.linker.flag
+  if (resourceManager.targetMachine->getTargetTriple().isOSWindows()) {
+    values = attrs->getAttrValuesByName(ATTR_CORE_WINDOWS_LINKER_FLAG);
+    linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
+  }
+  for (const CompileTimeValue *value : linkerFlagValues)
+    resourceManager.linker.addLinkerFlag(resourceManager.compileTimeStringValues.at(value->stringValueOffset));
 
   // core.linker.additional_source
   for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_ADDITIONAL_SOURCE)) {

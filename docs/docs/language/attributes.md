@@ -17,6 +17,8 @@ For attributes of type bool, the value `true` can be omitted.
 
 ### Available attributes
 - `core.linker.flag: string (default: "")`: Append linker flag
+- `core.linux.linker.flag: string (default: "")`: Append linker flag for Linux
+- `core.windows.linker.flag: string (default: "")`: Append linker flag for Windows
 - `core.compiler.alwaysKeepOnNameCollision: bool (default: false)`: Always keep the symbols of this source files when merging the name registries of multiple source files
 
 
