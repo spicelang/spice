@@ -108,7 +108,7 @@ bool SwitchStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
   const bool allCaseBranchesReturn = std::ranges::all_of(
       caseNodes, [=](CaseBranchNode *node) { return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable); });
   const bool defaultBranchReturns =
-      !defaultBranchNode || defaultBranchNode->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+      defaultBranchNode && defaultBranchNode->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   return allCaseBranchesReturn && defaultBranchReturns;
 }
