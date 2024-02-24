@@ -7,6 +7,7 @@
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
+#include <util/CodeLoc.h>
 
 namespace spice::compiler {
 

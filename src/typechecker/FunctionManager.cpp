@@ -4,9 +4,12 @@
 
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
+#include <model/GenericType.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/ExprResult.h>
 #include <typechecker/TypeMatcher.h>
+#include <util/CodeLoc.h>
 
 namespace spice::compiler {
 

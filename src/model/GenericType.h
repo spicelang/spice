@@ -5,7 +5,7 @@
 #include <string>
 #include <utility>
 
-#include "symboltablebuilder/SymbolType.h"
+#include <symboltablebuilder/SymbolType.h>
 
 #include "../../lib/json/json.hpp"
 

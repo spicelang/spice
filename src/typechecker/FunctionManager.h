@@ -8,12 +8,12 @@
 #include <vector>
 
 #include <model/GenericType.h>
-#include <typechecker/ExprResult.h>
-#include <util/CodeLoc.h>
 
 namespace spice::compiler {
 
 // Forward declarations
+struct CodeLoc;
+struct ExprResult;
 class Function;
 class Scope;
 class SymbolTableEntry;

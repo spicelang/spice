@@ -213,8 +213,9 @@ void execTestCase(const TestCase &testCase) {
       const bool exitRefFileFound =
           TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE, [&]() { return std::to_string(result.exitCode); });
       // If no exit code ref file exists, check against 0
-      if (!exitRefFileFound)
+      if (!exitRefFileFound) {
         EXPECT_EQ(0, result.exitCode) << "Program exited with non-zero exit code";
+      }
 #endif
 
       return result.output;
