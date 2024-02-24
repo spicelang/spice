@@ -2396,8 +2396,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return SymbolType(TY_INT);
 
   if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
-    const DataTypeNode *dataTypeNode = dynamic_cast<DataTypeNode *>(node->parent->parent);
-    assert(dataTypeNode != nullptr);
+    assert(dynamic_cast<DataTypeNode *>(node->parent->parent) != nullptr);
 
     // Collect the concrete template types
     bool allTemplateTypesConcrete = true;

@@ -536,8 +536,7 @@ void IRGenerator::generateTestMain() {
         auto fctDefNode = spice_pointer_cast<FctDefBaseNode *>(testFunction->declNode);
         assert(fctDefNode->attrs() != nullptr);
         const AttrLstNode *attrs = fctDefNode->attrs()->attrLst();
-        const CompileTimeValue *testValue = attrs->getAttrValueByName(ATTR_TEST);
-        assert(testValue->boolValue); // The test attribute must be present
+        assert(attrs->getAttrValueByName(ATTR_TEST)->boolValue); // The test attribute must be present
         const CompileTimeValue *testSkipAttr = attrs->getAttrValueByName(ATTR_TEST_SKIP);
         const bool skipTest = testSkipAttr && testSkipAttr->boolValue;
         const CompileTimeValue *testNameAttr = attrs->getAttrValueByName(ATTR_TEST_NAME);
