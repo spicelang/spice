@@ -389,6 +389,16 @@ public type LLVMVerifierFailureAction enum {
     ReturnStatusAction = 2
 }
 
+// ===== Additional helper enums, that are not included in llvm-c =====
+public type OptimizationLevel enum {
+    O0 = 0,
+    O1 = 1,
+    O2 = 2,
+    O3 = 3,
+    Os = 4,
+    Oz = 5
+}
+
 // ===== External function declarations =====
 ext f<LLVMContextRef> LLVMContextCreate();
 ext p LLVMContextDispose(LLVMContextRef /*C*/);
@@ -953,52 +963,117 @@ public f<TargetMachine> Target.createTargetMachine(heap string triple, string cp
 }
 
 // ===== PassBuilderOptions =====
-public type PassBuilderOptions struct {
+public type PipelineTuningOptions struct {
     LLVMPassBuilderOptionsRef internalOptions
 }
 
-public p PassBuilderOptions.ctor() {
+public p PipelineTuningOptions.ctor() {
     this.internalOptions = LLVMCreatePassBuilderOptions();
 }
 
-public p PassBuilderOptions.dtor() {
+public p PipelineTuningOptions.dtor() {
     LLVMDisposePassBuilderOptions(this.internalOptions);
 }
 
-public p PassBuilderOptions.setDebugLogging(bool enabled) {
+public p PipelineTuningOptions.setDebugLogging(bool enabled) {
     LLVMPassBuilderOptionsSetDebugLogging(this.internalOptions, enabled);
 }
 
-public p PassBuilderOptions.setLoopInterleaving(bool enabled) {
+public p PipelineTuningOptions.setLoopInterleaving(bool enabled) {
     LLVMPassBuilderOptionsSetLoopInterleaving(this.internalOptions, enabled);
 }
 
-public p PassBuilderOptions.setLoopVectorization(bool enabled) {
+public p PipelineTuningOptions.setLoopVectorization(bool enabled) {
     LLVMPassBuilderOptionsSetLoopVectorization(this.internalOptions, enabled);
 }
 
-public p PassBuilderOptions.setSLPVectorization(bool enabled) {
+public p PipelineTuningOptions.setSLPVectorization(bool enabled) {
     LLVMPassBuilderOptionsSetSLPVectorization(this.internalOptions, enabled);
 }
 
-public p PassBuilderOptions.setLoopUnrolling(bool enabled) {
+public p PipelineTuningOptions.setLoopUnrolling(bool enabled) {
     LLVMPassBuilderOptionsSetLoopUnrolling(this.internalOptions, enabled);
 }
 
-public p PassBuilderOptions.setLicmMssaNoAccForPromotionCap(unsigned int licmMssaNoAccForPromotionCap) {
+public p PipelineTuningOptions.setLicmMssaNoAccForPromotionCap(unsigned int licmMssaNoAccForPromotionCap) {
     LLVMPassBuilderOptionsSetLicmMssaNoAccForPromotionCap(this.internalOptions, licmMssaNoAccForPromotionCap);
 }
 
-public p PassBuilderOptions.setCallGraphProfile(bool enabled) {
+public p PipelineTuningOptions.setCallGraphProfile(bool enabled) {
     LLVMPassBuilderOptionsSetCallGraphProfile(this.internalOptions, enabled);
 }
 
-public p PassBuilderOptions.setMergeFunctions(bool enabled) {
+public p PipelineTuningOptions.setMergeFunctions(bool enabled) {
     LLVMPassBuilderOptionsSetMergeFunctions(this.internalOptions, enabled);
 }
 
-public p PassBuilderOptions.setInlinerThreshold(int threshold) {
+public p PipelineTuningOptions.setInlinerThreshold(int threshold) {
     LLVMPassBuilderOptionsSetInlinerThreshold(this.internalOptions, threshold);
+}
+
+// ===== PassInfoMixin =====
+public type PassInfo interface {
+    f<string> getOption();
+}
+
+// ===== AlwaysInlinerPass =====
+public type AlwaysInlinerPass struct : PassInfo {}
+
+public p AlwaysInlinerPass.ctor() {}
+
+f<string> AlwaysInlinerPass.getOption() {
+    return "always-inline";
+}
+
+// ===== PassBuilder =====
+public type PassBuilder struct {
+    LLVMPassBuilderOptionsRef internalOptions
+    Vector<String> passes
+    String pipelineDescription // Textual representation of the passes to run (like for passing to opt -passes=...)
+}
+
+public p PassBuilder.ctor(const PipelineTuningOptions& options) {
+    this.internalOptions = options.internalOptions;
+}
+
+public p PassBuilder.addPass(const String& pass) {
+    this.passes.pushBack(pass);
+}
+
+public p PassBuilder.addPass(string pass) {
+    this.passes.pushBack(String(pass));
+}
+
+// ToDo: Uncomment if this is working
+/*public p PassBuilder.addPass(const PassInfo& pass) {
+    this.passes.pushBack(String(pass.getOption()));
+}*/
+
+// ToDo: Delete if the code above is working
+public p PassBuilder.addPass(const AlwaysInlinerPass& pass) {
+    this.passes.pushBack(String(pass.getOption()));
+}
+
+public p PassBuilder.clearPasses() {
+    this.passes.clear();
+}
+
+public p PassBuilder.buildCustomPipeline() {
+    this.pipelineDescription.clear();
+    for (unsigned int i = 0; i < this.passes.getSize(); i++) {
+        if (i > 0) { this.pipelineDescription += ','; }
+        this.pipelineDescription += this.passes.get(i);
+    }
+}
+
+public p PassBuilder.buildPerModuleDefaultPipeline(OptimizationLevel optLevel) {
+    this.clearPasses();
+    this.addPass("default<" + getOptLevelNameFromOptLevel(optLevel) + ">");
+    this.buildCustomPipeline();
+}
+
+public p PassBuilder.run(const Module& module, const TargetMachine& targetMachine) {
+    LLVMRunPasses(module.self, targetMachine.self, this.pipelineDescription.getRaw(), this.internalOptions);
 }
 
 // ===== Static functions =====
@@ -1064,6 +1139,18 @@ public f<Target> getTargetFromTriple(string triple, string* outError) {
     Target target;
     assert !LLVMGetTargetFromTriple(triple, &target.self, outError);
     return target;
+}
+
+public f<string> getOptLevelNameFromOptLevel(OptimizationLevel optLevel) {
+    switch optLevel {
+        case OptimizationLevel::O0: { return "O0"; }
+        case OptimizationLevel::O1: { return "O1"; }
+        case OptimizationLevel::O2: { return "O2"; }
+        case OptimizationLevel::O3: { return "O3"; }
+        case OptimizationLevel::Os: { return "Os"; }
+        case OptimizationLevel::Oz: { return "Oz"; }
+    }
+    return "Invalid optimization level";
 }
 
 public p getVersion(unsigned int* major, unsigned int* minor, unsigned int* patch) {
