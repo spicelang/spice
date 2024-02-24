@@ -148,6 +148,7 @@ private:
   void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
   void createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
   void createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope);
+  void createCtorBodyPreamble(Scope *bodyScope);
   Function *implicitlyCallStructMethod(SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
                                        const ASTNode *node);
   void implicitlyCallStructCopyCtor(SymbolTableEntry *entry, const ASTNode *node);

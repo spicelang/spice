@@ -115,6 +115,10 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     if (node->hasParams)
       visit(node->paramLst());
 
+    // Prepare generation of special ctor preamble to store VTable, default field values, etc. if required
+    if (node->isCtor)
+      createCtorBodyPreamble(node->scope);
+
     // Visit statements in new scope
     visit(node->body());
 

@@ -215,6 +215,32 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
 }
 
 /**
+ * Prepare the generation of the ctor body preamble. This preamble is used to initialize the VTable, construct or initialize
+ * fields.
+ */
+void TypeChecker::createCtorBodyPreamble(Scope *bodyScope) {
+  // Retrieve struct scope
+  Scope *structScope = bodyScope->parent;
+  assert(structScope != nullptr);
+
+  const size_t fieldCount = structScope->getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
+    const SymbolType &fieldType = fieldSymbol->getType();
+
+    if (fieldType.is(TY_STRUCT)) {
+      auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
+      // Match ctor function, create the concrete manifestation and set it to used
+      Scope *matchScope = fieldType.getBodyScope();
+      FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
+    }
+  }
+}
+
+/**
  * Prepare the generation of a call to a method of a given struct
  *
  * @param entry Symbol entry to use as 'this' pointer for the method call
