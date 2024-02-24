@@ -1,7 +1,5 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
-target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-w64-windows-gnu"
 
 @anon.string.0 = private unnamed_addr constant [55 x i8] c"Assertion failed: Condition 'true' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [26 x i8] c"First assertion was true\0A\00", align 1

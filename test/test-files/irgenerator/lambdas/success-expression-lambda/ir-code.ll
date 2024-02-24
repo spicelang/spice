@@ -1,7 +1,5 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
-target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-w64-windows-gnu"
 
 @anon.array.0 = private unnamed_addr constant [10 x i32] [i32 10, i32 9, i32 8, i32 7, i32 6, i32 5, i32 4, i32 3, i32 2, i32 1]
 @printf.str.0 = private unnamed_addr constant [4 x i8] c"%d \00", align 1
