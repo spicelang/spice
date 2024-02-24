@@ -88,22 +88,16 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
 
     if (auto fieldNode = dynamic_cast<FieldNode *>(fieldSymbol->declNode)) {
       hasFieldsWithDefaultValue |= fieldNode->defaultValue() != nullptr;
-      if (fieldSymbol->getType().is(TY_STRUCT)) {
-        Scope *fieldScope = fieldSymbol->getType().getBodyScope();
-        // Lookup ctor function
-        const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
-        hasFieldsToConstruct |= ctorFct != nullptr;
-        requestRevisitIfRequired(ctorFct);
-      }
     } else {
       assert(dynamic_cast<DataTypeNode *>(fieldSymbol->declNode) != nullptr);
-      if (fieldSymbol->getType().is(TY_STRUCT)) {
-        Scope *fieldScope = fieldSymbol->getType().getBodyScope();
-        // Lookup ctor function
-        const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
-        hasFieldsToConstruct |= ctorFct != nullptr;
-        requestRevisitIfRequired(ctorFct);
-      }
+    }
+
+    if (fieldSymbol->getType().is(TY_STRUCT)) {
+      Scope *fieldScope = fieldSymbol->getType().getBodyScope();
+      // Lookup ctor function
+      const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
+      hasFieldsToConstruct |= ctorFct != nullptr;
+      requestRevisitIfRequired(ctorFct);
     }
   }
 
@@ -217,6 +211,32 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     Function *deallocFct = FunctionManager::matchFunction(matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
     assert(deallocFct != nullptr);
     deallocFct->used = true;
+  }
+}
+
+/**
+ * Prepare the generation of the ctor body preamble. This preamble is used to initialize the VTable, construct or initialize
+ * fields.
+ */
+void TypeChecker::createCtorBodyPreamble(Scope *bodyScope) {
+  // Retrieve struct scope
+  Scope *structScope = bodyScope->parent;
+  assert(structScope != nullptr);
+
+  const size_t fieldCount = structScope->getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
+    const SymbolType &fieldType = fieldSymbol->getType();
+
+    if (fieldType.is(TY_STRUCT)) {
+      auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
+      // Match ctor function, create the concrete manifestation and set it to used
+      Scope *matchScope = fieldType.getBodyScope();
+      FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
+    }
   }
 }
 

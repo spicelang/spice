@@ -7,12 +7,14 @@
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
+#include <util/CodeLoc.h>
 
 namespace spice::compiler {
 
 Struct *StructManager::insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
-  insertScope->structs.insert({spiceStruct.declNode->codeLoc, StructManifestationList()});
+  const std::string structId = spiceStruct.name + ":" + spiceStruct.declNode->codeLoc.toPrettyLineAndColumn();
+  insertScope->structs.insert({structId, StructManifestationList()});
 
   // Save substantiation in declaration node
   Struct *substantiation = insertSubstantiation(insertScope, spiceStruct, spiceStruct.declNode);
@@ -31,8 +33,9 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
 #endif
 
   // Retrieve the matching manifestation list of the scope
-  assert(insertScope->structs.contains(declNode->codeLoc));
-  StructManifestationList &manifestationList = insertScope->structs.at(declNode->codeLoc);
+  const std::string structId = newManifestation.name + ":" + declNode->codeLoc.toPrettyLineAndColumn();
+  assert(insertScope->structs.contains(structId));
+  StructManifestationList &manifestationList = insertScope->structs.at(structId);
 
   // Add substantiated struct
   newManifestation.manifestationIndex = manifestationList.size();
@@ -56,7 +59,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
   StructRegistry structRegistry = matchScope->structs;
   // Loop over struct registry to find structs, that match the requirements of the instantiation
   std::vector<Struct *> matches;
-  for (const auto &[defCodeLocStr, m] : structRegistry) {
+  for (const auto &[structId, m] : structRegistry) {
     // Copy the manifestation list to prevent iterating over items, that are created within the loop
     const StructManifestationList manifestations = m;
     for (const auto &[mangledName, presetStruct] : manifestations) {
@@ -89,15 +92,15 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
 
       // Check if it needs to be substantiated
       if (presetStruct.templateTypes.empty()) {
-        assert(matchScope->structs.contains(defCodeLocStr) && matchScope->structs.at(defCodeLocStr).contains(mangledName));
-        matches.push_back(&matchScope->structs.at(defCodeLocStr).at(mangledName));
+        assert(matchScope->structs.contains(structId) && matchScope->structs.at(structId).contains(mangledName));
+        matches.push_back(&matchScope->structs.at(structId).at(mangledName));
         matches.back()->used = true;
         continue; // Match was successful -> match the next struct
       }
 
       // Check if we already have this manifestation and can simply re-use it
       if (manifestations.contains(candidate.getSignature())) {
-        matches.push_back(&matchScope->structs.at(defCodeLocStr).at(candidate.getSignature()));
+        matches.push_back(&matchScope->structs.at(structId).at(candidate.getSignature()));
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 

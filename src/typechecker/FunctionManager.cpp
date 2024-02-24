@@ -4,16 +4,20 @@
 
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
+#include <model/GenericType.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/ExprResult.h>
 #include <typechecker/TypeMatcher.h>
+#include <util/CodeLoc.h>
 
 namespace spice::compiler {
 
 Function *FunctionManager::insertFunction(Scope *insertScope, const Function &baseFunction,
                                           std::vector<Function *> *nodeFunctionList) {
   // Open a new manifestation list for the function definition
-  insertScope->functions.insert({baseFunction.declNode->codeLoc, FunctionManifestationList()});
+  const std::string fctId = baseFunction.name + ":" + baseFunction.declNode->codeLoc.toPrettyLineAndColumn();
+  insertScope->functions.insert({fctId, FunctionManifestationList()});
 
   // Collect substantiations
   std::vector<Function> manifestations;
@@ -110,8 +114,9 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
       throw SemanticError(declNode, FUNCTION_DECLARED_TWICE, "The function/procedure '" + signature + "' is declared twice");
 
   // Retrieve the matching manifestation list of the scope
-  assert(insertScope->functions.contains(declNode->codeLoc));
-  FunctionManifestationList &manifestationList = insertScope->functions.at(declNode->codeLoc);
+  const std::string fctId = newManifestation.name + ":" + declNode->codeLoc.toPrettyLineAndColumn();
+  assert(insertScope->functions.contains(fctId));
+  FunctionManifestationList &manifestationList = insertScope->functions.at(fctId);
 
   // Add substantiated function
   manifestationList.emplace(signature, newManifestation);
@@ -193,7 +198,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
   FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
   std::vector<Function *> matches;
-  for (const auto &[defCodeLocStr, m] : functionRegistry) {
+  for (const auto &[fctId, m] : functionRegistry) {
     // Copy the manifestation list to prevent iterating over items, that are created within the loop
     const FunctionManifestationList manifestations = m;
     for (const auto &[signature, presetFunction] : manifestations) {
@@ -229,16 +234,16 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 
       // Check if the function is generic needs to be substantiated
       if (presetFunction.templateTypes.empty() && !forceSubstantiation) {
-        assert(matchScope->functions.contains(defCodeLocStr) && matchScope->functions.at(defCodeLocStr).contains(signature));
-        matches.push_back(&matchScope->functions.at(defCodeLocStr).at(signature));
+        assert(matchScope->functions.contains(fctId) && matchScope->functions.at(fctId).contains(signature));
+        matches.push_back(&matchScope->functions.at(fctId).at(signature));
         matches.back()->used = true;
         continue; // Match was successful -> match the next function
       }
 
       // Check if we already have this manifestation and can simply re-use it
       const std::string nonGenericSignature = candidate.getSignature();
-      if (matchScope->functions.at(defCodeLocStr).contains(nonGenericSignature)) {
-        matches.push_back(&matchScope->functions.at(defCodeLocStr).at(nonGenericSignature));
+      if (matchScope->functions.at(fctId).contains(nonGenericSignature)) {
+        matches.push_back(&matchScope->functions.at(fctId).at(nonGenericSignature));
         break; // Leave the whole manifestation list to not double-match the manifestation
       }
 

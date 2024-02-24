@@ -8,12 +8,12 @@
 #include <vector>
 
 #include <model/GenericType.h>
-#include <typechecker/ExprResult.h>
-#include <util/CodeLoc.h>
 
 namespace spice::compiler {
 
 // Forward declarations
+struct CodeLoc;
+struct ExprResult;
 class Function;
 class Scope;
 class SymbolTableEntry;
@@ -23,7 +23,7 @@ class GenericType;
 
 // Typedefs
 using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, Function>;
-using FunctionRegistry = std::map<CodeLoc, FunctionManifestationList>;
+using FunctionRegistry = std::map</*fctId=*/std::string, /*manifestationList=*/FunctionManifestationList>;
 using Arg = std::pair</*type=*/SymbolType, /*isTemporary=*/bool>;
 using ArgList = std::vector<Arg>;
 

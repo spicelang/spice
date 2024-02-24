@@ -8,19 +8,20 @@
 #include <vector>
 
 #include <model/GenericType.h>
-#include <util/CodeLoc.h>
 
 namespace spice::compiler {
 
 // Forward declarations
+struct CodeLoc;
 class Struct;
 class Scope;
 class SymbolType;
 class ASTNode;
+class GenericType;
 
 // Typedefs
 using StructManifestationList = std::unordered_map</*mangledName=*/std::string, Struct>;
-using StructRegistry = std::map<CodeLoc, StructManifestationList>;
+using StructRegistry = std::map</*structId=*/std::string, /*manifestationList=*/StructManifestationList>;
 
 class StructManager {
 public:
