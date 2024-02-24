@@ -47,8 +47,8 @@ define dso_local i32 @main() #0 {
   %9 = load %struct.String, ptr %2, align 8
   %fct4 = load ptr, ptr %callbackWithArgs2, align 8
   call void %fct4(%struct.String %9, i1 false)
-  call void @_ZN6String4dtorEv(ptr %1)
   call void @_ZN6String4dtorEv(ptr %2)
+  call void @_ZN6String4dtorEv(ptr %1)
   %10 = load i32, ptr %result, align 4
   ret i32 %10
 }

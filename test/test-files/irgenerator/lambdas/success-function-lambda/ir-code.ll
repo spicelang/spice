@@ -59,8 +59,8 @@ define dso_local i32 @main() #0 {
   %18 = icmp eq i32 %17, 1
   %19 = select i1 %18, i32 9, i32 12
   %20 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %19)
-  call void @_ZN6String4dtorEv(ptr %1)
   call void @_ZN6String4dtorEv(ptr %2)
+  call void @_ZN6String4dtorEv(ptr %1)
   %21 = load i32, ptr %result, align 4
   ret i32 %21
 }
