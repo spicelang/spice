@@ -275,7 +275,11 @@ void TypeChecker::implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode 
 void TypeChecker::doScopeCleanup(StmtLstNode *node) {
   // Get all variables, that are approved for deallocation
   std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
-  for (SymbolTableEntry *var : std::ranges::reverse_view(vars)) {
+  // Sort by reverse declaration order
+  auto lambda = [](const SymbolTableEntry *a, const SymbolTableEntry *b) { return a->declNode->codeLoc > b->declNode->codeLoc; };
+  std::ranges::sort(vars, lambda);
+  // Call dtor for each variable. We call the dtor in reverse declaration order
+  for (SymbolTableEntry *var : vars) {
     // Only generate dtor call for structs and if not omitted
     if (!var->getType().is(TY_STRUCT) || var->omitDtorCall)
       continue;
