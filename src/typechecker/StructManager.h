@@ -20,7 +20,7 @@ class ASTNode;
 
 // Typedefs
 using StructManifestationList = std::unordered_map</*mangledName=*/std::string, Struct>;
-using StructRegistry = std::map<CodeLoc, StructManifestationList>;
+using StructRegistry = std::map</*structId=*/std::string, /*manifestationList=*/StructManifestationList>;
 
 class StructManager {
 public:

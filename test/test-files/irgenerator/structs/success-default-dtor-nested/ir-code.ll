@@ -7,7 +7,6 @@ source_filename = "source.spice"
 
 @anon.string.0 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 1
 @printf.str.0 = private unnamed_addr constant [19 x i8] c"Inner dtor called\0A\00", align 1
-@anon.string.1 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 1
 
 declare ptr @malloc(i64 noundef)
 
@@ -43,12 +42,32 @@ define private void @_ZN5Inner4dtorEv(ptr noundef nonnull align 8 dereferenceabl
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #0
 
 ; Function Attrs: norecurse
+define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %2 = load ptr, ptr %this, align 8
+  %3 = getelementptr inbounds %struct.Middle, ptr %2, i32 0, i32 0
+  call void @_ZN5Inner4ctorEv(ptr %3)
+  ret void
+}
+
+; Function Attrs: norecurse
 define void @_ZN6Middle4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
   %3 = getelementptr inbounds %struct.Middle, ptr %2, i32 0, i32 0
   call void @_ZN5Inner4dtorEv(ptr %3)
+  ret void
+}
+
+; Function Attrs: norecurse
+define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
+  %this = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  %2 = load ptr, ptr %this, align 8
+  %3 = getelementptr inbounds %struct.Outer, ptr %2, i32 0, i32 0
+  call void @_ZN6Middle4ctorEv(ptr %3)
   ret void
 }
 
@@ -67,7 +86,7 @@ define dso_local i32 @main() #2 {
   %result = alloca i32, align 4
   %outer = alloca %struct.Outer, align 8
   store i32 0, ptr %result, align 4
-  store %struct.Outer { %struct.Middle { %struct.Inner { ptr @anon.string.1, ptr null } } }, ptr %outer, align 8
+  call void @_ZN5Outer4ctorEv(ptr %outer)
   call void @_ZN5Outer4dtorEv(ptr %outer)
   %1 = load i32, ptr %result, align 4
   ret i32 %1
