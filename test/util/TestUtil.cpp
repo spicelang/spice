@@ -172,16 +172,6 @@ bool TestUtil::isDisabled(const TestCase &testCase, bool isGHActions) {
 }
 
 /**
- * Removes the first n lines of the IR code to not compare target dependent code
- *
- * @param irCode IR code to modify
- */
-void TestUtil::eraseIRModuleHeader(std::string &irCode) {
-  for (unsigned int i = 0; i < IR_FILE_SKIP_LINES; i++)
-    irCode.erase(0, irCode.find('\n') + 1);
-}
-
-/**
  * Removes the first n lines of the GDB output to not compare target dependent code
  *
  * @param gdbOutput GDB output to modify

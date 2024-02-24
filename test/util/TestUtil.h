@@ -16,7 +16,6 @@ namespace spice::testing {
 
 const char *const PATH_TEST_FILES = "./test-files/";
 const unsigned int EXPECTED_NUMBER_OF_TESTS = 250;
-const unsigned int IR_FILE_SKIP_LINES = 5; // Skip the first couple of lines, because they contain target dependent information
 const char *const GDB_READING_SYMBOLS_MESSAGE = "Reading symbols from ";
 const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 extern bool updateRefs;
@@ -84,7 +83,6 @@ public:
 #endif
   }
   static bool isDisabled(const TestCase &testCase, bool isGHActions);
-  static void eraseIRModuleHeader(std::string &irCode);
   static void eraseGDBHeader(std::string &gdbOutput);
   static void eraseLinesBySubstring(std::string &irCode, const char *needle);
 };

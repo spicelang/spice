@@ -123,9 +123,6 @@ void execTestCase(const TestCase &testCase) {
     TestUtil::checkRefMatch(
         testCase.testPath / REF_NAME_IR, [&]() { return mainSourceFile->compilerOutput.irString; },
         [&](std::string &expectedOutput, std::string &actualOutput) {
-          // Cut of first few lines to be target independent
-          TestUtil::eraseIRModuleHeader(expectedOutput);
-          TestUtil::eraseIRModuleHeader(actualOutput);
           if (cliOptions.generateDebugInfo) {
             // Remove the lines, containing paths on the local file system
             TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
@@ -135,26 +132,19 @@ void execTestCase(const TestCase &testCase) {
 
     // Check optimized IR code
     for (uint8_t i = 1; i <= 5; i++) {
-      TestUtil::checkRefMatch(
-          testCase.testPath / REF_NAME_OPT_IR[i - 1],
-          [&]() {
-            cliOptions.optLevel = static_cast<OptLevel>(i);
+      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_OPT_IR[i - 1], [&]() {
+        cliOptions.optLevel = static_cast<OptLevel>(i);
 
-            if (cliOptions.useLTO) {
-              mainSourceFile->runPreLinkIROptimizer();
-              mainSourceFile->runBitcodeLinker();
-              mainSourceFile->runPostLinkIROptimizer();
-            } else {
-              mainSourceFile->runDefaultIROptimizer();
-            }
+        if (cliOptions.useLTO) {
+          mainSourceFile->runPreLinkIROptimizer();
+          mainSourceFile->runBitcodeLinker();
+          mainSourceFile->runPostLinkIROptimizer();
+        } else {
+          mainSourceFile->runDefaultIROptimizer();
+        }
 
-            return mainSourceFile->compilerOutput.irOptString;
-          },
-          [&](std::string &expectedOutput, std::string &actualOutput) {
-            // Cut of first n lines to be target independent
-            TestUtil::eraseIRModuleHeader(expectedOutput);
-            TestUtil::eraseIRModuleHeader(actualOutput);
-          });
+        return mainSourceFile->compilerOutput.irOptString;
+      });
     }
 
     // Link the bitcode if not happened yet
