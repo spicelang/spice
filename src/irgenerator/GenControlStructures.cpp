@@ -126,8 +126,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Visit idx variable declaration if required
   const DeclStmtNode *idxDeclNode = node->idxVarDecl();
   const bool hasIdx = idxDeclNode != nullptr;
-  SymbolTableEntry *idxEntry;
-  llvm::Value *idxAddress;
+  SymbolTableEntry *idxEntry = nullptr;
+  llvm::Value *idxAddress = nullptr;
   if (hasIdx) {
     visit(idxDeclNode);
     // Get address of idx variable
@@ -172,6 +172,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     // Store idx to idx var
     llvm::Value *idxAddrInPair = insertStructGEP(pairTy, pairPtr, 0, "idx_addr");
     LLVMExprResult idxResult = {.ptr = idxAddrInPair};
+    assert(idxAddress != nullptr && idxEntry != nullptr);
     doAssignment(idxAddress, idxEntry, idxResult, SymbolType(TY_LONG), true);
     // Store item to item var
     llvm::Value *itemAddrInPair = insertStructGEP(pairTy, pairPtr, 1, "item_addr");

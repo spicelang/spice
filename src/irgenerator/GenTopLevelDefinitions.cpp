@@ -572,13 +572,13 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   var->setConstant(isConst);
 
   // Set initializer
-  llvm::Constant *constantValue;
   if (node->hasValue) { // Set the constant value as variable initializer
-    constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
+    auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
+    var->setInitializer(constantValue);
   } else if (cliOptions.buildMode == BuildMode::DEBUG) { // Set the default value as variable initializer
-    constantValue = getDefaultValueForSymbolType(node->entry->getType());
+    llvm::Constant *constantValue = getDefaultValueForSymbolType(node->entry->getType());
+    var->setInitializer(constantValue);
   }
-  var->setInitializer(constantValue);
 
   node->entry->updateAddress(varAddress);
 

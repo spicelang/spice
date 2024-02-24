@@ -60,8 +60,12 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
       generateCtorOrDtorCall(varEntry, node->calledCopyCtor, {rhsAddress});
     } else {
       // Assign rhs to lhs
+#ifndef NDEBUG
       LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
       assert(assignResult.entry == varEntry);
+#else
+      doAssignment(varAddress, varEntry, node->assignExpr(), true);
+#endif
       varAddress = varEntry->getAddress();
       varEntry->updateAddress(varAddress);
     }
@@ -111,8 +115,7 @@ std::any IRGenerator::visitCaseConstant(const spice::compiler::CaseConstantNode 
     return visit(node->constant());
 
   // Get constant for enum item
-  Scope *enumScope = node->enumItemEntry->scope;
-  assert(enumScope->type == ScopeType::ENUM);
+  assert(node->enumItemEntry->scope->type == ScopeType::ENUM);
   auto itemNode = spice_pointer_cast<const EnumItemNode *>(node->enumItemEntry->declNode);
   llvm::Constant *constant = llvm::ConstantInt::get(builder.getInt32Ty(), itemNode->itemValue);
   return constant;
