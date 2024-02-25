@@ -201,6 +201,22 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       }
     }
 
+    // Generate default ctor body if required
+    const Function *ctorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, structType, {}, true);
+    if (ctorFunc != nullptr && ctorFunc->implicitDefault)
+      createDefaultCtorBody(ctorFunc);
+
+    // Generate default copy ctor body if required
+    const ArgList args = {{structType.toConstReference(node), false /* always non-temporary */}};
+    const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, structType, args, true);
+    if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
+      createDefaultCopyCtorBody(copyCtorFunc);
+
+    // Generate default dtor body if required
+    const Function *dtorFunc = FunctionManager::lookupFunction(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
+    if (dtorFunc != nullptr && dtorFunc->implicitDefault)
+      createDefaultDtorBody(dtorFunc);
+
     // Return to the root scope
     currentScope = rootScope;
     assert(currentScope != nullptr && currentScope->type == ScopeType::GLOBAL);

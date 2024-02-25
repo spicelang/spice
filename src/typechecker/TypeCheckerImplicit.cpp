@@ -109,6 +109,8 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
   createDefaultStructMethod(spiceStruct, CTOR_FUNCTION_NAME, {});
 }
 
+void TypeChecker::createDefaultCtorBody(const Function *ctorFunction) { createCtorBodyPreamble(ctorFunction->bodyScope); }
+
 /**
  * Checks if the given struct scope already has an user-defined constructor and creates a default one if not.
  *
@@ -154,6 +156,10 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
   // Create the default copy ctor function
   const ParamList paramTypes = {{structType.toConstReference(node), false}};
   createDefaultStructMethod(spiceStruct, CTOR_FUNCTION_NAME, paramTypes);
+}
+
+void TypeChecker::createDefaultCopyCtorBody(const Function *copyCtorFunction) {
+  createCopyCtorBodyPreamble(copyCtorFunction->bodyScope);
 }
 
 /**
@@ -214,11 +220,71 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
   }
 }
 
+void TypeChecker::createDefaultDtorBody(const Function *dtorFunction) { createDtorBodyPreamble(dtorFunction->bodyScope); }
+
 /**
  * Prepare the generation of the ctor body preamble. This preamble is used to initialize the VTable, construct or initialize
  * fields.
  */
 void TypeChecker::createCtorBodyPreamble(Scope *bodyScope) {
+  // Retrieve struct scope
+  Scope *structScope = bodyScope->parent;
+  assert(structScope != nullptr);
+
+  const size_t fieldCount = structScope->getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
+    SymbolType fieldType = fieldSymbol->getType();
+
+    if (fieldType.is(TY_STRUCT)) {
+      auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
+      // Match ctor function, create the concrete manifestation and set it to used
+      Scope *matchScope = fieldType.getBodyScope();
+      Function *spiceFunc = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
+      if (spiceFunc != nullptr) {
+        fieldType.setBodyScope(spiceFunc->thisType.getBodyScope());
+        fieldSymbol->updateType(fieldType, true);
+      }
+    }
+  }
+}
+
+/**
+ * Prepare the generation of the copy ctor body preamble. This preamble is used to initialize the VTable, construct or initialize
+ * fields.
+ */
+void TypeChecker::createCopyCtorBodyPreamble(Scope *bodyScope) {
+  // Retrieve struct scope
+  Scope *structScope = bodyScope->parent;
+  assert(structScope != nullptr);
+
+  const size_t fieldCount = structScope->getFieldCount();
+  for (size_t i = 0; i < fieldCount; i++) {
+    SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    assert(fieldSymbol != nullptr && fieldSymbol->isField());
+    if (fieldSymbol->isImplicitField)
+      continue;
+    SymbolType fieldType = fieldSymbol->getType();
+
+    if (fieldType.is(TY_STRUCT)) {
+      auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
+      // Match ctor function, create the concrete manifestation and set it to used
+      Scope *matchScope = fieldType.getBodyScope();
+      const ArgList args = {{fieldType.toConstReference(fieldNode), false /* we always have the field as storage */}};
+      Function *spiceFunc = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, args, {}, false, fieldNode);
+      fieldType.setBodyScope(spiceFunc->thisType.getBodyScope());
+      fieldSymbol->updateType(fieldType, true);
+    }
+  }
+}
+
+/**
+ * Prepare the generation of the dtor body preamble. This preamble is used to destruct all fields and to free all heap fields.
+ */
+void TypeChecker::createDtorBodyPreamble(Scope *bodyScope) {
   // Retrieve struct scope
   Scope *structScope = bodyScope->parent;
   assert(structScope != nullptr);
@@ -235,7 +301,7 @@ void TypeChecker::createCtorBodyPreamble(Scope *bodyScope) {
       auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
       // Match ctor function, create the concrete manifestation and set it to used
       Scope *matchScope = fieldType.getBodyScope();
-      FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
+      FunctionManager::matchFunction(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
     }
   }
 }
