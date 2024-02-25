@@ -147,6 +147,10 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
         }
 
         fieldEntry->updateType(fieldType, /*overwriteExistingType=*/true);
+
+        // Instantiate structs
+        if (baseType.is(TY_STRUCT))
+          baseType.getStruct(node);
       }
 
       // Instantiate implemented interfaces if required

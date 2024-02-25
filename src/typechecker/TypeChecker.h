@@ -146,9 +146,14 @@ private:
   // Implicit code generation
   void createDefaultStructMethod(const Struct &spiceStruct, const std::string &methodName, const ParamList &params);
   void createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
+  void createDefaultCtorBody(const Function *ctorFunction);
   void createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope);
+  void createDefaultCopyCtorBody(const Function *copyCtorFunction);
   void createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *structScope);
+  void createDefaultDtorBody(const Function *dtorFunction);
   void createCtorBodyPreamble(Scope *bodyScope);
+  void createCopyCtorBodyPreamble(Scope *bodyScope);
+  void createDtorBodyPreamble(Scope *bodyScope);
   Function *implicitlyCallStructMethod(SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
                                        const ASTNode *node);
   void implicitlyCallStructCopyCtor(SymbolTableEntry *entry, const ASTNode *node);
