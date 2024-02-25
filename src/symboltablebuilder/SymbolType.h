@@ -208,7 +208,7 @@ public:
   [[nodiscard]] const std::vector<SymbolType> &getFunctionParamAndReturnTypes() const;
   void setHasLambdaCaptures(bool hasCaptures);
   [[nodiscard]] bool hasLambdaCaptures() const;
-  [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
+  Struct *getStruct(const ASTNode *node) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
