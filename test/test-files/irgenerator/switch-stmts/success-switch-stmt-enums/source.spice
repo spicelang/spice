@@ -10,6 +10,7 @@ f<string> getName(Fruit input) {
         case Fruit::Banana: { return "Banana"; }
         case Fruit::Orange: { return "Orange"; }
     }
+    return "";
 }
 
 f<int> main() {
