@@ -486,11 +486,15 @@ ext p LLVMPassBuilderOptionsSetMergeFunctions(LLVMPassBuilderOptionsRef /*Option
 ext p LLVMPassBuilderOptionsSetInlinerThreshold(LLVMPassBuilderOptionsRef /*Options*/, int /*InlinerThreshold*/);
 ext f<LLVMErrorRef> LLVMRunPasses(LLVMModuleRef /*M*/, LLVMTargetMachineRef /*TM*/, string /*Passes*/, LLVMPassBuilderOptionsRef /*Options*/);
 ext p LLVM_InitializeNativeTarget();
+ext p LLVM_InitializeNativeAsmParser();
 ext p LLVM_InitializeNativeAsmPrinter();
+ext p LLVM_InitializeNativeDisassembler();
 ext p LLVM_InitializeAllTargetInfos();
 ext p LLVM_InitializeAllTargets();
 ext p LLVM_InitializeAllTargetMCs();
+ext p LLVM_InitializeAllAsmParsers();
 ext p LLVM_InitializeAllAsmPrinters();
+ext p LLVM_InitializeAllDisassemblers();
 ext f<heap string> LLVMGetDefaultTargetTriple();
 ext f<heap string> LLVMNormalizeTargetTriple(string /*TripleIn*/);
 ext f<heap string> LLVMGetHostCPUName();
@@ -945,6 +949,10 @@ public type TargetMachine struct {
     LLVMTargetMachineRef self
 }
 
+p TargetMachine.ctor(LLVMTargetRef targetRef, heap string triple, string cpu, string features, LLVMCodeGenOptLevel optLevel, LLVMRelocMode relocMode, LLVMCodeModel codeModel) {
+    this.self = LLVMCreateTargetMachine(targetRef, triple, cpu, features, optLevel, relocMode, codeModel);
+}
+
 public p TargetMachine.dtor() {
     LLVMDisposeTargetMachine(this.self);
 }
@@ -963,51 +971,51 @@ public f<TargetMachine> Target.createTargetMachine(heap string triple, string cp
 }
 
 // ===== PassBuilderOptions =====
-public type PipelineTuningOptions struct {
+public type PassBuilderOptions struct {
     LLVMPassBuilderOptionsRef internalOptions
 }
 
-public p PipelineTuningOptions.ctor() {
+public p PassBuilderOptions.ctor() {
     this.internalOptions = LLVMCreatePassBuilderOptions();
 }
 
-public p PipelineTuningOptions.dtor() {
+public p PassBuilderOptions.dtor() {
     LLVMDisposePassBuilderOptions(this.internalOptions);
 }
 
-public p PipelineTuningOptions.setDebugLogging(bool enabled) {
+public p PassBuilderOptions.setDebugLogging(bool enabled) {
     LLVMPassBuilderOptionsSetDebugLogging(this.internalOptions, enabled);
 }
 
-public p PipelineTuningOptions.setLoopInterleaving(bool enabled) {
+public p PassBuilderOptions.setLoopInterleaving(bool enabled) {
     LLVMPassBuilderOptionsSetLoopInterleaving(this.internalOptions, enabled);
 }
 
-public p PipelineTuningOptions.setLoopVectorization(bool enabled) {
+public p PassBuilderOptions.setLoopVectorization(bool enabled) {
     LLVMPassBuilderOptionsSetLoopVectorization(this.internalOptions, enabled);
 }
 
-public p PipelineTuningOptions.setSLPVectorization(bool enabled) {
+public p PassBuilderOptions.setSLPVectorization(bool enabled) {
     LLVMPassBuilderOptionsSetSLPVectorization(this.internalOptions, enabled);
 }
 
-public p PipelineTuningOptions.setLoopUnrolling(bool enabled) {
+public p PassBuilderOptions.setLoopUnrolling(bool enabled) {
     LLVMPassBuilderOptionsSetLoopUnrolling(this.internalOptions, enabled);
 }
 
-public p PipelineTuningOptions.setLicmMssaNoAccForPromotionCap(unsigned int licmMssaNoAccForPromotionCap) {
+public p PassBuilderOptions.setLicmMssaNoAccForPromotionCap(unsigned int licmMssaNoAccForPromotionCap) {
     LLVMPassBuilderOptionsSetLicmMssaNoAccForPromotionCap(this.internalOptions, licmMssaNoAccForPromotionCap);
 }
 
-public p PipelineTuningOptions.setCallGraphProfile(bool enabled) {
+public p PassBuilderOptions.setCallGraphProfile(bool enabled) {
     LLVMPassBuilderOptionsSetCallGraphProfile(this.internalOptions, enabled);
 }
 
-public p PipelineTuningOptions.setMergeFunctions(bool enabled) {
+public p PassBuilderOptions.setMergeFunctions(bool enabled) {
     LLVMPassBuilderOptionsSetMergeFunctions(this.internalOptions, enabled);
 }
 
-public p PipelineTuningOptions.setInlinerThreshold(int threshold) {
+public p PassBuilderOptions.setInlinerThreshold(int threshold) {
     LLVMPassBuilderOptionsSetInlinerThreshold(this.internalOptions, threshold);
 }
 
@@ -1032,7 +1040,7 @@ public type PassBuilder struct {
     String pipelineDescription // Textual representation of the passes to run (like for passing to opt -passes=...)
 }
 
-public p PassBuilder.ctor(const PipelineTuningOptions& options) {
+public p PassBuilder.ctor(const PassBuilderOptions& options) {
     this.internalOptions = options.internalOptions;
 }
 
@@ -1099,8 +1107,16 @@ public p initializeNativeTarget() {
     LLVM_InitializeNativeTarget();
 }
 
+public p initializeNativeAsmParser() {
+    LLVM_InitializeNativeAsmParser();
+}
+
 public p initializeNativeAsmPrinter() {
     LLVM_InitializeNativeAsmPrinter();
+}
+
+public p initializeNativeDisassembler() {
+    LLVM_InitializeNativeDisassembler();
 }
 
 public p initializeAllTargetInfos() {
@@ -1115,8 +1131,16 @@ public p initializeAllTargetMCs() {
     LLVM_InitializeAllTargetMCs();
 }
 
+public p initializeAllAsmParsers() {
+    LLVM_InitializeAllAsmParsers();
+}
+
 public p initializeAllAsmPrinters() {
     LLVM_InitializeAllAsmPrinters();
+}
+
+public p initializeAllDisassemblers() {
+    LLVM_InitializeAllDisassemblers();
 }
 
 public f<heap string> getDefaultTargetTriple() {
