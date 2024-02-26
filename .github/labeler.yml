@@ -20,11 +20,7 @@
   - changed-files:
       - any-glob-to-any-file:
           - 'doc/**/*'
-          - 'media/**/*'
-          - 'README.md'
-          - 'CONTRIBUTING.md'
-          - 'LICENSE'
-          - 'CHANGELOG.md'
+          - 'media/specs/**/*'
 
 'ci':
   - changed-files:
