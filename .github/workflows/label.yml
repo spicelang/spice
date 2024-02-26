@@ -1,0 +1,15 @@
+# Label pull requests based on the files that are modified.
+name: Labeler
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
