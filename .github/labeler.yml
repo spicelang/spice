@@ -1,0 +1,32 @@
+'compiler':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**/*'
+          - 'test/**/*'
+          - 'CMakeLists.txt'
+          - 'Options.cmake'
+
+'bootstrap':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'bootstrap/**/*'
+
+'std':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'std/**/*'
+
+'documentation':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'doc/**/*'
+          - 'media/**/*'
+          - 'README.md'
+          - 'CONTRIBUTING.md'
+          - 'LICENSE'
+          - 'CHANGELOG.md'
+
+'ci':
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**/*'
