@@ -48,7 +48,7 @@ f<int> main() {
 
     printf("Unoptimized IR:\n%s", module.print());
 
-    llvm::PipelineTuningOptions pto;
+    llvm::PassBuilderOptions pto;
     llvm::PassBuilder passBuilder = llvm::PassBuilder(pto);
     passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O0);
     passBuilder.addPass(llvm::AlwaysInlinerPass());
