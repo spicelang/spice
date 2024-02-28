@@ -511,8 +511,33 @@ ext f<unsigned int> LLVMPointerSize(LLVMTargetDataRef /*TD*/);
 ext f<unsigned long> LLVMSizeOfTypeInBits(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
 ext f<unsigned long> LLVMABISizeOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
 ext f<unsigned int> LLVMPreferredAlignmentOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
+ext f<LLVMErrorRef> LLVMCreateStringError(string /*ErrMsg*/);
+ext f<string> LLVMGetErrorMessage(LLVMErrorRef /*Err*/);
+ext p LLVMDisposeErrorMessage(string /*ErrMsg*/);
 ext p LLVMGetVersion(unsigned int* /*Major*/, unsigned int* /*Minor*/, unsigned int* /*Patch*/);
 ext p LLVMShutdown();
+
+// ===== LLVMError =====
+public type LLVMError struct {
+    LLVMErrorRef self
+    string message = nil<string>
+}
+
+public p LLVMError.ctor(string message) {
+    this.self = LLVMCreateStringError(message);
+}
+
+public p LLVMError.ctor(LLVMErrorRef error) {
+    this.self = error;
+}
+
+public p LLVMError.dtor() {
+    LLVMDisposeErrorMessage(this.message);
+}
+
+public f<string> LLVMError.getMessage() {
+    return this.message = LLVMGetErrorMessage(this.self);
+}
 
 // ===== Type =====
 public type Type struct {
@@ -947,7 +972,7 @@ public f<Value> Builder.createUnreachable() {
 
 // ===== TargetMachine =====
 public type TargetMachine struct {
-    LLVMTargetMachineRef self
+    LLVMTargetMachineRef self = nil<LLVMTargetMachineRef>
 }
 
 p TargetMachine.ctor(LLVMTargetRef targetRef, heap string triple, string cpu, string features, LLVMCodeGenOptLevel optLevel, LLVMRelocMode relocMode, LLVMCodeModel codeModel) {
@@ -958,10 +983,11 @@ public p TargetMachine.dtor() {
     LLVMDisposeTargetMachine(this.self);
 }
 
-public f<string> TargetMachine.emitToFile(const Module& module, string filename, LLVMCodeGenFileType codegen) {
-    string errorMessage = "";
-    assert !LLVMTargetMachineEmitToFile(this.self, module.self, filename, codegen, &errorMessage);
-    return errorMessage;
+public f<LLVMError> TargetMachine.emitToFile(const Module& module, string filename, LLVMCodeGenFileType codegen) {
+    string errorMessage;
+    const bool errorOccurred = LLVMTargetMachineEmitToFile(this.self, module.self, filename, codegen, &errorMessage);
+    assert !errorOccurred;
+    return LLVMError(errorMessage);
 }
 
 public f<DataLayout> TargetMachine.createDataLayout() {
@@ -1087,8 +1113,9 @@ public p PassBuilder.buildPerModuleDefaultPipeline(OptimizationLevel optLevel) {
     this.buildCustomPipeline();
 }
 
-public p PassBuilder.run(const Module& module, const TargetMachine& targetMachine) {
-    LLVMRunPasses(module.self, this.pipelineDescription.getRaw(), targetMachine.self, this.internalOptions);
+public f<LLVMError> PassBuilder.run(const Module& module, const TargetMachine& targetMachine) {
+    const LLVMErrorRef error = LLVMRunPasses(module.self, this.pipelineDescription.getRaw(), targetMachine.self, this.internalOptions);
+    return LLVMError(error);
 }
 
 // ===== Static functions =====
@@ -1168,7 +1195,8 @@ public f<heap string> getHostCPUFeatures() {
 
 public f<Target> getTargetFromTriple(string triple, string* outError) {
     Target target;
-    assert !LLVMGetTargetFromTriple(triple, &target.self, outError);
+    const bool errorOccurred = LLVMGetTargetFromTriple(triple, &target.self, outError);
+    assert !errorOccurred;
     return target;
 }
 

@@ -9,7 +9,7 @@
 'bootstrap':
   - changed-files:
       - any-glob-to-any-file:
-          - 'bootstrap/**/*'
+          - 'src-bootstrap/**/*'
 
 'std':
   - changed-files:

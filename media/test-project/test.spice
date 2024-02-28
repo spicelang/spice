@@ -1,7 +1,11 @@
 import "bootstrap/bindings/llvm/llvm" as llvm;
 import "std/data/vector";
+import "std/time/timer";
 
 f<int> main() {
+    Timer timer;
+    timer.start();
+
     llvm::initializeNativeTarget();
     llvm::initializeNativeAsmPrinter();
 
@@ -50,13 +54,16 @@ f<int> main() {
 
     llvm::PassBuilderOptions pto;
     llvm::PassBuilder passBuilder = llvm::PassBuilder(pto);
-    passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
+    passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
     passBuilder.addPass(llvm::AlwaysInlinerPass());
     passBuilder.run(module, targetMachine);
 
     printf("Optimized IR:\n%s", module.print());
 
     targetMachine.emitToFile(module, "this-is-a-test.o", llvm::LLVMCodeGenFileType::ObjectFile);
+
+    timer.stop();
+    printf("Elapsed time: %d\n", timer.getDurationInMicros());
 }
 
 /*import "bootstrap/util/block-allocator";
