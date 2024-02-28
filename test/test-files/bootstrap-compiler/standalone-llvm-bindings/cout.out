@@ -1,3 +1,4 @@
+Unoptimized IR:
 ; ModuleID = 'test'
 source_filename = "test"
 
@@ -9,3 +10,19 @@ define i32 @main() {
 }
 
 declare i32 @printf(ptr, i32, ...)
+Optimized IR:
+; ModuleID = 'test'
+source_filename = "test"
+
+@str = private unnamed_addr constant [14 x i8] c"Hello, world!\00", align 1
+
+; Function Attrs: nofree nounwind
+define noundef i32 @main() local_unnamed_addr #0 {
+  %puts = tail call i32 @puts(ptr nonnull dereferenceable(1) @str)
+  ret i32 0
+}
+
+; Function Attrs: nofree nounwind
+declare noundef i32 @puts(ptr nocapture noundef readonly) local_unnamed_addr #0
+
+attributes #0 = { nofree nounwind }

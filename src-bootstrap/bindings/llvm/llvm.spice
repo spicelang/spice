@@ -389,6 +389,16 @@ public type LLVMVerifierFailureAction enum {
     ReturnStatusAction = 2
 }
 
+// ===== Additional helper enums, that are not included in llvm-c =====
+public type OptimizationLevel enum {
+    O0 = 0,
+    O1 = 1,
+    O2 = 2,
+    O3 = 3,
+    Os = 4,
+    Oz = 5
+}
+
 // ===== External function declarations =====
 ext f<LLVMContextRef> LLVMContextCreate();
 ext p LLVMContextDispose(LLVMContextRef /*C*/);
@@ -474,13 +484,17 @@ ext p LLVMPassBuilderOptionsSetLicmMssaNoAccForPromotionCap(LLVMPassBuilderOptio
 ext p LLVMPassBuilderOptionsSetCallGraphProfile(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
 ext p LLVMPassBuilderOptionsSetMergeFunctions(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
 ext p LLVMPassBuilderOptionsSetInlinerThreshold(LLVMPassBuilderOptionsRef /*Options*/, int /*InlinerThreshold*/);
-ext f<LLVMErrorRef> LLVMRunPasses(LLVMModuleRef /*M*/, LLVMTargetMachineRef /*TM*/, string /*Passes*/, LLVMPassBuilderOptionsRef /*Options*/);
+ext f<LLVMErrorRef> LLVMRunPasses(LLVMModuleRef /*M*/, string /*Passes*/, LLVMTargetMachineRef /*TM*/, LLVMPassBuilderOptionsRef /*Options*/);
 ext p LLVM_InitializeNativeTarget();
+ext p LLVM_InitializeNativeAsmParser();
 ext p LLVM_InitializeNativeAsmPrinter();
+ext p LLVM_InitializeNativeDisassembler();
 ext p LLVM_InitializeAllTargetInfos();
 ext p LLVM_InitializeAllTargets();
 ext p LLVM_InitializeAllTargetMCs();
+ext p LLVM_InitializeAllAsmParsers();
 ext p LLVM_InitializeAllAsmPrinters();
+ext p LLVM_InitializeAllDisassemblers();
 ext f<heap string> LLVMGetDefaultTargetTriple();
 ext f<heap string> LLVMNormalizeTargetTriple(string /*TripleIn*/);
 ext f<heap string> LLVMGetHostCPUName();
@@ -488,6 +502,7 @@ ext f<heap string> LLVMGetHostCPUFeatures();
 ext f<LLVMBool> LLVMGetTargetFromTriple(string /*Triple*/, LLVMTargetMachineRef* /*OutMachine*/, string* /*OutError*/);
 ext f<LLVMTargetMachineRef> LLVMCreateTargetMachine(LLVMTargetRef /*T*/, heap string /*Triple*/, string /*CPU*/, string /*Features*/, LLVMCodeGenOptLevel /*OptLevel*/, LLVMRelocMode /*Reloc*/, LLVMCodeModel /*CodeModel*/);
 ext p LLVMDisposeTargetMachine(LLVMTargetMachineRef /*TM*/);
+ext f<LLVMBool> LLVMTargetMachineEmitToFile(LLVMTargetMachineRef /*T*/, LLVMModuleRef /*M*/, string /*Filename*/, LLVMCodeGenFileType /*codegen*/, string* /*ErrorMessage*/);
 ext f<LLVMTargetDataRef> LLVMCreateTargetDataLayout(LLVMTargetMachineRef /*TM*/);
 ext p LLVMDisposeTargetData(LLVMTargetDataRef /*TD*/);
 ext p LLVMSetDataLayout(LLVMModuleRef /*M*/, LLVMTargetDataRef /*DL*/);
@@ -935,8 +950,18 @@ public type TargetMachine struct {
     LLVMTargetMachineRef self
 }
 
+p TargetMachine.ctor(LLVMTargetRef targetRef, heap string triple, string cpu, string features, LLVMCodeGenOptLevel optLevel, LLVMRelocMode relocMode, LLVMCodeModel codeModel) {
+    this.self = LLVMCreateTargetMachine(targetRef, triple, cpu, features, optLevel, relocMode, codeModel);
+}
+
 public p TargetMachine.dtor() {
     LLVMDisposeTargetMachine(this.self);
+}
+
+public f<string> TargetMachine.emitToFile(const Module& module, string filename, LLVMCodeGenFileType codegen) {
+    string errorMessage = "";
+    assert !LLVMTargetMachineEmitToFile(this.self, module.self, filename, codegen, &errorMessage);
+    return errorMessage;
 }
 
 public f<DataLayout> TargetMachine.createDataLayout() {
@@ -1001,6 +1026,71 @@ public p PassBuilderOptions.setInlinerThreshold(int threshold) {
     LLVMPassBuilderOptionsSetInlinerThreshold(this.internalOptions, threshold);
 }
 
+// ===== PassInfoMixin =====
+public type PassInfo interface {
+    f<string> getOption();
+}
+
+// ===== AlwaysInlinerPass =====
+public type AlwaysInlinerPass struct : PassInfo {}
+
+public p AlwaysInlinerPass.ctor() {}
+
+f<string> AlwaysInlinerPass.getOption() {
+    return "always-inline";
+}
+
+// ===== PassBuilder =====
+public type PassBuilder struct {
+    LLVMPassBuilderOptionsRef internalOptions
+    Vector<String> passes
+    String pipelineDescription // Textual representation of the passes to run (like for passing to opt -passes=...)
+}
+
+public p PassBuilder.ctor(const PassBuilderOptions& options) {
+    this.internalOptions = options.internalOptions;
+}
+
+public p PassBuilder.addPass(const String& pass) {
+    this.passes.pushBack(pass);
+}
+
+public p PassBuilder.addPass(string pass) {
+    this.passes.pushBack(String(pass));
+}
+
+// ToDo: Uncomment if this is working
+/*public p PassBuilder.addPass(const PassInfo& pass) {
+    this.passes.pushBack(String(pass.getOption()));
+}*/
+
+// ToDo: Delete if the code above is working
+public p PassBuilder.addPass(const AlwaysInlinerPass& pass) {
+    this.passes.pushBack(String(pass.getOption()));
+}
+
+public p PassBuilder.clearPasses() {
+    this.passes.clear();
+}
+
+public p PassBuilder.buildCustomPipeline() {
+    this.pipelineDescription.clear();
+    for (unsigned int i = 0; i < this.passes.getSize(); i++) {
+        if (i > 0) { this.pipelineDescription += ','; }
+        this.pipelineDescription += this.passes.get(i);
+    }
+}
+
+public p PassBuilder.buildPerModuleDefaultPipeline(OptimizationLevel optLevel) {
+    this.clearPasses();
+    this.addPass("default<" + getOptLevelNameFromOptLevel(optLevel) + ">");
+    this.buildCustomPipeline();
+}
+
+public p PassBuilder.run(const Module& module, const TargetMachine& targetMachine) {
+    LLVMRunPasses(module.self, this.pipelineDescription.getRaw(), targetMachine.self, this.internalOptions);
+}
+
 // ===== Static functions =====
 
 public f<Type> getFunctionType(Type returnType, const Vector<Type>& paramTypes, bool isVarArg = false) {
@@ -1024,8 +1114,16 @@ public p initializeNativeTarget() {
     LLVM_InitializeNativeTarget();
 }
 
+public p initializeNativeAsmParser() {
+    LLVM_InitializeNativeAsmParser();
+}
+
 public p initializeNativeAsmPrinter() {
     LLVM_InitializeNativeAsmPrinter();
+}
+
+public p initializeNativeDisassembler() {
+    LLVM_InitializeNativeDisassembler();
 }
 
 public p initializeAllTargetInfos() {
@@ -1040,8 +1138,16 @@ public p initializeAllTargetMCs() {
     LLVM_InitializeAllTargetMCs();
 }
 
+public p initializeAllAsmParsers() {
+    LLVM_InitializeAllAsmParsers();
+}
+
 public p initializeAllAsmPrinters() {
     LLVM_InitializeAllAsmPrinters();
+}
+
+public p initializeAllDisassemblers() {
+    LLVM_InitializeAllDisassemblers();
 }
 
 public f<heap string> getDefaultTargetTriple() {
@@ -1064,6 +1170,18 @@ public f<Target> getTargetFromTriple(string triple, string* outError) {
     Target target;
     assert !LLVMGetTargetFromTriple(triple, &target.self, outError);
     return target;
+}
+
+public f<string> getOptLevelNameFromOptLevel(OptimizationLevel optLevel) {
+    switch optLevel {
+        case OptimizationLevel::O0: { return "O0"; }
+        case OptimizationLevel::O1: { return "O1"; }
+        case OptimizationLevel::O2: { return "O2"; }
+        case OptimizationLevel::O3: { return "O3"; }
+        case OptimizationLevel::Os: { return "Os"; }
+        case OptimizationLevel::Oz: { return "Oz"; }
+    }
+    return "Invalid optimization level";
 }
 
 public p getVersion(unsigned int* major, unsigned int* minor, unsigned int* patch) {
