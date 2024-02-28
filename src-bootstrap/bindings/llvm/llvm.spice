@@ -484,7 +484,7 @@ ext p LLVMPassBuilderOptionsSetLicmMssaNoAccForPromotionCap(LLVMPassBuilderOptio
 ext p LLVMPassBuilderOptionsSetCallGraphProfile(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
 ext p LLVMPassBuilderOptionsSetMergeFunctions(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*Enable*/);
 ext p LLVMPassBuilderOptionsSetInlinerThreshold(LLVMPassBuilderOptionsRef /*Options*/, int /*InlinerThreshold*/);
-ext f<LLVMErrorRef> LLVMRunPasses(LLVMModuleRef /*M*/, LLVMTargetMachineRef /*TM*/, string /*Passes*/, LLVMPassBuilderOptionsRef /*Options*/);
+ext f<LLVMErrorRef> LLVMRunPasses(LLVMModuleRef /*M*/, string /*Passes*/, LLVMTargetMachineRef /*TM*/, LLVMPassBuilderOptionsRef /*Options*/);
 ext p LLVM_InitializeNativeTarget();
 ext p LLVM_InitializeNativeAsmParser();
 ext p LLVM_InitializeNativeAsmPrinter();
@@ -502,6 +502,7 @@ ext f<heap string> LLVMGetHostCPUFeatures();
 ext f<LLVMBool> LLVMGetTargetFromTriple(string /*Triple*/, LLVMTargetMachineRef* /*OutMachine*/, string* /*OutError*/);
 ext f<LLVMTargetMachineRef> LLVMCreateTargetMachine(LLVMTargetRef /*T*/, heap string /*Triple*/, string /*CPU*/, string /*Features*/, LLVMCodeGenOptLevel /*OptLevel*/, LLVMRelocMode /*Reloc*/, LLVMCodeModel /*CodeModel*/);
 ext p LLVMDisposeTargetMachine(LLVMTargetMachineRef /*TM*/);
+ext f<LLVMBool> LLVMTargetMachineEmitToFile(LLVMTargetMachineRef /*T*/, LLVMModuleRef /*M*/, string /*Filename*/, LLVMCodeGenFileType /*codegen*/, string* /*ErrorMessage*/);
 ext f<LLVMTargetDataRef> LLVMCreateTargetDataLayout(LLVMTargetMachineRef /*TM*/);
 ext p LLVMDisposeTargetData(LLVMTargetDataRef /*TD*/);
 ext p LLVMSetDataLayout(LLVMModuleRef /*M*/, LLVMTargetDataRef /*DL*/);
@@ -957,6 +958,12 @@ public p TargetMachine.dtor() {
     LLVMDisposeTargetMachine(this.self);
 }
 
+public f<string> TargetMachine.emitToFile(const Module& module, string filename, LLVMCodeGenFileType codegen) {
+    string errorMessage = "";
+    assert !LLVMTargetMachineEmitToFile(this.self, module.self, filename, codegen, &errorMessage);
+    return errorMessage;
+}
+
 public f<DataLayout> TargetMachine.createDataLayout() {
     return DataLayout{ LLVMCreateTargetDataLayout(this.self) };
 }
@@ -1081,7 +1088,7 @@ public p PassBuilder.buildPerModuleDefaultPipeline(OptimizationLevel optLevel) {
 }
 
 public p PassBuilder.run(const Module& module, const TargetMachine& targetMachine) {
-    LLVMRunPasses(module.self, targetMachine.self, this.pipelineDescription.getRaw(), this.internalOptions);
+    LLVMRunPasses(module.self, this.pipelineDescription.getRaw(), targetMachine.self, this.internalOptions);
 }
 
 // ===== Static functions =====

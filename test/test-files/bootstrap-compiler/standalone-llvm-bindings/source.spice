@@ -46,5 +46,15 @@ f<int> main() {
     string output;
     assert !llvm::verifyModule(module, &output);
 
-    printf("%s", module.print());
+    printf("Unoptimized IR:\n%s", module.print());
+
+    llvm::PassBuilderOptions pto;
+    llvm::PassBuilder passBuilder = llvm::PassBuilder(pto);
+    passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
+    passBuilder.addPass(llvm::AlwaysInlinerPass());
+    passBuilder.run(module, targetMachine);
+
+    printf("Optimized IR:\n%s", module.print());
+
+    targetMachine.emitToFile(module, "this-is-a-test.o", llvm::LLVMCodeGenFileType::ObjectFile);
 }
