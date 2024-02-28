@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
 #include "ExternalLinkerInterface.h"
+#include "util/Timer.h"
 
 #include <iostream>
 
@@ -54,16 +55,23 @@ void ExternalLinkerInterface::link() const {
     std::cout << "\nEmitting executable to path: " << outputPath.string() << "\n"; // GCOV_EXCL_LINE
 
   // Call the linker
+  Timer timer;
+  timer.start();
   const std::string linkerCommand = linkerCommandBuilder.str();
   ExecResult result = FileUtil::exec(linkerCommand);
+  timer.stop();
 
   // Check for linker error
   if (result.exitCode != 0)                                                   // GCOV_EXCL_LINE
     throw LinkerError(LINKER_ERROR, "Linker exited with non-zero exit code"); // GCOV_EXCL_LINE
 
   // Print linker result if appropriate
-  if (cliOptions.printDebugOutput && !result.output.empty())  // GCOV_EXCL_LINE
-    std::cout << "Linking result: " << result.output << "\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && !result.output.empty())    // GCOV_EXCL_LINE
+    std::cout << "Linking result: " << result.output << "\n\n"; // GCOV_EXCL_LINE
+
+  // Print link time
+  if (cliOptions.printDebugOutput)                                                    // GCOV_EXCL_LINE
+    std::cout << "Total link time: " << timer.getDurationMilliseconds() << " ms\n\n"; // GCOV_EXCL_LINE
 }
 
 /**
