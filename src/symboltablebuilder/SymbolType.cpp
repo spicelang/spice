@@ -253,11 +253,15 @@ bool SymbolType::isIterator(const ASTNode *node) const {
 
 /**
  * Check if the current type is an iterable
+ * - Arrays are always considered iterable
+ * - Otherwise the type must be a struct that implements the iterator interface
  *
  * @param node ASTNode
  * @return Iterable or not
  */
 bool SymbolType::isIterable(const ASTNode *node) const {
+  if (isArray())
+    return true; // Arrays are always considered iterable
   if (!is(TY_STRUCT))
     return false;
   SymbolType genericType(TY_GENERIC, "T");

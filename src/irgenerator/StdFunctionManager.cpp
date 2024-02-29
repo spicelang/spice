@@ -78,6 +78,12 @@ llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {
   return getProcedure(mangledName.c_str(), {builder.getPtrTy()});
 }
 
+llvm::Function *StdFunctionManager::getIterateFct(const Function *spiceFunc) const {
+  const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
+  llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(context, nullptr);
+  return getFunction(functionName.c_str(), iteratorType, {builder.getPtrTy(), builder.getInt64Ty()});
+}
+
 llvm::Function *StdFunctionManager::getIteratorFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
   llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(context, nullptr);

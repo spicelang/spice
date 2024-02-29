@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:3:27:
-Wrong data type for operator: Can only iterate over data structures, inheriting from IIterator or IIterable. You provided bool
+Wrong data type for operator: Can only iterate over arrays or data structures, inheriting from IIterator or IIterable. You provided bool
 
 3  reach string item : b {
                        ^

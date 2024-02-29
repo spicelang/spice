@@ -28,6 +28,7 @@ public:
   [[nodiscard]] llvm::Function *getStringGetRawLengthStringFct() const;
   [[nodiscard]] llvm::Function *getStringIsRawEqualStringStringFct() const;
   [[nodiscard]] llvm::Function *getDeallocBytePtrRefFct() const;
+  [[nodiscard]] llvm::Function *getIterateFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorGetFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorGetIdxFct(const Function *spiceFunc, Scope *accessScope) const;
