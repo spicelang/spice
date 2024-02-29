@@ -27,10 +27,21 @@ public p FilePath.ctor(const FilePath& other) {
     this.path = other.path;
 }
 
+/**
+ * Returns the content of the filepath without modifying.
+ *
+ * @return The content of the filepath
+ */
 public f<string> FilePath.toString() {
     return this.path.getRaw();
 }
 
+/**
+  * Returns the content of the filepath using the given path separator.
+  *
+  * @param separator The path separator to use
+  * @return The content of the filepath using the given path separator
+  */
 public f<string> FilePath.toStringWithCustomSeparator(char separator) {
     if separator != PATH_SEPARATOR_UNIX {
         this.path.replaceAll(PATH_SEPARATOR_UNIX, separator);
@@ -41,10 +52,20 @@ public f<string> FilePath.toStringWithCustomSeparator(char separator) {
     return this.path.getRaw();
 }
 
+/**
+ * Returns the content of the filepath using the UNIX path separator.
+ *
+ * @return The content of the filepath using the UNIX path separator
+ */
 public f<string> FilePath.toGenericString() {
     return this.toStringWithCustomSeparator(PATH_SEPARATOR_UNIX);
 }
 
+/**
+ * Returns the content of the filepath using the native path separator.
+ *
+ * @return The content of the filepath using the native path separator
+ */
 public f<string> FilePath.toNativeString() {
     return this.toStringWithCustomSeparator(isWindows() ? PATH_SEPARATOR_WINDOWS : PATH_SEPARATOR_UNIX);
 }
@@ -89,6 +110,11 @@ public f<FilePath> operator/(const FilePath& lhs, const FilePath& rhs) {
     result /= rhs.path.getRaw();
 }
 
+/**
+ * Checks if the file or directory exists.
+ *
+ * @return True if the file or directory exists, false otherwise
+ */
 public f<bool> FilePath.exists() {
     return fileExists(this.path.getRaw());
 }
