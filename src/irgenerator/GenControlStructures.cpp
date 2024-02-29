@@ -100,11 +100,20 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   llvm::Value *iteratorPtr;
   if (node->getIteratorFct != nullptr) { // The iteratorAssignExpr is of type Iterable
     iteratorType = node->getIteratorFct->returnType;
-
-    // Call .getIterator() on iterable
-    llvm::Function *getIteratorFct = stdFunctionManager.getIteratorFct(node->getIteratorFct);
     llvm::Value *iterablePtr = resolveAddress(iteratorAssignNode);
-    llvm::Value *iterator = builder.CreateCall(getIteratorFct, iterablePtr);
+
+    llvm::Value *iterator;
+    if (!node->getIteratorFct->isMethod() && node->getIteratorFct->getParamTypes().front().isArray()) { // Array as iterable
+      // Call iterate() function from std/iterator/array-iterator
+      llvm::Function *iterateFct = stdFunctionManager.getIterateFct(node->getIteratorFct);
+      const size_t arraySize = iteratorAssignNode->getEvaluatedSymbolType(manIdx).getArraySize();
+      assert(arraySize > 0);
+      iterator = builder.CreateCall(iterateFct, {iterablePtr, builder.getInt64(arraySize)});
+    } else { // Struct as iterable
+      // Call .getIterator() on iterable
+      llvm::Function *getIteratorFct = stdFunctionManager.getIteratorFct(node->getIteratorFct);
+      iterator = builder.CreateCall(getIteratorFct, iterablePtr);
+    }
 
     // Resolve address of iterator
     LLVMExprResult callResult = {.value = iterator, .node = iteratorAssignNode};

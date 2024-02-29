@@ -1,0 +1,11 @@
+import "std/iterator/array-iterator";
+
+f<int> main() {
+    foreach const int item : [ 1, 5, 4, 0, 12, 12345, 9 ] {
+        printf("Item: %d\n", item);
+    }
+    dyn array = [ 1, 5, 4, 0, 12, 12345, 9 ];
+    foreach const int item : array {
+        printf("Item: %d\n", item);
+    }
+}

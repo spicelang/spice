@@ -156,11 +156,29 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
 
   // Retrieve iterator type
   SymbolType iteratorType = iteratorOrIterableType;
+
   if (iteratorOrIterableType.isIterable(node)) {
     const SymbolType &iterableType = iteratorOrIterableType;
-    Scope *matchScope = iterableType.getBodyScope();
-    node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
-    assert(node->getIteratorFct != nullptr); // At this point we are sure to implement IIterable, so we also have getIterator()
+    if (iteratorOrIterableType.isArray()) { // Array
+      const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(ARRAY_ITERATOR_NAME);
+      if (!nameRegistryEntry) {
+        softError(node, UNKNOWN_DATATYPE, "Forgot to import of \"std/iterator/array-iterator\"?");
+        return nullptr;
+      }
+      nameRegistryEntry->targetEntry->used = nameRegistryEntry->importEntry->used = true;
+      Scope *matchScope = nameRegistryEntry->targetScope->parent;
+      assert(matchScope->type == ScopeType::GLOBAL);
+      SymbolType unsignedLongType(TY_LONG);
+      unsignedLongType.specifiers.isSigned = false;
+      unsignedLongType.specifiers.isUnsigned = true;
+      const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
+      const SymbolType thisType(TY_DYN);
+      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
+    } else { // Struct, implementing Iterator interface
+      Scope *matchScope = iterableType.getBodyScope();
+      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
+    }
+    assert(node->getIteratorFct != nullptr);
     iteratorType = node->getIteratorFct->returnType;
     // Create anonymous entry for the iterator
     currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
@@ -169,7 +187,8 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Check iterator type
   if (!iteratorType.isIterator(node)) {
     const std::string errMsg =
-        "Can only iterate over data structures, inheriting from IIterator or IIterable. You provided " + iteratorType.getName();
+        "Can only iterate over arrays or data structures, inheriting from IIterator or IIterable. You provided " +
+        iteratorType.getName();
     softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }

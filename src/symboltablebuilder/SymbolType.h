@@ -27,6 +27,7 @@ const char *const STROBJ_NAME = "String";
 const char *const ERROBJ_NAME = "Error";
 const char *const TIOBJ_NAME = "TypeInfo";
 const char *const IITERATOR_NAME = "IIterator";
+const char *const ARRAY_ITERATOR_NAME = "ArrayIterator";
 const long ARRAY_SIZE_UNKNOWN = 0;
 const uint64_t TYPE_ID_ITERATOR_INTERFACE = 255;
 const uint64_t TYPE_ID_ITERABLE_INTERFACE = 256;
