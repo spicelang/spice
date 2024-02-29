@@ -42,6 +42,9 @@ jobs:
       - name: Setup Ninja
         run: sudo apt-get install ninja-build
 
+      - name: Setup Graphviz
+        run: sudo apt-get install graphviz
+
       - name: Setup Valgrind
         if: github.event_name == 'pull_request'
         run: sudo apt-get install valgrind
