@@ -37,6 +37,8 @@ f<int> main() {
     assert s.getRaw() == "This is a demo. And because this is a d, it is a demonstration.";
     assert s.replaceAll(" is ", " was ") == 3;
     assert s.getRaw() == "This was a demo. And because this was a d, it was a demonstration.";
+    assert s.replaceAll('t', 'y') == 4;
+    assert s.getRaw() == "This was a demo. And because yhis was a d, iy was a demonsyrayion.";
 
     printf("All assertions passed!");
 }

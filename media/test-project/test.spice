@@ -1,31 +1,21 @@
-import "std/io/cli-parser";
+import "std/io/filepath";
+import "std/os/os";
 
-type CliOptions struct {
-    bool sayHi = false
-}
+f<int> main() {
+    FilePath path = FilePath("C:\Users\Public\Documents");
+    path /= "test.txt";
+    assert len(path.toString()) == 34;
+    string expectedString = isWindows() ? "C:\\Users\\Public\\Documents\\test.txt" : "C:\\Users\\Public\\Documents/test.txt";
+    assert path.toString() == expectedString;
+    expectedString = isWindows() ? "C:\\Users\\Public\\Documents\\test.txt" : "C:/Users/Public/Documents/test.txt";
+    assert path.toNativeString() == expectedString;
+    assert path.toGenericString() == "C:/Users/Public/Documents/test.txt";
 
-p callback(bool& value) {
-    printf("Callback called with value %d\n", value);
-}
+    assert path.getFileName() == "test.txt";
+    assert path.getExtension() == "txt";
+    assert path.getBaseName() == "test";
 
-f<int> main(int argc, string[] argv) {
-    CliParser parser = CliParser("Test Program", "This is a simple test program");
-    parser.setVersion("v0.1.0");
-    parser.setFooter("Copyright (c) Marc Auberer 2021-2024");
-
-    CliOptions options;
-    parser.addFlag("--hi", options.sayHi, "Say hi to the user");
-    parser.addFlag("--callback", callback, "Call a callback function");
-    parser.addFlag("-cb", p(bool& value) {
-        printf("CB called with value %d\n", value);
-    }, "Call a callback function");
-
-    parser.parse(argc, argv);
-
-    // Print hi if requested
-    if options.sayHi {
-        printf("Hi!\n");
-    }
+    printf("All assertions passed!");
 }
 
 /*import "bootstrap/util/block-allocator";

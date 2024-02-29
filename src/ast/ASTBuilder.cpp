@@ -1468,17 +1468,34 @@ template <typename T> T ASTBuilder::parseNumeric(TerminalNode *terminal, const N
   }
 }
 
-void ASTBuilder::replaceEscapeChars(std::string &string) {
-  CommonUtil::replaceAll(string, "\\a", "\a");
-  CommonUtil::replaceAll(string, "\\b", "\b");
-  CommonUtil::replaceAll(string, "\\f", "\f");
-  CommonUtil::replaceAll(string, "\\n", "\n");
-  CommonUtil::replaceAll(string, "\\r", "\r");
-  CommonUtil::replaceAll(string, "\\t", "\t");
-  CommonUtil::replaceAll(string, "\\v", "\v");
-  CommonUtil::replaceAll(string, "\\'", "\'");
-  CommonUtil::replaceAll(string, "\\\"", "\"");
-  CommonUtil::replaceAll(string, "\\?", "\?");
+void ASTBuilder::replaceEscapeChars(std::string &input) {
+  std::unordered_map<char, char> escapeMap = {
+      {'a', '\a'}, {'b', '\b'},  {'f', '\f'}, {'n', '\n'},  {'r', '\r'}, {'t', '\t'},
+      {'v', '\v'}, {'\\', '\\'}, {'?', '\?'}, {'\'', '\''}, {'"', '\"'},
+  };
+
+  size_t writeIndex = 0; // Index where the next character should be written
+  for (size_t readIndex = 0; readIndex < input.length(); ++readIndex, ++writeIndex) {
+    if (input[readIndex] == '\\' && readIndex + 1 < input.length()) {
+      char nextChar = input[readIndex + 1];
+      if (escapeMap.find(nextChar) != escapeMap.end()) {
+        // If the next character forms a valid escape sequence, replace it
+        input[writeIndex] = escapeMap[nextChar];
+        readIndex++; // Skip the next character as it's part of the escape sequence
+      } else {
+        // If it's not a valid escape sequence, just copy the backslash
+        input[writeIndex] = input[readIndex];
+      }
+    } else {
+      if (writeIndex != readIndex) {
+        // If we've made replacements, shift the current character to the write position
+        input[writeIndex] = input[readIndex];
+      }
+      // If no replacements were needed, writeIndex and readIndex are the same, and this does nothing
+    }
+  }
+  // Resize the string to remove the unused portion
+  input.resize(writeIndex);
 }
 
 std::string ASTBuilder::getIdentifier(TerminalNode *terminal) {

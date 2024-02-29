@@ -5,6 +5,15 @@ f<int> main() {
     FilePath path = FilePath("C:\Users\Public\Documents");
     path /= "test.txt";
     assert len(path.toString()) == 34;
+    string expectedString = isWindows() ? "C:\\Users\\Public\\Documents\\test.txt" : "C:\\Users\\Public\\Documents/test.txt";
+    assert path.toString() == expectedString;
+    expectedString = isWindows() ? "C:\\Users\\Public\\Documents\\test.txt" : "C:/Users/Public/Documents/test.txt";
+    assert path.toNativeString() == expectedString;
+    assert path.toGenericString() == "C:/Users/Public/Documents/test.txt";
+
+    assert path.getFileName() == "test.txt";
+    assert path.getExtension() == "txt";
+    assert path.getBaseName() == "test";
 
     printf("All assertions passed!");
 }

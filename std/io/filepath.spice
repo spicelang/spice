@@ -1,10 +1,18 @@
 import "std/os/os";
+import "std/io/file";
+
+const char PATH_SEPARATOR_UNIX = '/';
+const char PATH_SEPARATOR_WINDOWS = '\\';
 
 /**
  * Represents a path to a file or directory on the local file system
  */
 public type FilePath struct {
     String path
+}
+
+public p FilePath.ctor() {
+    this.path = String();
 }
 
 public p FilePath.ctor(string pathStr) {
@@ -19,15 +27,94 @@ public p FilePath.ctor(const FilePath& other) {
     this.path = other.path;
 }
 
-public f<string> FilePath.toString() {
+public p FilePath.replaceSeparator(char separator) {
+    if separator != PATH_SEPARATOR_UNIX {
+        this.path.replaceAll(PATH_SEPARATOR_UNIX, separator);
+    }
+    if separator != PATH_SEPARATOR_WINDOWS {
+        this.path.replaceAll(PATH_SEPARATOR_WINDOWS, separator);
+    }
+}
+
+public inline p FilePath.makeGeneric() {
+    this.replaceSeparator(PATH_SEPARATOR_UNIX);
+}
+
+/**
+ * Returns the content of the filepath without modifying.
+ *
+ * @return The content of the filepath
+ */
+public inline f<string> FilePath.toString() {
     return this.path.getRaw();
 }
 
-public f<bool> operator==(const FilePath& lhs, const FilePath& rhs) {
+/**
+ * Returns the content of the filepath using the UNIX path separator.
+ *
+ * @return The content of the filepath using the UNIX path separator
+ */
+public inline f<string> FilePath.toGenericString() {
+    this.makeGeneric();
+    return this.path.getRaw();
+}
+
+/**
+ * Returns the content of the filepath using the native path separator.
+ *
+ * @return The content of the filepath using the native path separator
+ */
+public inline f<string> FilePath.toNativeString() {
+    this.replaceSeparator(PATH_SEPARATOR);
+    return this.path.getRaw();
+}
+
+/**
+ * Returns the parent directory of the file or directory.
+ *
+ * @return The parent directory of the file or directory
+ */
+public inline f<String> FilePath.getFileName() {
+    this.makeGeneric();
+    return this.path.getSubstring(this.path.rfind(PATH_SEPARATOR_UNIX) + 1);
+}
+
+/**
+ * Returns the parent directory of the file or directory.
+ *
+ * @return The parent directory of the file or directory
+ */
+public inline f<String> FilePath.getParentDirectory() {
+    this.makeGeneric();
+    return this.path.getSubstring(0, this.path.rfind(PATH_SEPARATOR_UNIX));
+}
+
+/**
+ * Returns the base name of the file.
+ *
+ * @return The base name of the file
+ */
+public inline f<String> FilePath.getBaseName() {
+    this.makeGeneric();
+    const unsigned long start = this.path.rfind(PATH_SEPARATOR_UNIX) + 1;
+    const unsigned long length = this.path.rfind('.') - start;
+    return this.path.getSubstring(start, length);
+}
+
+/**
+ * Returns the extension of the file.
+ *
+ * @return The extension of the file
+ */
+public inline f<String> FilePath.getExtension() {
+    return this.path.getSubstring(this.path.rfind('.') + 1);
+}
+
+public inline f<bool> operator==(const FilePath& lhs, const FilePath& rhs) {
     return lhs.path == rhs.path;
 }
 
-public f<bool> operator!=(const FilePath& lhs, const FilePath& rhs) {
+public inline f<bool> operator!=(const FilePath& lhs, const FilePath& rhs) {
     return lhs.path != rhs.path;
 }
 
@@ -40,25 +127,34 @@ public p operator/=(FilePath& lhs, string rhs) {
     }
 }
 
-public p operator/=(FilePath& lhs, const String& rhs) {
+public inline p operator/=(FilePath& lhs, const String& rhs) {
     lhs /= rhs.getRaw();
 }
 
-public p operator/=(FilePath& lhs, const FilePath& rhs) {
+public inline p operator/=(FilePath& lhs, const FilePath& rhs) {
     lhs /= rhs.path.getRaw();
 }
 
-public f<FilePath> operator/(const FilePath& lhs, string rhs) {
+public inline f<FilePath> operator/(const FilePath& lhs, string rhs) {
     result = FilePath(lhs);
     result /= rhs;
 }
 
-public f<FilePath> operator/(const FilePath& lhs, const String& rhs) {
+public inline f<FilePath> operator/(const FilePath& lhs, const String& rhs) {
     result = FilePath(lhs);
     result /= rhs.getRaw();
 }
 
-public f<FilePath> operator/(const FilePath& lhs, const FilePath& rhs) {
+public inline f<FilePath> operator/(const FilePath& lhs, const FilePath& rhs) {
     result = FilePath(lhs);
     result /= rhs.path.getRaw();
+}
+
+/**
+ * Checks if the file or directory exists.
+ *
+ * @return True if the file or directory exists, false otherwise
+ */
+public inline f<bool> FilePath.exists() {
+    return fileExists(this.path.getRaw());
 }

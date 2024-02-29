@@ -1,27 +1,154 @@
 // Std imports
-import "std/io/file" as file;
+import "std/os/os";
+import "std/os/cmd";
+import "std/os/env";
+import "std/io/file";
+import "std/io/filepath";
+import "std/type/error";
+import "std/iterator/array-iterator";
 
 public type ExecResult struct {
-    string output
+    String output
     int exitCode
 }
 
 /**
- * Util class for file-related work
+ * Execute external command. Used to execute compiled binaries
+ *
+ * @param cmd Command to execute
+ * @return Result struct
  */
-public type FileUtil struct {}
-
-public f<ExecResult> FileUtil.exec(const string cmd) {
+public f<ExecResult> exec(const string cmd) {
     // ToDo
     return ExecResult{};
 }
 
-public f<string> FileUtil.getStdDir() {
-    // ToDo
-    return "";
+/**
+ * Checks if a certain command is available on the computer
+ *
+ * @param cmd Command to search for
+ * @return Present or not
+ */
+public f<bool> isCommandAvailable(const string cmd) {
+    String checkCmd;
+    if isWindows() {
+        checkCmd = "where " + cmd + " > nul 2>&1";
+    } else if isLinux() {
+        checkCmd = "which " + cmd + " > /dev/null 2>&1";
+    } else {
+        panic(Error("Unsupported platform"));
+    }
+    return execCmd(checkCmd.getRaw()) == 0;
 }
 
-public f<string> FileUtil.getSpiceBinDir() {
-    // ToDo
-    return "";
+/**
+ * Checks if Graphviz is installed on the system
+ *
+ * @return Present or not
+ */
+public f<bool> isGraphvizInstalled() {
+    return isCommandAvailable("dot");
+}
+
+/**
+ * Search for a supported linker invoker on the system and return the executable name or path.
+ * This function may throw a LinkerError if no linker invoker is found.
+ *
+ * @return Name of path to the linker invoker executable
+ */
+public f<String> findLinkerInvoker() {
+    foreach const string linkerInvoker : ["clang", "gcc"] {
+        if isLinux() {
+            foreach const string path : ["/usr/bin/", "/usr/local/bin/", "/bin/"] {
+                const String linkerInvokerPath = path + linkerInvoker;
+                if fileExists(linkerInvokerPath.getRaw()) {
+                    return linkerInvokerPath;
+                }
+            }
+        } else if isWindows() {
+            String linkerInvokerLookupCommand = linkerInvoker + " -v";
+            if isCommandAvailable(linkerInvokerLookupCommand.getRaw()) {
+                return String(linkerInvoker);
+            }
+        }
+    }
+    panic(Error("No supported linker invoker found on the system. Supported are: clang and gcc"));
+}
+
+/**
+ * Search for a supported linker on the system and return the executable name or path.
+ * This function may throw a LinkerError if no linker is found.
+ *
+ * @return Name of path to the linker executable
+ */
+public f<String> findLinker() {
+    if isLinux() {
+        foreach const string linkerName : ["mold", "lld", "gold", "ld"] {
+            foreach const string path : ["/usr/bin/", "/usr/local/bin/", "/bin/"] {
+                String linker = path + linkerName;
+                if fileExists(linker.getRaw()) {
+                    return linker;
+                }
+            }
+        }
+    } else if isWindows() {
+        foreach const string linkerName : ["lld", "ld"] {
+            String checkCmd = linkerName + " -v";
+            if isCommandAvailable(checkCmd.getRaw()) {
+                return String(linkerName);
+            }
+        }
+    }
+    panic(Error("No supported linker found on the system. Supported are: mold, lld, gold and ld"));
+}
+
+/**
+ * Retrieve the dir, where the standard library lives.
+ * Returns an empty string if the std was not found.
+ *
+ * @return Std directory
+ */
+public f<FilePath> getStdDir() {
+    if isLinux() {
+        result = FilePath("/usr/lib/spice/std/");
+        if result.exists() { return; }
+    }
+    string value = getEnv("SPICE_STD_DIR");
+    if value != "" {
+        result = FilePath(value);
+        if result.exists() { return; }
+    }
+    return FilePath();
+}
+
+/**
+ * Retrieve the dir, where the bootstrap compiler lives.
+ * Returns an empty string if the bootstrap compiler was not found.
+ *
+ * @return
+ */
+public f<FilePath> getBootstrapCompilerDir() {
+    string value = getEnv("SPICE_BOOTSTRAP_DIR");
+    if value != "" {
+        result = FilePath(value);
+        if result.exists() { return; }
+    }
+    return FilePath();
+}
+
+/**
+ * Retrieve the dir, where output binaries should go when installing them
+ *
+ * @return Installation directory
+ */
+public f<FilePath> getSpiceBinDir() {
+    if isWindows() {
+        string userprofile = getEnv("USERPROFILE");
+        assert userprofile != "";
+        return FilePath(userprofile) / "spice" / "bin";
+    } else if isLinux() {
+        return FilePath("/usr/local/bin");
+    } else {
+        panic(Error("Unsupported platform"));
+    }
 }
