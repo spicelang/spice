@@ -374,6 +374,17 @@ public f<long> String.find(string needle, unsigned int startIndex) {
 }
 
 /**
+ * Searches for a subchar in a string. Returns -1 if the char was not found.
+ *
+ * @param startIndex Index where to start the search
+ * @return Index, where the subchar was found / -1
+ */
+public f<long> String.find(char needle, unsigned long startIndex = 0l) {
+    const String needleStr = String(needle);
+    return this.find(needleStr.getRaw(), startIndex);
+}
+
+/**
  * Searches for a substring in a string from the back. Returns -1 if the string was not found.
  *
  * @param startIndex Index where to start the search
@@ -406,6 +417,17 @@ public f<long> String.rfind(string needle, unsigned long startIndex = 0l) {
 }
 
 /**
+ * Searches for a subchar in a string from the back. Returns -1 if the char was not found.
+ *
+ * @param startIndex Index where to start the search
+ * @return Index, where the subchar was found / -1
+ */
+public f<long> String.rfind(char needle, unsigned long startIndex = 0l) {
+    const String needleStr = String(needle);
+    return this.rfind(needleStr.getRaw(), startIndex);
+}
+
+/**
  * Searches for a substring in a string from the back. Returns -1 if the string was not found.
  *
  * @param startIndex Index where to start the search
@@ -423,6 +445,27 @@ public f<long> String.rfind(string needle, unsigned int startIndex) {
  */
 public inline f<bool> String.contains(string needle) {
     return this.find(needle) != -1l;
+}
+
+/**
+ * Checks if the string starts with a given prefix
+ *
+ * @param prefix Prefix to check for
+ * @return Starts with prefix or not
+ */
+public f<bool> String.startsWith(string prefix) {
+    return this.find(prefix) == 0l;
+}
+
+/**
+ * Checks if the string ends with a given suffix
+ *
+ * @param prefix Suffix to check for
+ * @return Ends with suffix or not
+ */
+public f<bool> String.endsWith(string suffix) {
+    const unsigned long index = this.length - getRawLength(suffix);
+    return this.rfind(suffix) == index;
 }
 
 /**

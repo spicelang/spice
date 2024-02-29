@@ -47,7 +47,7 @@ public f<bool> isCommandAvailable(const string cmd) {
  * @return Present or not
  */
 public f<bool> isGraphvizInstalled() {
-    return execCmd("dot -V") == 0;
+    return isCommandAvailable("dot");
 }
 
 /**

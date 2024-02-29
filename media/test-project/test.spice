@@ -1,14 +1,20 @@
-import "bootstrap/util/file-util";
+import "std/io/filepath";
+import "std/os/os";
 
 f<int> main() {
-    printf("%s\n", findLinkerInvoker());
-    printf("%s\n", findLinker());
-    FilePath stdDir = getStdDir();
-    printf("%s\n", stdDir.toGenericString());
-    FilePath bootstrapDir = getBootstrapCompilerDir();
-    printf("%s\n", bootstrapDir.toGenericString());
-    FilePath spiceDir = getSpiceBinDir();
-    printf("%s\n", spiceDir.toGenericString());
+    FilePath path = FilePath("C:\Users\Public\Documents");
+    path /= "test.txt";
+    assert len(path.toString()) == 34;
+    if isWindows() {
+        assert path.toString() == "C:\\Users\\Public\\Documents\\test.txt";
+    } else {
+        assert path.toString() == "C:/Users/Public/Documents/test.txt";
+    }
+    assert path.getFileName() == "test.txt";
+    assert path.getExtension() == "txt";
+    assert path.getBaseName() == "test";
+
+    printf("All assertions passed!");
 }
 
 /*import "bootstrap/util/block-allocator";

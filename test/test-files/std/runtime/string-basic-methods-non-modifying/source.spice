@@ -36,6 +36,10 @@ f<int> main() {
     assert sub.getRaw() == "";
     sub =  s4.getSubstring(2l, 12l);
     assert sub.getRaw() == "llo World!";
+    assert s4.startsWith("Hello");
+    assert !s4.startsWith("World");
+    assert s4.endsWith("!");
+    assert !s2.endsWith("!");
 
     printf("All assertions passed!");
 }
