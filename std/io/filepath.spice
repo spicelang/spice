@@ -1,6 +1,9 @@
 import "std/os/os";
 import "std/io/file";
 
+const char PATH_SEPARATOR_UNIX = '/';
+const char PATH_SEPARATOR_WINDOWS = '\\';
+
 /**
  * Represents a path to a file or directory on the local file system
  */
@@ -26,6 +29,24 @@ public p FilePath.ctor(const FilePath& other) {
 
 public f<string> FilePath.toString() {
     return this.path.getRaw();
+}
+
+public f<string> FilePath.toStringWithCustomSeparator(char separator) {
+    if separator != PATH_SEPARATOR_UNIX {
+        this.path.replaceAll(PATH_SEPARATOR_UNIX, separator);
+    }
+    if separator != PATH_SEPARATOR_WINDOWS {
+        this.path.replaceAll(PATH_SEPARATOR_WINDOWS, separator);
+    }
+    return this.path.getRaw();
+}
+
+public f<string> FilePath.toGenericString() {
+    return this.toStringWithCustomSeparator(PATH_SEPARATOR_UNIX);
+}
+
+public f<string> FilePath.toNativeString() {
+    return this.toStringWithCustomSeparator(isWindows() ? PATH_SEPARATOR_WINDOWS : PATH_SEPARATOR_UNIX);
 }
 
 public f<bool> operator==(const FilePath& lhs, const FilePath& rhs) {

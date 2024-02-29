@@ -5,6 +5,7 @@ import "std/os/env";
 import "std/io/file";
 import "std/io/filepath";
 import "std/type/error";
+import "std/iterator/array-iterator";
 
 public type ExecResult struct {
     String output
@@ -31,9 +32,9 @@ public f<ExecResult> exec(const string cmd) {
 public f<bool> isCommandAvailable(const string cmd) {
     String checkCmd;
     if isWindows() {
-        checkCmd = "where " + cmd;
+        checkCmd = "where " + cmd + " > nul 2>&1";
     } else if isLinux() {
-        checkCmd = "which " + cmd;
+        checkCmd = "which " + cmd + " > /dev/null 2>&1";
     } else {
         panic(Error("Unsupported platform"));
     }
@@ -56,18 +57,18 @@ public f<bool> isGraphvizInstalled() {
  * @return Name of path to the linker invoker executable
  */
 public f<String> findLinkerInvoker() {
-    foreach const string linkerInvokerName : ["clang", "gcc"] {
+    foreach const string linkerInvoker : ["clang", "gcc"] {
         if isLinux() {
             foreach const string path : ["/usr/bin/", "/usr/local/bin/", "/bin/"] {
-                String linkerInvoker = path + linkerInvokerName;
-                if fileExists(linkerInvoker.getRaw()) {
-                    return linkerInvoker;
+                const String linkerInvokerPath = path + linkerInvoker;
+                if fileExists(linkerInvokerPath.getRaw()) {
+                    return linkerInvokerPath;
                 }
             }
         } else if isWindows() {
-            String linkerInvoker = linkerInvokerName + " -v";
-            if isCommandAvailable(linkerInvoker.getRaw()) {
-                return linkerInvoker;
+            String linkerInvokerLookupCommand = linkerInvoker + " -v";
+            if isCommandAvailable(linkerInvokerLookupCommand.getRaw()) {
+                return String(linkerInvoker);
             }
         }
     }
@@ -94,7 +95,7 @@ public f<String> findLinker() {
         foreach const string linkerName : ["lld", "ld"] {
             String checkCmd = linkerName + " -v";
             if isCommandAvailable(checkCmd.getRaw()) {
-                return linkerName;
+                return String(linkerName);
             }
         }
     }

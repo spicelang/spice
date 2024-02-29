@@ -2,6 +2,13 @@ import "bootstrap/util/file-util";
 
 f<int> main() {
     printf("%s\n", findLinkerInvoker());
+    printf("%s\n", findLinker());
+    FilePath stdDir = getStdDir();
+    printf("%s\n", stdDir.toGenericString());
+    FilePath bootstrapDir = getBootstrapCompilerDir();
+    printf("%s\n", bootstrapDir.toGenericString());
+    FilePath spiceDir = getSpiceBinDir();
+    printf("%s\n", spiceDir.toGenericString());
 }
 
 /*import "bootstrap/util/block-allocator";

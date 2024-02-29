@@ -514,6 +514,12 @@ public f<unsigned long> String.replaceAll(string needle, string replacement) {
     return foundOccurrences;
 }
 
+public f<unsigned long> String.replaceAll(char needle, char replacement) {
+    const String needleStr = String(needle);
+    const String replacementStr = String(replacement);
+    return this.replaceAll(needleStr.getRaw(), replacementStr.getRaw());
+}
+
 /**
  * Returns the substring of the current string, starting at position `startIndex` with
  * the length of `length`.
