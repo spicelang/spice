@@ -109,9 +109,10 @@ SymbolType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const E
   // Allow array to pointer
   if (lhsType.isPtr() && rhsType.isArray() && lhsType.getContainedTy().matches(rhsType.getContainedTy(), false, false, true))
     return lhsType;
-  // Allow interface* = struct* that implements this interface
+  // Allow interface* = struct* or interface& = struct that implements this interface
   const bool sameChainDepth = lhsType.typeChain.size() == rhsType.typeChain.size();
-  if (lhsType.isPtr() && rhsType.isPtr() && sameChainDepth && lhsType.isBaseType(TY_INTERFACE) && rhsType.isBaseType(TY_STRUCT)) {
+  const bool typesCompatible = (lhsType.isPtr() && rhsType.isPtr() && sameChainDepth) || lhsType.isRef();
+  if (typesCompatible && lhsType.isBaseType(TY_INTERFACE) && rhsType.isBaseType(TY_STRUCT)) {
     SymbolType lhsTypeCopy = lhsType;
     SymbolType rhsTypeCopy = rhsType;
     SymbolType::unwrapBoth(lhsTypeCopy, rhsTypeCopy);

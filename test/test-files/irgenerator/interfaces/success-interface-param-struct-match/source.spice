@@ -1,0 +1,22 @@
+type ITest interface {
+    p test();
+}
+
+type Test struct : ITest {}
+
+p Test.ctor() {}
+
+p Test.test() {
+    printf("Test");
+}
+
+p testFct(ITest& test) {
+    test.test();
+}
+
+f<int> main() {
+    Test test = Test();
+    ITest& itest = test;
+    testFct(itest);
+    return 0;
+}

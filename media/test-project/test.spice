@@ -1,21 +1,24 @@
-import "std/io/filepath";
-import "std/os/os";
+type ITest interface {
+    p test();
+}
+
+type Test struct : ITest {}
+
+p Test.ctor() {}
+
+p Test.test() {
+    printf("Test");
+}
+
+p testFct(ITest& test) {
+    test.test();
+}
 
 f<int> main() {
-    FilePath path = FilePath("C:\Users\Public\Documents");
-    path /= "test.txt";
-    assert len(path.toString()) == 34;
-    string expectedString = isWindows() ? "C:\\Users\\Public\\Documents\\test.txt" : "C:\\Users\\Public\\Documents/test.txt";
-    assert path.toString() == expectedString;
-    expectedString = isWindows() ? "C:\\Users\\Public\\Documents\\test.txt" : "C:/Users/Public/Documents/test.txt";
-    assert path.toNativeString() == expectedString;
-    assert path.toGenericString() == "C:/Users/Public/Documents/test.txt";
-
-    assert path.getFileName() == "test.txt";
-    assert path.getExtension() == "txt";
-    assert path.getBaseName() == "test";
-
-    printf("All assertions passed!");
+    Test test = Test();
+    ITest& itest = test;
+    testFct(itest);
+    return 0;
 }
 
 /*import "bootstrap/util/block-allocator";
