@@ -97,7 +97,7 @@ SymbolType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const E
   // Allow type to ref type of the same contained type straight away
   if (lhsType.isRef() && lhsType.getContainedTy().matches(rhsType, false, false, true)) {
     if (isDecl && !lhsType.canBind(rhsType, rhs.isTemporary()))
-      throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
+      throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference variables/fields");
     return lhsType;
   }
   // Allow dyn[] (empty array literal) to any array
@@ -116,14 +116,8 @@ SymbolType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const E
     SymbolType lhsTypeCopy = lhsType;
     SymbolType rhsTypeCopy = rhsType;
     SymbolType::unwrapBoth(lhsTypeCopy, rhsTypeCopy);
-
-    Struct *spiceStruct = rhsTypeCopy.getStruct(node);
-    assert(spiceStruct != nullptr);
-    for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
-      assert(interfaceType.is(TY_INTERFACE));
-      if (lhsTypeCopy.matches(interfaceType, false, false, true))
-        return lhsType;
-    }
+    if (lhsTypeCopy.matchesInterfaceImplementedByStruct(rhsTypeCopy))
+      return lhsType;
   }
 
   // Nothing matched

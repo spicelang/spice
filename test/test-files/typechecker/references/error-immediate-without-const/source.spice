@@ -1,7 +1,0 @@
-f<bool> fn(int& ref) {
-    return false;
-}
-
-f<int> main() {
-    fn(123);
-}

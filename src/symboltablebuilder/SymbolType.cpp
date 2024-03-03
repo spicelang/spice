@@ -607,6 +607,28 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
 }
 
 /**
+ * Check for the matching compatibility of two types in terms of interface implementation.
+ * Useful for function matching as well as assignment type validation and function arg matching.
+ *
+ * @param otherType Type to compare against
+ * @return Matching or not
+ */
+bool SymbolType::matchesInterfaceImplementedByStruct(const SymbolType &otherType) const {
+  if (!is(TY_INTERFACE) || !otherType.is(TY_STRUCT))
+    return false;
+
+  // Check if the rhs is a struct type that implements the lhs interface type
+  const Struct *spiceStruct = otherType.getStruct(nullptr);
+  assert(spiceStruct != nullptr);
+  for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
+    assert(interfaceType.is(TY_INTERFACE));
+    if (matches(interfaceType, false, false, true))
+      return true;
+  }
+  return false;
+}
+
+/**
  * Check if a certain input type can be bound (assigned) to the current type.
  *
  * @param inputType Type, which should be bound to the current type

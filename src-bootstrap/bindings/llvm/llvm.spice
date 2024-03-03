@@ -1085,13 +1085,7 @@ public p PassBuilder.addPass(string pass) {
     this.passes.pushBack(String(pass));
 }
 
-// ToDo: Uncomment if this is working
-/*public p PassBuilder.addPass(const PassInfo& pass) {
-    this.passes.pushBack(String(pass.getOption()));
-}*/
-
-// ToDo: Delete if the code above is working
-public p PassBuilder.addPass(const AlwaysInlinerPass& pass) {
+public p PassBuilder.addPass(const PassInfo& pass) {
     this.passes.pushBack(String(pass.getOption()));
 }
 

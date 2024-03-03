@@ -1485,8 +1485,9 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     // Check if overloaded function was referenced
     const std::vector<Function *> *manifestations = varEntry->declNode->getFctManifestations(varEntry->name);
     if (manifestations->size() > 1)
-      SOFT_ERROR_ER(node, REFERENCED_OVERLOADED_FCT,
-                    "Overloaded functions or functions with optional parameters cannot be referenced")
+      SOFT_ERROR_ER(node, REFERENCED_OVERLOADED_FCT, "Overloaded functions / functions with optional params cannot be referenced")
+    if (!manifestations->front()->templateTypes.empty())
+      SOFT_ERROR_ER(node, REFERENCED_OVERLOADED_FCT, "Generic functions cannot be referenced")
     // Set referenced function to used
     Function *referencedFunction = manifestations->front();
     referencedFunction->used = true;

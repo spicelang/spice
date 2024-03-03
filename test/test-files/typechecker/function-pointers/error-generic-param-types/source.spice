@@ -1,0 +1,10 @@
+type T dyn;
+
+p test<T>(const T& t) {
+    printf("%d\n", t);
+}
+
+f<int> main() {
+    p(const T&) s = test;
+    s(123);
+}

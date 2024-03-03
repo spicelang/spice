@@ -145,15 +145,19 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       const SymbolType &expectedSTy = paramSTypes.at(i);
       const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
+      const auto matchFct = [](const SymbolType &lhsTy, const SymbolType &rhsTy) {
+        return lhsTy.matches(rhsTy, false, true, true) || lhsTy.matchesInterfaceImplementedByStruct(rhsTy);
+      };
+
       // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly
-      if (expectedSTy.matches(actualSTy, false, true, true)) { // Matches the param type
+      if (matchFct(expectedSTy, actualSTy)) {
         // Resolve address if actual type is reference, otherwise value
         llvm::Value *argValue = actualSTy.isRef() ? resolveAddress(argNode) : resolveValue(argNode);
         argValues.push_back(argValue);
-      } else if (expectedSTy.isRef() && expectedSTy.getContainedTy().matches(actualSTy, false, true, true)) { // Matches with ref
+      } else if (expectedSTy.isRef() && matchFct(expectedSTy.getContainedTy(), actualSTy)) { // Matches with ref
         llvm::Value *argAddress = resolveAddress(argNode);
         argValues.push_back(argAddress);
-      } else if (actualSTy.isRef() && expectedSTy.matches(actualSTy.getContainedTy(), false, true, true)) { // Matches with ref
+      } else if (actualSTy.isRef() && matchFct(expectedSTy, actualSTy.getContainedTy())) { // Matches with ref
         llvm::Value *argAddress = resolveValue(argNode);
         argValues.push_back(argAddress);
       } else { // Need implicit cast

@@ -32,8 +32,13 @@ bool TypeMatcher::matchRequestedToCandidateType(SymbolType candidateType, Symbol
   SymbolType::unwrapBoth(candidateType, requestedType);
 
   // If the candidate does not contain any generic parts, we can simply check for type equality
-  if (!candidateType.hasAnyGenericParts())
+  if (!candidateType.hasAnyGenericParts()) {
+    // Check if the right one is a struct that implements the interface on the left
+    if (candidateType.matchesInterfaceImplementedByStruct(requestedType))
+      return true;
+    // Normal equality check
     return candidateType.matches(requestedType, true, !strictSpecifierMatching, true);
+  }
 
   // Check if the candidate type itself is generic
   if (candidateType.isBaseType(TY_GENERIC)) { // The candidate type itself is generic
