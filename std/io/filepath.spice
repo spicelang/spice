@@ -40,6 +40,10 @@ public inline p FilePath.makeGeneric() {
     this.replaceSeparator(PATH_SEPARATOR_UNIX);
 }
 
+public inline p FilePath.makeNative() {
+    this.replaceSeparator(PATH_SEPARATOR);
+}
+
 /**
  * Returns the content of the filepath without modifying.
  *
@@ -65,7 +69,7 @@ public inline f<string> FilePath.toGenericString() {
  * @return The content of the filepath using the native path separator
  */
 public inline f<string> FilePath.toNativeString() {
-    this.replaceSeparator(PATH_SEPARATOR);
+    this.makeNative();
     return this.path.getRaw();
 }
 

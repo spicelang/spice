@@ -1,4 +1,4 @@
-// Imports
+// Own imports
 import "../util/code-loc";
 
 public type LinkerErrorType enum {
@@ -28,7 +28,9 @@ public p LinkerError.ctor(const LinkerErrorType errorType, const string message)
  * @return Prefix string for the error type
  */
 f<string> LinkerError.getMessagePrefix(const LinkerErrorType errorType) {
-    if errorType == LinkerErrorType.PARSING_FAILED { return "Parsing failed"; }
-    if errorType == LinkerErrorType.NUMBER_OUT_OF_RANGE { return "Number is out of range"; }
-    return "Unknown error";
+    switch errorType {
+        case LinkerErrorType::LINKER_NOT_FOUND: { return "Linker not found"; }
+        case LinkerErrorType::LINKER_ERROR: { return "Linker error occurred"; }
+        default: { return "Unknown error"; }
+    }
 }

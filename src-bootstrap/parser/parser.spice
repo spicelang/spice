@@ -11,7 +11,7 @@ import "../ast/ast-nodes";
 type T dyn;
 
 public type Parser struct : ICompilerPass {
-    //compose CompilerPass
+    //compose CompilerPass compilerPass
     Lexer& lexer
     Stack<ASTNode*> parentStack
 }

@@ -595,6 +595,9 @@ SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhsT
   if (lhsType.specifiers.isHeap != rhsType.specifiers.isHeap)
     ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
 
+  // Allow identity casts
+  if (lhsType.matches(rhsType, false, true, true))
+    return lhsType;
   // Allow casts string -> char* and string -> char[]
   if (lhsType.isOneOf({TY_PTR, TY_ARRAY}) && lhsType.getContainedTy().is(TY_CHAR) && rhsType.is(TY_STRING))
     return lhsType;

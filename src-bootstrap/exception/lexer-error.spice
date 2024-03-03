@@ -1,4 +1,4 @@
-// Imports
+// Own imports
 import "../util/code-loc";
 
 public type LexerErrorType enum {
@@ -30,6 +30,8 @@ public p ParserError.ctor(const CodeLoc* codeLoc, const LexerErrorType errorType
  * @return Prefix string for the error type
  */
 f<string> ParserError.getMessagePrefix(const LexerErrorType errorType) {
-    if errorType == LexerErrorType.TOKENIZING_FAILED  { return "Parsing failed"; }
-    return "Unknown error";
+    switch errorType {
+        case LexerErrorType::TOKENIZING_FAILED: { return "Tokenizing failed"; }
+        default: { return "Unknown error"; }
+    }
 }
