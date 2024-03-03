@@ -4,7 +4,10 @@ import "../util/code-loc";
 public type ParserErrorType enum {
     PARSING_FAILED,
     NUMBER_OUT_OF_RANGE,
-    INVALID_CHAR_LITERAL
+    INVALID_SPECIFIER_COMBINATION,
+    INVALID_CHAR_LITERAL,
+    INVALID_ATTR_VALUE_TYPE,
+    RESERVED_KEYWORD
 }
 
 /**
@@ -32,8 +35,13 @@ public p ParserError.ctor(const CodeLoc* codeLoc, const ParserErrorType errorTyp
  * @return Prefix string for the error type
  */
 f<string> ParserError.getMessagePrefix(const ParserErrorType errorType) {
-    if errorType == ParserErrorType.PARSING_FAILED { return "Parsing failed"; }
-    if errorType == ParserErrorType.NUMBER_OUT_OF_RANGE { return "Number is out of range"; }
-    if errorType == ParserErrorType.INVALID_CHAR_LITERAL { return "Invalid char literal"; }
-    return "Unknown error";
+    switch errorType {
+        case ParserErrorType::PARSING_FAILED: { return "Parsing failed"; }
+        case ParserErrorType::NUMBER_OUT_OF_RANGE: { return "Number is out of range"; }
+        case ParserErrorType::INVALID_SPECIFIER_COMBINATION: { return "Invalid specifier combination"; }
+        case ParserErrorType::INVALID_CHAR_LITERAL: { return "Invalid char literal"; }
+        case ParserErrorType::INVALID_ATTR_VALUE_TYPE: { return "Invalid attribute value type"; }
+        case ParserErrorType::RESERVED_KEYWORD: { return "Usage of reserved keyword"; }
+        default: { return "Unknown error"; }
+    }
 }

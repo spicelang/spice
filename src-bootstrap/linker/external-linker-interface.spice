@@ -1,0 +1,83 @@
+// Std imports
+import "std/data/vector";
+import "std/io/filepath";
+import "std/type/error";
+
+// Own imports
+import "../driver";
+
+public type ExternalLinkerInterface struct {
+    CliOptions& cliOptions
+    public FilePath outputPath
+    Vector<string> objectFilePaths
+    Vector<string> linkerFlags
+}
+
+public p ExternalLinkerInterface.ctor(const CliOptions& cliOptions) {
+    this.cliOptions = cliOptions;
+    this.outputPath = cliOptions.outputPath;
+}
+
+public p ExternalLinkerInterface.prepare() {
+    // Set target to linker
+    this.addLinkerFlag("--target=" + this.cliOptions.targetTriple);
+
+    // Static linking
+    if this.cliOptions.staticLinking {
+        this.addLinkerFlag("-static");
+    }
+
+    // Stripping symbols
+    if !this.cliOptions.generateDebugInfo {
+        this.addLinkerFlag("-Wl,-s");
+    }
+
+    // Web Assembly
+    if this.cliOptions.targetArch == TARGET_WASM32 || this.cliOptions.targetArch == TARGET_WASM64 {
+        this.addLinkerFlag("-nostdlib");
+        this.addLinkerFlag("-Wl,--no-entry");
+        this.addLinkerFlag("-Wl,--export-all");
+    }
+}
+
+/**
+ * Start the linking process
+ */
+public p ExternalLinkerInterface.link() {
+    assert !this.outputPath.isEmpty();
+
+    // ToDo
+}
+
+/**
+ * Add another object file to be linked when calling 'link()'
+ *
+ * @param objectFilePath Path to the object file
+ */
+public p ExternalLinkerInterface.addObjectFilePath(string objectFilePath) {
+    this.objectFilePaths.pushBack(objectFilePath);
+}
+
+/**
+ * Add another linker flag for the call to the linker executable
+ *
+ * @param linkerFlag Linker flag
+ */
+public p ExternalLinkerInterface.addLinkerFlag(string linkerFlag) {
+    this.linkerFlags.pushBack(linkerFlag);
+}
+
+/**
+ * Add another source file to compile and link in (C or C++)
+ *
+ * @param additionalSource Additional source file
+ */
+public p ExternalLinkerInterface.addAdditionalSourcePath(FilePath additionalSource) {
+    // Check if the file exists
+    if !additionalSource.exists() {
+        panic(Error("The additional source file '" + additionalSource.toGenericString() + "' does not exist"));
+    }
+
+    // Add the file to the linker
+    this.addObjectFilePath(additionalSource.toNativeString());
+}

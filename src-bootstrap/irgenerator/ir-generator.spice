@@ -1,7 +1,75 @@
 // Std imports
+import "std/data/vector";
+import "std/data/stack";
 
 // Own imports
+import "bindings/llvm/llvm" as llvm;
 
-public type Generator struct {
+type CommonLLVMTypes struct {
+    llvm::StructType fatPtrType
+}
 
+public type IRGenerator struct/* : ICompilerPass*/ {
+    llvm::Context& context
+    llvm::Builder& builder
+    llvm::Module* module
+    //OpRuleConversionManager conversionManager
+    //StdFunctionManager stdFunctionManager
+    //DebugInfoGenerator diGenerator
+    CommonLLVMTypes llvmTypes
+    Vector<llvm::BasicBlock> breakBlocks
+    Vector<llvm::BasicBlock> continueBlocks
+    Stack<llvm::BasicBlock> fallthroughBlocks
+    llvm::BasicBlock* allocaInsertBlock = nil<llvm::BasicBlock*>
+    llvm::Instruction* allocaInsertInst = nil<llvm::Instruction*>
+    bool blockAlreadyTerminated = false
+    //Vector<DeferredLogic> deferredVTableInitializations
+}
+
+public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
+    this.context = resourceManager.context;
+    this.builder = resourceManager.builder;
+    this.module = sourceFile.module;
+    this.stdFunctionManager = StdFunctionManager(resourceManager, sourceFile.llvmModule);
+
+    // Attach information to the module
+    this.module.setTargetTriple(this.cliOptions.targetTriple);
+    this.module.setDataLayout(resourceManager.targetMachine.createDataLayout());
+
+    // Initialiize debug info generator
+    if this.cliOptions.generateDebugInfo {
+        this.diGenerator.initialize(sourceFile.fileName, sourceFile.fileDir);
+    }
+}
+
+public f<llvm::Value> IRGenerator.createAlloca(llvm::Type llvmType, String varName) {
+    if !this.cliOptions.namesForIRValues { varName.clear(); }
+
+    if this.allocaInsertInst != nil<llvm::Instruction*> { // If there is already an alloca inst, insert right after that
+        llvm::AllocaInst allocaInst = this.builder.createAlloca(llvmType, llvm::Value(), varName);
+        allocaInst.setDebugLoc(llvm::DebugLoc());
+        allocaInstrInst = allocaInst;
+    } else { // This is the first alloca inst in the current function -> insert at the entry block
+        // Save current basic block and move insert cursor to entry block of the current function
+        llvm::BasicBlock currentBlock = this.builder.getInsertBlock();
+        this.builder.setInsertPoint(this.allocaInsertBlock);
+
+        // Allocate the size of the given LLVM type
+        this.allocaInsertInst = this.builder.createAlloca(llvmType, llvm::Value(), varName);
+        this.allocaInsertInst.setDebugLoc(llvm::DebugLoc());
+
+        // Resotre old basic block
+        this.builder.setInsertPoint(currentBlock);
+    }
+    return (llvm::Value) allocaInsertInst;
+}
+
+public f<llvm::Value> IRGenerator.insertLoad(llvm::Type llvmType, llvm::Value ptr, bool isVolatile, const String& varName = "") {
+    assert ptr.getType().isPointerTy();
+    return this.builder.createLoad(llvmType, ptr, isVolatile, this.cliOptions.namesForIRValues ? varName.getRaw() : "");
+}
+
+public p IRGenerator.insertStore(llvm::Value value, llvm::Value ptr, bool isVolatile) {
+    assert ptr.getType().isPointerTy();
+    this.builder.createStore(value, ptr, isVolatile);
 }

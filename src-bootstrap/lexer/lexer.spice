@@ -12,6 +12,7 @@ import "../reader/reader";
 import "../reader/code-loc";
 
 public type Lexer struct/* : ICompilerPass*/ {
+    //compose CompilerPass compilerPass
     Reader reader
     Token curTok
 }

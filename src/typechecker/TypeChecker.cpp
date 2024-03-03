@@ -1808,9 +1808,10 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, const std::vector<Symb
 
   // Check if the exported name registry contains that function name
   const NameRegistryEntry *functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName);
-  if (!functionRegistryEntry)
-    SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION,
-                    "Function/procedure/struct '" + node->functionNameFragments.back() + "' could not be found")
+  if (!functionRegistryEntry) {
+    const std::string msg = "Function/procedure/struct '" + node->functionNameFragments.back() + "' could not be found";
+    SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, msg)
+  }
   SymbolTableEntry *functionEntry = functionRegistryEntry->targetEntry;
 
   // Check if the target symbol is a struct -> this must be a constructor call

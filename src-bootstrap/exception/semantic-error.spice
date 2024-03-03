@@ -6,15 +6,24 @@ public type SemanticErrorType enum {
     REFERENCED_UNDEFINED_FUNCTION,
     REFERENCED_UNDEFINED_VARIABLE,
     REFERENCED_UNDEFINED_STRUCT,
+    REFERENCED_UNDEFINED_FIELD,
+    USED_BEFORE_DECLARED,
     FUNCTION_AMBIGUITY,
     STRUCT_AMBIGUITY,
+    INTERFACE_AMBIGUITY,
+    DUPLICATE_SYMBOL,
     VARIABLE_DECLARED_TWICE,
+    GLOBAL_DECLARED_TWICE,
     FUNCTION_DECLARED_TWICE,
     GENERIC_TYPE_DECLARED_TWICE,
+    STRUCT_WITH_ILLEGAL_NAME,
+    STRUCT_INFINITE_SIZE,
     STRUCT_DECLARED_TWICE,
+    MISSING_NO_ARGS_CTOR,
     INTERFACE_DECLARED_TWICE,
     INTERFACE_METHOD_NOT_IMPLEMENTED,
     ENUM_DECLARED_TWICE,
+    INVALID_SYMBOL_ACCESS,
     DUPLICATE_ENUM_ITEM_NAME,
     DUPLICATE_ENUM_ITEM_VALUE,
     GLOBAL_OF_TYPE_DYN,
@@ -22,51 +31,73 @@ public type SemanticErrorType enum {
     GLOBAL_CONST_WITHOUT_VALUE,
     MISSING_RETURN_STMT,
     INVALID_PARAM_ORDER,
+    LAMBDA_WITH_OPTIONAL_PARAMS,
+    REFERENCED_OVERLOADED_FCT,
     DTOR_MUST_BE_PROCEDURE,
     DTOR_WITH_PARAMS,
     OPERATOR_WRONG_DATA_TYPE,
+    INVALID_ITERATOR,
     UNEXPECTED_DYN_TYPE,
     REASSIGN_CONST_VARIABLE,
     CONDITION_MUST_BE_BOOL,
+    SWITCH_EXPR_MUST_BE_PRIMITIVE,
+    SWITCH_CASE_TYPE_MISMATCH,
     MISSING_MAIN_FUNCTION,
     FCT_PARAM_IS_TYPE_DYN,
     INVALID_BREAK_NUMBER,
     INVALID_CONTINUE_NUMBER,
+    FALLTHROUGH_NOT_ALLOWED,
+    CASE_CONSTANT_NOT_ENUM,
     PRINTF_TYPE_ERROR,
     PRINTF_ARG_COUNT_ERROR,
-    STD_NOT_FOUND,
     DUPLICATE_IMPORT_NAME,
     IMPORTED_FILE_NOT_EXISTING,
     CIRCULAR_DEPENDENCY,
+    ACCESS_TO_NON_EXISTING_MEMBER,
     INVALID_MEMBER_ACCESS,
     SCOPE_ACCESS_ONLY_IMPORTS,
     UNKNOWN_DATATYPE,
+    UNKNOWN_ATTR,
+    INVALID_ATTR_TARGET,
+    MISSING_ATTR_VALUE,
     NUMBER_OF_FIELDS_NOT_MATCHING,
     FIELD_TYPE_NOT_MATCHING,
     ARRAY_SIZE_INVALID,
     FOREACH_IDX_NOT_LONG,
+    ARRAY_INDEX_NOT_INT_OR_LONG,
     ARRAY_ITEM_TYPE_NOT_MATCHING,
     EXPECTED_ARRAY_TYPE,
-    SIZEOF_DYNAMIC_SIZED_ARRAY,
+    EXPECTED_ERROR_TYPE,
     RETURN_WITHOUT_VALUE_RESULT,
     RETURN_WITH_VALUE_IN_PROCEDURE,
+    INVALID_STRUCT_INSTANTIATION,
     DYN_POINTERS_NOT_ALLOWED,
+    REF_POINTERS_ARE_NOT_ALLOWED,
+    DYN_REFERENCES_NOT_ALLOWED,
+    MULTI_REF_NOT_ALLOWED,
     DYN_ARRAYS_NOT_ALLOWED,
+    REFERENCE_WITHOUT_INITIALIZER,
+    TEMP_TO_NON_CONST_REF,
     GENERIC_TYPE_NOT_IN_TEMPLATE,
     SPECIFIER_AT_ILLEGAL_CONTEXT,
     INSUFFICIENT_VISIBILITY,
-    TID_INVALID,
     JOIN_ARG_MUST_BE_TID,
     EXPECTED_GENERIC_TYPE,
+    EXPECTED_NON_GENERIC_TYPE,
     EXPECTED_STRUCT_TYPE,
     EXPECTED_INTERFACE_TYPE,
+    ALIAS_WITH_TEMPLATE_LIST,
     INTERFACE_WITH_TEMPLATE_LIST,
+    INVALID_TEMPLATE_TYPES,
     EXPECTED_VALUE,
     EXPECTED_TYPE,
     UNSAFE_OPERATION_IN_SAFE_CONTEXT,
     ASSERTION_CONDITION_BOOL,
     ARRAY_INDEX_OUT_OF_BOUNDS,
-    RESERVED_KEYWORD,
+    EXPECTED_CONST_VARIABLE,
+    DIVISION_BY_ZERO,
+    TEST_FUNCTION_WITH_PARAMS,
+    TEST_FUNCTION_WRONG_RETURN_TYPE,
     COMING_SOON_SA
 }
 
@@ -86,13 +117,14 @@ public p SemanticError.ctor(const AstNode* node, const SemanticErrorType errorTy
  * @return Prefix string for the error type
  */
 f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
-    if errorType == SemanticErrorType.REFERENCED_UNDEFINED_FUNCTION { return "Referenced undefined function"; }
-    if errorType == SemanticErrorType.REFERENCED_UNDEFINED_VARIABLE { return "Referenced undefined variable"; }
-    if errorType == SemanticErrorType.REFERENCED_UNDEFINED_STRUCT { return "Referenced undefined struct"; }
-    if errorType == SemanticErrorType.FUNCTION_AMBIGUITY { return "Function ambiguity"; }
-    if errorType == SemanticErrorType.STRUCT_AMBIGUITY { return "Struct ambiguity"; }
-    if errorType == SemanticErrorType.VARIABLE_DECLARED_TWICE { return "Multiple declarations of the same variable"; }
-    if errorType == SemanticErrorType.FUNCTION_DECLARED_TWICE { return "Multiple declarations of a function/procedure"; }
-    // ToDo: Extend
-    return "Unknown error";
+    switch errorType {
+        case SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION: { return "Referenced undefined function"; }
+        case SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE: { return "Referenced undefined variable"; }
+        case SemanticErrorType::REFERENCED_UNDEFINED_STRUCT: { return "Referenced undefined struct"; }
+        case SemanticErrorType::FUNCTION_AMBIGUITY: { return "Function ambiguity"; }
+        case SemanticErrorType::STRUCT_AMBIGUITY: { return "Struct ambiguity"; }
+        case SemanticErrorType::VARIABLE_DECLARED_TWICE: { return "Multiple declarations of the same variable"; }
+        case SemanticErrorType::FUNCTION_DECLARED_TWICE: { return "Multiple declarations of a function/procedure"; }
+        default: { return "Unknown error"; }
+    }
 }
