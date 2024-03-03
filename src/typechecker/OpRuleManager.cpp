@@ -97,7 +97,7 @@ SymbolType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const E
   // Allow type to ref type of the same contained type straight away
   if (lhsType.isRef() && lhsType.getContainedTy().matches(rhsType, false, false, true)) {
     if (isDecl && !lhsType.canBind(rhsType, rhs.isTemporary()))
-      throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference parameters");
+      throw SemanticError(node, TEMP_TO_NON_CONST_REF, "Temporary values can only be bound to const reference variables/fields");
     return lhsType;
   }
   // Allow dyn[] (empty array literal) to any array
@@ -109,20 +109,15 @@ SymbolType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const E
   // Allow array to pointer
   if (lhsType.isPtr() && rhsType.isArray() && lhsType.getContainedTy().matches(rhsType.getContainedTy(), false, false, true))
     return lhsType;
-  // Allow interface* = struct* that implements this interface
+  // Allow interface* = struct* or interface& = struct that implements this interface
   const bool sameChainDepth = lhsType.typeChain.size() == rhsType.typeChain.size();
-  if (lhsType.isPtr() && rhsType.isPtr() && sameChainDepth && lhsType.isBaseType(TY_INTERFACE) && rhsType.isBaseType(TY_STRUCT)) {
+  const bool typesCompatible = (lhsType.isPtr() && rhsType.isPtr() && sameChainDepth) || lhsType.isRef();
+  if (typesCompatible && lhsType.isBaseType(TY_INTERFACE) && rhsType.isBaseType(TY_STRUCT)) {
     SymbolType lhsTypeCopy = lhsType;
     SymbolType rhsTypeCopy = rhsType;
     SymbolType::unwrapBoth(lhsTypeCopy, rhsTypeCopy);
-
-    Struct *spiceStruct = rhsTypeCopy.getStruct(node);
-    assert(spiceStruct != nullptr);
-    for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
-      assert(interfaceType.is(TY_INTERFACE));
-      if (lhsTypeCopy.matches(interfaceType, false, false, true))
-        return lhsType;
-    }
+    if (lhsTypeCopy.matchesInterfaceImplementedByStruct(rhsTypeCopy))
+      return lhsType;
   }
 
   // Nothing matched

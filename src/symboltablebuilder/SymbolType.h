@@ -214,6 +214,7 @@ public:
   friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
   friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
   [[nodiscard]] bool matches(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
+  [[nodiscard]] bool matchesInterfaceImplementedByStruct(const SymbolType &otherType) const;
   [[nodiscard]] bool canBind(const SymbolType &otherType, bool isTemporary) const;
 
   // Static util methods

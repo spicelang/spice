@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:4:21:
-Referenced overloaded function: Overloaded functions or functions with optional parameters cannot be referenced
+Referenced overloaded function: Overloaded functions / functions with optional params cannot be referenced
 
 4  p(double) fct = overloadedFct;
                    ^^^^^^^^^^^^^

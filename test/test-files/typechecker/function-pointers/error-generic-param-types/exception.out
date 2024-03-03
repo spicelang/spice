@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:8:21:
+Referenced overloaded function: Generic functions cannot be referenced
+
+8  p(const T&) s = test;
+                   ^^^^
