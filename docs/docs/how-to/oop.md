@@ -47,12 +47,18 @@ type Human struct : MakeSound, Speak {
     unsigned int age
 }
 
-p Human.makeSound() {
-    // Sigh ...
+p Human.ctor(string firstName, string lastName, unsigned int age) {
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.age = age;
 }
 
-p Human.sayHello() {
-    // Hi!
+p Human.makeSound() {
+    printf("Sigh...\n");
+}
+
+p Human.sayHello(string name) {
+    printf("Hi, %s!\n", name);
 }
 
 type Car struct : MakeSound {
@@ -61,8 +67,14 @@ type Car struct : MakeSound {
     unsigned int seats
 }
 
+p Car.ctor(string brand, string model, unsigned int seats) {
+    this.brand = brand;
+    this.model = model;
+    this.seats = seats;
+}
+
 p Car.makeSound() {
-    // Wroom, wroom
+    printf("Wroom, wroom!\n");
 }
 
 type Parrot struct : MakeSound, Speak {
@@ -70,16 +82,35 @@ type Parrot struct : MakeSound, Speak {
     unsigned int age
 }
 
-p Parrot.makeSound() {
-    // Sqawk!
+p Parrot.ctor(string name, unsigned int age) {
+    this.name = name;
+    this.age = age;
 }
 
-p Parrot.sayHello() {
-    // Hello, squawk!
+p Parrot.makeSound() {
+    printf("Sqawk!\n");
+}
+
+p Parrot.sayHello(string name) {
+    printf("Hello %s, squawk!\n", name);
+}
+
+f<int> main() {
+    Human human = Human("John", "Doe", 25);
+    Car car = Car("Toyota", "Corolla", 5);
+    Parrot parrot = Parrot("Polly", 3);
+
+    human.makeSound();
+    car.makeSound();
+    parrot.makeSound();
+
+    human.sayHello("Jane");
+    parrot.sayHello("Jane");
+    return 0;
 }
 ```
 
-As all living beings, parrots and humans have an age. So you might want to extract the `unsigned int age`, that exists
+All living beings, parrots and humans have an age. So you might want to extract the `unsigned int age`, that exists
 in both structs to a separate struct called `LivingBeing`.
 
 ```spice
@@ -102,3 +133,7 @@ type Parrot struct : MakeSound, Speak {
 
 // ...
 ```
+
+The `compose` keyword is used to include the fields and methods of another struct into the current struct. The members of the
+parent struct are accessible directly via name. e.g. `parrot.age` or through the compose member itself, e.g.
+`parrot.livingBeing.age`.
