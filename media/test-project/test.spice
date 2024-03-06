@@ -1,17 +1,15 @@
-import "std/os/env";
-import "bootstrap/lexer/lexer";
+import "std/data/hash-table";
 
 f<int> main() {
-    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-lexer-test/test-file.spice";
-    Lexer lexer = Lexer(filePath.getRaw());
-    unsigned long tokenCount = 0l;
-    while (!lexer.isEOF()) {
-        Token token = lexer.getToken();
-        token.print();
-        lexer.advance();
-        tokenCount++;
-    }
-    printf("\nLexed tokens: %d\n", tokenCount);
+    HashTable<int, int> hashTable = HashTable<int, int>();
+    hashTable.upsert(1, 2);
+    hashTable.upsert(2, 3);
+
+    Optional<int> value = hashTable.get(1);
+    assert(value.get() == 2);
+    value = hashTable.get(2);
+    assert(value.get() == 3);
+
 }
 
 /*import "bootstrap/util/block-allocator";

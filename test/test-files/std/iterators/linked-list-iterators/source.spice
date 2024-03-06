@@ -1,0 +1,69 @@
+import "std/data/linked-list";
+import "std/data/pair";
+
+f<int> main() {
+    // Create test vector to iterate over
+    LinkedList<long> lll = LinkedList<long>();
+    lll.pushBack(123l);
+    lll.pushBack(4321l);
+    lll.pushBack(9876l);
+    assert lll.getSize() == 3;
+
+    // Test base functionality
+    dyn it = lll.getIterator();
+    assert it.isValid();
+    assert it.get() == 123l;
+    assert it.get() == 123l;
+    it.next();
+    assert it.get() == 4321l;
+    assert it.isValid();
+    it.next();
+    dyn pair = it.getIdx();
+    assert pair.getFirst() == 2;
+    assert pair.getSecond() == 9876l;
+    it.next();
+    assert !it.isValid();
+
+    // Add new items to the vector
+    lll.pushBack(321l);
+    lll.pushBack(-99l);
+    assert it.isValid();
+
+    // Test overloaded operators
+    it -= 3;
+    assert it.get() == 123l;
+    assert it.isValid();
+    it++;
+    assert it.get() == 4321l;
+    it--;
+    assert it.get() == 123l;
+    it += 4;
+    assert it.get() == -99l;
+    it.next();
+    assert !it.isValid();
+
+    // Test foreach value
+    foreach long item : lll {
+        item++;
+    }
+    assert lll.get(0) == 123l;
+    assert lll.get(1) == 4321l;
+    assert lll.get(2) == 9876l;
+
+    // Test foreach ref
+    foreach long& item : lll.getIterator() {
+        item++;
+    }
+    assert lll.get(0) == 124l;
+    assert lll.get(1) == 4322l;
+    assert lll.get(2) == 9877l;
+
+    foreach long idx, long& item : lll {
+        item += idx;
+    }
+    assert lll.get(0) == 124l;
+    assert lll.get(1) == 4323l;
+    assert lll.get(2) == 9879l;
+
+    printf("All assertions passed!");
+}

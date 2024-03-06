@@ -1,62 +1,62 @@
 import "std/data/vector";
 import "std/data/linked-list";
-import "std/data/pair";
+import "std/data/optional";
 import "std/math/hash";
 
 // Generic types for key and value
 type K dyn;
 type V dyn;
 
+type HashEntry<K, V> struct {
+    K key
+    V value
+}
+
 public type HashTable<K, V> struct {
-    Vector<LinkedList<Pair<K, V>>> table
-    unsigned long bucketCount
+    Vector<LinkedList<HashEntry<K, V>>> table
 }
 
 public p HashTable.ctor(unsigned long bucketCount = 100l) {
-    this.bucketCount = bucketCount;
-    this.table = Vector<LinkedList<Pair<K, V>>>(bucketCount);
-}
-
-public p HashTable.insert(const K& key, const V& value) {
-    const unsigned long index = this.hash(key);
-    LinkedList<Pair<K, V>>& bucket = this.table.get(index);
-    foreach Pair<K, V>& pair : bucket {
-        if pair.getFirst() == key {
-            pair.setSecond(value);
-            return;
-        }
+    this.table = Vector<LinkedList<HashEntry<K, V>>>(bucketCount);
+    for unsigned long i = 0l; i < bucketCount; i++ {
+        this.table.pushBack(LinkedList<HashEntry<K, V>>());
     }
-    this.table.pushBack(LinkedList<Pair<K, V>>());
-    LinkedList<Pair<K, V>>& bucket = this.table.back();
-    bucket.pushBack(Pair<K, V>(key, value));
 }
 
-public p HashTable.delete(const K& key) {
+public p HashTable.upsert(const K& key, const V& value) {
     const unsigned long index = this.hash(key);
-    const LinkedList<Pair<K, V>>& bucket = this.table.at(index);
-
-    for unsigned long i = 0l; i < bucket.getSize(); i++ {
-        Pair<K, V>& candidate = bucket.at(i);
-        if candidate.getFirst() == key {
-            bucket.remove(i);
+    const LinkedList<HashEntry<K, V>>& list = this.table.get(index);
+    foreach const HashEntry<K, V>& entry : list {
+        if (entry.key == key) {
+            entry.value = value;
             return;
         }
     }
 }
 
-public f<V*> HashTable.get(const K& key) {
-    unsigned long index = this.hash(key);
-    const LinkedList<Pair<K, V>>& bucket = this.table.at(index);
-
-    for unsigned long i = 0l; i < bucket.getSize(); i++ {
-        Pair<K, V>& candidate = bucket.at(i);
-        if candidate.getFirst() == key {
-            return &candidate.getSecond();
+public f<Optional<V>> HashTable.get(const K& key) {
+    const unsigned long index = this.hash(key);
+    const LinkedList<HashEntry<K, V>>& list = this.table.get(index);
+    foreach const HashEntry<K, V>& entry : list {
+        if (entry.key == key) {
+            return Optional<V>(entry.value);
         }
     }
-    return nil<V*>;
+    return Optional<V>();
+}
+
+public p HashTable.remove(const K& key) {
+    const unsigned long index = this.hash(key);
+    LinkedList<HashEntry<K, V>>& list = this.table.get(index);
+    for (unsigned long i = 0l; i < list.getSize(); i++) {
+        if (list.get(i).key == key) {
+            list.remove(i);
+            return;
+        }
+    }
 }
 
 inline f<unsigned long> HashTable.hash(const K& key) {
-    return hash(key) % this.bucketCount;
+    K keyCopy = key;
+    return hash(keyCopy) % this.table.getSize();
 }

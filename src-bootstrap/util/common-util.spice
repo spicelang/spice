@@ -1,7 +1,49 @@
-public f<String> getLastFragment(String &haystack, const string needle) {
+/**
+ * Split the given haystack by the needle and return the last fragment
+ *
+ * @param haystack Input string
+ * @param needle String to search
+ * @return Last fragment
+ */
+public f<String> getLastFragment(const String &haystack, const string needle) {
     const unsigned long index = haystack.rfind(needle);
     if index == -1l {
         return haystack;
     }
     return haystack.getSubstring(index + getRawLength(needle));
+}
+
+/**
+ * Generate a circular import message from the given source files
+ *
+ * @param sourceFiles Source files building the circular dependency chain
+ * @return Error message
+ */
+public f<String> getCircularImportMessage(const Vector<const SourceFile*>& sourceFiles) {
+    String message;
+    message += "*-----*\n";
+    message += "|     |\n";
+    for unsigned long i = 0l; i < sourceFiles.getSize(); i++ {
+        const SourceFile* sourceFile = sourceFiles[i];
+        if i != 0 { message += "|     |\n"; }
+        message += "|  ";
+        message += sourceFile.fileName;
+        message += "\n";
+    }
+    message += "|     |\n";
+    message += "*-----*\n";
+    return message;
+}
+
+/**
+ * Generate the version info string for the Spice driver
+ *
+ * @return Version info string
+ */
+public f<String> getVersionInfo() {
+    String versionString;
+    versionString += "spice version" + SPICE_VERSION + " " + SPICE_TARGET_OS + "/" + SPICE_TARGET_ARCH + "\n";
+    versionString += "built by: " + SPICE_BUILT_BY + "\n\n";
+    versionString += "(c) Marc Auberer 2021-2024";
+    return versionString;
 }

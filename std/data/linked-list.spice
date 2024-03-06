@@ -41,6 +41,8 @@ public type LinkedList<T> struct : IIterable<T> {
     unsigned long size = 0l
 }
 
+public p LinkedList.ctor() {}
+
 public p LinkedList.pushBack(const T& value) {
     // Create new node
     heap Node<T>* newNode = this.createNode(value);

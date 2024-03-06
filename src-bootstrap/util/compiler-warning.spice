@@ -4,15 +4,21 @@ import "../reader/code-loc";
 public type CompilerWarningType enum {
     UNUSED_FUNCTION,
     UNUSED_PROCEDURE,
+    UNUSED_METHOD,
     UNUSED_STRUCT,
     UNUSED_INTERFACE,
     UNUSED_IMPORT,
     UNUSED_FIELD,
+    UNUSED_ENUM_ITEM,
+    UNUSED_ALIAS,
     UNUSED_VARIABLE,
-    INTERFACE_WITHOUT_SIGNATURE,
+    UNUSED_RETURN_VALUE,
+    UNREACHABLE_CODE,
+    SHADOWED_VARIABLE,
+    IDENTITY_CAST,
     SINGLE_GENERIC_TYPE_CONDITION,
     BOOL_ASSIGN_AS_CONDITION,
-    INDEX_EXCEEDS_ARRAY_SIZE,
+    ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION,
     UNINSTALL_FAILED,
     VERIFIER_DISABLED
 }
@@ -31,7 +37,7 @@ public type CompilerWarning struct {
  * @param warningType Type of the warning
  * @param message Warning message suffix
  */
-public p CompilerWarning.ctor(const CodeLoc* codeLoc, const CompilerWarningType warningType, const string message) {
+public p CompilerWarning.ctor(const CodeLoc& codeLoc, const CompilerWarningType warningType, const string message) {
     this.warningMessage = "[Warning] " + codeLoc.toPrettyString() + ": " +
             this.getMessagePrefix(warningType) + ": " + message;
 }
@@ -60,24 +66,26 @@ public p CompilerWarning.print() {
  * @return Prefix string for the warning type
  */
 f<string> CompilerWarning.getMessagePrefix(const CompilerWarningType warningType) {
-    if warningType == CompilerWarningType.UNUSED_FUNCTION { return "Unused function"; }
-    if warningType == CompilerWarningType.UNUSED_PROCEDURE { return "Unused procedure"; }
-    if warningType == CompilerWarningType.UNUSED_STRUCT { return "Unused struct"; }
-    if warningType == CompilerWarningType.UNUSED_INTERFACE { return "Unused interface"; }
-    if warningType == CompilerWarningType.UNUSED_IMPORT { return "Unused import"; }
-    if warningType == CompilerWarningType.UNUSED_FIELD { return "Unused field"; }
-    if warningType == CompilerWarningType.UNUSED_VARIABLE { return "Unused variable"; }
-    if warningType == CompilerWarningType.INTERFACE_WITHOUT_SIGNATURE { return "Interface without signature"; }
-    if warningType == CompilerWarningType.SINGLE_GENERIC_TYPE_CONDITION { return "Only one type condition"; }
-    if warningType == CompilerWarningType.BOOL_ASSIGN_AS_CONDITION { return "Bool assignment as condition"; }
-    if warningType == CompilerWarningType.INDEX_EXCEEDS_ARRAY_SIZE { return "Array index exceeds its size"; }
-    if warningType == CompilerWarningType.UNINSTALL_FAILED { return "Uninstall failed"; }
-    if warningType == CompilerWarningType.VERIFIER_DISABLED { return "Verifier disabled"; }
-    return "Unknown warning";
-}
-
-f<int> main() {
-    const CodeLoc codeLoc = CodeLoc(2l, 3l);
-    CompilerWarning warning = CompilerWarning(&codeLoc, CompilerWarningType.UNUSED_STRUCT, "Dies ist ein Test");
-    warning.print();
+    switch warningType {
+        case CompilerWarningType::UNUSED_FUNCTION: { return "Unused function"; }
+        case CompilerWarningType::UNUSED_PROCEDURE: { return "Unused procedure"; }
+        case CompilerWarningType::UNUSED_METHOD: { return "Unused method"; }
+        case CompilerWarningType::UNUSED_STRUCT: { return "Unused struct"; }
+        case CompilerWarningType::UNUSED_INTERFACE: { return "Unused interface"; }
+        case CompilerWarningType::UNUSED_IMPORT: { return "Unused import"; }
+        case CompilerWarningType::UNUSED_FIELD: { return "Unused field"; }
+        case CompilerWarningType::UNUSED_ENUM_ITEM: { return "Unused enum item"; }
+        case CompilerWarningType::UNUSED_ALIAS: { return "Unused type alias"; }
+        case CompilerWarningType::UNUSED_VARIABLE: { return "Unused variable"; }
+        case CompilerWarningType::UNUSED_RETURN_VALUE: { return "Unused return value"; }
+        case CompilerWarningType::UNREACHABLE_CODE: { return "Unreachable code detected"; }
+        case CompilerWarningType::SHADOWED_VARIABLE: { return "Shadowed variable"; }
+        case CompilerWarningType::IDENTITY_CAST: { return "Identity cast"; }
+        case CompilerWarningType::SINGLE_GENERIC_TYPE_CONDITION: { return "Only one type condition"; }
+        case CompilerWarningType::BOOL_ASSIGN_AS_CONDITION: { return "Bool assignment as condition"; }
+        case CompilerWarningType::ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION: { return "Lambda violates async lambda capture rule"; }
+        case CompilerWarningType::UNINSTALL_FAILED: { return "Uninstall failed"; }
+        case CompilerWarningType::VERIFIER_DISABLED: { return "Verifier disabled"; }
+        default: { return "Unknown warning"; }
+    }
 }
