@@ -153,6 +153,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   AssignExprNode *iteratorNode = node->iteratorAssign();
   SymbolType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
+  iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
 
   // Retrieve iterator type
   SymbolType iteratorType = iteratorOrIterableType;
