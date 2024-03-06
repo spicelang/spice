@@ -1,15 +1,77 @@
-import "std/data/hash-table";
+type Speak interface {
+    p sayHello(string);
+}
+
+type MakeSound interface {
+    p makeSound();
+}
+
+type Human struct : MakeSound, Speak {
+    string firstName
+    string lastName
+    unsigned int age
+}
+
+p Human.ctor(string firstName, string lastName, unsigned int age) {
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.age = age;
+}
+
+p Human.makeSound() {
+    printf("Sigh...\n");
+}
+
+p Human.sayHello(string name) {
+    printf("Hi, %s!\n", name);
+}
+
+type Car struct : MakeSound {
+    string brand
+    string model
+    unsigned int seats
+}
+
+p Car.ctor(string brand, string model, unsigned int seats) {
+    this.brand = brand;
+    this.model = model;
+    this.seats = seats;
+}
+
+p Car.makeSound() {
+    printf("Wroom, wroom!\n");
+}
+
+type Parrot struct : MakeSound, Speak {
+    string name
+    unsigned int age
+}
+
+p Parrot.ctor(string name, unsigned int age) {
+    this.name = name;
+    this.age = age;
+}
+
+p Parrot.makeSound() {
+    printf("Sqawk!\n");
+}
+
+p Parrot.sayHello(string name) {
+    printf("Hello %s, squawk!\n", name);
+}
 
 f<int> main() {
-    HashTable<int, int> hashTable = HashTable<int, int>();
-    hashTable.upsert(1, 2);
-    hashTable.upsert(2, 3);
+    Human human = Human("John", "Doe", 25);
+    Car car = Car("Toyota", "Corolla", 5);
+    Parrot parrot = Parrot("Polly", 3);
 
-    Optional<int> value = hashTable.get(1);
-    assert(value.get() == 2);
-    value = hashTable.get(2);
-    assert(value.get() == 3);
+    human.makeSound();
+    car.makeSound();
+    parrot.makeSound();
 
+    human.sayHello("Jane");
+    parrot.sayHello("Jane");
+    return 0;
 }
 
 /*import "bootstrap/util/block-allocator";
