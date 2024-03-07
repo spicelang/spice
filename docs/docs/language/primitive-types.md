@@ -2,7 +2,8 @@
 title: Primitive data types
 ---
 
-Spice supports eight different primitive data types out of the box: `double`, `int`, `short`, `long`, `byte`, `char`, `string` and `bool`. In addition, there is a builtin type-inferred type, called `dyn`.
+Spice supports eight different primitive data types out of the box: `double`, `int`, `short`, `long`, `byte`, `char`, `string` and
+`bool`. In addition, there is a builtin type-inferred type, called `dyn`.
 Let us take a look at each one individually!
 
 ## The `double` data type
@@ -108,7 +109,10 @@ variable2 = false;
 	You can find more information about that in the respective sections.
 
 ## The `dyn` data type
-The `dyn` data type is a more unconventional data type. Dyn stands for dynamic and means that the `dyn` data type can hold any value of one of the eight types `double`, `int`, `short`, `long`, `byte`, `char`, `string` or `bool`. The concrete type of a `dyn` variable gets inferred at compile time so that the language stays type-safe. This also means, that as soon as you assign a value to a `dyn` variable, the type gets set fixed and is not mutable anymore.
+The `dyn` data type is a more unconventional data type. Dyn stands for dynamic and means that the `dyn` data type can hold any
+value of one of the eight types `double`, `int`, `short`, `long`, `byte`, `char`, `string` or `bool`. The concrete type of a `dyn`
+variable gets inferred at compile time so that the language stays type-safe. This also means, that as soon as you assign a value
+to a `dyn` variable, the type gets set fixed and is not mutable anymore.
 
 Dyn variables can be defined like this:
 
@@ -122,4 +126,5 @@ variable3 = "demo string";
 ```
 
 !!! note "Usage of the dyn data type"
-    The dyn data type can not be used everywhere. Function arguments can only be declared as `dyn`, when they have a default value attached to them. For more information about [functions](../functions), visit the respective documentation section.
+    The dyn data type can not be used everywhere. Function arguments can only be declared as `dyn`, when they have a default value
+    attached to them. For more information about [functions](functions.md), visit the respective documentation section.

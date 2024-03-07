@@ -34,5 +34,5 @@ Content: Hello World!
 ```
 
 !!! tip
-    You can initialize or destroy structs by using [constructors](constructors.md) and [destructors](destructors.md).
+    You can initialize or destroy structs by using [constructors and destructors](constructors-destructors.md).
     Read more about those in the respective documentation section.

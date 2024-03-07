@@ -20,4 +20,4 @@ for int i = 1; i <= 10; i++ {
 !!! tip "Usage of loop alternatives"
     For loops should only be used when it is foreseeable how often a block of code will run. If this is not the case, it
     is recommended to use the [while loop](while-loops.md) or [do-while loop](do-while-loops.md) instead. If you want to
-    iterate over a container of items, consider using the [foreach loop](foreach-loop.md).
+    iterate over a container of items, consider using the [foreach loop](foreach-loops.md).
