@@ -1,3 +1,6 @@
+import "std/data/hash-table";
+import "std/type/result";
+
 // Add generic type definitions
 type K dyn;
 type V dyn;
@@ -11,9 +14,87 @@ type V dyn;
  * Lookup: O(1) (average case), O(n) (worst case)
  */
 public type UnorderedMap<K, V> struct {
-
+    HashTable<K, V> hashTable
 }
 
-public p UnorderedMap.ctor() {
+public p UnorderedMap.ctor(unsigned long bucketCount = 100l) {
+    this.hashTable = HashTable<K, V>(bucketCount);
+}
 
+/**
+ * Insert a key-value pair into the map
+ * If the key already exists, the value is updated.
+ *
+ * @param key The key to insert
+ * @param value The value to insert
+ */
+public p UnorderedMap.upsert(const K& key, const V& value) {
+    this.hashTable.upsert(key, value);
+}
+
+/**
+ * Retrieve the value associated with the given key.
+ * If the key is not found, panic.
+ *
+ * @param key The key to look up
+ * @return The value associated with the key
+ */
+public f<V&> UnorderedMap.get(const K& key) {
+    return this.hashTable.get(key);
+}
+
+/**
+ * Retrieve the value associated with the given key as Optional<T>.
+ * If the key is not found, return an empty optional.
+ *
+ * @param key The key to look up
+ * @return Optional<T>, containing the value associated with the key or empty if the key is not found
+ */
+public f<Result<V>> UnorderedMap.getSafe(const K& key) {
+    return this.hashTable.getSafe(key);
+}
+
+/**
+ * Check if the map contains the given key.
+ *
+ * @param key The key to check for
+ * @return True if the key is found, false otherwise
+ */
+public p UnorderedMap.remove(const K& key) {
+    this.hashTable.remove(key);
+}
+
+/**
+ * Check if the map contains the given key.
+ *
+ * @param key The key to check for
+ * @return True if the key is found, false otherwise
+ */
+public f<bool> UnorderedMap.contains(const K& key) {
+    return this.hashTable.contains(key);
+}
+
+/**
+ * Get the size of the unordered map.
+ *
+ * @return The number of key-value pairs in the map
+ */
+public f<unsigned long> UnorderedMap.getSize() {
+    return this.hashTable.getSize();
+}
+
+/**
+ * Check if the unordered map is empty.
+ *
+ * @return True if empty, false otherwise
+ */
+public f<bool> UnorderedMap.isEmpty() {
+    return this.hashTable.isEmpty();
+}
+
+/**
+ * Clear the unordered map, removing all key-value pairs.
+ */
+public p UnorderedMap.clear() {
+    this.hashTable.clear();
 }

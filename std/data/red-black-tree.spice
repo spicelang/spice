@@ -158,7 +158,11 @@ public p RedBlackTree.remove(const K& key) {
  * @return The value for the given key
  */
 public f<V&> RedBlackTree.find(const K& key) {
-    return this.search(key).value;
+    heap Node<K, V>* node = this.search(key);
+    if node == nil<heap Node<K, V>*> {
+        panic(Error("The provided key was not found"));
+    }
+    return node.value;
 }
 
 /**
