@@ -1,6 +1,7 @@
 import "std/data/vector";
 import "std/data/linked-list";
-import "std/data/optional";
+import "std/type/result";
+import "std/type/error";
 import "std/math/hash";
 
 // Generic types for key and value
@@ -13,50 +14,136 @@ type HashEntry<K, V> struct {
 }
 
 public type HashTable<K, V> struct {
-    Vector<LinkedList<HashEntry<K, V>>> table
+    Vector<LinkedList<HashEntry<K, V>>> buckets
 }
 
 public p HashTable.ctor(unsigned long bucketCount = 100l) {
-    this.table = Vector<LinkedList<HashEntry<K, V>>>(bucketCount);
+    this.buckets = Vector<LinkedList<HashEntry<K, V>>>(bucketCount);
     for unsigned long i = 0l; i < bucketCount; i++ {
-        this.table.pushBack(LinkedList<HashEntry<K, V>>());
+        this.buckets.pushBack(LinkedList<HashEntry<K, V>>());
     }
 }
 
+/**
+ * Insert a key-value pair into the hash table.
+ * If the key already exists, the value is updated.
+ *
+ * @param key The key to insert
+ * @param value The value to insert
+ */
 public p HashTable.upsert(const K& key, const V& value) {
     const unsigned long index = this.hash(key);
-    const LinkedList<HashEntry<K, V>>& list = this.table.get(index);
-    foreach const HashEntry<K, V>& entry : list {
+    const LinkedList<HashEntry<K, V>>& bucket = this.buckets.get(index);
+    foreach const HashEntry<K, V>& entry : bucket {
         if (entry.key == key) {
             entry.value = value;
             return;
         }
     }
+    bucket.pushBack(HashEntry<K, V>{key, value});
 }
 
-public f<Optional<V>> HashTable.get(const K& key) {
+/**
+ * Retrieve the value associated with the given key.
+ * If the key is not found, panic.
+ *
+ * @param key The key to look up
+ * @return The value associated with the key
+ */
+public f<V&> HashTable.get(const K& key) {
     const unsigned long index = this.hash(key);
-    const LinkedList<HashEntry<K, V>>& list = this.table.get(index);
-    foreach const HashEntry<K, V>& entry : list {
+    const LinkedList<HashEntry<K, V>>& bucket = this.buckets.get(index);
+    foreach const HashEntry<K, V>& entry : bucket {
         if (entry.key == key) {
-            return Optional<V>(entry.value);
+            return entry.value;
         }
     }
-    return Optional<V>();
+    panic(Error("The provided key was not found"));
 }
 
+/**
+ * Retrieve the value associated with the given key as Optional<T>.
+ * If the key is not found, return an empty optional.
+ *
+ * @param key The key to look up
+ * @return Optional<T>, containing the value associated with the key or empty if the key is not found
+ */
+public f<Result<V>> HashTable.getSafe(const K& key) {
+    const unsigned long index = this.hash(key);
+    const LinkedList<HashEntry<K, V>>& bucket = this.buckets.get(index);
+    foreach const HashEntry<K, V>& entry : bucket {
+        if (entry.key == key) {
+            return ok(entry.value);
+        }
+    }
+    return err<V>(Error("The provided key was not found"));
+}
+
+/**
+ * Remove the key-value pair associated with the given key.
+ * If the key is not found, do nothing.
+ *
+ * @param key The key to remove
+ */
 public p HashTable.remove(const K& key) {
     const unsigned long index = this.hash(key);
-    LinkedList<HashEntry<K, V>>& list = this.table.get(index);
-    for (unsigned long i = 0l; i < list.getSize(); i++) {
-        if (list.get(i).key == key) {
-            list.remove(i);
+    LinkedList<HashEntry<K, V>>& bucket = this.buckets.get(index);
+    for unsigned long i = 0l; i < bucket.getSize(); i++ {
+        if (bucket.get(i).key == key) {
+            bucket.removeAt(i);
             return;
         }
     }
 }
 
+/**
+ * Check if the hash table contains the given key.
+ *
+ * @param key The key to check for
+ * @return True if the key is found, false otherwise
+ */
+public f<bool> HashTable.contains(const K& key) {
+    const unsigned long index = this.hash(key);
+    const LinkedList<HashEntry<K, V>>& bucket = this.buckets.get(index);
+    foreach const HashEntry<K, V>& entry : bucket {
+        if (entry.key == key) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Get the size of the hash table.
+ *
+ * @return The number of key-value pairs in the hash table
+ */
+public inline f<unsigned long> HashTable.getSize() {
+    result = 0l;
+    foreach LinkedList<HashEntry<K, V>>& bucket : this.buckets {
+        result += bucket.getSize();
+    }
+}
+
+/**
+ * Checks if the hash table is empty.
+ *
+ * @return True if empty, false otherwise.
+ */
+public inline f<bool> HashTable.isEmpty() {
+    return this.getSize() == 0l;
+}
+
+/**
+ * Clear the hash table, removing all key-value pairs.
+ */
+public inline p HashTable.clear() {
+    foreach LinkedList<HashEntry<K, V>>& bucket : this.buckets {
+        bucket.clear();
+    }
+}
+
 inline f<unsigned long> HashTable.hash(const K& key) {
-    K keyCopy = key;
-    return hash(keyCopy) % this.table.getSize();
+    const K keyCopy = key;
+    return hash(keyCopy) % this.buckets.getSize();
 }

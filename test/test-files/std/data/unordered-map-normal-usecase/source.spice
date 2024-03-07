@@ -1,10 +1,6 @@
 import "std/data/unordered-map";
-import "std/time/timer";
 
 f<int> main() {
-    Timer timer = Timer();
-    timer.start();
-
     UnorderedMap<int, string> map = UnorderedMap<int, string>(3l);
     assert map.getSize() == 0;
     assert map.isEmpty();
@@ -38,15 +34,5 @@ f<int> main() {
     map.remove(1);
     assert map.isEmpty();
 
-    timer.stop();
-    printf("All assertions passed in %d microseconds!\n", timer.getDurationInMicros());
+    printf("All assertions passed!\n");
 }
-
-/*import "bootstrap/util/block-allocator";
-import "bootstrap/util/memory";
-
-f<int> main() {
-    DefaultMemoryManager defaultMemoryManager;
-    IMemoryManager* memoryManager = &defaultMemoryManager;
-    BlockAllocator<int> allocator = BlockAllocator<int>(memoryManager, 10l);
-}*/

@@ -43,6 +43,11 @@ public type LinkedList<T> struct : IIterable<T> {
 
 public p LinkedList.ctor() {}
 
+/**
+ * Pushes a new item to the back of the list
+ *
+ * @param value Value to push
+ */
 public p LinkedList.pushBack(const T& value) {
     // Create new node
     heap Node<T>* newNode = this.createNode(value);
@@ -57,6 +62,11 @@ public p LinkedList.pushBack(const T& value) {
     this.size++;
 }
 
+/**
+ * Pushes a new item to the front of the list
+ *
+ * @param value Value to push
+ */
 public p LinkedList.pushFront(const T& value) {
     // Create new node
     heap Node<T>* newNode = this.createNode(value);
@@ -71,6 +81,12 @@ public p LinkedList.pushFront(const T& value) {
     this.size++;
 }
 
+/**
+ * Inserts a new item at the given index
+ *
+ * @param idx Index to insert the new item
+ * @param value Value to insert
+ */
 public p LinkedList.insertAt(unsigned long idx, const T& value) {
     // Abort if the index is out of bounds
     if idx < 0l || idx >= this.size { return; }
@@ -94,10 +110,21 @@ public p LinkedList.insertAt(unsigned long idx, const T& value) {
     this.size++;
 }
 
-public p LinkedList.insertAt(unsigned int idx, const T& value) {
+/**
+ * Inserts a new item at the given index
+ *
+ * @param idx Index to insert the new item
+ * @param value Value to insert
+ */
+public inline p LinkedList.insertAt(unsigned int idx, const T& value) {
     this.insertAt((unsigned long) idx, value);
 }
 
+/**
+ * Removes the first occurrence of the given value
+ *
+ * @param valueToRemove Value to remove
+ */
 public p LinkedList.remove(const T& valueToRemove) {
     // Abort if the list is already empty
     if this.isEmpty() { return; }
@@ -127,6 +154,11 @@ public p LinkedList.remove(const T& valueToRemove) {
     this.size--;
 }
 
+/**
+ * Removes the first occurrence of the given value
+ *
+ * @param valueToRemove Value to remove
+ */
 public p LinkedList.removeAt(unsigned long idx) {
     // Abort if the index is out of bounds
     if idx < 0l || idx >= this.size { return; }
@@ -159,26 +191,53 @@ public p LinkedList.removeAt(unsigned long idx) {
     this.size--;
 }
 
-public p LinkedList.removeAt(unsigned int index) {
-    this.removeAt((unsigned long) index);
+/**
+ * Removes the first occurrence of the given value
+ *
+ * @param idx Index to remove
+ */
+public inline p LinkedList.removeAt(unsigned int idx) {
+    this.removeAt((unsigned long) idx);
 }
 
-public p LinkedList.removeFront() {
+/**
+ * Removes the first item of the list
+ */
+public inline p LinkedList.removeFront() {
     this.removeAt(0l);
 }
 
-public p LinkedList.removeBack() {
+/**
+ * Removes the last item of the list
+ */
+public inline p LinkedList.removeBack() {
     this.removeAt(this.size - 1l);
 }
 
+/**
+ * Returns the size of the list
+ *
+ * @return Size of the list
+ */
 public inline f<unsigned long> LinkedList.getSize() {
     return this.size;
 }
 
+/**
+ * Returns if the list is empty
+ *
+ * @return true if the list is empty, false otherwise
+ */
 public inline f<bool> LinkedList.isEmpty() {
     return this.size == 0l;
 }
 
+/**
+ * Returns the item at the given index
+ *
+ * @param idx Index to access
+ * @return Reference to the item
+ */
 public f<T&> LinkedList.get(unsigned long idx) {
     // Abort if the index is out of bounds
     if idx < 0 || idx >= this.size { panic(Error("Access index out of bound")); }
@@ -190,18 +249,43 @@ public f<T&> LinkedList.get(unsigned long idx) {
     return curr.value;
 }
 
-public f<T&> LinkedList.get(unsigned int idx) {
+/**
+ * Returns the item at the given index
+ *
+ * @param idx Index to access
+ * @return Reference to the item
+ */
+public inline f<T&> LinkedList.get(unsigned int idx) {
     return this.get((unsigned long) idx);
 }
 
+/**
+ * Returns the first item of the list
+ *
+ * @return Reference to the first item
+ */
 public inline f<T&> LinkedList.getFront() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.tail.value;
 }
 
+/**
+ * Returns the last item of the list
+ *
+ * @return Reference to the last item
+ */
 public inline f<T&> LinkedList.getBack() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.head.value;
+}
+
+/**
+ * Clears the list
+ */
+public inline p LinkedList.clear() {
+    while !this.isEmpty() {
+        this.removeFront();
+    }
 }
 
 f<heap Node<T>*> LinkedList.createNode(const T& value) {
