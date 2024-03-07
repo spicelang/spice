@@ -37,4 +37,4 @@ int result1 = demoFunction("another input", 1.0);
 
 !!! tip
     If you only want to execute some actions and don't need to return a value to the caller, please consider to use
-    [procedures](../procedures.md) instead of functions.
+    [procedures](procedures.md) instead of functions.

@@ -2,7 +2,7 @@
 title: Arrays
 ---
 
-You can use arrays in Spice for any [primitive](../primitive-types.md) or custom [struct](../structs.md) data type.
+You can use arrays in Spice for any [primitive](primitive-types.md) or custom [struct](structs.md) data type.
 
 ## Usage
 

@@ -84,7 +84,7 @@ variable2 = "Hello World!";
 
 !!! info "Note"
     This type of string is immutable. So if you want to mutate your string at runtime, you can use the
-    [builtin String data type](../builtin-types.md#the-string-data-type).
+    [builtin String data type](builtin-types.md#the-string-data-type).
 
 !!! tip "Tip"
     Use the `string` primitive type over the `String` builtin type as much as possible, due to its advantages in runtime
@@ -103,8 +103,8 @@ variable2 = false;
 ```
 
 !!! info "Additional information"
-    Many language components like [if statements](../if-statements.md), [for loops](../for-loops.md),
-    [while loops](../while-loops.md), etc. use the `bool` data type as evaluation unit for conditions.
+    Many language components like [if statements](if-statements.md), [for loops](for-loops.md),
+    [while loops](while-loops.md), etc. use the `bool` data type as evaluation unit for conditions.
 	You can find more information about that in the respective sections.
 
 ## The `dyn` data type

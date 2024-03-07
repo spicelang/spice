@@ -42,7 +42,7 @@ f<int> main() {
 }
 ```
 
-The `ctor` method can also be called manually like calling [other methods](./methods.md).
+The `ctor` method can also be called manually like calling [other methods](methods.md).
 
 ## Destructors
 You have the option to create a destructor by providing a `dtor` method on a struct. It does not allow any arguments and has no

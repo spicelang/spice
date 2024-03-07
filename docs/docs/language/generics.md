@@ -2,8 +2,8 @@
 title: Generics
 ---
 
-Spice offers basic support for generics. [Structs](./structs.md) and [Interfaces](./interfaces.md) as well as [functions](./functions.md)
-and [procedures](./procedures.md) can be marked as generic by attaching a template list with one or more generic types to it.
+Spice offers basic support for generics. [Structs](structs.md) and [Interfaces](interfaces.md) as well as [functions](functions.md)
+and [procedures](procedures.md) can be marked as generic by attaching a template list with one or more generic types to it.
 
 Spice resolves the substantiations of generic types at compile time. This helps to keep the runtime performance up.
 Generic function substantiations that are unused, are removed by the compiler automatically.
