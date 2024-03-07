@@ -12,8 +12,7 @@ theme:
   custom_dir: docs/overrides
   language: en
   favicon: static/favicon-96x96.ico
-  icon:
-    logo: static/avatar.png
+  logo: static/avatar.png
   include_search_page: false
   search_index_only: true
   features:

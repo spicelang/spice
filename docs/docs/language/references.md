@@ -1,7 +1,7 @@
 ---
 title: References
 ---
-In addition to [pointers](../pointers), Spice supports references. Under the hood, this works with non-nullable pointers.
+In addition to [pointers](../pointers.md), Spice supports references. Under the hood, this works with non-nullable pointers.
 
 ## Usage - local variables
 

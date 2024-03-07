@@ -2,8 +2,8 @@
 title: Generics
 ---
 
-Spice offers basic support for generics. [Structs](./structs) and [Interfaces](./interfaces) as well as [functions](./functions)
-and [procedures](./procedures) can be marked as generic by attaching a template list with one or more generic types to it.
+Spice offers basic support for generics. [Structs](./structs.md) and [Interfaces](./interfaces.md) as well as [functions](./functions.md)
+and [procedures](./procedures.md) can be marked as generic by attaching a template list with one or more generic types to it.
 
 Spice resolves the substantiations of generic types at compile time. This helps to keep the runtime performance up.
 Generic function substantiations that are unused, are removed by the compiler automatically.
@@ -52,5 +52,5 @@ p Vector.print() {
 ```
 
 The above example shows, that you can use the generic type as part of struct field types. Like normal structs, generic structs can
-also have [methods](./methods). The concrete types for the generic types, used for the parent struct, are inherited by the method,
+also have [methods](./methods.md). The concrete types for the generic types, used for the parent struct, are inherited by the method,
 so you do not have to define the method above with following signature: `Vector<T>.print()`.

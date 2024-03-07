@@ -16,7 +16,7 @@ f<int> main() {
 }
 ```
 
-Like any other [function](../functions), the `main` function automatically declares the variable `result` of the same type as the
+Like any other [function](../functions.md), the `main` function automatically declares the variable `result` of the same type as the
 function return type. You then have the option to use either the return statement (e.g.: `return 1;`) or assign a value to the
 `result` variable. If you choose the second option, the value of this variable gets returned at the end of the function body.
 Unlike normal functions, the `main` function has `0` as the initial value assigned to the `result` variable for reasons of
@@ -24,7 +24,7 @@ convenience and to not always have to write `return 0;` or `result = 0;` to exit
 
 !!! info "Hello World program"
     Now, as you know how to start a program in Spice, you may like to write your first Spice program. Visit the guide for the
-    [Hello World example](../hello-world) to get started!
+    [Hello World example](../hello-world.md) to get started!
 
 ## Command Line Arguments
 Spice programs can accept command line arguments similar you would write it in C:

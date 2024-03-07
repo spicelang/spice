@@ -6,7 +6,7 @@ title: Hello World
 
 In this example, we will code a simple "Hello World" program in Spice. What it does is to simply print "Hello World!" to the
 console when it gets started. The guide assumes, that you already have Spice
-[installed on your development system](https://www.spicelang.com/install/linux) and are ready to go.
+[installed on your development system](../install/linux.md) and are ready to go.
 
 ## Write your first program
 
