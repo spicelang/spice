@@ -4,8 +4,8 @@ title: Do-While Loops
 
 Do-While loops are designed to do something until a certain condition evaluates to `false`, but at least execute the action once.
 This means, that a do-while loop could also run infinitely when the condition never gets fulfilled. <br>
-Like the [if statement](../if-statements), the condition of the `do-while` loop must evaluate to a
-[boolean value](../primitive-types#the-bool-data-type), but can hold complex, nested expressions.
+Like the [if statement](if-statements.md), the condition of the `do-while` loop must evaluate to a
+[boolean value](primitive-types.md#the-bool-data-type), but can hold complex, nested expressions.
 
 ## Usage
 
@@ -29,5 +29,5 @@ do {
 ```
 
 !!! tip "Usage of loop alternatives"
-    If you somehow know how many times you want to execute something, we recommend you to use a [for loop](../for-loops)
-    instead. If you want to iterate over a container of items, consider using the [foreach loop](../foreach-loops).
+    If you somehow know how many times you want to execute something, we recommend you to use a [for loop](for-loops.md)
+    instead. If you want to iterate over a container of items, consider using the [foreach loop](foreach-loops.md).

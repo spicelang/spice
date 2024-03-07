@@ -3,7 +3,7 @@ title: Foreach Loops
 ---
 
 Foreach loops can be used to iterate over containers, that offer iterator implementations like `Vector`, `ArrayList`,
-etc. as well as [arrays](../arrays) of arbitrary elements and number ranges.
+etc. as well as [arrays](arrays.md) of arbitrary elements and number ranges.
 
 ## Usage
 
@@ -38,5 +38,5 @@ foreach long idx, string word : welcomeMessage {
 
 !!! tip "Usage of loop alternatives"
     Foreach loops should only be used when you have a container data structure and want to iterate over its items.
-    If this is not the case, we recommend using the [for loop](../for-loops), [while loop](../while-loops) or
-	[do-while loop](../do-while-loops) instead.
+    If this is not the case, we recommend using the [for loop](for-loops.md), [while loop](while-loops.md) or
+	[do-while loop](do-while-loops.md) instead.

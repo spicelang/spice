@@ -2,7 +2,7 @@
 title: Type Casts
 ---
 
-Sometimes it is useful to directly cast [a type](../primitive-types) to another one. Spice offers type casting for some
+Sometimes it is useful to directly cast [a type](primitive-types.md) to another one. Spice offers type casting for some
 type combinations. Additionally, the casting operator can always be applied when the source type matches the cast
 destination type.
 

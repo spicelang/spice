@@ -16,7 +16,7 @@ type Person struct {
 }
 ```
 
-Structs can only be declared in the global scope, like [functions](../functions) and [procedures](../procedures).
+Structs can only be declared in the global scope, like [functions](functions.md) and [procedures](procedures.md).
 
 For creating an instance of the declared struct, you can pass values for either all or none of the fields in curly braces.
 To access a field of the instance, you can address the field by its name:

@@ -11,15 +11,17 @@ theme:
   name: material
   custom_dir: docs/overrides
   language: en
-  logo: static/avatar.png
   favicon: static/favicon-96x96.ico
+  logo: static/avatar.png
   include_search_page: false
   search_index_only: true
   features:
     - navigation.instant
     - navigation.tabs
+    - navigation.top
     - content.code.copy
     - content.action.edit
+    - content.action.view
     - announce.dismiss
   palette:
     - media: "(prefers-color-scheme)"  # System preference
@@ -52,8 +54,12 @@ plugins:
       - en
   - minify:
       minify_html: true
+  - social
 
 extra:
+  status:
+    new: Recently added
+    deprecated: Deprecated
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/spicelang/spice
@@ -115,7 +121,6 @@ nav:
   - contributing.md
 
 markdown_extensions:
-  - codehilite
   - meta
   - footnotes
   - admonition
@@ -126,6 +131,13 @@ markdown_extensions:
       alternate_style: true
   - pymdownx.superfences
   - attr_list
+  - pymdownx.highlight:
+      auto_title: true
+      linenums: true
+      anchor_linenums: true
+      use_pygments: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg

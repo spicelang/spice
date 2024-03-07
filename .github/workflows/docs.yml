@@ -25,7 +25,9 @@ jobs:
           python-version: 3.x
 
       - name: Install dependencies
-        run: pip install -r docs/requirements.txt
+        run: |
+          sudo apt-get install libcairo2-dev libfreetype6-dev libffi-dev libjpeg-dev libpng-dev libz-dev pngquant
+          pip install -r docs/requirements.txt
 
       - name: Build and deploy
         working-directory: docs

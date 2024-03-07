@@ -38,5 +38,5 @@ demoProcedure(7, true);
 ```
 
 !!! tip
-    If you want to calculate something and need to return a value to the caller, please consider to use [functions](../functions)
-    instead of procedures.
+    If you want to calculate something and need to return a value to the caller, please consider to use
+    [functions](functions.md) instead of procedures.
