@@ -33,6 +33,19 @@ public inline f<LinkedList<HashEntry<K, V>>&> HashTable.getBucket(const K& key) 
 }
 
 /**
+ * Retrieve the bucket associated by a given index.
+ *
+ * @param bucketIdx The index of the bucket to retrieve
+ * @return The bucket at the given index
+ */
+public inline f<LinkedList<HashEntry<K, V>>&> HashTable.getBucketByIndex(unsigned long bucketIdx) {
+    if bucketIdx >= this.buckets.getSize() {
+        panic(Error("The provided bucket index is out of range"));
+    }
+    return this.buckets.get(bucketIdx);
+}
+
+/**
  * Insert a key-value pair into the hash table.
  * If the key already exists, the value is updated.
  *
@@ -40,7 +53,8 @@ public inline f<LinkedList<HashEntry<K, V>>&> HashTable.getBucket(const K& key) 
  * @param value The value to insert
  */
 public p HashTable.upsert(const K& key, const V& value) {
-    foreach const HashEntry<K, V>& entry : this.getBucket(key) {
+    LinkedList<HashEntry<K, V>>& bucket = this.getBucket(key);
+    foreach const HashEntry<K, V>& entry : bucket {
         if (entry.key == key) {
             entry.value = value;
             return;

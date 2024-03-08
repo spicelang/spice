@@ -120,8 +120,8 @@ public p UnorderedMapIterator.ctor<K, V>(UnorderedMap<K, V>& map) {
  *
  * @return Reference to the current item
  */
-public inline f<T&> UnorderedMapIterator.get() {
-    const List<Pair<K, V>>& bucket = this.map.hashTable.getBucket(this.cursorBucketIdx);
+public inline f<Pair<const K&, V&>> UnorderedMapIterator.get() {
+    const LinkedList<Pair<K, V>>& bucket = this.map.hashTable.getBucketByIndex(this.cursorBucketIdx);
     return bucket.get(this.cursorBucketItemIdx);
 }
 
