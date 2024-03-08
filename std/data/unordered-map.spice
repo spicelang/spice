@@ -1,8 +1,12 @@
 import "std/data/hash-table";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
 // Add generic type definitions
 type K dyn;
 type V dyn;
+type Numeric int|long|short;
 
 /**
  * A map in Spice is a commonly used data structure, which can be used to represent a list of key value pairs.
@@ -12,7 +16,7 @@ type V dyn;
  * Delete: O(1) (average case), O(n) (worst case)
  * Lookup: O(1) (average case), O(n) (worst case)
  */
-public type UnorderedMap<K, V> struct {
+public type UnorderedMap<K, V> struct : IIterable<Pair<K, V>> {
     HashTable<K, V> hashTable
 }
 
@@ -96,4 +100,102 @@ public f<bool> UnorderedMap.isEmpty() {
  */
 public p UnorderedMap.clear() {
     this.hashTable.clear();
+}
+
+/**
+ * Iterator to iterate over an unordered map data structure
+ */
+public type UnorderedMapIterator<K, V> struct : IIterator<Pair<K, V>> {
+    UnorderedMap<K, V>& map
+    unsigned long cursorBucketIdx = 0l
+    unsigned long cursorBucketItemIdx = 0l
+}
+
+public p UnorderedMapIterator.ctor<K, V>(UnorderedMap<K, V>& map) {
+    this.map = map;
+}
+
+/**
+ * Returns the current key-value pair of the unordered map
+ *
+ * @return Reference to the current item
+ */
+public inline f<T&> UnorderedMapIterator.get() {
+    const List<Pair<K, V>>& bucket = this.map.hashTable.getBucket(this.cursorBucketIdx);
+    return bucket.get(this.cursorBucketItemIdx);
+}
+
+/**
+ * Returns the current index and the current item of the unordered map
+ *
+ * @return Pair of current index and reference to current item
+ */
+public inline f<Pair<unsigned long, Pair<const K&, V&>>> UnorderedMapIterator.getIdx() {
+    return Pair<unsigned long, Pair<const K&, V&>>(this.cursor, this.map.get(this.cursor));
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> UnorderedMapIterator.isValid() {
+    return this.cursor < this.map.getSize();
+}
+
+/**
+ * Returns the current item of the unordered map iterator and moves the cursor to the next item
+ */
+public inline p UnorderedMapIterator.next() {
+    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
+    this.cursor++;
+}
+
+/**
+ * Advances the cursor by one
+ *
+ * @param it UnorderedMapIterator
+ */
+public inline p operator++<K, V>(UnorderedMapIterator<K, V>& it) {
+    if it.cursor >= it.map.getSize() { panic(Error("Iterator out of bounds")); }
+    it.cursor++;
+}
+
+/**
+ * Move the cursor back by one
+ *
+ * @param it UnorderedMapIterator
+ */
+public inline p operator--<K, V>(UnorderedMapIterator<K, V>& it) {
+    if it.cursor <= 0l { panic(Error("Iterator out of bounds")); }
+    it.cursor--;
+}
+
+/**
+ * Advances the cursor by the given offset
+ *
+ * @param it UnorderedMapIterator
+ * @param offset Offset
+ */
+public inline p operator+=<K, V, Numeric>(UnorderedMapIterator<K, V>& it, Numeric offset) {
+    if it.cursor + offset >= it.map.getSize() || it.cursor + offset < 0 { panic(Error("Iterator out of bounds")); }
+    it.cursor += offset;
+}
+
+/**
+ * Move the cursor back by the given offset
+ *
+ * @param it UnorderedMapIterator
+ * @param offset Offset
+ */
+public inline p operator-=<K, V, Numeric>(UnorderedMapIterator<K, V>& it, Numeric offset) {
+    if it.cursor - offset >= it.map.getSize() || it.cursor - offset < 0 { panic(Error("Iterator out of bounds")); }
+    it.cursor -= offset;
+}
+
+/**
+ * Retrieve an forward iterator for the unordered map
+ */
+public f<UnorderedMapIterator<K, V>> UnorderedMap.getIterator() {
+    return UnorderedMapIterator<K, V>(*this);
 }

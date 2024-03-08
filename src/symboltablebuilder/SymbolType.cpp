@@ -620,12 +620,10 @@ bool SymbolType::matchesInterfaceImplementedByStruct(const SymbolType &otherType
   // Check if the rhs is a struct type that implements the lhs interface type
   const Struct *spiceStruct = otherType.getStruct(nullptr);
   assert(spiceStruct != nullptr);
-  for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
+  return std::ranges::any_of(spiceStruct->interfaceTypes, [&](const SymbolType &interfaceType) {
     assert(interfaceType.is(TY_INTERFACE));
-    if (matches(interfaceType, false, false, true))
-      return true;
-  }
-  return false;
+    return matches(interfaceType, false, false, true);
+  });
 }
 
 /**

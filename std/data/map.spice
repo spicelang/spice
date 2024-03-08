@@ -1,8 +1,12 @@
 import "std/data/red-black-tree";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
 // Add generic type definitions
 type K dyn;
 type V dyn;
+type Numeric int|long|short;
 
 /**
  * A map in Spice is a commonly used data structure, which can be used to represent a list of key value pairs.

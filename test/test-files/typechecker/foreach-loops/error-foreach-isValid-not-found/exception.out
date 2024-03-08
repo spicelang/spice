@@ -1,0 +1,5 @@
+[Error|Semantic] ./test.spice:13:24:
+Invalid iterator: No isValid() function found for the given iterable type
+
+13  foreach dyn item : c {
+                       ^

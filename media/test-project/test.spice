@@ -1,18 +1,42 @@
-import "std/os/env";
-import "bootstrap/lexer/lexer";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
+
+type Container struct : IIterable<int> {}
+
+type ContainerIterator struct : IIterator<int> {
+    Container& container
+}
+
+p ContainerIterator.ctor(Container& container) {
+    this.container = container;
+}
+
+f<ContainerIterator> Container.getIterator() {
+    return ContainerIterator(*this);
+}
 
 f<int> main() {
-    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-lexer-test/test-file.spice";
-    Lexer lexer = Lexer(filePath.getRaw());
-    unsigned long tokenCount = 0l;
-    while (!lexer.isEOF()) {
-        Token token = lexer.getToken();
-        token.print();
-        lexer.advance();
-        tokenCount++;
+    Container c;
+    foreach int item : c {
+        printf("%d\n", item);
     }
-    printf("\nLexed tokens: %d\n", tokenCount);
 }
+
+/*import "std/data/unordered-map";
+
+f<int> main() {
+    UnorderedMap<int, string> map = UnorderedMap<int, string>(3l);
+    map.upsert(1, "one");
+    map.upsert(2, "two");
+    map.upsert(3, "three");
+    map.upsert(4, "four");
+    foreach Pair<int, string> item : map {
+        printf("%d: %s\n", item.key, item.value);
+    }
+
+    printf("All assertions passed\n");
+}*/
 
 /*import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
