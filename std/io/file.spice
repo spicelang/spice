@@ -1,4 +1,3 @@
-import "std/type/result";
 import "std/type/error";
 
 // File open modes

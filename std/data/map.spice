@@ -1,5 +1,4 @@
 import "std/data/red-black-tree";
-import "std/type/result";
 
 // Add generic type definitions
 type K dyn;

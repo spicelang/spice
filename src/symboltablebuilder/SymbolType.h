@@ -24,6 +24,7 @@ class Interface;
 
 // Constants
 const char *const STROBJ_NAME = "String";
+const char *const RESULTOBJ_NAME = "Result";
 const char *const ERROBJ_NAME = "Error";
 const char *const TIOBJ_NAME = "TypeInfo";
 const char *const IITERATOR_NAME = "IIterator";

@@ -1,7 +1,5 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
-import "std/type/result";
-
 // Link external functions
 ext f<heap byte*> malloc(unsigned long);
 ext f<heap byte*> realloc(heap byte*, unsigned long);
