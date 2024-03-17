@@ -44,6 +44,24 @@ std::string FileUtil::getFileContent(const std::filesystem::path &filePath) {
 }
 
 /**
+ * Retrieve the number of lines of a file
+ *
+ * @param filePath File path
+ * @return Number of lines
+ */
+size_t FileUtil::getLineCount(const std::filesystem::path &filePath) {
+  std::ifstream file(filePath);
+  if (!file)
+    throw CompilerError(IO_ERROR, "Failed to open file: " + filePath.string());
+  size_t lineCount = 0;
+  std::string line;
+  while (std::getline(file, line))
+    lineCount++;
+  file.close();
+  return lineCount;
+}
+
+/**
  * Execute external command. Used to execute compiled binaries
  *
  * @param cmd Command to execute

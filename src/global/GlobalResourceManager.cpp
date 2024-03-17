@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <util/FileUtil.h>
 
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
@@ -77,5 +78,10 @@ SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const st
 }
 
 uint64_t GlobalResourceManager::getNextCustomTypeId() { return nextCustomTypeId++; }
+
+size_t GlobalResourceManager::getTotalLineCount() const {
+  const auto acc = [](size_t sum, const auto &sourceFile) { return sum + FileUtil::getLineCount(sourceFile.second->filePath); };
+  return std::accumulate(sourceFiles.begin(), sourceFiles.end(), 0, acc);
+}
 
 } // namespace spice::compiler

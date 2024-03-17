@@ -43,6 +43,7 @@ public:
   // Public methods
   SourceFile *createSourceFile(SourceFile *parent, const std::string &depName, const std::filesystem::path &path, bool isStdFile);
   uint64_t getNextCustomTypeId();
+  size_t getTotalLineCount() const;
 
   // Public members
   llvm::LLVMContext context;
