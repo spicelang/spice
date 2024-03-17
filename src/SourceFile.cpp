@@ -542,7 +542,8 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
     resourceManager.totalTimer.stop();
     if (resourceManager.cliOptions.printDebugOutput) {
       CHECK_ABORT_FLAG_V()
-      std::cout << "\nSuccessfully compiled " << std::to_string(resourceManager.sourceFiles.size()) << " source file(s).\n";
+      std::cout << "\nSuccessfully compiled " << std::to_string(resourceManager.sourceFiles.size()) << " source file(s)";
+      std::cout << " or " << std::to_string(resourceManager.getTotalLineCount()) << " lines in total.\n";
       std::cout << "Total compile time: " << std::to_string(resourceManager.totalTimer.getDurationMilliseconds()) << " ms\n";
     }
   }
