@@ -1,6 +1,5 @@
 import "std/data/vector";
 import "std/data/linked-list";
-import "std/type/result";
 import "std/type/error";
 import "std/math/hash";
 

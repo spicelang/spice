@@ -251,11 +251,11 @@ public f<bool> operator==(const String& a, const String& b) {
     return true;
 }
 
-public f<bool> operator==(const String& a, const string& b) {
+public f<bool> operator==(const String& a, string b) {
     return isRawEqual(a.getRaw(), b);
 }
 
-public f<bool> operator==(const string& a, const String& b) {
+public f<bool> operator==(string a, const String& b) {
     return isRawEqual(a, b.getRaw());
 }
 
@@ -294,7 +294,7 @@ public inline f<string> String.getRaw() {
  *
  * @return Current length of the string
  */
-public inline f<long> String.getLength() {
+public inline f<unsigned long> String.getLength() {
     return this.length;
 }
 
@@ -310,7 +310,7 @@ public inline f<bool> String.isEmpty() {
  *
  * @return Current capacity of the string
  */
- public inline f<long> String.getCapacity() {
+ public inline f<unsigned long> String.getCapacity() {
      return this.capacity;
  }
 
@@ -417,6 +417,16 @@ public f<long> String.rfind(string needle, unsigned long startIndex = 0l) {
 }
 
 /**
+ * Searches for a substring in a string from the back. Returns -1 if the string was not found.
+ *
+ * @param startIndex Index where to start the search
+ * @return Index, where the substring was found / -1
+ */
+public f<long> String.rfind(string needle, unsigned int startIndex) {
+    return this.rfind(needle, (unsigned long) startIndex);
+}
+
+/**
  * Searches for a subchar in a string from the back. Returns -1 if the char was not found.
  *
  * @param startIndex Index where to start the search
@@ -425,16 +435,6 @@ public f<long> String.rfind(string needle, unsigned long startIndex = 0l) {
 public f<long> String.rfind(char needle, unsigned long startIndex = 0l) {
     const String needleStr = String(needle);
     return this.rfind(needleStr.getRaw(), startIndex);
-}
-
-/**
- * Searches for a substring in a string from the back. Returns -1 if the string was not found.
- *
- * @param startIndex Index where to start the search
- * @return Index, where the substring was found / -1
- */
-public f<long> String.rfind(string needle, unsigned int startIndex) {
-    return this.rfind(needle, (unsigned long) startIndex);
 }
 
 /**

@@ -1,7 +1,6 @@
 // Std imports
 import "std/io/filepath";
 import "std/io/file";
-import "std/type/result";
 import "std/type/error";
 import "std/os/os";
 

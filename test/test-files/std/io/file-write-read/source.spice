@@ -1,5 +1,4 @@
 import "std/io/file";
-import "std/type/result";
 
 f<int> main() {
     // Write file
