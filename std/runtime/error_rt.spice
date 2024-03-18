@@ -1,3 +1,5 @@
+#![core.compiler.alwaysKeepOnNameCollision = true]
+
 /**
  * This is the generalized error type in Spice and part of the error handling mechanism.
  */

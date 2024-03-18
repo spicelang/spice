@@ -1,7 +1,5 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
-import "std/type/error";
-
 // Generic types
 type T dyn;
 

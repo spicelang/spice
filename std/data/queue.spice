@@ -1,5 +1,3 @@
-import "std/type/error";
-
 // Constants
 const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;

@@ -1,7 +1,5 @@
 #![core.linker.flag = "-pthread"]
 
-import "std/type/error";
-
 // Type definitions
 type Pthread_t alias long;
 type Pthread_attr_t struct {

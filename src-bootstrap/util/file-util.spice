@@ -4,7 +4,6 @@ import "std/os/cmd";
 import "std/os/env";
 import "std/io/file";
 import "std/io/filepath";
-import "std/type/error";
 import "std/iterator/array-iterator";
 
 public type ExecResult struct {

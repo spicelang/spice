@@ -1,4 +1,3 @@
-import "std/type/error";
 import "std/iterator/iterable";
 import "std/iterator/iterator";
 import "std/data/pair";

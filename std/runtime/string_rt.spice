@@ -1,7 +1,5 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
-import "std/type/error";
-
 // Link external functions
 // We intentionally do not use the memory_rt here to avoid dependency circles
 ext f<heap char*> malloc(unsigned long);

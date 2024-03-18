@@ -1,6 +1,5 @@
 // Std imports
 import "std/data/vector";
-import "std/type/error";
 import "std/text/format";
 import "std/text/analysis";
 
