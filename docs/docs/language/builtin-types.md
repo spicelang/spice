@@ -113,3 +113,19 @@ The `Result<T>` builtin type offers the following static functions:
 - `Result<T> err(const Error&)`: Returns a Result object with an error
 - `Result<T> err(int, string)`: Returns a Result object with an error, constructed with an error code and an error message
 - `Result<T> err(string)`: Returns a Result object with an error, constructed with an error message
+
+## The `Error` data type
+The `Error` builtin type is used to represent an error. It can be used e.g. in combination with the `Result<T>` type.
+
+### Constructors
+The `Error` builtin type offers the following constructors:
+
+- `void Error()`: Initialize an empty error object. This object has an error code of 0 and the error message `Runtime error`
+- `void Error(int, string)`: Initialize an error object with an error code and an error message
+- `void Error(string)`: Initialize an error object with an error message
+
+### Methods
+The `Error` builtin type offers the following methods:
+
+- `void print()`: Prints the error message to the standard error output
+- `void toPanic()`: Triggers a panic with this error

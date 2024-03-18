@@ -1,6 +1,5 @@
 import "std/iterator/iterator";
 import "std/data/pair";
-import "std/type/error";
 
 // Generic type definitions
 type I dyn;

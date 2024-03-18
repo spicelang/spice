@@ -1,7 +1,6 @@
 // Std imports
 import "std/data/vector";
 import "std/io/filepath";
-import "std/type/error";
 
 // Own imports
 import "../driver";

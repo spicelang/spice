@@ -1,14 +1,16 @@
 
 const string STRING_RT_IMPORT_NAME = "__rt_string";
 const string RESULT_RT_IMPORT_NAME = "__rt_result";
+const string ERROR_RT_IMPORT_NAME = "__rt_error";
 const string MEMORY_RT_IMPORT_NAME = "__rt_memory";
 const string RTTI_RT_IMPORT_NAME = "__rt_rtti";
 
 public type RuntimeModule enum {
     STRING_RT = 1,
     RESULT_RT = 2,
-    ARRAY_RT = 4,
-    OBJECT_RT = 8
+    ERROR_RT  = 4,
+    ARRAY_RT  = 8,
+    OBJECT_RT = 16
 }
 
 type ModuleNamePair struct {
@@ -77,6 +79,8 @@ public f<ModuleNamePair> RuntimeModuleManager.resolveNamePair(RuntimeModule requ
             return ModuleNamePair{STRING_RT_IMPORT_NAME, "string_rt"};
         case RuntimeModule::RESULT_RT:
             return ModuleNamePair{RESULT_RT_IMPORT_NAME, "result_rt"};
+        case RuntimeModule::ERROR_RT:
+            return ModuleNamePair{ERROR_RT_IMPORT_NAME, "error_rt"};
         case RuntimeModule::ARRAY_RT:
             return ModuleNamePair{MEMORY_RT_IMPORT_NAME, "memory_rt"};
         case RuntimeModule::OBJECT_RT:
