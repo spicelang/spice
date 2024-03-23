@@ -1,10 +1,10 @@
-GNU gdb (GDB for MinGW-W64 x86_64, built by Brecht Sanders, r5) 14.1
-Copyright (C) 2023 Free Software Foundation, Inc.
+GNU gdb (Ubuntu 12.1-0ubuntu1~22.04) 12.1
+Copyright (C) 2022 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 Type "show copying" and "show warranty" for details.
-This GDB was configured as "x86_64-w64-mingw32".
+This GDB was configured as "x86_64-linux-gnu".
 Type "show configuration" for configuration details.
 For bug reporting instructions, please see:
 <https://www.gnu.org/software/gdb/bugs/>.
@@ -13,10 +13,12 @@ Find the GDB manual and other documentation resources online at:
 
 For help, type "help".
 Type "apropos word" to search for commands related to "word"...
-Reading symbols from .\source.exe...
-Breakpoint 1: file source.spice, line 42.
+Reading symbols from ./source...
+Haltepunkt 1: file source.spice, line 42.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
 
-Thread 1 hit Breakpoint 1, main (_argc=1, _argv=...) at source.spice:42
+Breakpoint 1, main (_argc=1, _argv=...) at source.spice:42
 42	    it.next();
 result = 0
 vi = {contents = , capacity = 5, size = 5}
@@ -25,4 +27,4 @@ pair = {first = 2, second = }
 $1 = {contents = , capacity = 5, size = 5}
 $2 = 5
 All assertions passed!
-[Inferior 1 (process 5992) exited normally]
+[Inferior 1 (process 685913) exited normally]

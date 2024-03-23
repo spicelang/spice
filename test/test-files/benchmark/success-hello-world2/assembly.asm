@@ -1,55 +1,46 @@
 	.text
-	.def	@feat.00;
-	.scl	3;
-	.type	0;
-	.endef
-	.globl	@feat.00
-.set @feat.00, 0
 	.file	"source.spice"
-	.def	main;
-	.scl	2;
-	.type	32;
-	.endef
 	.globl	main                            # -- Begin function main
 	.p2align	4, 0x90
+	.type	main,@function
 main:                                   # @main
-.seh_proc main
+.Lmain$local:
+	.type	.Lmain$local,@function
+	.cfi_startproc
 # %bb.0:                                # %while.body.L5
-	pushq	%rbp
-	.seh_pushreg %rbp
-	subq	$32, %rsp
-	.seh_stackalloc 32
-	leaq	32(%rsp), %rbp
-	.seh_setframe %rbp, 32
-	.seh_endprologue
-	callq	__main
-	movl	$72, %ecx
-	callq	putchar
-	movl	$101, %ecx
-	callq	putchar
-	movl	$108, %ecx
-	callq	putchar
-	movl	$108, %ecx
-	callq	putchar
-	movl	$111, %ecx
-	callq	putchar
-	movl	$32, %ecx
-	callq	putchar
-	movl	$87, %ecx
-	callq	putchar
-	movl	$111, %ecx
-	callq	putchar
-	movl	$114, %ecx
-	callq	putchar
-	movl	$108, %ecx
-	callq	putchar
-	movl	$100, %ecx
-	callq	putchar
-	movl	$32, %ecx
-	callq	putchar
+	pushq	%rax
+	.cfi_def_cfa_offset 16
+	movl	$72, %edi
+	callq	putchar@PLT
+	movl	$101, %edi
+	callq	putchar@PLT
+	movl	$108, %edi
+	callq	putchar@PLT
+	movl	$108, %edi
+	callq	putchar@PLT
+	movl	$111, %edi
+	callq	putchar@PLT
+	movl	$32, %edi
+	callq	putchar@PLT
+	movl	$87, %edi
+	callq	putchar@PLT
+	movl	$111, %edi
+	callq	putchar@PLT
+	movl	$114, %edi
+	callq	putchar@PLT
+	movl	$108, %edi
+	callq	putchar@PLT
+	movl	$100, %edi
+	callq	putchar@PLT
+	movl	$32, %edi
+	callq	putchar@PLT
 	xorl	%eax, %eax
-	addq	$32, %rsp
-	popq	%rbp
+	popq	%rcx
+	.cfi_def_cfa_offset 8
 	retq
-	.seh_endproc
+.Lfunc_end0:
+	.size	main, .Lfunc_end0-main
+	.size	.Lmain$local, .Lfunc_end0-main
+	.cfi_endproc
                                         # -- End function
+	.section	".note.GNU-stack","",@progbits

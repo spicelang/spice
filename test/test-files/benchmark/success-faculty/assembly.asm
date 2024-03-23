@@ -1,16 +1,6 @@
 	.text
-	.def	@feat.00;
-	.scl	3;
-	.type	0;
-	.endef
-	.globl	@feat.00
-.set @feat.00, 0
 	.file	"source.spice"
-	.def	.L_Z7facultyi;
-	.scl	3;
-	.type	32;
-	.endef
-	.section	.rdata,"dr"
+	.section	.rodata.cst16,"aM",@progbits,16
 	.p2align	4, 0x0                          # -- Begin function _Z7facultyi
 .LCPI0_0:
 	.long	0                               # 0x0
@@ -34,27 +24,25 @@
 	.long	4294967288                      # 0xfffffff8
 	.text
 	.p2align	4, 0x90
+	.type	.L_Z7facultyi,@function
 .L_Z7facultyi:                          # @_Z7facultyi
 # %bb.0:
-	subq	$40, %rsp
-	movdqa	%xmm7, 16(%rsp)                 # 16-byte Spill
-	movdqa	%xmm6, (%rsp)                   # 16-byte Spill
-                                        # kill: def $ecx killed $ecx def $rcx
+                                        # kill: def $edi killed $edi def $rdi
 	movl	$1, %eax
-	cmpl	$2, %ecx
+	cmpl	$2, %edi
 	jl	.LBB0_6
 # %bb.1:                                # %if.exit.L2.preheader
-	cmpl	$9, %ecx
+	cmpl	$9, %edi
 	jb	.LBB0_5
 # %bb.2:                                # %vector.ph
-	leal	-1(%rcx), %edx
-	movl	%edx, %r8d
-	andl	$-8, %r8d
-	movd	%ecx, %xmm0
-	subl	%r8d, %ecx
+	leal	-1(%rdi), %ecx
+	movl	%ecx, %edx
+	andl	$-8, %edx
+	movd	%edi, %xmm0
+	subl	%edx, %edi
 	pshufd	$0, %xmm0, %xmm0                # xmm0 = xmm0[0,0,0,0]
 	paddd	.LCPI0_0(%rip), %xmm0
-	movl	%r8d, %eax
+	movl	%edx, %eax
 	negl	%eax
 	movdqa	.LCPI0_1(%rip), %xmm1           # xmm1 = [1,1,1,1]
 	movdqa	.LCPI0_2(%rip), %xmm2           # xmm2 = [4294967292,4294967292,4294967292,4294967292]
@@ -96,52 +84,51 @@
 	pmuludq	%xmm2, %xmm1
 	pmuludq	%xmm0, %xmm1
 	movd	%xmm1, %eax
-	cmpl	%r8d, %edx
+	cmpl	%edx, %ecx
 	je	.LBB0_6
 	.p2align	4, 0x90
 .LBB0_5:                                # %if.exit.L2
                                         # =>This Inner Loop Header: Depth=1
-	imull	%ecx, %eax
-	leal	-1(%rcx), %edx
-	cmpl	$3, %ecx
-	movl	%edx, %ecx
+	imull	%edi, %eax
+	leal	-1(%rdi), %ecx
+	cmpl	$3, %edi
+	movl	%ecx, %edi
 	jae	.LBB0_5
 .LBB0_6:                                # %common.ret
-	movaps	(%rsp), %xmm6                   # 16-byte Reload
-	movaps	16(%rsp), %xmm7                 # 16-byte Reload
-	addq	$40, %rsp
 	retq
+.Lfunc_end0:
+	.size	.L_Z7facultyi, .Lfunc_end0-.L_Z7facultyi
                                         # -- End function
-	.def	main;
-	.scl	2;
-	.type	32;
-	.endef
 	.globl	main                            # -- Begin function main
 	.p2align	4, 0x90
+	.type	main,@function
 main:                                   # @main
-.seh_proc main
+.Lmain$local:
+	.type	.Lmain$local,@function
+	.cfi_startproc
 # %bb.0:
-	pushq	%rbp
-	.seh_pushreg %rbp
-	subq	$32, %rsp
-	.seh_stackalloc 32
-	leaq	32(%rsp), %rbp
-	.seh_setframe %rbp, 32
-	.seh_endprologue
-	callq	__main
-	movl	$10, %ecx
+	pushq	%rax
+	.cfi_def_cfa_offset 16
+	movl	$10, %edi
 	callq	.L_Z7facultyi
-	leaq	.Lprintf.str.0(%rip), %rcx
-	movl	$10, %edx
-	movl	%eax, %r8d
-	callq	printf
+	leaq	.Lprintf.str.0(%rip), %rdi
+	movl	$10, %esi
+	movl	%eax, %edx
+	movb	$0, %al
+	callq	printf@PLT
 	xorl	%eax, %eax
-	addq	$32, %rsp
-	popq	%rbp
+	popq	%rcx
+	.cfi_def_cfa_offset 8
 	retq
-	.seh_endproc
+.Lfunc_end1:
+	.size	main, .Lfunc_end1-main
+	.size	.Lmain$local, .Lfunc_end1-main
+	.cfi_endproc
                                         # -- End function
-	.section	.rdata,"dr"
-.Lprintf.str.0:                         # @printf.str.0
+	.type	.Lprintf.str.0,@object          # @printf.str.0
+	.section	.rodata.str1.1,"aMS",@progbits,1
+.Lprintf.str.0:
 	.asciz	"Faculty of %d is: %d"
+	.size	.Lprintf.str.0, 21
 
+	.section	".note.GNU-stack","",@progbits

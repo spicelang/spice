@@ -1,77 +1,70 @@
 	.text
-	.def	@feat.00;
-	.scl	3;
-	.type	0;
-	.endef
-	.globl	@feat.00
-.set @feat.00, 0
 	.file	"source.spice"
-	.def	.L_Z4fiboi;
-	.scl	3;
-	.type	32;
-	.endef
 	.p2align	4, 0x90                         # -- Begin function _Z4fiboi
+	.type	.L_Z4fiboi,@function
 .L_Z4fiboi:                             # @_Z4fiboi
 # %bb.0:
-	pushq	%rsi
-	pushq	%rdi
-	subq	$40, %rsp
-	movl	%ecx, %edi
-	xorl	%esi, %esi
-	cmpl	$2, %ecx
+	pushq	%r14
+	pushq	%rbx
+	pushq	%rax
+	movl	%edi, %r14d
+	xorl	%ebx, %ebx
+	cmpl	$2, %edi
 	jge	.LBB0_3
 # %bb.1:
-	movl	%edi, %ecx
+	movl	%r14d, %ecx
 	jmp	.LBB0_2
 .LBB0_3:                                # %if.exit.L2.preheader
-	xorl	%esi, %esi
+	xorl	%ebx, %ebx
 	.p2align	4, 0x90
 .LBB0_4:                                # %if.exit.L2
                                         # =>This Inner Loop Header: Depth=1
-	leal	-1(%rdi), %ecx
+	leal	-1(%r14), %edi
 	callq	.L_Z4fiboi
-	leal	-2(%rdi), %ecx
-	addl	%eax, %esi
-	cmpl	$4, %edi
-	movl	%ecx, %edi
+	leal	-2(%r14), %ecx
+	addl	%eax, %ebx
+	cmpl	$4, %r14d
+	movl	%ecx, %r14d
 	jae	.LBB0_4
 .LBB0_2:                                # %common.ret
-	addl	%ecx, %esi
-	movl	%esi, %eax
-	addq	$40, %rsp
-	popq	%rdi
-	popq	%rsi
+	addl	%ecx, %ebx
+	movl	%ebx, %eax
+	addq	$8, %rsp
+	popq	%rbx
+	popq	%r14
 	retq
+.Lfunc_end0:
+	.size	.L_Z4fiboi, .Lfunc_end0-.L_Z4fiboi
                                         # -- End function
-	.def	main;
-	.scl	2;
-	.type	32;
-	.endef
 	.globl	main                            # -- Begin function main
 	.p2align	4, 0x90
+	.type	main,@function
 main:                                   # @main
-.seh_proc main
+.Lmain$local:
+	.type	.Lmain$local,@function
+	.cfi_startproc
 # %bb.0:
-	pushq	%rbp
-	.seh_pushreg %rbp
-	subq	$32, %rsp
-	.seh_stackalloc 32
-	leaq	32(%rsp), %rbp
-	.seh_setframe %rbp, 32
-	.seh_endprologue
-	callq	__main
-	movl	$30, %ecx
+	pushq	%rax
+	.cfi_def_cfa_offset 16
+	movl	$30, %edi
 	callq	.L_Z4fiboi
-	leaq	.Lprintf.str.0(%rip), %rcx
-	movl	%eax, %edx
-	callq	printf
+	leaq	.Lprintf.str.0(%rip), %rdi
+	movl	%eax, %esi
+	movb	$0, %al
+	callq	printf@PLT
 	xorl	%eax, %eax
-	addq	$32, %rsp
-	popq	%rbp
+	popq	%rcx
+	.cfi_def_cfa_offset 8
 	retq
-	.seh_endproc
+.Lfunc_end1:
+	.size	main, .Lfunc_end1-main
+	.size	.Lmain$local, .Lfunc_end1-main
+	.cfi_endproc
                                         # -- End function
-	.section	.rdata,"dr"
-.Lprintf.str.0:                         # @printf.str.0
+	.type	.Lprintf.str.0,@object          # @printf.str.0
+	.section	.rodata.str1.1,"aMS",@progbits,1
+.Lprintf.str.0:
 	.asciz	"Result: %d"
+	.size	.Lprintf.str.0, 11
 
+	.section	".note.GNU-stack","",@progbits
