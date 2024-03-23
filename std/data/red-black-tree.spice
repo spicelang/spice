@@ -1,3 +1,8 @@
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/stack";
+import "std/data/pair";
+
 // Add generic type definitions
 type K dyn;
 type V dyn;
@@ -45,7 +50,7 @@ inline f<bool> Node.isBlack() {
  * Delete: O(log n)
  * Lookup: O(log n)
  */
-public type RedBlackTree<K, V> struct {
+public type RedBlackTree<K, V> struct : IIterable<Pair<K, V>> {
     heap Node<K, V>* rootNode = nil<heap Node<K, V>*>
     unsigned long size = 0l
 }
@@ -413,4 +418,98 @@ p RedBlackTree.clearRecursive(heap Node<K, V>* node) {
     this.clearRecursive(node.childLeft);
     this.clearRecursive(node.childRight);
     sDelete(node);
+}
+
+/**
+ * Iterator to iterate over a red black tree data structure
+ */
+public type RedBlackTreeIterator<K, V> struct : IIterator<Pair<K, V>> {
+    RedBlackTree<K, V>& tree
+    heap Node<K, V>* currentNode = nil<heap Node<K, V>*>
+    Stack<Node<K, V>*> nodeStack
+    unsigned long cursor = 0l
+}
+
+public p RedBlackTreeIterator.ctor<K, V>(RedBlackTree<K, V>& tree) {
+    this.tree = tree;
+    this.currentNode = tree.rootNode;
+
+    // Move to the leftmost leaf node
+    while this.currentNode != nil<heap Node<K, V>*> {
+        this.nodeStack.push(this.currentNode);
+        this.currentNode = this.currentNode.childLeft;
+    }
+    if (!this.nodeStack.isEmpty()) {
+        this.currentNode = this.nodeStack.pop();
+    }
+}
+
+/**
+ * Returns the current key-value pair of the red black tree
+ *
+ * @return Reference to the current item
+ */
+public inline f<Pair<const K&, V&>> RedBlackTreeIterator.get() {
+    return Pair<const K&, V&>(this.currentNode.key, this.currentNode.value);
+}
+
+/**
+ * Returns the current index and the current item of the unordered map
+ *
+ * @return Pair of current index and reference to current item
+ */
+public inline f<Pair<unsigned long, Pair<const K&, V&>>> RedBlackTreeIterator.getIdx() {
+    return Pair<unsigned long, Pair<const K&, V&>>(this.cursor, this.get());
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> RedBlackTreeIterator.isValid() {
+    return this.currentNode != nil<heap Node<K, V>*>;
+}
+
+/**
+ * Move the iterator to the previous element
+ */
+public p RedBlackTreeIterator.prev() {
+    if !this.isValid() { panic(Error("Calling prev() on invalid iterator")); }
+    heap Node<K, V>* temp = this.currentNode.childLeft;
+    while temp != nil<heap Node<K, V>*> {
+        this.nodeStack.push(temp);
+        temp = temp.childRight;
+    }
+    if !this.nodeStack.isEmpty() {
+        this.currentNode = this.nodeStack.pop();
+    } else {
+        this.currentNode = nil<heap Node<K, V>*>;
+    }
+    this.cursor--;
+}
+
+/**
+ * Move the iterator to the next element
+ */
+public p RedBlackTreeIterator.next() {
+    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
+    heap Node<K, V>* temp = this.currentNode.childRight;
+    while temp != nil<heap Node<K, V>*> {
+        this.nodeStack.push(temp);
+        temp = temp.childLeft;
+    }
+    if !this.nodeStack.isEmpty() {
+        this.currentNode = this.nodeStack.pop();
+    } else {
+        this.currentNode = nil<heap Node<K, V>*>;
+    }
+    this.cursor++;
+}
+
+/**
+ * Retrieve a forward iterator for the red black tree
+ */
+public f<RedBlackTreeIterator<K, V>> RedBlackTree.getIterator() {
+    return RedBlackTreeIterator<K, V>(*this);
 }

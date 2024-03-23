@@ -337,7 +337,7 @@ public inline p operator-=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
 }
 
 /**
- * Retrieve an forward iterator for the vector
+ * Retrieve a forward iterator for the vector
  */
 public f<VectorIterator<T>> Vector.getIterator() {
     return VectorIterator<T>(*this);

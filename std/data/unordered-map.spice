@@ -194,7 +194,7 @@ public inline p operator-=<K, V, Numeric>(UnorderedMapIterator<K, V>& it, Numeri
 }
 
 /**
- * Retrieve an forward iterator for the unordered map
+ * Retrieve a forward iterator for the unordered map
  */
 public f<UnorderedMapIterator<K, V>> UnorderedMap.getIterator() {
     return UnorderedMapIterator<K, V>(*this);
