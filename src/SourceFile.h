@@ -28,6 +28,7 @@ class GlobalResourceManager;
 class EntryNode;
 class ASTNode;
 class Timer;
+class CliOptions;
 
 enum CompileStageType : uint8_t {
   NONE,
@@ -179,6 +180,7 @@ public:
 private:
   // Private fields
   GlobalResourceManager &resourceManager;
+  const CliOptions &cliOptions;
   BS::synced_stream &tout;
   uint8_t importedRuntimeModules = 0;
   unsigned short totalTypeCheckerRuns = 0;
