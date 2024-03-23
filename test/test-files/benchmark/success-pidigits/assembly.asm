@@ -1,96 +1,88 @@
 	.text
-	.def	@feat.00;
-	.scl	3;
-	.type	0;
-	.endef
-	.globl	@feat.00
-.set @feat.00, 0
 	.file	"source.spice"
-	.def	main;
-	.scl	2;
-	.type	32;
-	.endef
 	.globl	main                            # -- Begin function main
 	.p2align	4, 0x90
+	.type	main,@function
 main:                                   # @main
-.seh_proc main
+.Lmain$local:
+	.type	.Lmain$local,@function
+	.cfi_startproc
 # %bb.0:
 	pushq	%rbp
-	.seh_pushreg %rbp
+	.cfi_def_cfa_offset 16
 	pushq	%r15
-	.seh_pushreg %r15
+	.cfi_def_cfa_offset 24
 	pushq	%r14
-	.seh_pushreg %r14
+	.cfi_def_cfa_offset 32
 	pushq	%r13
-	.seh_pushreg %r13
+	.cfi_def_cfa_offset 40
 	pushq	%r12
-	.seh_pushreg %r12
-	pushq	%rsi
-	.seh_pushreg %rsi
-	pushq	%rdi
-	.seh_pushreg %rdi
+	.cfi_def_cfa_offset 48
 	pushq	%rbx
-	.seh_pushreg %rbx
-	subq	$56, %rsp
-	.seh_stackalloc 56
-	leaq	48(%rsp), %rbp
-	.seh_setframe %rbp, 48
-	.seh_endprologue
-	callq	__main
-	xorl	%edi, %edi
+	.cfi_def_cfa_offset 56
+	subq	$24, %rsp
+	.cfi_def_cfa_offset 80
+	.cfi_offset %rbx, -56
+	.cfi_offset %r12, -48
+	.cfi_offset %r13, -40
+	.cfi_offset %r14, -32
+	.cfi_offset %r15, -24
+	.cfi_offset %rbp, -16
+	xorl	%ebp, %ebp
 	movl	$1, %r14d
-	movl	$3, %r10d
-	xorl	%r12d, %r12d
-	xorl	%r11d, %r11d
-	movl	$3, %esi
+	movl	$3, %r8d
+	xorl	%r13d, %r13d
+	xorl	%r9d, %r9d
+	movl	$3, %eax
 	movl	$1, %edx
-	movl	$1, %ebx
+	movl	$1, %r15d
 	jmp	.LBB0_1
 .LBB0_1:                                # %for.body.L19
                                         # =>This Inner Loop Header: Depth=1
-	movq	%r14, %rax
-	shlq	$2, %rax
-	subq	%rbx, %rax
-	addq	%r12, %rax
-	movq	%rbx, %r15
-	imulq	%rsi, %r15
-	cmpq	%r15, %rax
+	movq	%r14, %rcx
+	shlq	$2, %rcx
+	subq	%r15, %rcx
+	addq	%r13, %rcx
+	movq	%r15, %r12
+	imulq	%rax, %r12
+	cmpq	%r12, %rcx
 	jge	.LBB0_5
 # %bb.2:                                # %if.then.L20
                                         #   in Loop: Header=BB0_1 Depth=1
-	movq	%rdx, (%rbp)                    # 8-byte Spill
-	movq	%r10, -8(%rbp)                  # 8-byte Spill
-	leaq	.Lprintf.str.0(%rip), %rcx
-	movq	%rsi, %rdx
-	movl	%r11d, %r13d
-	callq	printf
-	movl	%r13d, %r11d
-	cmpl	$0, %r11d
+	movq	%rdx, 8(%rsp)                   # 8-byte Spill
+	movq	%r8, 16(%rsp)                   # 8-byte Spill
+	leaq	.Lprintf.str.0(%rip), %rdi
+	movq	%rax, (%rsp)                    # 8-byte Spill
+	movq	%rax, %rsi
+	movb	$0, %al
+	movl	%r9d, %ebx
+	callq	printf@PLT
+	movl	%ebx, %r9d
+	cmpl	$0, %r9d
 	jne	.LBB0_4
 # %bb.3:                                # %if.then.L22
                                         #   in Loop: Header=BB0_1 Depth=1
-	movl	$46, %ecx
-	callq	putchar
-	movl	%r13d, %r11d
+	movl	$46, %edi
+	callq	putchar@PLT
+	movl	%ebx, %r9d
 .LBB0_4:                                # %if.exit.L22
                                         #   in Loop: Header=BB0_1 Depth=1
-	addl	$1, %r11d
+	addl	$1, %r9d
 	imulq	$10, %r14, %rcx
-	movq	%r12, %rax
-	subq	%r15, %rax
-	imulq	$10, %rax, %r8
+	movq	%r13, %rax
+	subq	%r12, %rax
+	imulq	$10, %rax, %rsi
 	imulq	$3, %r14, %rax
-	addq	%rax, %r12
-	imulq	$10, %r12, %rax
+	addq	%rax, %r13
+	imulq	$10, %r13, %rax
 	cqto
-	idivq	%rbx
-	imulq	$-10, %rsi, %rdx
+	idivq	%r15
+	imulq	$-10, (%rsp), %rdx              # 8-byte Folded Reload
 	addq	%rdx, %rax
-	movq	%r8, %r12
-	movq	%rax, %rsi
+	movq	%rsi, %r13
 	movq	%rcx, %r14
-	movq	-8(%rbp), %r10                  # 8-byte Reload
-	movq	(%rbp), %rdx                    # 8-byte Reload
+	movq	16(%rsp), %r8                   # 8-byte Reload
+	movq	8(%rsp), %rdx                   # 8-byte Reload
 	jmp	.LBB0_6
 .LBB0_5:                                # %if.else.L20
                                         #   in Loop: Header=BB0_1 Depth=1
@@ -98,44 +90,54 @@ main:                                   # @main
 	imulq	%r14, %rcx
 	movq	%r14, %rax
 	shlq	%rax
-	movq	%r12, %r8
-	addq	%rax, %r8
-	imulq	%r10, %r8
-	imulq	%r10, %rbx
-	movq	%rdx, %r9
-	addq	$1, %r9
+	movq	%r13, %rsi
+	addq	%rax, %rsi
+	imulq	%r8, %rsi
+	imulq	%r8, %r15
+	movq	%rdx, %rdi
+	addq	$1, %rdi
 	imulq	$7, %rdx, %rax
 	addq	$2, %rax
 	imulq	%r14, %rax
-	imulq	%r10, %r12
-	addq	%r12, %rax
+	imulq	%r8, %r13
+	addq	%r13, %rax
 	cqto
-	idivq	%rbx
-	movq	%rax, %rsi
-	addq	$2, %r10
-	movq	%r8, %r12
-	movq	%r9, %rdx
+	idivq	%r15
+	addq	$2, %r8
+	movq	%rsi, %r13
+	movq	%rdi, %rdx
 	movq	%rcx, %r14
 .LBB0_6:                                # %for.tail.L19
                                         #   in Loop: Header=BB0_1 Depth=1
-	addl	$1, %edi
-	cmpl	$20, %edi
+	addl	$1, %ebp
+	cmpl	$20, %ebp
 	jne	.LBB0_1
 # %bb.7:                                # %for.exit.L19
 	xorl	%eax, %eax
-	addq	$56, %rsp
+	addq	$24, %rsp
+	.cfi_def_cfa_offset 56
 	popq	%rbx
-	popq	%rdi
-	popq	%rsi
+	.cfi_def_cfa_offset 48
 	popq	%r12
+	.cfi_def_cfa_offset 40
 	popq	%r13
+	.cfi_def_cfa_offset 32
 	popq	%r14
+	.cfi_def_cfa_offset 24
 	popq	%r15
+	.cfi_def_cfa_offset 16
 	popq	%rbp
+	.cfi_def_cfa_offset 8
 	retq
-	.seh_endproc
+.Lfunc_end0:
+	.size	main, .Lfunc_end0-main
+	.size	.Lmain$local, .Lfunc_end0-main
+	.cfi_endproc
                                         # -- End function
-	.section	.rdata,"dr"
-.Lprintf.str.0:                         # @printf.str.0
+	.type	.Lprintf.str.0,@object          # @printf.str.0
+	.section	.rodata.str1.1,"aMS",@progbits,1
+.Lprintf.str.0:
 	.asciz	"%d"
+	.size	.Lprintf.str.0, 3
 
+	.section	".note.GNU-stack","",@progbits

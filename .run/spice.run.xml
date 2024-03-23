@@ -1,11 +1,12 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="spice" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="run -O3 -d ../../media/test-project/test.spice" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="spice" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="spice">
+  <configuration default="false" name="spice" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="run -O0 -d -ir ../../media/test-project/test.spice" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Spice" TARGET_NAME="spice" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Spice" RUN_TARGET_NAME="spice">
     <envs>
-      <env name="LLVM_BUILD_INCLUDE_DIR" value="D:/LLVM/build-release/include" />
-      <env name="LLVM_INCLUDE_DIR" value="D:/LLVM/llvm/include" />
-      <env name="LLVM_LIB_DIR" value="D:/LLVM/build-release/lib" />
       <env name="LLVM_ADDITIONAL_FLAGS" value="-lole32 -lws2_32" />
+      <env name="LLVM_BUILD_INCLUDE_DIR" value="$PROJECT_DIR$/../llvm-project-latest/build/include" />
+      <env name="LLVM_INCLUDE_DIR" value="$PROJECT_DIR$/../llvm-project-latest/llvm/include" />
+      <env name="LLVM_LIB_DIR" value="$PROJECT_DIR$/../llvm-project-latest/build/lib" />
       <env name="SPICE_STD_DIR" value="$PROJECT_DIR$/std" />
+      <env name="SPICE_BOOTSTRAP_DIR" value="$PROJECT_DIR$/src-bootstrap" />
     </envs>
     <method v="2">
       <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
