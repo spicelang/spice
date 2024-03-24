@@ -15,8 +15,7 @@ OpRuleManager::OpRuleManager(TypeChecker *typeChecker)
 SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
                                               const char *errMsgPrefix) {
   // Check if we try to assign a constant value
-  if (!isDecl)
-    ensureNoConstAssign(node, lhs.type);
+  ensureNoConstAssign(node, lhs.type, isDecl);
 
   // Retrieve types
   SymbolType lhsType = lhs.type;
@@ -54,8 +53,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprRes
 SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
                                                    bool isDecl) {
   // Check if we try to assign a constant value
-  if (!isDecl)
-    ensureNoConstAssign(node, lhs.type);
+  ensureNoConstAssign(node, lhs.type, isDecl);
 
   // Retrieve types
   SymbolType lhsType = lhs.type;
@@ -725,9 +723,9 @@ void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, c
   SOFT_ERROR_VOID(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg)
 }
 
-void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs) {
+void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs, bool isDecl) {
   // Check if we try to assign a constant value
-  if (lhs.removeReferenceWrapper().isConst()) {
+  if (lhs.removeReferenceWrapper().isConst() && !isDecl) {
     const std::string errorMessage = "Trying to assign value to an immutable variable of type " + lhs.getName(true);
     throw SemanticError(node, REASSIGN_CONST_VARIABLE, errorMessage);
   }
