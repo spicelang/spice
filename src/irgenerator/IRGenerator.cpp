@@ -458,15 +458,28 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     return rhs;
   }
 
-  // We can load the value from the right side and store it to the left side
-  // Retrieve value of the right side
-  llvm::Value *rhsValue = resolveValue(rhsSType, rhs, currentScope);
   // Allocate new memory if the lhs address does not exist
   if (!lhsAddress) {
     assert(lhsEntry != nullptr);
     lhsAddress = insertAlloca(lhsEntry->getType().toLLVMType(context, currentScope));
     lhsEntry->updateAddress(lhsAddress);
   }
+
+  // Check if we try to assign an array by value to a pointer. Here we have to store the address of the first element to the lhs
+  if (lhsEntry && lhsEntry->getType().isPtr() && rhsSType.isArray() && rhsSType.getArraySize() != ARRAY_SIZE_UNKNOWN) {
+    // Get address of right side
+    llvm::Value *rhsAddress = resolveAddress(rhs);
+    assert(rhsAddress != nullptr);
+    llvm::Type *elementTy = rhsSType.toLLVMType(context, currentScope);
+    llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
+    llvm::Value *firstItemAddress = insertInBoundsGEP(elementTy, rhsAddress, indices);
+    insertStore(firstItemAddress, lhsAddress);
+    return LLVMExprResult{.value = rhsAddress, .ptr = lhsAddress, .entry = lhsEntry};
+  }
+
+  // We can load the value from the right side and store it to the left side
+  // Retrieve value of the right side
+  llvm::Value *rhsValue = resolveValue(rhsSType, rhs, currentScope);
   // Store the value to the address
   insertStore(rhsValue, lhsAddress);
   return LLVMExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
