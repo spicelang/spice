@@ -1,0 +1,14 @@
+f<int> main() {
+    int[3] a = [1, 2, 3];
+    int* aPtr = &a[0];
+    assert *aPtr == 1;
+    unsafe { aPtr++; }
+    assert *aPtr == 2;
+    unsafe { aPtr--; }
+    assert *aPtr == 1;
+    unsafe { aPtr += 2; }
+    assert *aPtr == 3;
+    unsafe { aPtr -= 2; }
+    assert *aPtr == 1;
+    printf("All assertions passed!");
+}
