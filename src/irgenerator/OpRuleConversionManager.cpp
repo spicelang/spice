@@ -62,7 +62,8 @@ LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LL
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {
     llvm::Type *elementTy = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
-    return {.value = builder.CreateGEP(elementTy, lhsV(), rhsV())};
+    llvm::Value* rhsVExt = builder.CreateSExt(rhsV(), builder.getInt64Ty());
+    return {.value = builder.CreateGEP(elementTy, lhsV(), rhsVExt)};
   }
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +="); // GCOV_EXCL_LINE
@@ -116,8 +117,10 @@ LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, L
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {
-    llvm::Type *elementType = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
-    return {.value = builder.CreateGEP(elementType, lhsV(), rhsV())};
+    llvm::Type *elementTy = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
+    llvm::Value* rhsVExt = builder.CreateSExt(rhsV(), builder.getInt64Ty());
+    llvm::Value* rhsVNeg = builder.CreateNeg(rhsVExt);
+    return {.value = builder.CreateGEP(elementTy, lhsV(), rhsVNeg)};
   }
   default:                                                             // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -="); // GCOV_EXCL_LINE
@@ -1481,6 +1484,10 @@ LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *nod
     return {.value = builder.CreateAdd(lhsV(), builder.getInt16(1), "", false, lhsSTy.isSigned())};
   case TY_LONG:
     return {.value = builder.CreateAdd(lhsV(), builder.getInt64(1), "", false, lhsSTy.isSigned())};
+  case TY_PTR: {
+    llvm::Type *elementTy = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
+    return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(1))};
+  }
   default:
     break;
   }
@@ -1499,6 +1506,10 @@ LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *n
     return {.value = builder.CreateSub(lhsV(), builder.getInt16(1), "", false, lhsSTy.isSigned())};
   case TY_LONG:
     return {.value = builder.CreateSub(lhsV(), builder.getInt64(1), "", false, lhsSTy.isSigned())};
+  case TY_PTR: {
+    llvm::Type *elementTy = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
+    return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(-1))};
+  }
   default:
     break;
   }
@@ -1552,6 +1563,10 @@ LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *no
     return {.value = builder.CreateAdd(lhsV(), builder.getInt16(1), "", false, lhsSTy.isSigned())};
   case TY_LONG:
     return {.value = builder.CreateAdd(lhsV(), builder.getInt64(1), "", false, lhsSTy.isSigned())};
+  case TY_PTR: {
+    llvm::Type *elementTy = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
+    return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(1))};
+  }
   default:
     break;
   }
@@ -1575,6 +1590,10 @@ LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *
     return {.value = builder.CreateSub(lhsV(), builder.getInt16(1), "", false, lhsSTy.isSigned())};
   case TY_LONG:
     return {.value = builder.CreateSub(lhsV(), builder.getInt64(1), "", false, lhsSTy.isSigned())};
+  case TY_PTR: {
+    llvm::Type *elementTy = lhsSTy.getContainedTy().toLLVMType(context, accessScope);
+    return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(-1))};
+  }
   default:
     break;
   }

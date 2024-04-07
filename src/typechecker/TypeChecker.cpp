@@ -1250,7 +1250,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
     operandType = OpRuleManager::getPrefixMinusResultType(node, operand);
     break;
   case PrefixUnaryExprNode::OP_PLUS_PLUS:
-    operandType = OpRuleManager::getPrefixPlusPlusResultType(node, operand);
+    operandType = opRuleManager.getPrefixPlusPlusResultType(node, operand);
 
     if (operandEntry) {
       // In case the lhs is captured, notify the capture about the write access
@@ -1263,7 +1263,7 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
     break;
   case PrefixUnaryExprNode::OP_MINUS_MINUS:
-    operandType = OpRuleManager::getPrefixMinusMinusResultType(node, operand);
+    operandType = opRuleManager.getPrefixMinusMinusResultType(node, operand);
 
     if (operandEntry) {
       // In case the lhs is captured, notify the capture about the write access
