@@ -648,8 +648,8 @@ public:
   ExprResult getDivResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
   static ExprResult getRemResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
   static SymbolType getPrefixMinusResultType(const ASTNode *node, const ExprResult &lhs);
-  static SymbolType getPrefixPlusPlusResultType(const ASTNode *node, const ExprResult &lhs);
-  static SymbolType getPrefixMinusMinusResultType(const ASTNode *node, const ExprResult &lhs);
+  SymbolType getPrefixPlusPlusResultType(const ASTNode *node, const ExprResult &lhs);
+  SymbolType getPrefixMinusMinusResultType(const ASTNode *node, const ExprResult &lhs);
   static SymbolType getPrefixNotResultType(const ASTNode *node, const ExprResult &lhs);
   static SymbolType getPrefixBitwiseNotResultType(const ASTNode *node, const ExprResult &lhs);
   static SymbolType getPrefixMulResultType(const ASTNode *node, const ExprResult &lhs);
@@ -676,6 +676,7 @@ private:
   static SemanticError getExceptionUnary(const ASTNode *node, const char *name, const SymbolType &lhs);
   static SemanticError getExceptionBinary(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs,
                                           const char *messagePrefix);
+  void ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs) const;
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs, const SymbolType &rhs) const;
   static void ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs);
 };

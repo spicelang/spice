@@ -1,17 +1,11 @@
-import "std/os/env";
-import "bootstrap/lexer/lexer";
-
 f<int> main() {
-    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-lexer-test/test-file.spice";
-    Lexer lexer = Lexer(filePath.getRaw());
-    unsigned long tokenCount = 0l;
-    while (!lexer.isEOF()) {
-        Token token = lexer.getToken();
-        token.print();
-        lexer.advance();
-        tokenCount++;
+    int[3] a = [1, 2, 3];
+    int* aPtr = a;
+    printf("%d\n", *aPtr);
+    unsafe {
+        aPtr++;
     }
-    printf("\nLexed tokens: %d\n", tokenCount);
+    printf("%d\n", *aPtr);
 }
 
 /*import "bootstrap/util/block-allocator";

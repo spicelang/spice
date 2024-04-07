@@ -512,6 +512,12 @@ SymbolType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, const
   // Remove reference wrappers
   SymbolType lhsType = lhs.type.removeReferenceWrapper();
 
+  // Check if this is an unsafe operation
+  if (lhsType.isPtr()) {
+    ensureUnsafeAllowed(node, "++", lhsType);
+    return lhsType;
+  }
+
   return validateUnaryOperation(node, PREFIX_PLUS_PLUS_OP_RULES, ARRAY_LENGTH(PREFIX_PLUS_PLUS_OP_RULES), "++", lhsType);
 }
 
@@ -521,6 +527,12 @@ SymbolType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, con
 
   // Remove reference wrappers
   SymbolType lhsType = lhs.type.removeReferenceWrapper();
+
+  // Check if this is an unsafe operation
+  if (lhsType.isPtr()) {
+    ensureUnsafeAllowed(node, "--", lhsType);
+    return lhsType;
+  }
 
   return validateUnaryOperation(node, PREFIX_MINUS_MINUS_OP_RULES, ARRAY_LENGTH(PREFIX_MINUS_MINUS_OP_RULES), "--", lhsType);
 }
@@ -567,8 +579,13 @@ ExprResult OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, const Expr
   // Remove reference wrappers
   SymbolType lhsType = lhs.type.removeReferenceWrapper();
 
-  return ExprResult(
-      validateUnaryOperation(node, POSTFIX_PLUS_PLUS_OP_RULES, ARRAY_LENGTH(POSTFIX_PLUS_PLUS_OP_RULES), "++", lhsType));
+  // Check if this is an unsafe operation
+  if (lhsType.isPtr()) {
+    ensureUnsafeAllowed(node, "++", lhsType);
+    return {lhs};
+  }
+
+  return {validateUnaryOperation(node, POSTFIX_PLUS_PLUS_OP_RULES, ARRAY_LENGTH(POSTFIX_PLUS_PLUS_OP_RULES), "++", lhsType)};
 }
 
 ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, const ExprResult &lhs, size_t opIdx) {
@@ -582,6 +599,12 @@ ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, const Ex
 
   // Remove reference wrappers
   SymbolType lhsType = lhs.type.removeReferenceWrapper();
+
+  // Check if this is an unsafe operation
+  if (lhsType.isPtr()) {
+    ensureUnsafeAllowed(node, "--", lhsType);
+    return {lhs};
+  }
 
   return {validateUnaryOperation(node, POSTFIX_MINUS_MINUS_OP_RULES, ARRAY_LENGTH(POSTFIX_MINUS_MINUS_OP_RULES), "--", lhsType)};
 }
@@ -711,6 +734,16 @@ SemanticError OpRuleManager::getExceptionBinary(const ASTNode *node, const char 
 
   // Return the exception
   return {node, OPERATOR_WRONG_DATA_TYPE, errorMsg.str()};
+}
+
+void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs) const {
+  if (typeChecker->currentScope->doesAllowUnsafeOperations())
+    return;
+  // Print error message
+  const std::string lhsName = lhs.getName(true);
+  const std::string errorMsg = "Cannot apply '" + std::string(name) + "' operator on type " + lhsName +
+                               " as this is an unsafe operation. Please use unsafe blocks if you know what you are doing.";
+  SOFT_ERROR_VOID(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg)
 }
 
 void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs,
