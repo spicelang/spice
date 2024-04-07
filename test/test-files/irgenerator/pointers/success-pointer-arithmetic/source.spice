@@ -1,6 +1,6 @@
 f<int> main() {
     int[3] a = [1, 2, 3];
-    int* aPtr = &a[0];
+    int* aPtr = a;
     assert *aPtr == 1;
     unsafe { aPtr++; }
     assert *aPtr == 2;
