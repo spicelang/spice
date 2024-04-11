@@ -31,7 +31,7 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
   // Check which implicit structures we need for each struct, defined in this source file
   if (isPrepare) {
     for (const auto &[structName, manifestations] : rootScope->getStructs()) {
-      for (const auto &[manifestationName, manifestation] : manifestations) {
+      for (const auto &[_, manifestation] : manifestations) {
         createDefaultCtorIfRequired(manifestation, manifestation.scope);
         createDefaultCopyCtorIfRequired(manifestation, manifestation.scope);
         createDefaultDtorIfRequired(manifestation, manifestation.scope);

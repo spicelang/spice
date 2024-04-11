@@ -177,11 +177,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     }
   }
 
-  // Rename / duplicate the original child scope to reflect the substantiated versions of the function
-  currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getSignature(false));
+  // Duplicate / rename the original child scope to reflect the substantiated versions of the function
   for (size_t i = 1; i < node->manifestations.size(); i++)
-    currentScope->copyChildScope(node->manifestations.front()->getSignature(false),
-                                 node->manifestations.at(i)->getSignature(false));
+    currentScope->copyChildScope(node->getScopeId(), node->manifestations.at(i)->getSignature(false));
+  currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getSignature(false));
 
   // Change to the root scope
   currentScope = rootScope;
@@ -295,11 +294,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     }
   }
 
-  // Rename / duplicate the original child scope to reflect the substantiated versions of the procedure
-  currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getSignature(false));
+  // Duplicate / rename the original child scope to reflect the substantiated versions of the procedure
   for (size_t i = 1; i < node->manifestations.size(); i++)
-    currentScope->copyChildScope(node->manifestations.front()->getSignature(false),
-                                 node->manifestations.at(i)->getSignature(false));
+    currentScope->copyChildScope(node->getScopeId(), node->manifestations.at(i)->getSignature(false));
+  currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getSignature(false));
 
   // Change to the root scope
   currentScope = rootScope;
