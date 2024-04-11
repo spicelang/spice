@@ -4,32 +4,7 @@
     {
       "captures": [],
       "children": [],
-      "name": "double calledFunction(string)",
-      "symbols": [
-        {
-          "codeLoc": "L7C26",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "testString",
-          "orderIndex": 1,
-          "state": "initialized",
-          "type": "string"
-        },
-        {
-          "codeLoc": "L7C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "result",
-          "orderIndex": 0,
-          "state": "declared",
-          "type": "double"
-        }
-      ]
-    },
-    {
-      "captures": [],
-      "children": [],
-      "name": "double calledFunction(int,bool)",
+      "name": "double calledFunction(int)",
       "symbols": [
         {
           "codeLoc": "L1C44",
@@ -63,7 +38,32 @@
     {
       "captures": [],
       "children": [],
-      "name": "double calledFunction(int)",
+      "name": "double calledFunction(string)",
+      "symbols": [
+        {
+          "codeLoc": "L7C26",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "testString",
+          "orderIndex": 1,
+          "state": "initialized",
+          "type": "string"
+        },
+        {
+          "codeLoc": "L7C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "result",
+          "orderIndex": 0,
+          "state": "declared",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "captures": [],
+      "children": [],
+      "name": "double calledFunction(int,bool)",
       "symbols": [
         {
           "codeLoc": "L1C44",
