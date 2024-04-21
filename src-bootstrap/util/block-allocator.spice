@@ -1,6 +1,5 @@
 // Std imports
 import "std/data/vector";
-import "std/type/long";
 import "std/os/system";
 
 // Own imports
@@ -10,7 +9,7 @@ type Base dyn;
 
 public type BlockAllocator<Base> struct {
     IMemoryManager* memoryManager
-    Vector<heap byte*> memoryBlocks
+    Vector<byte*> memoryBlocks
     Vector<Base*> allocatedObjects
     unsigned long blockSize
     unsigned long offsetInBlock = 0l

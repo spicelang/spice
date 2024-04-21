@@ -30,12 +30,11 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
 
   // Check which implicit structures we need for each struct, defined in this source file
   if (isPrepare) {
-    for (const auto &[structName, manifestations] : rootScope->getStructs()) {
-      for (const auto &[_, manifestation] : manifestations) {
-        createDefaultCtorIfRequired(manifestation, manifestation.scope);
-        createDefaultCopyCtorIfRequired(manifestation, manifestation.scope);
-        createDefaultDtorIfRequired(manifestation, manifestation.scope);
-      }
+    for (const Struct *manifestation : rootScope->getAllStructManifestationsInDeclarationOrder()) {
+      // Check if we need to create a default ctor, copy ctor or dtor
+      createDefaultCtorIfRequired(*manifestation, manifestation->scope);
+      createDefaultCopyCtorIfRequired(*manifestation, manifestation->scope);
+      createDefaultDtorIfRequired(*manifestation, manifestation->scope);
     }
   }
 
@@ -596,8 +595,9 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     if (localVarType.is(TY_STRUCT) && !node->isParam && !node->isForEachItem) {
       Scope *matchScope = localVarType.getBodyScope();
       assert(matchScope != nullptr);
-      // Check if we need to call a ctor
-      node->isCtorCallRequired = matchScope->hasRefFields();
+      // Check if we are required to call a ctor
+      auto structDeclNode = spice_pointer_cast<StructDefNode *>(localVarType.getStruct(node)->declNode);
+      node->isCtorCallRequired = matchScope->hasRefFields() || structDeclNode->emitVTable;
       // Check if we have a no-args ctor to call
       const std::string &structName = localVarType.getSubType();
       const SymbolType &thisType = localVarType;

@@ -1,18 +1,38 @@
+type Visitor struct {}
+
+type SymbolTable struct {}
+
+type Visitable interface {
+    f<bool> accept(Visitor*);
+}
+
+type AstNode struct : Visitable {}
+
+type AstEntryNode struct : Visitable {
+    AstNode astNode
+    SymbolTable* extFunctionScope
+    bool takesArgs
+}
+
 f<int> main() {
-    int[3] a = [1, 2, 3];
-    int* aPtr = a;
-    printf("%d\n", *aPtr);
-    unsafe {
-        aPtr++;
-    }
-    printf("%d\n", *aPtr);
+    AstEntryNode entryNode;
+    printf("%d", entryNode.takesArgs);
 }
 
 /*import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
 
+type ASTNode struct {
+    int value
+}
+
+p ASTNode.dtor() {
+    printf("Dtor called!");
+}
+
 f<int> main() {
     DefaultMemoryManager defaultMemoryManager;
     IMemoryManager* memoryManager = &defaultMemoryManager;
-    BlockAllocator<int> allocator = BlockAllocator<int>(memoryManager, 10l);
+    memoryManager.allocate(10l);
+    //BlockAllocator<ASTNode> allocator = BlockAllocator<ASTNode>(memoryManager, 10l);
 }*/

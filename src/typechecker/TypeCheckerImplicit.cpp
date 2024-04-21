@@ -64,7 +64,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
  * @param structScope Scope of the struct
  */
 void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
-  ASTNode *node = spiceStruct.declNode;
+  auto node = spice_pointer_cast<StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
   // Abort if the struct already has a user-defined constructor
@@ -93,16 +93,23 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
     }
 
     if (fieldSymbol->getType().is(TY_STRUCT)) {
-      Scope *fieldScope = fieldSymbol->getType().getBodyScope();
+      Scope *bodyScope = fieldSymbol->getType().getBodyScope();
+      Struct *fieldStruct = fieldSymbol->getType().getStruct(node);
+      // Check if we are required to call a ctor
+      const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
+      const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
       // Lookup ctor function
-      const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
+      const Function *ctorFct = FunctionManager::matchFunction(bodyScope, CTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
+      // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
+      if (!ctorFct && isCtorCallRequired)
+        return;
       hasFieldsToConstruct |= ctorFct != nullptr;
       requestRevisitIfRequired(ctorFct);
     }
   }
 
   // If we don't have any fields, that require us to do anything in the ctor, we can skip it
-  if (!hasFieldsWithDefaultValue && !hasFieldsToConstruct)
+  if (!hasFieldsWithDefaultValue && !hasFieldsToConstruct && !node->emitVTable)
     return;
 
   // Create the default ctor function
@@ -118,7 +125,7 @@ void TypeChecker::createDefaultCtorBody(const Function *ctorFunction) { createCt
  * @param structScope Scope of the struct
  */
 void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Scope *structScope) {
-  ASTNode *node = spiceStruct.declNode;
+  auto node = spice_pointer_cast<StructDefNode *>(spiceStruct.declNode);
   assert(structScope != nullptr && structScope->type == ScopeType::STRUCT);
 
   // Abort if the struct already has a user-defined constructor
@@ -140,17 +147,24 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
       return;
 
     if (fieldSymbol->getType().is(TY_STRUCT)) {
-      Scope *fieldScope = fieldSymbol->getType().getBodyScope();
-      // Lookup ctor function
+      Scope *bodyScope = fieldSymbol->getType().getBodyScope();
+      Struct *fieldStruct = fieldSymbol->getType().getStruct(node);
+      // Check if we are required to call a ctor
+      const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
+      const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
+      // Lookup copy ctor function
       const ArgList args = {{thisType.toConstReference(node), false /* we always have the field as storage */}};
-      const Function *ctorFct = FunctionManager::matchFunction(fieldScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+      const Function *ctorFct = FunctionManager::matchFunction(bodyScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+      // If we are required to construct, but no constructor is found, we can't generate a default ctor for the outer struct
+      if (!ctorFct && isCtorCallRequired)
+        return;
       hasFieldsToCopyConstruct |= ctorFct != nullptr;
       requestRevisitIfRequired(ctorFct);
     }
   }
 
   // If we don't have any fields, that require us to do anything in the copy ctor, we can skip it
-  if (!hasFieldsToCopyConstruct)
+  if (!hasFieldsToCopyConstruct && !node->emitVTable)
     return;
 
   // Create the default copy ctor function

@@ -1,0 +1,8 @@
+type TypeWithVTable struct {
+    int& refField
+}
+
+f<int> main() {
+    // Types containing reference fields can't have a default constructor, thus this should fail
+    TypeWithVTable v;
+}
