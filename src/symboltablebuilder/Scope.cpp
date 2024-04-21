@@ -325,6 +325,25 @@ std::vector<Function *> Scope::getVirtualMethods() {
 }
 
 /**
+ * Retrieve all struct manifestations in this scope in the order of their declaration
+ *
+ * @return All struct manifestations in declaration order
+ */
+std::vector<const Struct *> Scope::getAllStructManifestationsInDeclarationOrder() const {
+  // Retrieve all struct manifestations in this scope
+  std::vector<const Struct *> manifestations;
+  manifestations.reserve(structs.size()); // Reserve at least the size of individual generic structs
+  for (const auto &[structId, structManifestations] : structs)
+    for (const auto &[_, manifestation] : structManifestations)
+      manifestations.push_back(&manifestation);
+
+  // Sort manifestations by declaration code location
+  auto sortLambda = [](const Struct *lhs, const Struct *rhs) { return lhs->getDeclCodeLoc() < rhs->getDeclCodeLoc(); };
+  std::ranges::sort(manifestations, sortLambda);
+  return manifestations;
+}
+
+/**
  * Check if this struct has any reference fields
  *
  * @return Has reference fields or not

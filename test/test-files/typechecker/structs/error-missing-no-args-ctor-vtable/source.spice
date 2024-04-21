@@ -1,0 +1,14 @@
+type TypeContainingRefField struct {
+    int& refField
+}
+
+#[core.compiler.alwaysEmitVTable]
+type TypeWithVTable struct {
+    TypeContainingRefField refFieldStruct
+}
+
+f<int> main() {
+    // Can't call default ctor, because it can't be generated due to the reference field
+    // But we need to call it to trigger the generation of the vtable.
+    TypeWithVTable v;
+}
