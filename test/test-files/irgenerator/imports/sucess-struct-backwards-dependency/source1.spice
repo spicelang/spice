@@ -1,0 +1,13 @@
+type T dyn;
+
+type TestStruct<T> struct {
+    T t
+}
+
+f<int> privateFunction<T>(const T& t) {
+    return t.i;
+}
+
+public p TestStruct.ctor() {
+    privateFunction(this.t);
+}

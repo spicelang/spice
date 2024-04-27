@@ -39,7 +39,7 @@ public p BlockAllocator.dtor() {
 public p BlockAllocator.allocateNewBlock() {
     // Allocate new block
     heap byte* ptr = this.memoryManager.allocate(this.blockSize);
-    if ptr != nil<heap byte*> {
+    if ptr == nil<heap byte*> {
         panic(Error("Could not allocate memory block for BlockAllocator."));
     }
 

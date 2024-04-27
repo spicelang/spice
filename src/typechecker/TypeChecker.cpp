@@ -1521,7 +1521,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Retrieve scope for the new scope path fragment
   if (baseType.is(TY_STRUCT)) {
     // Set access scope to struct scope
-    const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(baseType.getSubType());
+    const std::string &structName = baseType.getSubType();
+    const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(structName);
     assert(nameRegistryEntry != nullptr);
 
     // Change the access scope to the struct scope
@@ -1530,8 +1531,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     // Check if the entry is public if it is imported
     assert(nameRegistryEntry->targetEntry != nullptr);
     if (!nameRegistryEntry->targetEntry->getType().isPublic() && accessScope->parent->isImportedBy(rootScope))
-      SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY,
-                    "Cannot access struct '" + nameRegistryEntry->targetEntry->name + "' due to its private visibility")
+      SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access struct '" + structName + "' due to its private visibility")
   }
 
   return ExprResult{node->setEvaluatedSymbolType(varType, manIdx), varEntry};
@@ -1778,7 +1778,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
     returnType = mapImportedScopeTypeToLocalType(returnType.getBaseType().getBodyScope(), returnType);
 
-    // Add anonymous symbol to keep track of deallocation
+    // Add anonymous symbol to keep track of de-allocation
     if (returnType.is(TY_STRUCT))
       anonymousSymbol = currentScope->symbolTable.insertAnonymous(returnType, node);
   }
@@ -1793,7 +1793,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }
 
-bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, const std::vector<SymbolType> &templateTypes,
+bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::vector<SymbolType> &templateTypes,
                                        const std::string &fqFunctionName) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
@@ -1856,12 +1856,16 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, const std::vector<Symb
   if (!data.thisType.is(TY_DYN) && !templateTypes.empty())
     data.thisType.setTemplateTypes(templateTypes);
 
-  // Map local types to imported types
+  // Map local arg types to imported types
   Scope *matchScope = data.calleeParentScope = functionRegistryEntry->targetScope;
   ArgList localArgs;
   localArgs.reserve(data.argResults.size());
   for (const ExprResult &argResult : data.argResults)
     localArgs.emplace_back(mapLocalTypeToImportedScopeType(data.calleeParentScope, argResult.type), argResult.isTemporary());
+
+  // Map local template types to imported types
+  for (SymbolType &templateType : templateTypes)
+    templateType = mapLocalTypeToImportedScopeType(data.calleeParentScope, templateType);
 
   // Retrieve function object
   data.callee = FunctionManager::matchFunction(matchScope, functionName, data.thisType, localArgs, templateTypes, false, node);
@@ -1891,7 +1895,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionT
   return true;
 }
 
-bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, const std::vector<SymbolType> &templateTypes) const {
+bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, std::vector<SymbolType> &templateTypes) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
@@ -1918,11 +1922,15 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, const s
   if (data.thisType.is(TY_INTERFACE))
     SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS, "Cannot call a method on an interface")
 
-  // Map local types to imported types
+  // Map local arg types to imported types
   Scope *matchScope = data.calleeParentScope = structScope;
   ArgList localArgs;
   for (const ExprResult &argResult : data.argResults)
     localArgs.emplace_back(mapLocalTypeToImportedScopeType(data.calleeParentScope, argResult.type), argResult.isTemporary());
+
+  // Map local template types to imported types
+  for (SymbolType &templateType : templateTypes)
+    templateType = mapLocalTypeToImportedScopeType(data.calleeParentScope, templateType);
 
   // 'this' type
   SymbolType localThisType = data.thisType;

@@ -23,8 +23,7 @@ public:
                                              const std::vector<SymbolType> &reqTypes, TypeMapping &typeMapping,
                                              ResolverFct &resolverFct, bool strictSpecifiers);
   static bool matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
-                                            ResolverFct &resolverFct, bool strictSpecifierMatching,
-                                            bool isRequestedValueTemporary = false);
+                                            ResolverFct &resolverFct, bool strictSpecifierMatching);
   static void substantiateTypesWithTypeMapping(std::vector<SymbolType> &symbolTypes, const TypeMapping &typeMapping);
   static void substantiateTypeWithTypeMapping(SymbolType &symbolType, const TypeMapping &typeMapping);
 };

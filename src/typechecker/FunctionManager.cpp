@@ -413,7 +413,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
 
     // Check if the requested param type matches the candidate param type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateParamType, requestedType, typeMapping, genericTypeResolver,
-                                                    strictSpecifierMatching, isArgTemporary))
+                                                    strictSpecifierMatching))
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
