@@ -334,10 +334,10 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
-    const SymbolType &fieldType = fieldSymbol->getType();
-    auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
 
     // Call ctor for struct fields
+    const SymbolType &fieldType = fieldSymbol->getType();
+    auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
     if (fieldType.is(TY_STRUCT)) {
       // Lookup ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
@@ -398,9 +398,9 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
-    const SymbolType &fieldType = fieldSymbol->getType();
 
     // Call copy ctor for struct fields
+    const SymbolType &fieldType = fieldSymbol->getType();
     if (fieldType.is(TY_STRUCT)) {
       // Lookup copy ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
@@ -443,14 +443,14 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
-    const SymbolType &fieldType = fieldSymbol->getType();
 
     // Call dtor for struct fields
+    const SymbolType &fieldType = fieldSymbol->getType();
     if (fieldType.is(TY_STRUCT)) {
       // Lookup dtor function and generate call if found
-      dtorFunction = FunctionManager::lookupFunction(fieldType.getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
-      if (dtorFunction)
-        generateCtorOrDtorCall(fieldSymbol, dtorFunction, {});
+      const Function *dtorFct = FunctionManager::lookupFunction(fieldType.getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
+      if (dtorFct)
+        generateCtorOrDtorCall(fieldSymbol, dtorFct, {});
       continue;
     }
 

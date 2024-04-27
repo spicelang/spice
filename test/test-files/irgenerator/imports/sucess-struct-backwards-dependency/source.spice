@@ -1,0 +1,9 @@
+import "source1";
+
+type Outer struct {
+    int i
+}
+
+f<int> main() {
+    TestStruct<Outer> ts = TestStruct<Outer>();
+}

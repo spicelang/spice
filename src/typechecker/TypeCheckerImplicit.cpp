@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
 #include "TypeChecker.h"
+#include "TypeMatcher.h"
 
 #include <SourceFile.h>
 #include <ast/ASTBuilder.h>
@@ -252,6 +253,8 @@ void TypeChecker::createCtorBodyPreamble(Scope *bodyScope) {
     if (fieldSymbol->isImplicitField)
       continue;
     SymbolType fieldType = fieldSymbol->getType();
+    if (fieldType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 
     if (fieldType.is(TY_STRUCT)) {
       auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
@@ -282,6 +285,8 @@ void TypeChecker::createCopyCtorBodyPreamble(Scope *bodyScope) {
     if (fieldSymbol->isImplicitField)
       continue;
     SymbolType fieldType = fieldSymbol->getType();
+    if (fieldType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 
     if (fieldType.is(TY_STRUCT)) {
       auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
@@ -289,8 +294,10 @@ void TypeChecker::createCopyCtorBodyPreamble(Scope *bodyScope) {
       Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstReference(fieldNode), false /* we always have the field as storage */}};
       Function *spiceFunc = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, args, {}, false, fieldNode);
-      fieldType.setBodyScope(spiceFunc->thisType.getBodyScope());
-      fieldSymbol->updateType(fieldType, true);
+      if (spiceFunc != nullptr) {
+        fieldType.setBodyScope(spiceFunc->thisType.getBodyScope());
+        fieldSymbol->updateType(fieldType, true);
+      }
     }
   }
 }
@@ -309,7 +316,9 @@ void TypeChecker::createDtorBodyPreamble(Scope *bodyScope) {
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
-    const SymbolType &fieldType = fieldSymbol->getType();
+    SymbolType fieldType = fieldSymbol->getType();
+    if (fieldType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 
     if (fieldType.is(TY_STRUCT)) {
       auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
