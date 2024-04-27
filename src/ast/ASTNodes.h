@@ -76,7 +76,7 @@ public:
     return nodes;
   }
 
-  virtual void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
+  void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
     // Resize children
     for (ASTNode *child : children) {
       assert(child != nullptr);
@@ -88,14 +88,14 @@ public:
     customItemsInitialization(manifestationCount);
   }
 
-  virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {                           // LCOV_EXCL_LINE
-    assert_fail("The given node does not overload the getOpFctPointers function");                   // LCOV_EXCL_LINE
-    return nullptr;                                                                                  // LCOV_EXCL_LINE
-  }                                                                                                  // LCOV_EXCL_LINE
+  virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {         // LCOV_EXCL_LINE
+    assert_fail("The given node does not overload the getOpFctPointers function"); // LCOV_EXCL_LINE
+    return nullptr;                                                                // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
   [[nodiscard]] virtual const std::vector<std::vector<const Function *>> *getOpFctPointers() const { // LCOV_EXCL_LINE
     assert_fail("The given node does not overload the getOpFctPointers function");                   // LCOV_EXCL_LINE
     return nullptr;                                                                                  // LCOV_EXCL_LINE
-  }                                                                                                  // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   virtual void customItemsInitialization(size_t) {} // Noop
 
@@ -134,17 +134,17 @@ public:
   [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &) {                 // LCOV_EXCL_LINE
     assert_fail("Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
     return nullptr;                                                                                          // LCOV_EXCL_LINE
-  }                                                                                                          // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() { // LCOV_EXCL_LINE
     assert_fail("Must be called on a StructDefNode");                      // LCOV_EXCL_LINE
     return nullptr;                                                        // LCOV_EXCL_LINE
-  }                                                                        // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() { // LCOV_EXCL_LINE
     assert_fail("Must be called on a InterfaceDefNode");                         // LCOV_EXCL_LINE
     return nullptr;                                                              // LCOV_EXCL_LINE
-  }                                                                              // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
@@ -825,10 +825,7 @@ public:
 
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
-  void resizeToNumberOfManifestations(size_t manifestationCount) override {
-    ASTNode::resizeToNumberOfManifestations(manifestationCount);
-    dtorFunctions.resize(manifestationCount);
-  }
+  void customItemsInitialization(size_t manifestationCount) override { dtorFunctions.resize(manifestationCount); }
   [[nodiscard]] bool isStmtLstNode() const override { return true; }
 
   // Public members
