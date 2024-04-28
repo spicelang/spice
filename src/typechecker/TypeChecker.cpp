@@ -129,7 +129,7 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   visit(node->initDecl());
 
   // Visit condition
-  SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condAssign())).type;
+  Type conditionType = std::any_cast<ExprResult>(visit(node->condAssign())).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -150,15 +150,15 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
 
   // Visit iterator assignment
   AssignExprNode *iteratorNode = node->iteratorAssign();
-  SymbolType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
+  Type iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
   iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
 
   // Retrieve iterator type
-  SymbolType iteratorType = iteratorOrIterableType;
+  Type iteratorType = iteratorOrIterableType;
 
   if (iteratorOrIterableType.isIterable(node)) {
-    const SymbolType &iterableType = iteratorOrIterableType;
+    const Type &iterableType = iteratorOrIterableType;
     if (iteratorOrIterableType.isArray()) { // Array
       const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(ARRAY_ITERATOR_NAME);
       if (!nameRegistryEntry) {
@@ -168,11 +168,11 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       nameRegistryEntry->targetEntry->used = nameRegistryEntry->importEntry->used = true;
       Scope *matchScope = nameRegistryEntry->targetScope->parent;
       assert(matchScope->type == ScopeType::GLOBAL);
-      SymbolType unsignedLongType(TY_LONG);
+      Type unsignedLongType(TY_LONG);
       unsignedLongType.specifiers.isSigned = false;
       unsignedLongType.specifiers.isUnsigned = true;
       const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
-      const SymbolType thisType(TY_DYN);
+      const Type thisType(TY_DYN);
       node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
     } else { // Struct, implementing Iterator interface
       Scope *matchScope = iterableType.getBodyScope();
@@ -192,7 +192,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }
-  const std::vector<SymbolType> &iteratorTemplateTypes = iteratorType.getTemplateTypes();
+  const std::vector<Type> &iteratorTemplateTypes = iteratorType.getTemplateTypes();
   if (iteratorTemplateTypes.empty())
     SOFT_ERROR_ER(node->iteratorAssign(), INVALID_ITERATOR,
                   "Iterator has no generic arguments so that the item type could not be inferred")
@@ -200,7 +200,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   const bool hasIdx = node->idxVarDecl();
   if (hasIdx) {
     // Visit index declaration or assignment
-    auto indexType = std::any_cast<SymbolType>(visit(node->idxVarDecl()));
+    auto indexType = std::any_cast<Type>(visit(node->idxVarDecl()));
     HANDLE_UNRESOLVED_TYPE_PTR(indexType)
     // Check if index type is int
     if (!indexType.is(TY_LONG))
@@ -210,7 +210,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
 
   // Retrieve .get(), .getIdx(), .isValid() and .next() functions
   Scope *matchScope = iteratorType.getBodyScope();
-  SymbolType iteratorItemType;
+  Type iteratorItemType;
   if (hasIdx) {
     node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType, {}, {}, false, node);
     assert(node->getIdxFct != nullptr);
@@ -230,7 +230,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   assert(itemVarSymbol != nullptr);
 
   // Check type of the item
-  auto itemType = std::any_cast<SymbolType>(visit(node->itemVarDecl()));
+  auto itemType = std::any_cast<Type>(visit(node->itemVarDecl()));
   HANDLE_UNRESOLVED_TYPE_PTR(itemType)
   if (itemType.is(TY_DYN)) { // Perform type inference
     // Update evaluated symbol type of the declaration data type
@@ -258,7 +258,7 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit condition
-  SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  Type conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -278,7 +278,7 @@ std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
   visit(node->body());
 
   // Visit condition
-  SymbolType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  Type conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -293,7 +293,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
 
   // Visit condition
   AssignExprNode *condition = node->condition();
-  SymbolType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  Type conditionType = std::any_cast<ExprResult>(visit(condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -336,7 +336,7 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
 std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   // Check expression type
   AssignExprNode *expr = node->assignExpr();
-  SymbolType exprType = std::any_cast<ExprResult>(visit(expr)).type;
+  Type exprType = std::any_cast<ExprResult>(visit(expr)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(exprType)
   if (!exprType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}))
     SOFT_ERROR_ER(node->assignExpr(), SWITCH_EXPR_MUST_BE_PRIMITIVE,
@@ -348,7 +348,7 @@ std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   // Check if case constant types match switch expression type
   for (CaseBranchNode *caseBranchNode : node->caseBranches())
     for (CaseConstantNode *constantNode : caseBranchNode->caseConstants()) {
-      const SymbolType constantType = std::any_cast<ExprResult>(visit(constantNode)).type;
+      const Type constantType = std::any_cast<ExprResult>(visit(constantNode)).type;
       if (!constantType.matches(exprType, false, true, true))
         SOFT_ERROR_ER(constantNode, SWITCH_CASE_TYPE_MISMATCH, "Case value type does not match the switch expression type")
     }
@@ -416,7 +416,7 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
 
   for (DeclStmtNode *param : node->params()) {
     // Visit param
-    const auto paramType = std::any_cast<SymbolType>(visit(param));
+    const auto paramType = std::any_cast<Type>(visit(param));
     if (paramType.is(TY_UNRESOLVED))
       continue;
 
@@ -442,11 +442,11 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
 }
 
 std::any TypeChecker::visitField(FieldNode *node) {
-  auto fieldType = std::any_cast<SymbolType>(visit(node->dataType()));
+  auto fieldType = std::any_cast<Type>(visit(node->dataType()));
   HANDLE_UNRESOLVED_TYPE_ST(fieldType)
 
   if (TernaryExprNode *defaultValueNode = node->defaultValue()) {
-    const SymbolType defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
+    const Type defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
     HANDLE_UNRESOLVED_TYPE_ST(defaultValueType)
     if (!fieldType.matches(defaultValueType, false, true, true))
       SOFT_ERROR_ST(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
@@ -463,7 +463,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   if (node->hasTemplateTypes) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
-      auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      auto templateType = std::any_cast<Type>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
         return static_cast<std::vector<Function *> *>(nullptr);
       // Check if it is a generic type
@@ -479,9 +479,9 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Visit return type
-  SymbolType returnType(TY_DYN);
+  Type returnType(TY_DYN);
   if (isFunction) {
-    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+    returnType = std::any_cast<Type>(visit(node->returnType()));
     if (returnType.is(TY_UNRESOLVED))
       return static_cast<std::vector<Function *> *>(nullptr);
 
@@ -491,12 +491,12 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Visit params
-  std::vector<SymbolType> paramTypes;
+  std::vector<Type> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     paramList.reserve(node->paramTypeLst()->dataTypes().size());
     for (DataTypeNode *param : node->paramTypeLst()->dataTypes()) {
-      auto paramType = std::any_cast<SymbolType>(visit(param));
+      auto paramType = std::any_cast<Type>(visit(param));
       if (paramType.is(TY_UNRESOLVED))
         return static_cast<std::vector<Function *> *>(nullptr);
 
@@ -513,7 +513,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Build signature object
-  Function signature(node->methodName, nullptr, SymbolType(TY_DYN), returnType, paramList, usedGenericTypes, node);
+  Function signature(node->methodName, nullptr, Type(TY_DYN), returnType, paramList, usedGenericTypes, node);
 
   // Add signature to current scope
   Function *manifestation = FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
@@ -521,7 +521,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   manifestation->used = true;
 
   // Prepare signature type
-  SymbolType signatureType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
+  Type signatureType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
   signatureType.specifiers = node->signatureSpecifiers;
   if (isFunction)
     signatureType.setFunctionReturnType(returnType);
@@ -540,7 +540,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   SymbolTableEntry *localVarEntry = currentScope->lookupStrict(node->varName);
   assert(localVarEntry != nullptr);
 
-  SymbolType localVarType;
+  Type localVarType;
   if (node->hasAssignment) {
     // Visit the right side
     auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
@@ -553,7 +553,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     }
 
     // Visit data type
-    localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
+    localVarType = std::any_cast<Type>(visit(node->dataType()));
 
     // Infer the type left to right if the right side is an empty array initialization
     if (rhsTy.isArrayOf(TY_DYN))
@@ -569,7 +569,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
         Scope *matchScope = localVarType.getBodyScope();
         assert(matchScope != nullptr);
         // Check if we have a no-args ctor to call
-        const SymbolType &thisType = localVarType;
+        const Type &thisType = localVarType;
         const ArgList args = {{thisType.toConstReference(node), false}};
         node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
       }
@@ -578,14 +578,14 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       if (localVarType.isBaseType(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBaseType().getSubType())) {
         const std::string structName = localVarType.getBaseType().getSubType();
         softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
-        localVarType = SymbolType(TY_UNRESOLVED);
+        localVarType = Type(TY_UNRESOLVED);
       }
     } else {
-      localVarType = SymbolType(TY_UNRESOLVED);
+      localVarType = Type(TY_UNRESOLVED);
     }
   } else {
     // Visit data type
-    localVarType = std::any_cast<SymbolType>(visit(node->dataType()));
+    localVarType = std::any_cast<Type>(visit(node->dataType()));
 
     // References with no initialization are illegal
     if (localVarType.isRef() && !node->isParam && !node->isForEachItem)
@@ -600,7 +600,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       node->isCtorCallRequired = matchScope->hasRefFields() || structDeclNode->emitVTable;
       // Check if we have a no-args ctor to call
       const std::string &structName = localVarType.getSubType();
-      const SymbolType &thisType = localVarType;
+      const Type &thisType = localVarType;
       node->calledInitCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
       if (!node->calledInitCtor && node->isCtorCallRequired)
         SOFT_ERROR_ST(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
@@ -639,7 +639,7 @@ std::any TypeChecker::visitCaseConstant(CaseConstantNode *node) {
   if (node->enumItemEntry->scope->type != ScopeType::ENUM)
     SOFT_ERROR_ER(node, CASE_CONSTANT_NOT_ENUM, "Case constants must be of type enum")
 
-  const SymbolType varType = node->enumItemEntry->getType();
+  const Type varType = node->enumItemEntry->getType();
   assert(varType.is(TY_INT));
   return ExprResult{node->setEvaluatedSymbolType(varType, manIdx)};
 }
@@ -648,7 +648,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   // Retrieve return variable entry
   SymbolTableEntry *returnVar = currentScope->lookup(RETURN_VARIABLE_NAME);
   const bool isFunction = returnVar != nullptr;
-  SymbolType returnType = isFunction ? returnVar->getType() : SymbolType(TY_DYN);
+  Type returnType = isFunction ? returnVar->getType() : Type(TY_DYN);
 
   // Check if procedure with return value
   if (!isFunction) {
@@ -723,7 +723,7 @@ std::any TypeChecker::visitFallthroughStmt(FallthroughStmtNode *node) {
 
 std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   // Visit condition
-  SymbolType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  Type conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
   // Check if condition evaluates to bool
@@ -745,7 +745,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     // Get next assignment
     AssignExprNode *assignment = node->args().at(placeholderCount);
     // Visit assignment
-    SymbolType argType = std::any_cast<ExprResult>(visit(assignment)).type;
+    Type argType = std::any_cast<ExprResult>(visit(assignment)).type;
     HANDLE_UNRESOLVED_TYPE_ER(argType)
     argType = argType.removeReferenceWrapper();
 
@@ -806,7 +806,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   if (placeholderCount < node->args().size())
     SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains less placeholders than arguments")
 
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_BOOL), manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(Type(TY_BOOL), manIdx)};
 }
 
 std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
@@ -816,7 +816,7 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
     visit(node->assignExpr());
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(Type(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
@@ -826,11 +826,11 @@ std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
     visit(node->assignExpr());
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(Type(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
-  SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  Type argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
   argType = argType.removeReferenceWrapper();
 
@@ -842,11 +842,11 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
   if (argType.is(TY_STRING) && !sourceFile->isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
 
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(Type(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
-  SymbolType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  Type argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
   argType = argType.removeReferenceWrapper();
 
@@ -854,7 +854,7 @@ std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
   if (!argType.isErrorObj())
     SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
 
-  return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_DYN), manIdx)};
+  return ExprResult{node->setEvaluatedSymbolType(Type(TY_DYN), manIdx)};
 }
 
 std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
@@ -933,11 +933,11 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
 
   // Visit condition
   LogicalOrExprNode *condition = node->operands()[0];
-  SymbolType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  Type conditionType = std::any_cast<ExprResult>(visit(condition)).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
-  SymbolType trueType;
-  SymbolType falseType;
+  Type trueType;
+  Type falseType;
   if (node->isShortened) {
     trueType = conditionType;
     falseType = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
@@ -953,8 +953,8 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     SOFT_ERROR_ER(condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool")
 
   // Check if trueType and falseType are matching
-  const SymbolType trueTypeModified = trueType.removeReferenceWrapper();
-  const SymbolType falseTypeModified = falseType.removeReferenceWrapper();
+  const Type trueTypeModified = trueType.removeReferenceWrapper();
+  const Type falseTypeModified = falseType.removeReferenceWrapper();
   if (!trueTypeModified.matches(falseTypeModified, false, true, false))
     SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE,
                   "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
@@ -1098,7 +1098,7 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check operator
-  SymbolType resultType;
+  Type resultType;
   if (node->op == RelationalExprNode::OP_LESS) // Operator was less
     resultType = OpRuleManager::getLessResultType(node, lhs, rhs);
   else if (node->op == RelationalExprNode::OP_GREATER) // Operator was greater
@@ -1215,7 +1215,7 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   auto src = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr()));
   HANDLE_UNRESOLVED_TYPE_ER(src.type)
   // Visit destination type
-  auto dstType = std::any_cast<SymbolType>(visit(node->dataType()));
+  auto dstType = std::any_cast<Type>(visit(node->dataType()));
   HANDLE_UNRESOLVED_TYPE_ER(dstType)
 
   // Check for identity cast
@@ -1225,7 +1225,7 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   }
 
   // Get result type
-  SymbolType resultType = opRuleManager.getCastResultType(node, dstType, src);
+  Type resultType = opRuleManager.getCastResultType(node, dstType, src);
 
   SymbolTableEntry *entry = src.type.isSameContainerTypeAs(dstType) ? src.entry : nullptr;
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx), entry};
@@ -1316,7 +1316,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // Visit index assignment
     AssignExprNode *indexAssignExpr = node->assignExpr();
-    SymbolType indexType = std::any_cast<ExprResult>(visit(indexAssignExpr)).type;
+    Type indexType = std::any_cast<ExprResult>(visit(indexAssignExpr)).type;
     HANDLE_UNRESOLVED_TYPE_ER(indexType)
     // Check if the index is of the right type
     if (!indexType.isOneOf({TY_INT, TY_LONG}))
@@ -1353,7 +1353,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     const std::string &fieldName = node->identifier;
 
     // Check if lhs is enum or strobj
-    SymbolType lhsBaseTy = lhsType;
+    Type lhsBaseTy = lhsType;
     autoDeReference(lhsBaseTy);
     if (!lhsBaseTy.is(TY_STRUCT))
       SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName())
@@ -1376,7 +1376,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     SymbolTableEntry *memberEntry = structScope->symbolTable.lookupInComposedFields(fieldName, indexPath);
     if (!memberEntry)
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Field '" + node->identifier + "' not found in struct " + structName)
-    SymbolType memberType = memberEntry->getType();
+    Type memberType = memberEntry->getType();
 
     // Check for insufficient visibility
     if (structScope->isImportedBy(rootScope) && !memberEntry->getType().isPublic())
@@ -1479,7 +1479,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   assert(accessScope != nullptr);
   AtomicExprNode::VarAccessData &data = node->data.at(manIdx);
   data = {varEntry, accessScope, accessScope->symbolTable.lookupCapture(varEntry->name)};
-  SymbolType varType = varEntry->getType();
+  Type varType = varEntry->getType();
   HANDLE_UNRESOLVED_TYPE_ER(varType)
 
   if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->global) {
@@ -1499,7 +1499,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     SOFT_ERROR_ER(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.")
 
   // The base type should be a primitive, struct, interface, function or procedure
-  const SymbolType baseType = varType.getBaseType();
+  const Type baseType = varType.getBaseType();
   if (!baseType.isPrimitive() && !baseType.isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
     SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here")
 
@@ -1564,7 +1564,7 @@ std::any TypeChecker::visitValue(ValueNode *node) {
 
   // Typed nil
   if (node->isNil) {
-    auto nilType = std::any_cast<SymbolType>(visit(node->nilType()));
+    auto nilType = std::any_cast<Type>(visit(node->nilType()));
     HANDLE_UNRESOLVED_TYPE_ER(nilType)
     if (nilType.is(TY_DYN))
       SOFT_ERROR_ER(node->nilType(), UNEXPECTED_DYN_TYPE, "Nil must have an explicit type")
@@ -1575,7 +1575,7 @@ std::any TypeChecker::visitValue(ValueNode *node) {
 }
 
 std::any TypeChecker::visitConstant(ConstantNode *node) {
-  SymbolSuperType superType;
+  SuperType superType;
   switch (node->type) {
   case ConstantNode::TYPE_DOUBLE:
     superType = TY_DOUBLE;
@@ -1606,7 +1606,7 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   }
 
   // Create symbol type
-  SymbolType symbolType(superType);
+  Type symbolType(superType);
   symbolType.specifiers = TypeSpecifiers::of(superType);
 
   return ExprResult{node->setEvaluatedSymbolType(symbolType, manIdx)};
@@ -1641,7 +1641,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
     firstFragEntry->used = true;
     // Decide of which type the function call is
-    const SymbolType &baseType = firstFragEntry->getType().getBaseType();
+    const Type &baseType = firstFragEntry->getType().getBaseType();
     HANDLE_UNRESOLVED_TYPE_ER(baseType)
     if (baseType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
       data.callType = firstFragEntry->scope->type == ScopeType::GLOBAL ? FctCallNode::TYPE_CTOR : FctCallNode::TYPE_METHOD;
@@ -1664,7 +1664,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Get the concrete template types
-  std::vector<SymbolType> concreteTemplateTypes;
+  std::vector<Type> concreteTemplateTypes;
   if (isAliasType) {
     // Retrieve concrete template types from type alias
     concreteTemplateTypes = aliasedTypeContainerEntry->getType().getTemplateTypes();
@@ -1676,7 +1676,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Get concrete template types
   if (node->hasTemplateTypes) {
     for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
-      auto templateType = std::any_cast<SymbolType>(visit(templateTypeNode));
+      auto templateType = std::any_cast<Type>(visit(templateTypeNode));
       assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
 
       // Abort if the type is unresolved
@@ -1699,21 +1699,21 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     assert(structBodyScope != nullptr);
     bool success = visitMethodCall(node, structBodyScope, concreteTemplateTypes);
     if (!success) // Check if soft errors occurred
-      return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
+      return ExprResult{node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx)};
     assert(data.calleeParentScope != nullptr);
   } else if (data.isFctPtrCall()) {
     // This is a function pointer call
-    const SymbolType &functionType = firstFragEntry->getType().getBaseType();
+    const Type &functionType = firstFragEntry->getType().getBaseType();
     assert(functionType.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
     bool success = visitFctPtrCall(node, functionType);
     if (!success) // Check if soft errors occurred
-      return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
+      return ExprResult{node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx)};
   } else {
     // This is an ordinary function call
     assert(data.isOrdinaryCall() || data.isCtorCall());
     bool success = visitOrdinaryFctCall(node, concreteTemplateTypes, fqFunctionName);
     if (!success) // Check if soft errors occurred
-      return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};
+      return ExprResult{node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx)};
     assert(data.calleeParentScope != nullptr);
 
     // Only ordinary function calls can be constructors
@@ -1731,7 +1731,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       errArgTypes.reserve(data.argResults.size());
       for (const ExprResult &argResult : data.argResults)
         errArgTypes.push_back({argResult.type, false});
-      const std::string signature = Function::getSignature(functionName, data.thisType, SymbolType(TY_DYN), errArgTypes, {});
+      const std::string signature = Function::getSignature(functionName, data.thisType, Type(TY_DYN), errArgTypes, {});
       // Throw error
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + signature + "' could not be found")
     }
@@ -1751,15 +1751,15 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
   // Retrieve return type
   const bool isFct = data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().is(TY_FUNCTION) : data.callee->isFunction();
-  SymbolType returnType;
+  Type returnType;
   if (data.isFctPtrCall()) {
-    returnType = isFct ? firstFragEntry->getType().getBaseType().getFunctionReturnType() : SymbolType(TY_BOOL);
+    returnType = isFct ? firstFragEntry->getType().getBaseType().getFunctionReturnType() : Type(TY_BOOL);
   } else if (data.isCtorCall()) {
     // Set return type to 'this' type
     returnType = data.thisType;
   } else if (data.callee->isProcedure()) {
     // Procedures always have the return type 'bool'
-    returnType = SymbolType(TY_BOOL);
+    returnType = Type(TY_BOOL);
   } else {
     returnType = data.callee->returnType;
   }
@@ -1767,7 +1767,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Initialize return type if required
   SymbolTableEntry *anonymousSymbol = nullptr;
   if (returnType.isBaseType(TY_STRUCT)) {
-    SymbolType returnBaseType = returnType.getBaseType();
+    Type returnBaseType = returnType.getBaseType();
     const std::string structName = returnBaseType.getSubType();
     Scope *matchScope = returnBaseType.getBodyScope()->parent;
     assert(matchScope != nullptr);
@@ -1793,7 +1793,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }
 
-bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::vector<SymbolType> &templateTypes,
+bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::vector<Type> &templateTypes,
                                        const std::string &fqFunctionName) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
@@ -1864,7 +1864,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::vector<SymbolType
     localArgs.emplace_back(mapLocalTypeToImportedScopeType(data.calleeParentScope, argResult.type), argResult.isTemporary());
 
   // Map local template types to imported types
-  for (SymbolType &templateType : templateTypes)
+  for (Type &templateType : templateTypes)
     templateType = mapLocalTypeToImportedScopeType(data.calleeParentScope, templateType);
 
   // Retrieve function object
@@ -1873,11 +1873,11 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::vector<SymbolType
   return true;
 }
 
-bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionType) const {
+bool TypeChecker::visitFctPtrCall(FctCallNode *node, const Type &functionType) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if the given argument types match the type
-  const std::vector<SymbolType> expectedArgTypes = functionType.getFunctionParamTypes();
+  const std::vector<Type> expectedArgTypes = functionType.getFunctionParamTypes();
   if (data.argResults.size() != expectedArgTypes.size())
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
 
@@ -1885,8 +1885,8 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionT
   TypeMatcher::ResolverFct resolverFct = [](const std::string &genericTypeName) { return nullptr; };
 
   for (size_t i = 0; i < data.argResults.size(); i++) {
-    const SymbolType &actualType = data.argResults.at(i).type;
-    const SymbolType &expectedType = expectedArgTypes.at(i);
+    const Type &actualType = data.argResults.at(i).type;
+    const Type &expectedType = expectedArgTypes.at(i);
     TypeMapping tm;
     if (!TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
       SOFT_ERROR_BOOL(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
@@ -1895,7 +1895,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const SymbolType &functionT
   return true;
 }
 
-bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, std::vector<SymbolType> &templateTypes) const {
+bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, std::vector<Type> &templateTypes) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
@@ -1929,11 +1929,11 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, std::ve
     localArgs.emplace_back(mapLocalTypeToImportedScopeType(data.calleeParentScope, argResult.type), argResult.isTemporary());
 
   // Map local template types to imported types
-  for (SymbolType &templateType : templateTypes)
+  for (Type &templateType : templateTypes)
     templateType = mapLocalTypeToImportedScopeType(data.calleeParentScope, templateType);
 
   // 'this' type
-  SymbolType localThisType = data.thisType;
+  Type localThisType = data.thisType;
   autoDeReference(localThisType);
   localThisType = mapLocalTypeToImportedScopeType(data.calleeParentScope, localThisType);
 
@@ -1945,12 +1945,12 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, std::ve
 }
 
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
-  SymbolType actualItemType(TY_DYN);
+  Type actualItemType(TY_DYN);
   // Check if all values have the same type
   if (node->itemLst()) {
     node->actualSize = static_cast<long>(node->itemLst()->args().size());
     for (AssignExprNode *arg : node->itemLst()->args()) {
-      const SymbolType itemType = std::any_cast<ExprResult>(visit(arg)).type;
+      const Type itemType = std::any_cast<ExprResult>(visit(arg)).type;
       HANDLE_UNRESOLVED_TYPE_ER(itemType)
       if (actualItemType.is(TY_DYN)) // Perform type inference
         actualItemType = itemType;
@@ -1961,7 +1961,7 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
     }
   }
 
-  const SymbolType arrayType = actualItemType.toArray(node, node->actualSize, true);
+  const Type arrayType = actualItemType.toArray(node, node->actualSize, true);
   return ExprResult{node->setEvaluatedSymbolType(arrayType, manIdx)};
 }
 
@@ -1992,10 +1992,10 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   Scope *structScope = accessScope = registryEntry->targetScope;
 
   // Get struct type
-  SymbolType structType = structEntry->getType();
+  Type structType = structEntry->getType();
 
   // Get the concrete template types
-  std::vector<SymbolType> concreteTemplateTypes;
+  std::vector<Type> concreteTemplateTypes;
   if (isAliasType) {
     // Retrieve concrete template types from type alias
     concreteTemplateTypes = aliasedTypeContainerEntry->getType().getTemplateTypes();
@@ -2007,7 +2007,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   if (node->templateTypeLst()) {
     concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
-      auto concreteType = std::any_cast<SymbolType>(visit(dataType));
+      auto concreteType = std::any_cast<Type>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_ER(concreteType)
       // Check if generic type
       if (concreteType.is(TY_GENERIC))
@@ -2035,7 +2035,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   structType.setBodyScope(structScope);
 
   // Set template types to the struct
-  std::vector<SymbolType> templateTypes;
+  std::vector<Type> templateTypes;
   for (const GenericType &genericType : spiceStruct->templateTypes)
     templateTypes.emplace_back(genericType.typeChain);
   structType.setTemplateTypes(templateTypes);
@@ -2070,7 +2070,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       }
     }
   } else {
-    for (SymbolType &fieldType : spiceStruct->fieldTypes) {
+    for (Type &fieldType : spiceStruct->fieldTypes) {
       if (fieldType.isRef())
         SOFT_ERROR_ER(node, REFERENCE_WITHOUT_INITIALIZER,
                       "The struct takes at least one reference field. You need to instantiate it with all fields.")
@@ -2102,7 +2102,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit return type
-  auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+  auto returnType = std::any_cast<Type>(visit(node->returnType()));
   HANDLE_UNRESOLVED_TYPE_ST(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -2114,7 +2114,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   resultVarEntry->used = true;
 
   // Visit parameters
-  std::vector<SymbolType> paramTypes;
+  std::vector<Type> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -2135,14 +2135,14 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   scopeHandle.leaveScopeEarly();
 
   // Prepare type of function
-  SymbolType functionType(TY_FUNCTION);
+  Type functionType(TY_FUNCTION);
   functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
   functionType.setHasLambdaCaptures(!bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->manifestations.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node);
+  node->manifestations.at(manIdx) = Function(fctName, nullptr, Type(TY_DYN), returnType, paramList, {}, node);
   node->manifestations.at(manIdx).bodyScope = bodyScope;
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
@@ -2158,7 +2158,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit parameters
-  std::vector<SymbolType> paramTypes;
+  std::vector<Type> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -2179,13 +2179,13 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   scopeHandle.leaveScopeEarly();
 
   // Prepare type of function
-  SymbolType functionType(TY_PROCEDURE);
+  Type functionType(TY_PROCEDURE);
   functionType.setFunctionParamTypes(paramTypes);
   functionType.setHasLambdaCaptures(!bodyScope->symbolTable.captures.empty());
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->manifestations.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), SymbolType(TY_DYN), paramList, {}, node);
+  node->manifestations.at(manIdx) = Function(fctName, nullptr, Type(TY_DYN), Type(TY_DYN), paramList, {}, node);
   node->manifestations.at(manIdx).bodyScope = bodyScope;
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
@@ -2201,7 +2201,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit parameters
-  std::vector<SymbolType> paramTypes;
+  std::vector<Type> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -2216,7 +2216,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   }
 
   // Visit lambda expression
-  SymbolType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
+  Type returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -2226,7 +2226,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
 
   // Prepare type of function
   const bool isFunction = !returnType.is(TY_DYN);
-  SymbolType functionType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
+  Type functionType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
   if (isFunction)
     functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
@@ -2234,7 +2234,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->manifestations.at(manIdx) = Function(fctName, nullptr, SymbolType(TY_DYN), returnType, paramList, {}, node);
+  node->manifestations.at(manIdx) = Function(fctName, nullptr, Type(TY_DYN), returnType, paramList, {}, node);
   node->manifestations.at(manIdx).bodyScope = bodyScope;
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
@@ -2243,7 +2243,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
 
 std::any TypeChecker::visitDataType(DataTypeNode *node) {
   // Visit base data type
-  auto type = std::any_cast<SymbolType>(visit(node->baseDataType()));
+  auto type = std::any_cast<Type>(visit(node->baseDataType()));
   HANDLE_UNRESOLVED_TYPE_ST(type)
 
   std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
@@ -2290,7 +2290,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
 
   // Attach the specifiers to the type
   if (node->specifierLst()) {
-    const SymbolType baseType = type.getBaseType();
+    const Type baseType = type.getBaseType();
     for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
       if (specifier->type == SpecifierNode::TY_CONST) {
         type.specifiers.isConst = true;
@@ -2339,33 +2339,33 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
 std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
   switch (node->type) {
   case BaseDataTypeNode::TYPE_DOUBLE:
-    return node->setEvaluatedSymbolType(SymbolType(TY_DOUBLE), manIdx);
+    return node->setEvaluatedSymbolType(Type(TY_DOUBLE), manIdx);
   case BaseDataTypeNode::TYPE_INT:
-    return node->setEvaluatedSymbolType(SymbolType(TY_INT), manIdx);
+    return node->setEvaluatedSymbolType(Type(TY_INT), manIdx);
   case BaseDataTypeNode::TYPE_SHORT:
-    return node->setEvaluatedSymbolType(SymbolType(TY_SHORT), manIdx);
+    return node->setEvaluatedSymbolType(Type(TY_SHORT), manIdx);
   case BaseDataTypeNode::TYPE_LONG:
-    return node->setEvaluatedSymbolType(SymbolType(TY_LONG), manIdx);
+    return node->setEvaluatedSymbolType(Type(TY_LONG), manIdx);
   case BaseDataTypeNode::TYPE_BYTE:
-    return node->setEvaluatedSymbolType(SymbolType(TY_BYTE), manIdx);
+    return node->setEvaluatedSymbolType(Type(TY_BYTE), manIdx);
   case BaseDataTypeNode::TYPE_CHAR:
-    return node->setEvaluatedSymbolType(SymbolType(TY_CHAR), manIdx);
+    return node->setEvaluatedSymbolType(Type(TY_CHAR), manIdx);
   case BaseDataTypeNode::TYPE_STRING:
-    return node->setEvaluatedSymbolType(SymbolType(TY_STRING), manIdx);
+    return node->setEvaluatedSymbolType(Type(TY_STRING), manIdx);
   case BaseDataTypeNode::TYPE_BOOL:
-    return node->setEvaluatedSymbolType(SymbolType(TY_BOOL), manIdx);
+    return node->setEvaluatedSymbolType(Type(TY_BOOL), manIdx);
   case BaseDataTypeNode::TYPE_CUSTOM: {
-    auto customType = std::any_cast<SymbolType>(visit(node->customDataType()));
+    auto customType = std::any_cast<Type>(visit(node->customDataType()));
     HANDLE_UNRESOLVED_TYPE_ST(customType)
     return node->setEvaluatedSymbolType(customType, manIdx);
   }
   case BaseDataTypeNode::TYPE_FUNCTION: {
-    auto functionType = std::any_cast<SymbolType>(visit(node->functionDataType()));
+    auto functionType = std::any_cast<Type>(visit(node->functionDataType()));
     HANDLE_UNRESOLVED_TYPE_ST(functionType)
     return node->setEvaluatedSymbolType(functionType, manIdx);
   }
   default:
-    return node->setEvaluatedSymbolType(SymbolType(TY_DYN), manIdx);
+    return node->setEvaluatedSymbolType(Type(TY_DYN), manIdx);
   }
 }
 
@@ -2383,10 +2383,10 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
   // Check if it is a generic type
   const bool isImported = node->typeNameFragments.size() > 1;
-  const SymbolType *genericType = rootScope->lookupGenericType(firstFragment);
+  const Type *genericType = rootScope->lookupGenericType(firstFragment);
   if (!isImported && genericType) {
     // Take the concrete replacement type for the name of this generic type if available
-    SymbolType symbolType = *genericType;
+    Type symbolType = *genericType;
     if (typeMapping.contains(firstFragment))
       symbolType = typeMapping.at(firstFragment);
 
@@ -2419,22 +2419,22 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   localAccessScope = registryEntry->targetScope->parent;
 
   // Get struct type
-  SymbolType entryType = entry->getType();
+  Type entryType = entry->getType();
 
   // Enums can early-return
   if (entryType.is(TY_ENUM))
-    return SymbolType(TY_INT);
+    return Type(TY_INT);
 
   if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
     assert(dynamic_cast<DataTypeNode *>(node->parent->parent) != nullptr);
 
     // Collect the concrete template types
     bool allTemplateTypesConcrete = true;
-    std::vector<SymbolType> templateTypes;
+    std::vector<Type> templateTypes;
     if (node->templateTypeLst()) {
       templateTypes.reserve(node->templateTypeLst()->dataTypes().size());
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
-        auto templateType = std::any_cast<SymbolType>(visit(dataType));
+        auto templateType = std::any_cast<Type>(visit(dataType));
         HANDLE_UNRESOLVED_TYPE_ST(templateType)
         if (entryType.is(TY_GENERIC))
           allTemplateTypesConcrete = false;
@@ -2479,26 +2479,26 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
 std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   // Visit return type
-  SymbolType returnType(TY_DYN);
+  Type returnType(TY_DYN);
   if (node->isFunction) {
-    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+    returnType = std::any_cast<Type>(visit(node->returnType()));
     HANDLE_UNRESOLVED_TYPE_ST(returnType)
     if (returnType.is(TY_DYN))
       SOFT_ERROR_ER(node->returnType(), UNEXPECTED_DYN_TYPE, "Function types cannot have return type dyn")
   }
 
   // Visit param types
-  std::vector<SymbolType> paramTypes;
+  std::vector<Type> paramTypes;
   if (const TypeLstNode *paramTypeListNode = node->paramTypeLst(); paramTypeListNode != nullptr) {
     for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes()) {
-      auto paramType = std::any_cast<SymbolType>(visit(paramTypeNode));
+      auto paramType = std::any_cast<Type>(visit(paramTypeNode));
       HANDLE_UNRESOLVED_TYPE_ST(returnType)
       paramTypes.push_back(paramType);
     }
   }
 
   // Build function type
-  SymbolType functionType(node->isFunction ? TY_FUNCTION : TY_PROCEDURE);
+  Type functionType(node->isFunction ? TY_FUNCTION : TY_PROCEDURE);
   if (node->isFunction)
     functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
@@ -2539,7 +2539,7 @@ bool TypeChecker::checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const Lambd
   return false; // Not violated
 }
 
-SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const {
+Type TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const Type &symbolType) const {
   // Skip all types, except structs
   if (!symbolType.isBaseType(TY_STRUCT))
     return symbolType;
@@ -2568,7 +2568,7 @@ SymbolType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope
   return symbolType;
 }
 
-SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const {
+Type TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, const Type &symbolType) const {
   // Skip all types, except structs
   if (!symbolType.isBaseType(TY_STRUCT))
     return symbolType;
@@ -2579,7 +2579,7 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
     return symbolType;
 
   // Match the scope of the symbol type against all scopes in the name registry of this source file
-  const SymbolType baseType = symbolType.getBaseType();
+  const Type baseType = symbolType.getBaseType();
   for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
@@ -2603,7 +2603,7 @@ SymbolType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope
  *
  * @param symbolType Input symbol type
  */
-void TypeChecker::autoDeReference(SymbolType &symbolType) {
+void TypeChecker::autoDeReference(Type &symbolType) {
   while (symbolType.isPtr() || symbolType.isRef())
     symbolType = symbolType.getContainedTy();
 }

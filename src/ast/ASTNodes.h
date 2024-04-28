@@ -83,7 +83,7 @@ public:
       child->resizeToNumberOfManifestations(manifestationCount);
     }
     // Reserve this node
-    symbolTypes.resize(manifestationCount, SymbolType(TY_INVALID));
+    symbolTypes.resize(manifestationCount, Type(TY_INVALID));
     // Do custom work
     customItemsInitialization(manifestationCount);
   }
@@ -99,13 +99,13 @@ public:
 
   virtual void customItemsInitialization(size_t) {} // Noop
 
-  SymbolType setEvaluatedSymbolType(const SymbolType &symbolType, const size_t idx) {
+  Type setEvaluatedSymbolType(const Type &symbolType, const size_t idx) {
     assert(symbolTypes.size() > idx);
     symbolTypes.at(idx) = symbolType;
     return symbolType;
   }
 
-  [[nodiscard]] const SymbolType &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
+  [[nodiscard]] const Type &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
     if (!symbolTypes.empty() && !symbolTypes.at(idx).is(TY_INVALID))
       return symbolTypes.at(idx);
     if (children.size() != 1)
@@ -159,7 +159,7 @@ public:
   ASTNode *parent = nullptr;
   std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
-  std::vector<SymbolType> symbolTypes;
+  std::vector<Type> symbolTypes;
   bool unreachable = false;
 };
 
@@ -1638,7 +1638,7 @@ public:
   };
 
   // Typedefs
-  typedef std::queue<std::pair<AdditiveOp, SymbolType>> OpQueue;
+  typedef std::queue<std::pair<AdditiveOp, Type>> OpQueue;
 
   // Constructors
   using ExprNode::ExprNode;
@@ -1674,7 +1674,7 @@ public:
   };
 
   // Typedefs
-  typedef std::queue<std::pair<MultiplicativeOp, SymbolType>> OpQueue;
+  typedef std::queue<std::pair<MultiplicativeOp, Type>> OpQueue;
 
   // Constructors
   using ExprNode::ExprNode;
@@ -1908,7 +1908,7 @@ public:
     // Members
     FctCallType callType = TYPE_ORDINARY;
     bool isImported = false;
-    SymbolType thisType = SymbolType(TY_DYN); // Is filled if method or ctor call
+    Type thisType = Type(TY_DYN); // Is filled if method or ctor call
     std::vector<ExprResult> argResults;
     Function *callee = nullptr;
     Scope *calleeParentScope = nullptr;

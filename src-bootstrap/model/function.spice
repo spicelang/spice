@@ -4,13 +4,13 @@ import "std/data/map";
 
 // Helper structs
 public type Param struct {
-    SymbolType sType
+    Type sType
     bool isOptional
 }
 
 public type NamedParam struct {
     String name
-    SymbolType sType
+    Type sType
     bool isOptional
 }
 
@@ -20,11 +20,11 @@ type NamedParamList alias Vector<NamedParam>;
 
 public type Function struct {
     String name
-    SymbolType thisType
-    SymbolType returnType
+    Type thisType
+    Type returnType
     ParamLits paramList
     Vector<GenericType> templateTypes
-    Map<String, SymbolType> typeMapping
+    Map<String, Type> typeMapping
     SymbolTableEntry* entry
     ASTNode* declNode
     bool genericSubstantiation

@@ -1,6 +1,6 @@
 // Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
-#include "SymbolType.h"
+#include "Type.h"
 
 #include <SourceFile.h>
 #include <ast/Attributes.h>
@@ -15,19 +15,19 @@
 
 namespace spice::compiler {
 
-SymbolType::SymbolType(SymbolSuperType superType)
+Type::Type(SuperType superType)
     : typeChain({TypeChainElement{superType}}), specifiers(TypeSpecifiers::of(superType)) {}
 
-SymbolType::SymbolType(SymbolSuperType superType, const std::string &subType)
+Type::Type(SuperType superType, const std::string &subType)
     : typeChain({TypeChainElement{superType, subType}}), specifiers(TypeSpecifiers::of(superType)) {}
 
-SymbolType::SymbolType(SymbolSuperType superType, const std::string &subType, uint64_t typeId,
-                       const SymbolType::TypeChainElementData &data, const std::vector<SymbolType> &templateTypes)
+Type::Type(SuperType superType, const std::string &subType, uint64_t typeId,
+                       const Type::TypeChainElementData &data, const std::vector<Type> &templateTypes)
     : typeChain({TypeChainElement(superType, subType, typeId, data, templateTypes)}), specifiers(TypeSpecifiers::of(superType)) {}
 
-SymbolType::SymbolType(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
+Type::Type(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
 
-SymbolType::SymbolType(TypeChain types, TypeSpecifiers specifiers) : typeChain(std::move(types)), specifiers(specifiers) {}
+Type::Type(TypeChain types, TypeSpecifiers specifiers) : typeChain(std::move(types)), specifiers(specifiers) {}
 
 /**
  * Get the pointer type of the current type as a new type
@@ -35,7 +35,7 @@ SymbolType::SymbolType(TypeChain types, TypeSpecifiers specifiers) : typeChain(s
  * @param node AST node for error messages
  * @return Pointer type of the current type
  */
-SymbolType SymbolType::toPointer(const ASTNode *node) const {
+Type Type::toPointer(const ASTNode *node) const {
   // Do not allow pointers of dyn
   if (is(TY_DYN))
     throw SemanticError(node, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
@@ -53,7 +53,7 @@ SymbolType SymbolType::toPointer(const ASTNode *node) const {
  * @param node AST node for error messages
  * @return Reference type of the current type
  */
-SymbolType SymbolType::toReference(const ASTNode *node) const {
+Type Type::toReference(const ASTNode *node) const {
   // Do not allow references of dyn
   if (is(TY_DYN))
     throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
@@ -72,8 +72,8 @@ SymbolType SymbolType::toReference(const ASTNode *node) const {
  * @param node AST node for error messages
  * @return Const reference type of the current type
  */
-SymbolType SymbolType::toConstReference(const ASTNode *node) const {
-  SymbolType constRefType = toReference(node);
+Type Type::toConstReference(const ASTNode *node) const {
+  Type constRefType = toReference(node);
   constRefType.specifiers.isConst = true;
   return constRefType;
 }
@@ -85,7 +85,7 @@ SymbolType SymbolType::toConstReference(const ASTNode *node) const {
  * @param size Size of the array
  * @return Array type of the current type
  */
-SymbolType SymbolType::toArray(const ASTNode *node, unsigned int size, bool skipDynCheck /*=false*/) const {
+Type Type::toArray(const ASTNode *node, unsigned int size, bool skipDynCheck /*=false*/) const {
   // Do not allow arrays of dyn
   if (!skipDynCheck && typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
@@ -100,9 +100,9 @@ SymbolType SymbolType::toArray(const ASTNode *node, unsigned int size, bool skip
  *
  * @return Base type
  */
-SymbolType SymbolType::getContainedTy() const {
+Type Type::getContainedTy() const {
   if (is(TY_STRING))
-    return SymbolType(TY_CHAR);
+    return Type(TY_CHAR);
   assert(typeChain.size() > 1);
   TypeChain newTypeChain = typeChain;
   newTypeChain.pop_back();
@@ -115,7 +115,7 @@ SymbolType SymbolType::getContainedTy() const {
  * @param newBaseType New base type
  * @return The new type
  */
-SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
+Type Type::replaceBaseType(const Type &newBaseType) const {
   assert(!typeChain.empty());
 
   // Create new type chain
@@ -139,7 +139,7 @@ SymbolType SymbolType::replaceBaseType(const SymbolType &newBaseType) const {
  * @param accessScope Access scope for structs
  * @return Corresponding LLVM type
  */
-llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const { // NOLINT(misc-no-recursion)
+llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const { // NOLINT(misc-no-recursion)
   assert(!typeChain.empty() && !isOneOf({TY_DYN, TY_INVALID}));
 
   if (is(TY_DOUBLE))
@@ -243,11 +243,11 @@ llvm::Type *SymbolType::toLLVMType(llvm::LLVMContext &context, Scope *accessScop
  * @param node ASTNode
  * @return Iterator or not
  */
-bool SymbolType::isIterator(const ASTNode *node) const {
+bool Type::isIterator(const ASTNode *node) const {
   if (!is(TY_STRUCT))
     return false;
-  SymbolType genericType(TY_GENERIC, "T");
-  SymbolType iteratorType(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERATOR_INTERFACE, {.bodyScope = nullptr}, {genericType});
+  Type genericType(TY_GENERIC, "T");
+  Type iteratorType(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERATOR_INTERFACE, {.bodyScope = nullptr}, {genericType});
   return implements(iteratorType, node);
 }
 
@@ -259,13 +259,13 @@ bool SymbolType::isIterator(const ASTNode *node) const {
  * @param node ASTNode
  * @return Iterable or not
  */
-bool SymbolType::isIterable(const ASTNode *node) const {
+bool Type::isIterable(const ASTNode *node) const {
   if (isArray())
     return true; // Arrays are always considered iterable
   if (!is(TY_STRUCT))
     return false;
-  SymbolType genericType(TY_GENERIC, "T");
-  SymbolType iteratorType(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERABLE_INTERFACE, {.bodyScope = nullptr}, {genericType});
+  Type genericType(TY_GENERIC, "T");
+  Type iteratorType(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERABLE_INTERFACE, {.bodyScope = nullptr}, {genericType});
   return implements(iteratorType, node);
 }
 
@@ -274,7 +274,7 @@ bool SymbolType::isIterable(const ASTNode *node) const {
  *
  * @return String object or not
  */
-bool SymbolType::isStringObj() const {
+bool Type::isStringObj() const {
   return is(TY_STRUCT) && getSubType() == STROBJ_NAME && getBodyScope()->sourceFile->stdFile;
 }
 
@@ -283,7 +283,7 @@ bool SymbolType::isStringObj() const {
  *
  * @return Error object or not
  */
-bool SymbolType::isErrorObj() const {
+bool Type::isErrorObj() const {
   return is(TY_STRUCT) && getSubType() == ERROBJ_NAME && getBodyScope()->sourceFile->stdFile;
 }
 
@@ -294,11 +294,11 @@ bool SymbolType::isErrorObj() const {
  * @param node ASTNode
  * @return Struct implements interface or not
  */
-bool SymbolType::implements(const SymbolType &symbolType, const ASTNode *node) const {
+bool Type::implements(const Type &symbolType, const ASTNode *node) const {
   assert(is(TY_STRUCT) && symbolType.is(TY_INTERFACE));
   Struct *spiceStruct = getStruct(node);
   assert(spiceStruct != nullptr);
-  return std::ranges::any_of(spiceStruct->interfaceTypes, [&](const SymbolType &interfaceType) {
+  return std::ranges::any_of(spiceStruct->interfaceTypes, [&](const Type &interfaceType) {
     assert(interfaceType.is(TY_INTERFACE));
     return symbolType.matches(interfaceType, false, false, true);
   });
@@ -310,7 +310,7 @@ bool SymbolType::implements(const SymbolType &symbolType, const ASTNode *node) c
  * @param superType Super type to check for
  * @return Applicable or not
  */
-bool SymbolType::isBaseType(SymbolSuperType superType) const {
+bool Type::isBaseType(SuperType superType) const {
   assert(!typeChain.empty());
   return typeChain.front().superType == superType;
 }
@@ -322,7 +322,7 @@ bool SymbolType::isBaseType(SymbolSuperType superType) const {
  * @param otherType Other symbol type
  * @return Same container type or not
  */
-bool SymbolType::isSameContainerTypeAs(const SymbolType &otherType) const {
+bool Type::isSameContainerTypeAs(const Type &otherType) const {
   return (isPtr() && otherType.isPtr()) || (isRef() && otherType.isRef()) || (isArray() && otherType.isArray());
 }
 
@@ -331,8 +331,8 @@ bool SymbolType::isSameContainerTypeAs(const SymbolType &otherType) const {
  *
  * @return Contains generic parts or not
  */
-bool SymbolType::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
-  const SymbolType &baseType = getBaseType();
+bool Type::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
+  const Type &baseType = getBaseType();
 
   // Check if the type itself is generic
   if (baseType.is(TY_GENERIC))
@@ -340,13 +340,13 @@ bool SymbolType::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
 
   // Check if the type has generic template types
   const auto templateTypes = baseType.getTemplateTypes();
-  if (std::ranges::any_of(templateTypes, [](const SymbolType &t) { return t.hasAnyGenericParts(); }))
+  if (std::ranges::any_of(templateTypes, [](const Type &t) { return t.hasAnyGenericParts(); }))
     return true;
 
   // Check param and return types or functions/procedures
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
     const auto paramTypes = baseType.getFunctionParamAndReturnTypes();
-    if (std::ranges::any_of(paramTypes, [](const SymbolType &t) { return t.hasAnyGenericParts(); }))
+    if (std::ranges::any_of(paramTypes, [](const Type &t) { return t.hasAnyGenericParts(); }))
       return true;
   }
 
@@ -356,7 +356,7 @@ bool SymbolType::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
 /**
  * Set the list of templates types
  */
-void SymbolType::setTemplateTypes(const std::vector<SymbolType> &templateTypes) {
+void Type::setTemplateTypes(const std::vector<Type> &templateTypes) {
   assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
   typeChain.back().templateTypes = templateTypes;
 }
@@ -364,7 +364,7 @@ void SymbolType::setTemplateTypes(const std::vector<SymbolType> &templateTypes) 
 /**
  * Set the list of templates types of the base type
  */
-void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes) {
+void Type::setBaseTemplateTypes(const std::vector<Type> &templateTypes) {
   assert(getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}));
   typeChain.front().templateTypes = templateTypes;
 }
@@ -374,7 +374,7 @@ void SymbolType::setBaseTemplateTypes(const std::vector<SymbolType> &templateTyp
  *
  * @return Vector of template types
  */
-const std::vector<SymbolType> &SymbolType::getTemplateTypes() const { return typeChain.back().templateTypes; }
+const std::vector<Type> &Type::getTemplateTypes() const { return typeChain.back().templateTypes; }
 
 /**
  * Check if the given generic type list has a substantiation for the current (generic) type
@@ -382,8 +382,8 @@ const std::vector<SymbolType> &SymbolType::getTemplateTypes() const { return typ
  * @param genericTypeList Generic type list
  * @return Has substantiation or not
  */
-bool SymbolType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const {
-  const SymbolType baseType = getBaseType();
+bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const {
+  const Type baseType = getBaseType();
   // Check if the symbol type itself is generic
   if (baseType.is(TY_GENERIC)) {
     return std::ranges::any_of(genericTypeList, [&](GenericType &t) {
@@ -398,16 +398,16 @@ bool SymbolType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTyp
   // If the type is non-generic check template types
   bool covered = true;
   // Check template types
-  const std::vector<SymbolType> &baseTemplateTypes = baseType.getTemplateTypes();
-  covered &= std::ranges::all_of(baseTemplateTypes, [&](const SymbolType &templateType) {
+  const std::vector<Type> &baseTemplateTypes = baseType.getTemplateTypes();
+  covered &= std::ranges::all_of(baseTemplateTypes, [&](const Type &templateType) {
     return templateType.isCoveredByGenericTypeList(genericTypeList);
   });
 
   // If function/procedure, check param and return types
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-    const std::vector<SymbolType> &paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
+    const std::vector<Type> &paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
     covered &= std::ranges::all_of(
-        paramAndReturnTypes, [&](const SymbolType &paramType) { return paramType.isCoveredByGenericTypeList(genericTypeList); });
+        paramAndReturnTypes, [&](const Type &paramType) { return paramType.isCoveredByGenericTypeList(genericTypeList); });
   }
 
   return covered;
@@ -420,7 +420,7 @@ bool SymbolType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTyp
  * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
-std::string SymbolType::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
+std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
   std::stringstream name;
 
   // Append the specifiers
@@ -452,9 +452,9 @@ std::string SymbolType::getName(bool withSize, bool ignorePublic) const { // NOL
  *
  * @param returnType Function return type
  */
-void SymbolType::setFunctionReturnType(const SymbolType &returnType) {
+void Type::setFunctionReturnType(const Type &returnType) {
   assert(is(TY_FUNCTION));
-  std::vector<SymbolType> &paramTypes = typeChain.back().paramTypes;
+  std::vector<Type> &paramTypes = typeChain.back().paramTypes;
   if (paramTypes.empty())
     paramTypes.resize(1);
   paramTypes.at(0) = returnType;
@@ -465,7 +465,7 @@ void SymbolType::setFunctionReturnType(const SymbolType &returnType) {
  *
  * @return Function return type
  */
-const SymbolType &SymbolType::getFunctionReturnType() const {
+const Type &Type::getFunctionReturnType() const {
   assert(is(TY_FUNCTION));
   assert(!typeChain.back().paramTypes.empty());
   return typeChain.back().paramTypes.front();
@@ -476,12 +476,12 @@ const SymbolType &SymbolType::getFunctionReturnType() const {
  *
  * @param paramTypes Function param types
  */
-void SymbolType::setFunctionParamTypes(const std::vector<SymbolType> &newParamTypes) {
+void Type::setFunctionParamTypes(const std::vector<Type> &newParamTypes) {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  std::vector<SymbolType> &paramTypes = typeChain.back().paramTypes;
+  std::vector<Type> &paramTypes = typeChain.back().paramTypes;
   // Resize param types if required
   if (paramTypes.size() < newParamTypes.size() + 1)
-    paramTypes.resize(newParamTypes.size() + 1, SymbolType(TY_DYN));
+    paramTypes.resize(newParamTypes.size() + 1, Type(TY_DYN));
   // Set the function param types
   for (size_t i = 0; i < newParamTypes.size(); i++)
     paramTypes.at(i + 1) = newParamTypes.at(i);
@@ -492,7 +492,7 @@ void SymbolType::setFunctionParamTypes(const std::vector<SymbolType> &newParamTy
  *
  * @return Function param types
  */
-std::vector<SymbolType> SymbolType::getFunctionParamTypes() const {
+std::vector<Type> Type::getFunctionParamTypes() const {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   if (typeChain.back().paramTypes.empty())
     return {};
@@ -504,7 +504,7 @@ std::vector<SymbolType> SymbolType::getFunctionParamTypes() const {
  *
  * @param hasCaptures Has captures
  */
-void SymbolType::setHasLambdaCaptures(bool hasCaptures) {
+void Type::setHasLambdaCaptures(bool hasCaptures) {
   assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   typeChain.front().data.hasCaptures = hasCaptures;
 }
@@ -514,7 +514,7 @@ void SymbolType::setHasLambdaCaptures(bool hasCaptures) {
  *
  * @return Has captures
  */
-bool SymbolType::hasLambdaCaptures() const {
+bool Type::hasLambdaCaptures() const {
   assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   return typeChain.front().data.hasCaptures;
 }
@@ -524,7 +524,7 @@ bool SymbolType::hasLambdaCaptures() const {
  *
  * @param newParamAndReturnTypes Function param and return types (first is return type, rest are param types)
  */
-void SymbolType::setFunctionParamAndReturnTypes(const std::vector<SymbolType> &newParamAndReturnTypes) {
+void Type::setFunctionParamAndReturnTypes(const std::vector<Type> &newParamAndReturnTypes) {
   assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   typeChain.front().paramTypes = newParamAndReturnTypes;
 }
@@ -534,7 +534,7 @@ void SymbolType::setFunctionParamAndReturnTypes(const std::vector<SymbolType> &n
  *
  * @return Function param and return types (first is return type, rest are param types)
  */
-const std::vector<SymbolType> &SymbolType::getFunctionParamAndReturnTypes() const {
+const std::vector<Type> &Type::getFunctionParamAndReturnTypes() const {
   assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   return typeChain.front().paramTypes;
 }
@@ -545,11 +545,11 @@ const std::vector<SymbolType> &SymbolType::getFunctionParamAndReturnTypes() cons
  * @param node Accessing AST node
  * @return Struct instance
  */
-Struct *SymbolType::getStruct(const ASTNode *node) const {
+Struct *Type::getStruct(const ASTNode *node) const {
   assert(is(TY_STRUCT));
   Scope *structDefScope = getBodyScope()->parent;
   const std::string structName = getSubType();
-  const std::vector<SymbolType> &templateTypes = getTemplateTypes();
+  const std::vector<Type> &templateTypes = getTemplateTypes();
   return StructManager::matchStruct(structDefScope, structName, templateTypes, node);
 }
 
@@ -559,19 +559,19 @@ Struct *SymbolType::getStruct(const ASTNode *node) const {
  * @param node Accessing AST node
  * @return Interface instance
  */
-Interface *SymbolType::getInterface(const ASTNode *node) const {
+Interface *Type::getInterface(const ASTNode *node) const {
   assert(is(TY_INTERFACE));
   Scope *interfaceDefScope = getBodyScope()->parent;
   const std::string structName = getSubType();
-  const std::vector<SymbolType> &templateTypes = getTemplateTypes();
+  const std::vector<Type> &templateTypes = getTemplateTypes();
   return InterfaceManager::matchInterface(interfaceDefScope, structName, templateTypes, node);
 }
 
-bool operator==(const SymbolType &lhs, const SymbolType &rhs) {
+bool operator==(const Type &lhs, const Type &rhs) {
   return lhs.typeChain == rhs.typeChain && lhs.specifiers == rhs.specifiers;
 }
 
-bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs == rhs); }
+bool operator!=(const Type &lhs, const Type &rhs) { return !(lhs == rhs); }
 
 /**
  * Check for the matching compatibility of two types.
@@ -583,15 +583,15 @@ bool operator!=(const SymbolType &lhs, const SymbolType &rhs) { return !(lhs == 
  * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
  * @return Matching or not
  */
-bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const {
+bool Type::matches(const Type &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const {
   // If the size does not match, it is not equal
   if (typeChain.size() != otherType.typeChain.size())
     return false;
 
   // Compare the elements
   for (size_t i = 0; i < typeChain.size(); i++) {
-    const SymbolType::TypeChainElement &lhsElement = typeChain.at(i);
-    const SymbolType::TypeChainElement &rhsElement = otherType.typeChain.at(i);
+    const Type::TypeChainElement &lhsElement = typeChain.at(i);
+    const Type::TypeChainElement &rhsElement = otherType.typeChain.at(i);
 
     // Ignore differences in array size
     if (ignoreArraySize && lhsElement.superType == TY_ARRAY && rhsElement.superType == TY_ARRAY)
@@ -613,14 +613,14 @@ bool SymbolType::matches(const SymbolType &otherType, bool ignoreArraySize, bool
  * @param otherType Type to compare against
  * @return Matching or not
  */
-bool SymbolType::matchesInterfaceImplementedByStruct(const SymbolType &otherType) const {
+bool Type::matchesInterfaceImplementedByStruct(const Type &otherType) const {
   if (!is(TY_INTERFACE) || !otherType.is(TY_STRUCT))
     return false;
 
   // Check if the rhs is a struct type that implements the lhs interface type
   const Struct *spiceStruct = otherType.getStruct(nullptr);
   assert(spiceStruct != nullptr);
-  for (const SymbolType &interfaceType : spiceStruct->interfaceTypes) {
+  for (const Type &interfaceType : spiceStruct->interfaceTypes) {
     assert(interfaceType.is(TY_INTERFACE));
     if (matches(interfaceType, false, false, true))
       return true;
@@ -635,7 +635,7 @@ bool SymbolType::matchesInterfaceImplementedByStruct(const SymbolType &otherType
  * @param isTemporary Is the input type a temporary type
  * @return Can be bound or not
  */
-bool SymbolType::canBind(const SymbolType &inputType, bool isTemporary) const {
+bool Type::canBind(const Type &inputType, bool isTemporary) const {
   return !isTemporary || inputType.isRef() || !isRef() || isConstRef();
 }
 
@@ -646,7 +646,7 @@ bool SymbolType::canBind(const SymbolType &inputType, bool isTemporary) const {
  * @param typeA Candidate type
  * @param typeB Requested type
  */
-void SymbolType::unwrapBoth(SymbolType &typeA, SymbolType &typeB) {
+void Type::unwrapBoth(Type &typeA, Type &typeB) {
   // Remove reference wrapper of front type if required
   if (typeA.isRef() && !typeB.isRef())
     typeA = typeA.removeReferenceWrapper();

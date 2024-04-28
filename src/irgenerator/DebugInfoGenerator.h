@@ -12,7 +12,7 @@ namespace spice::compiler {
 // Forward declarations
 class IRGenerator;
 class SymbolTableEntry;
-class SymbolType;
+class Type;
 class Function;
 class Struct;
 class ASTNode;
@@ -62,7 +62,7 @@ private:
   llvm::DICompositeType *fatPtrTy = nullptr;
 
   // Private methods
-  [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const ASTNode *node, const SymbolType &symbolType) const;
+  [[nodiscard]] llvm::DIType *getDITypeForSymbolType(const ASTNode *node, const Type &symbolType) const;
 };
 
 } // namespace spice::compiler

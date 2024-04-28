@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <symboltablebuilder/SymbolType.h>
+#include <symboltablebuilder/Type.h>
 
 namespace spice::compiler {
 
@@ -10,7 +10,7 @@ namespace spice::compiler {
 class SymbolTableEntry;
 
 struct ExprResult {
-  SymbolType type;
+  Type type;
   SymbolTableEntry *entry = nullptr;
 
   [[nodiscard]] bool isTemporary() const { return entry == nullptr; }

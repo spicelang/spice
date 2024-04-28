@@ -80,7 +80,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     thisPtr = firstFragEntry->getAddress();
 
     // Auto de-reference 'this' pointer
-    SymbolType firstFragmentType = firstFragEntry->getType();
+    Type firstFragmentType = firstFragEntry->getType();
     autoDeReferencePtr(thisPtr, firstFragmentType, structScope->parent);
     llvm::Type *structTy = firstFragEntry->getType().getBaseType().toLLVMType(context, structScope->parent);
 
@@ -90,7 +90,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       // Retrieve field entry
       SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
       assert(fieldEntry != nullptr);
-      SymbolType fieldEntryType = fieldEntry->getType();
+      Type fieldEntryType = fieldEntry->getType();
       assert(fieldEntryType.getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}));
       // Get struct type and scope
       structScope = fieldEntryType.getBaseType().getBodyScope();
@@ -137,15 +137,15 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   if (node->hasArgs) {
     argValues.reserve(node->argLst()->args().size());
     const std::vector<AssignExprNode *> args = node->argLst()->args();
-    const std::vector<SymbolType> paramSTypes =
+    const std::vector<Type> paramSTypes =
         data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes() : spiceFunc->getParamTypes();
     assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
       AssignExprNode *argNode = args.at(i);
-      const SymbolType &expectedSTy = paramSTypes.at(i);
-      const SymbolType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
+      const Type &expectedSTy = paramSTypes.at(i);
+      const Type &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
-      const auto matchFct = [](const SymbolType &lhsTy, const SymbolType &rhsTy) {
+      const auto matchFct = [](const Type &lhsTy, const Type &rhsTy) {
         return lhsTy.matches(rhsTy, false, true, true) || lhsTy.matchesInterfaceImplementedByStruct(rhsTy);
       };
 
@@ -168,8 +168,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   // Retrieve return and param types
-  SymbolType returnSType(TY_DYN);
-  std::vector<SymbolType> paramSTypes;
+  Type returnSType(TY_DYN);
+  std::vector<Type> paramSTypes;
   if (data.isFctPtrCall()) {
     if (firstFragEntry->getType().isBaseType(TY_FUNCTION))
       returnSType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
@@ -195,7 +195,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       argTypes.push_back(builder.getPtrTy()); // This pointer
     if (data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures())
       argTypes.push_back(builder.getPtrTy()); // Capture pointer
-    for (const SymbolType &paramType : paramSTypes)
+    for (const Type &paramType : paramSTypes)
       argTypes.push_back(paramType.toLLVMType(context, accessScope));
 
     fctType = llvm::FunctionType::get(returnType, argTypes, false);
@@ -219,7 +219,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     result = builder.CreateCall({fctType, fct}, argValues);
   } else if (data.isFctPtrCall()) {
     assert(firstFragEntry != nullptr);
-    SymbolType firstFragType = firstFragEntry->getType();
+    Type firstFragType = firstFragEntry->getType();
     if (!fctPtr)
       fctPtr = firstFragEntry->getAddress();
     autoDeReferencePtr(fctPtr, firstFragType, currentScope);
@@ -290,7 +290,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
 
   // Get LLVM type of item and array
   assert(!itemResults.empty());
-  const SymbolType &firstItemSTy = node->itemLst()->args().front()->getEvaluatedSymbolType(manIdx);
+  const Type &firstItemSTy = node->itemLst()->args().front()->getEvaluatedSymbolType(manIdx);
   llvm::Type *itemType = firstItemSTy.toLLVMType(context, currentScope);
   llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, node->actualSize);
 
@@ -336,7 +336,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   // Get struct object
   const Struct *spiceStruct = node->instantiatedStructs.at(manIdx);
   assert(spiceStruct != nullptr);
-  const std::vector<SymbolType> &fieldTypes = spiceStruct->fieldTypes;
+  const std::vector<Type> &fieldTypes = spiceStruct->fieldTypes;
 
   // Can only be constant if none of the fields is of type reference
   bool canBeConstant = !spiceStruct->hasReferenceFields();
@@ -365,7 +365,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     // Collect constants
     std::vector<llvm::Constant *> constants;
     // For each interface a nullptr
-    for (const SymbolType &interfaceType : spiceStruct->interfaceTypes)
+    for (const Type &interfaceType : spiceStruct->interfaceTypes)
       constants.push_back(getDefaultValueForSymbolType(interfaceType));
     // Constant value for each field
     for (const LLVMExprResult &exprResult : fieldValueResults)
@@ -383,7 +383,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
     // Store interface values at their corresponding offsets
     for (; i < interfaceCount; i++) {
-      const SymbolType &interfaceType = spiceStruct->interfaceTypes.at(i);
+      const Type &interfaceType = spiceStruct->interfaceTypes.at(i);
       // Get field value
       llvm::Value *itemValue = getDefaultValueForSymbolType(interfaceType);
       // Get field address
@@ -856,7 +856,7 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
   if (currentScope != rootScope && !node->isParamType && !node->isReturnType && !node->isFieldType)
     diGenerator.setSourceLocation(node);
   // Retrieve symbol type
-  SymbolType symbolType = node->getEvaluatedSymbolType(manIdx);
+  Type symbolType = node->getEvaluatedSymbolType(manIdx);
   assert(!symbolType.is(TY_DYN)); // Symbol type should not be dyn anymore at this point
   return symbolType.toLLVMType(context, currentScope);
 }

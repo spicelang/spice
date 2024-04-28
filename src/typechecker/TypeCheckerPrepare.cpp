@@ -13,7 +13,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   node->returnsOnAllControlPaths(nullptr);
 
   // Retrieve return type
-  SymbolType returnType(TY_INT);
+  Type returnType(TY_INT);
 
   // Change to function body scope
   currentScope = node->fctScope;
@@ -25,7 +25,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   resultEntry->used = true;
 
   // Retrieve param types
-  std::vector<SymbolType> paramTypes;
+  std::vector<Type> paramTypes;
   if (node->takesArgs) {
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList)
@@ -33,7 +33,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   }
 
   // Prepare type of function
-  SymbolType functionType(TY_FUNCTION);
+  Type functionType(TY_FUNCTION);
   functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
 
@@ -67,7 +67,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   if (node->hasTemplateTypes) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
-      auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      auto templateType = std::any_cast<Type>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
         continue;
       // Check if it is a generic type
@@ -81,8 +81,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   }
 
   // Retrieve 'this' type
-  SymbolType thisType(TY_DYN); // If the function is not a method, the default this type is TY_DYN
-  SymbolType thisPtrType = thisType;
+  Type thisType(TY_DYN); // If the function is not a method, the default this type is TY_DYN
+  Type thisPtrType = thisType;
   if (node->isMethod) {
     Scope *structParentScope = node->structScope->parent;
     SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->name->structName);
@@ -93,7 +93,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
-    for (const SymbolType &templateType : thisType.getTemplateTypes()) {
+    for (const Type &templateType : thisType.getTemplateTypes()) {
       if (std::ranges::none_of(usedGenericTypes, [&](const GenericType &genericType) { return genericType == templateType; }))
         usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
@@ -109,7 +109,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Visit parameters
   std::vector<std::string> paramNames;
-  std::vector<SymbolType> paramTypes;
+  std::vector<Type> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -126,7 +126,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   }
 
   // Retrieve return type
-  auto returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+  auto returnType = std::any_cast<Type>(visit(node->returnType()));
   HANDLE_UNRESOLVED_TYPE_PTR(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_BOOL(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -139,7 +139,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
 
   // Prepare type of function
-  SymbolType functionType(TY_FUNCTION);
+  Type functionType(TY_FUNCTION);
   functionType.specifiers = node->specifiers;
   functionType.setFunctionReturnType(returnType);
   functionType.setFunctionParamTypes(paramTypes);
@@ -206,7 +206,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   if (node->hasTemplateTypes) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
-      auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      auto templateType = std::any_cast<Type>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
         continue;
       // Check if it is a generic type
@@ -220,8 +220,8 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   }
 
   // Retrieve 'this' type
-  SymbolType thisType(TY_DYN); // If the procedure is not a method, the default this type is TY_DYN
-  SymbolType thisPtrType = thisType;
+  Type thisType(TY_DYN); // If the procedure is not a method, the default this type is TY_DYN
+  Type thisPtrType = thisType;
   if (node->isMethod) {
     Scope *structParentScope = node->structScope->parent;
     SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->name->structName);
@@ -232,7 +232,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
-    for (const SymbolType &templateType : thisType.getTemplateTypes()) {
+    for (const Type &templateType : thisType.getTemplateTypes()) {
       if (std::ranges::none_of(usedGenericTypes, [&](const GenericType &genericType) { return genericType == templateType; }))
         usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
@@ -248,7 +248,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Visit parameters
   std::vector<std::string> paramNames;
-  std::vector<SymbolType> paramTypes;
+  std::vector<Type> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -269,7 +269,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
 
   // Prepare type of procedure
-  SymbolType procedureType(TY_PROCEDURE);
+  Type procedureType(TY_PROCEDURE);
   procedureType.specifiers = node->specifiers;
   procedureType.setFunctionParamTypes(paramTypes);
 
@@ -279,7 +279,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   procedureEntry->updateType(procedureType, false);
 
   // Build procedure object
-  Function spiceProc(node->name->name, procedureEntry, thisType, SymbolType(TY_DYN), paramList, usedGenericTypes, node);
+  Function spiceProc(node->name->name, procedureEntry, thisType, Type(TY_DYN), paramList, usedGenericTypes, node);
   spiceProc.bodyScope = node->scope;
   FunctionManager::insertFunction(currentScope, spiceProc, &node->manifestations);
 
@@ -307,7 +307,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 }
 
 std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
-  std::vector<SymbolType> usedTemplateTypes;
+  std::vector<Type> usedTemplateTypes;
   std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve struct template types
@@ -316,7 +316,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
-      auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      auto templateType = std::any_cast<Type>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
         continue;
       // Check if it is a generic type
@@ -331,12 +331,12 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   }
 
   // Retrieve implemented interfaces
-  std::vector<SymbolType> interfaceTypes;
+  std::vector<Type> interfaceTypes;
   if (node->hasInterfaces) {
     interfaceTypes.reserve(node->interfaceTypeLst()->dataTypes().size());
     for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes()) {
       // Visit interface type
-      auto interfaceType = std::any_cast<SymbolType>(visit(interfaceNode));
+      auto interfaceType = std::any_cast<Type>(visit(interfaceNode));
       if (interfaceType.is(TY_UNRESOLVED))
         continue;
       // Check if it is an interface type
@@ -358,8 +358,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Update type of struct entry
   assert(node->entry != nullptr);
-  const SymbolType::TypeChainElementData data = {.bodyScope = node->structScope};
-  SymbolType structType(TY_STRUCT, node->structName, node->typeId, data, usedTemplateTypes);
+  const Type::TypeChainElementData data = {.bodyScope = node->structScope};
+  Type structType(TY_STRUCT, node->structName, node->typeId, data, usedTemplateTypes);
   structType.specifiers = node->structSpecifiers;
   node->entry->updateType(structType, false);
 
@@ -368,11 +368,11 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   assert(currentScope->type == ScopeType::STRUCT);
 
   // Retrieve field types
-  std::vector<SymbolType> fieldTypes;
+  std::vector<Type> fieldTypes;
   fieldTypes.reserve(node->fields().size());
   for (FieldNode *field : node->fields()) {
     // Visit field type
-    auto fieldType = std::any_cast<SymbolType>(visit(field));
+    auto fieldType = std::any_cast<Type>(visit(field));
     if (fieldType.is(TY_UNRESOLVED))
       sourceFile->checkForSoftErrors(); // We get into trouble if we continue without the field type -> abort
 
@@ -414,7 +414,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 }
 
 std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
-  std::vector<SymbolType> usedTemplateTypes;
+  std::vector<Type> usedTemplateTypes;
   std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve interface template types
@@ -423,7 +423,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
     templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
-      auto templateType = std::any_cast<SymbolType>(visit(dataType));
+      auto templateType = std::any_cast<Type>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_PTR(templateType)
       // Check if it is a generic type
       if (!templateType.is(TY_GENERIC)) {
@@ -439,8 +439,8 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   }
 
   // Update type of interface entry
-  const SymbolType::TypeChainElementData data = {.bodyScope = node->interfaceScope};
-  SymbolType interfaceType(TY_INTERFACE, node->interfaceName, node->typeId, data, usedTemplateTypes);
+  const Type::TypeChainElementData data = {.bodyScope = node->interfaceScope};
+  Type interfaceType(TY_INTERFACE, node->interfaceName, node->typeId, data, usedTemplateTypes);
   interfaceType.specifiers = node->interfaceSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(interfaceType, false);
@@ -487,8 +487,8 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
 std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Update type of enum entry
-  const SymbolType::TypeChainElementData data = {.bodyScope = node->enumScope};
-  SymbolType enumType(TY_ENUM, node->enumName, node->typeId, data, {});
+  const Type::TypeChainElementData data = {.bodyScope = node->enumScope};
+  Type enumType(TY_ENUM, node->enumName, node->typeId, data, {});
   enumType.specifiers = node->enumSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(enumType, false);
@@ -515,7 +515,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 
   // Loop through all items without values
   uint32_t nextValue = 0;
-  SymbolType intSymbolType(TY_INT);
+  Type intSymbolType(TY_INT);
   for (EnumItemNode *enumItem : node->itemLst()->items()) {
     // Update type of enum item entry
     SymbolTableEntry *itemEntry = currentScope->lookupStrict(enumItem->itemName);
@@ -539,10 +539,10 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 
 std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   // Retrieve type conditions
-  std::vector<SymbolType> typeConditions;
+  std::vector<Type> typeConditions;
   typeConditions.reserve(node->typeAltsLst()->dataTypes().size());
   for (const auto &typeAlt : node->typeAltsLst()->dataTypes()) {
-    auto typeCondition = std::any_cast<SymbolType>(visit(typeAlt));
+    auto typeCondition = std::any_cast<Type>(visit(typeAlt));
     HANDLE_UNRESOLVED_TYPE_PTR(typeCondition)
     if (!typeCondition.is(TY_DYN))
       typeConditions.push_back(typeCondition);
@@ -564,12 +564,12 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
   assert(node->entry != nullptr && node->aliasedTypeContainerEntry != nullptr);
 
   // Update type of alias entry
-  SymbolType aliasType(TY_ALIAS, node->dataTypeString);
+  Type aliasType(TY_ALIAS, node->dataTypeString);
   aliasType.specifiers = node->aliasSpecifiers;
   node->entry->updateType(aliasType, false);
 
   // Update type of the aliased type container entry
-  auto aliasedType = std::any_cast<SymbolType>(visit(node->dataType()));
+  auto aliasedType = std::any_cast<Type>(visit(node->dataType()));
   HANDLE_UNRESOLVED_TYPE_PTR(aliasedType)
   node->aliasedTypeContainerEntry->updateType(aliasedType, false);
   node->aliasedTypeContainerEntry->used = true; // The container type is always used per default
@@ -579,11 +579,11 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
 
 std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
   // Insert variable name to symbol table
-  auto globalVarType = std::any_cast<SymbolType>(visit(node->dataType()));
+  auto globalVarType = std::any_cast<Type>(visit(node->dataType()));
   HANDLE_UNRESOLVED_TYPE_PTR(globalVarType)
 
   if (node->constant()) { // Variable is initialized here
-    SymbolType rhsType = std::any_cast<ExprResult>(visit(node->constant())).type;
+    Type rhsType = std::any_cast<ExprResult>(visit(node->constant())).type;
     HANDLE_UNRESOLVED_TYPE_PTR(rhsType)
     if (globalVarType.is(TY_DYN)) { // Perform type inference
       globalVarType = rhsType;
@@ -614,13 +614,13 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
 
 std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   // Collect argument types
-  std::vector<SymbolType> argTypes;
+  std::vector<Type> argTypes;
   ParamList argList;
   if (node->hasArgs) {
     argList.reserve(node->argTypeLst()->dataTypes().size());
     for (DataTypeNode *arg : node->argTypeLst()->dataTypes()) {
       // Visit argument
-      auto argType = std::any_cast<SymbolType>(visit(arg));
+      auto argType = std::any_cast<Type>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_PTR(argType)
       // Check if the argument type is 'dyn'
       if (argType.is(TY_DYN)) {
@@ -634,10 +634,10 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Retrieve return type
-  SymbolType returnType(TY_DYN);
+  Type returnType(TY_DYN);
   const bool isFunction = node->returnType();
   if (isFunction) { // External function
-    returnType = std::any_cast<SymbolType>(visit(node->returnType()));
+    returnType = std::any_cast<Type>(visit(node->returnType()));
     HANDLE_UNRESOLVED_TYPE_PTR(returnType)
     // Check if return type is dyn
     if (returnType.is(TY_DYN))
@@ -645,7 +645,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Add function to current scope
-  Function spiceFunc = Function(node->extFunctionName, node->entry, SymbolType(TY_DYN), returnType, argList, {}, node);
+  Function spiceFunc = Function(node->extFunctionName, node->entry, Type(TY_DYN), returnType, argList, {}, node);
   node->extFunction = FunctionManager::insertFunction(currentScope, spiceFunc, &node->extFunctionManifestations);
   node->extFunction->mangleFunctionName = false;
 
@@ -661,7 +661,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Prepare ext function type
-  SymbolType extFunctionType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
+  Type extFunctionType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
   if (isFunction)
     extFunctionType.setFunctionReturnType(returnType);
   extFunctionType.setFunctionParamTypes(argTypes);
@@ -677,7 +677,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
 
 std::any TypeChecker::visitImportDefPrepare(ImportDefNode *node) {
   // Set entry to import type
-  const SymbolType importType(TY_IMPORT, node->importName);
+  const Type importType(TY_IMPORT, node->importName);
   assert(node->entry != nullptr);
   node->entry->updateType(importType, false);
 

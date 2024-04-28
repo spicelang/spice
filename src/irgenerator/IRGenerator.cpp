@@ -119,7 +119,7 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, LLVMExprResult &expr
   return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult, accessScope);
 }
 
-llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, LLVMExprResult &exprResult,
+llvm::Value *IRGenerator::resolveValue(const Type &symbolType, LLVMExprResult &exprResult,
                                        Scope *accessScope /*=nullptr*/) {
   // Check if the value is already present
   if (exprResult.value != nullptr)
@@ -138,7 +138,7 @@ llvm::Value *IRGenerator::resolveValue(const SymbolType &symbolType, LLVMExprRes
     accessScope = currentScope;
 
   // De-reference if reference type
-  SymbolType referencedType = symbolType.removeReferenceWrapper();
+  Type referencedType = symbolType.removeReferenceWrapper();
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr)
     exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, exprResult.entry && exprResult.entry->isVolatile);
 
@@ -175,7 +175,7 @@ llvm::Value *IRGenerator::resolveAddress(LLVMExprResult &exprResult) {
   return exprResult.ptr;
 }
 
-llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symbolType) { // NOLINT(misc-no-recursion)
+llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType) { // NOLINT(misc-no-recursion)
   // Double
   if (symbolType.is(TY_DOUBLE))
     return llvm::ConstantFP::get(context, llvm::APFloat(0.0));
@@ -230,7 +230,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
     if (!llvmTypes.fatPtrType)
       llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
 
-    llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(SymbolType(TY_PTR));
+    llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(Type(TY_PTR));
     return llvm::ConstantStruct::get(llvmTypes.fatPtrType, {ptrDefaultValue, ptrDefaultValue});
   }
 
@@ -277,7 +277,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const SymbolType &symb
   throw CompilerError(INTERNAL_ERROR, "Cannot determine default value for symbol type"); // GCOV_EXCL_LINE
 }
 
-llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, const SymbolType &type, const ASTNode *node) {
+llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, const Type &type, const ASTNode *node) {
   if (type.is(TY_DOUBLE))
     return llvm::ConstantFP::get(context, llvm::APFloat(compileTimeValue.doubleValue));
 
@@ -381,13 +381,13 @@ LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *
 LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode,
                                          bool isDecl) {
   // Get symbol type of right side
-  const SymbolType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
+  const Type &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
   return doAssignment(lhsAddress, lhsEntry, rhs, rhsSType, isDecl);
 }
 
 LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
-                                         const SymbolType &rhsSType, bool isDecl) {
+                                         const Type &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
   const bool needsCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !rhs.isTemporary();
@@ -505,7 +505,7 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
   return targetAddress;
 }
 
-void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const {
+void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, Type &symbolType, Scope *accessScope) const {
   while (symbolType.isPtr() || symbolType.isRef()) {
     ptr = insertLoad(symbolType.toLLVMType(context, accessScope), ptr);
     symbolType = symbolType.getContainedTy();

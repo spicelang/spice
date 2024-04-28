@@ -53,7 +53,7 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  * @param node Instantiation AST node for printing error messages
  * @return Matched struct or nullptr
  */
-Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const std::vector<SymbolType> &reqTemplateTypes,
+Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const std::vector<Type> &reqTemplateTypes,
                                    const ASTNode *node) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   StructRegistry structRegistry = matchScope->structs;
@@ -124,7 +124,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
       substantiatedStruct->scope->isGenericScope = false;
 
       // Attach the template types to the new struct entry
-      SymbolType entryType = substantiatedStruct->entry->getType();
+      Type entryType = substantiatedStruct->entry->getType();
       entryType.setTemplateTypes(substantiatedStruct->getTemplateTypes());
       entryType.setBodyScope(substantiatedStruct->scope);
       substantiatedStruct->entry->updateType(entryType, true);
@@ -137,8 +137,8 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
         // Replace field type with concrete template type
         SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
         assert(fieldEntry != nullptr && fieldEntry->isField());
-        SymbolType &fieldType = substantiatedStruct->fieldTypes.at(i);
-        SymbolType baseType = fieldType.getBaseType();
+        Type &fieldType = substantiatedStruct->fieldTypes.at(i);
+        Type baseType = fieldType.getBaseType();
 
         // Set the body scope of fields that are of type <candidate-struct>*
         if (baseType.matches(substantiatedStruct->entry->getType(), false, true, true)) {
@@ -154,13 +154,13 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
       }
 
       // Instantiate implemented interfaces if required
-      for (SymbolType &interfaceType : substantiatedStruct->interfaceTypes) {
+      for (Type &interfaceType : substantiatedStruct->interfaceTypes) {
         // Skip non-generic interfaces
         if (!interfaceType.hasAnyGenericParts())
           continue;
 
         // Build template types
-        std::vector<SymbolType> templateTypes = interfaceType.getTemplateTypes();
+        std::vector<Type> templateTypes = interfaceType.getTemplateTypes();
         TypeMatcher::substantiateTypesWithTypeMapping(templateTypes, typeMapping);
 
         // Instantiate interface
@@ -204,7 +204,7 @@ bool StructManager::matchName(const Struct &candidate, const std::string &reqNam
  * @param reqTemplateTypes Requested struct template types
  * @return Fulfilled or not
  */
-bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<SymbolType> &reqTemplateTypes,
+bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Type> &reqTemplateTypes,
                                        TypeMapping &typeMapping) {
   // Check if the number of types match
   const size_t typeCount = reqTemplateTypes.size();
@@ -218,8 +218,8 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Symb
 
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
-    const SymbolType &reqType = reqTemplateTypes.at(i);
-    SymbolType &candidateType = candidate.templateTypes.at(i);
+    const Type &reqType = reqTemplateTypes.at(i);
+    Type &candidateType = candidate.templateTypes.at(i);
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false))
@@ -244,7 +244,7 @@ void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeM
   const size_t fieldCount = candidate.scope->getFieldCount() - candidate.fieldTypes.size();
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldEntry = candidate.scope->symbolTable.lookupStrictByIndex(i);
-    SymbolType fieldType = fieldEntry->getType();
+    Type fieldType = fieldEntry->getType();
     if (fieldType.hasAnyGenericParts()) {
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
       fieldEntry->updateType(fieldType, true);
@@ -252,7 +252,7 @@ void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeM
   }
 
   // Loop over all explicit field types and substantiate the generic ones
-  for (SymbolType &fieldType : candidate.fieldTypes)
+  for (Type &fieldType : candidate.fieldTypes)
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 }

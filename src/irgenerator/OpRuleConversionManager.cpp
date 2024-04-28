@@ -14,8 +14,8 @@ OpRuleConversionManager::OpRuleConversionManager(GlobalResourceManager &resource
     : context(resourceManager.context), builder(resourceManager.builder), irGenerator(irGenerator),
       stdFunctionManager(irGenerator->stdFunctionManager) {}
 
-LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                         LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                         LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope,
                                                          size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
@@ -70,8 +70,8 @@ LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LL
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                          LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope,
                                                           size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
@@ -127,8 +127,8 @@ LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, L
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                        LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope,
                                                         size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
@@ -175,8 +175,8 @@ LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLV
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                        LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope,
                                                         size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
@@ -223,8 +223,8 @@ LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLV
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                        LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -264,8 +264,8 @@ LLVMExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, LLV
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                        LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -297,8 +297,8 @@ LLVMExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, LLV
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                        LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -330,8 +330,8 @@ LLVMExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, LLV
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                        LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -363,8 +363,9 @@ LLVMExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, LLV
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                       LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                       LLVMExprResult &rhs,
+                                                       Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -396,8 +397,8 @@ LLVMExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, LLVM
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                        LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -430,8 +431,8 @@ LLVMExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, LLV
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                         LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+LLVMExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                         LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope,
                                                          size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
@@ -450,8 +451,8 @@ LLVMExprResult OpRuleConversionManager::getBitwiseOrInst(const ASTNode *node, LL
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                          LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -469,8 +470,8 @@ LLVMExprResult OpRuleConversionManager::getBitwiseXorInst(const ASTNode *node, L
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+LLVMExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                          LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope,
                                                           size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
@@ -489,8 +490,9 @@ LLVMExprResult OpRuleConversionManager::getBitwiseAndInst(const ASTNode *node, L
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                     LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                     LLVMExprResult &rhs,
+                                                     Type rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -623,8 +625,8 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                        LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                        LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope,
                                                         size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
@@ -759,8 +761,9 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                    LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                    LLVMExprResult &rhs,
+                                                    Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -823,8 +826,9 @@ LLVMExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, LLVMExp
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                       LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                       LLVMExprResult &rhs,
+                                                       Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -887,8 +891,8 @@ LLVMExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, LLVM
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                         LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                         LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -951,8 +955,8 @@ LLVMExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, LL
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                            LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                            LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1015,8 +1019,8 @@ LLVMExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node,
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                         LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+LLVMExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                         LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope,
                                                          size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
@@ -1062,8 +1066,8 @@ LLVMExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, LL
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                          LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope,
+LLVMExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                          LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope,
                                                           size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
@@ -1109,8 +1113,9 @@ LLVMExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, L
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                    LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                    LLVMExprResult &rhs,
+                                                    Type rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -1190,8 +1195,9 @@ LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExp
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                     LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                     LLVMExprResult &rhs,
+                                                     Type rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -1271,8 +1277,9 @@ LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMEx
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                   LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                   LLVMExprResult &rhs,
+                                                   Type rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -1340,8 +1347,9 @@ LLVMExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, LLVMExpr
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                   LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope, size_t opIdx) {
+LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                   LLVMExprResult &rhs,
+                                                   Type rhsSTy, Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -1410,8 +1418,9 @@ LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExpr
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
-                                                   LLVMExprResult &rhs, SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
+                                                   LLVMExprResult &rhs,
+                                                   Type rhsSTy, Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1454,7 +1463,7 @@ LLVMExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, LLVMExpr
   }
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
                                                            Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1472,7 +1481,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, 
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
                                                               Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1494,7 +1503,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *nod
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (prefix)"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
                                                                 Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1516,7 +1525,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *n
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (prefix)"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+LLVMExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
                                                          Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1530,7 +1539,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixNotInst(const ASTNode *node, LL
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: !"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
                                                                 Scope *accessScope) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
@@ -1546,7 +1555,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixBitwiseNotInst(const ASTNode *n
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ~"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
                                                                Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -1573,7 +1582,7 @@ LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *no
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: ++ (postfix)"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, SymbolType lhsSTy,
+LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *node, LLVMExprResult &lhs, Type lhsSTy,
                                                                  Scope *accessScope, size_t opIdx) {
   ResolverFct lhsV = [&]() { return irGenerator->resolveValue(lhsSTy, lhs, accessScope); };
   ResolverFct lhsP = [&]() { return irGenerator->resolveAddress(lhs); };
@@ -1600,8 +1609,7 @@ LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *
   throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -- (postfix)"); // GCOV_EXCL_LINE
 }
 
-LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, SymbolType lhsSTy, LLVMExprResult &rhs,
-                                                    SymbolType rhsSTy, Scope *accessScope) {
+LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, Type lhsSTy, LLVMExprResult &rhs, Type rhsSTy, Scope *accessScope) {
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
@@ -1687,7 +1695,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   assert(accessScope != nullptr);
 
   // Get arg values
-  const std::vector<SymbolType> &paramTypes = opFct->getParamTypes();
+  const std::vector<Type> &paramTypes = opFct->getParamTypes();
   assert(paramTypes.size() == N);
   llvm::Value *argValues[N];
   argValues[0] = paramTypes[0].isRef() ? opV[1]() : opV[0]();
@@ -1703,7 +1711,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
 
     // Get arg types
     std::vector<llvm::Type *> argTypes;
-    for (const SymbolType &paramType : opFct->getParamTypes())
+    for (const Type &paramType : opFct->getParamTypes())
       argTypes.push_back(paramType.toLLVMType(context, accessScope));
 
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
@@ -1741,14 +1749,14 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   return {.value = result, .ptr = resultPtr, .entry = anonymousSymbol};
 }
 
-llvm::Value *OpRuleConversionManager::generateIToFp(const SymbolType &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const {
+llvm::Value *OpRuleConversionManager::generateIToFp(const Type &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const {
   if (srcSTy.isSigned())
     return builder.CreateSIToFP(srcV, tgtT);
   else
     return builder.CreateUIToFP(srcV, tgtT);
 }
 
-llvm::Value *OpRuleConversionManager::generateSHR(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+llvm::Value *OpRuleConversionManager::generateSHR(const Type &lhsSTy, const Type &rhsSTy, llvm::Value *lhsV,
                                                   llvm::Value *rhsV) const {
   if (lhsSTy.isSigned())
     return builder.CreateAShr(lhsV, rhsV);
@@ -1756,7 +1764,7 @@ llvm::Value *OpRuleConversionManager::generateSHR(const SymbolType &lhsSTy, cons
     return builder.CreateLShr(lhsV, rhsV);
 }
 
-llvm::Value *OpRuleConversionManager::generateLT(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+llvm::Value *OpRuleConversionManager::generateLT(const Type &lhsSTy, const Type &rhsSTy, llvm::Value *lhsV,
                                                  llvm::Value *rhsV) const {
   if (lhsSTy.isSigned() && rhsSTy.isSigned())
     return builder.CreateICmpSLT(lhsV, rhsV);
@@ -1764,7 +1772,7 @@ llvm::Value *OpRuleConversionManager::generateLT(const SymbolType &lhsSTy, const
     return builder.CreateICmpULT(lhsV, rhsV);
 }
 
-llvm::Value *OpRuleConversionManager::generateLE(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+llvm::Value *OpRuleConversionManager::generateLE(const Type &lhsSTy, const Type &rhsSTy, llvm::Value *lhsV,
                                                  llvm::Value *rhsV) const {
   if (lhsSTy.isSigned() && rhsSTy.isSigned())
     return builder.CreateICmpSLE(lhsV, rhsV);
@@ -1772,7 +1780,7 @@ llvm::Value *OpRuleConversionManager::generateLE(const SymbolType &lhsSTy, const
     return builder.CreateICmpULE(lhsV, rhsV);
 }
 
-llvm::Value *OpRuleConversionManager::generateGT(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+llvm::Value *OpRuleConversionManager::generateGT(const Type &lhsSTy, const Type &rhsSTy, llvm::Value *lhsV,
                                                  llvm::Value *rhsV) const {
   if (lhsSTy.isSigned() && rhsSTy.isSigned())
     return builder.CreateICmpSGT(lhsV, rhsV);
@@ -1780,7 +1788,7 @@ llvm::Value *OpRuleConversionManager::generateGT(const SymbolType &lhsSTy, const
     return builder.CreateICmpUGT(lhsV, rhsV);
 }
 
-llvm::Value *OpRuleConversionManager::generateGE(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+llvm::Value *OpRuleConversionManager::generateGE(const Type &lhsSTy, const Type &rhsSTy, llvm::Value *lhsV,
                                                  llvm::Value *rhsV) const {
   if (lhsSTy.isSigned() && rhsSTy.isSigned())
     return builder.CreateICmpSGE(lhsV, rhsV);
@@ -1788,7 +1796,7 @@ llvm::Value *OpRuleConversionManager::generateGE(const SymbolType &lhsSTy, const
     return builder.CreateICmpUGE(lhsV, rhsV);
 }
 
-llvm::Value *OpRuleConversionManager::generateDiv(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+llvm::Value *OpRuleConversionManager::generateDiv(const Type &lhsSTy, const Type &rhsSTy, llvm::Value *lhsV,
                                                   llvm::Value *rhsV) const {
   if (lhsSTy.isSigned() && rhsSTy.isSigned())
     return builder.CreateSDiv(lhsV, rhsV);
@@ -1796,7 +1804,7 @@ llvm::Value *OpRuleConversionManager::generateDiv(const SymbolType &lhsSTy, cons
     return builder.CreateUDiv(lhsV, rhsV);
 }
 
-llvm::Value *OpRuleConversionManager::generateRem(const SymbolType &lhsSTy, const SymbolType &rhsSTy, llvm::Value *lhsV,
+llvm::Value *OpRuleConversionManager::generateRem(const Type &lhsSTy, const Type &rhsSTy, llvm::Value *lhsV,
                                                   llvm::Value *rhsV) const {
   if (lhsSTy.isSigned() && rhsSTy.isSigned())
     return builder.CreateSRem(lhsV, rhsV);

@@ -36,7 +36,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   // Get variable entry
   SymbolTableEntry *varEntry = node->entries.at(manIdx);
   assert(varEntry != nullptr);
-  const SymbolType varSymbolType = varEntry->getType();
+  const Type varSymbolType = varEntry->getType();
 
   // Get LLVM type of variable
   Scope *accessScope = currentScope;

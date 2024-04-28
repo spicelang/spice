@@ -95,12 +95,12 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
     manifestations.push_back(baseFunction);
 }
 
-Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std::vector<SymbolType> &paramTypes,
+Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std::vector<Type> &paramTypes,
                                              ASTNode *declNode) {
   ParamList paramList;
-  for (const SymbolType &paramType : paramTypes)
+  for (const Type &paramType : paramTypes)
     paramList.push_back({paramType, false});
-  return {MAIN_FUNCTION_NAME, entry, SymbolType(TY_DYN), SymbolType(TY_INT), paramList, {}, declNode};
+  return {MAIN_FUNCTION_NAME, entry, Type(TY_DYN), Type(TY_INT), paramList, {}, declNode};
 }
 
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
@@ -133,7 +133,7 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @return Found function or nullptr
  */
-const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &reqName, const SymbolType &reqThisType,
+const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType,
                                                 const ArgList &reqArgs, bool strictSpecifierMatching) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT}));
 
@@ -189,8 +189,8 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
-Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &reqName, const SymbolType &reqThisType,
-                                         const ArgList &reqArgs, const std::vector<SymbolType> &templateTypeHints,
+Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType,
+                                         const ArgList &reqArgs, const std::vector<Type> &templateTypeHints,
                                          bool strictSpecifierMatching, const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
 
@@ -216,7 +216,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       typeMapping.clear();
       for (size_t i = 0; i < std::min(templateTypeHints.size(), candidate.templateTypes.size()); i++) {
         const std::string &typeName = candidate.templateTypes.at(i).getSubType();
-        const SymbolType &templateType = templateTypeHints.at(i);
+        const Type &templateType = templateTypeHints.at(i);
         typeMapping.insert({typeName, templateType});
       }
 
@@ -298,7 +298,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 }
 
 MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&matchScope, const std::string &reqName,
-                                                const SymbolType &reqThisType, const ArgList &reqArgs, TypeMapping &typeMapping,
+                                                const Type &reqThisType, const ArgList &reqArgs, TypeMapping &typeMapping,
                                                 bool strictSpecifierMatching, bool &forceSubstantiation,
                                                 const ASTNode *callNode) {
   // Check name requirement
@@ -320,7 +320,7 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
   // Substantiate return type
   substantiateReturnType(candidate, typeMapping);
 
-  const SymbolType &thisType = candidate.thisType;
+  const Type &thisType = candidate.thisType;
   if (!thisType.is(TY_DYN)) {
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (matchScope->isGenericScope) {
@@ -354,9 +354,9 @@ bool FunctionManager::matchName(const Function &candidate, const std::string &re
  * @param strictSpecifierMatching Match specifiers strictly
  * @return Fulfilled or not
  */
-bool FunctionManager::matchThisType(Function &candidate, const SymbolType &reqThisType, TypeMapping &typeMapping,
+bool FunctionManager::matchThisType(Function &candidate, const Type &reqThisType, TypeMapping &typeMapping,
                                     bool strictSpecifierMatching) {
-  SymbolType &candidateThisType = candidate.thisType;
+  Type &candidateThisType = candidate.thisType;
 
   // Shortcut for procedures
   if (candidateThisType.is(TY_DYN) && reqThisType.is(TY_DYN))
@@ -406,9 +406,9 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
   for (size_t i = 0; i < reqArgs.size(); i++) {
     // Retrieve actual and requested types
     assert(!candidateParamList.at(i).isOptional);
-    SymbolType &candidateParamType = candidateParamList.at(i).type;
+    Type &candidateParamType = candidateParamList.at(i).type;
     const Arg &requestedParamType = reqArgs.at(i);
-    const SymbolType &requestedType = requestedParamType.first;
+    const Type &requestedType = requestedParamType.first;
     const bool isArgTemporary = requestedParamType.second;
 
     // Check if the requested param type matches the candidate param type. The type mapping may be extended

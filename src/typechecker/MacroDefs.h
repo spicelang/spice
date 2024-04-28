@@ -7,13 +7,13 @@
 #define SOFT_ERROR_ER(node, type, message)                                                                                       \
   {                                                                                                                              \
     resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};                                          \
+    return ExprResult{node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx)};                                          \
   }
 
 #define SOFT_ERROR_ST(node, type, message)                                                                                       \
   {                                                                                                                              \
     resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    return SymbolType(TY_UNRESOLVED);                                                                                            \
+    return Type(TY_UNRESOLVED);                                                                                            \
   }
 
 #define SOFT_ERROR_BOOL(node, type, message)                                                                                     \
@@ -31,7 +31,7 @@
 #define HANDLE_UNRESOLVED_TYPE_ER(var)                                                                                           \
   {                                                                                                                              \
     if (var.is(TY_UNRESOLVED))                                                                                                   \
-      return ExprResult{node->setEvaluatedSymbolType(SymbolType(TY_UNRESOLVED), manIdx)};                                        \
+      return ExprResult{node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx)};                                        \
   }
 
 #define HANDLE_UNRESOLVED_TYPE_ST(var)                                                                                           \

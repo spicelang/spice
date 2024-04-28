@@ -95,8 +95,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Resolve iterator
   AssignExprNode *iteratorAssignNode = node->iteratorAssign();
-  SymbolType iteratorOrIterableType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
-  SymbolType iteratorType = iteratorOrIterableType;
+  Type iteratorOrIterableType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
+  Type iteratorType = iteratorOrIterableType;
   llvm::Value *iteratorPtr;
   if (node->getIteratorFct != nullptr) { // The iteratorAssignExpr is of type Iterable
     iteratorType = node->getIteratorFct->returnType;
@@ -127,8 +127,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     iteratorPtr = resolveAddress(iteratorAssignNode);
   }
 
-  const SymbolType itemSTy = iteratorType.getTemplateTypes().front();
-  const SymbolType itemRefSTy = itemSTy.toReference(node);
+  const Type itemSTy = iteratorType.getTemplateTypes().front();
+  const Type itemRefSTy = itemSTy.toReference(node);
   assert(!node->getFct || itemRefSTy == node->getFct->returnType);
   assert(!node->getIdxFct || itemRefSTy == node->getIdxFct->returnType.getTemplateTypes().back());
 
@@ -182,7 +182,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     llvm::Value *idxAddrInPair = insertStructGEP(pairTy, pairPtr, 0, "idx_addr");
     LLVMExprResult idxResult = {.ptr = idxAddrInPair};
     assert(idxAddress != nullptr && idxEntry != nullptr);
-    doAssignment(idxAddress, idxEntry, idxResult, SymbolType(TY_LONG), true);
+    doAssignment(idxAddress, idxEntry, idxResult, Type(TY_LONG), true);
     // Store item to item var
     llvm::Value *itemAddrInPair = insertStructGEP(pairTy, pairPtr, 1, "item_addr");
     LLVMExprResult itemResult = {.refPtr = itemAddrInPair};

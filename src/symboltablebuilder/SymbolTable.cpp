@@ -22,7 +22,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
   bool isGlobal = parent == nullptr;
   size_t orderIndex = symbols.size();
   // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
-  symbols.insert({name, SymbolTableEntry(name, SymbolType(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
+  symbols.insert({name, SymbolTableEntry(name, Type(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
   // Set entry to declared
   SymbolTableEntry *entry = &symbols.at(name);
   entry->updateState(DECLARED, declNode);
@@ -44,7 +44,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
  * @param declNode AST node where the anonymous symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *SymbolTable::insertAnonymous(const SymbolType &type, ASTNode *declNode, size_t numericSuffix) {
+SymbolTableEntry *SymbolTable::insertAnonymous(const Type &type, ASTNode *declNode, size_t numericSuffix) {
   // Check if the anonymous entry already exists
   if (SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc, numericSuffix))
     return anonSymbol;

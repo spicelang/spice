@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include <symboltablebuilder/SymbolType.h>
+#include <symboltablebuilder/Type.h>
 
 namespace spice::compiler {
 

@@ -32,7 +32,7 @@ public type ASTNode struct /*: IVisitable*/ {
     Vector<ASTNode*> children
     CodeLoc codeLoc
     string errorMessage
-    //Vector<SymbolType> symbolTypes
+    //Vector<Type> symbolTypes
     bool unreachable = false
     //Vector<Vector<const Function*>> opFct // Operator overloading functions
 }

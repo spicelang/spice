@@ -12,15 +12,15 @@ namespace spice::compiler {
 OpRuleManager::OpRuleManager(TypeChecker *typeChecker)
     : typeChecker(typeChecker), resourceManager(typeChecker->resourceManager) {}
 
-SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
+Type OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
                                               const char *errMsgPrefix) {
   // Check if we try to assign a constant value
   if (!isDecl)
     ensureNoConstAssign(node, lhs.type);
 
   // Retrieve types
-  SymbolType lhsType = lhs.type;
-  SymbolType rhsType = rhs.type;
+  Type lhsType = lhs.type;
+  Type rhsType = rhs.type;
 
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference
   if (lhsType.is(TY_DYN))
@@ -31,7 +31,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprRes
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
-    SymbolType rhsModified = rhsType.getContainedTy();
+    Type rhsModified = rhsType.getContainedTy();
     rhsModified.specifiers.isConst = false;
 
     if (lhsType.matches(rhsModified, false, !lhsType.isRef(), true))
@@ -43,7 +43,7 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprRes
     return rhsType;
 
   // Check common type combinations
-  SymbolType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl);
+  Type resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -51,15 +51,15 @@ SymbolType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprRes
   return validateBinaryOperation(node, ASSIGN_OP_RULES, ARRAY_LENGTH(ASSIGN_OP_RULES), "=", lhsType, rhsType, true, errMsgPrefix);
 }
 
-SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
+Type OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
                                                    bool isDecl) {
   // Check if we try to assign a constant value
   if (!isDecl)
     ensureNoConstAssign(node, lhs.type);
 
   // Retrieve types
-  SymbolType lhsType = lhs.type;
-  SymbolType rhsType = rhs.type;
+  Type lhsType = lhs.type;
+  Type rhsType = rhs.type;
   assert(!lhsType.is(TY_DYN));
 
   // Allow pointers and arrays of the same type straight away
@@ -79,7 +79,7 @@ SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Ex
     return rhsType;
 
   // Check common type combinations
-  SymbolType resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl);
+  Type resultType = getAssignResultTypeCommon(node, lhs, rhs, isDecl);
   if (!resultType.is(TY_INVALID))
     return resultType;
 
@@ -88,11 +88,11 @@ SymbolType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Ex
                                  ERROR_FIELD_ASSIGN);
 }
 
-SymbolType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
+Type OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
                                                     bool isDecl) {
   // Retrieve types
-  SymbolType lhsType = lhs.type;
-  SymbolType rhsType = rhs.type;
+  Type lhsType = lhs.type;
+  Type rhsType = rhs.type;
 
   // Allow type to ref type of the same contained type straight away
   if (lhsType.isRef() && lhsType.getContainedTy().matches(rhsType, false, false, true)) {
@@ -113,15 +113,15 @@ SymbolType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const E
   const bool sameChainDepth = lhsType.typeChain.size() == rhsType.typeChain.size();
   const bool typesCompatible = (lhsType.isPtr() && rhsType.isPtr() && sameChainDepth) || lhsType.isRef();
   if (typesCompatible && lhsType.isBaseType(TY_INTERFACE) && rhsType.isBaseType(TY_STRUCT)) {
-    SymbolType lhsTypeCopy = lhsType;
-    SymbolType rhsTypeCopy = rhsType;
-    SymbolType::unwrapBoth(lhsTypeCopy, rhsTypeCopy);
+    Type lhsTypeCopy = lhsType;
+    Type rhsTypeCopy = rhsType;
+    Type::unwrapBoth(lhsTypeCopy, rhsTypeCopy);
     if (lhsTypeCopy.matchesInterfaceImplementedByStruct(rhsTypeCopy))
       return lhsType;
   }
 
   // Nothing matched
-  return SymbolType(TY_INVALID);
+  return Type(TY_INVALID);
 }
 
 ExprResult OpRuleManager::getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) {
@@ -134,8 +134,8 @@ ExprResult OpRuleManager::getPlusEqualResultType(ASTNode *node, const ExprResult
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   // Check if this is an unsafe operation
   if (lhsType.isPtr() && rhsType.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
@@ -156,8 +156,8 @@ ExprResult OpRuleManager::getMinusEqualResultType(ASTNode *node, const ExprResul
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   // Check if this is an unsafe operation
   if (lhsType.isPtr() && rhsType.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
@@ -178,8 +178,8 @@ ExprResult OpRuleManager::getMulEqualResultType(ASTNode *node, const ExprResult 
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return {validateBinaryOperation(node, MUL_EQUAL_OP_RULES, ARRAY_LENGTH(MUL_EQUAL_OP_RULES), "*=", lhsType, rhsType)};
 }
@@ -194,114 +194,114 @@ ExprResult OpRuleManager::getDivEqualResultType(ASTNode *node, const ExprResult 
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return {validateBinaryOperation(node, DIV_EQUAL_OP_RULES, ARRAY_LENGTH(DIV_EQUAL_OP_RULES), "/=", lhsType, rhsType)};
 }
 
-SymbolType OpRuleManager::getRemEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getRemEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, REM_EQUAL_OP_RULES, ARRAY_LENGTH(REM_EQUAL_OP_RULES), "%=", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getSHLEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getSHLEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, SHL_EQUAL_OP_RULES, ARRAY_LENGTH(SHL_EQUAL_OP_RULES), "<<=", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getSHREqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getSHREqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, SHR_EQUAL_OP_RULES, ARRAY_LENGTH(SHR_EQUAL_OP_RULES), ">>=", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getAndEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getAndEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, AND_EQUAL_OP_RULES, ARRAY_LENGTH(AND_EQUAL_OP_RULES), "&=", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getOrEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getOrEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, OR_EQUAL_OP_RULES, ARRAY_LENGTH(OR_EQUAL_OP_RULES), "|=", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getXorEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getXorEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, XOR_EQUAL_OP_RULES, ARRAY_LENGTH(XOR_EQUAL_OP_RULES), "^=", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getLogicalOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getLogicalOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, LOGICAL_OR_OP_RULES, ARRAY_LENGTH(LOGICAL_OR_OP_RULES), "||", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getLogicalAndResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getLogicalAndResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, LOGICAL_AND_OP_RULES, ARRAY_LENGTH(LOGICAL_AND_OP_RULES), "&&", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getBitwiseOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getBitwiseOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, BITWISE_OR_OP_RULES, ARRAY_LENGTH(BITWISE_OR_OP_RULES), "|", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getBitwiseXorResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getBitwiseXorResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, BITWISE_XOR_OP_RULES, ARRAY_LENGTH(BITWISE_XOR_OP_RULES), "^", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, BITWISE_AND_OP_RULES, ARRAY_LENGTH(BITWISE_AND_OP_RULES), "&", lhsType, rhsType);
 }
@@ -313,20 +313,20 @@ ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lh
     return resultType;
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   // Allow 'pointer == pointer' straight away
   if (lhsType.isPtr() && rhsType.isPtr())
-    return ExprResult(SymbolType(TY_BOOL));
+    return ExprResult(Type(TY_BOOL));
 
   // Allow 'pointer == int' straight away
   if (lhsType.isPtr() && rhsType.is(TY_INT))
-    return ExprResult(SymbolType(TY_BOOL));
+    return ExprResult(Type(TY_BOOL));
 
   // Allow 'string == char*' and vice versa straight away
   if ((lhsType.is(TY_STRING) && rhsType.isPtrOf(TY_CHAR)) || (lhsType.isPtrOf(TY_CHAR) && rhsType.is(TY_STRING)))
-    return ExprResult(SymbolType(TY_BOOL));
+    return ExprResult(Type(TY_BOOL));
 
   // Check primitive type combinations
   return ExprResult(validateBinaryOperation(node, EQUAL_OP_RULES, ARRAY_LENGTH(EQUAL_OP_RULES), "==", lhsType, rhsType));
@@ -339,53 +339,53 @@ ExprResult OpRuleManager::getNotEqualResultType(ASTNode *node, const ExprResult 
     return resultType;
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   // Allow 'pointer != pointer' straight away
   if (lhsType.isPtr() && rhsType.isPtr())
-    return ExprResult(SymbolType(TY_BOOL));
+    return ExprResult(Type(TY_BOOL));
 
   // Allow 'pointer != int' straight away
   if (lhsType.isPtr() && rhsType.is(TY_INT))
-    return ExprResult(SymbolType(TY_BOOL));
+    return ExprResult(Type(TY_BOOL));
 
   // Allow 'string != char*' and vice versa straight away
   if ((lhsType.is(TY_STRING) && rhsType.isPtrOf(TY_CHAR)) || (lhsType.isPtrOf(TY_CHAR) && rhsType.is(TY_STRING)))
-    return ExprResult(SymbolType(TY_BOOL));
+    return ExprResult(Type(TY_BOOL));
 
   // Check primitive type combinations
   return ExprResult(validateBinaryOperation(node, NOT_EQUAL_OP_RULES, ARRAY_LENGTH(NOT_EQUAL_OP_RULES), "!=", lhsType, rhsType));
 }
 
-SymbolType OpRuleManager::getLessResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getLessResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, LESS_OP_RULES, ARRAY_LENGTH(LESS_OP_RULES), "<", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getGreaterResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getGreaterResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, GREATER_OP_RULES, ARRAY_LENGTH(GREATER_OP_RULES), ">", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getLessEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getLessEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, LESS_EQUAL_OP_RULES, ARRAY_LENGTH(LESS_EQUAL_OP_RULES), "<=", lhsType, rhsType);
 }
 
-SymbolType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+Type OpRuleManager::getGreaterEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return validateBinaryOperation(node, GREATER_EQUAL_OP_RULES, ARRAY_LENGTH(GREATER_EQUAL_OP_RULES), ">=", lhsType, rhsType);
 }
@@ -397,8 +397,8 @@ ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult
     return resultType;
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return {validateBinaryOperation(node, SHIFT_LEFT_OP_RULES, ARRAY_LENGTH(SHIFT_LEFT_OP_RULES), "<<", lhsType, rhsType)};
 }
@@ -410,8 +410,8 @@ ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, const ExprResul
     return resultType;
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return {validateBinaryOperation(node, SHIFT_RIGHT_OP_RULES, ARRAY_LENGTH(SHIFT_RIGHT_OP_RULES), ">>", lhsType, rhsType)};
 }
@@ -423,8 +423,8 @@ ExprResult OpRuleManager::getPlusResultType(ASTNode *node, const ExprResult &lhs
     return result;
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   // Allow any* + <int/long/short>
   if (lhsType.isPtr() && rhsType.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
@@ -447,8 +447,8 @@ ExprResult OpRuleManager::getMinusResultType(ASTNode *node, const ExprResult &lh
     return resultType;
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   // Allow any* - <int/long/short>
   if (lhsType.isPtr() && rhsType.isOneOf({TY_INT, TY_LONG, TY_SHORT})) {
@@ -471,8 +471,8 @@ ExprResult OpRuleManager::getMulResultType(ASTNode *node, const ExprResult &lhs,
     return resultType;
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return {validateBinaryOperation(node, MUL_OP_RULES, ARRAY_LENGTH(MUL_OP_RULES), "*", lhsType, rhsType)};
 }
@@ -484,33 +484,33 @@ ExprResult OpRuleManager::getDivResultType(ASTNode *node, const ExprResult &lhs,
     return resultType;
 
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return {validateBinaryOperation(node, DIV_OP_RULES, ARRAY_LENGTH(DIV_OP_RULES), "/", lhsType, rhsType)};
 }
 
 ExprResult OpRuleManager::getRemResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
   // Remove reference wrappers
-  const SymbolType lhsType = lhs.type.removeReferenceWrapper();
-  const SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  const Type lhsType = lhs.type.removeReferenceWrapper();
+  const Type rhsType = rhs.type.removeReferenceWrapper();
 
   return {validateBinaryOperation(node, REM_OP_RULES, ARRAY_LENGTH(REM_OP_RULES), "%", lhsType, rhsType)};
 }
 
-SymbolType OpRuleManager::getPrefixMinusResultType(const ASTNode *node, const ExprResult &lhs) {
+Type OpRuleManager::getPrefixMinusResultType(const ASTNode *node, const ExprResult &lhs) {
   // Remove reference wrappers
-  SymbolType lhsType = lhs.type.removeReferenceWrapper();
+  Type lhsType = lhs.type.removeReferenceWrapper();
 
   return validateUnaryOperation(node, PREFIX_MINUS_OP_RULES, ARRAY_LENGTH(PREFIX_MINUS_OP_RULES), "-", lhsType);
 }
 
-SymbolType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, const ExprResult &lhs) {
+Type OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, const ExprResult &lhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  SymbolType lhsType = lhs.type.removeReferenceWrapper();
+  Type lhsType = lhs.type.removeReferenceWrapper();
 
   // Check if this is an unsafe operation
   if (lhsType.isPtr()) {
@@ -521,12 +521,12 @@ SymbolType OpRuleManager::getPrefixPlusPlusResultType(const ASTNode *node, const
   return validateUnaryOperation(node, PREFIX_PLUS_PLUS_OP_RULES, ARRAY_LENGTH(PREFIX_PLUS_PLUS_OP_RULES), "++", lhsType);
 }
 
-SymbolType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, const ExprResult &lhs) {
+Type OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, const ExprResult &lhs) {
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  SymbolType lhsType = lhs.type.removeReferenceWrapper();
+  Type lhsType = lhs.type.removeReferenceWrapper();
 
   // Check if this is an unsafe operation
   if (lhsType.isPtr()) {
@@ -537,32 +537,32 @@ SymbolType OpRuleManager::getPrefixMinusMinusResultType(const ASTNode *node, con
   return validateUnaryOperation(node, PREFIX_MINUS_MINUS_OP_RULES, ARRAY_LENGTH(PREFIX_MINUS_MINUS_OP_RULES), "--", lhsType);
 }
 
-SymbolType OpRuleManager::getPrefixNotResultType(const ASTNode *node, const ExprResult &lhs) {
+Type OpRuleManager::getPrefixNotResultType(const ASTNode *node, const ExprResult &lhs) {
   // Remove reference wrappers
-  SymbolType lhsType = lhs.type.removeReferenceWrapper();
+  Type lhsType = lhs.type.removeReferenceWrapper();
 
   return validateUnaryOperation(node, PREFIX_NOT_OP_RULES, ARRAY_LENGTH(PREFIX_NOT_OP_RULES), "!", lhsType);
 }
 
-SymbolType OpRuleManager::getPrefixBitwiseNotResultType(const ASTNode *node, const ExprResult &lhs) {
+Type OpRuleManager::getPrefixBitwiseNotResultType(const ASTNode *node, const ExprResult &lhs) {
   // Remove reference wrappers
-  SymbolType lhsType = lhs.type.removeReferenceWrapper();
+  Type lhsType = lhs.type.removeReferenceWrapper();
 
   return validateUnaryOperation(node, PREFIX_BITWISE_NOT_OP_RULES, ARRAY_LENGTH(PREFIX_BITWISE_NOT_OP_RULES), "~", lhsType);
 }
 
-SymbolType OpRuleManager::getPrefixMulResultType(const ASTNode *node, const ExprResult &lhs) {
+Type OpRuleManager::getPrefixMulResultType(const ASTNode *node, const ExprResult &lhs) {
   // Remove reference wrappers
-  SymbolType lhsType = lhs.type.removeReferenceWrapper();
+  Type lhsType = lhs.type.removeReferenceWrapper();
 
   if (!lhsType.isPtr())
     throw SemanticError(node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply de-referencing operator on type " + lhsType.getName(true));
   return lhsType.getContainedTy();
 }
 
-SymbolType OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs) {
+Type OpRuleManager::getPrefixBitwiseAndResultType(const ASTNode *node, const ExprResult &lhs) {
   // Remove reference wrappers
-  SymbolType lhsType = lhs.type.removeReferenceWrapper();
+  Type lhsType = lhs.type.removeReferenceWrapper();
 
   return lhsType.toPointer(node);
 }
@@ -577,7 +577,7 @@ ExprResult OpRuleManager::getPostfixPlusPlusResultType(ASTNode *node, const Expr
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  SymbolType lhsType = lhs.type.removeReferenceWrapper();
+  Type lhsType = lhs.type.removeReferenceWrapper();
 
   // Check if this is an unsafe operation
   if (lhsType.isPtr()) {
@@ -598,7 +598,7 @@ ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, const Ex
   ensureNoConstAssign(node, lhs.type);
 
   // Remove reference wrappers
-  SymbolType lhsType = lhs.type.removeReferenceWrapper();
+  Type lhsType = lhs.type.removeReferenceWrapper();
 
   // Check if this is an unsafe operation
   if (lhsType.isPtr()) {
@@ -609,10 +609,10 @@ ExprResult OpRuleManager::getPostfixMinusMinusResultType(ASTNode *node, const Ex
   return {validateUnaryOperation(node, POSTFIX_MINUS_MINUS_OP_RULES, ARRAY_LENGTH(POSTFIX_MINUS_MINUS_OP_RULES), "--", lhsType)};
 }
 
-SymbolType OpRuleManager::getCastResultType(const ASTNode *node, SymbolType lhsType, const ExprResult &rhs) {
+Type OpRuleManager::getCastResultType(const ASTNode *node, Type lhsType, const ExprResult &rhs) {
   // Remove reference wrappers
   lhsType = lhsType.removeReferenceWrapper();
-  SymbolType rhsType = rhs.type.removeReferenceWrapper();
+  Type rhsType = rhs.type.removeReferenceWrapper();
 
   // Only allow to cast the 'heap' specifier away, if we are in unsafe mode
   if (lhsType.specifiers.isHeap != rhsType.specifiers.isHeap)
@@ -649,7 +649,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
 
     // Match callees in the global scope of this source file
     calleeParentScope = sourceFile->globalScope.get();
-    const SymbolType thisType(TY_DYN);
+    const Type thisType(TY_DYN);
     ArgList args(N);
     args[0] = {typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[0].type), op[0].isTemporary()};
     if constexpr (N == 2)
@@ -661,7 +661,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
 
   // Return invalid type if the callee was not found
   if (!callee)
-    return ExprResult(SymbolType(TY_INVALID));
+    return ExprResult(Type(TY_INVALID));
   assert(calleeParentScope != nullptr);
 
   // Save the pointer to the operator function in the AST node
@@ -684,7 +684,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
 
   // Procedures always have the return type 'bool'
   if (callee->isProcedure())
-    return ExprResult(SymbolType(TY_BOOL));
+    return ExprResult(Type(TY_BOOL));
 
   // Add anonymous symbol to keep track of deallocation
   SymbolTableEntry *anonymousSymbol = nullptr;
@@ -694,23 +694,23 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   return {typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType), anonymousSymbol};
 }
 
-SymbolType OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,
-                                                 const char *name, const SymbolType &lhs) {
+Type OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,
+                                                 const char *name, const Type &lhs) {
   for (size_t i = 0; i < opRulesSize; i++) {
     const UnaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType())
-      return SymbolType(SymbolSuperType(std::get<1>(rule)));
+      return Type(SuperType(std::get<1>(rule)));
   }
   throw getExceptionUnary(node, name, lhs);
 }
 
-SymbolType OpRuleManager::validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
-                                                  const char *name, const SymbolType &lhs, const SymbolType &rhs,
+Type OpRuleManager::validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
+                                                  const char *name, const Type &lhs, const Type &rhs,
                                                   bool preserveSpecifiersFromLhs, const char *customMessagePrefix) {
   for (size_t i = 0; i < opRulesSize; i++) {
     const BinaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType() && std::get<1>(rule) == rhs.getSuperType()) {
-      SymbolType resultType = SymbolType(SymbolSuperType(std::get<2>(rule)));
+      Type resultType = Type(SuperType(std::get<2>(rule)));
       if (preserveSpecifiersFromLhs)
         resultType.specifiers = lhs.specifiers;
       return resultType;
@@ -719,12 +719,12 @@ SymbolType OpRuleManager::validateBinaryOperation(const ASTNode *node, const Bin
   throw getExceptionBinary(node, name, lhs, rhs, customMessagePrefix);
 }
 
-SemanticError OpRuleManager::getExceptionUnary(const ASTNode *node, const char *name, const SymbolType &lhs) {
+SemanticError OpRuleManager::getExceptionUnary(const ASTNode *node, const char *name, const Type &lhs) {
   return {node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + std::string(name) + "' operator on type " + lhs.getName(true)};
 }
 
-SemanticError OpRuleManager::getExceptionBinary(const ASTNode *node, const char *name, const SymbolType &lhs,
-                                                const SymbolType &rhs, const char *messagePrefix) {
+SemanticError OpRuleManager::getExceptionBinary(const ASTNode *node, const char *name, const Type &lhs,
+                                                const Type &rhs, const char *messagePrefix) {
   // Build error message
   std::stringstream errorMsg;
   if (strlen(messagePrefix) != 0)
@@ -736,7 +736,7 @@ SemanticError OpRuleManager::getExceptionBinary(const ASTNode *node, const char 
   return {node, OPERATOR_WRONG_DATA_TYPE, errorMsg.str()};
 }
 
-void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs) const {
+void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const Type &lhs) const {
   if (typeChecker->currentScope->doesAllowUnsafeOperations())
     return;
   // Print error message
@@ -746,8 +746,8 @@ void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, c
   SOFT_ERROR_VOID(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg)
 }
 
-void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const SymbolType &lhs,
-                                        const SymbolType &rhs) const {
+void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const Type &lhs,
+                                        const Type &rhs) const {
   if (typeChecker->currentScope->doesAllowUnsafeOperations())
     return;
   // Print error message
@@ -758,7 +758,7 @@ void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, c
   SOFT_ERROR_VOID(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg)
 }
 
-void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const SymbolType &lhs) {
+void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const Type &lhs) {
   // Check if we try to assign a constant value
   if (lhs.removeReferenceWrapper().isConst()) {
     const std::string errorMessage = "Trying to assign value to an immutable variable of type " + lhs.getName(true);

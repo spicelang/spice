@@ -75,7 +75,7 @@ public p SymbolTable.ctor(
  */
 public p SymbolTable.insert(
     const string name,
-    const SymbolType symbolType,
+    const Type symbolType,
     const TypeSpecifiers specifiers,
     const SymbolState state,
     const AstNode* declNode
@@ -93,7 +93,7 @@ public p SymbolTable.insert(
  * @param symbolType Type of the symbol
  * @param declNode AST node where the symbol is declared
  */
-public p SymbolTable.insertAnonymous(const SymbolType symbolType, const AstNode* declNode) {
+public p SymbolTable.insertAnonymous(const Type symbolType, const AstNode* declNode) {
     string name = "anon." + declNode.codeLoc.toString();
     this.insert(name, symbolType, TypeSpecifiers(symbolType), SymbolState.DECLARED, declNode);
     this.lookupAnonymous(declNode.codeLoc).used = true;
@@ -385,8 +385,8 @@ public f<Function*> SymbolTable.insertFunction(const Function *function) {
 public f<Function*> SymbolTable.matchFunction(
     SymbolTable* currentScope,
     const string callFunctionName,
-    const SymbolType callThisType,
-    const Vector<SymbolType>* callArgTypes,
+    const Type callThisType,
+    const Vector<Type>* callArgTypes,
     const AstNode* node
 ) {
     Vector<Function*> matches;
@@ -486,7 +486,7 @@ public f<Struct*> SymbolTable.insertStruct(const Struct *spiceStruct) {
 public f<Struct*> SymbolTable.matchStruct(
     SymbolTable* currentScope,
     const string structName,
-    const Vector<SymbolType>* templateTypes,
+    const Vector<Type>* templateTypes,
     const AstNode* node
 ) {
     Vector<Struct*> matches;
@@ -562,7 +562,7 @@ public p SymbolTable.insertInterface(const Interface* i) {
     assert !this.interfaces.contains(i.name);
     this.interfaces.insert(i.name, i);
     // Add symbol table entry for the interface
-    this.insert(i.name, SymbolType(TY_INTERFACE), i.specifiers, INITIALIZED, i.declNode);
+    this.insert(i.name, Type(TY_INTERFACE), i.specifiers, INITIALIZED, i.declNode);
 }
 
 /**

@@ -5,7 +5,7 @@
 #include <utility>
 
 #include <model/GenericType.h>
-#include <symboltablebuilder/SymbolType.h>
+#include <symboltablebuilder/Type.h>
 #include <symboltablebuilder/TypeSpecifiers.h>
 
 #include <llvm/IR/Function.h>
@@ -18,14 +18,14 @@ struct CodeLoc;
 class SymbolTableEntry;
 
 struct Param {
-  SymbolType type;
+  Type type;
   bool isOptional = false;
 
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Param, type, isOptional)
 };
 struct NamedParam {
   std::string name;
-  SymbolType type;
+  Type type;
   bool isOptional = false;
 
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(NamedParam, name, type, isOptional)
@@ -36,17 +36,17 @@ using NamedParamList = std::vector<NamedParam>;
 class Function {
 public:
   // Constructors
-  Function(std::string name, SymbolTableEntry *entry, SymbolType thisType, SymbolType returnType, ParamList paramList,
+  Function(std::string name, SymbolTableEntry *entry, Type thisType, Type returnType, ParamList paramList,
            std::vector<GenericType> templateTypes, ASTNode *declNode)
       : name(std::move(name)), thisType(std::move(thisType)), returnType(std::move(returnType)), paramList(std::move(paramList)),
         templateTypes(std::move(templateTypes)), entry(entry), declNode(declNode) {}
   Function() = default;
 
   // Public methods
-  [[nodiscard]] std::vector<SymbolType> getParamTypes() const;
+  [[nodiscard]] std::vector<Type> getParamTypes() const;
   [[nodiscard]] std::string getSignature(bool withThisType = true, bool ignorePublic = true) const;
-  [[nodiscard]] static std::string getSignature(const std::string &name, const SymbolType &thisType, const SymbolType &returnType,
-                                                const ParamList &paramList, const std::vector<SymbolType> &concreteTemplateTypes,
+  [[nodiscard]] static std::string getSignature(const std::string &name, const Type &thisType, const Type &returnType,
+                                                const ParamList &paramList, const std::vector<Type> &concreteTemplateTypes,
                                                 bool withThisType = true, bool ignorePublic = true);
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] static std::string getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc);
@@ -65,11 +65,11 @@ public:
 
   // Public members
   std::string name;
-  SymbolType thisType = SymbolType(TY_DYN);
-  SymbolType returnType = SymbolType(TY_DYN);
+  Type thisType = Type(TY_DYN);
+  Type returnType = Type(TY_DYN);
   ParamList paramList;
   std::vector<GenericType> templateTypes;
-  std::unordered_map<std::string, SymbolType> typeMapping;
+  std::unordered_map<std::string, Type> typeMapping;
   SymbolTableEntry *entry = nullptr;
   ASTNode *declNode = nullptr;
   Scope *bodyScope = nullptr;

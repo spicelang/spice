@@ -1,12 +1,12 @@
 // Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
-#include "SymbolType.h"
+#include "Type.h"
 
 #include <exception/CompilerError.h>
 
 namespace spice::compiler {
 
-bool operator==(const SymbolType::TypeChainElement &lhs, const SymbolType::TypeChainElement &rhs) {
+bool operator==(const Type::TypeChainElement &lhs, const Type::TypeChainElement &rhs) {
   // Check super type
   if (lhs.superType != rhs.superType)
     return false;
@@ -43,7 +43,7 @@ bool operator==(const SymbolType::TypeChainElement &lhs, const SymbolType::TypeC
   }
 }
 
-bool operator!=(const SymbolType::TypeChainElement &lhs, const SymbolType::TypeChainElement &rhs) { return !(lhs == rhs); }
+bool operator!=(const Type::TypeChainElement &lhs, const Type::TypeChainElement &rhs) { return !(lhs == rhs); }
 
 /**
  * Return the type name as string
@@ -51,7 +51,7 @@ bool operator!=(const SymbolType::TypeChainElement &lhs, const SymbolType::TypeC
  * @param withSize Also encode array sizes
  * @return Name as string
  */
-std::string SymbolType::TypeChainElement::getName(bool withSize) const {
+std::string Type::TypeChainElement::getName(bool withSize) const {
   switch (superType) {
   case TY_PTR:
     return "*";

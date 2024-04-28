@@ -5,7 +5,7 @@
 #include <string>
 
 #include <model/GenericType.h>
-#include <symboltablebuilder/SymbolType.h>
+#include <symboltablebuilder/Type.h>
 
 namespace spice::compiler {
 
@@ -57,11 +57,11 @@ public:
 
 private:
   // Typedefs
-  using TypeChainElement = SymbolType::TypeChainElement;
+  using TypeChainElement = Type::TypeChainElement;
 
   // Private methods
   static void mangleName(std::stringstream &out, const std::string &name, bool &nestedType);
-  static void mangleType(std::stringstream &out, SymbolType type, const TypeMapping &typeMapping);
+  static void mangleType(std::stringstream &out, Type type, const TypeMapping &typeMapping);
   static void mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, const TypeMapping &typeMapping,
                                      bool signedness);
 };

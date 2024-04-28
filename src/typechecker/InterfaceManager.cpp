@@ -50,7 +50,7 @@ Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface 
  * @return Matched interface or nullptr
  */
 Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string &reqName,
-                                            const std::vector<SymbolType> &reqTemplateTypes, const ASTNode *node) {
+                                            const std::vector<Type> &reqTemplateTypes, const ASTNode *node) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   InterfaceRegistry interfaceRegistry = matchScope->interfaces;
   // Loop over interface registry to find interfaces, that match the requirements of the instantiation
@@ -120,7 +120,7 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
       substantiatedInterface->scope->isGenericScope = false;
 
       // Attach the template types to the new interface entry
-      SymbolType entryType = substantiatedInterface->entry->getType();
+      Type entryType = substantiatedInterface->entry->getType();
       entryType.setTemplateTypes(substantiatedInterface->getTemplateTypes());
       entryType.setBodyScope(substantiatedInterface->scope);
       substantiatedInterface->entry->updateType(entryType, true);
@@ -166,7 +166,7 @@ bool InterfaceManager::matchName(const Interface &candidate, const std::string &
  * @param reqTemplateTypes Requested interface template types
  * @return Fulfilled or not
  */
-bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vector<SymbolType> &reqTemplateTypes,
+bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vector<Type> &reqTemplateTypes,
                                           TypeMapping &typeMapping) {
   // Check if the number of types match
   const size_t typeCount = reqTemplateTypes.size();
@@ -180,8 +180,8 @@ bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vecto
 
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
-    const SymbolType &reqType = reqTemplateTypes.at(i);
-    SymbolType &candidateType = candidate.templateTypes.at(i);
+    const Type &reqType = reqTemplateTypes.at(i);
+    Type &candidateType = candidate.templateTypes.at(i);
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false))

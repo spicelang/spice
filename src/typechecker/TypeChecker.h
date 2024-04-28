@@ -132,13 +132,13 @@ private:
   bool typeCheckedMainFct = false;
 
   // Private methods
-  bool visitOrdinaryFctCall(FctCallNode *node, std::vector<SymbolType> &templateTypes, const std::string &fqFunctionName);
-  bool visitFctPtrCall(FctCallNode *node, const SymbolType &functionType) const;
-  bool visitMethodCall(FctCallNode *node, Scope *structScope, std::vector<SymbolType> &templateTypes) const;
+  bool visitOrdinaryFctCall(FctCallNode *node, std::vector<Type> &templateTypes, const std::string &fqFunctionName);
+  bool visitFctPtrCall(FctCallNode *node, const Type &functionType) const;
+  bool visitMethodCall(FctCallNode *node, Scope *structScope, std::vector<Type> &templateTypes) const;
   bool checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
-  [[nodiscard]] SymbolType mapLocalTypeToImportedScopeType(const Scope *targetScope, const SymbolType &symbolType) const;
-  [[nodiscard]] SymbolType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const SymbolType &symbolType) const;
-  static void autoDeReference(SymbolType &symbolType);
+  [[nodiscard]] Type mapLocalTypeToImportedScopeType(const Scope *targetScope, const Type &symbolType) const;
+  [[nodiscard]] Type mapImportedScopeTypeToLocalType(const Scope *sourceScope, const Type &symbolType) const;
+  static void autoDeReference(Type &symbolType);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   void requestRevisitIfRequired(const Function *fct);
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;
