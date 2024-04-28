@@ -18,7 +18,7 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   // Collect replacement arguments
   for (AssignExprNode *arg : node->args()) {
     // Retrieve type of argument
-    const SymbolType argSymbolType = arg->getEvaluatedSymbolType(manIdx);
+    const Type argSymbolType = arg->getEvaluatedSymbolType(manIdx);
     llvm::Type *argType = argSymbolType.toLLVMType(context, currentScope);
 
     // Re-map some values
@@ -89,7 +89,7 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
-  SymbolType symbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
+  Type symbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
   symbolType = symbolType.removeReferenceWrapper();
 
   llvm::Value *lengthValue;

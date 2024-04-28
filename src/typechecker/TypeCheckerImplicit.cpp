@@ -24,11 +24,11 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
   Scope *structScope = spiceStruct.scope;
   ASTNode *node = spiceStruct.declNode;
   const SymbolTableEntry *structEntry = spiceStruct.entry;
-  const SymbolType &structType = structEntry->getType();
+  const Type &structType = structEntry->getType();
   const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + methodName;
 
   // Procedure type
-  SymbolType procedureType(TY_PROCEDURE);
+  Type procedureType(TY_PROCEDURE);
   procedureType.specifiers.isPublic = true; // Always public
 
   // Insert symbol for function into the symbol table
@@ -41,7 +41,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
 
   // Create the default method
   const std::vector<GenericType> templateTypes = spiceStruct.templateTypes;
-  const SymbolType returnType(TY_DYN);
+  const Type returnType(TY_DYN);
   Function defaultMethod(methodName, fctEntry, structType, returnType, params, templateTypes, structEntry->declNode);
   defaultMethod.implicitDefault = true;
 
@@ -70,7 +70,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
 
   // Abort if the struct already has a user-defined constructor
   const SymbolTableEntry *structEntry = spiceStruct.entry;
-  const SymbolType &structType = structEntry->getType();
+  const Type &structType = structEntry->getType();
   const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
   if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
@@ -81,7 +81,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
   bool hasFieldsToConstruct = false;
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
-    const SymbolType &thisType = fieldSymbol->getType();
+    const Type &thisType = fieldSymbol->getType();
 
     // Abort if we have a field, that is a reference
     if (thisType.isRef())
@@ -131,7 +131,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
 
   // Abort if the struct already has a user-defined constructor
   const SymbolTableEntry *structEntry = spiceStruct.entry;
-  const SymbolType &structType = structEntry->getType();
+  const Type &structType = structEntry->getType();
   const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
   if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
@@ -141,7 +141,7 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
   bool hasFieldsToCopyConstruct = false;
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
-    const SymbolType &thisType = fieldSymbol->getType();
+    const Type &thisType = fieldSymbol->getType();
 
     // Abort if we have a field, that is a reference
     if (thisType.isRef())
@@ -189,7 +189,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
 
   // Abort if the struct already has a user-defined destructor
   const SymbolTableEntry *structEntry = spiceStruct.entry;
-  const SymbolType &structType = structEntry->getType();
+  const Type &structType = structEntry->getType();
   const std::string fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + DTOR_FUNCTION_NAME;
   if (sourceFile->getNameRegistryEntry(fqFctName))
     return;
@@ -204,7 +204,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     if (fieldSymbol->getType().is(TY_STRUCT)) {
       Scope *fieldScope = fieldSymbol->getType().getBodyScope();
       // Lookup dtor function
-      const SymbolType &thisType = fieldSymbol->getType();
+      const Type &thisType = fieldSymbol->getType();
       const Function *dtorFct = FunctionManager::matchFunction(fieldScope, DTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
       hasFieldsToDestruct |= dtorFct != nullptr;
       requestRevisitIfRequired(dtorFct);
@@ -225,8 +225,8 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     assert(memoryRT != nullptr);
     Scope *matchScope = memoryRT->globalScope.get();
     // Set dealloc function to used
-    const SymbolType thisType(TY_DYN);
-    SymbolType bytePtrRefType = SymbolType(TY_BYTE).toPointer(node).toReference(node);
+    const Type thisType(TY_DYN);
+    Type bytePtrRefType = Type(TY_BYTE).toPointer(node).toReference(node);
     bytePtrRefType.specifiers.isHeap = true;
     const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
     Function *deallocFct = FunctionManager::matchFunction(matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
@@ -252,7 +252,7 @@ void TypeChecker::createCtorBodyPreamble(Scope *bodyScope) {
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
-    SymbolType fieldType = fieldSymbol->getType();
+    Type fieldType = fieldSymbol->getType();
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 
@@ -284,7 +284,7 @@ void TypeChecker::createCopyCtorBodyPreamble(Scope *bodyScope) {
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
-    SymbolType fieldType = fieldSymbol->getType();
+    Type fieldType = fieldSymbol->getType();
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 
@@ -316,7 +316,7 @@ void TypeChecker::createDtorBodyPreamble(Scope *bodyScope) {
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
     if (fieldSymbol->isImplicitField)
       continue;
-    SymbolType fieldType = fieldSymbol->getType();
+    Type fieldType = fieldSymbol->getType();
     if (fieldType.hasAnyGenericParts())
       TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 
@@ -339,7 +339,7 @@ void TypeChecker::createDtorBodyPreamble(Scope *bodyScope) {
  */
 Function *TypeChecker::implicitlyCallStructMethod(SymbolTableEntry *entry, const std::string &methodName, const ArgList &args,
                                                   const ASTNode *node) {
-  SymbolType thisType = entry->getType();
+  Type thisType = entry->getType();
   assert(thisType.is(TY_STRUCT));
   Scope *matchScope = thisType.getBodyScope();
   assert(matchScope->type == ScopeType::STRUCT);

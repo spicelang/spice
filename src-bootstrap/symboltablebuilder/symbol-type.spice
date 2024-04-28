@@ -5,7 +5,7 @@ import "std/data/vector";
 import "../util/common-util";
 import "../symboltablebuilder/scope";
 
-public type SymbolSuperType enum {
+public type SuperType enum {
     TY_INVALID,
     TY_UNRESOLVED,
     TY_DOUBLE,
@@ -37,11 +37,11 @@ type TypeChainElementData struct {
 }
 
 type TypeChainElement struct {
-    SymbolSuperType superType = SymbolSuperType::TY_DYN
+    SuperType superType = SuperType::TY_DYN
     String subType
     TypeChainElementData data
-    Vector<SymbolType> templateTypes
-    Vector<SymbolType> paramTypes // First type is the return type
+    Vector<Type> templateTypes
+    Vector<Type> paramTypes // First type is the return type
 }
 
 f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& rhs) {
@@ -74,11 +74,11 @@ f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& rhs) {
 
 type TypeChain alias Vector<TypeChainElement>;
 
-public type SymbolType struct {
+public type Type struct {
     Vector<TypeChainElement> typeChain
     bool isBaseTypeSigned
 }
 
-p SymbolType.ctor() {
+p Type.ctor() {
     this.isBaseTypeSigned = true;
 }

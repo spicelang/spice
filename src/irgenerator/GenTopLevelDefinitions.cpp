@@ -25,7 +25,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
 
   // Visit parameters
   std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
-  std::vector<SymbolType> paramSymbolTypes;
+  std::vector<Type> paramSymbolTypes;
   std::vector<llvm::Type *> paramTypes;
   if (node->takesArgs) {
     const size_t numOfParams = node->paramLst()->params().size();
@@ -141,7 +141,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Change to struct scope
     if (manifestation->isMethod()) {
-      const SymbolType &thisType = manifestation->thisType;
+      const Type &thisType = manifestation->thisType;
       const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
       assert(currentScope != nullptr);
@@ -173,10 +173,10 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         // Get symbol table entry of param
         SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
-        const SymbolType paramSymbolType = manifestation->getParamTypes().at(argIdx);
+        const Type paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
-          SymbolType paramSymbolSymbolType = paramSymbol->getType();
+          Type paramSymbolSymbolType = paramSymbol->getType();
           paramSymbolSymbolType.setHasLambdaCaptures(true);
           paramSymbol->updateType(paramSymbolSymbolType, true);
         }
@@ -313,7 +313,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
 
     // Change to struct scope
     if (manifestation->isMethod()) {
-      const SymbolType &thisType = manifestation->thisType;
+      const Type &thisType = manifestation->thisType;
       const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
       assert(currentScope != nullptr);
@@ -345,10 +345,10 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         // Get symbol table entry of param
         SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
-        const SymbolType paramSymbolType = manifestation->getParamTypes().at(argIdx);
+        const Type paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
-          SymbolType paramSymbolSymbolType = paramSymbol->getType();
+          Type paramSymbolSymbolType = paramSymbol->getType();
           paramSymbolSymbolType.setHasLambdaCaptures(true);
           paramSymbol->updateType(paramSymbolSymbolType, true);
         }
@@ -492,7 +492,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     }
 
     // Generate default ctor if required
-    const SymbolType &thisType = structEntry->getType();
+    const Type &thisType = structEntry->getType();
     const Function *ctorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, {}, true);
     if (ctorFunc != nullptr && ctorFunc->implicitDefault)
       generateDefaultCtor(ctorFunc);
@@ -556,7 +556,7 @@ std::any IRGenerator::visitAliasDef(const AliasDefNode *node) {
 std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   // Retrieve some information about the variable
   assert(node->entry != nullptr);
-  const SymbolType &entryType = node->entry->getType();
+  const Type &entryType = node->entry->getType();
   const bool isPublic = entryType.isPublic();
   const bool isConst = entryType.isConst();
 
@@ -599,7 +599,7 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   // Get arg types
   std::vector<llvm::Type *> argTypes;
   argTypes.reserve(spiceFunc->paramList.size());
-  for (const SymbolType &paramType : spiceFunc->getParamTypes())
+  for (const Type &paramType : spiceFunc->getParamTypes())
     argTypes.push_back(paramType.toLLVMType(context, currentScope));
 
   // Declare function

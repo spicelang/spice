@@ -7,7 +7,7 @@
 namespace spice::compiler {
 
 // Forward declarations
-class SymbolType;
+class Type;
 
 /**
  * Helper class for FunctionManager and StructManager to match generic types.
@@ -19,13 +19,13 @@ public:
   using ResolverFct = std::function<const GenericType *(const std::string &)>;
 
   // Public methods
-  static bool matchRequestedToCandidateTypes(const std::vector<SymbolType> &candidateType,
-                                             const std::vector<SymbolType> &reqTypes, TypeMapping &typeMapping,
+  static bool matchRequestedToCandidateTypes(const std::vector<Type> &candidateType,
+                                             const std::vector<Type> &reqTypes, TypeMapping &typeMapping,
                                              ResolverFct &resolverFct, bool strictSpecifiers);
-  static bool matchRequestedToCandidateType(SymbolType candidateType, SymbolType requestedType, TypeMapping &typeMapping,
+  static bool matchRequestedToCandidateType(Type candidateType, Type requestedType, TypeMapping &typeMapping,
                                             ResolverFct &resolverFct, bool strictSpecifierMatching);
-  static void substantiateTypesWithTypeMapping(std::vector<SymbolType> &symbolTypes, const TypeMapping &typeMapping);
-  static void substantiateTypeWithTypeMapping(SymbolType &symbolType, const TypeMapping &typeMapping);
+  static void substantiateTypesWithTypeMapping(std::vector<Type> &symbolTypes, const TypeMapping &typeMapping);
+  static void substantiateTypeWithTypeMapping(Type &symbolType, const TypeMapping &typeMapping);
 };
 
 } // namespace spice::compiler

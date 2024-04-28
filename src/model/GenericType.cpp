@@ -12,7 +12,7 @@ namespace spice::compiler {
  * @param ignoreSpecifiers Ignore the type specifiers for type comparison
  * @return True or false
  */
-bool GenericType::checkConditionsOf(const SymbolType &symbolType, bool ignoreArraySize /*=false*/,
+bool GenericType::checkConditionsOf(const Type &symbolType, bool ignoreArraySize /*=false*/,
                                     bool ignoreSpecifiers /*=false*/) const {
   return checkTypeConditionOf(symbolType, ignoreArraySize, ignoreSpecifiers);
 }
@@ -25,12 +25,12 @@ bool GenericType::checkConditionsOf(const SymbolType &symbolType, bool ignoreArr
  * @param ignoreSpecifiers Ignore the type specifiers for type comparison
  * @return True or false
  */
-bool GenericType::checkTypeConditionOf(const SymbolType &symbolType, bool ignoreArraySize, bool ignoreSpecifiers) const {
+bool GenericType::checkTypeConditionOf(const Type &symbolType, bool ignoreArraySize, bool ignoreSpecifiers) const {
   // Succeed if no type conditions are set
   if (typeConditions.empty())
     return true;
   // Check type conditions
-  return std::ranges::any_of(typeConditions, [&](const SymbolType &typeCondition) {
+  return std::ranges::any_of(typeConditions, [&](const Type &typeCondition) {
     return typeCondition.is(TY_DYN) || typeCondition.matches(symbolType, ignoreArraySize, ignoreSpecifiers, ignoreSpecifiers);
   });
 }

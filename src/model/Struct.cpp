@@ -13,7 +13,7 @@ namespace spice::compiler {
  * @return Has reference as field type or not
  */
 bool Struct::hasReferenceFields() const {
-  return std::ranges::any_of(fieldTypes, [](const SymbolType &fieldType) { return fieldType.isRef(); });
+  return std::ranges::any_of(fieldTypes, [](const Type &fieldType) { return fieldType.isRef(); });
 }
 
 } // namespace spice::compiler

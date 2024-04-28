@@ -13,7 +13,7 @@
 namespace spice::compiler {
 
 // Forward declarations
-class SymbolType;
+class Type;
 class SymbolTableEntry;
 class Scope;
 class ASTNode;
@@ -27,16 +27,16 @@ public:
 
   // Public methods
   [[nodiscard]] std::string getSignature() const;
-  static std::string getSignature(const std::string &name, const std::vector<SymbolType> &concreteTemplateTypes);
+  static std::string getSignature(const std::string &name, const std::vector<Type> &concreteTemplateTypes);
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
-  [[nodiscard]] std::vector<SymbolType> getTemplateTypes() const;
+  [[nodiscard]] std::vector<Type> getTemplateTypes() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
   // Public members
   std::string name;
   std::vector<GenericType> templateTypes;
-  std::unordered_map<std::string, SymbolType> typeMapping;
+  std::unordered_map<std::string, Type> typeMapping;
   SymbolTableEntry *entry = nullptr;
   Scope *scope = nullptr;
   ASTNode *declNode;

@@ -290,7 +290,7 @@ size_t Scope::getFieldCount() const {
   assert(type == ScopeType::STRUCT);
   size_t fieldCount = 0;
   for (const auto &symbol : symbolTable.symbols) {
-    const SymbolType &symbolType = symbol.second.getType();
+    const Type &symbolType = symbol.second.getType();
     if (symbolType.is(TY_IMPORT))
       continue;
     const ASTNode *declNode = symbol.second.declNode;

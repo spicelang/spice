@@ -120,15 +120,15 @@ public:
   llvm::Value *insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned index, std::string varName = "") const;
   llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const ASTNode *node, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
-  llvm::Value *resolveValue(const SymbolType &symbolType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
+  llvm::Value *resolveValue(const Type &symbolType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveAddress(const ASTNode *node);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
-  [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const SymbolType &symbolType);
+  [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const Type &symbolType);
   [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, bool withoutTargetInfo);
 
 private:
   // Private methods
-  llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const SymbolType &type, const ASTNode *node);
+  llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const Type &type, const ASTNode *node);
   llvm::BasicBlock *createBlock(const std::string &blockName = "");
   void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
   void insertJump(llvm::BasicBlock *targetBlock);
@@ -139,10 +139,10 @@ private:
   LLVMExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
   LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl = false);
   LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
-                              const SymbolType &rhsSType, bool isDecl);
+                              const Type &rhsSType, bool isDecl);
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
                                  const std::string &name = "", bool isVolatile = false);
-  void autoDeReferencePtr(llvm::Value *&ptr, SymbolType &symbolType, Scope *accessScope) const;
+  void autoDeReferencePtr(llvm::Value *&ptr, Type &symbolType, Scope *accessScope) const;
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant);
   llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
@@ -153,7 +153,7 @@ private:
   void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType);
 
   // Generate implicit
-  llvm::Value *doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy);
+  llvm::Value *doImplicitCast(llvm::Value *src, Type dstSTy, Type srcSTy);
   void generateScopeCleanup(const StmtLstNode *node) const;
   void generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
   void generateDeallocCall(llvm::Value *variableAddress) const;

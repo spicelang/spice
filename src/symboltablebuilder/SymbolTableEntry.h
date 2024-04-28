@@ -7,7 +7,7 @@
 #include <utility>
 
 #include <symboltablebuilder/Lifecycle.h>
-#include <symboltablebuilder/SymbolType.h>
+#include <symboltablebuilder/Type.h>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Value.h>
@@ -28,12 +28,12 @@ union CompileTimeValue;
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, SymbolType type, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
+  SymbolTableEntry(std::string name, Type type, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
       : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global), type(std::move(type)){};
 
   // Public methods
-  [[nodiscard]] const SymbolType &getType() const;
-  void updateType(const SymbolType &newType, bool overwriteExistingType);
+  [[nodiscard]] const Type &getType() const;
+  void updateType(const Type &newType, bool overwriteExistingType);
   void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] llvm::StructType *getStructLLVMType() const;
@@ -61,7 +61,7 @@ public:
 
 private:
   // Members
-  SymbolType type;
+  Type type;
   llvm::StructType *llvmStructType = nullptr; // For structs and interfaces only
   std::stack<llvm::Value *> memAddress;
   Lifecycle lifecycle;

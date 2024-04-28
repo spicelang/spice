@@ -33,7 +33,7 @@ const long ARRAY_SIZE_UNKNOWN = 0;
 const uint64_t TYPE_ID_ITERATOR_INTERFACE = 255;
 const uint64_t TYPE_ID_ITERABLE_INTERFACE = 256;
 
-enum SymbolSuperType : uint8_t {
+enum SuperType : uint8_t {
   TY_INVALID,
   TY_UNRESOLVED,
   TY_DOUBLE,
@@ -58,7 +58,7 @@ enum SymbolSuperType : uint8_t {
   TY_IMPORT,
 };
 
-class SymbolType {
+class Type {
 public:
   // Unions
   union TypeChainElementData {
@@ -74,13 +74,13 @@ public:
   public:
     // Constructors
     TypeChainElement() = default;
-    explicit TypeChainElement(SymbolSuperType superType) : superType(superType), typeId(superType){};
-    TypeChainElement(SymbolSuperType superType, std::string subType)
+    explicit TypeChainElement(SuperType superType) : superType(superType), typeId(superType){};
+    TypeChainElement(SuperType superType, std::string subType)
         : superType(superType), subType(std::move(subType)), typeId(superType){};
-    TypeChainElement(SymbolSuperType superType, TypeChainElementData data)
+    TypeChainElement(SuperType superType, TypeChainElementData data)
         : superType(superType), typeId(superType), data(data){};
-    TypeChainElement(SymbolSuperType superType, std::string subType, uint64_t typeId, TypeChainElementData data,
-                     const std::vector<SymbolType> &templateTypes)
+    TypeChainElement(SuperType superType, std::string subType, uint64_t typeId, TypeChainElementData data,
+                     const std::vector<Type> &templateTypes)
         : superType(superType), subType(std::move(subType)), typeId(typeId), data(data), templateTypes(templateTypes){};
 
     // Overloaded operators
@@ -89,12 +89,12 @@ public:
     [[nodiscard]] std::string getName(bool withSize) const;
 
     // Public members
-    SymbolSuperType superType = TY_INVALID;
+    SuperType superType = TY_INVALID;
     std::string subType;
     uint64_t typeId = TY_INVALID;
     TypeChainElementData data = {.arraySize = 0};
-    std::vector<SymbolType> templateTypes;
-    std::vector<SymbolType> paramTypes; // First type is the return type
+    std::vector<Type> templateTypes;
+    std::vector<Type> paramTypes; // First type is the return type
 
     // Json serializer/deserializer
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, typeId, data, templateTypes, paramTypes)
@@ -107,35 +107,35 @@ public:
   using TypeChain = std::vector<TypeChainElement>;
 
   // Constructors
-  SymbolType() = default;
-  explicit SymbolType(SymbolSuperType superType);
-  SymbolType(SymbolSuperType superType, const std::string &subType);
-  SymbolType(SymbolSuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
-             const std::vector<SymbolType> &templateTypes);
-  explicit SymbolType(const TypeChain &types);
-  SymbolType(TypeChain types, TypeSpecifiers specifiers);
+  Type() = default;
+  explicit Type(SuperType superType);
+  Type(SuperType superType, const std::string &subType);
+  Type(SuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
+             const std::vector<Type> &templateTypes);
+  explicit Type(const TypeChain &types);
+  Type(TypeChain types, TypeSpecifiers specifiers);
 
   // Public methods
-  [[nodiscard]] SymbolType toPointer(const ASTNode *node) const;
-  [[nodiscard]] SymbolType toReference(const ASTNode *node) const;
-  [[nodiscard]] SymbolType toConstReference(const ASTNode *node) const;
-  [[nodiscard]] SymbolType toArray(const ASTNode *node, unsigned int size = 0, bool skipDynCheck = false) const;
-  [[nodiscard]] SymbolType getContainedTy() const;
-  [[nodiscard]] SymbolType replaceBaseType(const SymbolType &newBaseType) const;
+  [[nodiscard]] Type toPointer(const ASTNode *node) const;
+  [[nodiscard]] Type toReference(const ASTNode *node) const;
+  [[nodiscard]] Type toConstReference(const ASTNode *node) const;
+  [[nodiscard]] Type toArray(const ASTNode *node, unsigned int size = 0, bool skipDynCheck = false) const;
+  [[nodiscard]] Type getContainedTy() const;
+  [[nodiscard]] Type replaceBaseType(const Type &newBaseType) const;
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
   [[nodiscard]] ALWAYS_INLINE bool isPtr() const { return getSuperType() == TY_PTR; }
-  [[nodiscard]] ALWAYS_INLINE bool isPtrOf(SymbolSuperType superType) const { return isPtr() && getContainedTy().is(superType); }
+  [[nodiscard]] ALWAYS_INLINE bool isPtrOf(SuperType superType) const { return isPtr() && getContainedTy().is(superType); }
   [[nodiscard]] ALWAYS_INLINE bool isRef() const { return getSuperType() == TY_REF; }
   [[nodiscard]] ALWAYS_INLINE bool isConstRef() const { return getSuperType() == TY_REF && isConst(); }
-  [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isRefOf(SymbolSuperType superType) const {
+  [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isRefOf(SuperType superType) const {
     return isRef() && getContainedTy().is(superType);
   }
   [[nodiscard]] ALWAYS_INLINE bool isArray() const { return getSuperType() == TY_ARRAY; }
-  [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isArrayOf(SymbolSuperType superType) const {
+  [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isArrayOf(SuperType superType) const {
     return isArray() && getContainedTy().is(superType);
   }
-  [[nodiscard]] ALWAYS_INLINE bool is(SymbolSuperType superType) const { return getSuperType() == superType; }
-  [[nodiscard]] ALWAYS_INLINE bool is(SymbolSuperType superType, const std::string &subType) const {
+  [[nodiscard]] ALWAYS_INLINE bool is(SuperType superType) const { return getSuperType() == superType; }
+  [[nodiscard]] ALWAYS_INLINE bool is(SuperType superType, const std::string &subType) const {
     return getSuperType() == superType && getSubType() == subType;
   }
   [[nodiscard]] ALWAYS_INLINE bool isPrimitive() const {
@@ -145,14 +145,14 @@ public:
   [[nodiscard]] bool isIterable(const ASTNode *node) const;
   [[nodiscard]] bool isStringObj() const;
   [[nodiscard]] bool isErrorObj() const;
-  [[nodiscard]] bool implements(const SymbolType &symbolType, const ASTNode *node) const;
-  [[nodiscard]] bool isBaseType(SymbolSuperType superType) const;
-  [[nodiscard]] ALWAYS_INLINE bool isOneOf(const std::initializer_list<SymbolSuperType> &superTypes) const {
-    const SymbolSuperType superType = getSuperType();
-    return std::ranges::any_of(superTypes, [&superType](SymbolSuperType type) { return type == superType; });
+  [[nodiscard]] bool implements(const Type &symbolType, const ASTNode *node) const;
+  [[nodiscard]] bool isBaseType(SuperType superType) const;
+  [[nodiscard]] ALWAYS_INLINE bool isOneOf(const std::initializer_list<SuperType> &superTypes) const {
+    const SuperType superType = getSuperType();
+    return std::ranges::any_of(superTypes, [&superType](SuperType type) { return type == superType; });
   }
-  [[nodiscard]] bool isSameContainerTypeAs(const SymbolType &otherType) const;
-  [[nodiscard]] ALWAYS_INLINE SymbolSuperType getSuperType() const {
+  [[nodiscard]] bool isSameContainerTypeAs(const Type &otherType) const;
+  [[nodiscard]] ALWAYS_INLINE SuperType getSuperType() const {
     assert(!typeChain.empty());
     return typeChain.back().superType;
   }
@@ -160,20 +160,20 @@ public:
     assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
     return typeChain.back().subType;
   }
-  [[nodiscard]] ALWAYS_INLINE SymbolType removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
-  [[nodiscard]] ALWAYS_INLINE SymbolType getNonConst() const {
-    SymbolType type = *this;
+  [[nodiscard]] ALWAYS_INLINE Type removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
+  [[nodiscard]] ALWAYS_INLINE Type getNonConst() const {
+    Type type = *this;
     type.specifiers.isConst = false;
     return type;
   }
-  [[nodiscard]] SymbolType getBaseType() const {
+  [[nodiscard]] Type getBaseType() const {
     assert(!typeChain.empty());
-    return SymbolType({typeChain.front()}, specifiers);
+    return Type({typeChain.front()}, specifiers);
   }
   [[nodiscard]] bool hasAnyGenericParts() const;
-  void setTemplateTypes(const std::vector<SymbolType> &templateTypes);
-  void setBaseTemplateTypes(const std::vector<SymbolType> &templateTypes);
-  [[nodiscard]] const std::vector<SymbolType> &getTemplateTypes() const;
+  void setTemplateTypes(const std::vector<Type> &templateTypes);
+  void setBaseTemplateTypes(const std::vector<Type> &templateTypes);
+  [[nodiscard]] const std::vector<Type> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
   [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false) const;
   [[nodiscard]] ALWAYS_INLINE unsigned int getArraySize() const {
@@ -202,24 +202,24 @@ public:
     assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
     return typeChain.back().data.bodyScope;
   }
-  void setFunctionReturnType(const SymbolType &returnType);
-  [[nodiscard]] const SymbolType &getFunctionReturnType() const;
-  void setFunctionParamTypes(const std::vector<SymbolType> &paramTypes);
-  [[nodiscard]] std::vector<SymbolType> getFunctionParamTypes() const;
-  void setFunctionParamAndReturnTypes(const std::vector<SymbolType> &paramAndReturnTypes);
-  [[nodiscard]] const std::vector<SymbolType> &getFunctionParamAndReturnTypes() const;
+  void setFunctionReturnType(const Type &returnType);
+  [[nodiscard]] const Type &getFunctionReturnType() const;
+  void setFunctionParamTypes(const std::vector<Type> &paramTypes);
+  [[nodiscard]] std::vector<Type> getFunctionParamTypes() const;
+  void setFunctionParamAndReturnTypes(const std::vector<Type> &paramAndReturnTypes);
+  [[nodiscard]] const std::vector<Type> &getFunctionParamAndReturnTypes() const;
   void setHasLambdaCaptures(bool hasCaptures);
   [[nodiscard]] bool hasLambdaCaptures() const;
   Struct *getStruct(const ASTNode *node) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
-  friend bool operator==(const SymbolType &lhs, const SymbolType &rhs);
-  friend bool operator!=(const SymbolType &lhs, const SymbolType &rhs);
-  [[nodiscard]] bool matches(const SymbolType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
-  [[nodiscard]] bool matchesInterfaceImplementedByStruct(const SymbolType &otherType) const;
-  [[nodiscard]] bool canBind(const SymbolType &otherType, bool isTemporary) const;
+  friend bool operator==(const Type &lhs, const Type &rhs);
+  friend bool operator!=(const Type &lhs, const Type &rhs);
+  [[nodiscard]] bool matches(const Type &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
+  [[nodiscard]] bool matchesInterfaceImplementedByStruct(const Type &otherType) const;
+  [[nodiscard]] bool canBind(const Type &otherType, bool isTemporary) const;
 
   // Static util methods
-  static void unwrapBoth(SymbolType &typeA, SymbolType &typeB);
+  static void unwrapBoth(Type &typeA, Type &typeB);
 
   // Public members
   TypeChain typeChain;
@@ -227,10 +227,10 @@ public:
 
 public:
   // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(SymbolType, typeChain);
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Type, typeChain);
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(SymbolType) == 32);
+static_assert(sizeof(Type) == 32);
 
 } // namespace spice::compiler

@@ -14,7 +14,7 @@ namespace spice::compiler {
  *
  * @return Current symbol type of this symbol
  */
-const SymbolType &SymbolTableEntry::getType() const { return type; }
+const Type &SymbolTableEntry::getType() const { return type; }
 
 /**
  * Update the type of this symbol.
@@ -22,7 +22,7 @@ const SymbolType &SymbolTableEntry::getType() const { return type; }
  * @param newType New type of the current symbol
  * @param overwriteExistingType Overwrites the existing type without throwing an error
  */
-void SymbolTableEntry::updateType(const SymbolType &newType, bool overwriteExistingType) {
+void SymbolTableEntry::updateType(const Type &newType, bool overwriteExistingType) {
   assert(overwriteExistingType || type.isOneOf({TY_INVALID, TY_DYN}));
   type = newType;
 }

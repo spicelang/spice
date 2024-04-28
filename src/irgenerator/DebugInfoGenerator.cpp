@@ -120,7 +120,7 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
     llvm::DIType *captureStructPtr = diBuilder->createPointerType(captureStructType, pointerWidth);
     argTypes.push_back(captureStructPtr); // Add this type
   }
-  for (const SymbolType &argType : spiceFunc->getParamTypes()) // Add arg types
+  for (const Type &argType : spiceFunc->getParamTypes()) // Add arg types
     argTypes.push_back(getDITypeForSymbolType(node, argType));
 
   // Create function type
@@ -176,9 +176,9 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
   // Get LLVM type for struct
   std::vector<llvm::Type *> fieldTypes;
   std::vector<SymbolTableEntry *> fieldEntries;
-  std::vector<SymbolType> fieldSymbolTypes;
+  std::vector<Type> fieldSymbolTypes;
   for (const auto &[_, capture] : captures) {
-    SymbolType captureType = capture.capturedEntry->getType();
+    Type captureType = capture.capturedEntry->getType();
 
     // Capture by reference
     if (capture.getMode() == BY_REFERENCE)
@@ -275,7 +275,7 @@ void DebugInfoGenerator::finalize() {
     diBuilder->finalize();
 }
 
-llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, const SymbolType &symbolType) const {
+llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, const Type &symbolType) const {
   // Pointer type
   if (symbolType.isPtr()) {
     llvm::DIType *pointeeTy = getDITypeForSymbolType(node, symbolType.getContainedTy());
@@ -357,7 +357,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
       if (fieldEntry->isImplicitField)
         continue;
 
-      const SymbolType fieldType = fieldEntry->getType();
+      const Type fieldType = fieldEntry->getType();
       const size_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
       const size_t offsetInBits = structLayout->getElementOffsetInBits(i);
 

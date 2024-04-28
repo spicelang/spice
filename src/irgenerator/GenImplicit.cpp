@@ -20,7 +20,7 @@ static const char *const TEST_CASE_SUCCESS_MSG = "\033[1m\033[32m[ PASSED   ]\03
 static const char *const TEST_CASE_FAILED_MSG = "\033[1m\033[31m[ FAILED   ]\033[0m\033[22m %s\n";
 static const char *const TEST_CASE_SKIPPED_MSG = "\033[1m\033[33m[ SKIPPED  ]\033[0m\033[22m %s\n";
 
-llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, SymbolType dstSTy, SymbolType srcSTy) {
+llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, Type dstSTy, Type srcSTy) {
   assert(srcSTy != dstSTy); // We only need to cast implicitly, if the types do not match exactly
 
   // Unpack the pointers until a pointer of another type is met
@@ -313,7 +313,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
-  SymbolType structSymbolType = thisEntry->getType().getBaseType();
+  Type structSymbolType = thisEntry->getType().getBaseType();
   llvm::Type *structType = structSymbolType.toLLVMType(context, structScope);
 
   // Store VTable to first struct field if required
@@ -336,7 +336,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       continue;
 
     // Call ctor for struct fields
-    const SymbolType &fieldType = fieldSymbol->getType();
+    const Type &fieldType = fieldSymbol->getType();
     auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
     if (fieldType.is(TY_STRUCT)) {
       // Lookup ctor function and call if available
@@ -400,7 +400,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
       continue;
 
     // Call copy ctor for struct fields
-    const SymbolType &fieldType = fieldSymbol->getType();
+    const Type &fieldType = fieldSymbol->getType();
     if (fieldType.is(TY_STRUCT)) {
       // Lookup copy ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
@@ -445,7 +445,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
       continue;
 
     // Call dtor for struct fields
-    const SymbolType &fieldType = fieldSymbol->getType();
+    const Type &fieldType = fieldSymbol->getType();
     if (fieldType.is(TY_STRUCT)) {
       // Lookup dtor function and generate call if found
       const Function *dtorFct = FunctionManager::lookupFunction(fieldType.getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
@@ -494,13 +494,13 @@ void IRGenerator::generateTestMain() {
   llvm::Constant *skippedMsg = createGlobalStringConst("skippedMsg", TEST_CASE_SKIPPED_MSG, *rootScope->codeLoc);
 
   // Prepare entry for test main
-  SymbolType functionType(TY_FUNCTION);
+  Type functionType(TY_FUNCTION);
   functionType.specifiers = TypeSpecifiers::of(TY_FUNCTION);
   functionType.specifiers.isPublic = true;
   SymbolTableEntry entry(MAIN_FUNCTION_NAME, functionType, rootScope, nullptr, 0, false);
 
   // Prepare test main function
-  Function testMain(MAIN_FUNCTION_NAME, &entry, SymbolType(TY_DYN), SymbolType(TY_INT), {}, {}, nullptr);
+  Function testMain(MAIN_FUNCTION_NAME, &entry, Type(TY_DYN), Type(TY_INT), {}, {}, nullptr);
   testMain.used = true; // Mark as used to prevent removal
   testMain.implicitDefault = true;
   testMain.mangleFunctionName = false;

@@ -15,7 +15,7 @@ namespace spice::compiler {
 struct CodeLoc;
 class Struct;
 class Scope;
-class SymbolType;
+class Type;
 class ASTNode;
 class GenericType;
 
@@ -28,13 +28,13 @@ public:
   // Public methods
   static Struct *insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList);
   [[nodiscard]] static Struct *matchStruct(Scope *matchScope, const std::string &reqName,
-                                           const std::vector<SymbolType> &reqTemplateTypes, const ASTNode *node);
+                                           const std::vector<Type> &reqTemplateTypes, const ASTNode *node);
 
 private:
   // Private methods
   [[nodiscard]] static Struct *insertSubstantiation(Scope *insertScope, Struct &newManifestation, const ASTNode *declNode);
   [[nodiscard]] static bool matchName(const Struct &candidate, const std::string &reqName);
-  [[nodiscard]] static bool matchTemplateTypes(Struct &candidate, const std::vector<SymbolType> &reqTemplateTypes,
+  [[nodiscard]] static bool matchTemplateTypes(Struct &candidate, const std::vector<Type> &reqTemplateTypes,
                                                TypeMapping &typeMapping);
   static void substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Struct &candidate,

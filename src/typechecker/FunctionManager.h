@@ -17,14 +17,14 @@ struct ExprResult;
 class Function;
 class Scope;
 class SymbolTableEntry;
-class SymbolType;
+class Type;
 class ASTNode;
 class GenericType;
 
 // Typedefs
 using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, Function>;
 using FunctionRegistry = std::map</*fctId=*/std::string, /*manifestationList=*/FunctionManifestationList>;
-using Arg = std::pair</*type=*/SymbolType, /*isTemporary=*/bool>;
+using Arg = std::pair</*type=*/Type, /*isTemporary=*/bool>;
 using ArgList = std::vector<Arg>;
 
 enum class MatchResult : uint8_t {
@@ -42,13 +42,13 @@ public:
   static Function *insertFunction(Scope *insertScope, const Function &baseFunction,
                                   std::vector<Function *> *nodeFunctionList = nullptr);
   static void substantiateOptionalParams(const Function &baseFunction, std::vector<Function> &manifestations);
-  [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const std::vector<SymbolType> &paramTypes,
+  [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const std::vector<Type> &paramTypes,
                                                    ASTNode *declNode);
   [[nodiscard]] static const Function *lookupFunction(Scope *matchScope, const std::string &reqName,
-                                                      const SymbolType &reqThisType, const ArgList &reqArgs,
+                                                      const Type &reqThisType, const ArgList &reqArgs,
                                                       bool strictSpecifierMatching);
-  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const SymbolType &reqThisType,
-                                 const ArgList &reqArgs, const std::vector<SymbolType> &templateTypeHints,
+  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType,
+                                 const ArgList &reqArgs, const std::vector<Type> &templateTypeHints,
                                  bool strictSpecifierMatching, const ASTNode *callNode);
 
 private:
@@ -56,11 +56,11 @@ private:
   [[nodiscard]] static Function *insertSubstantiation(Scope *insertScope, const Function &newManifestation,
                                                       const ASTNode *declNode);
   [[nodiscard]] static MatchResult matchManifestation(Function &candidate, Scope *&matchScope, const std::string &reqName,
-                                                      const SymbolType &reqThisType, const ArgList &reqArgs,
+                                                      const Type &reqThisType, const ArgList &reqArgs,
                                                       TypeMapping &typeMapping, bool strictSpecifierMatching,
                                                       bool &forceSubstantiation, const ASTNode *callNode);
   [[nodiscard]] static bool matchName(const Function &candidate, const std::string &reqName);
-  [[nodiscard]] static bool matchThisType(Function &candidate, const SymbolType &reqThisType, TypeMapping &typeMapping,
+  [[nodiscard]] static bool matchThisType(Function &candidate, const Type &reqThisType, TypeMapping &typeMapping,
                                           bool strictSpecifierMatching);
   [[nodiscard]] static bool matchArgTypes(Function &candidate, const ArgList &reqArgs, TypeMapping &typeMapping,
                                           bool strictSpecifierMatching, bool &needsSubstantiation, const ASTNode *callNode);

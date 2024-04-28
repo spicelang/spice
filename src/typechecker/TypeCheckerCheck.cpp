@@ -160,11 +160,11 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         visit(field->defaultValue());
 
     // Build struct type
-    const SymbolType structType = manifestation->entry->getType();
+    const Type structType = manifestation->entry->getType();
 
     // Check if the struct implements all methods of all attached interfaces
     size_t vtableIndex = 0;
-    for (const SymbolType &interfaceType : manifestation->interfaceTypes) {
+    for (const Type &interfaceType : manifestation->interfaceTypes) {
       // Retrieve interface instance
       const std::string interfaceName = interfaceType.getSubType();
       Scope *matchScope = interfaceType.getBodyScope()->parent;
@@ -174,8 +174,8 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       // Check for all methods, that it is implemented by the struct
       for (const Function *expectedMethod : interface->methods) {
         const std::string methodName = expectedMethod->name;
-        std::vector<SymbolType> params = expectedMethod->getParamTypes();
-        SymbolType returnType = expectedMethod->returnType;
+        std::vector<Type> params = expectedMethod->getParamTypes();
+        Type returnType = expectedMethod->returnType;
 
         // Substantiate
         TypeMatcher::substantiateTypesWithTypeMapping(params, interface->typeMapping);
@@ -185,7 +185,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         // Build args list
         ArgList args;
         args.reserve(params.size());
-        for (const SymbolType &param : params)
+        for (const Type &param : params)
           args.emplace_back(param, nullptr);
 
         Function *spiceFunction = FunctionManager::matchFunction(currentScope, methodName, structType, args, {}, true, node);

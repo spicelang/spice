@@ -3,7 +3,7 @@
 #include "TypeSpecifiers.h"
 
 #include <exception/CompilerError.h>
-#include <symboltablebuilder/SymbolType.h>
+#include <symboltablebuilder/Type.h>
 
 namespace spice::compiler {
 

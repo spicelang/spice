@@ -13,8 +13,8 @@ namespace spice::compiler {
  *
  * @return Vector of parameter types
  */
-std::vector<SymbolType> Function::getParamTypes() const {
-  std::vector<SymbolType> newParamTypes;
+std::vector<Type> Function::getParamTypes() const {
+  std::vector<Type> newParamTypes;
   for (const Param &param : paramList)
     newParamTypes.push_back(param.type);
   return newParamTypes;
@@ -31,7 +31,7 @@ std::vector<SymbolType> Function::getParamTypes() const {
  * @return String representation as function signature
  */
 std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePublic /*=false*/) const {
-  std::vector<SymbolType> templateSymbolTypes;
+  std::vector<Type> templateSymbolTypes;
   templateSymbolTypes.reserve(templateTypes.size());
   for (const GenericType &genericType : templateTypes) {
     if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
@@ -57,14 +57,14 @@ std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePubli
  * @param ignorePublic Not include public modifiers in signature
  * @return Function signature
  */
-std::string Function::getSignature(const std::string &name, const SymbolType &thisType, const SymbolType &returnType,
-                                   const ParamList &paramList, const std::vector<SymbolType> &concreteTemplateTypes,
+std::string Function::getSignature(const std::string &name, const Type &thisType, const Type &returnType,
+                                   const ParamList &paramList, const std::vector<Type> &concreteTemplateTypes,
                                    bool withThisType /*=true*/, bool ignorePublic /*=false*/) {
   // Build this type string
   std::stringstream thisTyStr;
   if (withThisType && !thisType.is(TY_DYN)) {
     thisTyStr << thisType.getBaseType().getSubType();
-    const std::vector<SymbolType> &thisTemplateTypes = thisType.getTemplateTypes();
+    const std::vector<Type> &thisTemplateTypes = thisType.getTemplateTypes();
     if (!thisTemplateTypes.empty()) {
       thisTyStr << "<";
       for (size_t i = 0; i < thisTemplateTypes.size(); i++) {

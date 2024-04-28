@@ -50,7 +50,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
     // Template types themselves
     for (const GenericType &genericTemplateType : spiceFunc.templateTypes) {
       assert(spiceFunc.typeMapping.contains(genericTemplateType.getSubType()));
-      const SymbolType &actualType = spiceFunc.typeMapping.at(genericTemplateType.getSubType());
+      const Type &actualType = spiceFunc.typeMapping.at(genericTemplateType.getSubType());
       mangleType(mangledName, actualType, spiceFunc.typeMapping);
     }
     mangledName << "E";
@@ -78,7 +78,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
     mangledName << "v";
 
 #ifndef NDEBUG
-  const std::unordered_map<std::string, SymbolType> &typeMapping = spiceFunc.typeMapping;
+  const std::unordered_map<std::string, Type> &typeMapping = spiceFunc.typeMapping;
   const bool returnTypeIsFctOrProc = spiceFunc.returnType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE});
   const auto paramPredicate = [](const Param &p) { return p.type.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}); };
   const bool paramTypeIsFctOrProc = std::ranges::any_of(spiceFunc.paramList, paramPredicate);
@@ -153,7 +153,7 @@ void NameMangling::mangleName(std::stringstream &out, const std::string &name, b
  * @param type Input symbol type
  * @return Mangled name
  */
-void NameMangling::mangleType(std::stringstream &out, SymbolType type, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
+void NameMangling::mangleType(std::stringstream &out, Type type, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
   // Replace generic type with concrete type
   if (type.hasAnyGenericParts() && !typeMapping.empty())
     TypeMatcher::substantiateTypeWithTypeMapping(type, typeMapping);
@@ -223,7 +223,7 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     mangleName(out, chainElement.subType, nestedType);
     if (!chainElement.templateTypes.empty()) {
       out << "I";
-      for (const SymbolType &templateType : chainElement.templateTypes)
+      for (const Type &templateType : chainElement.templateTypes)
         mangleType(out, templateType, typeMapping);
       out << "E";
     }
@@ -240,7 +240,7 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
   }
   case TY_FUNCTION: {
     out << (chainElement.data.hasCaptures ? "PFC" : "PF");
-    for (const SymbolType &paramType : chainElement.paramTypes)
+    for (const Type &paramType : chainElement.paramTypes)
       mangleType(out, paramType, typeMapping);
     out << "E";
     break;

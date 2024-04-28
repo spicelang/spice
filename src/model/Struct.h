@@ -16,8 +16,8 @@ namespace spice::compiler {
 class Struct : public StructBase {
 public:
   // Constructors
-  Struct(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<SymbolType> fieldTypes,
-         std::vector<GenericType> templateTypes, std::vector<SymbolType> interfaceTypes, ASTNode *declNode)
+  Struct(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<Type> fieldTypes,
+         std::vector<GenericType> templateTypes, std::vector<Type> interfaceTypes, ASTNode *declNode)
       : StructBase(std::move(name), entry, scope, std::move(templateTypes), declNode), fieldTypes(std::move(fieldTypes)),
         interfaceTypes(std::move(interfaceTypes)) {}
 
@@ -25,8 +25,8 @@ public:
   [[nodiscard]] bool hasReferenceFields() const;
 
   // Public members
-  std::vector<SymbolType> fieldTypes;
-  std::vector<SymbolType> interfaceTypes;
+  std::vector<Type> fieldTypes;
+  std::vector<Type> interfaceTypes;
 
   // Json serializer/deserializer
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, fieldTypes, templateTypes, interfaceTypes, genericSubstantiation, used)

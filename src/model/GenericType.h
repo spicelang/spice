@@ -5,26 +5,26 @@
 #include <string>
 #include <utility>
 
-#include <symboltablebuilder/SymbolType.h>
+#include <symboltablebuilder/Type.h>
 
 #include "../../lib/json/json.hpp"
 
 namespace spice::compiler {
 
 // Typedefs
-using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/SymbolType>;
+using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/Type>;
 
-class GenericType : public SymbolType {
+class GenericType : public Type {
 public:
   // Constructors
-  explicit GenericType(const SymbolType &type) : SymbolType(type){};
-  explicit GenericType(const std::string &name) : SymbolType(TY_GENERIC, name) {}
-  GenericType(const std::string &name, const std::vector<SymbolType> &typeConditions)
-      : SymbolType(TY_GENERIC, name), typeConditions(typeConditions) {}
+  explicit GenericType(const Type &type) : Type(type){};
+  explicit GenericType(const std::string &name) : Type(TY_GENERIC, name) {}
+  GenericType(const std::string &name, const std::vector<Type> &typeConditions)
+      : Type(TY_GENERIC, name), typeConditions(typeConditions) {}
   GenericType() = default;
 
   // Public methods
-  [[nodiscard]] bool checkConditionsOf(const SymbolType &symbolType, bool ignoreArraySize = false,
+  [[nodiscard]] bool checkConditionsOf(const Type &symbolType, bool ignoreArraySize = false,
                                        bool ignoreSpecifiers = false) const;
 
   // Public members
@@ -35,10 +35,10 @@ public:
 
 private:
   // Members
-  std::vector<SymbolType> typeConditions = {SymbolType(TY_DYN)};
+  std::vector<Type> typeConditions = {Type(TY_DYN)};
 
   // Private methods
-  [[nodiscard]] bool checkTypeConditionOf(const SymbolType &symbolType, bool ignoreArraySize, bool ignoreSpecifiers) const;
+  [[nodiscard]] bool checkTypeConditionOf(const Type &symbolType, bool ignoreArraySize, bool ignoreSpecifiers) const;
 };
 
 } // namespace spice::compiler

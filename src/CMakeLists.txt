@@ -50,8 +50,8 @@ set(SOURCES
         symboltablebuilder/SymbolTableEntry.h
         symboltablebuilder/Capture.cpp
         symboltablebuilder/Capture.h
-        symboltablebuilder/SymbolType.cpp
-        symboltablebuilder/SymbolType.h
+        symboltablebuilder/Type.cpp
+        symboltablebuilder/Type.h
         symboltablebuilder/TypeChain.cpp
         symboltablebuilder/TypeSpecifiers.cpp
         symboltablebuilder/TypeSpecifiers.h
