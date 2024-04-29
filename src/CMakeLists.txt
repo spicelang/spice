@@ -15,6 +15,8 @@ set(SOURCES
         global/CacheManager.h
         global/RuntimeModuleManager.cpp
         global/RuntimeModuleManager.h
+        global/TypeRegistry.cpp
+        global/TypeRegistry.h
         # Driver
         driver/Driver.cpp
         driver/Driver.h

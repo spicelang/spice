@@ -6,6 +6,7 @@
 #include <ast/Attributes.h>
 #include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
+#include <global/TypeRegistry.h>
 #include <irgenerator/NameMangling.h>
 #include <irgenerator/StdFunctionManager.h>
 #include <model/GenericType.h>
@@ -15,14 +16,13 @@
 
 namespace spice::compiler {
 
-Type::Type(SuperType superType)
-    : typeChain({TypeChainElement{superType}}), specifiers(TypeSpecifiers::of(superType)) {}
+Type::Type(SuperType superType) : typeChain({TypeChainElement{superType}}), specifiers(TypeSpecifiers::of(superType)) {}
 
 Type::Type(SuperType superType, const std::string &subType)
     : typeChain({TypeChainElement{superType, subType}}), specifiers(TypeSpecifiers::of(superType)) {}
 
-Type::Type(SuperType superType, const std::string &subType, uint64_t typeId,
-                       const Type::TypeChainElementData &data, const std::vector<Type> &templateTypes)
+Type::Type(SuperType superType, const std::string &subType, uint64_t typeId, const Type::TypeChainElementData &data,
+           const std::vector<Type> &templateTypes)
     : typeChain({TypeChainElement(superType, subType, typeId, data, templateTypes)}), specifiers(TypeSpecifiers::of(superType)) {}
 
 Type::Type(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
@@ -48,6 +48,27 @@ Type Type::toPointer(const ASTNode *node) const {
 }
 
 /**
+ * Get the pointer type of the current type as a new type
+ *
+ * @param node AST node for error messages
+ * @return Pointer type of the current type
+ */
+const Type *Type::toPtr(const ASTNode *node) const {
+  // Do not allow pointers of dyn
+  if (is(TY_DYN))
+    throw SemanticError(node, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
+  if (isRef())
+    throw SemanticError(node, REF_POINTERS_ARE_NOT_ALLOWED, "Pointers to references are not allowed. Use pointer instead");
+
+  // Create new type
+  Type newType = *this;
+  newType.typeChain.emplace_back(TY_PTR);
+
+  // Register new type or return if already registered
+  return TypeRegistry::getOrInsert(newType);
+}
+
+/**
  * Get the reference type of the current type as a new type
  *
  * @param node AST node for error messages
@@ -64,6 +85,28 @@ Type Type::toReference(const ASTNode *node) const {
   TypeChain newTypeChain = typeChain;
   newTypeChain.emplace_back(TY_REF);
   return {newTypeChain, specifiers};
+}
+
+/**
+ * Get the reference type of the current type as a new type
+ *
+ * @param node AST node for error messages
+ * @return Reference type of the current type
+ */
+const Type *Type::toRef(const ASTNode *node) const {
+  // Do not allow references of dyn
+  if (is(TY_DYN))
+    throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
+  // Do not allow references of references
+  if (isRef())
+    throw SemanticError(node, MULTI_REF_NOT_ALLOWED, "References to references are not allowed");
+
+  // Create new type
+  Type newType = *this;
+  newType.typeChain.emplace_back(TY_REF);
+
+  // Register new type or return if already registered
+  return TypeRegistry::getOrInsert(newType);
 }
 
 /**
@@ -94,6 +137,25 @@ Type Type::toArray(const ASTNode *node, unsigned int size, bool skipDynCheck /*=
   newTypeChain.emplace_back(TY_ARRAY, TypeChainElementData{.arraySize = size});
   return {newTypeChain, specifiers};
 }
+/**
+ * Get the array type of the current type as a new type
+ *
+ * @param node AST node for error messages
+ * @param size Size of the array
+ * @return Array type of the current type
+ */
+const Type *Type::toArr(const ASTNode *node, unsigned int size, bool skipDynCheck /*=false*/) const {
+  // Do not allow arrays of dyn
+  if (!skipDynCheck && typeChain.back().superType == TY_DYN)
+    throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
+
+  // Create new type
+  Type newType = *this;
+  newType.typeChain.emplace_back(TY_ARRAY, TypeChainElementData{.arraySize = size});
+
+  // Register new type or return if already registered
+  return TypeRegistry::getOrInsert(newType);
+}
 
 /**
  * Retrieve the base type of an array or a pointer
@@ -107,6 +169,24 @@ Type Type::getContainedTy() const {
   TypeChain newTypeChain = typeChain;
   newTypeChain.pop_back();
   return {newTypeChain, specifiers};
+}
+
+/**
+ * Retrieve the base type of an array or a pointer
+ *
+ * @return Base type
+ */
+const Type *Type::getContained() const {
+  if (is(TY_STRING))
+    return TypeRegistry::getOrInsert(TY_CHAR);
+
+  // Create new type
+  Type newType = *this;
+  assert(newType.typeChain.size() > 1);
+  newType.typeChain.pop_back();
+
+  // Register new type or return if already registered
+  return TypeRegistry::getOrInsert(newType);
 }
 
 /**
@@ -130,6 +210,30 @@ Type Type::replaceBaseType(const Type &newBaseType) const {
 
   // Return the new chain as a symbol type
   return {newTypeChain, newSpecifiers};
+}
+
+/**
+ * Replace the base type with another one
+ *
+ * @param newBaseType New base type
+ * @return The new type
+ */
+const Type *Type::replaceBase(const Type &newBaseType) const {
+  assert(!typeChain.empty());
+
+  // Create new type
+  Type newType = *this;
+  TypeChain &newTypeChain = newType.typeChain;
+  const bool doubleRef = newTypeChain.back().superType == TY_REF && typeChain.back().superType == TY_REF;
+  for (size_t i = 1; i < typeChain.size(); i++)
+    if (!doubleRef || i > 1)
+      newTypeChain.push_back(typeChain.at(i));
+
+  // Create new specifiers
+  newType.specifiers = specifiers.merge(newBaseType.specifiers);
+
+  // Register new type or return if already registered
+  return TypeRegistry::getOrInsert(newType);
 }
 
 /**
@@ -274,18 +378,14 @@ bool Type::isIterable(const ASTNode *node) const {
  *
  * @return String object or not
  */
-bool Type::isStringObj() const {
-  return is(TY_STRUCT) && getSubType() == STROBJ_NAME && getBodyScope()->sourceFile->stdFile;
-}
+bool Type::isStringObj() const { return is(TY_STRUCT) && getSubType() == STROBJ_NAME && getBodyScope()->sourceFile->stdFile; }
 
 /**
  * Check if the current type is a error object
  *
  * @return Error object or not
  */
-bool Type::isErrorObj() const {
-  return is(TY_STRUCT) && getSubType() == ERROBJ_NAME && getBodyScope()->sourceFile->stdFile;
-}
+bool Type::isErrorObj() const { return is(TY_STRUCT) && getSubType() == ERROBJ_NAME && getBodyScope()->sourceFile->stdFile; }
 
 /**
  * Check if the current type implements the given interface type
@@ -399,15 +499,14 @@ bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList)
   bool covered = true;
   // Check template types
   const std::vector<Type> &baseTemplateTypes = baseType.getTemplateTypes();
-  covered &= std::ranges::all_of(baseTemplateTypes, [&](const Type &templateType) {
-    return templateType.isCoveredByGenericTypeList(genericTypeList);
-  });
+  covered &= std::ranges::all_of(
+      baseTemplateTypes, [&](const Type &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); });
 
   // If function/procedure, check param and return types
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
     const std::vector<Type> &paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
-    covered &= std::ranges::all_of(
-        paramAndReturnTypes, [&](const Type &paramType) { return paramType.isCoveredByGenericTypeList(genericTypeList); });
+    covered &= std::ranges::all_of(paramAndReturnTypes,
+                                   [&](const Type &paramType) { return paramType.isCoveredByGenericTypeList(genericTypeList); });
   }
 
   return covered;
@@ -567,9 +666,7 @@ Interface *Type::getInterface(const ASTNode *node) const {
   return InterfaceManager::matchInterface(interfaceDefScope, structName, templateTypes, node);
 }
 
-bool operator==(const Type &lhs, const Type &rhs) {
-  return lhs.typeChain == rhs.typeChain && lhs.specifiers == rhs.specifiers;
-}
+bool operator==(const Type &lhs, const Type &rhs) { return lhs.typeChain == rhs.typeChain && lhs.specifiers == rhs.specifiers; }
 
 bool operator!=(const Type &lhs, const Type &rhs) { return !(lhs == rhs); }
 
