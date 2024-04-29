@@ -129,7 +129,7 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   visit(node->initDecl());
 
   // Visit condition
-  Type conditionType = std::any_cast<ExprResult>(visit(node->condAssign())).type;
+  QualType conditionType = std::any_cast<ExprResult>(visit(node->condAssign())).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -150,16 +150,16 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
 
   // Visit iterator assignment
   AssignExprNode *iteratorNode = node->iteratorAssign();
-  Type iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
+  QualType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
-  iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
+  iteratorOrIterableType = QualType(iteratorOrIterableType.removeReferenceWrapper());
 
   // Retrieve iterator type
-  Type iteratorType = iteratorOrIterableType;
+  QualType iteratorType = iteratorOrIterableType;
 
-  if (iteratorOrIterableType.isIterable(node)) {
-    const Type &iterableType = iteratorOrIterableType;
-    if (iteratorOrIterableType.isArray()) { // Array
+  if (iteratorOrIterableType.getType().isIterable(node)) {
+    const QualType &iterableType = iteratorOrIterableType;
+    if (iteratorOrIterableType.getType().isArray()) { // Array
       const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(ARRAY_ITERATOR_NAME);
       if (!nameRegistryEntry) {
         softError(node, UNKNOWN_DATATYPE, "Forgot to import of \"std/iterator/array-iterator\"?");
@@ -171,28 +171,28 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       Type unsignedLongType(TY_LONG);
       unsignedLongType.specifiers.isSigned = false;
       unsignedLongType.specifiers.isUnsigned = true;
-      const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
+      const ArgList argTypes = {Arg(iterableType.getType(), false), Arg(unsignedLongType, false)};
       const Type thisType(TY_DYN);
       node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
     } else { // Struct, implementing Iterator interface
-      Scope *matchScope = iterableType.getBodyScope();
-      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
+      Scope *matchScope = iterableType.getType().getBodyScope();
+      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType.getType(), {}, {}, true, iteratorNode);
     }
     assert(node->getIteratorFct != nullptr);
-    iteratorType = node->getIteratorFct->returnType;
+    iteratorType = QualType(node->getIteratorFct->returnType);
     // Create anonymous entry for the iterator
-    currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
+    currentScope->symbolTable.insertAnonymous(iteratorType.getType(), iteratorNode);
   }
 
   // Check iterator type
-  if (!iteratorType.isIterator(node)) {
+  if (!iteratorType.getType().isIterator(node)) {
     const std::string errMsg =
         "Can only iterate over arrays or data structures, inheriting from IIterator or IIterable. You provided " +
-        iteratorType.getName();
+        iteratorType.getName(false);
     softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }
-  const std::vector<Type> &iteratorTemplateTypes = iteratorType.getTemplateTypes();
+  const std::vector<Type> &iteratorTemplateTypes = iteratorType.getType().getTemplateTypes();
   if (iteratorTemplateTypes.empty())
     SOFT_ERROR_ER(node->iteratorAssign(), INVALID_ITERATOR,
                   "Iterator has no generic arguments so that the item type could not be inferred")
@@ -200,29 +200,29 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   const bool hasIdx = node->idxVarDecl();
   if (hasIdx) {
     // Visit index declaration or assignment
-    auto indexType = std::any_cast<Type>(visit(node->idxVarDecl()));
+    auto indexType = std::any_cast<QualType>(visit(node->idxVarDecl()));
     HANDLE_UNRESOLVED_TYPE_PTR(indexType)
     // Check if index type is int
     if (!indexType.is(TY_LONG))
       SOFT_ERROR_ER(node->idxVarDecl(), FOREACH_IDX_NOT_LONG,
-                    "Index in foreach loop must be of type long. You provided " + indexType.getName())
+                    "Index in foreach loop must be of type long. You provided " + indexType.getName(false))
   }
 
   // Retrieve .get(), .getIdx(), .isValid() and .next() functions
-  Scope *matchScope = iteratorType.getBodyScope();
+  Scope *matchScope = iteratorType.getType().getBodyScope();
   Type iteratorItemType;
   if (hasIdx) {
-    node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType, {}, {}, false, node);
+    node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType.getType(), {}, {}, false, node);
     assert(node->getIdxFct != nullptr);
     iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
   } else {
-    node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, {}, false, node);
+    node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType.getType(), {}, {}, false, node);
     assert(node->getFct != nullptr);
     iteratorItemType = node->getFct->returnType;
   }
-  node->isValidFct = FunctionManager::matchFunction(matchScope, "isValid", iteratorType, {}, {}, false, node);
+  node->isValidFct = FunctionManager::matchFunction(matchScope, "isValid", iteratorType.getType(), {}, {}, false, node);
   assert(node->isValidFct != nullptr);
-  node->nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, {}, false, node);
+  node->nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType.getType(), {}, {}, false, node);
   assert(node->nextFct != nullptr);
 
   // Retrieve item variable entry
@@ -230,22 +230,22 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   assert(itemVarSymbol != nullptr);
 
   // Check type of the item
-  auto itemType = std::any_cast<Type>(visit(node->itemVarDecl()));
+  auto itemType = std::any_cast<QualType>(visit(node->itemVarDecl()));
   HANDLE_UNRESOLVED_TYPE_PTR(itemType)
   if (itemType.is(TY_DYN)) { // Perform type inference
     // Update evaluated symbol type of the declaration data type
     node->itemVarDecl()->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
     // Update item type
-    itemType = iteratorItemType;
+    itemType = QualType(iteratorItemType);
   } else {
     // Check item type
     const ExprResult itemResult = {itemType, itemVarSymbol};
-    const ExprResult iteratorItemResult = {iteratorItemType, nullptr /* always a temporary */};
+    const ExprResult iteratorItemResult = {QualType(iteratorItemType), nullptr /* always a temporary */};
     OpRuleManager::getAssignResultType(node->itemVarDecl(), itemResult, iteratorItemResult, true, ERROR_FOREACH_ITEM);
   }
 
   // Update type of item
-  itemVarSymbol->updateType(itemType, true);
+  itemVarSymbol->updateType(itemType.getType(), true);
 
   // Visit body
   visit(node->body());
@@ -258,7 +258,7 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit condition
-  Type conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -278,7 +278,7 @@ std::any TypeChecker::visitDoWhileLoop(DoWhileLoopNode *node) {
   visit(node->body());
 
   // Visit condition
-  Type conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -293,7 +293,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
 
   // Visit condition
   AssignExprNode *condition = node->condition();
-  Type conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
@@ -336,7 +336,7 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
 std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   // Check expression type
   AssignExprNode *expr = node->assignExpr();
-  Type exprType = std::any_cast<ExprResult>(visit(expr)).type;
+  QualType exprType = std::any_cast<ExprResult>(visit(expr)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(exprType)
   if (!exprType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}))
     SOFT_ERROR_ER(node->assignExpr(), SWITCH_EXPR_MUST_BE_PRIMITIVE,
@@ -348,7 +348,7 @@ std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   // Check if case constant types match switch expression type
   for (CaseBranchNode *caseBranchNode : node->caseBranches())
     for (CaseConstantNode *constantNode : caseBranchNode->caseConstants()) {
-      const Type constantType = std::any_cast<ExprResult>(visit(constantNode)).type;
+      const QualType constantType = std::any_cast<ExprResult>(visit(constantNode)).type;
       if (!constantType.matches(exprType, false, true, true))
         SOFT_ERROR_ER(constantNode, SWITCH_CASE_TYPE_MISMATCH, "Case value type does not match the switch expression type")
     }
@@ -416,7 +416,7 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
 
   for (DeclStmtNode *param : node->params()) {
     // Visit param
-    const auto paramType = std::any_cast<Type>(visit(param));
+    const auto paramType = std::any_cast<QualType>(visit(param));
     if (paramType.is(TY_UNRESOLVED))
       continue;
 
@@ -442,14 +442,14 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
 }
 
 std::any TypeChecker::visitField(FieldNode *node) {
-  auto fieldType = std::any_cast<Type>(visit(node->dataType()));
-  HANDLE_UNRESOLVED_TYPE_ST(fieldType)
+  auto fieldType = std::any_cast<QualType>(visit(node->dataType()));
+  HANDLE_UNRESOLVED_TYPE_QT(fieldType)
 
   if (TernaryExprNode *defaultValueNode = node->defaultValue()) {
-    const Type defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
-    HANDLE_UNRESOLVED_TYPE_ST(defaultValueType)
+    const QualType defaultValueType = std::any_cast<ExprResult>(visit(defaultValueNode)).type;
+    HANDLE_UNRESOLVED_TYPE_QT(defaultValueType)
     if (!fieldType.matches(defaultValueType, false, true, true))
-      SOFT_ERROR_ST(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
+      SOFT_ERROR_QT(node, FIELD_TYPE_NOT_MATCHING, "Type of the default values does not match the field type")
   }
 
   return fieldType;
@@ -463,7 +463,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   if (node->hasTemplateTypes) {
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
       // Visit template type
-      auto templateType = std::any_cast<Type>(visit(dataType));
+      auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
         return static_cast<std::vector<Function *> *>(nullptr);
       // Check if it is a generic type
@@ -472,20 +472,20 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
         return static_cast<std::vector<Function *> *>(nullptr);
       }
       // Convert generic symbol type to generic type
-      GenericType *genericType = rootScope->lookupGenericType(templateType.getSubType());
+      GenericType *genericType = rootScope->lookupGenericType(templateType.getType().getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
   }
 
   // Visit return type
-  Type returnType(TY_DYN);
+  QualType returnType(TY_DYN);
   if (isFunction) {
-    returnType = std::any_cast<Type>(visit(node->returnType()));
+    returnType = std::any_cast<QualType>(visit(node->returnType()));
     if (returnType.is(TY_UNRESOLVED))
       return static_cast<std::vector<Function *> *>(nullptr);
 
-    if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
+    if (!returnType.getType().isCoveredByGenericTypeList(usedGenericTypes))
       softError(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                 "Generic return type not included in the template type list of the function");
   }
@@ -496,12 +496,12 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   if (node->hasParams) {
     paramList.reserve(node->paramTypeLst()->dataTypes().size());
     for (DataTypeNode *param : node->paramTypeLst()->dataTypes()) {
-      auto paramType = std::any_cast<Type>(visit(param));
+      auto paramType = std::any_cast<QualType>(visit(param));
       if (paramType.is(TY_UNRESOLVED))
         return static_cast<std::vector<Function *> *>(nullptr);
 
       // Check if the type is present in the template for generic types
-      if (!paramType.isCoveredByGenericTypeList(usedGenericTypes)) {
+      if (!paramType.getType().isCoveredByGenericTypeList(usedGenericTypes)) {
         softError(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                   "Generic param type not included in the template type list of the function");
         continue;
@@ -540,7 +540,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   SymbolTableEntry *localVarEntry = currentScope->lookupStrict(node->varName);
   assert(localVarEntry != nullptr);
 
-  Type localVarType;
+  QualType localVarType;
   if (node->hasAssignment) {
     // Visit the right side
     auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
@@ -553,68 +553,68 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     }
 
     // Visit data type
-    localVarType = std::any_cast<Type>(visit(node->dataType()));
+    localVarType = std::any_cast<QualType>(visit(node->dataType()));
 
     // Infer the type left to right if the right side is an empty array initialization
-    if (rhsTy.isArrayOf(TY_DYN))
-      rhsTy = localVarType;
+    if (rhsTy.getType().isArrayOf(TY_DYN))
+      rhsTy = QualType(localVarType);
 
     // Check if type has to be inferred or both types are fixed
     if (!localVarType.is(TY_UNRESOLVED) && !rhsTy.is(TY_UNRESOLVED)) {
       const ExprResult lhsResult = {localVarType, localVarEntry};
-      localVarType = OpRuleManager::getAssignResultType(node, lhsResult, rhs, true);
+      localVarType = QualType(OpRuleManager::getAssignResultType(node, lhsResult, rhs, true));
 
       // Call copy ctor if required
       if (localVarType.is(TY_STRUCT) && !node->isParam && !rhs.isTemporary()) {
-        Scope *matchScope = localVarType.getBodyScope();
+        Scope *matchScope = localVarType.getType().getBodyScope();
         assert(matchScope != nullptr);
         // Check if we have a no-args ctor to call
-        const Type &thisType = localVarType;
-        const ArgList args = {{thisType.toConstReference(node), false}};
-        node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+        const QualType &thisType = localVarType;
+        const ArgList args = {{thisType.getType().toConstReference(node), false}};
+        node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType.getType(), args, {}, true, node);
       }
 
       // If this is a struct type, check if the type is known. If not, error out
       if (localVarType.isBaseType(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBaseType().getSubType())) {
         const std::string structName = localVarType.getBaseType().getSubType();
         softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
-        localVarType = Type(TY_UNRESOLVED);
+        localVarType = QualType(TY_UNRESOLVED);
       }
     } else {
-      localVarType = Type(TY_UNRESOLVED);
+      localVarType = QualType(TY_UNRESOLVED);
     }
   } else {
     // Visit data type
-    localVarType = std::any_cast<Type>(visit(node->dataType()));
+    localVarType = std::any_cast<QualType>(visit(node->dataType()));
 
     // References with no initialization are illegal
-    if (localVarType.isRef() && !node->isParam && !node->isForEachItem)
+    if (localVarType.getType().isRef() && !node->isParam && !node->isForEachItem)
       softError(node, REFERENCE_WITHOUT_INITIALIZER, "References must always be initialized directly");
 
     // If this is a struct, check for the default ctor
     if (localVarType.is(TY_STRUCT) && !node->isParam && !node->isForEachItem) {
-      Scope *matchScope = localVarType.getBodyScope();
+      Scope *matchScope = localVarType.getType().getBodyScope();
       assert(matchScope != nullptr);
       // Check if we are required to call a ctor
-      auto structDeclNode = spice_pointer_cast<StructDefNode *>(localVarType.getStruct(node)->declNode);
+      auto structDeclNode = spice_pointer_cast<StructDefNode *>(localVarType.getType().getStruct(node)->declNode);
       node->isCtorCallRequired = matchScope->hasRefFields() || structDeclNode->emitVTable;
       // Check if we have a no-args ctor to call
-      const std::string &structName = localVarType.getSubType();
-      const Type &thisType = localVarType;
-      node->calledInitCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
+      const std::string &structName = localVarType.getType().getSubType();
+      const QualType &thisType = localVarType;
+      node->calledInitCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType.getType(), {}, {}, false, node);
       if (!node->calledInitCtor && node->isCtorCallRequired)
-        SOFT_ERROR_ST(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
+        SOFT_ERROR_QT(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
     }
   }
 
   // Update the type of the variable
-  localVarEntry->updateType(localVarType, true);
+  localVarEntry->updateType(localVarType.getType(), true);
   node->entries.at(manIdx) = localVarEntry;
 
   // Update the state of the variable
   localVarEntry->updateState(INITIALIZED, node, true);
 
-  return node->setEvaluatedSymbolType(localVarType, manIdx);
+  return node->setEvaluatedSymbolType(localVarType.getType(), manIdx);
 }
 
 std::any TypeChecker::visitCaseConstant(CaseConstantNode *node) {
@@ -641,14 +641,14 @@ std::any TypeChecker::visitCaseConstant(CaseConstantNode *node) {
 
   const Type varType = node->enumItemEntry->getType();
   assert(varType.is(TY_INT));
-  return ExprResult{node->setEvaluatedSymbolType(varType, manIdx)};
+  return ExprResult{QualType(node->setEvaluatedSymbolType(varType, manIdx))};
 }
 
 std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   // Retrieve return variable entry
   SymbolTableEntry *returnVar = currentScope->lookup(RETURN_VARIABLE_NAME);
   const bool isFunction = returnVar != nullptr;
-  Type returnType = isFunction ? returnVar->getType() : Type(TY_DYN);
+  QualType returnType = isFunction ? returnVar->getQualType() : QualType(TY_DYN);
 
   // Check if procedure with return value
   if (!isFunction) {
@@ -658,14 +658,14 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   }
 
   if (!node->hasReturnValue && !returnVar->isInitialized())
-    SOFT_ERROR_ST(node, RETURN_WITHOUT_VALUE_RESULT, "Return without value, but result variable is not initialized yet")
+    SOFT_ERROR_QT(node, RETURN_WITHOUT_VALUE_RESULT, "Return without value, but result variable is not initialized yet")
 
   if (!node->hasReturnValue)
     return nullptr;
 
   // Visit right side
   auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
-  HANDLE_UNRESOLVED_TYPE_ST(rhs.type)
+  HANDLE_UNRESOLVED_TYPE_QT(rhs.type)
 
   // Check if types match
   const ExprResult returnResult = {returnType, returnVar};
@@ -723,7 +723,7 @@ std::any TypeChecker::visitFallthroughStmt(FallthroughStmtNode *node) {
 
 std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   // Visit condition
-  Type conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  QualType conditionType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
   // Check if condition evaluates to bool
@@ -745,14 +745,14 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     // Get next assignment
     AssignExprNode *assignment = node->args().at(placeholderCount);
     // Visit assignment
-    Type argType = std::any_cast<ExprResult>(visit(assignment)).type;
+    QualType argType = std::any_cast<ExprResult>(visit(assignment)).type;
     HANDLE_UNRESOLVED_TYPE_ER(argType)
-    argType = argType.removeReferenceWrapper();
+    argType = QualType(argType.removeReferenceWrapper());
 
     switch (node->templatedString.at(index + 1)) {
     case 'c': {
       if (!argType.is(TY_CHAR))
-        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects char, but got " + argType.getName())
+        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects char, but got " + argType.getName(false))
       placeholderCount++;
       break;
     }
@@ -765,7 +765,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     case 'X': {
       if (!argType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_BOOL}))
         SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
-                      "The placeholder string expects int, short, long, byte or bool, but got " + argType.getName())
+                      "The placeholder string expects int, short, long, byte or bool, but got " + argType.getName(false))
       placeholderCount++;
       break;
     }
@@ -778,21 +778,21 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     case 'g':
     case 'G': {
       if (!argType.is(TY_DOUBLE))
-        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects double, but got " + argType.getName())
+        SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR, "The placeholder string expects double, but got " + argType.getName(false))
       placeholderCount++;
       break;
     }
     case 's': {
-      if (!argType.is(TY_STRING) && !argType.isStringObj() && !argType.isPtrOf(TY_CHAR) && !argType.isArrayOf(TY_CHAR))
+      if (!argType.is(TY_STRING) && !argType.getType().isStringObj() && !argType.getType().isPtrOf(TY_CHAR) && !argType.getType().isArrayOf(TY_CHAR))
         SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
-                      "The placeholder string expects string, String, char* or char[], but got " + argType.getName())
+                      "The placeholder string expects string, String, char* or char[], but got " + argType.getName(false))
       placeholderCount++;
       break;
     }
     case 'p': {
-      if (!argType.isPtr() && !argType.isArray() && !argType.is(TY_STRING))
+      if (!argType.getType().isPtr() && !argType.getType().isArray() && !argType.is(TY_STRING))
         SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
-                      "The placeholder string expects pointer, array or string, but got " + argType.getName())
+                      "The placeholder string expects pointer, array or string, but got " + argType.getName(false))
       placeholderCount++;
       break;
     }
@@ -806,7 +806,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   if (placeholderCount < node->args().size())
     SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains less placeholders than arguments")
 
-  return ExprResult{node->setEvaluatedSymbolType(Type(TY_BOOL), manIdx)};
+  return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_BOOL), manIdx))};
 }
 
 std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
@@ -816,7 +816,7 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
     visit(node->assignExpr());
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(Type(TY_LONG), manIdx)};
+  return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_LONG), manIdx))};
 }
 
 std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
@@ -826,42 +826,42 @@ std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
     visit(node->assignExpr());
   }
 
-  return ExprResult{node->setEvaluatedSymbolType(Type(TY_LONG), manIdx)};
+  return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_LONG), manIdx))};
 }
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
-  Type argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
-  argType = argType.removeReferenceWrapper();
+  argType = QualType(argType.removeReferenceWrapper());
 
   // Check if arg is of type array
-  if (!argType.isArray() && !argType.is(TY_STRING))
+  if (!argType.getType().isArray() && !argType.is(TY_STRING))
     SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ARRAY_TYPE, "The len builtin can only work on arrays or strings")
 
   // If we want to use the len builtin on a string, we need to import the string runtime module
   if (argType.is(TY_STRING) && !sourceFile->isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
 
-  return ExprResult{node->setEvaluatedSymbolType(Type(TY_LONG), manIdx)};
+  return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_LONG), manIdx))};
 }
 
 std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
-  Type argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
+  QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
-  argType = argType.removeReferenceWrapper();
+  argType = QualType(argType.removeReferenceWrapper());
 
   // Check if arg is of type array
-  if (!argType.isErrorObj())
+  if (!argType.getType().isErrorObj())
     SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
 
-  return ExprResult{node->setEvaluatedSymbolType(Type(TY_DYN), manIdx)};
+  return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_DYN), manIdx))};
 }
 
 std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   // Check if ternary
   if (node->ternaryExpr()) {
     auto result = std::any_cast<ExprResult>(visit(node->ternaryExpr()));
-    node->setEvaluatedSymbolType(result.type, manIdx);
+    node->setEvaluatedSymbolType(result.type.getType(), manIdx);
     return result;
   }
 
@@ -1215,11 +1215,11 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   auto src = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr()));
   HANDLE_UNRESOLVED_TYPE_ER(src.type)
   // Visit destination type
-  auto dstType = std::any_cast<Type>(visit(node->dataType()));
+  auto dstType = std::any_cast<QualType>(visit(node->dataType()));
   HANDLE_UNRESOLVED_TYPE_ER(dstType)
 
   // Check for identity cast
-  if (src.type == dstType) {
+  if (src.type.getType() == dstType) {
     CompilerWarning warning(node->codeLoc, IDENTITY_CAST, "You cast from a type to itself. Thus, this can be simplified.");
     sourceFile->compilerOutput.warnings.push_back(warning);
   }
@@ -1227,7 +1227,7 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   // Get result type
   Type resultType = opRuleManager.getCastResultType(node, dstType, src);
 
-  SymbolTableEntry *entry = src.type.isSameContainerTypeAs(dstType) ? src.entry : nullptr;
+  SymbolTableEntry *entry = src.type.getType().isSameContainerTypeAs(dstType) ? src.entry : nullptr;
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx), entry};
 }
 
@@ -1323,15 +1323,15 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       SOFT_ERROR_ER(node, ARRAY_INDEX_NOT_INT_OR_LONG, "Array index must be of type int or long")
 
     // Check if we have an unsafe operation
-    if (lhsType.isPtr() && !currentScope->doesAllowUnsafeOperations())
+    if (lhsType.getType().isPtr() && !currentScope->doesAllowUnsafeOperations())
       SOFT_ERROR_ER(
           node, UNSAFE_OPERATION_IN_SAFE_CONTEXT,
           "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.")
 
     // Check if we have a hardcoded array index
-    if (lhsType.isArray() && lhsType.getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
+    if (lhsType.getType().isArray() && lhsType.getType().getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
       const int32_t constIndex = indexAssignExpr->getCompileTimeValue().intValue;
-      const unsigned int constSize = lhsType.getArraySize();
+      const unsigned int constSize = lhsType.getType().getArraySize();
       // Check if we are accessing out-of-bounds memory
       if (constIndex >= static_cast<int32_t>(constSize)) {
         const std::string idxStr = std::to_string(constIndex);
@@ -1342,10 +1342,10 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     }
 
     // Get item type
-    lhsType = lhsType.getContainedTy();
+    lhsType = lhsType.getType().getContainedTy();
 
     // Remove heap specifier
-    lhsType.specifiers.isHeap = false;
+    lhsType.getType().specifiers.isHeap = false;
 
     break;
   }
@@ -1356,7 +1356,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     Type lhsBaseTy = lhsType;
     autoDeReference(lhsBaseTy);
     if (!lhsBaseTy.is(TY_STRUCT))
-      SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName())
+      SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName(false))
 
     // Retrieve registry entry
     const std::string &structName = lhsBaseTy.getSubType();
@@ -1501,7 +1501,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // The base type should be a primitive, struct, interface, function or procedure
   const Type baseType = varType.getBaseType();
   if (!baseType.isPrimitive() && !baseType.isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
-    SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName() + " cannot be accessed here")
+    SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName(false) + " cannot be accessed here")
 
   // Check if is an imported variable
   if (accessScope->isImportedBy(rootScope)) {
@@ -1564,7 +1564,7 @@ std::any TypeChecker::visitValue(ValueNode *node) {
 
   // Typed nil
   if (node->isNil) {
-    auto nilType = std::any_cast<Type>(visit(node->nilType()));
+    auto nilType = std::any_cast<QualType>(visit(node->nilType()));
     HANDLE_UNRESOLVED_TYPE_ER(nilType)
     if (nilType.is(TY_DYN))
       SOFT_ERROR_ER(node->nilType(), UNEXPECTED_DYN_TYPE, "Nil must have an explicit type")
@@ -1624,7 +1624,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       // Visit argument
       const auto argResult = std::any_cast<ExprResult>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_ER(argResult.type)
-      assert(!argResult.type.hasAnyGenericParts());
+      assert(!argResult.type.getType().hasAnyGenericParts());
       // Save arg type to arg types list
       data.argResults.push_back(argResult);
     }
@@ -1676,7 +1676,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Get concrete template types
   if (node->hasTemplateTypes) {
     for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes()) {
-      auto templateType = std::any_cast<Type>(visit(templateTypeNode));
+      auto templateType = std::any_cast<QualType>(visit(templateTypeNode));
       assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
 
       // Abort if the type is unresolved
@@ -1890,7 +1890,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const Type &functionType) c
     TypeMapping tm;
     if (!TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
       SOFT_ERROR_BOOL(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
-                      "Expected " + expectedType.getName() + " but got " + actualType.getName())
+                      "Expected " + expectedType.getName(false) + " but got " + actualType.getName(false))
   }
   return true;
 }
@@ -1906,7 +1906,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, std::ve
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
     if (!fieldEntry)
       SOFT_ERROR_BOOL(node, ACCESS_TO_NON_EXISTING_MEMBER,
-                      "The type " + data.thisType.getBaseType().getName() + " does not have a member with the name '" +
+                      "The type " + data.thisType.getBaseType().getName(false) + " does not have a member with the name '" +
                           identifier + "'")
     if (!fieldEntry->getType().getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}))
       SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS,
@@ -1956,8 +1956,8 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
         actualItemType = itemType;
       else if (itemType != actualItemType) // Check if types are matching
         SOFT_ERROR_ER(arg, ARRAY_ITEM_TYPE_NOT_MATCHING,
-                      "All provided values have to be of the same data type. You provided " + actualItemType.getName() + " and " +
-                          itemType.getName())
+                      "All provided values have to be of the same data type. You provided " + actualItemType.getName(false) + " and " +
+                          itemType.getName(false))
     }
   }
 
@@ -2007,7 +2007,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   if (node->templateTypeLst()) {
     concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
     for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
-      auto concreteType = std::any_cast<Type>(visit(dataType));
+      auto concreteType = std::any_cast<QualType>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_ER(concreteType)
       // Check if generic type
       if (concreteType.is(TY_GENERIC))
@@ -2102,8 +2102,8 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit return type
-  auto returnType = std::any_cast<Type>(visit(node->returnType()));
-  HANDLE_UNRESOLVED_TYPE_ST(returnType)
+  auto returnType = std::any_cast<QualType>(visit(node->returnType()));
+  HANDLE_UNRESOLVED_TYPE_QT(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
 
@@ -2243,25 +2243,25 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
 
 std::any TypeChecker::visitDataType(DataTypeNode *node) {
   // Visit base data type
-  auto type = std::any_cast<Type>(visit(node->baseDataType()));
-  HANDLE_UNRESOLVED_TYPE_ST(type)
+  auto type = std::any_cast<QualType>(visit(node->baseDataType()));
+  HANDLE_UNRESOLVED_TYPE_QT(type)
 
   std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
   while (!tmQueue.empty()) {
     DataTypeNode::TypeModifier typeModifier = tmQueue.front();
 
     // Only the outermost array can have an unknown size
-    if (type.isArray() && type.getArraySize() == ARRAY_SIZE_UNKNOWN)
-      SOFT_ERROR_ST(node, ARRAY_SIZE_INVALID,
+    if (type.getType().isArray() && type.getType().getArraySize() == ARRAY_SIZE_UNKNOWN)
+      SOFT_ERROR_QT(node, ARRAY_SIZE_INVALID,
                     "Usage of incomplete array type. Only the outermost array type may have unknown size")
 
     switch (typeModifier.modifierType) {
     case DataTypeNode::TYPE_PTR: {
-      type = type.toPointer(node);
+      type = type.getType().toPointer(node);
       break;
     }
     case DataTypeNode::TYPE_REF: {
-      type = type.toReference(node);
+      type = type.getType().toReference(node);
       break;
     }
     case DataTypeNode::TYPE_ARRAY: {
@@ -2269,17 +2269,17 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       if (!varName.empty()) {
         SymbolTableEntry *globalVar = rootScope->lookupStrict(varName);
         if (!globalVar)
-          SOFT_ERROR_ST(node, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + varName + "' ")
+          SOFT_ERROR_QT(node, REFERENCED_UNDEFINED_VARIABLE, "Could not find global variable '" + varName + "' ")
         if (!globalVar->getType().isConst())
-          SOFT_ERROR_ST(node, EXPECTED_CONST_VARIABLE, "The size of the array must be known at compile time")
+          SOFT_ERROR_QT(node, EXPECTED_CONST_VARIABLE, "The size of the array must be known at compile time")
         if (!globalVar->getType().is(TY_INT))
-          SOFT_ERROR_ST(node, OPERATOR_WRONG_DATA_TYPE, "Expected variable of type int")
+          SOFT_ERROR_QT(node, OPERATOR_WRONG_DATA_TYPE, "Expected variable of type int")
         typeModifier.hardcodedSize = globalVar->declNode->getCompileTimeValue().intValue;
       }
 
       if (typeModifier.hasSize && typeModifier.hardcodedSize <= 1)
-        SOFT_ERROR_ST(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated")
-      type = type.toArray(node, typeModifier.hardcodedSize);
+        SOFT_ERROR_QT(node, ARRAY_SIZE_INVALID, "The size of an array must be > 1 and explicitly stated")
+      type = type.getType().toArray(node, typeModifier.hardcodedSize);
       break;
     }
     default:                                                               // GCOV_EXCL_LINE
@@ -2293,30 +2293,31 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
     const Type baseType = type.getBaseType();
     for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
       if (specifier->type == SpecifierNode::TY_CONST) {
-        type.specifiers.isConst = true;
+        type.getType().specifiers.isConst = true;
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
-          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
-        type.specifiers.isSigned = true;
-        type.specifiers.isUnsigned = false;
+          SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName(false))
+        type.getType().specifiers.isSigned = true;
+        type.getType().specifiers.isUnsigned = false;
       } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
-          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName())
-        type.specifiers.isSigned = false;
-        type.specifiers.isUnsigned = true;
+          SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName(false))
+        type.getType().specifiers.isSigned = false;
+        type.getType().specifiers.isUnsigned = true;
       } else if (specifier->type == SpecifierNode::TY_HEAP) {
         // Heap variables can only be pointers
         if (!type.removeReferenceWrapper().isOneOf({TY_PTR, TY_STRING}))
-          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
-                        "The heap specifier can only be applied to symbols of pointer type, you provided " + baseType.getName())
+          SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
+                        "The heap specifier can only be applied to symbols of pointer type, you provided " +
+                            baseType.getName(false))
 
-        type.specifiers.isHeap = true;
+        type.getType().specifiers.isHeap = true;
       } else if (specifier->type == SpecifierNode::TY_COMPOSITION && node->isFieldType) {
         if (!type.is(TY_STRUCT))
-          SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "The compose specifier can only be used on plain struct fields")
-        type.specifiers.isComposition = true;
+          SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "The compose specifier can only be used on plain struct fields")
+        type.getType().specifiers.isComposition = true;
       } else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
-        type.specifiers.isPublic = true;
+        type.getType().specifiers.isPublic = true;
       } else {
         const char *entryName = "local variable";
         if (node->isGlobalType)
@@ -2327,7 +2328,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
           entryName = "param";
         else if (node->isReturnType)
           entryName = "return variable";
-        SOFT_ERROR_ST(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
+        SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT,
                       "Cannot use this specifier on a " + std::string(entryName) + " definition")
       }
     }
@@ -2355,13 +2356,13 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
   case BaseDataTypeNode::TYPE_BOOL:
     return node->setEvaluatedSymbolType(Type(TY_BOOL), manIdx);
   case BaseDataTypeNode::TYPE_CUSTOM: {
-    auto customType = std::any_cast<Type>(visit(node->customDataType()));
-    HANDLE_UNRESOLVED_TYPE_ST(customType)
+    auto customType = std::any_cast<QualType>(visit(node->customDataType()));
+    HANDLE_UNRESOLVED_TYPE_QT(customType)
     return node->setEvaluatedSymbolType(customType, manIdx);
   }
   case BaseDataTypeNode::TYPE_FUNCTION: {
-    auto functionType = std::any_cast<Type>(visit(node->functionDataType()));
-    HANDLE_UNRESOLVED_TYPE_ST(functionType)
+    auto functionType = std::any_cast<QualType>(visit(node->functionDataType()));
+    HANDLE_UNRESOLVED_TYPE_QT(functionType)
     return node->setEvaluatedSymbolType(functionType, manIdx);
   }
   default:
@@ -2412,7 +2413,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   // Check if the type exists in the exported names registry
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqTypeName);
   if (!registryEntry)
-    SOFT_ERROR_ST(node, UNKNOWN_DATATYPE, "Unknown datatype '" + node->fqTypeName + "'")
+    SOFT_ERROR_QT(node, UNKNOWN_DATATYPE, "Unknown datatype '" + node->fqTypeName + "'")
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *entry = registryEntry->targetEntry;
   assert(entry != nullptr);
@@ -2423,7 +2424,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
   // Enums can early-return
   if (entryType.is(TY_ENUM))
-    return Type(TY_INT);
+    return QualType(TY_INT);
 
   if (entryType.isOneOf({TY_STRUCT, TY_INTERFACE})) {
     assert(dynamic_cast<DataTypeNode *>(node->parent->parent) != nullptr);
@@ -2434,8 +2435,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     if (node->templateTypeLst()) {
       templateTypes.reserve(node->templateTypeLst()->dataTypes().size());
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
-        auto templateType = std::any_cast<Type>(visit(dataType));
-        HANDLE_UNRESOLVED_TYPE_ST(templateType)
+        auto templateType = std::any_cast<QualType>(visit(dataType));
+        HANDLE_UNRESOLVED_TYPE_QT(templateType)
         if (entryType.is(TY_GENERIC))
           allTemplateTypesConcrete = false;
         templateTypes.push_back(templateType);
@@ -2448,7 +2449,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       const CodeLoc &declCodeLoc = entry->declNode->codeLoc;
       const CodeLoc &codeLoc = node->codeLoc;
       if (declCodeLoc.sourceFile->filePath == codeLoc.sourceFile->filePath && declCodeLoc > codeLoc)
-        SOFT_ERROR_ST(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage")
+        SOFT_ERROR_QT(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage")
 
       if (allTemplateTypesConcrete) { // Only do the next step, if we have concrete template types
         // Set the struct instance to used, if found
@@ -2465,7 +2466,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       const std::string interfaceName = node->typeNameFragments.back();
       Interface *spiceInterface = InterfaceManager::matchInterface(localAccessScope, interfaceName, templateTypes, node);
       if (!spiceInterface)
-        SOFT_ERROR_ST(node, UNKNOWN_DATATYPE, "Unknown interface " + Interface::getSignature(interfaceName, templateTypes))
+        SOFT_ERROR_QT(node, UNKNOWN_DATATYPE, "Unknown interface " + Interface::getSignature(interfaceName, templateTypes))
       entryType.setBodyScope(spiceInterface->scope);
     }
 
@@ -2473,16 +2474,16 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   }
 
   const std::string errorMessage =
-      entryType.is(TY_INVALID) ? "Used type before declared" : "Expected type, but got " + entryType.getName();
-  SOFT_ERROR_ST(node, EXPECTED_TYPE, errorMessage)
+      entryType.is(TY_INVALID) ? "Used type before declared" : "Expected type, but got " + entryType.getName(false);
+  SOFT_ERROR_QT(node, EXPECTED_TYPE, errorMessage)
 }
 
 std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   // Visit return type
-  Type returnType(TY_DYN);
+  QualType returnType(TY_DYN);
   if (node->isFunction) {
-    returnType = std::any_cast<Type>(visit(node->returnType()));
-    HANDLE_UNRESOLVED_TYPE_ST(returnType)
+    returnType = std::any_cast<QualType>(visit(node->returnType()));
+    HANDLE_UNRESOLVED_TYPE_QT(returnType)
     if (returnType.is(TY_DYN))
       SOFT_ERROR_ER(node->returnType(), UNEXPECTED_DYN_TYPE, "Function types cannot have return type dyn")
   }
@@ -2491,8 +2492,8 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   std::vector<Type> paramTypes;
   if (const TypeLstNode *paramTypeListNode = node->paramTypeLst(); paramTypeListNode != nullptr) {
     for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes()) {
-      auto paramType = std::any_cast<Type>(visit(paramTypeNode));
-      HANDLE_UNRESOLVED_TYPE_ST(returnType)
+      auto paramType = std::any_cast<QualType>(visit(paramTypeNode));
+      HANDLE_UNRESOLVED_TYPE_QT(returnType)
       paramTypes.push_back(paramType);
     }
   }

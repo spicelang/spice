@@ -9,8 +9,6 @@
 #include <model/GenericType.h>
 #include <model/StructBase.h>
 
-#include "../../lib/json/json.hpp"
-
 namespace spice::compiler {
 
 class Struct : public StructBase {
@@ -27,9 +25,6 @@ public:
   // Public members
   std::vector<Type> fieldTypes;
   std::vector<Type> interfaceTypes;
-
-  // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, fieldTypes, templateTypes, interfaceTypes, genericSubstantiation, used)
 };
 
 } // namespace spice::compiler

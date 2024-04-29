@@ -111,32 +111,32 @@ void TypeMatcher::substantiateTypesWithTypeMapping(std::vector<Type> &symbolType
       substantiateTypeWithTypeMapping(symbolType, typeMapping);
 }
 
-void TypeMatcher::substantiateTypeWithTypeMapping(Type &symbolType, const TypeMapping &typeMapping) {
-  assert(symbolType.hasAnyGenericParts());
+void TypeMatcher::substantiateTypeWithTypeMapping(Type &type, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
+  assert(type.hasAnyGenericParts());
 
   // Check if the type itself is generic
-  if (symbolType.isBaseType(TY_GENERIC)) { // The symbol type itself is generic
-    const std::string genericTypeName = symbolType.getBaseType().getSubType();
+  if (type.isBaseType(TY_GENERIC)) { // The symbol type itself is generic
+    const std::string genericTypeName = type.getBaseType().getSubType();
     assert(typeMapping.contains(genericTypeName));
     const Type &replacementType = typeMapping.at(genericTypeName);
-    symbolType = symbolType.replaceBaseType(replacementType);
+    type = type.replaceBaseType(replacementType);
   } else { // The symbol type itself is non-generic, but one or several template or param types are
-    if (symbolType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    if (type.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
       // Substantiate each param type
-      std::vector<Type> paramTypes = symbolType.getFunctionParamAndReturnTypes();
+      std::vector<Type> paramTypes = type.getFunctionParamAndReturnTypes();
       for (Type &paramType : paramTypes)
         if (paramType.hasAnyGenericParts())
           substantiateTypeWithTypeMapping(paramType, typeMapping);
       // Attach the list of concrete param types to the symbol type
-      symbolType.setFunctionParamAndReturnTypes(paramTypes);
+      type.setFunctionParamAndReturnTypes(paramTypes);
     } else {
       // Substantiate each template type
-      std::vector<Type> templateTypes = symbolType.getBaseType().getTemplateTypes();
+      std::vector<Type> templateTypes = type.getBaseType().getTemplateTypes();
       for (Type &templateType : templateTypes)
         if (templateType.hasAnyGenericParts())
           substantiateTypeWithTypeMapping(templateType, typeMapping);
       // Attach the list of concrete template types to the symbol type
-      symbolType.setBaseTemplateTypes(templateTypes);
+      type.setBaseTemplateTypes(templateTypes);
     }
   }
 }

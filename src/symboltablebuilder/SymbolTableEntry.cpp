@@ -10,11 +10,18 @@
 namespace spice::compiler {
 
 /**
- * Retrieve the symbol type of this symbol
+ * Retrieve the qualified type of this symbol
  *
- * @return Current symbol type of this symbol
+ * @return Qualified type of this symbol
  */
-const Type &SymbolTableEntry::getType() const { return type; }
+const QualType &SymbolTableEntry::getQualType() const { return qualType; }
+
+/**
+ * Retrieve the type of this symbol
+ *
+ * @return Type of this symbol
+ */
+const Type &SymbolTableEntry::getType() const { return qualType.getType(); }
 
 /**
  * Update the type of this symbol.
@@ -23,8 +30,8 @@ const Type &SymbolTableEntry::getType() const { return type; }
  * @param overwriteExistingType Overwrites the existing type without throwing an error
  */
 void SymbolTableEntry::updateType(const Type &newType, bool overwriteExistingType) {
-  assert(overwriteExistingType || type.isOneOf({TY_INVALID, TY_DYN}));
-  type = newType;
+  assert(overwriteExistingType || qualType.isOneOf({TY_INVALID, TY_DYN}));
+  qualType.getType() = newType;
 }
 
 /**
@@ -40,7 +47,7 @@ void SymbolTableEntry::updateType(const Type &newType, bool overwriteExistingTyp
 void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node, bool force) {
   const LifecycleState oldState = lifecycle.getCurrentState();
   // Check if this is a constant variable and is already initialized
-  if (newState != DEAD && oldState != DECLARED && type.isConst() && !force)                       // GCOV_EXCL_LINE
+  if (newState != DEAD && oldState != DECLARED && qualType.isConst() && !force)                   // GCOV_EXCL_LINE
     throw CompilerError(INTERNAL_ERROR, "Not re-assignable variable '" + name + "'");             // GCOV_EXCL_LINE
   if (newState == DEAD && oldState == DECLARED)                                                   // GCOV_EXCL_LINE
     throw CompilerError(INTERNAL_ERROR, "Cannot destruct uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
@@ -62,7 +69,7 @@ const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declNode->codeL
  * @return LLVM type of the current struct symbol
  */
 llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
-  assert(type.isOneOf({TY_STRUCT, TY_INTERFACE}));
+  assert(qualType.isOneOf({TY_STRUCT, TY_INTERFACE}));
   return llvmStructType;
 }
 
@@ -72,7 +79,7 @@ llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
  * @param newStructType New struct LLVM type
  */
 void SymbolTableEntry::setStructLLVMType(llvm::StructType *newStructType) {
-  assert(type.isOneOf({TY_STRUCT, TY_INTERFACE}));
+  assert(qualType.isOneOf({TY_STRUCT, TY_INTERFACE}));
   llvmStructType = newStructType;
 }
 
@@ -91,7 +98,8 @@ llvm::Value *SymbolTableEntry::getAddress() const { return memAddress.empty() ? 
 void SymbolTableEntry::updateAddress(llvm::Value *address) {
   assert(address != nullptr);
   // Ensure that structs fields get no addresses assigned, as the addresses are meant for the struct instances
-  assert((scope->type != ScopeType::STRUCT && scope->type != ScopeType::INTERFACE) || type.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  assert((scope->type != ScopeType::STRUCT && scope->type != ScopeType::INTERFACE) ||
+         qualType.isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   if (memAddress.empty())
     memAddress.push(address);
   else
@@ -145,7 +153,7 @@ bool SymbolTableEntry::isField() const { return scope->type == ScopeType::STRUCT
 nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   nlohmann::json result;
   result["name"] = name;
-  result["type"] = type.getName(true);
+  result["type"] = qualType.getType().getName(true);
   result["codeLoc"] = declNode->codeLoc.toString();
   result["orderIndex"] = orderIndex;
   result["state"] = lifecycle.getCurrentStateName();

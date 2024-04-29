@@ -10,8 +10,6 @@
 
 #include <llvm/IR/Type.h>
 
-#include "../../lib/json/json.hpp"
-
 namespace spice::compiler {
 
 // Forward declarations
@@ -21,6 +19,7 @@ class Scope;
 class GenericType;
 class Struct;
 class Interface;
+class QualType;
 
 // Constants
 const char *const STROBJ_NAME = "String";
@@ -65,8 +64,6 @@ public:
     unsigned int arraySize;     // TY_ARRAY
     Scope *bodyScope = nullptr; // TY_STRUCT, TY_INTERFACE, TY_ENUM
     bool hasCaptures;           // TY_FUNCTION, TY_PROCEDURE (lambdas)
-
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
   };
 
   // Structs
@@ -86,6 +83,7 @@ public:
     // Overloaded operators
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs);
     friend bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs);
+    void getName(std::stringstream &name, bool withSize) const;
     [[nodiscard]] std::string getName(bool withSize) const;
 
     // Public members
@@ -95,9 +93,6 @@ public:
     TypeChainElementData data = {.arraySize = 0};
     std::vector<Type> templateTypes;
     std::vector<Type> paramTypes; // First type is the return type
-
-    // Json serializer/deserializer
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, typeId, data, templateTypes, paramTypes)
   };
 
   // Make sure we have no unexpected increases in memory consumption
@@ -109,6 +104,7 @@ public:
   // Constructors
   Type() = default;
   explicit Type(SuperType superType);
+  Type(const QualType &qualType); // ToDo: Remove
   Type(SuperType superType, const std::string &subType);
   Type(SuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
              const std::vector<Type> &templateTypes);
@@ -171,15 +167,13 @@ public:
     type.specifiers.isConst = false;
     return type;
   }
-  [[nodiscard]] Type getBaseType() const {
-    assert(!typeChain.empty());
-    return Type({typeChain.front()}, specifiers);
-  }
+  [[nodiscard]] Type getBaseType() const;
   [[nodiscard]] bool hasAnyGenericParts() const;
   void setTemplateTypes(const std::vector<Type> &templateTypes);
   void setBaseTemplateTypes(const std::vector<Type> &templateTypes);
   [[nodiscard]] const std::vector<Type> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
+  void getName(std::stringstream &name, bool withSize = false, bool ignorePublic = false) const;
   [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false) const;
   [[nodiscard]] ALWAYS_INLINE unsigned int getArraySize() const {
     assert(getSuperType() == TY_ARRAY);
@@ -229,10 +223,6 @@ public:
   // Public members
   TypeChain typeChain;
   TypeSpecifiers specifiers;
-
-public:
-  // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Type, typeChain);
 };
 
 // Make sure we have no unexpected increases in memory consumption

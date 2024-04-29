@@ -106,7 +106,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     if (!node->getIteratorFct->isMethod() && node->getIteratorFct->getParamTypes().front().isArray()) { // Array as iterable
       // Call iterate() function from std/iterator/array-iterator
       llvm::Function *iterateFct = stdFunctionManager.getIterateFct(node->getIteratorFct);
-      const size_t arraySize = iteratorAssignNode->getEvaluatedSymbolType(manIdx).getArraySize();
+      const size_t arraySize = iteratorAssignNode->getEvaluatedSymbolType(manIdx).getType().getArraySize();
       assert(arraySize > 0);
       iterator = builder.CreateCall(iterateFct, {iterablePtr, builder.getInt64(arraySize)});
     } else { // Struct as iterable

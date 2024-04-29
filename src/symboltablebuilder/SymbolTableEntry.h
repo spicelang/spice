@@ -7,7 +7,7 @@
 #include <utility>
 
 #include <symboltablebuilder/Lifecycle.h>
-#include <symboltablebuilder/Type.h>
+#include <symboltablebuilder/QualType.h>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Value.h>
@@ -28,10 +28,15 @@ union CompileTimeValue;
 class SymbolTableEntry {
 public:
   // Constructors
+  SymbolTableEntry(std::string name, QualType qualType, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
+      : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global),
+        qualType(std::move(qualType)){};
   SymbolTableEntry(std::string name, Type type, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
-      : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global), type(std::move(type)){};
+      : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global),
+        qualType(std::move(type)){};
 
   // Public methods
+  [[nodiscard]] const QualType &getQualType() const;
   [[nodiscard]] const Type &getType() const;
   void updateType(const Type &newType, bool overwriteExistingType);
   void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);
@@ -61,7 +66,7 @@ public:
 
 private:
   // Members
-  Type type;
+  QualType qualType;
   llvm::StructType *llvmStructType = nullptr; // For structs and interfaces only
   std::stack<llvm::Value *> memAddress;
   Lifecycle lifecycle;

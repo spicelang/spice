@@ -18,6 +18,8 @@ namespace spice::compiler {
 
 Type::Type(SuperType superType) : typeChain({TypeChainElement{superType}}), specifiers(TypeSpecifiers::of(superType)) {}
 
+Type::Type(const QualType &qualType) : typeChain(qualType.getType().typeChain), specifiers(qualType.getType().specifiers) {}
+
 Type::Type(SuperType superType, const std::string &subType)
     : typeChain({TypeChainElement{superType, subType}}), specifiers(TypeSpecifiers::of(superType)) {}
 
@@ -427,6 +429,16 @@ bool Type::isSameContainerTypeAs(const Type &otherType) const {
 }
 
 /**
+ * Retrieve the base type of the current type
+ *
+ * @return Base type
+ */
+Type Type::getBaseType() const {
+  assert(!typeChain.empty());
+  return Type({typeChain.front()}, specifiers);
+}
+
+/**
  * Checks if the base type is generic itself or has generic parts in its template types
  *
  * @return Contains generic parts or not
@@ -519,9 +531,7 @@ bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList)
  * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
-std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
-  std::stringstream name;
-
+void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
   // Append the specifiers
   const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
   if (!ignorePublic && specifiers.isPublic && !defaultForSuperType.isPublic)
@@ -542,7 +552,18 @@ std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(mi
   // Loop through all chain elements
   for (const TypeChainElement &chainElement : typeChain)
     name << chainElement.getName(withSize);
+}
 
+/**
+ * Get the name of the symbol type as a string
+ *
+ * @param withSize Include the array size for sized types
+ * @param ignorePublic Ignore any potential public specifier
+ * @return Symbol type name
+ */
+std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
+  std::stringstream name;
+  getName(name, withSize, ignorePublic);
   return name.str();
 }
 
@@ -717,12 +738,8 @@ bool Type::matchesInterfaceImplementedByStruct(const Type &otherType) const {
   // Check if the rhs is a struct type that implements the lhs interface type
   const Struct *spiceStruct = otherType.getStruct(nullptr);
   assert(spiceStruct != nullptr);
-  for (const Type &interfaceType : spiceStruct->interfaceTypes) {
-    assert(interfaceType.is(TY_INTERFACE));
-    if (matches(interfaceType, false, false, true))
-      return true;
-  }
-  return false;
+  const auto pred = [&](const Type &interfaceType) { return matches(interfaceType, false, false, true); };
+  return std::ranges::any_of(spiceStruct->interfaceTypes, pred);
 }
 
 /**

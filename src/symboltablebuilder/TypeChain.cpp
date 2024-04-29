@@ -45,6 +45,101 @@ bool operator==(const Type::TypeChainElement &lhs, const Type::TypeChainElement 
 
 bool operator!=(const Type::TypeChainElement &lhs, const Type::TypeChainElement &rhs) { return !(lhs == rhs); }
 
+void Type::TypeChainElement::getName(std::stringstream &name, bool withSize) const {
+  switch (superType) {
+  case TY_PTR:
+    name << "*";
+    break;
+  case TY_REF:
+    name << "&";
+    break;
+  case TY_ARRAY:
+    name << (withSize && data.arraySize != ARRAY_SIZE_UNKNOWN ? "[" + std::to_string(data.arraySize) + "]" : "");
+    break;
+  case TY_DOUBLE:
+    name << "double";
+    break;
+  case TY_INT:
+    name << "int";
+    break;
+  case TY_SHORT:
+    name << "short";
+    break;
+  case TY_LONG:
+    name << "long";
+    break;
+  case TY_BYTE:
+    name << "byte";
+    break;
+  case TY_CHAR:
+    name << "char";
+    break;
+  case TY_STRING:
+    name << "string";
+    break;
+  case TY_BOOL:
+    name << "bool";
+    break;
+  case TY_STRUCT: // fall-through
+  case TY_INTERFACE:
+    name << subType;
+    if (!templateTypes.empty()) {
+      name << "<";
+      for (size_t i = 0; i < templateTypes.size(); i++) {
+        if (i > 0)
+          name << ",";
+        templateTypes.at(i).getName(name, withSize);
+      }
+      name << ">";
+    }
+    break;
+  case TY_ENUM:
+    name << "enum";
+    break;
+  case TY_GENERIC: // fall-through
+  case TY_ALIAS:
+    name << subType;
+    break;
+  case TY_DYN:
+    name << "dyn";
+    break;
+  case TY_FUNCTION: {
+    name << "f";
+    if (data.hasCaptures)
+      name << "[]";
+    name << "<" << paramTypes.front().getName(true) << ">(";
+    for (size_t i = 1; i < paramTypes.size(); i++) {
+      if (i > 1)
+        name << ",";
+      paramTypes.at(i).getName(name, true);
+    }
+    name << ")";
+    break;
+  }
+  case TY_PROCEDURE: {
+    name << "p";
+    if (data.hasCaptures)
+      name << "[]";
+    name << "(";
+    for (size_t i = 1; i < paramTypes.size(); i++) {
+      if (i > 1)
+        name << ",";
+      paramTypes.at(i).getName(name, true);
+    }
+    name << ")";
+    break;
+  }
+  case TY_IMPORT:
+    name << "import";
+    break;
+  case TY_INVALID:   // GCOV_EXCL_LINE
+    name << "invalid"; // GCOV_EXCL_LINE
+    break;
+  default:
+    throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element");
+  }
+}
+
 /**
  * Return the type name as string
  *
@@ -52,86 +147,9 @@ bool operator!=(const Type::TypeChainElement &lhs, const Type::TypeChainElement 
  * @return Name as string
  */
 std::string Type::TypeChainElement::getName(bool withSize) const {
-  switch (superType) {
-  case TY_PTR:
-    return "*";
-  case TY_REF:
-    return "&";
-  case TY_ARRAY:
-    return withSize && data.arraySize != ARRAY_SIZE_UNKNOWN ? "[" + std::to_string(data.arraySize) + "]" : "";
-  case TY_DOUBLE:
-    return "double";
-  case TY_INT:
-    return "int";
-  case TY_SHORT:
-    return "short";
-  case TY_LONG:
-    return "long";
-  case TY_BYTE:
-    return "byte";
-  case TY_CHAR:
-    return "char";
-  case TY_STRING:
-    return "string";
-  case TY_BOOL:
-    return "bool";
-  case TY_STRUCT: // fall-through
-  case TY_INTERFACE: {
-    std::stringstream name;
-    name << subType;
-    if (!templateTypes.empty()) {
-      name << "<";
-      for (size_t i = 0; i < templateTypes.size(); i++) {
-        if (i > 0)
-          name << ",";
-        name << templateTypes.at(i).getName();
-      }
-      name << ">";
-    }
-    return name.str();
-  }
-  case TY_ENUM:
-    return "enum";
-  case TY_GENERIC: // fall-through
-  case TY_ALIAS:
-    return subType;
-  case TY_DYN:
-    return "dyn";
-  case TY_FUNCTION: {
-    std::stringstream functionName;
-    functionName << "f";
-    if (data.hasCaptures)
-      functionName << "[]";
-    functionName << "<" << paramTypes.front().getName(true) << ">(";
-    for (size_t i = 1; i < paramTypes.size(); i++) {
-      if (i > 1)
-        functionName << ",";
-      functionName << paramTypes.at(i).getName(true);
-    }
-    functionName << ")";
-    return functionName.str();
-  }
-  case TY_PROCEDURE: {
-    std::stringstream procedureName;
-    procedureName << "p";
-    if (data.hasCaptures)
-      procedureName << "[]";
-    procedureName << "(";
-    for (size_t i = 1; i < paramTypes.size(); i++) {
-      if (i > 1)
-        procedureName << ",";
-      procedureName << paramTypes.at(i).getName(true);
-    }
-    procedureName << ")";
-    return procedureName.str();
-  }
-  case TY_IMPORT:
-    return "import";
-  case TY_INVALID:    // GCOV_EXCL_LINE
-    return "invalid"; // GCOV_EXCL_LINE
-  default:
-    throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element");
-  }
+  std::stringstream name;
+  getName(name, withSize);
+  return name.str();
 }
 
 } // namespace spice::compiler

@@ -99,13 +99,13 @@ public:
 
   virtual void customItemsInitialization(size_t) {} // Noop
 
-  Type setEvaluatedSymbolType(const Type &symbolType, const size_t idx) {
+  QualType setEvaluatedSymbolType(const QualType &symbolType, const size_t idx) {
     assert(symbolTypes.size() > idx);
     symbolTypes.at(idx) = symbolType;
     return symbolType;
   }
 
-  [[nodiscard]] const Type &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
+  [[nodiscard]] const QualType &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
     if (!symbolTypes.empty() && !symbolTypes.at(idx).is(TY_INVALID))
       return symbolTypes.at(idx);
     if (children.size() != 1)
@@ -159,7 +159,7 @@ public:
   ASTNode *parent = nullptr;
   std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
-  std::vector<Type> symbolTypes;
+  std::vector<QualType> symbolTypes;
   bool unreachable = false;
 };
 

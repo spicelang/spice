@@ -1,4 +1,10 @@
-import "bootstrap/util/block-allocator";
+const int COUNT;
+
+f<int> main() {
+    printf("Test");
+}
+
+/*import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
 
 type ASTNode struct {
@@ -13,4 +19,4 @@ f<int> main() {
     DefaultMemoryManager defaultMemoryManager;
     IMemoryManager* memoryManager = &defaultMemoryManager;
     BlockAllocator<ASTNode> allocator = BlockAllocator<ASTNode>(memoryManager, 10l);
-}
+}*/

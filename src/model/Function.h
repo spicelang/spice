@@ -20,15 +20,11 @@ class SymbolTableEntry;
 struct Param {
   Type type;
   bool isOptional = false;
-
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Param, type, isOptional)
 };
 struct NamedParam {
   std::string name;
   Type type;
   bool isOptional = false;
-
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(NamedParam, name, type, isOptional)
 };
 using ParamList = std::vector<Param>;
 using NamedParamList = std::vector<NamedParam>;
@@ -83,9 +79,6 @@ public:
   llvm::Function *llvmFunction = nullptr;
   bool isVirtual = false;
   size_t vtableIndex = 0;
-
-  // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, thisType, returnType, paramList, templateTypes)
 };
 
 } // namespace spice::compiler

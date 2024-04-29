@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 
+#include <symboltablebuilder/QualType.h>
 #include <symboltablebuilder/Type.h>
 
 #include "../../lib/json/json.hpp"
@@ -24,21 +25,19 @@ public:
   GenericType() = default;
 
   // Public methods
-  [[nodiscard]] bool checkConditionsOf(const Type &symbolType, bool ignoreArraySize = false,
-                                       bool ignoreSpecifiers = false) const;
+  [[nodiscard]] [[deprecated]] bool checkConditionsOf(const Type &type, bool ignoreArraySize = false,
+                                                      bool ignoreSpecifiers = false) const;
 
   // Public members
   bool used = false;
-
-  // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(GenericType, typeChain, typeConditions)
 
 private:
   // Members
   std::vector<Type> typeConditions = {Type(TY_DYN)};
 
   // Private methods
-  [[nodiscard]] bool checkTypeConditionOf(const Type &symbolType, bool ignoreArraySize, bool ignoreSpecifiers) const;
+  [[nodiscard]] [[deprecated]] bool checkTypeConditionOf(const Type &type, bool ignoreArraySize,
+                                                         bool ignoreSpecifiers) const;
 };
 
 } // namespace spice::compiler

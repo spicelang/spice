@@ -7,13 +7,13 @@
 #define SOFT_ERROR_ER(node, type, message)                                                                                       \
   {                                                                                                                              \
     resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    return ExprResult{node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx)};                                          \
+    return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx))};                                      \
   }
 
-#define SOFT_ERROR_ST(node, type, message)                                                                                       \
+#define SOFT_ERROR_QT(node, type, message)                                                                                       \
   {                                                                                                                              \
     resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    return Type(TY_UNRESOLVED);                                                                                            \
+    return QualType(TY_UNRESOLVED);                                                                                              \
   }
 
 #define SOFT_ERROR_BOOL(node, type, message)                                                                                     \
@@ -28,21 +28,21 @@
     return;                                                                                                                      \
   }
 
-#define HANDLE_UNRESOLVED_TYPE_ER(var)                                                                                           \
+#define HANDLE_UNRESOLVED_TYPE_ER(type)                                                                                          \
   {                                                                                                                              \
-    if (var.is(TY_UNRESOLVED))                                                                                                   \
-      return ExprResult{node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx)};                                        \
+    if (type.is(TY_UNRESOLVED))                                                                                                  \
+      return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx))};                                    \
   }
 
-#define HANDLE_UNRESOLVED_TYPE_ST(var)                                                                                           \
+#define HANDLE_UNRESOLVED_TYPE_QT(qualType)                                                                                      \
   {                                                                                                                              \
-    if (var.is(TY_UNRESOLVED))                                                                                                   \
-      return node->setEvaluatedSymbolType(var, manIdx);                                                                          \
+    if (qualType.is(TY_UNRESOLVED))                                                                                              \
+      return QualType(node->setEvaluatedSymbolType(qualType.getType(), manIdx));                                                 \
   }
 
-#define HANDLE_UNRESOLVED_TYPE_PTR(var)                                                                                          \
+#define HANDLE_UNRESOLVED_TYPE_PTR(type)                                                                                         \
   {                                                                                                                              \
-    if (var.is(TY_UNRESOLVED))                                                                                                   \
+    if (type.is(TY_UNRESOLVED))                                                                                                  \
       return nullptr;                                                                                                            \
   }
 

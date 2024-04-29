@@ -22,7 +22,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
   bool isGlobal = parent == nullptr;
   size_t orderIndex = symbols.size();
   // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
-  symbols.insert({name, SymbolTableEntry(name, Type(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
+  symbols.insert({name, SymbolTableEntry(name, QualType(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
   // Set entry to declared
   SymbolTableEntry *entry = &symbols.at(name);
   entry->updateState(DECLARED, declNode);
