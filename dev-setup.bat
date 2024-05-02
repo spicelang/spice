@@ -34,7 +34,7 @@ echo done.
 
 :: Clone LLVM
 echo [Step 2] Cloning LLVM (Could take a while) ...
-git clone --depth 1 --branch llvmorg-18.1.4 https://github.com/llvm/llvm-project llvm
+git clone --depth 1 --branch llvmorg-18.1.5 https://github.com/llvm/llvm-project llvm
 echo done.
 
 :: Build LLVM
