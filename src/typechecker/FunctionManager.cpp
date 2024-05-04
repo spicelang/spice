@@ -95,10 +95,10 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
     manifestations.push_back(baseFunction);
 }
 
-Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std::vector<Type> &paramTypes,
+Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std::vector<QualType> &paramTypes,
                                              ASTNode *declNode) {
   ParamList paramList;
-  for (const Type &paramType : paramTypes)
+  for (const QualType &paramType : paramTypes)
     paramList.push_back({paramType, false});
   return {MAIN_FUNCTION_NAME, entry, Type(TY_DYN), Type(TY_INT), paramList, {}, declNode};
 }
@@ -190,7 +190,7 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * @return Matched function or nullptr
  */
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType,
-                                         const ArgList &reqArgs, const std::vector<Type> &templateTypeHints,
+                                         const ArgList &reqArgs, const std::vector<QualType> &templateTypeHints,
                                          bool strictSpecifierMatching, const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
 
@@ -205,7 +205,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
       // Skip generic substantiations to prevent double matching of a function
-      if (presetFunction.genericSubstantiation)
+      if (presetFunction.isGenericSubstantiation())
         continue;
 
       // Copy the function to be able to substantiate types
@@ -216,7 +216,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       typeMapping.clear();
       for (size_t i = 0; i < std::min(templateTypeHints.size(), candidate.templateTypes.size()); i++) {
         const std::string &typeName = candidate.templateTypes.at(i).getSubType();
-        const Type &templateType = templateTypeHints.at(i);
+        const QualType &templateType = templateTypeHints.at(i);
         typeMapping.insert({typeName, templateType});
       }
 
@@ -249,7 +249,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 
       // Insert the substantiated version if required
       Function *substantiatedFunction = insertSubstantiation(matchScope, candidate, presetFunction.declNode);
-      substantiatedFunction->genericSubstantiation = true;
+      substantiatedFunction->genericPreset = &matchScope->functions.at(fctId).at(signature);
       substantiatedFunction->alreadyTypeChecked = false;
       substantiatedFunction->declNode->getFctManifestations(reqName)->push_back(substantiatedFunction);
 
@@ -261,8 +261,8 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       assert(substantiatedFunction->entry != nullptr);
 
       // Copy function scope
-      matchScope->copyChildScope(presetFunction.getSignature(false), newSignature);
-      Scope *childScope = matchScope->getChildScope(newSignature);
+      const std::string oldSignature = presetFunction.getSignature(false);
+      Scope *childScope = matchScope->copyChildScope(oldSignature, newSignature);
       assert(childScope != nullptr);
       childScope->isGenericScope = false;
       substantiatedFunction->bodyScope = childScope;

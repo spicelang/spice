@@ -130,7 +130,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   const Type itemSTy = iteratorType.getTemplateTypes().front();
   const Type itemRefSTy = itemSTy.toReference(node);
   assert(!node->getFct || itemRefSTy == node->getFct->returnType);
-  assert(!node->getIdxFct || itemRefSTy == node->getIdxFct->returnType.getTemplateTypes().back());
+  assert(!node->getIdxFct || itemRefSTy == node->getIdxFct->returnType.getTemplateTypes().back().getType());
 
   // Visit idx variable declaration if required
   const DeclStmtNode *idxDeclNode = node->idxVarDecl();

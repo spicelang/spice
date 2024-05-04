@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include <symboltablebuilder/QualType.h>
 #include <symboltablebuilder/TypeSpecifiers.h>
 #include <util/GlobalDefinitions.h>
 
@@ -19,7 +20,6 @@ class Scope;
 class GenericType;
 class Struct;
 class Interface;
-class QualType;
 
 // Constants
 const char *const STROBJ_NAME = "String";
@@ -77,7 +77,7 @@ public:
     TypeChainElement(SuperType superType, TypeChainElementData data)
         : superType(superType), typeId(superType), data(data){};
     TypeChainElement(SuperType superType, std::string subType, uint64_t typeId, TypeChainElementData data,
-                     const std::vector<Type> &templateTypes)
+                     const std::vector<QualType> &templateTypes)
         : superType(superType), subType(std::move(subType)), typeId(typeId), data(data), templateTypes(templateTypes){};
 
     // Overloaded operators
@@ -91,8 +91,8 @@ public:
     std::string subType;
     uint64_t typeId = TY_INVALID;
     TypeChainElementData data = {.arraySize = 0};
-    std::vector<Type> templateTypes;
-    std::vector<Type> paramTypes; // First type is the return type
+    std::vector<QualType> templateTypes;
+    std::vector<QualType> paramTypes; // First type is the return type
   };
 
   // Make sure we have no unexpected increases in memory consumption
@@ -104,10 +104,10 @@ public:
   // Constructors
   Type() = default;
   explicit Type(SuperType superType);
-  Type(const QualType &qualType); // ToDo: Remove
+  [[deprecated]] Type(const QualType &qualType); // ToDo: Remove
   Type(SuperType superType, const std::string &subType);
   Type(SuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
-             const std::vector<Type> &templateTypes);
+             const std::vector<QualType> &templateTypes);
   explicit Type(const TypeChain &types);
   Type(TypeChain types, TypeSpecifiers specifiers);
 
@@ -169,9 +169,9 @@ public:
   }
   [[nodiscard]] Type getBaseType() const;
   [[nodiscard]] bool hasAnyGenericParts() const;
-  void setTemplateTypes(const std::vector<Type> &templateTypes);
-  void setBaseTemplateTypes(const std::vector<Type> &templateTypes);
-  [[nodiscard]] const std::vector<Type> &getTemplateTypes() const;
+  void setTemplateTypes(const std::vector<QualType> &templateTypes);
+  void setBaseTemplateTypes(const std::vector<QualType> &templateTypes);
+  [[nodiscard]] const std::vector<QualType> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
   void getName(std::stringstream &name, bool withSize = false, bool ignorePublic = false) const;
   [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false) const;
@@ -202,11 +202,11 @@ public:
     return typeChain.back().data.bodyScope;
   }
   void setFunctionReturnType(const Type &returnType);
-  [[nodiscard]] const Type &getFunctionReturnType() const;
+  [[nodiscard]] const QualType &getFunctionReturnType() const;
   void setFunctionParamTypes(const std::vector<Type> &paramTypes);
-  [[nodiscard]] std::vector<Type> getFunctionParamTypes() const;
-  void setFunctionParamAndReturnTypes(const std::vector<Type> &paramAndReturnTypes);
-  [[nodiscard]] const std::vector<Type> &getFunctionParamAndReturnTypes() const;
+  [[nodiscard]] std::vector<QualType> getFunctionParamTypes() const;
+  void setFunctionParamAndReturnTypes(const std::vector<QualType> &paramAndReturnTypes);
+  [[nodiscard]] const std::vector<QualType> &getFunctionParamAndReturnTypes() const;
   void setHasLambdaCaptures(bool hasCaptures);
   [[nodiscard]] bool hasLambdaCaptures() const;
   Struct *getStruct(const ASTNode *node) const;

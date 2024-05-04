@@ -18,7 +18,7 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
   node->resizeToNumberOfManifestations(1);
 
   // Change to function body scope
-  currentScope = node->fctScope;
+  currentScope = node->bodyScope;
   // Visit statements in new scope
   visit(node->body());
   // Leave main function body scope
@@ -48,7 +48,7 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     }
 
     // Change to function scope
-    changeToScope(manifestation->getSignature(false), ScopeType::FUNC_PROC_BODY);
+    changeToScope(manifestation->bodyScope, ScopeType::FUNC_PROC_BODY);
 
     // Mount type mapping for this manifestation
     assert(typeMapping.empty());
@@ -104,7 +104,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     }
 
     // Change to procedure scope
-    changeToScope(manifestation->getSignature(false), ScopeType::FUNC_PROC_BODY);
+    changeToScope(manifestation->bodyScope, ScopeType::FUNC_PROC_BODY);
 
     // Mount type mapping for this manifestation
     assert(typeMapping.empty());
@@ -174,7 +174,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       // Check for all methods, that it is implemented by the struct
       for (const Function *expectedMethod : interface->methods) {
         const std::string methodName = expectedMethod->name;
-        std::vector<Type> params = expectedMethod->getParamTypes();
+        std::vector<QualType> params = expectedMethod->getParamTypes();
         Type returnType = expectedMethod->returnType;
 
         // Substantiate

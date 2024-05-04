@@ -120,7 +120,7 @@ public:
   llvm::Value *insertStructGEP(llvm::Type *type, llvm::Value *basePtr, unsigned index, std::string varName = "") const;
   llvm::Value *resolveValue(const ASTNode *node, Scope *accessScope = nullptr);
   llvm::Value *resolveValue(const ASTNode *node, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
-  llvm::Value *resolveValue(const Type &symbolType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
+  llvm::Value *resolveValue(const QualType &qualType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveAddress(const ASTNode *node);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
   [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const Type &symbolType);

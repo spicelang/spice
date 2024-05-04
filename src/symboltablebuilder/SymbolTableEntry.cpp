@@ -31,7 +31,7 @@ const Type &SymbolTableEntry::getType() const { return qualType.getType(); }
  */
 void SymbolTableEntry::updateType(const Type &newType, bool overwriteExistingType) {
   assert(overwriteExistingType || qualType.isOneOf({TY_INVALID, TY_DYN}));
-  qualType.getType() = newType;
+  qualType.setType(newType);
 }
 
 /**

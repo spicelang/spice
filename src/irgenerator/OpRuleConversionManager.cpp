@@ -1695,7 +1695,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   assert(accessScope != nullptr);
 
   // Get arg values
-  const std::vector<Type> &paramTypes = opFct->getParamTypes();
+  const std::vector<QualType> &paramTypes = opFct->getParamTypes();
   assert(paramTypes.size() == N);
   llvm::Value *argValues[N];
   argValues[0] = paramTypes[0].isRef() ? opV[1]() : opV[0]();
@@ -1711,8 +1711,8 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
 
     // Get arg types
     std::vector<llvm::Type *> argTypes;
-    for (const Type &paramType : opFct->getParamTypes())
-      argTypes.push_back(paramType.toLLVMType(context, accessScope));
+    for (const QualType &paramType : opFct->getParamTypes())
+      argTypes.push_back(paramType.getType().toLLVMType(context, accessScope));
 
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
     irGenerator->module->getOrInsertFunction(mangledName, fctType);

@@ -251,7 +251,7 @@ public:
 
   // Public members
   SymbolTableEntry *entry = nullptr;
-  Scope *fctScope = nullptr;
+  Scope *bodyScope = nullptr;
   bool takesArgs = false;
 };
 

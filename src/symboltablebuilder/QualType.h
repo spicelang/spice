@@ -2,33 +2,43 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
 #include <utility>
 
-#include <symboltablebuilder/Type.h>
 #include <symboltablebuilder/TypeSpecifiers.h>
+#include <util/GlobalDefinitions.h>
 
 namespace spice::compiler {
+
+// Forward declarations
+class Type;
+enum SuperType : uint8_t;
 
 class QualType {
 public:
   // Constructors
   QualType() = default;
-  /*ToDo: explicit*/ QualType(Type type);
+  [[deprecated]] /*ToDo: explicit*/ QualType(Type type);
   explicit QualType(SuperType superType);
   QualType(Type type, TypeSpecifiers specifiers);
 
+  // ToDo: Remove those later on
+  [[deprecated]] QualType(const QualType &other);
+  [[deprecated]] QualType &operator=(const QualType &other);
+
   // Public methods
+  void getName(std::stringstream &name, bool withSize = false, bool ignorePublic = false) const;
   [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false) const;
-  [[nodiscard]] ALWAYS_INLINE bool is(SuperType superType) const { return type.is(superType); }
-  [[nodiscard]] ALWAYS_INLINE bool isOneOf(const std::initializer_list<SuperType> &superTypes) const {
-    return type.isOneOf(superTypes);
-  }
-  [[nodiscard]] bool isBaseType(SuperType superType) const { return type.isBaseType(superType); }
-  [[nodiscard]] Type getBaseType() const { return type.getBaseType(); }
+  [[nodiscard]] bool is(SuperType superType) const;
+  [[nodiscard]] bool isOneOf(const std::initializer_list<SuperType> &superTypes) const;
+  [[nodiscard]] bool isBaseType(SuperType superType) const;
+  [[nodiscard]] QualType getBaseType() const;
 
   // Getters and setters on type
-  [[nodiscard]] Type &getType() { return type; }
-  [[nodiscard]] const Type &getType() const { return type; }
+  [[nodiscard]] Type &getType() { return *type; }
+  [[nodiscard]] const Type &getType() const { return *type; }
+  void setType(const Type &newType);
 
   // Getters and setters on specifiers
   [[nodiscard]] bool isConst() const;
@@ -43,18 +53,20 @@ public:
   void makeHeap(bool isHeap = true);
 
   // Queries on the type
-  [[nodiscard]] bool isPtr() const { return type.isPtr(); }
-  [[nodiscard]] bool isRef() const { return type.isRef(); }
-  [[nodiscard]] bool isArray() const { return type.isArray(); }
+  [[nodiscard]] bool isPtr() const;
+  [[nodiscard]] bool isRef() const;
+  [[nodiscard]] bool isArray() const;
   [[nodiscard]] bool isConstRef() const;
   [[nodiscard]] QualType toNonConst() const;
   [[nodiscard]] bool canBind(const QualType &otherType, bool isTemporary) const;
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
 
+  // Overloaded operators
+  friend bool operator==(const QualType &lhs, const QualType &rhs);
+  friend bool operator!=(const QualType &lhs, const QualType &rhs);
+
   // Modify the type
-  [[nodiscard]] ALWAYS_INLINE QualType removeReferenceWrapper() const {
-    return isRef() ? QualType(type.getContainedTy()) : *this;
-  }
+  [[nodiscard]] QualType removeReferenceWrapper() const;
   [[nodiscard]] QualType replaceBaseType(const QualType &newBaseType) const;
 
   // Public static methods
@@ -62,11 +74,11 @@ public:
 
 private:
   // Private members
-  Type type;
-  TypeSpecifiers specifiers;
+  std::unique_ptr<Type> type;
+  // TypeSpecifiers specifiers;
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(QualType) == 40);
+static_assert(sizeof(QualType) == 8);
 
 } // namespace spice::compiler

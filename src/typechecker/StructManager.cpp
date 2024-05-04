@@ -53,7 +53,7 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  * @param node Instantiation AST node for printing error messages
  * @return Matched struct or nullptr
  */
-Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const std::vector<Type> &reqTemplateTypes,
+Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const std::vector<QualType> &reqTemplateTypes,
                                    const ASTNode *node) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   StructRegistry structRegistry = matchScope->structs;
@@ -63,12 +63,12 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
     // Copy the manifestation list to prevent iterating over items, that are created within the loop
     const StructManifestationList manifestations = m;
     for (const auto &[mangledName, presetStruct] : manifestations) {
+      // Skip generic substantiations to prevent double matching of a struct
+      if (presetStruct.isGenericSubstantiation())
+        continue;
+
       // Copy the struct to be able to substantiate types
       Struct candidate = presetStruct;
-
-      // Skip generic substantiations to prevent double matching of a struct
-      if (presetStruct.genericSubstantiation)
-        continue;
 
       // Check name requirement
       if (!matchName(candidate, reqName))
@@ -106,7 +106,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
 
       // Insert the substantiated version if required
       Struct *substantiatedStruct = insertSubstantiation(matchScope, candidate, presetStruct.declNode);
-      substantiatedStruct->genericSubstantiation = true;
+      substantiatedStruct->genericPreset = &matchScope->structs.at(structId).at(mangledName);
       substantiatedStruct->declNode->getStructManifestations()->push_back(substantiatedStruct);
 
       // Copy struct entry
@@ -117,9 +117,9 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
       assert(substantiatedStruct->entry != nullptr);
 
       // Copy struct scope
+      const std::string oldScopeName = STRUCT_SCOPE_PREFIX + presetStruct.name;
       const std::string newScopeName = STRUCT_SCOPE_PREFIX + newSignature;
-      matchScope->copyChildScope(STRUCT_SCOPE_PREFIX + presetStruct.name, newScopeName);
-      substantiatedStruct->scope = matchScope->getChildScope(newScopeName);
+      substantiatedStruct->scope = matchScope->copyChildScope(oldScopeName, newScopeName);
       assert(substantiatedStruct->scope != nullptr);
       substantiatedStruct->scope->isGenericScope = false;
 
@@ -160,7 +160,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
           continue;
 
         // Build template types
-        std::vector<Type> templateTypes = interfaceType.getTemplateTypes();
+        std::vector<QualType> templateTypes = interfaceType.getTemplateTypes();
         TypeMatcher::substantiateTypesWithTypeMapping(templateTypes, typeMapping);
 
         // Instantiate interface
@@ -204,7 +204,7 @@ bool StructManager::matchName(const Struct &candidate, const std::string &reqNam
  * @param reqTemplateTypes Requested struct template types
  * @return Fulfilled or not
  */
-bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Type> &reqTemplateTypes,
+bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<QualType> &reqTemplateTypes,
                                        TypeMapping &typeMapping) {
   // Check if the number of types match
   const size_t typeCount = reqTemplateTypes.size();

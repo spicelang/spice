@@ -8,6 +8,7 @@
 
 #include <symboltablebuilder/Lifecycle.h>
 #include <symboltablebuilder/QualType.h>
+#include <symboltablebuilder/Type.h>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Value.h>

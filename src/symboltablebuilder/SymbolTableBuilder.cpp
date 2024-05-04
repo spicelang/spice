@@ -41,11 +41,12 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   mainFctEntry->used = true;
 
   // Create scope for main function body
-  node->fctScope = currentScope = rootScope->createChildScope(node->getScopeId(), ScopeType::FUNC_PROC_BODY, &node->codeLoc);
+  const std::string scopeId = MainFctDefNode::getScopeId();
+  node->bodyScope = currentScope = rootScope->createChildScope(scopeId, ScopeType::FUNC_PROC_BODY, &node->codeLoc);
   currentScope->isGenericScope = false;
 
   // Declare variable for the return value in the function scope
-  SymbolTableEntry *resultVarEntry = node->fctScope->insert(RETURN_VARIABLE_NAME, node);
+  SymbolTableEntry *resultVarEntry = node->bodyScope->insert(RETURN_VARIABLE_NAME, node);
   resultVarEntry->used = true;
 
   // Visit arguments in new scope

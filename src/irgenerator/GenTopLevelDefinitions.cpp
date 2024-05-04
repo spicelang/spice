@@ -20,12 +20,12 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     return nullptr;
 
   // Change scope to function scope
-  currentScope = node->fctScope;
+  currentScope = node->bodyScope;
   assert(currentScope != nullptr);
 
   // Visit parameters
   std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
-  std::vector<Type> paramSymbolTypes;
+  std::vector<QualType> paramSymbolTypes;
   std::vector<llvm::Type *> paramTypes;
   if (node->takesArgs) {
     const size_t numOfParams = node->paramLst()->params().size();
@@ -34,7 +34,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     paramTypes.reserve(numOfParams);
     for (DeclStmtNode *param : node->paramLst()->params()) {
       // Get symbol table entry of param
-      SymbolTableEntry *paramSymbol = node->fctScope->lookupStrict(param->varName);
+      SymbolTableEntry *paramSymbol = node->bodyScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
       auto paramType = any_cast<llvm::Type *>(visit(param->dataType()));

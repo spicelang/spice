@@ -119,7 +119,7 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, LLVMExprResult &expr
   return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult, accessScope);
 }
 
-llvm::Value *IRGenerator::resolveValue(const Type &symbolType, LLVMExprResult &exprResult,
+llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult &exprResult,
                                        Scope *accessScope /*=nullptr*/) {
   // Check if the value is already present
   if (exprResult.value != nullptr)
@@ -138,12 +138,12 @@ llvm::Value *IRGenerator::resolveValue(const Type &symbolType, LLVMExprResult &e
     accessScope = currentScope;
 
   // De-reference if reference type
-  Type referencedType = symbolType.removeReferenceWrapper();
+  QualType referencedType = qualType.removeReferenceWrapper();
   if (exprResult.refPtr != nullptr && exprResult.ptr == nullptr)
     exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, exprResult.entry && exprResult.entry->isVolatile);
 
   // Load the value from the pointer
-  llvm::Type *valueTy = referencedType.toLLVMType(context, accessScope);
+  llvm::Type *valueTy = referencedType.getType().toLLVMType(context, accessScope);
   exprResult.value = insertLoad(valueTy, exprResult.ptr, exprResult.entry && exprResult.entry->isVolatile);
 
   return exprResult.value;

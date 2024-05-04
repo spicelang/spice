@@ -137,7 +137,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   if (node->hasArgs) {
     argValues.reserve(node->argLst()->args().size());
     const std::vector<AssignExprNode *> args = node->argLst()->args();
-    const std::vector<Type> paramSTypes =
+    const std::vector<QualType> paramSTypes =
         data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes() : spiceFunc->getParamTypes();
     assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
@@ -169,7 +169,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // Retrieve return and param types
   Type returnSType(TY_DYN);
-  std::vector<Type> paramSTypes;
+  std::vector<QualType> paramSTypes;
   if (data.isFctPtrCall()) {
     if (firstFragEntry->getType().isBaseType(TY_FUNCTION))
       returnSType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
@@ -195,8 +195,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       argTypes.push_back(builder.getPtrTy()); // This pointer
     if (data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures())
       argTypes.push_back(builder.getPtrTy()); // Capture pointer
-    for (const Type &paramType : paramSTypes)
-      argTypes.push_back(paramType.toLLVMType(context, accessScope));
+    for (const QualType &paramType : paramSTypes)
+      argTypes.push_back(paramType.getType().toLLVMType(context, accessScope));
 
     fctType = llvm::FunctionType::get(returnType, argTypes, false);
     if (!data.isFctPtrCall() && !data.isVirtualMethodCall())
@@ -445,7 +445,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
       SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).getType().toLLVMType(context, currentScope);
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
@@ -600,7 +600,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
       SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).getType().toLLVMType(context, currentScope);
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
@@ -742,7 +742,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
       SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).getType().toLLVMType(context, currentScope);
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);

@@ -39,7 +39,7 @@ public:
   Function() = default;
 
   // Public methods
-  [[nodiscard]] std::vector<Type> getParamTypes() const;
+  [[nodiscard]] std::vector<QualType> getParamTypes() const;
   [[nodiscard]] std::string getSignature(bool withThisType = true, bool ignorePublic = true) const;
   [[nodiscard]] static std::string getSignature(const std::string &name, const Type &thisType, const Type &returnType,
                                                 const ParamList &paramList, const std::vector<Type> &concreteTemplateTypes,
@@ -57,6 +57,7 @@ public:
   [[nodiscard]] bool hasSubstantiatedParams() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
+  [[nodiscard]] bool isGenericSubstantiation() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
   // Public members
@@ -72,7 +73,7 @@ public:
   bool mangleFunctionName = true;
   std::string predefinedMangledName;
   std::string mangleSuffix;
-  bool genericSubstantiation = false;
+  Function *genericPreset = nullptr;
   bool alreadyTypeChecked = false;
   bool used = false;
   bool implicitDefault = false;

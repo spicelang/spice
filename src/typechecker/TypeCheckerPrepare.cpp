@@ -16,7 +16,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   Type returnType(TY_INT);
 
   // Change to function body scope
-  currentScope = node->fctScope;
+  currentScope = node->bodyScope;
 
   // Set type of 'result' variable to int
   SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
@@ -93,8 +93,9 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
-    for (const Type &templateType : thisType.getTemplateTypes()) {
-      if (std::ranges::none_of(usedGenericTypes, [&](const GenericType &genericType) { return genericType == templateType; }))
+    for (const QualType &templateType : thisType.getTemplateTypes()) {
+      const auto lambda = [&](const GenericType &genericType) { return genericType == templateType.getType(); };
+      if (std::ranges::none_of(usedGenericTypes, lambda))
         usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
     }
@@ -178,8 +179,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   }
 
   // Duplicate / rename the original child scope to reflect the substantiated versions of the function
-  for (size_t i = 1; i < node->manifestations.size(); i++)
-    currentScope->copyChildScope(node->getScopeId(), node->manifestations.at(i)->getSignature(false));
+  for (size_t i = 1; i < node->manifestations.size(); i++) {
+    Scope *scope = currentScope->copyChildScope(node->getScopeId(), node->manifestations.at(i)->getSignature(false));
+    node->manifestations.at(i)->bodyScope = scope;
+  }
   currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getSignature(false));
 
   // Change to the root scope
@@ -232,8 +235,9 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     thisType = structEntry->getType();
     thisPtrType = thisType.toPointer(node);
     // Collect template types of 'this' type
-    for (const Type &templateType : thisType.getTemplateTypes()) {
-      if (std::ranges::none_of(usedGenericTypes, [&](const GenericType &genericType) { return genericType == templateType; }))
+    for (const QualType &templateType : thisType.getTemplateTypes()) {
+      const auto lambda = [&](const GenericType &genericType) { return genericType == templateType.getType(); };
+      if (std::ranges::none_of(usedGenericTypes, lambda))
         usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
     }
@@ -295,8 +299,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   }
 
   // Duplicate / rename the original child scope to reflect the substantiated versions of the procedure
-  for (size_t i = 1; i < node->manifestations.size(); i++)
-    currentScope->copyChildScope(node->getScopeId(), node->manifestations.at(i)->getSignature(false));
+  for (size_t i = 1; i < node->manifestations.size(); i++) {
+    Scope *scope = currentScope->copyChildScope(node->getScopeId(), node->manifestations.at(i)->getSignature(false));
+    node->manifestations.at(i)->bodyScope = scope;
+  }
   currentScope->renameChildScope(node->getScopeId(), node->manifestations.front()->getSignature(false));
 
   // Change to the root scope
@@ -307,7 +313,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 }
 
 std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
-  std::vector<Type> usedTemplateTypes;
+  std::vector<QualType> usedTemplateTypes;
   std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve struct template types
@@ -341,11 +347,13 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
         continue;
       // Check if it is an interface type
       if (!interfaceType.is(TY_INTERFACE))
-        throw SemanticError(interfaceNode, EXPECTED_INTERFACE_TYPE, "Expected interface type, got " + interfaceType.getName(false));
+        throw SemanticError(interfaceNode, EXPECTED_INTERFACE_TYPE,
+                            "Expected interface type, got " + interfaceType.getName(false));
       // Check for visibility
       if (interfaceType.getType().getBodyScope()->isImportedBy(rootScope) && !interfaceType.isPublic())
         throw SemanticError(node, INSUFFICIENT_VISIBILITY,
-                            "Cannot access interface '" + interfaceType.getType().getSubType() + "' due to its private visibility");
+                            "Cannot access interface '" + interfaceType.getType().getSubType() +
+                                "' due to its private visibility");
       // Add to interface types
       interfaceTypes.push_back(interfaceType);
       // Update the type of the entry for that interface field
@@ -414,7 +422,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 }
 
 std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
-  std::vector<Type> usedTemplateTypes;
+  std::vector<QualType> usedTemplateTypes;
   std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve interface template types

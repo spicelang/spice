@@ -13,8 +13,8 @@ namespace spice::compiler {
  *
  * @return Vector of parameter types
  */
-std::vector<Type> Function::getParamTypes() const {
-  std::vector<Type> newParamTypes;
+std::vector<QualType> Function::getParamTypes() const {
+  std::vector<QualType> newParamTypes;
   for (const Param &param : paramList)
     newParamTypes.push_back(param.type);
   return newParamTypes;
@@ -31,18 +31,18 @@ std::vector<Type> Function::getParamTypes() const {
  * @return String representation as function signature
  */
 std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePublic /*=false*/) const {
-  std::vector<Type> templateSymbolTypes;
-  templateSymbolTypes.reserve(templateTypes.size());
+  std::vector<Type> concreteTemplateTypes;
+  concreteTemplateTypes.reserve(templateTypes.size());
   for (const GenericType &genericType : templateTypes) {
     if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
       assert(typeMapping.contains(genericType.getSubType()));
-      templateSymbolTypes.push_back(typeMapping.at(genericType.getSubType()));
+      concreteTemplateTypes.push_back(typeMapping.at(genericType.getSubType()));
     } else {
-      templateSymbolTypes.push_back(genericType);
+      concreteTemplateTypes.push_back(genericType);
     }
   }
 
-  return Function::getSignature(name, thisType, returnType, paramList, templateSymbolTypes, withThisType, ignorePublic);
+  return Function::getSignature(name, thisType, returnType, paramList, concreteTemplateTypes, withThisType, ignorePublic);
 }
 
 /**
@@ -60,52 +60,57 @@ std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePubli
 std::string Function::getSignature(const std::string &name, const Type &thisType, const Type &returnType,
                                    const ParamList &paramList, const std::vector<Type> &concreteTemplateTypes,
                                    bool withThisType /*=true*/, bool ignorePublic /*=false*/) {
-  // Build this type string
-  std::stringstream thisTyStr;
-  if (withThisType && !thisType.is(TY_DYN)) {
-    thisTyStr << thisType.getBaseType().getSubType();
-    const std::vector<Type> &thisTemplateTypes = thisType.getTemplateTypes();
-    if (!thisTemplateTypes.empty()) {
-      thisTyStr << "<";
-      for (size_t i = 0; i < thisTemplateTypes.size(); i++) {
-        if (i > 0)
-          thisTyStr << ",";
-        thisTyStr << thisTemplateTypes.at(i).getName(false, ignorePublic);
-      }
-      thisTyStr << ">";
-    }
-    thisTyStr << MEMBER_ACCESS_TOKEN;
-  }
+  std::stringstream signature;
 
   // Build return type string
-  std::string returnTyStr;
-  if (!returnType.is(TY_DYN))
-    returnTyStr = returnType.getName(false, ignorePublic) + " ";
+  if (!returnType.is(TY_DYN)) {
+    returnType.getName(signature, false, ignorePublic);
+    signature << " ";
+  }
+
+  // Build this type string
+  if (withThisType && !thisType.is(TY_DYN)) {
+    signature << thisType.getBaseType().getSubType();
+    const std::vector<QualType> &thisTemplateTypes = thisType.getTemplateTypes();
+    if (!thisTemplateTypes.empty()) {
+      signature << "<";
+      for (size_t i = 0; i < thisTemplateTypes.size(); i++) {
+        if (i > 0)
+          signature << ",";
+        signature << thisTemplateTypes.at(i).getName(false, ignorePublic);
+      }
+      signature << ">";
+    }
+    signature << MEMBER_ACCESS_TOKEN;
+  }
+
+  // Name
+  signature << name;
+
+  // Build template type string
+  if (!concreteTemplateTypes.empty()) {
+    signature << "<";
+    for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
+      if (i > 0)
+        signature << ",";
+      signature << concreteTemplateTypes.at(i).getName(false, ignorePublic);
+    }
+    signature << ">";
+  }
 
   // Parameter type string
-  std::stringstream paramTyStr;
+  signature << "(";
   for (size_t i = 0; i < paramList.size(); i++) {
     const Param &param = paramList.at(i);
     if (i > 0)
-      paramTyStr << ",";
-    paramTyStr << param.type.getName(false, ignorePublic);
+      signature << ",";
+    signature << param.type.getName(false, ignorePublic);
     if (param.isOptional)
-      paramTyStr << "?";
+      signature << "?";
   }
+  signature << ")";
 
-  // Build template type string
-  std::stringstream templateTyStr;
-  if (!concreteTemplateTypes.empty()) {
-    templateTyStr << "<";
-    for (size_t i = 0; i < concreteTemplateTypes.size(); i++) {
-      if (i > 0)
-        templateTyStr << ",";
-      templateTyStr << concreteTemplateTypes.at(i).getName(false, ignorePublic);
-    }
-    templateTyStr << ">";
-  }
-
-  return returnTyStr + thisTyStr.str() + name + templateTyStr.str() + "(" + paramTyStr.str() + ")";
+  return signature.str();
 }
 
 std::string Function::getMangledName() const {
@@ -151,6 +156,13 @@ bool Function::hasSubstantiatedGenerics() const {
  * @return Fully substantiated or not
  */
 bool Function::isFullySubstantiated() const { return hasSubstantiatedParams() && hasSubstantiatedGenerics(); }
+
+/**
+ * Returns, if this function is a substantiation of a generic one.
+ *
+ * @return Generic substantiation or not
+ */
+bool Function::isGenericSubstantiation() const { return genericPreset != nullptr; }
 
 /**
  * Retrieve the declaration code location of this function
