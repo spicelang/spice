@@ -42,12 +42,13 @@ void Scope::renameChildScope(const std::string &oldName, const std::string &newN
  * @param oldName Old name of the child block
  * @param newName New block name
  */
-void Scope::copyChildScope(const std::string &oldName, const std::string &newName) {
+Scope *Scope::copyChildScope(const std::string &oldName, const std::string &newName) {
   assert(children.contains(oldName) && !children.contains(newName));
   // Create copy
   const std::shared_ptr<Scope> newScope = children.at(oldName)->deepCopyScope();
   // Save copy under new name
   children.insert({newName, newScope});
+  return newScope.get();
 }
 
 std::shared_ptr<Scope> Scope::deepCopyScope() { // NOLINT(misc-no-recursion)
@@ -55,8 +56,10 @@ std::shared_ptr<Scope> Scope::deepCopyScope() { // NOLINT(misc-no-recursion)
   for (const auto &[childName, oldChild] : children) {
     newScope->children[childName] = oldChild->deepCopyScope();
     newScope->children[childName]->parent = newScope.get();
+    newScope->children[childName]->symbolTable.scope = newScope->children[childName].get();
     newScope->children[childName]->symbolTable.parent = &newScope->symbolTable;
   }
+  newScope->symbolTable.scope = newScope.get();
   return newScope;
 }
 

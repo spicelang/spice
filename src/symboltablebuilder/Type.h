@@ -5,12 +5,11 @@
 #include <string>
 #include <vector>
 
+#include <symboltablebuilder/QualType.h>
 #include <symboltablebuilder/TypeSpecifiers.h>
 #include <util/GlobalDefinitions.h>
 
 #include <llvm/IR/Type.h>
-
-#include "../../lib/json/json.hpp"
 
 namespace spice::compiler {
 
@@ -65,8 +64,6 @@ public:
     unsigned int arraySize;     // TY_ARRAY
     Scope *bodyScope = nullptr; // TY_STRUCT, TY_INTERFACE, TY_ENUM
     bool hasCaptures;           // TY_FUNCTION, TY_PROCEDURE (lambdas)
-
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElementData, arraySize)
   };
 
   // Structs
@@ -80,12 +77,13 @@ public:
     TypeChainElement(SuperType superType, TypeChainElementData data)
         : superType(superType), typeId(superType), data(data){};
     TypeChainElement(SuperType superType, std::string subType, uint64_t typeId, TypeChainElementData data,
-                     const std::vector<Type> &templateTypes)
+                     const std::vector<QualType> &templateTypes)
         : superType(superType), subType(std::move(subType)), typeId(typeId), data(data), templateTypes(templateTypes){};
 
     // Overloaded operators
     friend bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs);
     friend bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs);
+    void getName(std::stringstream &name, bool withSize) const;
     [[nodiscard]] std::string getName(bool withSize) const;
 
     // Public members
@@ -93,11 +91,8 @@ public:
     std::string subType;
     uint64_t typeId = TY_INVALID;
     TypeChainElementData data = {.arraySize = 0};
-    std::vector<Type> templateTypes;
-    std::vector<Type> paramTypes; // First type is the return type
-
-    // Json serializer/deserializer
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TypeChainElement, superType, subType, typeId, data, templateTypes, paramTypes)
+    std::vector<QualType> templateTypes;
+    std::vector<QualType> paramTypes; // First type is the return type
   };
 
   // Make sure we have no unexpected increases in memory consumption
@@ -109,9 +104,10 @@ public:
   // Constructors
   Type() = default;
   explicit Type(SuperType superType);
+  [[deprecated]] Type(const QualType &qualType); // ToDo: Remove
   Type(SuperType superType, const std::string &subType);
   Type(SuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
-             const std::vector<Type> &templateTypes);
+             const std::vector<QualType> &templateTypes);
   explicit Type(const TypeChain &types);
   Type(TypeChain types, TypeSpecifiers specifiers);
 
@@ -171,15 +167,13 @@ public:
     type.specifiers.isConst = false;
     return type;
   }
-  [[nodiscard]] Type getBaseType() const {
-    assert(!typeChain.empty());
-    return Type({typeChain.front()}, specifiers);
-  }
+  [[nodiscard]] Type getBaseType() const;
   [[nodiscard]] bool hasAnyGenericParts() const;
-  void setTemplateTypes(const std::vector<Type> &templateTypes);
-  void setBaseTemplateTypes(const std::vector<Type> &templateTypes);
-  [[nodiscard]] const std::vector<Type> &getTemplateTypes() const;
+  void setTemplateTypes(const std::vector<QualType> &templateTypes);
+  void setBaseTemplateTypes(const std::vector<QualType> &templateTypes);
+  [[nodiscard]] const std::vector<QualType> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
+  void getName(std::stringstream &name, bool withSize = false, bool ignorePublic = false) const;
   [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false) const;
   [[nodiscard]] ALWAYS_INLINE unsigned int getArraySize() const {
     assert(getSuperType() == TY_ARRAY);
@@ -207,12 +201,12 @@ public:
     assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
     return typeChain.back().data.bodyScope;
   }
-  void setFunctionReturnType(const Type &returnType);
-  [[nodiscard]] const Type &getFunctionReturnType() const;
-  void setFunctionParamTypes(const std::vector<Type> &paramTypes);
-  [[nodiscard]] std::vector<Type> getFunctionParamTypes() const;
-  void setFunctionParamAndReturnTypes(const std::vector<Type> &paramAndReturnTypes);
-  [[nodiscard]] const std::vector<Type> &getFunctionParamAndReturnTypes() const;
+  void setFunctionReturnType(const QualType &returnType);
+  [[nodiscard]] const QualType &getFunctionReturnType() const;
+  void setFunctionParamTypes(const std::vector<QualType> &paramTypes);
+  [[nodiscard]] std::vector<QualType> getFunctionParamTypes() const;
+  void setFunctionParamAndReturnTypes(const std::vector<QualType> &paramAndReturnTypes);
+  [[nodiscard]] const std::vector<QualType> &getFunctionParamAndReturnTypes() const;
   void setHasLambdaCaptures(bool hasCaptures);
   [[nodiscard]] bool hasLambdaCaptures() const;
   Struct *getStruct(const ASTNode *node) const;
@@ -229,10 +223,6 @@ public:
   // Public members
   TypeChain typeChain;
   TypeSpecifiers specifiers;
-
-public:
-  // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Type, typeChain);
 };
 
 // Make sure we have no unexpected increases in memory consumption

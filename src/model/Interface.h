@@ -10,8 +10,6 @@
 #include <model/GenericType.h>
 #include <model/StructBase.h>
 
-#include "../../lib/json/json.hpp"
-
 namespace spice::compiler {
 
 class Interface : public StructBase {
@@ -23,9 +21,6 @@ public:
 
   // Public members
   std::vector<Function *> methods;
-
-  // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Interface, name, templateTypes, genericSubstantiation, used)
 };
 
 } // namespace spice::compiler

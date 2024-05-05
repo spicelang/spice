@@ -1695,7 +1695,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   assert(accessScope != nullptr);
 
   // Get arg values
-  const std::vector<Type> &paramTypes = opFct->getParamTypes();
+  const std::vector<QualType> &paramTypes = opFct->getParamTypes();
   assert(paramTypes.size() == N);
   llvm::Value *argValues[N];
   argValues[0] = paramTypes[0].isRef() ? opV[1]() : opV[0]();
@@ -1707,12 +1707,12 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
     // Get returnType
     llvm::Type *returnType = builder.getVoidTy();
     if (!opFct->returnType.is(TY_DYN))
-      returnType = opFct->returnType.toLLVMType(context, accessScope);
+      returnType = opFct->returnType.getType().toLLVMType(context, accessScope);
 
     // Get arg types
     std::vector<llvm::Type *> argTypes;
-    for (const Type &paramType : opFct->getParamTypes())
-      argTypes.push_back(paramType.toLLVMType(context, accessScope));
+    for (const QualType &paramType : opFct->getParamTypes())
+      argTypes.push_back(paramType.getType().toLLVMType(context, accessScope));
 
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
     irGenerator->module->getOrInsertFunction(mangledName, fctType);
@@ -1729,7 +1729,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   if (opFct->isProcedure())
     return {.constant = builder.getTrue()};
 
-  // Attach address to anonymous symbol to keep track of deallocation
+  // Attach address to anonymous symbol to keep track of de-allocation
   SymbolTableEntry *anonymousSymbol = nullptr;
   llvm::Value *resultPtr = nullptr;
   if (opFct->returnType.is(TY_STRUCT)) {

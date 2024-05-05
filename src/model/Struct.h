@@ -9,15 +9,13 @@
 #include <model/GenericType.h>
 #include <model/StructBase.h>
 
-#include "../../lib/json/json.hpp"
-
 namespace spice::compiler {
 
 class Struct : public StructBase {
 public:
   // Constructors
-  Struct(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<Type> fieldTypes,
-         std::vector<GenericType> templateTypes, std::vector<Type> interfaceTypes, ASTNode *declNode)
+  Struct(std::string name, SymbolTableEntry *entry, Scope *scope, std::vector<QualType> fieldTypes,
+         std::vector<GenericType> templateTypes, std::vector<QualType> interfaceTypes, ASTNode *declNode)
       : StructBase(std::move(name), entry, scope, std::move(templateTypes), declNode), fieldTypes(std::move(fieldTypes)),
         interfaceTypes(std::move(interfaceTypes)) {}
 
@@ -25,11 +23,8 @@ public:
   [[nodiscard]] bool hasReferenceFields() const;
 
   // Public members
-  std::vector<Type> fieldTypes;
-  std::vector<Type> interfaceTypes;
-
-  // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct, name, fieldTypes, templateTypes, interfaceTypes, genericSubstantiation, used)
+  std::vector<QualType> fieldTypes;
+  std::vector<QualType> interfaceTypes;
 };
 
 } // namespace spice::compiler

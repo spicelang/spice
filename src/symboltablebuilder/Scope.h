@@ -66,7 +66,7 @@ public:
   // Scope management
   Scope *createChildScope(const std::string &scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc);
   void renameChildScope(const std::string &oldName, const std::string &newName);
-  void copyChildScope(const std::string &oldName, const std::string &newName);
+  Scope *copyChildScope(const std::string &oldName, const std::string &newName);
   std::shared_ptr<Scope> deepCopyScope();
   [[nodiscard]] Scope *getChildScope(const std::string &scopeName) const;
   [[nodiscard]] std::vector<SymbolTableEntry *> getVarsGoingOutOfScope();

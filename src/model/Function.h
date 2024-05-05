@@ -18,17 +18,13 @@ struct CodeLoc;
 class SymbolTableEntry;
 
 struct Param {
-  Type type;
+  QualType type;
   bool isOptional = false;
-
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Param, type, isOptional)
 };
 struct NamedParam {
-  std::string name;
-  Type type;
+  const char *name;
+  QualType type;
   bool isOptional = false;
-
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(NamedParam, name, type, isOptional)
 };
 using ParamList = std::vector<Param>;
 using NamedParamList = std::vector<NamedParam>;
@@ -43,7 +39,7 @@ public:
   Function() = default;
 
   // Public methods
-  [[nodiscard]] std::vector<Type> getParamTypes() const;
+  [[nodiscard]] std::vector<QualType> getParamTypes() const;
   [[nodiscard]] std::string getSignature(bool withThisType = true, bool ignorePublic = true) const;
   [[nodiscard]] static std::string getSignature(const std::string &name, const Type &thisType, const Type &returnType,
                                                 const ParamList &paramList, const std::vector<Type> &concreteTemplateTypes,
@@ -61,12 +57,13 @@ public:
   [[nodiscard]] bool hasSubstantiatedParams() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
+  [[nodiscard]] bool isGenericSubstantiation() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
 
   // Public members
   std::string name;
-  Type thisType = Type(TY_DYN);
-  Type returnType = Type(TY_DYN);
+  QualType thisType = QualType(TY_DYN);
+  QualType returnType = QualType(TY_DYN);
   ParamList paramList;
   std::vector<GenericType> templateTypes;
   std::unordered_map<std::string, Type> typeMapping;
@@ -76,16 +73,13 @@ public:
   bool mangleFunctionName = true;
   std::string predefinedMangledName;
   std::string mangleSuffix;
-  bool genericSubstantiation = false;
+  Function *genericPreset = nullptr;
   bool alreadyTypeChecked = false;
   bool used = false;
   bool implicitDefault = false;
   llvm::Function *llvmFunction = nullptr;
   bool isVirtual = false;
   size_t vtableIndex = 0;
-
-  // Json serializer/deserializer
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Function, name, thisType, returnType, paramList, templateTypes)
 };
 
 } // namespace spice::compiler

@@ -24,7 +24,7 @@ class GenericType;
 // Typedefs
 using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, Function>;
 using FunctionRegistry = std::map</*fctId=*/std::string, /*manifestationList=*/FunctionManifestationList>;
-using Arg = std::pair</*type=*/Type, /*isTemporary=*/bool>;
+using Arg = std::pair</*type=*/QualType, /*isTemporary=*/bool>;
 using ArgList = std::vector<Arg>;
 
 enum class MatchResult : uint8_t {
@@ -42,23 +42,22 @@ public:
   static Function *insertFunction(Scope *insertScope, const Function &baseFunction,
                                   std::vector<Function *> *nodeFunctionList = nullptr);
   static void substantiateOptionalParams(const Function &baseFunction, std::vector<Function> &manifestations);
-  [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const std::vector<Type> &paramTypes,
+  [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const std::vector<QualType> &paramTypes,
                                                    ASTNode *declNode);
-  [[nodiscard]] static const Function *lookupFunction(Scope *matchScope, const std::string &reqName,
-                                                      const Type &reqThisType, const ArgList &reqArgs,
-                                                      bool strictSpecifierMatching);
-  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType,
-                                 const ArgList &reqArgs, const std::vector<Type> &templateTypeHints,
-                                 bool strictSpecifierMatching, const ASTNode *callNode);
+  [[nodiscard]] static const Function *lookupFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType,
+                                                      const ArgList &reqArgs, bool strictSpecifierMatching);
+  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType, const ArgList &reqArgs,
+                                 const std::vector<QualType> &templateTypeHints, bool strictSpecifierMatching,
+                                 const ASTNode *callNode);
 
 private:
   // Private methods
   [[nodiscard]] static Function *insertSubstantiation(Scope *insertScope, const Function &newManifestation,
                                                       const ASTNode *declNode);
   [[nodiscard]] static MatchResult matchManifestation(Function &candidate, Scope *&matchScope, const std::string &reqName,
-                                                      const Type &reqThisType, const ArgList &reqArgs,
-                                                      TypeMapping &typeMapping, bool strictSpecifierMatching,
-                                                      bool &forceSubstantiation, const ASTNode *callNode);
+                                                      const Type &reqThisType, const ArgList &reqArgs, TypeMapping &typeMapping,
+                                                      bool strictSpecifierMatching, bool &forceSubstantiation,
+                                                      const ASTNode *callNode);
   [[nodiscard]] static bool matchName(const Function &candidate, const std::string &reqName);
   [[nodiscard]] static bool matchThisType(Function &candidate, const Type &reqThisType, TypeMapping &typeMapping,
                                           bool strictSpecifierMatching);

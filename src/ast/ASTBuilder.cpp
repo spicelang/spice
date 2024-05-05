@@ -884,9 +884,9 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::PLUS)
-      additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_PLUS, Type(TY_INVALID));
+      additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_PLUS, TY_INVALID);
     else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::MINUS)
-      additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, Type(TY_INVALID));
+      additiveExprNode->opQueue.emplace(AdditiveExprNode::OP_MINUS, TY_INVALID);
   }
 
   return concludeNode(additiveExprNode);
@@ -900,11 +900,11 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL)
-      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_MUL, Type(TY_INVALID));
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_MUL, TY_INVALID);
     else if (auto t2 = dynamic_cast<TerminalNode *>(subTree); t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::DIV)
-      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_DIV, Type(TY_INVALID));
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_DIV, TY_INVALID);
     else if (auto t3 = dynamic_cast<TerminalNode *>(subTree); t3 != nullptr && t3->getSymbol()->getType() == SpiceParser::REM)
-      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, Type(TY_INVALID));
+      multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::OP_REM, TY_INVALID);
   }
 
   return concludeNode(multiplicativeExprNode);

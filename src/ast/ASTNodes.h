@@ -99,13 +99,13 @@ public:
 
   virtual void customItemsInitialization(size_t) {} // Noop
 
-  Type setEvaluatedSymbolType(const Type &symbolType, const size_t idx) {
+  QualType setEvaluatedSymbolType(const QualType &symbolType, const size_t idx) {
     assert(symbolTypes.size() > idx);
     symbolTypes.at(idx) = symbolType;
     return symbolType;
   }
 
-  [[nodiscard]] const Type &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
+  [[nodiscard]] const QualType &getEvaluatedSymbolType(const size_t idx) const { // NOLINT(misc-no-recursion)
     if (!symbolTypes.empty() && !symbolTypes.at(idx).is(TY_INVALID))
       return symbolTypes.at(idx);
     if (children.size() != 1)
@@ -159,7 +159,7 @@ public:
   ASTNode *parent = nullptr;
   std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
-  std::vector<Type> symbolTypes;
+  std::vector<QualType> symbolTypes;
   bool unreachable = false;
 };
 
@@ -251,7 +251,7 @@ public:
 
   // Public members
   SymbolTableEntry *entry = nullptr;
-  Scope *fctScope = nullptr;
+  Scope *bodyScope = nullptr;
   bool takesArgs = false;
 };
 
@@ -953,7 +953,7 @@ public:
 class SignatureNode : public ASTNode {
 public:
   // Enums
-  enum Type : uint8_t {
+  enum SignatureType : uint8_t {
     TYPE_NONE,
     TYPE_FUNCTION,
     TYPE_PROCEDURE,
@@ -976,7 +976,7 @@ public:
   std::vector<Function *> *getFctManifestations(const std::string &) override { return &signatureManifestations; }
 
   // Public members
-  Type signatureType = SignatureNode::TYPE_NONE;
+  SignatureType signatureType = SignatureNode::TYPE_NONE;
   std::string methodName;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers signatureSpecifiers;
@@ -1638,7 +1638,7 @@ public:
   };
 
   // Typedefs
-  typedef std::queue<std::pair<AdditiveOp, Type>> OpQueue;
+  using OpQueue = std::queue<std::pair<AdditiveOp, QualType>>;
 
   // Constructors
   using ExprNode::ExprNode;
@@ -1674,7 +1674,7 @@ public:
   };
 
   // Typedefs
-  typedef std::queue<std::pair<MultiplicativeOp, Type>> OpQueue;
+  using OpQueue = std::queue<std::pair<MultiplicativeOp, QualType>>;
 
   // Constructors
   using ExprNode::ExprNode;
@@ -1908,7 +1908,7 @@ public:
     // Members
     FctCallType callType = TYPE_ORDINARY;
     bool isImported = false;
-    Type thisType = Type(TY_DYN); // Is filled if method or ctor call
+    QualType thisType = QualType(TY_DYN); // Is filled if method or ctor call
     std::vector<ExprResult> argResults;
     Function *callee = nullptr;
     Scope *calleeParentScope = nullptr;

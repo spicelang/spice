@@ -50,7 +50,7 @@ Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface 
  * @return Matched interface or nullptr
  */
 Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string &reqName,
-                                            const std::vector<Type> &reqTemplateTypes, const ASTNode *node) {
+                                            const std::vector<QualType> &reqTemplateTypes, const ASTNode *node) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   InterfaceRegistry interfaceRegistry = matchScope->interfaces;
   // Loop over interface registry to find interfaces, that match the requirements of the instantiation
@@ -59,12 +59,12 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
     // Copy the manifestation list to prevent iterating over items, that are created within the loop
     const InterfaceManifestationList manifestations = m;
     for (const auto &[mangledName, presetInterface] : manifestations) {
+      // Skip generic substantiations to prevent double matching of an interface
+      if (presetInterface.isGenericSubstantiation())
+        continue;
+
       // Copy the interface to be able to substantiate types
       Interface candidate = presetInterface;
-
-      // Skip generic substantiations to prevent double matching of an interface
-      if (presetInterface.genericSubstantiation)
-        continue;
 
       // Check name requirement
       if (!matchName(candidate, reqName))
@@ -102,7 +102,7 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
 
       // Insert the substantiated version if required
       Interface *substantiatedInterface = insertSubstantiation(matchScope, candidate, presetInterface.declNode);
-      substantiatedInterface->genericSubstantiation = true;
+      substantiatedInterface->genericPreset = &matchScope->interfaces.at(defCodeLocStr).at(mangledName);
       substantiatedInterface->declNode->getInterfaceManifestations()->push_back(substantiatedInterface);
 
       // Copy interface entry
@@ -166,7 +166,7 @@ bool InterfaceManager::matchName(const Interface &candidate, const std::string &
  * @param reqTemplateTypes Requested interface template types
  * @return Fulfilled or not
  */
-bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vector<Type> &reqTemplateTypes,
+bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vector<QualType> &reqTemplateTypes,
                                           TypeMapping &typeMapping) {
   // Check if the number of types match
   const size_t typeCount = reqTemplateTypes.size();
@@ -180,7 +180,7 @@ bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vecto
 
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
-    const Type &reqType = reqTemplateTypes.at(i);
+    const QualType &reqType = reqTemplateTypes.at(i);
     Type &candidateType = candidate.templateTypes.at(i);
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
@@ -215,7 +215,7 @@ void InterfaceManager::substantiateSignatures(Interface &candidate, TypeMapping 
     // Substantiate param types
     for (Param &paramType : method->paramList)
       if (paramType.type.isBaseType(TY_GENERIC))
-        TypeMatcher::substantiateTypeWithTypeMapping(paramType.type, typeMapping);
+        TypeMatcher::substantiateTypeWithTypeMapping(paramType.type.getType(), typeMapping);
   }
 }
 

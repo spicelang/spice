@@ -44,7 +44,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   // Template types
   bool isSelfGeneric = !spiceFunc.templateTypes.empty();
   if (spiceFunc.isMethod())
-    isSelfGeneric = spiceFunc.templateTypes.size() > spiceFunc.thisType.getTemplateTypes().size();
+    isSelfGeneric = spiceFunc.templateTypes.size() > spiceFunc.thisType.getType().getTemplateTypes().size();
   if (isSelfGeneric) {
     mangledName << "I";
     // Template types themselves
@@ -223,7 +223,7 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     mangleName(out, chainElement.subType, nestedType);
     if (!chainElement.templateTypes.empty()) {
       out << "I";
-      for (const Type &templateType : chainElement.templateTypes)
+      for (const QualType &templateType : chainElement.templateTypes)
         mangleType(out, templateType, typeMapping);
       out << "E";
     }
@@ -240,7 +240,7 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
   }
   case TY_FUNCTION: {
     out << (chainElement.data.hasCaptures ? "PFC" : "PF");
-    for (const Type &paramType : chainElement.paramTypes)
+    for (const QualType &paramType : chainElement.paramTypes)
       mangleType(out, paramType, typeMapping);
     out << "E";
     break;

@@ -95,10 +95,10 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
     manifestations.push_back(baseFunction);
 }
 
-Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std::vector<Type> &paramTypes,
+Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std::vector<QualType> &paramTypes,
                                              ASTNode *declNode) {
   ParamList paramList;
-  for (const Type &paramType : paramTypes)
+  for (const QualType &paramType : paramTypes)
     paramList.push_back({paramType, false});
   return {MAIN_FUNCTION_NAME, entry, Type(TY_DYN), Type(TY_INT), paramList, {}, declNode};
 }
@@ -190,7 +190,7 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * @return Matched function or nullptr
  */
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType,
-                                         const ArgList &reqArgs, const std::vector<Type> &templateTypeHints,
+                                         const ArgList &reqArgs, const std::vector<QualType> &templateTypeHints,
                                          bool strictSpecifierMatching, const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
 
@@ -205,7 +205,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       assert(presetFunction.hasSubstantiatedParams()); // No optional params are allowed at this point
 
       // Skip generic substantiations to prevent double matching of a function
-      if (presetFunction.genericSubstantiation)
+      if (presetFunction.isGenericSubstantiation())
         continue;
 
       // Copy the function to be able to substantiate types
@@ -216,7 +216,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       typeMapping.clear();
       for (size_t i = 0; i < std::min(templateTypeHints.size(), candidate.templateTypes.size()); i++) {
         const std::string &typeName = candidate.templateTypes.at(i).getSubType();
-        const Type &templateType = templateTypeHints.at(i);
+        const QualType &templateType = templateTypeHints.at(i);
         typeMapping.insert({typeName, templateType});
       }
 
@@ -249,7 +249,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 
       // Insert the substantiated version if required
       Function *substantiatedFunction = insertSubstantiation(matchScope, candidate, presetFunction.declNode);
-      substantiatedFunction->genericSubstantiation = true;
+      substantiatedFunction->genericPreset = &matchScope->functions.at(fctId).at(signature);
       substantiatedFunction->alreadyTypeChecked = false;
       substantiatedFunction->declNode->getFctManifestations(reqName)->push_back(substantiatedFunction);
 
@@ -261,8 +261,8 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       assert(substantiatedFunction->entry != nullptr);
 
       // Copy function scope
-      matchScope->copyChildScope(presetFunction.getSignature(false), newSignature);
-      Scope *childScope = matchScope->getChildScope(newSignature);
+      const std::string oldSignature = presetFunction.getSignature(false);
+      Scope *childScope = matchScope->copyChildScope(oldSignature, newSignature);
       assert(childScope != nullptr);
       childScope->isGenericScope = false;
       substantiatedFunction->bodyScope = childScope;
@@ -275,7 +275,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       if (presetFunction.isMethod() && !presetFunction.templateTypes.empty()) {
         SymbolTableEntry *thisEntry = childScope->lookupStrict(THIS_VARIABLE_NAME);
         assert(thisEntry != nullptr);
-        thisEntry->updateType(candidate.thisType.toPointer(callNode), /*overwriteExistingType=*/true);
+        thisEntry->updateType(candidate.thisType.getType().toPointer(callNode), /*overwriteExistingType=*/true);
       }
 
       // Add to matched functions
@@ -330,7 +330,7 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
       assert(spiceStruct != nullptr);
       matchScope = spiceStruct->scope;
     }
-    candidate.thisType.setBodyScope(matchScope);
+    candidate.thisType.getType().setBodyScope(matchScope);
   }
 
   return MatchResult::MATCHED;
@@ -356,7 +356,7 @@ bool FunctionManager::matchName(const Function &candidate, const std::string &re
  */
 bool FunctionManager::matchThisType(Function &candidate, const Type &reqThisType, TypeMapping &typeMapping,
                                     bool strictSpecifierMatching) {
-  Type &candidateThisType = candidate.thisType;
+  QualType &candidateThisType = candidate.thisType;
 
   // Shortcut for procedures
   if (candidateThisType.is(TY_DYN) && reqThisType.is(TY_DYN))
@@ -373,8 +373,8 @@ bool FunctionManager::matchThisType(Function &candidate, const Type &reqThisType
     return false;
 
   // Substantiate the candidate param type, based on the type mapping
-  if (candidateThisType.hasAnyGenericParts())
-    TypeMatcher::substantiateTypeWithTypeMapping(candidateThisType, typeMapping);
+  if (candidateThisType.getType().hasAnyGenericParts())
+    TypeMatcher::substantiateTypeWithTypeMapping(candidateThisType.getType(), typeMapping);
 
   return true;
 }
@@ -406,7 +406,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
   for (size_t i = 0; i < reqArgs.size(); i++) {
     // Retrieve actual and requested types
     assert(!candidateParamList.at(i).isOptional);
-    Type &candidateParamType = candidateParamList.at(i).type;
+    QualType &candidateParamType = candidateParamList.at(i).type;
     const Arg &requestedParamType = reqArgs.at(i);
     const Type &requestedType = requestedParamType.first;
     const bool isArgTemporary = requestedParamType.second;
@@ -417,8 +417,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
-    if (candidateParamType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType, typeMapping);
+    if (candidateParamType.getType().hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType.getType(), typeMapping);
 
     // Check if we try to bind a non-ref temporary to a non-const ref parameter
     if (!candidateParamType.canBind(requestedType, isArgTemporary)) {
@@ -429,7 +429,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
 
     // If we have a function/procedure type we need to take care of the information, if it takes captures
     if (requestedType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
-      candidateParamType.setHasLambdaCaptures(true);
+      candidateParamType.getType().setHasLambdaCaptures(true);
       needsSubstantiation = true;
     }
   }
@@ -444,8 +444,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
  * @param typeMapping Concrete template type mapping
  */
 void FunctionManager::substantiateReturnType(Function &candidate, TypeMapping &typeMapping) {
-  if (candidate.returnType.hasAnyGenericParts())
-    TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType, typeMapping);
+  if (candidate.returnType.getType().hasAnyGenericParts())
+    TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType.getType(), typeMapping);
 }
 
 /**

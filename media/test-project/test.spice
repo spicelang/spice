@@ -1,4 +1,20 @@
-import "bootstrap/util/block-allocator";
+import "std/data/vector";
+
+f<int> main() {
+    Vector<int> intVector;
+    intVector.pushBack(1);
+    intVector.pushBack(5);
+    intVector.pushBack(4);
+    intVector.pushBack(0);
+    intVector.pushBack(12);
+    intVector.pushBack(12345);
+    intVector.pushBack(9);
+    foreach const int item : intVector {
+        printf("Item: %d\n", item);
+    }
+}
+
+/*import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
 
 type ASTNode struct {
@@ -13,4 +29,4 @@ f<int> main() {
     DefaultMemoryManager defaultMemoryManager;
     IMemoryManager* memoryManager = &defaultMemoryManager;
     BlockAllocator<ASTNode> allocator = BlockAllocator<ASTNode>(memoryManager, 10l);
-}
+}*/

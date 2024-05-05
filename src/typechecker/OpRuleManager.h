@@ -42,9 +42,9 @@ const char *const ERROR_FOREACH_ITEM = "Passed wrong data type to foreach item";
 const char *const ERROR_FIELD_ASSIGN = "Given type of the field value does not match declaration";
 
 // Unary operator rule:        lhs type, result type, unsafe
-using UnaryOpRule = std::tuple<uint32_t, uint32_t, bool>;
+using UnaryOpRule = std::tuple<SuperType, SuperType, bool>;
 // Binary operator rule:        lhs type, rhs type, result type, unsafe
-using BinaryOpRule = std::tuple<uint32_t, uint32_t, uint32_t, bool>;
+using BinaryOpRule = std::tuple<SuperType, SuperType, SuperType, bool>;
 
 // Assign op rules
 const BinaryOpRule ASSIGN_OP_RULES[] = {
@@ -616,9 +616,9 @@ public:
 
   // Public methods
   static Type getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl = false,
-                                        const char *errMsgPrefix = "");
+                                  const char *errMsgPrefix = "");
   static Type getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
-                                             bool isDecl = false);
+                                       bool isDecl = false);
   ExprResult getPlusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
   ExprResult getMinusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
   ExprResult getMulEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx);
@@ -669,10 +669,10 @@ private:
   ExprResult isOperatorOverloadingFctAvailable(ASTNode *node, const char *fctName, const std::array<ExprResult, N> &op,
                                                size_t opIdx);
   static Type validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
-                                           const Type &lhs);
-  static Type validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
-                                            const char *name, const Type &lhs, const Type &rhs,
-                                            bool preserveSpecifiersFromLhs = false, const char *customMessagePrefix = "");
+                                     const Type &lhs);
+  static Type validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize, const char *name,
+                                      const Type &lhs, const Type &rhs, bool preserveSpecifiersFromLhs = false,
+                                      const char *customMessagePrefix = "");
   static SemanticError getExceptionUnary(const ASTNode *node, const char *name, const Type &lhs);
   static SemanticError getExceptionBinary(const ASTNode *node, const char *name, const Type &lhs, const Type &rhs,
                                           const char *messagePrefix);

@@ -53,7 +53,7 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  * @param node Instantiation AST node for printing error messages
  * @return Matched struct or nullptr
  */
-Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const std::vector<Type> &reqTemplateTypes,
+Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const std::vector<QualType> &reqTemplateTypes,
                                    const ASTNode *node) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   StructRegistry structRegistry = matchScope->structs;
@@ -63,12 +63,12 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
     // Copy the manifestation list to prevent iterating over items, that are created within the loop
     const StructManifestationList manifestations = m;
     for (const auto &[mangledName, presetStruct] : manifestations) {
+      // Skip generic substantiations to prevent double matching of a struct
+      if (presetStruct.isGenericSubstantiation())
+        continue;
+
       // Copy the struct to be able to substantiate types
       Struct candidate = presetStruct;
-
-      // Skip generic substantiations to prevent double matching of a struct
-      if (presetStruct.genericSubstantiation)
-        continue;
 
       // Check name requirement
       if (!matchName(candidate, reqName))
@@ -106,7 +106,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
 
       // Insert the substantiated version if required
       Struct *substantiatedStruct = insertSubstantiation(matchScope, candidate, presetStruct.declNode);
-      substantiatedStruct->genericSubstantiation = true;
+      substantiatedStruct->genericPreset = &matchScope->structs.at(structId).at(mangledName);
       substantiatedStruct->declNode->getStructManifestations()->push_back(substantiatedStruct);
 
       // Copy struct entry
@@ -117,9 +117,9 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
       assert(substantiatedStruct->entry != nullptr);
 
       // Copy struct scope
+      const std::string oldScopeName = STRUCT_SCOPE_PREFIX + presetStruct.name;
       const std::string newScopeName = STRUCT_SCOPE_PREFIX + newSignature;
-      matchScope->copyChildScope(STRUCT_SCOPE_PREFIX + presetStruct.name, newScopeName);
-      substantiatedStruct->scope = matchScope->getChildScope(newScopeName);
+      substantiatedStruct->scope = matchScope->copyChildScope(oldScopeName, newScopeName);
       assert(substantiatedStruct->scope != nullptr);
       substantiatedStruct->scope->isGenericScope = false;
 
@@ -137,12 +137,12 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
         // Replace field type with concrete template type
         SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
         assert(fieldEntry != nullptr && fieldEntry->isField());
-        Type &fieldType = substantiatedStruct->fieldTypes.at(i);
-        Type baseType = fieldType.getBaseType();
+        QualType &fieldType = substantiatedStruct->fieldTypes.at(i);
+        QualType baseType = fieldType.getBaseType();
 
         // Set the body scope of fields that are of type <candidate-struct>*
         if (baseType.matches(substantiatedStruct->entry->getType(), false, true, true)) {
-          baseType.setBodyScope(substantiatedStruct->scope);
+          baseType.getType().setBodyScope(substantiatedStruct->scope);
           fieldType = fieldType.replaceBaseType(baseType);
         }
 
@@ -150,23 +150,23 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
 
         // Instantiate structs
         if (baseType.is(TY_STRUCT))
-          baseType.getStruct(node);
+          baseType.getType().getStruct(node);
       }
 
       // Instantiate implemented interfaces if required
-      for (Type &interfaceType : substantiatedStruct->interfaceTypes) {
+      for (QualType &interfaceType : substantiatedStruct->interfaceTypes) {
         // Skip non-generic interfaces
-        if (!interfaceType.hasAnyGenericParts())
+        if (!interfaceType.getType().hasAnyGenericParts())
           continue;
 
         // Build template types
-        std::vector<Type> templateTypes = interfaceType.getTemplateTypes();
+        std::vector<QualType> templateTypes = interfaceType.getType().getTemplateTypes();
         TypeMatcher::substantiateTypesWithTypeMapping(templateTypes, typeMapping);
 
         // Instantiate interface
-        Scope *interfaceMatchScope = interfaceType.getBodyScope()->parent;
+        Scope *interfaceMatchScope = interfaceType.getType().getBodyScope()->parent;
         Interface *spiceInterface =
-            InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getSubType(), templateTypes, node);
+            InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getType().getSubType(), templateTypes, node);
         assert(spiceInterface != nullptr);
 
         interfaceType = spiceInterface->entry->getType();
@@ -204,7 +204,7 @@ bool StructManager::matchName(const Struct &candidate, const std::string &reqNam
  * @param reqTemplateTypes Requested struct template types
  * @return Fulfilled or not
  */
-bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Type> &reqTemplateTypes,
+bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<QualType> &reqTemplateTypes,
                                        TypeMapping &typeMapping) {
   // Check if the number of types match
   const size_t typeCount = reqTemplateTypes.size();
@@ -218,7 +218,7 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Type
 
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
-    const Type &reqType = reqTemplateTypes.at(i);
+    const QualType &reqType = reqTemplateTypes.at(i);
     Type &candidateType = candidate.templateTypes.at(i);
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
@@ -252,9 +252,9 @@ void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeM
   }
 
   // Loop over all explicit field types and substantiate the generic ones
-  for (Type &fieldType : candidate.fieldTypes)
-    if (fieldType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
+  for (QualType &fieldType : candidate.fieldTypes)
+    if (fieldType.getType().hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType.getType(), typeMapping);
 }
 
 /**

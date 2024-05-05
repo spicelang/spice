@@ -18,7 +18,7 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
   node->resizeToNumberOfManifestations(1);
 
   // Change to function body scope
-  currentScope = node->fctScope;
+  currentScope = node->bodyScope;
   // Visit statements in new scope
   visit(node->body());
   // Leave main function body scope
@@ -43,12 +43,13 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const auto structSignature = Struct::getSignature(node->name->structName, manifestation->thisType.getTemplateTypes());
+      const auto structSignature =
+          Struct::getSignature(node->name->structName, manifestation->thisType.getType().getTemplateTypes());
       changeToScope(STRUCT_SCOPE_PREFIX + structSignature, ScopeType::STRUCT);
     }
 
     // Change to function scope
-    changeToScope(manifestation->getSignature(false), ScopeType::FUNC_PROC_BODY);
+    changeToScope(manifestation->bodyScope, ScopeType::FUNC_PROC_BODY);
 
     // Mount type mapping for this manifestation
     assert(typeMapping.empty());
@@ -99,12 +100,13 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
 
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
-      const auto structSignature = Struct::getSignature(node->name->structName, manifestation->thisType.getTemplateTypes());
+      const auto structSignature =
+          Struct::getSignature(node->name->structName, manifestation->thisType.getType().getTemplateTypes());
       changeToScope(STRUCT_SCOPE_PREFIX + structSignature, ScopeType::STRUCT);
     }
 
     // Change to procedure scope
-    changeToScope(manifestation->getSignature(false), ScopeType::FUNC_PROC_BODY);
+    changeToScope(manifestation->bodyScope, ScopeType::FUNC_PROC_BODY);
 
     // Mount type mapping for this manifestation
     assert(typeMapping.empty());
@@ -164,17 +166,18 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
     // Check if the struct implements all methods of all attached interfaces
     size_t vtableIndex = 0;
-    for (const Type &interfaceType : manifestation->interfaceTypes) {
+    for (const QualType &interfaceType : manifestation->interfaceTypes) {
       // Retrieve interface instance
-      const std::string interfaceName = interfaceType.getSubType();
-      Scope *matchScope = interfaceType.getBodyScope()->parent;
-      Interface *interface = InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
+      const std::string interfaceName = interfaceType.getType().getSubType();
+      Scope *matchScope = interfaceType.getType().getBodyScope()->parent;
+      Interface *interface =
+          InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getType().getTemplateTypes(), node);
       assert(interface != nullptr);
 
       // Check for all methods, that it is implemented by the struct
       for (const Function *expectedMethod : interface->methods) {
         const std::string methodName = expectedMethod->name;
-        std::vector<Type> params = expectedMethod->getParamTypes();
+        std::vector<QualType> params = expectedMethod->getParamTypes();
         Type returnType = expectedMethod->returnType;
 
         // Substantiate
@@ -185,7 +188,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         // Build args list
         ArgList args;
         args.reserve(params.size());
-        for (const Type &param : params)
+        for (const QualType &param : params)
           args.emplace_back(param, nullptr);
 
         Function *spiceFunction = FunctionManager::matchFunction(currentScope, methodName, structType, args, {}, true, node);

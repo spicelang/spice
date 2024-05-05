@@ -15,7 +15,7 @@ namespace spice::compiler {
  * @return String representation as struct signature
  */
 std::string StructBase::getSignature() const {
-  std::vector<Type> templateSymbolTypes;
+  std::vector<QualType> templateSymbolTypes;
   templateSymbolTypes.reserve(templateTypes.size());
   for (const GenericType &genericType : templateTypes) {
     if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
@@ -39,7 +39,7 @@ std::string StructBase::getSignature() const {
  * @param concreteTemplateTypes Concrete template types
  * @return Signature
  */
-std::string StructBase::getSignature(const std::string &name, const std::vector<Type> &concreteTemplateTypes) {
+std::string StructBase::getSignature(const std::string &name, const std::vector<QualType> &concreteTemplateTypes) {
   // Build template type string
   std::stringstream templateTyStr;
   if (!concreteTemplateTypes.empty()) {
@@ -78,8 +78,8 @@ bool StructBase::isFullySubstantiated() const { return hasSubstantiatedGenerics(
  *
  * @return Template types as vector of symbol types
  */
-std::vector<Type> StructBase::getTemplateTypes() const {
-  std::vector<Type> templateSymbolTypes;
+std::vector<QualType> StructBase::getTemplateTypes() const {
+  std::vector<QualType> templateSymbolTypes;
   for (const GenericType &genericTemplateType : templateTypes)
     templateSymbolTypes.push_back(genericTemplateType);
   return templateSymbolTypes;
@@ -91,5 +91,12 @@ std::vector<Type> StructBase::getTemplateTypes() const {
  * @return Declaration code location
  */
 const CodeLoc &StructBase::getDeclCodeLoc() const { return declNode->codeLoc; }
+
+/**
+ * Returns, if this struct is a substantiation of a generic one.
+ *
+ * @return Generic substantiation or not
+ */
+bool StructBase::isGenericSubstantiation() const { return genericPreset != nullptr; }
 
 } // namespace spice::compiler

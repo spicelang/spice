@@ -153,6 +153,8 @@ set(SOURCES
         util/Memory.h
         util/RawStringOStream.cpp
         util/RawStringOStream.h
+        symboltablebuilder/QualType.cpp
+        symboltablebuilder/QualType.h
 )
 
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})

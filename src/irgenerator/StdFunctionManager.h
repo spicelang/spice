@@ -10,7 +10,6 @@
 namespace spice::compiler {
 
 // Forward declarations
-class Type;
 class Function;
 
 class StdFunctionManager {

@@ -18,11 +18,13 @@ namespace spice::compiler {
 
 Type::Type(SuperType superType) : typeChain({TypeChainElement{superType}}), specifiers(TypeSpecifiers::of(superType)) {}
 
+Type::Type(const QualType &qualType) : typeChain(qualType.getType().typeChain), specifiers(qualType.getType().specifiers) {}
+
 Type::Type(SuperType superType, const std::string &subType)
     : typeChain({TypeChainElement{superType, subType}}), specifiers(TypeSpecifiers::of(superType)) {}
 
 Type::Type(SuperType superType, const std::string &subType, uint64_t typeId, const Type::TypeChainElementData &data,
-           const std::vector<Type> &templateTypes)
+           const std::vector<QualType> &templateTypes)
     : typeChain({TypeChainElement(superType, subType, typeId, data, templateTypes)}), specifiers(TypeSpecifiers::of(superType)) {}
 
 Type::Type(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
@@ -427,6 +429,16 @@ bool Type::isSameContainerTypeAs(const Type &otherType) const {
 }
 
 /**
+ * Retrieve the base type of the current type
+ *
+ * @return Base type
+ */
+Type Type::getBaseType() const {
+  assert(!typeChain.empty());
+  return Type({typeChain.front()}, specifiers);
+}
+
+/**
  * Checks if the base type is generic itself or has generic parts in its template types
  *
  * @return Contains generic parts or not
@@ -456,7 +468,7 @@ bool Type::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
 /**
  * Set the list of templates types
  */
-void Type::setTemplateTypes(const std::vector<Type> &templateTypes) {
+void Type::setTemplateTypes(const std::vector<QualType> &templateTypes) {
   assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
   typeChain.back().templateTypes = templateTypes;
 }
@@ -464,7 +476,7 @@ void Type::setTemplateTypes(const std::vector<Type> &templateTypes) {
 /**
  * Set the list of templates types of the base type
  */
-void Type::setBaseTemplateTypes(const std::vector<Type> &templateTypes) {
+void Type::setBaseTemplateTypes(const std::vector<QualType> &templateTypes) {
   assert(getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}));
   typeChain.front().templateTypes = templateTypes;
 }
@@ -474,7 +486,7 @@ void Type::setBaseTemplateTypes(const std::vector<Type> &templateTypes) {
  *
  * @return Vector of template types
  */
-const std::vector<Type> &Type::getTemplateTypes() const { return typeChain.back().templateTypes; }
+const std::vector<QualType> &Type::getTemplateTypes() const { return typeChain.back().templateTypes; }
 
 /**
  * Check if the given generic type list has a substantiation for the current (generic) type
@@ -498,13 +510,13 @@ bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList)
   // If the type is non-generic check template types
   bool covered = true;
   // Check template types
-  const std::vector<Type> &baseTemplateTypes = baseType.getTemplateTypes();
+  const std::vector<QualType> &baseTemplateTypes = baseType.getTemplateTypes();
   covered &= std::ranges::all_of(
       baseTemplateTypes, [&](const Type &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); });
 
   // If function/procedure, check param and return types
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-    const std::vector<Type> &paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
+    const std::vector<QualType> &paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
     covered &= std::ranges::all_of(paramAndReturnTypes,
                                    [&](const Type &paramType) { return paramType.isCoveredByGenericTypeList(genericTypeList); });
   }
@@ -519,9 +531,7 @@ bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList)
  * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
-std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
-  std::stringstream name;
-
+void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
   // Append the specifiers
   const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
   if (!ignorePublic && specifiers.isPublic && !defaultForSuperType.isPublic)
@@ -542,7 +552,18 @@ std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(mi
   // Loop through all chain elements
   for (const TypeChainElement &chainElement : typeChain)
     name << chainElement.getName(withSize);
+}
 
+/**
+ * Get the name of the symbol type as a string
+ *
+ * @param withSize Include the array size for sized types
+ * @param ignorePublic Ignore any potential public specifier
+ * @return Symbol type name
+ */
+std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
+  std::stringstream name;
+  getName(name, withSize, ignorePublic);
   return name.str();
 }
 
@@ -551,9 +572,9 @@ std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(mi
  *
  * @param returnType Function return type
  */
-void Type::setFunctionReturnType(const Type &returnType) {
+void Type::setFunctionReturnType(const QualType &returnType) {
   assert(is(TY_FUNCTION));
-  std::vector<Type> &paramTypes = typeChain.back().paramTypes;
+  std::vector<QualType> &paramTypes = typeChain.back().paramTypes;
   if (paramTypes.empty())
     paramTypes.resize(1);
   paramTypes.at(0) = returnType;
@@ -564,7 +585,7 @@ void Type::setFunctionReturnType(const Type &returnType) {
  *
  * @return Function return type
  */
-const Type &Type::getFunctionReturnType() const {
+const QualType &Type::getFunctionReturnType() const {
   assert(is(TY_FUNCTION));
   assert(!typeChain.back().paramTypes.empty());
   return typeChain.back().paramTypes.front();
@@ -575,12 +596,12 @@ const Type &Type::getFunctionReturnType() const {
  *
  * @param paramTypes Function param types
  */
-void Type::setFunctionParamTypes(const std::vector<Type> &newParamTypes) {
+void Type::setFunctionParamTypes(const std::vector<QualType> &newParamTypes) {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  std::vector<Type> &paramTypes = typeChain.back().paramTypes;
+  std::vector<QualType> &paramTypes = typeChain.back().paramTypes;
   // Resize param types if required
   if (paramTypes.size() < newParamTypes.size() + 1)
-    paramTypes.resize(newParamTypes.size() + 1, Type(TY_DYN));
+    paramTypes.resize(newParamTypes.size() + 1, QualType(TY_DYN));
   // Set the function param types
   for (size_t i = 0; i < newParamTypes.size(); i++)
     paramTypes.at(i + 1) = newParamTypes.at(i);
@@ -591,7 +612,7 @@ void Type::setFunctionParamTypes(const std::vector<Type> &newParamTypes) {
  *
  * @return Function param types
  */
-std::vector<Type> Type::getFunctionParamTypes() const {
+std::vector<QualType> Type::getFunctionParamTypes() const {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   if (typeChain.back().paramTypes.empty())
     return {};
@@ -623,7 +644,7 @@ bool Type::hasLambdaCaptures() const {
  *
  * @param newParamAndReturnTypes Function param and return types (first is return type, rest are param types)
  */
-void Type::setFunctionParamAndReturnTypes(const std::vector<Type> &newParamAndReturnTypes) {
+void Type::setFunctionParamAndReturnTypes(const std::vector<QualType> &newParamAndReturnTypes) {
   assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   typeChain.front().paramTypes = newParamAndReturnTypes;
 }
@@ -633,7 +654,7 @@ void Type::setFunctionParamAndReturnTypes(const std::vector<Type> &newParamAndRe
  *
  * @return Function param and return types (first is return type, rest are param types)
  */
-const std::vector<Type> &Type::getFunctionParamAndReturnTypes() const {
+const std::vector<QualType> &Type::getFunctionParamAndReturnTypes() const {
   assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   return typeChain.front().paramTypes;
 }
@@ -648,7 +669,7 @@ Struct *Type::getStruct(const ASTNode *node) const {
   assert(is(TY_STRUCT));
   Scope *structDefScope = getBodyScope()->parent;
   const std::string structName = getSubType();
-  const std::vector<Type> &templateTypes = getTemplateTypes();
+  const std::vector<QualType> &templateTypes = getTemplateTypes();
   return StructManager::matchStruct(structDefScope, structName, templateTypes, node);
 }
 
@@ -662,7 +683,7 @@ Interface *Type::getInterface(const ASTNode *node) const {
   assert(is(TY_INTERFACE));
   Scope *interfaceDefScope = getBodyScope()->parent;
   const std::string structName = getSubType();
-  const std::vector<Type> &templateTypes = getTemplateTypes();
+  const std::vector<QualType> &templateTypes = getTemplateTypes();
   return InterfaceManager::matchInterface(interfaceDefScope, structName, templateTypes, node);
 }
 
@@ -717,12 +738,8 @@ bool Type::matchesInterfaceImplementedByStruct(const Type &otherType) const {
   // Check if the rhs is a struct type that implements the lhs interface type
   const Struct *spiceStruct = otherType.getStruct(nullptr);
   assert(spiceStruct != nullptr);
-  for (const Type &interfaceType : spiceStruct->interfaceTypes) {
-    assert(interfaceType.is(TY_INTERFACE));
-    if (matches(interfaceType, false, false, true))
-      return true;
-  }
-  return false;
+  const auto pred = [&](const Type &interfaceType) { return matches(interfaceType, false, false, true); };
+  return std::ranges::any_of(spiceStruct->interfaceTypes, pred);
 }
 
 /**

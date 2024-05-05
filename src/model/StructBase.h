@@ -27,11 +27,12 @@ public:
 
   // Public methods
   [[nodiscard]] std::string getSignature() const;
-  static std::string getSignature(const std::string &name, const std::vector<Type> &concreteTemplateTypes);
+  static std::string getSignature(const std::string &name, const std::vector<QualType> &concreteTemplateTypes);
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
-  [[nodiscard]] std::vector<Type> getTemplateTypes() const;
+  [[nodiscard]] std::vector<QualType> getTemplateTypes() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
+  [[nodiscard]] bool isGenericSubstantiation() const;
 
   // Public members
   std::string name;
@@ -41,7 +42,7 @@ public:
   Scope *scope = nullptr;
   ASTNode *declNode;
   size_t manifestationIndex = 0;
-  bool genericSubstantiation = false;
+  StructBase *genericPreset = nullptr;
   bool used = false;
   llvm::DICompositeType *diType = nullptr;
   struct {

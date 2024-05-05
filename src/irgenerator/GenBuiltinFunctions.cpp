@@ -62,7 +62,7 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
   if (node->isType) { // Size of type
     type = any_cast<llvm::Type *>(visit(node->dataType()));
   } else { // Size of value
-    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
+    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).getType().toLLVMType(context, currentScope);
   }
   // Calculate size at compile-time
   const llvm::TypeSize sizeInBits = module->getDataLayout().getTypeSizeInBits(type);
@@ -77,7 +77,7 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
   if (node->isType) { // Align of type
     type = any_cast<llvm::Type *>(visit(node->dataType()));
   } else { // Align of value
-    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
+    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).getType().toLLVMType(context, currentScope);
   }
   // Calculate size at compile-time
   const llvm::Align align = module->getDataLayout().getABITypeAlign(type);

@@ -110,7 +110,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   if (data.isCtorCall()) {
     assert(!data.isMethodCall());
 
-    llvm::Type *thisType = spiceFunc->thisType.toLLVMType(context, spiceFunc->thisType.getBodyScope());
+    llvm::Type *thisType = spiceFunc->thisType.getType().toLLVMType(context, spiceFunc->thisType.getType().getBodyScope());
     thisPtr = insertAlloca(thisType);
 
     // Add 'this' pointer to the front of the argument list
@@ -137,7 +137,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   if (node->hasArgs) {
     argValues.reserve(node->argLst()->args().size());
     const std::vector<AssignExprNode *> args = node->argLst()->args();
-    const std::vector<Type> paramSTypes =
+    const std::vector<QualType> paramSTypes =
         data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes() : spiceFunc->getParamTypes();
     assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
@@ -168,8 +168,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   // Retrieve return and param types
-  Type returnSType(TY_DYN);
-  std::vector<Type> paramSTypes;
+  QualType returnSType(TY_DYN);
+  std::vector<QualType> paramSTypes;
   if (data.isFctPtrCall()) {
     if (firstFragEntry->getType().isBaseType(TY_FUNCTION))
       returnSType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
@@ -187,7 +187,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     // Get returnType
     llvm::Type *returnType = builder.getVoidTy();
     if (!returnSType.is(TY_DYN))
-      returnType = returnSType.toLLVMType(context, accessScope);
+      returnType = returnSType.getType().toLLVMType(context, accessScope);
 
     // Get arg types
     std::vector<llvm::Type *> argTypes;
@@ -195,8 +195,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       argTypes.push_back(builder.getPtrTy()); // This pointer
     if (data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures())
       argTypes.push_back(builder.getPtrTy()); // Capture pointer
-    for (const Type &paramType : paramSTypes)
-      argTypes.push_back(paramType.toLLVMType(context, accessScope));
+    for (const QualType &paramType : paramSTypes)
+      argTypes.push_back(paramType.getType().toLLVMType(context, accessScope));
 
     fctType = llvm::FunctionType::get(returnType, argTypes, false);
     if (!data.isFctPtrCall() && !data.isVirtualMethodCall())
@@ -237,7 +237,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   }
 
   if (data.isMethodCall() || data.isCtorCall() || data.isVirtualMethodCall()) {
-    llvm::Type *thisType = data.thisType.toLLVMType(context, currentScope);
+    llvm::Type *thisType = data.thisType.getType().toLLVMType(context, currentScope);
     result->addParamAttr(0, llvm::Attribute::NoUndef);
     result->addParamAttr(0, llvm::Attribute::NonNull);
     result->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(thisType));
@@ -290,8 +290,8 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
 
   // Get LLVM type of item and array
   assert(!itemResults.empty());
-  const Type &firstItemSTy = node->itemLst()->args().front()->getEvaluatedSymbolType(manIdx);
-  llvm::Type *itemType = firstItemSTy.toLLVMType(context, currentScope);
+  const QualType &firstItemSTy = node->itemLst()->args().front()->getEvaluatedSymbolType(manIdx);
+  llvm::Type *itemType = firstItemSTy.getType().toLLVMType(context, currentScope);
   llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, node->actualSize);
 
   if (canBeConstant) { // All items are constants, so we can create a global constant array
@@ -336,7 +336,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   // Get struct object
   const Struct *spiceStruct = node->instantiatedStructs.at(manIdx);
   assert(spiceStruct != nullptr);
-  const std::vector<Type> &fieldTypes = spiceStruct->fieldTypes;
+  const std::vector<QualType> &fieldTypes = spiceStruct->fieldTypes;
 
   // Can only be constant if none of the fields is of type reference
   bool canBeConstant = !spiceStruct->hasReferenceFields();
@@ -365,7 +365,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     // Collect constants
     std::vector<llvm::Constant *> constants;
     // For each interface a nullptr
-    for (const Type &interfaceType : spiceStruct->interfaceTypes)
+    for (const QualType &interfaceType : spiceStruct->interfaceTypes)
       constants.push_back(getDefaultValueForSymbolType(interfaceType));
     // Constant value for each field
     for (const LLVMExprResult &exprResult : fieldValueResults)
@@ -383,7 +383,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
     // Store interface values at their corresponding offsets
     for (; i < interfaceCount; i++) {
-      const Type &interfaceType = spiceStruct->interfaceTypes.at(i);
+      const QualType &interfaceType = spiceStruct->interfaceTypes.at(i);
       // Get field value
       llvm::Value *itemValue = getDefaultValueForSymbolType(interfaceType);
       // Get field address
@@ -404,7 +404,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
       insertStore(itemValue, currentFieldAddress, storeVolatile);
     }
 
-    // Attach address to anonymous symbol to keep track of deallocation
+    // Attach address to anonymous symbol to keep track of de-allocation
     SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node->codeLoc);
     if (returnSymbol != nullptr)
       returnSymbol->updateAddress(structAddr);
@@ -445,7 +445,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
       SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).getType().toLLVMType(context, currentScope);
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
@@ -453,7 +453,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   }
 
   // Get return type
-  llvm::Type *returnType = spiceFunc.returnType.toLLVMType(context, currentScope);
+  llvm::Type *returnType = spiceFunc.returnType.getType().toLLVMType(context, currentScope);
 
   // Create function or implement declared function
   spiceFunc.mangleSuffix = "." + std::to_string(manIdx);
@@ -600,7 +600,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
       SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).getType().toLLVMType(context, currentScope);
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
@@ -742,7 +742,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
       SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).toLLVMType(context, currentScope);
+      llvm::Type *paramType = spiceFunc.getParamTypes().at(argIdx).getType().toLLVMType(context, currentScope);
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramTypes.push_back(paramType);
@@ -752,7 +752,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Get return type
   llvm::Type *returnType = builder.getVoidTy();
   if (spiceFunc.isFunction())
-    returnType = spiceFunc.returnType.toLLVMType(context, currentScope);
+    returnType = spiceFunc.returnType.getType().toLLVMType(context, currentScope);
 
   // Create function or implement declared function
   const std::string mangledName = spiceFunc.getMangledName();
@@ -856,9 +856,9 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
   if (currentScope != rootScope && !node->isParamType && !node->isReturnType && !node->isFieldType)
     diGenerator.setSourceLocation(node);
   // Retrieve symbol type
-  Type symbolType = node->getEvaluatedSymbolType(manIdx);
+  QualType symbolType = node->getEvaluatedSymbolType(manIdx);
   assert(!symbolType.is(TY_DYN)); // Symbol type should not be dyn anymore at this point
-  return symbolType.toLLVMType(context, currentScope);
+  return symbolType.getType().toLLVMType(context, currentScope);
 }
 
 llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda) {

@@ -124,7 +124,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
     return nullptr;
 
   // Retrieve return type
-  llvm::Type *returnType = spiceFunc->returnType.toLLVMType(context, currentScope);
+  llvm::Type *returnType = spiceFunc->returnType.getType().toLLVMType(context, currentScope);
 
   // Get 'this' entry
   std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
@@ -140,7 +140,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
   // Get parameter types
   for (const Param &param : spiceFunc->paramList) {
     assert(!param.isOptional);
-    paramTypes.push_back(param.type.toLLVMType(context, currentScope));
+    paramTypes.push_back(param.type.getType().toLLVMType(context, currentScope));
   }
 
   // Get function linkage
@@ -231,7 +231,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   // Get parameter types
   for (const Param &param : spiceProc->paramList) {
     assert(!param.isOptional);
-    paramTypes.push_back(param.type.toLLVMType(context, currentScope));
+    paramTypes.push_back(param.type.getType().toLLVMType(context, currentScope));
   }
 
   // Get function linkage

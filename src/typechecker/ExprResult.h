@@ -10,7 +10,7 @@ namespace spice::compiler {
 class SymbolTableEntry;
 
 struct ExprResult {
-  Type type;
+  QualType type;
   SymbolTableEntry *entry = nullptr;
 
   [[nodiscard]] bool isTemporary() const { return entry == nullptr; }
