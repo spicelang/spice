@@ -58,22 +58,22 @@ llvm::Function *StdFunctionManager::getMemcpyIntrinsic() const {
 }
 
 llvm::Function *StdFunctionManager::getStringGetRawLengthStringFct() const {
-  const ParamList paramLst = {{Type(TY_STRING), false}};
-  const Function function("getRawLength", nullptr, Type(TY_DYN), Type(TY_LONG), paramLst, {}, nullptr);
+  const ParamList paramLst = {{QualType(TY_STRING), false}};
+  const Function function("getRawLength", nullptr, QualType(TY_DYN), QualType(TY_LONG), paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
   return getFunction(mangledName.c_str(), builder.getInt64Ty(), {builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getStringIsRawEqualStringStringFct() const {
-  const ParamList paramLst = {{Type(TY_STRING), false}, {Type(TY_STRING), false}};
-  const Function function("isRawEqual", nullptr, Type(TY_DYN), Type(TY_BOOL), paramLst, {}, nullptr);
+  const ParamList paramLst = {{QualType(TY_STRING), false}, {QualType(TY_STRING), false}};
+  const Function function("isRawEqual", nullptr, QualType(TY_DYN), QualType(TY_BOOL), paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
   return getFunction(mangledName.c_str(), builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {
-  const ParamList paramLst = {{Type(TY_BYTE).toPointer(nullptr).toReference(nullptr), false}};
-  const Function function("sDealloc", nullptr, Type(TY_DYN), Type(TY_DYN), paramLst, {}, nullptr);
+  const ParamList paramLst = {{QualType(TY_BYTE).toPtr(nullptr).toRef(nullptr), false}};
+  const Function function("sDealloc", nullptr, QualType(TY_DYN), QualType(TY_DYN), paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
   return getProcedure(mangledName.c_str(), {builder.getPtrTy()});
 }

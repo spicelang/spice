@@ -188,8 +188,8 @@ bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vecto
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
-    if (candidateType.getType().hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateType.getType(), typeMapping);
+    if (candidateType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping);
   }
 
   return true;
@@ -215,7 +215,7 @@ void InterfaceManager::substantiateSignatures(Interface &candidate, TypeMapping 
     // Substantiate param types
     for (Param &paramType : method->paramList)
       if (paramType.type.isBase(TY_GENERIC))
-        TypeMatcher::substantiateTypeWithTypeMapping(paramType.type.getType(), typeMapping);
+        TypeMatcher::substantiateTypeWithTypeMapping(paramType.type, typeMapping);
   }
 }
 

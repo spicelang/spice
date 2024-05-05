@@ -448,7 +448,8 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
     const QualType &fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
       // Lookup dtor function and generate call if found
-      const Function *dtorFct = FunctionManager::lookupFunction(fieldType.getType().getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
+      const Function *dtorFct =
+          FunctionManager::lookupFunction(fieldType.getType().getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
       if (dtorFct)
         generateCtorOrDtorCall(fieldSymbol, dtorFct, {});
       continue;
@@ -494,13 +495,13 @@ void IRGenerator::generateTestMain() {
   llvm::Constant *skippedMsg = createGlobalStringConst("skippedMsg", TEST_CASE_SKIPPED_MSG, *rootScope->codeLoc);
 
   // Prepare entry for test main
-  Type functionType(TY_FUNCTION);
-  functionType.specifiers = TypeSpecifiers::of(TY_FUNCTION);
-  functionType.specifiers.isPublic = true;
+  QualType functionType(TY_FUNCTION);
+  functionType.getType().specifiers = TypeSpecifiers::of(TY_FUNCTION);
+  functionType.getType().specifiers.isPublic = true;
   SymbolTableEntry entry(MAIN_FUNCTION_NAME, functionType, rootScope, nullptr, 0, false);
 
   // Prepare test main function
-  Function testMain(MAIN_FUNCTION_NAME, &entry, Type(TY_DYN), Type(TY_INT), {}, {}, nullptr);
+  Function testMain(MAIN_FUNCTION_NAME, &entry, QualType(TY_DYN), QualType(TY_INT), {}, {}, nullptr);
   testMain.used = true; // Mark as used to prevent removal
   testMain.implicitDefault = true;
   testMain.mangleFunctionName = false;

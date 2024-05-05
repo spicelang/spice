@@ -45,7 +45,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   llvm::Type *varTy = varSymbolType.getType().toLLVMType(context, accessScope);
 
   // Check if right side is dyn array. If this is the case we have an empty array initializer and need the default value
-  const bool rhsIsDynArray = node->hasAssignment && node->assignExpr()->getEvaluatedSymbolType(manIdx).getType().isArrayOf(TY_DYN);
+  const bool rhsIsDynArray = node->hasAssignment && node->assignExpr()->getEvaluatedSymbolType(manIdx).isArrayOf(TY_DYN);
 
   // Check if the declaration is with an assignment or the default value
   llvm::Value *varAddress = nullptr;

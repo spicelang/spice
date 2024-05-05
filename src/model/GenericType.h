@@ -25,8 +25,7 @@ public:
   GenericType() = default;
 
   // Public methods
-  [[nodiscard]] [[deprecated]] bool checkConditionsOf(const QualType &type, bool ignoreArraySize = false,
-                                                      bool ignoreSpecifiers = false) const;
+  [[nodiscard]] bool checkConditionsOf(const QualType &type, bool ignoreArraySize = false, bool ignoreSpecifiers = false) const;
 
   // Public members
   bool used = false;
@@ -36,8 +35,7 @@ private:
   std::vector<QualType> typeConditions = {QualType(TY_DYN)};
 
   // Private methods
-  [[nodiscard]] [[deprecated]] bool checkTypeConditionOf(const QualType &type, bool ignoreArraySize,
-                                                         bool ignoreSpecifiers) const;
+  [[nodiscard]] [[deprecated]] bool checkTypeConditionOf(const QualType &type, bool ignoreArraySize, bool ignoreSpecifiers) const;
 };
 
 } // namespace spice::compiler

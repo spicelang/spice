@@ -156,7 +156,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
       // Instantiate implemented interfaces if required
       for (QualType &interfaceType : substantiatedStruct->interfaceTypes) {
         // Skip non-generic interfaces
-        if (!interfaceType.getType().hasAnyGenericParts())
+        if (!interfaceType.hasAnyGenericParts())
           continue;
 
         // Build template types
@@ -226,8 +226,8 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Qual
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
-    if (candidateType.getType().hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateType.getType(), typeMapping);
+    if (candidateType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping);
   }
 
   return true;
@@ -245,16 +245,16 @@ void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeM
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldEntry = candidate.scope->symbolTable.lookupStrictByIndex(i);
     QualType fieldType = fieldEntry->getQualType();
-    if (fieldType.getType().hasAnyGenericParts()) {
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType.getType(), typeMapping);
+    if (fieldType.hasAnyGenericParts()) {
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
       fieldEntry->updateType(fieldType, true);
     }
   }
 
   // Loop over all explicit field types and substantiate the generic ones
   for (QualType &fieldType : candidate.fieldTypes)
-    if (fieldType.getType().hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType.getType(), typeMapping);
+    if (fieldType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 }
 
 /**

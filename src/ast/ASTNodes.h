@@ -83,7 +83,7 @@ public:
       child->resizeToNumberOfManifestations(manifestationCount);
     }
     // Reserve this node
-    symbolTypes.resize(manifestationCount, Type(TY_INVALID));
+    symbolTypes.resize(manifestationCount, QualType(TY_INVALID));
     // Do custom work
     customItemsInitialization(manifestationCount);
   }

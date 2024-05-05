@@ -374,8 +374,8 @@ bool FunctionManager::matchThisType(Function &candidate, const QualType &reqThis
     return false;
 
   // Substantiate the candidate param type, based on the type mapping
-  if (candidateThisType.getType().hasAnyGenericParts())
-    TypeMatcher::substantiateTypeWithTypeMapping(candidateThisType.getType(), typeMapping);
+  if (candidateThisType.hasAnyGenericParts())
+    TypeMatcher::substantiateTypeWithTypeMapping(candidateThisType, typeMapping);
 
   return true;
 }
@@ -418,8 +418,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
-    if (candidateParamType.getType().hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType.getType(), typeMapping);
+    if (candidateParamType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType, typeMapping);
 
     // Check if we try to bind a non-ref temporary to a non-const ref parameter
     if (!candidateParamType.canBind(requestedType, isArgTemporary)) {
@@ -445,8 +445,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
  * @param typeMapping Concrete template type mapping
  */
 void FunctionManager::substantiateReturnType(Function &candidate, TypeMapping &typeMapping) {
-  if (candidate.returnType.getType().hasAnyGenericParts())
-    TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType.getType(), typeMapping);
+  if (candidate.returnType.hasAnyGenericParts())
+    TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType, typeMapping);
 }
 
 /**
