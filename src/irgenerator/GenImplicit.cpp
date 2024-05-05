@@ -27,8 +27,8 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, QualType dstSTy, Qual
   size_t loadCounter = 0;
   while (srcSTy.isPtr()) {
     src = insertLoad(srcSTy.getType().toLLVMType(context, currentScope), src);
-    srcSTy = srcSTy.getType().getContainedTy();
-    dstSTy = dstSTy.getType().getContainedTy();
+    srcSTy = srcSTy.getContained();
+    dstSTy = dstSTy.getContained();
     loadCounter++;
   }
   // GEP or bit-cast
@@ -84,8 +84,8 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
     // Take 'this' var as base pointer
     const SymbolTableEntry *thisVar = currentScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisVar != nullptr);
-    assert(thisVar->getType().isPtr() && thisVar->getType().getContainedTy().is(TY_STRUCT));
-    llvm::Type *thisType = thisVar->getType().getContainedTy().toLLVMType(context, currentScope);
+    assert(thisVar->getType().isPtr() && thisVar->getQualType().getContained().is(TY_STRUCT));
+    llvm::Type *thisType = thisVar->getQualType().getContained().toLLVMType(context, currentScope);
     llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), thisVar->getAddress());
     // Add field offset
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(entry->orderIndex)};
@@ -159,7 +159,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
     fct->addParamAttr(0, llvm::Attribute::NoUndef);
     fct->addParamAttr(0, llvm::Attribute::NonNull);
     assert(thisEntry != nullptr);
-    llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+    llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(context, currentScope);
     assert(structType != nullptr);
     fct->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
     fct->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
@@ -250,7 +250,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
     fct->addParamAttr(0, llvm::Attribute::NoUndef);
     fct->addParamAttr(0, llvm::Attribute::NonNull);
     assert(thisEntry != nullptr);
-    llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+    llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(context, currentScope);
     assert(structType != nullptr);
     fct->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
     fct->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
@@ -313,7 +313,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
-  Type structSymbolType = thisEntry->getType().getBaseType();
+  Type structSymbolType = thisEntry->getType().getBase();
   llvm::Type *structType = structSymbolType.toLLVMType(context, structScope);
 
   // Store VTable to first struct field if required
@@ -390,7 +390,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
-  llvm::Type *structType = thisEntry->getType().getBaseType().toLLVMType(context, structScope);
+  llvm::Type *structType = thisEntry->getType().getBase().toLLVMType(context, structScope);
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
@@ -400,11 +400,11 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
       continue;
 
     // Call copy ctor for struct fields
-    const Type &fieldType = fieldSymbol->getType();
+    const QualType &fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
       // Lookup copy ctor function and call if available
-      Scope *matchScope = fieldType.getBodyScope();
-      const ArgList args = {{fieldType.toConstReference(nullptr), false /* we have the field as storage */}};
+      Scope *matchScope = fieldType.getType().getBodyScope();
+      const ArgList args = {{fieldType.toConstRef(nullptr), false /* we have the field as storage */}};
       const Function *ctorFct = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false);
       if (ctorFct) {
         // Retrieve field address
@@ -435,7 +435,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
-  llvm::Type *structType = thisEntry->getType().getBaseType().toLLVMType(context, structScope);
+  llvm::Type *structType = thisEntry->getType().getBase().toLLVMType(context, structScope);
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
@@ -445,10 +445,10 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
       continue;
 
     // Call dtor for struct fields
-    const Type &fieldType = fieldSymbol->getType();
+    const QualType &fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
       // Lookup dtor function and generate call if found
-      const Function *dtorFct = FunctionManager::lookupFunction(fieldType.getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
+      const Function *dtorFct = FunctionManager::lookupFunction(fieldType.getType().getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
       if (dtorFct)
         generateCtorOrDtorCall(fieldSymbol, dtorFct, {});
       continue;

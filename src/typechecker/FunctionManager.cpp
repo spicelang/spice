@@ -189,7 +189,7 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
-Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType,
+Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                          const ArgList &reqArgs, const std::vector<QualType> &templateTypeHints,
                                          bool strictSpecifierMatching, const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
@@ -275,7 +275,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       if (presetFunction.isMethod() && !presetFunction.templateTypes.empty()) {
         SymbolTableEntry *thisEntry = childScope->lookupStrict(THIS_VARIABLE_NAME);
         assert(thisEntry != nullptr);
-        thisEntry->updateType(candidate.thisType.getType().toPointer(callNode), /*overwriteExistingType=*/true);
+        thisEntry->updateType(candidate.thisType.toPtr(callNode), /*overwriteExistingType=*/true);
       }
 
       // Add to matched functions
@@ -429,7 +429,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
     }
 
     // If we have a function/procedure type we need to take care of the information, if it takes captures
-    if (requestedType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.getType().hasLambdaCaptures()) {
+    if (requestedType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.getType().hasLambdaCaptures()) {
       candidateParamType.getType().setHasLambdaCaptures(true);
       needsSubstantiation = true;
     }

@@ -138,7 +138,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
         SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
         assert(fieldEntry != nullptr && fieldEntry->isField());
         QualType &fieldType = substantiatedStruct->fieldTypes.at(i);
-        QualType baseType = fieldType.getBaseType();
+        QualType baseType = fieldType.getBase();
 
         // Set the body scope of fields that are of type <candidate-struct>*
         if (baseType.matches(substantiatedStruct->entry->getType(), false, true, true)) {

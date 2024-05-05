@@ -73,8 +73,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     assert(!data.isCtorCall());
 
     // Retrieve entry of the first fragment
-    assert(firstFragEntry != nullptr && firstFragEntry->getType().getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}));
-    Scope *structScope = firstFragEntry->getType().getBaseType().getBodyScope();
+    assert(firstFragEntry != nullptr && firstFragEntry->getType().getBase().isOneOf({TY_STRUCT, TY_INTERFACE}));
+    Scope *structScope = firstFragEntry->getType().getBase().getBodyScope();
 
     // Get address of the referenced variable / struct instance
     thisPtr = firstFragEntry->getAddress();
@@ -82,7 +82,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     // Auto de-reference 'this' pointer
     QualType firstFragmentType = firstFragEntry->getQualType();
     autoDeReferencePtr(thisPtr, firstFragmentType, structScope->parent);
-    llvm::Type *structTy = firstFragEntry->getType().getBaseType().toLLVMType(context, structScope->parent);
+    llvm::Type *structTy = firstFragEntry->getType().getBase().toLLVMType(context, structScope->parent);
 
     // Traverse through structs - the first fragment is already looked up and the last one is the function name
     for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
@@ -91,16 +91,16 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
       assert(fieldEntry != nullptr);
       QualType fieldEntryType = fieldEntry->getQualType();
-      assert(fieldEntryType.getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}));
+      assert(fieldEntryType.getBase().isOneOf({TY_STRUCT, TY_INTERFACE}));
       // Get struct type and scope
-      structScope = fieldEntryType.getBaseType().getType().getBodyScope();
+      structScope = fieldEntryType.getBase().getType().getBodyScope();
       assert(structScope != nullptr);
       // Get address of field
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
       thisPtr = insertInBoundsGEP(structTy, thisPtr, indices);
       // Auto de-reference pointer and get new struct type
       autoDeReferencePtr(thisPtr, fieldEntryType, structScope->parent);
-      structTy = fieldEntryType.getBaseType().getType().toLLVMType(context, structScope->parent);
+      structTy = fieldEntryType.getBase().getType().toLLVMType(context, structScope->parent);
     }
 
     // Add 'this' pointer to the front of the argument list
@@ -138,7 +138,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     argValues.reserve(node->argLst()->args().size());
     const std::vector<AssignExprNode *> args = node->argLst()->args();
     const std::vector<QualType> paramSTypes =
-        data.isFctPtrCall() ? firstFragEntry->getType().getBaseType().getFunctionParamTypes() : spiceFunc->getParamTypes();
+        data.isFctPtrCall() ? firstFragEntry->getType().getBase().getFunctionParamTypes() : spiceFunc->getParamTypes();
     assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
       AssignExprNode *argNode = args.at(i);
@@ -154,10 +154,10 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
         // Resolve address if actual type is reference, otherwise value
         llvm::Value *argValue = actualSTy.isRef() ? resolveAddress(argNode) : resolveValue(argNode);
         argValues.push_back(argValue);
-      } else if (expectedSTy.isRef() && matchFct(expectedSTy.getType().getContainedTy(), actualSTy)) { // Matches with ref
+      } else if (expectedSTy.isRef() && matchFct(expectedSTy.getContained(), actualSTy)) { // Matches with ref
         llvm::Value *argAddress = resolveAddress(argNode);
         argValues.push_back(argAddress);
-      } else if (actualSTy.isRef() && matchFct(expectedSTy, actualSTy.getType().getContainedTy())) { // Matches with ref
+      } else if (actualSTy.isRef() && matchFct(expectedSTy, actualSTy.getContained())) { // Matches with ref
         llvm::Value *argAddress = resolveValue(argNode);
         argValues.push_back(argAddress);
       } else { // Need implicit cast
@@ -171,9 +171,9 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   QualType returnSType(TY_DYN);
   std::vector<QualType> paramSTypes;
   if (data.isFctPtrCall()) {
-    if (firstFragEntry->getType().isBaseType(TY_FUNCTION))
-      returnSType = firstFragEntry->getType().getBaseType().getFunctionReturnType();
-    paramSTypes = firstFragEntry->getType().getBaseType().getFunctionParamTypes();
+    if (firstFragEntry->getType().isBase(TY_FUNCTION))
+      returnSType = firstFragEntry->getType().getBase().getFunctionReturnType();
+    paramSTypes = firstFragEntry->getType().getBase().getFunctionParamTypes();
   } else {
     returnSType = spiceFunc->returnType;
     paramSTypes = spiceFunc->getParamTypes();

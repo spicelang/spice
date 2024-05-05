@@ -278,19 +278,19 @@ void DebugInfoGenerator::finalize() {
 llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, const QualType &ty) const { // NOLINT(*-no-recursion)
   // Pointer ty
   if (ty.isPtr()) {
-    llvm::DIType *pointeeTy = getDITypeForQualType(node, ty.getType().getContainedTy());
+    llvm::DIType *pointeeTy = getDITypeForQualType(node, ty.getContained());
     return diBuilder->createPointerType(pointeeTy, pointerWidth);
   }
 
   // Reference ty
   if (ty.isRef()) {
-    llvm::DIType *referencedType = getDITypeForQualType(node, ty.getType().getContainedTy());
+    llvm::DIType *referencedType = getDITypeForQualType(node, ty.getContained());
     return diBuilder->createReferenceType(llvm::dwarf::DW_TAG_reference_type, referencedType, pointerWidth);
   }
 
   // Array ty
   if (ty.isArray()) {
-    llvm::DIType *itemTy = getDITypeForQualType(node, ty.getType().getContainedTy());
+    llvm::DIType *itemTy = getDITypeForQualType(node, ty.getContained());
     const size_t size = ty.getType().getArraySize();
     llvm::DINodeArray subscripts = diBuilder->getOrCreateArray({});
     return diBuilder->createArrayType(size, 0, itemTy, subscripts);

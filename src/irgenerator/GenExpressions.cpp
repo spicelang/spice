@@ -685,7 +685,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       // Now the pointer is the value
       lhs.ptr = lhs.value;
 
-      lhsTy = lhsSTy.getType().getContainedTy().toLLVMType(context, currentScope);
+      lhsTy = lhsSTy.getContained().toLLVMType(context, currentScope);
       // Calculate address of pointer item
       lhs.ptr = insertInBoundsGEP(lhsTy, lhs.ptr, indexValue);
     }

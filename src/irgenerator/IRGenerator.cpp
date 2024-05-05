@@ -119,8 +119,7 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, LLVMExprResult &expr
   return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult, accessScope);
 }
 
-llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult &exprResult,
-                                       Scope *accessScope /*=nullptr*/) {
+llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
   // Check if the value is already present
   if (exprResult.value != nullptr)
     return exprResult.value;
@@ -214,10 +213,10 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     const size_t arraySize = symbolType.getType().getArraySize();
 
     // Get default value for item
-    llvm::Constant *defaultItemValue = getDefaultValueForSymbolType(symbolType.getType().getContainedTy());
+    llvm::Constant *defaultItemValue = getDefaultValueForSymbolType(symbolType.getContained());
 
     // Retrieve array and item type
-    llvm::Type *itemType = symbolType.getType().getContainedTy().toLLVMType(context, currentScope);
+    llvm::Type *itemType = symbolType.getContained().toLLVMType(context, currentScope);
     llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
 
     // Create a constant array with n times the default value
@@ -230,7 +229,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     if (!llvmTypes.fatPtrType)
       llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
 
-    llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(Type(TY_PTR));
+    llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(QualType(TY_PTR));
     return llvm::ConstantStruct::get(llvmTypes.fatPtrType, {ptrDefaultValue, ptrDefaultValue});
   }
 
@@ -255,9 +254,9 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
       // Retrieve default field value
       llvm::Constant *defaultFieldValue;
       if (const auto fieldNode = dynamic_cast<FieldNode *>(fieldEntry->declNode); fieldNode && fieldNode->defaultValue())
-        defaultFieldValue = getConst(fieldNode->defaultValue()->getCompileTimeValue(), fieldEntry->getType(), fieldNode);
+        defaultFieldValue = getConst(fieldNode->defaultValue()->getCompileTimeValue(), fieldEntry->getQualType(), fieldNode);
       else
-        defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getType());
+        defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getQualType());
 
       fieldConstants.push_back(defaultFieldValue);
     }

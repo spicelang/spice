@@ -218,7 +218,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       func->addParamAttr(0, llvm::Attribute::NoUndef);
       func->addParamAttr(0, llvm::Attribute::NonNull);
       assert(thisEntry != nullptr);
-      llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(context, currentScope);
       assert(structType != nullptr);
       func->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
       func->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
@@ -387,7 +387,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       proc->addParamAttr(0, llvm::Attribute::NoUndef);
       proc->addParamAttr(0, llvm::Attribute::NonNull);
       assert(thisEntry != nullptr);
-      llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(context, currentScope);
       assert(structType != nullptr);
       proc->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
       proc->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
@@ -492,13 +492,13 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     }
 
     // Generate default ctor if required
-    const Type &thisType = structEntry->getType();
+    const QualType &thisType = structEntry->getQualType();
     const Function *ctorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, {}, true);
     if (ctorFunc != nullptr && ctorFunc->implicitDefault)
       generateDefaultCtor(ctorFunc);
 
     // Generate default copy ctor if required
-    const ArgList args = {{thisType.toConstReference(node), false /* always non-temporary */}};
+    const ArgList args = {{thisType.toConstRef(node), false /* always non-temporary */}};
     const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, args, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
       generateDefaultCopyCtor(copyCtorFunc);

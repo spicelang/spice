@@ -138,7 +138,7 @@ private:
   bool checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
   [[nodiscard]] QualType mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;
   [[nodiscard]] QualType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const;
-  static void autoDeReference(Type &symbolType);
+  static void autoDeReference(QualType &symbolType);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   void requestRevisitIfRequired(const Function *fct);
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;

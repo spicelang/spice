@@ -32,17 +32,17 @@ using NamedParamList = std::vector<NamedParam>;
 class Function {
 public:
   // Constructors
-  Function(std::string name, SymbolTableEntry *entry, Type thisType, Type returnType, ParamList paramList,
+  Function(std::string name, SymbolTableEntry *entry, const QualType &thisType, const QualType &returnType, ParamList paramList,
            std::vector<GenericType> templateTypes, ASTNode *declNode)
-      : name(std::move(name)), thisType(std::move(thisType)), returnType(std::move(returnType)), paramList(std::move(paramList)),
+      : name(std::move(name)), thisType(thisType), returnType(returnType), paramList(std::move(paramList)),
         templateTypes(std::move(templateTypes)), entry(entry), declNode(declNode) {}
   Function() = default;
 
   // Public methods
   [[nodiscard]] std::vector<QualType> getParamTypes() const;
   [[nodiscard]] std::string getSignature(bool withThisType = true, bool ignorePublic = true) const;
-  [[nodiscard]] static std::string getSignature(const std::string &name, const Type &thisType, const Type &returnType,
-                                                const ParamList &paramList, const std::vector<Type> &concreteTemplateTypes,
+  [[nodiscard]] static std::string getSignature(const std::string &name, const QualType &thisType, const QualType &returnType,
+                                                const ParamList &paramList, const std::vector<QualType> &concreteTemplateTypes,
                                                 bool withThisType = true, bool ignorePublic = true);
   [[nodiscard]] std::string getMangledName() const;
   [[nodiscard]] static std::string getSymbolTableEntryName(const std::string &functionName, const CodeLoc &codeLoc);

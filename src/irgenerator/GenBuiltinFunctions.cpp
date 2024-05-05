@@ -27,9 +27,9 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
       llvm::Type *argType = argSymbolType.getType().toLLVMType(context, currentScope);
       argVal = insertInBoundsGEP(argType, argValPtr, indices);
-    } else if (argSymbolType.getBaseType().getType().isStringObj()) {
+    } else if (argSymbolType.getBase().getType().isStringObj()) {
       llvm::Value *argValPtr = resolveAddress(arg);
-      llvm::Type *argBaseType = argSymbolType.getBaseType().getType().toLLVMType(context, currentScope);
+      llvm::Type *argBaseType = argSymbolType.getBase().getType().toLLVMType(context, currentScope);
       argValPtr = insertStructGEP(argBaseType, argValPtr, 0);
       argVal = insertLoad(builder.getPtrTy(), argValPtr);
     } else {

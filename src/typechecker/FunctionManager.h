@@ -46,7 +46,7 @@ public:
                                                    ASTNode *declNode);
   [[nodiscard]] static const Function *lookupFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                                       const ArgList &reqArgs, bool strictSpecifierMatching);
-  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType, const ArgList &reqArgs,
+  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType, const ArgList &reqArgs,
                                  const std::vector<QualType> &templateTypeHints, bool strictSpecifierMatching,
                                  const ASTNode *callNode);
 

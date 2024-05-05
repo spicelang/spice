@@ -44,7 +44,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
  * @param declNode AST node where the anonymous symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *SymbolTable::insertAnonymous(const Type &type, ASTNode *declNode, size_t numericSuffix) {
+SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &type, ASTNode *declNode, size_t numericSuffix) {
   // Check if the anonymous entry already exists
   if (SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc, numericSuffix))
     return anonSymbol;
