@@ -78,12 +78,12 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
     mangledName << "v";
 
 #ifndef NDEBUG
-  const std::unordered_map<std::string, Type> &typeMapping = spiceFunc.typeMapping;
-  const bool returnTypeIsFctOrProc = spiceFunc.returnType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE});
-  const auto paramPredicate = [](const Param &p) { return p.type.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}); };
+  const TypeMapping &typeMapping = spiceFunc.typeMapping;
+  const bool returnTypeIsFctOrProc = spiceFunc.returnType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE});
+  const auto paramPredicate = [](const Param &p) { return p.type.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}); };
   const bool paramTypeIsFctOrProc = std::ranges::any_of(spiceFunc.paramList, paramPredicate);
   const auto templateTypePredicate = [&](const GenericType &t) {
-    return typeMapping.at(t.getSubType()).getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE});
+    return typeMapping.at(t.getSubType()).getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE});
   };
   const bool templateTypeIsFctOrProc = std::ranges::any_of(spiceFunc.templateTypes, templateTypePredicate);
   if (!returnTypeIsFctOrProc && !paramTypeIsFctOrProc && !templateTypeIsFctOrProc)

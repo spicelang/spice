@@ -96,7 +96,7 @@ std::any IRGenerator::visitLenCall(const LenCallNode *node) {
     llvm::Function *getRawLengthFct = stdFunctionManager.getStringGetRawLengthStringFct();
     lengthValue = builder.CreateCall(getRawLengthFct, resolveValue(node->assignExpr()));
   } else {
-    assert(symbolType.isArray() && symbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
+    assert(symbolType.isArray() && symbolType.getType().getArraySize() != ARRAY_SIZE_UNKNOWN);
     // Return length value
     lengthValue = builder.getInt64(symbolType.getType().getArraySize());
   }
