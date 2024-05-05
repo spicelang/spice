@@ -150,7 +150,7 @@ SymbolTableEntry *SymbolTable::lookupInComposedFields(const std::string &name, /
     const SymbolTableEntry *fieldEntry = lookupStrictByIndex(i);
 
     // Skip all fields that are not composition fields
-    if (!fieldEntry->getQualType().getType().specifiers.isComposition)
+    if (!fieldEntry->getQualType().isComposition())
       continue;
 
     // Add the current field's order index to the index path

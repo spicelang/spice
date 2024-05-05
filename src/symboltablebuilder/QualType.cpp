@@ -8,25 +8,26 @@
 
 namespace spice::compiler {
 
-QualType::QualType(Type t) : type(std::make_unique<Type>(std::move(t))) /*, specifiers(this->type->specifiers)*/ {}
-QualType::QualType(SuperType superType) : type(std::make_unique<Type>(superType)) {}
-QualType::QualType(SuperType superType, const std::string &subType) : type(std::make_unique<Type>(superType, subType)) {}
-QualType::QualType(Type t, TypeSpecifiers specifiers) : type(std::make_unique<Type>(std::move(t))) /*, specifiers(specifiers)*/ {}
+QualType::QualType(Type t) : type(std::make_unique<Type>(std::move(t))), specifiers(TypeSpecifiers::of(t.getSuperType())) {}
+QualType::QualType(SuperType superType) : type(std::make_unique<Type>(superType)), specifiers(TypeSpecifiers::of(superType)) {}
+QualType::QualType(SuperType superType, const std::string &subType)
+    : type(std::make_unique<Type>(superType, subType)), specifiers(TypeSpecifiers::of(superType)) {}
+QualType::QualType(Type t, TypeSpecifiers specifiers) : type(std::make_unique<Type>(std::move(t))), specifiers(specifiers) {}
 
 // ToDo: Delete those two later on
 QualType::QualType(const QualType &other) {
   type = std::make_unique<Type>(*other.type);
-  // specifiers = other.specifiers;
+  specifiers = other.specifiers;
 }
 QualType &QualType::operator=(const spice::compiler::QualType &other) {
   type = std::make_unique<Type>(*other.type);
-  // specifiers = other.specifiers;
+  specifiers = other.specifiers;
   return *this;
 }
 
 void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic) const {
   // Append the specifiers
-  /*const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(type->getSuperType());
+  const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBase().getSuperType());
   if (!ignorePublic && specifiers.isPublic && !defaultForSuperType.isPublic)
     name << "public ";
   if (specifiers.isInline && !defaultForSuperType.isInline)
@@ -40,10 +41,10 @@ void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic
   if (specifiers.isSigned && !defaultForSuperType.isSigned)
     name << "signed ";
   if (!specifiers.isSigned && defaultForSuperType.isSigned)
-    name << "unsigned ";*/
+    name << "unsigned ";
 
   // Loop through all chain elements
-  type->getName(name, withSize, ignorePublic);
+  type->getName(name, withSize);
 }
 
 /**
@@ -65,65 +66,65 @@ bool QualType::isOneOf(const std::initializer_list<SuperType> &superTypes) const
 
 bool QualType::isBase(SuperType superType) const { return type->isBase(superType); }
 
-QualType QualType::getBase() const { return type->getBase(); }
+QualType QualType::getBase() const {
+  QualType qualType = *this;
+  qualType.type = std::make_unique<Type>(type->getBase());
+  return qualType;
+}
 
 void QualType::setType(const Type &newType) { type = std::make_unique<Type>(newType); }
 
-bool QualType::isConst() const {
-  return type->specifiers.isConst;
-  // return specifiers.isConst;
-}
+bool QualType::isConst() const { return specifiers.isConst; }
 
-void QualType::makeConst(bool isConst) {
-  type->specifiers.isConst = isConst;
-  // specifiers.isConst = isConst;
-}
+void QualType::makeConst(bool isConst) { specifiers.isConst = isConst; }
 
 bool QualType::isSigned() const {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
-  return type->specifiers.isSigned;
-  // return specifiers.isSigned;
+  return specifiers.isSigned;
 }
 
 void QualType::makeSigned(bool isSigned) {
   assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
-  type->specifiers.isSigned = isSigned;
-  // specifiers.isSigned = isSigned;
+  specifiers.isSigned = isSigned;
+}
+
+bool QualType::isUnsigned() const {
+  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
+  return specifiers.isUnsigned;
+}
+
+void QualType::makeUnsigned(bool isUnsigned) {
+  assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
+  specifiers.isUnsigned = isUnsigned;
 }
 
 bool QualType::isInline() const {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  return type->specifiers.isInline;
-  // return specifiers.isInline;
+  return specifiers.isInline;
 }
 
 void QualType::makeInline(bool isInline) {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  type->specifiers.isInline = isInline;
-  // specifiers.isInline = isInline;
+  specifiers.isInline = isInline;
 }
 
 bool QualType::isPublic() const {
   assert(type->isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
-  return type->specifiers.isPublic;
-  // return specifiers.isPublic;
+  return specifiers.isPublic;
 }
 
 void QualType::makePublic(bool isPublic) {
   assert(type->isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
-  type->specifiers.isPublic = isPublic;
-  // specifiers.isPublic = isPublic;
+  specifiers.isPublic = isPublic;
 }
 
-bool QualType::isHeap() const {
-  return type->specifiers.isHeap;
-  // return specifiers.isHeap;
-}
+bool QualType::isHeap() const { return specifiers.isHeap; }
 
-void QualType::makeHeap(bool isHeap) {
-  type->specifiers.isHeap = isHeap;
-  // specifiers.isHeap = isHeap;
-}
+void QualType::makeHeap(bool isHeap) { specifiers.isHeap = isHeap; }
+
+bool QualType::isComposition() const { return specifiers.isComposition; }
+
+void QualType::makeComposition(bool isComposition) { specifiers.isComposition = isComposition; }
 
 bool QualType::isPtr() const { return type->isPtr(); }
 
@@ -172,12 +173,10 @@ bool QualType::matches(const QualType &otherType, bool ignoreArraySize, bool ign
     return false;
 
   // Ignore or compare specifiers
-  return ignoreSpecifiers || type->specifiers.match(otherType.type->specifiers, allowConstify);
+  return ignoreSpecifiers || specifiers.match(otherType.specifiers, allowConstify);
 }
 
-bool QualType::isSameContainerTypeAs(const QualType &other) const {
-  return type->isSameContainerTypeAs(*other.type);
-}
+bool QualType::isSameContainerTypeAs(const QualType &other) const { return type->isSameContainerTypeAs(*other.type); }
 
 /**
  * Convert the type to an LLVM type
@@ -190,23 +189,41 @@ llvm::Type *QualType::toLLVMType(llvm::LLVMContext &context, Scope *accessScope)
   return type->toLLVMType(context, accessScope);
 }
 
-QualType QualType::toPtr(const ASTNode *node) const { return {type->toPointer(node)}; }
+QualType QualType::toPtr(const ASTNode *node) const {
+  QualType newType = *this;
+  newType.type = std::make_unique<Type>(type->toPointer(node));
+  return newType;
+}
 
-QualType QualType::toRef(const ASTNode *node) const { return {type->toReference(node)}; }
+QualType QualType::toRef(const ASTNode *node) const {
+  QualType newType = *this;
+  newType.type = std::make_unique<Type>(type->toReference(node));
+  return newType;
+}
 
 QualType QualType::toArray(const ASTNode *node, size_t size, bool skipDynCheck /*=false*/) const {
-  return {type->toArray(node, size, skipDynCheck)};
+  QualType newType = *this;
+  newType.type = std::make_unique<Type>(type->toArray(node, size, skipDynCheck));
+  return newType;
 }
 
 QualType QualType::toNonConst() const {
   QualType qualType = *this;
-  qualType.type->specifiers.isConst = false;
+  qualType.specifiers.isConst = false;
   return qualType;
 }
 
-QualType QualType::toConstRef(const ASTNode *node) const { return {type->toConstReference(node)}; }
+QualType QualType::toConstRef(const ASTNode *node) const {
+  QualType qualType = toRef(node);
+  qualType.specifiers.isConst = true;
+  return qualType;
+}
 
-QualType QualType::getContained() const { return {type->getContainedTy()}; }
+QualType QualType::getContained() const {
+  QualType qualType = *this;
+  qualType.type = std::make_unique<Type>(type->getContainedTy());
+  return qualType;
+}
 
 bool operator==(const QualType &lhs, const QualType &rhs) { return *lhs.type == *rhs.type; }
 
@@ -224,7 +241,7 @@ QualType QualType::replaceBaseType(const QualType &newBaseType) const {
   // Create new type
   Type newType = type->replaceBaseType(newBaseType.getType());
   // Create new specifiers
-  TypeSpecifiers newSpecifiers = type->specifiers.merge(newBaseType.type->specifiers);
+  TypeSpecifiers newSpecifiers = specifiers.merge(newBaseType.specifiers);
   // Return the new qualified type
   return {newType, newSpecifiers};
 }

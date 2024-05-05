@@ -164,9 +164,9 @@ void NameMangling::mangleType(std::stringstream &out, QualType type, const TypeM
     mangleTypeChainElement(out, type.getType().typeChain.at(i), typeMapping, false);
 
   // Specifiers
-  assert(type.getType().specifiers.isSigned == !type.getType().specifiers.isUnsigned);
-  const bool signedness = type.getType().specifiers.isSigned;
-  if (type.getType().specifiers.isConst && type.getType().typeChain.size() > 1)
+  assert(type.getSpecifiers().isSigned == !type.getSpecifiers().isUnsigned);
+  const bool signedness = type.getSpecifiers().isSigned;
+  if (type.getSpecifiers().isConst && type.getType().typeChain.size() > 1)
     out << "K";
 
   // Base chain element

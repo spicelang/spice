@@ -6,7 +6,6 @@
 #include <vector>
 
 #include <symboltablebuilder/QualType.h>
-#include <symboltablebuilder/TypeSpecifiers.h>
 #include <util/GlobalDefinitions.h>
 
 #include <llvm/IR/Type.h>
@@ -108,15 +107,13 @@ public:
   Type(SuperType superType, const std::string &subType);
   Type(SuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
              const std::vector<QualType> &templateTypes);
-  explicit Type(const TypeChain &types);
-  Type(TypeChain types, TypeSpecifiers specifiers);
+  explicit Type(TypeChain types);
 
   // Public methods
   [[nodiscard]] [[deprecated]] Type toPointer(const ASTNode *node) const;
   [[nodiscard]] const Type *toPtr(const ASTNode *node) const;
   [[nodiscard]] [[deprecated]] Type toReference(const ASTNode *node) const;
   [[nodiscard]] const Type *toRef(const ASTNode *node) const;
-  [[nodiscard]] Type toConstReference(const ASTNode *node) const;
   [[nodiscard]] [[deprecated]] Type toArray(const ASTNode *node, unsigned int size = 0, bool skipDynCheck = false) const;
   [[nodiscard]] const Type *toArr(const ASTNode *node, unsigned int size = 0, bool skipDynCheck = false) const;
   [[nodiscard]] [[deprecated]] Type getContainedTy() const;
@@ -126,7 +123,6 @@ public:
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
   [[nodiscard]] ALWAYS_INLINE bool isPtr() const { return getSuperType() == TY_PTR; }
   [[nodiscard]] ALWAYS_INLINE bool isRef() const { return getSuperType() == TY_REF; }
-  [[nodiscard]] ALWAYS_INLINE bool isConstRef() const { return getSuperType() == TY_REF && isConst(); }
   [[nodiscard]] ALWAYS_INLINE bool isArray() const { return getSuperType() == TY_ARRAY; }
   [[nodiscard]] ALWAYS_INLINE bool is(SuperType superType) const { return getSuperType() == superType; }
   [[nodiscard]] ALWAYS_INLINE bool isPrimitive() const {
@@ -158,20 +154,11 @@ public:
   void setBaseTemplateTypes(const std::vector<QualType> &templateTypes);
   [[nodiscard]] const std::vector<QualType> &getTemplateTypes() const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
-  void getName(std::stringstream &name, bool withSize = false, bool ignorePublic = false) const;
-  [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false) const;
+  void getName(std::stringstream &name, bool withSize = false) const;
+  [[nodiscard]] std::string getName(bool withSize = false) const;
   [[nodiscard]] ALWAYS_INLINE unsigned int getArraySize() const {
     assert(getSuperType() == TY_ARRAY);
     return typeChain.back().data.arraySize;
-  }
-  [[nodiscard]] ALWAYS_INLINE bool isConst() const { return specifiers.isConst; }
-  [[nodiscard]] ALWAYS_INLINE bool isSigned() const {
-    assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
-    return specifiers.isSigned;
-  }
-  [[nodiscard]] ALWAYS_INLINE bool isPublic() const {
-    assert(isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
-    return specifiers.isPublic;
   }
   ALWAYS_INLINE void setBodyScope(Scope *bodyScope) {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
@@ -195,17 +182,15 @@ public:
   friend bool operator!=(const Type &lhs, const Type &rhs);
   [[nodiscard]] bool matches(const Type &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
   [[nodiscard]] bool matchesInterfaceImplementedByStruct(const Type &otherType) const;
-  [[nodiscard]] bool canBind(const Type &otherType, bool isTemporary) const;
 
   // Static util methods
   static void unwrapBoth(Type &typeA, Type &typeB);
 
   // Public members
   TypeChain typeChain;
-  TypeSpecifiers specifiers;
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(Type) == 32);
+static_assert(sizeof(Type) == 24);
 
 } // namespace spice::compiler
