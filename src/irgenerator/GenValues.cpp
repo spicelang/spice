@@ -80,7 +80,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     thisPtr = firstFragEntry->getAddress();
 
     // Auto de-reference 'this' pointer
-    Type firstFragmentType = firstFragEntry->getType();
+    QualType firstFragmentType = firstFragEntry->getQualType();
     autoDeReferencePtr(thisPtr, firstFragmentType, structScope->parent);
     llvm::Type *structTy = firstFragEntry->getType().getBaseType().toLLVMType(context, structScope->parent);
 
@@ -90,17 +90,17 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       // Retrieve field entry
       SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
       assert(fieldEntry != nullptr);
-      Type fieldEntryType = fieldEntry->getType();
+      QualType fieldEntryType = fieldEntry->getQualType();
       assert(fieldEntryType.getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}));
       // Get struct type and scope
-      structScope = fieldEntryType.getBaseType().getBodyScope();
+      structScope = fieldEntryType.getBaseType().getType().getBodyScope();
       assert(structScope != nullptr);
       // Get address of field
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
       thisPtr = insertInBoundsGEP(structTy, thisPtr, indices);
       // Auto de-reference pointer and get new struct type
       autoDeReferencePtr(thisPtr, fieldEntryType, structScope->parent);
-      structTy = fieldEntryType.getBaseType().toLLVMType(context, structScope->parent);
+      structTy = fieldEntryType.getBaseType().getType().toLLVMType(context, structScope->parent);
     }
 
     // Add 'this' pointer to the front of the argument list
@@ -142,8 +142,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
       AssignExprNode *argNode = args.at(i);
-      const Type &expectedSTy = paramSTypes.at(i);
-      const Type &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
+      const QualType &expectedSTy = paramSTypes.at(i);
+      const QualType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
       const auto matchFct = [](const Type &lhsTy, const Type &rhsTy) {
         return lhsTy.matches(rhsTy, false, true, true) || lhsTy.matchesInterfaceImplementedByStruct(rhsTy);
@@ -154,10 +154,10 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
         // Resolve address if actual type is reference, otherwise value
         llvm::Value *argValue = actualSTy.isRef() ? resolveAddress(argNode) : resolveValue(argNode);
         argValues.push_back(argValue);
-      } else if (expectedSTy.isRef() && matchFct(expectedSTy.getContainedTy(), actualSTy)) { // Matches with ref
+      } else if (expectedSTy.isRef() && matchFct(expectedSTy.getType().getContainedTy(), actualSTy)) { // Matches with ref
         llvm::Value *argAddress = resolveAddress(argNode);
         argValues.push_back(argAddress);
-      } else if (actualSTy.isRef() && matchFct(expectedSTy, actualSTy.getContainedTy())) { // Matches with ref
+      } else if (actualSTy.isRef() && matchFct(expectedSTy, actualSTy.getType().getContainedTy())) { // Matches with ref
         llvm::Value *argAddress = resolveValue(argNode);
         argValues.push_back(argAddress);
       } else { // Need implicit cast
@@ -219,7 +219,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     result = builder.CreateCall({fctType, fct}, argValues);
   } else if (data.isFctPtrCall()) {
     assert(firstFragEntry != nullptr);
-    Type firstFragType = firstFragEntry->getType();
+    QualType firstFragType = firstFragEntry->getQualType();
     if (!fctPtr)
       fctPtr = firstFragEntry->getAddress();
     autoDeReferencePtr(fctPtr, firstFragType, currentScope);
@@ -244,7 +244,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     result->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(thisType)));
   }
 
-  // Attach address to anonymous symbol to keep track of deallocation
+  // Attach address to anonymous symbol to keep track of de-allocation
   SymbolTableEntry *anonymousSymbol = nullptr;
   llvm::Value *resultPtr = nullptr;
   if (returnSType.is(TY_STRUCT) || data.isCtorCall()) {
@@ -347,7 +347,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   assert(structType != nullptr);
 
   if (!node->fieldLst()) {
-    llvm::Constant *constantStruct = getDefaultValueForSymbolType(spiceStruct->entry->getType());
+    llvm::Constant *constantStruct = getDefaultValueForSymbolType(spiceStruct->entry->getQualType());
     return LLVMExprResult{.constant = constantStruct};
   }
 
@@ -863,7 +863,7 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
 
 llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda) {
   // Create capture struct if required
-  llvm::Value *capturesPtr = nullptr;
+  llvm::Value *capturesPtr;
   if (capturesStructType != nullptr) {
     assert(bodyScope != nullptr);
     // If we have a single capture of ptr type, we can directly store it into the fat ptr. Otherwise, we need a stack allocated
@@ -922,9 +922,9 @@ llvm::Type *IRGenerator::buildCapturesContainerType(const CaptureMap &captures) 
 
   // Create captures struct type
   std::vector<llvm::Type *> captureTypes;
-  for (const auto &[_, capture] : captures) {
-    if (capture.getMode() == BY_VALUE)
-      captureTypes.push_back(capture.capturedEntry->getType().toLLVMType(context, currentScope));
+  for (const auto &[_, c] : captures) {
+    if (c.getMode() == BY_VALUE)
+      captureTypes.push_back(c.capturedEntry->getType().toLLVMType(context, currentScope));
     else
       captureTypes.push_back(builder.getPtrTy());
   }
@@ -946,12 +946,12 @@ void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llv
     llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), val);
 
     size_t captureIdx = 0;
-    for (const auto &[name, capture] : captures) {
-      const std::string valueName = capture.getMode() == BY_REFERENCE ? name + ".addr" : name;
+    for (const auto &[name, c] : captures) {
+      const std::string valueName = c.getMode() == BY_REFERENCE ? name + ".addr" : name;
       llvm::Value *captureAddress = insertStructGEP(structType, capturesPtr, captureIdx, valueName);
-      capture.capturedEntry->pushAddress(captureAddress);
+      c.capturedEntry->pushAddress(captureAddress);
       // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(capture.getName(), captureAddress);
+      diGenerator.generateLocalVarDebugInfo(c.getName(), captureAddress);
       captureIdx++;
     }
   }

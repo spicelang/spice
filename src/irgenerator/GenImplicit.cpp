@@ -20,24 +20,24 @@ static const char *const TEST_CASE_SUCCESS_MSG = "\033[1m\033[32m[ PASSED   ]\03
 static const char *const TEST_CASE_FAILED_MSG = "\033[1m\033[31m[ FAILED   ]\033[0m\033[22m %s\n";
 static const char *const TEST_CASE_SKIPPED_MSG = "\033[1m\033[33m[ SKIPPED  ]\033[0m\033[22m %s\n";
 
-llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, Type dstSTy, Type srcSTy) {
+llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy) {
   assert(srcSTy != dstSTy); // We only need to cast implicitly, if the types do not match exactly
 
   // Unpack the pointers until a pointer of another type is met
   size_t loadCounter = 0;
   while (srcSTy.isPtr()) {
-    src = insertLoad(srcSTy.toLLVMType(context, currentScope), src);
-    srcSTy = srcSTy.getContainedTy();
-    dstSTy = dstSTy.getContainedTy();
+    src = insertLoad(srcSTy.getType().toLLVMType(context, currentScope), src);
+    srcSTy = srcSTy.getType().getContainedTy();
+    dstSTy = dstSTy.getType().getContainedTy();
     loadCounter++;
   }
   // GEP or bit-cast
   if (dstSTy.isArray() && srcSTy.isArray()) { // Special case that is used for passing arrays as pointer to functions
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
-    src = insertInBoundsGEP(srcSTy.toLLVMType(context, currentScope), src, indices);
+    src = insertInBoundsGEP(srcSTy.getType().toLLVMType(context, currentScope), src, indices);
   } else {
-    src = insertLoad(srcSTy.toLLVMType(context, currentScope), src);
-    src = builder.CreateBitCast(src, dstSTy.toLLVMType(context, currentScope));
+    src = insertLoad(srcSTy.getType().toLLVMType(context, currentScope), src);
+    src = builder.CreateBitCast(src, dstSTy.getType().toLLVMType(context, currentScope));
   }
   // Pack the pointers together again
   for (; loadCounter > 0; loadCounter--) {
@@ -336,11 +336,11 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       continue;
 
     // Call ctor for struct fields
-    const Type &fieldType = fieldSymbol->getType();
+    const QualType &fieldType = fieldSymbol->getQualType();
     auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
     if (fieldType.is(TY_STRUCT)) {
       // Lookup ctor function and call if available
-      Scope *matchScope = fieldType.getBodyScope();
+      Scope *matchScope = fieldType.getType().getBodyScope();
       const Function *ctorFunction = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false);
       if (ctorFunction)
         generateCtorOrDtorCall(fieldSymbol, ctorFunction, {});

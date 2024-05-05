@@ -35,6 +35,17 @@ void SymbolTableEntry::updateType(const Type &newType, bool overwriteExistingTyp
 }
 
 /**
+ * Update the type of this symbol.
+ *
+ * @param newType New type of the current symbol
+ * @param overwriteExistingType Overwrites the existing type without throwing an error
+ */
+void SymbolTableEntry::updateType(const QualType &newType, bool overwriteExistingType) {
+  assert(overwriteExistingType || qualType.isOneOf({TY_INVALID, TY_DYN}));
+  qualType = newType;
+}
+
+/**
  * Update the state of the current symbol
  *
  * @throws SemanticError When trying to re-assign a constant variable

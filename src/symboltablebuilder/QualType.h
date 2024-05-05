@@ -25,8 +25,8 @@ public:
   QualType(Type type, TypeSpecifiers specifiers);
 
   // ToDo: Remove those later on
-  [[deprecated]] QualType(const QualType &other);
-  [[deprecated]] QualType &operator=(const QualType &other);
+  QualType(const QualType &other);
+  QualType &operator=(const QualType &other);
 
   // Public methods
   void getName(std::stringstream &name, bool withSize = false, bool ignorePublic = false) const;

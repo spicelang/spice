@@ -182,7 +182,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     llvm::Value *idxAddrInPair = insertStructGEP(pairTy, pairPtr, 0, "idx_addr");
     LLVMExprResult idxResult = {.ptr = idxAddrInPair};
     assert(idxAddress != nullptr && idxEntry != nullptr);
-    doAssignment(idxAddress, idxEntry, idxResult, Type(TY_LONG), true);
+    doAssignment(idxAddress, idxEntry, idxResult, QualType(TY_LONG), true);
     // Store item to item var
     llvm::Value *itemAddrInPair = insertStructGEP(pairTy, pairPtr, 1, "item_addr");
     LLVMExprResult itemResult = {.refPtr = itemAddrInPair};

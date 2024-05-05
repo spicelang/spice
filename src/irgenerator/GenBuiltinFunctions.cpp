@@ -18,18 +18,18 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   // Collect replacement arguments
   for (AssignExprNode *arg : node->args()) {
     // Retrieve type of argument
-    const Type argSymbolType = arg->getEvaluatedSymbolType(manIdx);
-    llvm::Type *argType = argSymbolType.toLLVMType(context, currentScope);
+    const QualType argSymbolType = arg->getEvaluatedSymbolType(manIdx);
 
     // Re-map some values
     llvm::Value *argVal;
     if (argSymbolType.isArray()) {
       llvm::Value *argValPtr = resolveAddress(arg);
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
+      llvm::Type *argType = argSymbolType.getType().toLLVMType(context, currentScope);
       argVal = insertInBoundsGEP(argType, argValPtr, indices);
-    } else if (argSymbolType.getBaseType().isStringObj()) {
+    } else if (argSymbolType.getBaseType().getType().isStringObj()) {
       llvm::Value *argValPtr = resolveAddress(arg);
-      llvm::Type *argBaseType = argSymbolType.getBaseType().toLLVMType(context, currentScope);
+      llvm::Type *argBaseType = argSymbolType.getBaseType().getType().toLLVMType(context, currentScope);
       argValPtr = insertStructGEP(argBaseType, argValPtr, 0);
       argVal = insertLoad(builder.getPtrTy(), argValPtr);
     } else {
@@ -37,7 +37,6 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
     }
 
     // Extend all integer types lower than 32 bit to 32 bit
-    argType = argVal->getType();
     if (argSymbolType.removeReferenceWrapper().isOneOf({TY_SHORT, TY_BYTE, TY_CHAR, TY_BOOL})) {
       if (argSymbolType.removeReferenceWrapper().isSigned())
         argVal = builder.CreateSExt(argVal, llvm::Type::getInt32Ty(context));
@@ -89,7 +88,7 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
-  Type symbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
+  QualType symbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
   symbolType = symbolType.removeReferenceWrapper();
 
   llvm::Value *lengthValue;
@@ -99,7 +98,7 @@ std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   } else {
     assert(symbolType.isArray() && symbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
     // Return length value
-    lengthValue = builder.getInt64(symbolType.getArraySize());
+    lengthValue = builder.getInt64(symbolType.getType().getArraySize());
   }
   return LLVMExprResult{.value = lengthValue};
 }

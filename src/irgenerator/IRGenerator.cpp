@@ -175,7 +175,7 @@ llvm::Value *IRGenerator::resolveAddress(LLVMExprResult &exprResult) {
   return exprResult.ptr;
 }
 
-llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType) { // NOLINT(misc-no-recursion)
+llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbolType) { // NOLINT(misc-no-recursion)
   // Double
   if (symbolType.is(TY_DOUBLE))
     return llvm::ConstantFP::get(context, llvm::APFloat(0.0));
@@ -211,13 +211,13 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType
   // Array
   if (symbolType.isArray()) {
     // Get array size
-    const size_t arraySize = symbolType.getArraySize();
+    const size_t arraySize = symbolType.getType().getArraySize();
 
     // Get default value for item
-    llvm::Constant *defaultItemValue = getDefaultValueForSymbolType(symbolType.getContainedTy());
+    llvm::Constant *defaultItemValue = getDefaultValueForSymbolType(symbolType.getType().getContainedTy());
 
     // Retrieve array and item type
-    llvm::Type *itemType = symbolType.getContainedTy().toLLVMType(context, currentScope);
+    llvm::Type *itemType = symbolType.getType().getContainedTy().toLLVMType(context, currentScope);
     llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
 
     // Create a constant array with n times the default value
@@ -237,10 +237,10 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType
   // Struct
   if (symbolType.is(TY_STRUCT)) {
     // Retrieve struct type
-    Scope *structScope = symbolType.getBodyScope();
+    Scope *structScope = symbolType.getType().getBodyScope();
     assert(structScope != nullptr);
     const size_t fieldCount = structScope->getFieldCount();
-    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, structScope));
+    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.getType().toLLVMType(context, structScope));
 
     // Get default values for all fields of the struct
     std::vector<llvm::Constant *> fieldConstants;
@@ -267,9 +267,9 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType
   // Interface
   if (symbolType.is(TY_INTERFACE)) {
     // Retrieve struct type
-    Scope *interfaceScope = symbolType.getBodyScope();
+    Scope *interfaceScope = symbolType.getType().getBodyScope();
     assert(interfaceScope != nullptr);
-    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, interfaceScope));
+    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.getType().toLLVMType(context, interfaceScope));
 
     return llvm::ConstantStruct::get(structType, llvm::Constant::getNullValue(builder.getPtrTy()));
   }
@@ -505,10 +505,10 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
   return targetAddress;
 }
 
-void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, Type &symbolType, Scope *accessScope) const {
+void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType, Scope *accessScope) const {
   while (symbolType.isPtr() || symbolType.isRef()) {
-    ptr = insertLoad(symbolType.toLLVMType(context, accessScope), ptr);
-    symbolType = symbolType.getContainedTy();
+    ptr = insertLoad(symbolType.getType().toLLVMType(context, accessScope), ptr);
+    symbolType = symbolType.getType().getContainedTy();
   }
 }
 

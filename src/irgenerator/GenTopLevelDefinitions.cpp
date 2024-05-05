@@ -40,7 +40,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
       auto paramType = any_cast<llvm::Type *>(visit(param->dataType()));
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
-      paramSymbolTypes.push_back(paramSymbol->getType());
+      paramSymbolTypes.push_back(paramSymbol->getQualType());
       paramTypes.push_back(paramType);
     }
   }
@@ -576,7 +576,7 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
     auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
     var->setInitializer(constantValue);
   } else if (cliOptions.buildMode == BuildMode::DEBUG) { // Set the default value as variable initializer
-    llvm::Constant *constantValue = getDefaultValueForSymbolType(node->entry->getType());
+    llvm::Constant *constantValue = getDefaultValueForSymbolType(node->entry->getQualType());
     var->setInitializer(constantValue);
   }
 

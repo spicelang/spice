@@ -133,7 +133,7 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @return Found function or nullptr
  */
-const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType,
+const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                                 const ArgList &reqArgs, bool strictSpecifierMatching) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT}));
 
@@ -298,7 +298,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
 }
 
 MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&matchScope, const std::string &reqName,
-                                                const Type &reqThisType, const ArgList &reqArgs, TypeMapping &typeMapping,
+                                                const QualType &reqThisType, const ArgList &reqArgs, TypeMapping &typeMapping,
                                                 bool strictSpecifierMatching, bool &forceSubstantiation,
                                                 const ASTNode *callNode) {
   // Check name requirement
@@ -320,13 +320,14 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
   // Substantiate return type
   substantiateReturnType(candidate, typeMapping);
 
-  const Type &thisType = candidate.thisType;
+  const QualType &thisType = candidate.thisType;
   if (!thisType.is(TY_DYN)) {
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (matchScope->isGenericScope) {
-      const std::string structName = thisType.getSubType();
-      Scope *scope = thisType.getBodyScope()->parent;
-      Struct *spiceStruct = StructManager::matchStruct(scope, structName, thisType.getTemplateTypes(), candidate.declNode);
+      const std::string structName = thisType.getType().getSubType();
+      Scope *scope = thisType.getType().getBodyScope()->parent;
+      Struct *spiceStruct =
+          StructManager::matchStruct(scope, structName, thisType.getType().getTemplateTypes(), candidate.declNode);
       assert(spiceStruct != nullptr);
       matchScope = spiceStruct->scope;
     }
@@ -354,7 +355,7 @@ bool FunctionManager::matchName(const Function &candidate, const std::string &re
  * @param strictSpecifierMatching Match specifiers strictly
  * @return Fulfilled or not
  */
-bool FunctionManager::matchThisType(Function &candidate, const Type &reqThisType, TypeMapping &typeMapping,
+bool FunctionManager::matchThisType(Function &candidate, const QualType &reqThisType, TypeMapping &typeMapping,
                                     bool strictSpecifierMatching) {
   QualType &candidateThisType = candidate.thisType;
 
@@ -408,7 +409,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
     assert(!candidateParamList.at(i).isOptional);
     QualType &candidateParamType = candidateParamList.at(i).type;
     const Arg &requestedParamType = reqArgs.at(i);
-    const Type &requestedType = requestedParamType.first;
+    const QualType &requestedType = requestedParamType.first;
     const bool isArgTemporary = requestedParamType.second;
 
     // Check if the requested param type matches the candidate param type. The type mapping may be extended
@@ -428,7 +429,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
     }
 
     // If we have a function/procedure type we need to take care of the information, if it takes captures
-    if (requestedType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
+    if (requestedType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.getType().hasLambdaCaptures()) {
       candidateParamType.getType().setHasLambdaCaptures(true);
       needsSubstantiation = true;
     }

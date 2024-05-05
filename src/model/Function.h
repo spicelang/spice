@@ -66,7 +66,7 @@ public:
   QualType returnType = QualType(TY_DYN);
   ParamList paramList;
   std::vector<GenericType> templateTypes;
-  std::unordered_map<std::string, Type> typeMapping;
+  TypeMapping typeMapping;
   SymbolTableEntry *entry = nullptr;
   ASTNode *declNode = nullptr;
   Scope *bodyScope = nullptr;

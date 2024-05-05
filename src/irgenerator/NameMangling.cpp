@@ -50,7 +50,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
     // Template types themselves
     for (const GenericType &genericTemplateType : spiceFunc.templateTypes) {
       assert(spiceFunc.typeMapping.contains(genericTemplateType.getSubType()));
-      const Type &actualType = spiceFunc.typeMapping.at(genericTemplateType.getSubType());
+      const QualType &actualType = spiceFunc.typeMapping.at(genericTemplateType.getSubType());
       mangleType(mangledName, actualType, spiceFunc.typeMapping);
     }
     mangledName << "E";
@@ -153,7 +153,9 @@ void NameMangling::mangleName(std::stringstream &out, const std::string &name, b
  * @param type Input symbol type
  * @return Mangled name
  */
-void NameMangling::mangleType(std::stringstream &out, Type type, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
+void NameMangling::mangleType(std::stringstream &out, QualType qt, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
+  Type type = qt.getType();
+
   // Replace generic type with concrete type
   if (type.hasAnyGenericParts() && !typeMapping.empty())
     TypeMatcher::substantiateTypeWithTypeMapping(type, typeMapping);
@@ -263,7 +265,7 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
 std::string NameMangling::mangleTypeInfoName(const StructBase *structBase) {
   std::stringstream out;
   out << "_ZTS";
-  mangleType(out, structBase->entry->getType(), {});
+  mangleType(out, structBase->entry->getQualType(), {});
   return out.str();
 }
 
@@ -272,14 +274,14 @@ std::string NameMangling::mangleTypeInfoValue(const std::string &value) { return
 std::string NameMangling::mangleTypeInfo(const StructBase *structBase) {
   std::stringstream out;
   out << "_ZTI";
-  mangleType(out, structBase->entry->getType(), {});
+  mangleType(out, structBase->entry->getQualType(), {});
   return out.str();
 }
 
 std::string NameMangling::mangleVTable(const StructBase *structBase) {
   std::stringstream out;
   out << "_ZTV";
-  mangleType(out, structBase->entry->getType(), {});
+  mangleType(out, structBase->entry->getQualType(), {});
   return out.str();
 }
 

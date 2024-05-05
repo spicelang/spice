@@ -111,17 +111,17 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
   if (spiceFunc->isProcedure())
     argTypes.push_back(voidTy);
   else
-    argTypes.push_back(getDITypeForSymbolType(node, spiceFunc->returnType)); // Add result type
+    argTypes.push_back(getDITypeForQualType(node, spiceFunc->returnType)); // Add result type
   if (spiceFunc->isMethod())
-    argTypes.push_back(getDITypeForSymbolType(node, spiceFunc->thisType)); // Add this type
+    argTypes.push_back(getDITypeForQualType(node, spiceFunc->thisType)); // Add this type
   if (isLambda) {
     llvm::DICompositeType *captureStructType = generateCaptureStructDebugInfo(spiceFunc);
     scope = captureStructType;
     llvm::DIType *captureStructPtr = diBuilder->createPointerType(captureStructType, pointerWidth);
     argTypes.push_back(captureStructPtr); // Add this type
   }
-  for (const Type &argType : spiceFunc->getParamTypes()) // Add arg types
-    argTypes.push_back(getDITypeForSymbolType(node, argType));
+  for (const QualType &argType : spiceFunc->getParamTypes()) // Add arg types
+    argTypes.push_back(getDITypeForQualType(node, argType));
 
   // Create function type
   llvm::DISubroutineType *functionTy = diBuilder->createSubroutineType(diBuilder->getOrCreateTypeArray(argTypes));
@@ -176,17 +176,17 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
   // Get LLVM type for struct
   std::vector<llvm::Type *> fieldTypes;
   std::vector<SymbolTableEntry *> fieldEntries;
-  std::vector<Type> fieldSymbolTypes;
+  std::vector<QualType> fieldSymbolTypes;
   for (const auto &[_, capture] : captures) {
-    Type captureType = capture.capturedEntry->getType();
+    QualType captureType = capture.capturedEntry->getQualType();
 
     // Capture by reference
     if (capture.getMode() == BY_REFERENCE)
-      captureType = captureType.toReference(node);
+      captureType = captureType.toRef(node);
 
     fieldEntries.push_back(capture.capturedEntry);
     fieldSymbolTypes.push_back(captureType);
-    fieldTypes.push_back(captureType.toLLVMType(irGenerator->context, irGenerator->currentScope));
+    fieldTypes.push_back(captureType.getType().toLLVMType(irGenerator->context, irGenerator->currentScope));
   }
   llvm::StructType *structType = llvm::StructType::get(irGenerator->context, fieldTypes, CAPTURES_PARAM_NAME);
   const llvm::StructLayout *structLayout = irGenerator->module->getDataLayout().getStructLayout(structType);
@@ -199,7 +199,7 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
 
   std::vector<llvm::Metadata *> fieldDITypes;
   for (size_t i = 0; i < fieldEntries.size(); i++) {
-    llvm::DIType *fieldDiType = getDITypeForSymbolType(node, fieldSymbolTypes.at(i));
+    llvm::DIType *fieldDiType = getDITypeForQualType(node, fieldSymbolTypes.at(i));
     const std::string &fieldName = fieldEntries.at(i)->name;
     const size_t offsetInBits = structLayout->getElementOffsetInBits(i);
     const size_t fieldSize = fieldDiType->getSizeInBits();
@@ -219,7 +219,7 @@ void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global
 
   const size_t lineNo = globalEntry->getDeclCodeLoc().line;
   llvm::StringRef name = global->getName();
-  llvm::DIType *type = getDITypeForSymbolType(globalEntry->declNode, globalEntry->getType());
+  llvm::DIType *type = getDITypeForQualType(globalEntry->declNode, globalEntry->getQualType());
   const bool isLocal = globalEntry->getType().isPublic();
 
   global->addDebugInfo(diBuilder->createGlobalVariableExpression(compileUnit, name, name, diFile, lineNo, type, isLocal));
@@ -244,7 +244,7 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
   assert(variableEntry != nullptr);
   // Build debug info
   llvm::DIScope *scope = lexicalBlocks.top();
-  llvm::DIType *diType = getDITypeForSymbolType(variableEntry->declNode, variableEntry->getType());
+  llvm::DIType *diType = getDITypeForQualType(variableEntry->declNode, variableEntry->getQualType());
   const size_t lineNo = variableEntry->declNode->codeLoc.line;
 
   llvm::DILocalVariable *varInfo;
@@ -275,41 +275,41 @@ void DebugInfoGenerator::finalize() {
     diBuilder->finalize();
 }
 
-llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, const Type &symbolType) const {
-  // Pointer type
-  if (symbolType.isPtr()) {
-    llvm::DIType *pointeeTy = getDITypeForSymbolType(node, symbolType.getContainedTy());
+llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, const QualType &ty) const { // NOLINT(*-no-recursion)
+  // Pointer ty
+  if (ty.isPtr()) {
+    llvm::DIType *pointeeTy = getDITypeForQualType(node, ty.getType().getContainedTy());
     return diBuilder->createPointerType(pointeeTy, pointerWidth);
   }
 
-  // Reference type
-  if (symbolType.isRef()) {
-    llvm::DIType *referencedType = getDITypeForSymbolType(node, symbolType.getContainedTy());
+  // Reference ty
+  if (ty.isRef()) {
+    llvm::DIType *referencedType = getDITypeForQualType(node, ty.getType().getContainedTy());
     return diBuilder->createReferenceType(llvm::dwarf::DW_TAG_reference_type, referencedType, pointerWidth);
   }
 
-  // Array type
-  if (symbolType.isArray()) {
-    llvm::DIType *itemTy = getDITypeForSymbolType(node, symbolType.getContainedTy());
-    const size_t size = symbolType.getArraySize();
+  // Array ty
+  if (ty.isArray()) {
+    llvm::DIType *itemTy = getDITypeForQualType(node, ty.getType().getContainedTy());
+    const size_t size = ty.getType().getArraySize();
     llvm::DINodeArray subscripts = diBuilder->getOrCreateArray({});
     return diBuilder->createArrayType(size, 0, itemTy, subscripts);
   }
 
   // Primitive types
   llvm::DIType *baseDiType;
-  switch (symbolType.getSuperType()) {
+  switch (ty.getType().getSuperType()) {
   case TY_DOUBLE:
     baseDiType = doubleTy;
     break;
   case TY_INT:
-    baseDiType = symbolType.isSigned() ? intTy : uIntTy;
+    baseDiType = ty.isSigned() ? intTy : uIntTy;
     break;
   case TY_SHORT:
-    baseDiType = symbolType.isSigned() ? shortTy : uShortTy;
+    baseDiType = ty.isSigned() ? shortTy : uShortTy;
     break;
   case TY_LONG:
-    baseDiType = symbolType.isSigned() ? longTy : uLongTy;
+    baseDiType = ty.isSigned() ? longTy : uLongTy;
     break;
   case TY_BYTE:
     baseDiType = byteTy;
@@ -324,10 +324,10 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     baseDiType = boolTy;
     break;
   case TY_STRUCT: {
-    Struct *spiceStruct = symbolType.getStruct(node);
+    Struct *spiceStruct = ty.getType().getStruct(node);
     assert(spiceStruct != nullptr);
 
-    // Check if we already know the DI type
+    // Check if we already know the DI ty
     if (spiceStruct->diType != nullptr) {
       baseDiType = spiceStruct->diType;
       break;
@@ -341,7 +341,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(structType));
     const uint32_t alignInBits = dataLayout.getABITypeAlign(structType).value();
 
-    // Create struct type
+    // Create struct ty
     const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
     llvm::DICompositeType *structDiType = diBuilder->createStructType(
         diFile, spiceStruct->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
@@ -357,11 +357,11 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
       if (fieldEntry->isImplicitField)
         continue;
 
-      const Type fieldType = fieldEntry->getType();
+      const QualType &fieldType = fieldEntry->getQualType();
       const size_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
       const size_t offsetInBits = structLayout->getElementOffsetInBits(i);
 
-      llvm::DIType *fieldDiType = getDITypeForSymbolType(node, fieldType);
+      llvm::DIType *fieldDiType = getDITypeForQualType(node, fieldType);
       llvm::DIDerivedType *fieldDiDerivedType =
           diBuilder->createMemberType(structDiType, fieldEntry->name, diFile, fieldLineNo, fieldDiType->getSizeInBits(),
                                       fieldDiType->getAlignInBits(), offsetInBits, llvm::DINode::FlagZero, fieldDiType);
@@ -373,10 +373,10 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     break;
   }
   case TY_INTERFACE: {
-    Interface *spiceInterface = symbolType.getInterface(node);
+    Interface *spiceInterface = ty.getType().getInterface(node);
     assert(spiceInterface != nullptr);
 
-    // Check if we already know the DI type
+    // Check if we already know the DI ty
     if (spiceInterface->diType != nullptr) {
       baseDiType = spiceInterface->diType;
       break;
@@ -390,7 +390,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(interfaceType));
     const uint32_t alignInBits = dataLayout.getABITypeAlign(interfaceType).value();
 
-    // Create interface type
+    // Create interface ty
     const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
     llvm::DICompositeType *interfaceDiType = diBuilder->createStructType(
         diFile, spiceInterface->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
@@ -410,7 +410,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForSymbolType(const ASTNode *node, co
     throw CompilerError(UNHANDLED_BRANCH, "Debug Info Type fallthrough"); // GCOV_EXCL_LINE
   }
 
-  if (symbolType.isConst())
+  if (ty.isConst())
     baseDiType = diBuilder->createQualifiedType(llvm::dwarf::DW_TAG_const_type, baseDiType);
 
   return baseDiType;

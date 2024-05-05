@@ -13,7 +13,7 @@ OpRuleManager::OpRuleManager(TypeChecker *typeChecker)
     : typeChecker(typeChecker), resourceManager(typeChecker->resourceManager) {}
 
 Type OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
-                                              const char *errMsgPrefix) {
+                                        const char *errMsgPrefix) {
   // Check if we try to assign a constant value
   if (!isDecl)
     ensureNoConstAssign(node, lhs.type);
@@ -52,7 +52,7 @@ Type OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResult &l
 }
 
 Type OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
-                                                   bool isDecl) {
+                                             bool isDecl) {
   // Check if we try to assign a constant value
   if (!isDecl)
     ensureNoConstAssign(node, lhs.type);
@@ -88,8 +88,7 @@ Type OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResu
                                  ERROR_FIELD_ASSIGN);
 }
 
-Type OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
-                                                    bool isDecl) {
+Type OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl) {
   // Retrieve types
   Type lhsType = lhs.type;
   Type rhsType = rhs.type;
@@ -694,8 +693,8 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   return {typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, callee->returnType), anonymousSymbol};
 }
 
-Type OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,
-                                                 const char *name, const Type &lhs) {
+Type OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
+                                           const Type &lhs) {
   for (size_t i = 0; i < opRulesSize; i++) {
     const UnaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType())
@@ -705,8 +704,8 @@ Type OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRul
 }
 
 Type OpRuleManager::validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize,
-                                                  const char *name, const Type &lhs, const Type &rhs,
-                                                  bool preserveSpecifiersFromLhs, const char *customMessagePrefix) {
+                                            const char *name, const Type &lhs, const Type &rhs, bool preserveSpecifiersFromLhs,
+                                            const char *customMessagePrefix) {
   for (size_t i = 0; i < opRulesSize; i++) {
     const BinaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType() && std::get<1>(rule) == rhs.getSuperType()) {
@@ -723,8 +722,8 @@ SemanticError OpRuleManager::getExceptionUnary(const ASTNode *node, const char *
   return {node, OPERATOR_WRONG_DATA_TYPE, "Cannot apply '" + std::string(name) + "' operator on type " + lhs.getName(true)};
 }
 
-SemanticError OpRuleManager::getExceptionBinary(const ASTNode *node, const char *name, const Type &lhs,
-                                                const Type &rhs, const char *messagePrefix) {
+SemanticError OpRuleManager::getExceptionBinary(const ASTNode *node, const char *name, const Type &lhs, const Type &rhs,
+                                                const char *messagePrefix) {
   // Build error message
   std::stringstream errorMsg;
   if (strlen(messagePrefix) != 0)
@@ -746,8 +745,7 @@ void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, c
   SOFT_ERROR_VOID(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg)
 }
 
-void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const Type &lhs,
-                                        const Type &rhs) const {
+void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, const Type &lhs, const Type &rhs) const {
   if (typeChecker->currentScope->doesAllowUnsafeOperations())
     return;
   // Print error message
