@@ -953,7 +953,7 @@ public:
 class SignatureNode : public ASTNode {
 public:
   // Enums
-  enum Type : uint8_t {
+  enum SignatureType : uint8_t {
     TYPE_NONE,
     TYPE_FUNCTION,
     TYPE_PROCEDURE,
@@ -976,7 +976,7 @@ public:
   std::vector<Function *> *getFctManifestations(const std::string &) override { return &signatureManifestations; }
 
   // Public members
-  Type signatureType = SignatureNode::TYPE_NONE;
+  SignatureType signatureType = SignatureNode::TYPE_NONE;
   std::string methodName;
   SymbolTableEntry *entry = nullptr;
   TypeSpecifiers signatureSpecifiers;
@@ -1638,7 +1638,7 @@ public:
   };
 
   // Typedefs
-  typedef std::queue<std::pair<AdditiveOp, Type>> OpQueue;
+  using OpQueue = std::queue<std::pair<AdditiveOp, QualType>>;
 
   // Constructors
   using ExprNode::ExprNode;
@@ -1674,7 +1674,7 @@ public:
   };
 
   // Typedefs
-  typedef std::queue<std::pair<MultiplicativeOp, Type>> OpQueue;
+  using OpQueue = std::queue<std::pair<MultiplicativeOp, QualType>>;
 
   // Constructors
   using ExprNode::ExprNode;
