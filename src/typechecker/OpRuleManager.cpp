@@ -678,7 +678,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   // Check if the called function has sufficient visibility
   const bool isImported = calleeParentScope->isImportedBy(typeChecker->rootScope);
   SymbolTableEntry *calleeEntry = callee->entry;
-  if (isImported && !calleeEntry->getType().isPublic())
+  if (isImported && !calleeEntry->getQualType().isPublic())
     throw SemanticError(node, INSUFFICIENT_VISIBILITY,
                         "Overloaded operator '" + callee->getSignature() + "' has insufficient visibility");
 

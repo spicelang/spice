@@ -133,7 +133,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
-    const bool isPublic = manifestation->entry->getType().isPublic();
+    const bool isPublic = manifestation->entry->getQualType().isPublic();
     if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
@@ -176,8 +176,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.getType().hasLambdaCaptures()) {
-          Type paramSymbolSymbolType = paramSymbol->getType();
-          paramSymbolSymbolType.setHasLambdaCaptures(true);
+          QualType paramSymbolSymbolType = paramSymbol->getQualType();
+          paramSymbolSymbolType.getType().setHasLambdaCaptures(true);
           paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
@@ -192,7 +192,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     llvm::Type *returnType = manifestation->returnType.getType().toLLVMType(context, currentScope);
 
     // Check if function is explicitly inlined
-    const bool explicitlyInlined = manifestation->entry->getType().isInline();
+    const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
     // Get function linkage
     bool externalLinkage = isPublic;
     if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_TEST))
@@ -304,7 +304,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
-    const bool isPublic = manifestation->entry->getType().isPublic();
+    const bool isPublic = manifestation->entry->getQualType().isPublic();
     if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
@@ -348,8 +348,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.getType().hasLambdaCaptures()) {
-          Type paramSymbolSymbolType = paramSymbol->getType();
-          paramSymbolSymbolType.setHasLambdaCaptures(true);
+          QualType paramSymbolSymbolType = paramSymbol->getQualType();
+          paramSymbolSymbolType.getType().setHasLambdaCaptures(true);
           paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
@@ -364,7 +364,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     llvm::Type *returnType = builder.getVoidTy();
 
     // Check if procedure is explicitly inlined
-    const bool explicitlyInlined = manifestation->entry->getType().isInline();
+    const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
     // Get procedure linkage
     llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
@@ -474,7 +474,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
       continue;
 
     // Do not generate this struct if it is private and used by nobody
-    if (!spiceStruct->used && !spiceStruct->entry->getType().isPublic())
+    if (!spiceStruct->used && !spiceStruct->entry->getQualType().isPublic())
       continue;
 
     // Change scope to struct scope, specific to substantiation
@@ -530,7 +530,7 @@ std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
       continue;
 
     // Do not generate this interface if it is private and used by nobody
-    if (!spiceInterface->used && !spiceInterface->entry->getType().isPublic())
+    if (!spiceInterface->used && !spiceInterface->entry->getQualType().isPublic())
       continue;
 
     // Generate VTable information
@@ -556,7 +556,7 @@ std::any IRGenerator::visitAliasDef(const AliasDefNode *node) {
 std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   // Retrieve some information about the variable
   assert(node->entry != nullptr);
-  const Type &entryType = node->entry->getType();
+  const QualType &entryType = node->entry->getQualType();
   const bool isPublic = entryType.isPublic();
   const bool isConst = entryType.isConst();
 

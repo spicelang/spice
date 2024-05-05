@@ -133,7 +133,7 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
   } else { // Try to load return variable value
     SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (resultEntry != nullptr) {
-      llvm::Type *resultSTy = resultEntry->getType().toLLVMType(context, currentScope);
+      llvm::Type *resultSTy = resultEntry->getQualType().toLLVMType(context, currentScope);
       llvm::Value *returnValueAddr = resultEntry->getAddress();
       returnValue = insertLoad(resultSTy, returnValueAddr);
     }

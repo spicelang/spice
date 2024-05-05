@@ -84,7 +84,7 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
     // Take 'this' var as base pointer
     const SymbolTableEntry *thisVar = currentScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisVar != nullptr);
-    assert(thisVar->getType().isPtr() && thisVar->getQualType().getContained().is(TY_STRUCT));
+    assert(thisVar->getQualType().isPtr() && thisVar->getQualType().getContained().is(TY_STRUCT));
     llvm::Type *thisType = thisVar->getQualType().getContained().toLLVMType(context, currentScope);
     llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), thisVar->getAddress());
     // Add field offset
@@ -144,7 +144,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
   }
 
   // Get function linkage
-  const bool isPublic = spiceFunc->entry->getType().specifiers.isPublic;
+  const bool isPublic = spiceFunc->entry->getQualType().isPublic();
   llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
   // Create function
@@ -235,7 +235,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   }
 
   // Get function linkage
-  const bool isPublic = spiceProc->entry->getType().specifiers.isPublic;
+  const bool isPublic = spiceProc->entry->getQualType().isPublic();
   llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
   // Create function
@@ -313,11 +313,11 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
-  Type structSymbolType = thisEntry->getType().getBase();
+  QualType structSymbolType = thisEntry->getQualType().getBase();
   llvm::Type *structType = structSymbolType.toLLVMType(context, structScope);
 
   // Store VTable to first struct field if required
-  Struct *spiceStruct = structSymbolType.getStruct(nullptr);
+  Struct *spiceStruct = structSymbolType.getType().getStruct(nullptr);
   assert(spiceStruct != nullptr);
   if (spiceStruct->vTableData.vtable != nullptr) {
     assert(spiceStruct->vTableData.vtableType != nullptr);
@@ -390,7 +390,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
-  llvm::Type *structType = thisEntry->getType().getBase().toLLVMType(context, structScope);
+  llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(context, structScope);
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
@@ -435,7 +435,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
-  llvm::Type *structType = thisEntry->getType().getBase().toLLVMType(context, structScope);
+  llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(context, structScope);
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {

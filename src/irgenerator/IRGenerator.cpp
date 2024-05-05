@@ -373,7 +373,7 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
 LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {
   // Get entry of left side
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
-  llvm::Value *lhsAddress = lhs.entry != nullptr && lhs.entry->getType().isRef() ? lhs.refPtr : lhs.ptr;
+  llvm::Value *lhsAddress = lhs.entry != nullptr && lhs.entry->getQualType().isRef() ? lhs.refPtr : lhs.ptr;
   return doAssignment(lhsAddress, lhs.entry, rhsNode);
 }
 
@@ -388,7 +388,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
 LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
                                          const QualType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
-  const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
+  const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getQualType().isRef();
   const bool needsCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !rhs.isTemporary();
 
   if (isRefAssign) {
@@ -460,12 +460,13 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   // Allocate new memory if the lhs address does not exist
   if (!lhsAddress) {
     assert(lhsEntry != nullptr);
-    lhsAddress = insertAlloca(lhsEntry->getType().toLLVMType(context, currentScope));
+    lhsAddress = insertAlloca(lhsEntry->getQualType().toLLVMType(context, currentScope));
     lhsEntry->updateAddress(lhsAddress);
   }
 
   // Check if we try to assign an array by value to a pointer. Here we have to store the address of the first element to the lhs
-  if (lhsEntry && lhsEntry->getType().isPtr() && rhsSType.isArray() && rhsSType.getType().getArraySize() != ARRAY_SIZE_UNKNOWN) {
+  if (lhsEntry && lhsEntry->getQualType().isPtr() && rhsSType.isArray() &&
+      rhsSType.getType().getArraySize() != ARRAY_SIZE_UNKNOWN) {
     // Get address of right side
     llvm::Value *rhsAddress = resolveAddress(rhs);
     assert(rhsAddress != nullptr);
@@ -507,7 +508,7 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
 void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType, Scope *accessScope) const {
   while (symbolType.isPtr() || symbolType.isRef()) {
     ptr = insertLoad(symbolType.getType().toLLVMType(context, accessScope), ptr);
-    symbolType = symbolType.getType().getContainedTy();
+    symbolType = symbolType.getContained();
   }
 }
 

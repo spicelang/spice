@@ -101,7 +101,7 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
     assert(parent != nullptr && parent->type == ScopeType::STRUCT);
     // Get all fields of the struct
     for (const auto &[name, entry] : parent->symbolTable.symbols)
-      if (!entry.getType().isOneOf({TY_FUNCTION, TY_PROCEDURE}))
+      if (!entry.getQualType().isOneOf({TY_FUNCTION, TY_PROCEDURE}))
         varsGoingOutOfScope.push_back(&parent->symbolTable.symbols.at(name));
   }
 
@@ -150,7 +150,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     switch (entry.getQualType().getSuperType()) {
     case TY_FUNCTION: {
       // Skip generic function entries
-      if (!entry.getType().getTemplateTypes().empty())
+      if (!entry.getQualType().getType().getTemplateTypes().empty())
         continue;
 
       if (type == ScopeType::GLOBAL) {
@@ -170,7 +170,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     }
     case TY_PROCEDURE: {
       // Skip generic procedure entries
-      if (!entry.getType().getTemplateTypes().empty())
+      if (!entry.getQualType().getType().getTemplateTypes().empty())
         continue;
 
       if (type == ScopeType::GLOBAL) {
@@ -195,7 +195,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     case TY_STRUCT: {
       if (entry.scope->type == ScopeType::GLOBAL) {
         // Skip generic struct entries
-        if (!entry.getType().getTemplateTypes().empty())
+        if (!entry.getQualType().getType().getTemplateTypes().empty())
           continue;
 
         warningType = UNUSED_STRUCT;
@@ -209,7 +209,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     case TY_INTERFACE: {
       if (entry.scope->type == ScopeType::GLOBAL) {
         // Skip generic struct entries
-        if (!entry.getType().getTemplateTypes().empty())
+        if (!entry.getQualType().getType().getTemplateTypes().empty())
           continue;
 
         warningType = UNUSED_INTERFACE;
@@ -276,7 +276,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 void Scope::ensureSuccessfulTypeInference() const { // NOLINT(misc-no-recursion)
   // Check symbols in this scope
   for (auto &[name, entry] : symbolTable.symbols)
-    if (entry.getType().is(TY_DYN))
+    if (entry.getQualType().getType().is(TY_DYN))
       throw SemanticError(entry.declNode, UNEXPECTED_DYN_TYPE, "For the variable '" + name + "' no type could be inferred");
 
   // Check child scopes
@@ -293,7 +293,7 @@ size_t Scope::getFieldCount() const {
   assert(type == ScopeType::STRUCT);
   size_t fieldCount = 0;
   for (const auto &symbol : symbolTable.symbols) {
-    const Type &symbolType = symbol.second.getType();
+    const QualType &symbolType = symbol.second.getQualType();
     if (symbolType.is(TY_IMPORT))
       continue;
     const ASTNode *declNode = symbol.second.declNode;
@@ -356,7 +356,7 @@ bool Scope::hasRefFields() {
   const size_t fieldCount = getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
     const SymbolTableEntry *fieldEntry = symbolTable.lookupStrictByIndex(i);
-    if (fieldEntry->getType().isRef())
+    if (fieldEntry->getQualType().isRef())
       return true;
   }
   return false;

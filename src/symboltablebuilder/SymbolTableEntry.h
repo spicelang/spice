@@ -29,16 +29,15 @@ union CompileTimeValue;
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, QualType qualType, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
+  SymbolTableEntry(std::string name, const QualType& qualType, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
       : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global),
-        qualType(std::move(qualType)){};
-  SymbolTableEntry(std::string name, Type type, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
+        qualType(qualType){};
+  SymbolTableEntry(std::string name, const Type &type, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
       : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global),
-        qualType(std::move(type)){};
+        qualType(type){};
 
   // Public methods
   [[nodiscard]] const QualType &getQualType() const;
-  [[nodiscard]] const Type &getType() const;
   void updateType(const Type &newType, bool overwriteExistingType);
   void updateType(const QualType &newType, bool overwriteExistingType);
   void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);

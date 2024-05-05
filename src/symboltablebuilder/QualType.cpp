@@ -53,7 +53,7 @@ void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic
  * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
-std::string QualType::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
+std::string QualType::getName(bool withSize, bool ignorePublic) const {
   std::stringstream name;
   getName(name, withSize, ignorePublic);
   return name.str();

@@ -178,12 +178,12 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       for (const Function *expectedMethod : interface->methods) {
         const std::string methodName = expectedMethod->name;
         std::vector<QualType> params = expectedMethod->getParamTypes();
-        Type returnType = expectedMethod->returnType;
+        QualType returnType = expectedMethod->returnType;
 
         // Substantiate
         TypeMatcher::substantiateTypesWithTypeMapping(params, interface->typeMapping);
-        if (returnType.hasAnyGenericParts())
-          TypeMatcher::substantiateTypeWithTypeMapping(returnType, interface->typeMapping);
+        if (returnType.getType().hasAnyGenericParts())
+          TypeMatcher::substantiateTypeWithTypeMapping(returnType.getType(), interface->typeMapping);
 
         // Build args list
         ArgList args;

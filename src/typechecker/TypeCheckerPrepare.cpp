@@ -13,7 +13,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   node->returnsOnAllControlPaths(nullptr);
 
   // Retrieve return type
-  Type returnType(TY_INT);
+  QualType returnType(TY_INT);
 
   // Change to function body scope
   currentScope = node->bodyScope;
@@ -352,8 +352,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
       // Check for visibility
       if (interfaceType.getType().getBodyScope()->isImportedBy(rootScope) && !interfaceType.isPublic())
         throw SemanticError(node, INSUFFICIENT_VISIBILITY,
-                            "Cannot access interface '" + interfaceType.getSubType() +
-                                "' due to its private visibility");
+                            "Cannot access interface '" + interfaceType.getSubType() + "' due to its private visibility");
       // Add to interface types
       interfaceTypes.push_back(interfaceType);
       // Update the type of the entry for that interface field
@@ -642,7 +641,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Retrieve return type
-  Type returnType(TY_DYN);
+  QualType returnType(TY_DYN);
   const bool isFunction = node->returnType();
   if (isFunction) { // External function
     returnType = std::any_cast<QualType>(visit(node->returnType()));
@@ -653,7 +652,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Add function to current scope
-  Function spiceFunc = Function(node->extFunctionName, node->entry, Type(TY_DYN), returnType, argList, {}, node);
+  Function spiceFunc = Function(node->extFunctionName, node->entry, QualType(TY_DYN), returnType, argList, {}, node);
   node->extFunction = FunctionManager::insertFunction(currentScope, spiceFunc, &node->extFunctionManifestations);
   node->extFunction->mangleFunctionName = false;
 

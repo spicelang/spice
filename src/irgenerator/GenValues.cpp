@@ -73,8 +73,9 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     assert(!data.isCtorCall());
 
     // Retrieve entry of the first fragment
-    assert(firstFragEntry != nullptr && firstFragEntry->getType().getBase().isOneOf({TY_STRUCT, TY_INTERFACE}));
-    Scope *structScope = firstFragEntry->getType().getBase().getBodyScope();
+    const QualType baseType = firstFragEntry->getQualType().getBase();
+    assert(firstFragEntry != nullptr && baseType.isOneOf({TY_STRUCT, TY_INTERFACE}));
+    Scope *structScope = baseType.getType().getBodyScope();
 
     // Get address of the referenced variable / struct instance
     thisPtr = firstFragEntry->getAddress();
@@ -82,7 +83,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     // Auto de-reference 'this' pointer
     QualType firstFragmentType = firstFragEntry->getQualType();
     autoDeReferencePtr(thisPtr, firstFragmentType, structScope->parent);
-    llvm::Type *structTy = firstFragEntry->getType().getBase().toLLVMType(context, structScope->parent);
+    llvm::Type *structTy = baseType.toLLVMType(context, structScope->parent);
 
     // Traverse through structs - the first fragment is already looked up and the last one is the function name
     for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
@@ -124,7 +125,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     // Load fctPtr
     llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
     fctPtr = insertStructGEP(fatStructType, fatPtr, 0);
-    if (firstFragEntry->getType().hasLambdaCaptures()) {
+    if (firstFragEntry->getQualType().getType().hasLambdaCaptures()) {
       // Load captures struct
       llvm::Value *capturesPtrPtr = insertStructGEP(fatStructType, fatPtr, 1);
       llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);
@@ -138,7 +139,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     argValues.reserve(node->argLst()->args().size());
     const std::vector<AssignExprNode *> args = node->argLst()->args();
     const std::vector<QualType> paramSTypes =
-        data.isFctPtrCall() ? firstFragEntry->getType().getBase().getFunctionParamTypes() : spiceFunc->getParamTypes();
+        data.isFctPtrCall() ? firstFragEntry->getQualType().getBase().getType().getFunctionParamTypes() : spiceFunc->getParamTypes();
     assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
       AssignExprNode *argNode = args.at(i);
@@ -171,9 +172,9 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   QualType returnSType(TY_DYN);
   std::vector<QualType> paramSTypes;
   if (data.isFctPtrCall()) {
-    if (firstFragEntry->getType().isBase(TY_FUNCTION))
-      returnSType = firstFragEntry->getType().getBase().getFunctionReturnType();
-    paramSTypes = firstFragEntry->getType().getBase().getFunctionParamTypes();
+    if (firstFragEntry->getQualType().isBase(TY_FUNCTION))
+      returnSType = firstFragEntry->getQualType().getBase().getType().getFunctionReturnType();
+    paramSTypes = firstFragEntry->getQualType().getBase().getType().getFunctionParamTypes();
   } else {
     returnSType = spiceFunc->returnType;
     paramSTypes = spiceFunc->getParamTypes();
@@ -193,7 +194,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     std::vector<llvm::Type *> argTypes;
     if (data.isMethodCall() || data.isCtorCall())
       argTypes.push_back(builder.getPtrTy()); // This pointer
-    if (data.isFctPtrCall() && firstFragEntry->getType().hasLambdaCaptures())
+    if (data.isFctPtrCall() && firstFragEntry->getQualType().getType().hasLambdaCaptures())
       argTypes.push_back(builder.getPtrTy()); // Capture pointer
     for (const QualType &paramType : paramSTypes)
       argTypes.push_back(paramType.getType().toLLVMType(context, accessScope));
@@ -343,7 +344,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
   // Get struct type
   assert(spiceStruct->entry != nullptr);
-  auto structType = reinterpret_cast<llvm::StructType *>(spiceStruct->entry->getType().toLLVMType(context, currentScope));
+  auto structType = reinterpret_cast<llvm::StructType *>(spiceStruct->entry->getQualType().toLLVMType(context, currentScope));
   assert(structType != nullptr);
 
   if (!node->fieldLst()) {
@@ -873,7 +874,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
       assert(captures.size() == 1);
       const Capture &capture = captures.begin()->second;
       if (capture.getMode() == BY_VALUE) {
-        llvm::Type *varType = capture.capturedEntry->getType().toLLVMType(context, currentScope);
+        llvm::Type *varType = capture.capturedEntry->getQualType().toLLVMType(context, currentScope);
         capturesPtr = insertLoad(varType, capture.capturedEntry->getAddress());
       } else {
         capturesPtr = capture.capturedEntry->getAddress();
@@ -887,7 +888,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
         llvm::Value *capturedValue = capturedEntry->getAddress();
         assert(capturedValue != nullptr);
         if (capture.getMode() == BY_VALUE) {
-          llvm::Type *captureType = capturedEntry->getType().toLLVMType(context, currentScope);
+          llvm::Type *captureType = capturedEntry->getQualType().toLLVMType(context, currentScope);
           capturedValue = insertLoad(captureType, capturedValue);
         }
         // Store it in the capture struct
@@ -917,14 +918,14 @@ llvm::Type *IRGenerator::buildCapturesContainerType(const CaptureMap &captures) 
 
   // If we have only one capture that is a ptr, we can just use that ptr type
   const Capture &capture = captures.begin()->second;
-  if (captures.size() == 1 && (capture.capturedEntry->getType().isPtr() || capture.getMode() == BY_REFERENCE))
+  if (captures.size() == 1 && (capture.capturedEntry->getQualType().isPtr() || capture.getMode() == BY_REFERENCE))
     return builder.getPtrTy();
 
   // Create captures struct type
   std::vector<llvm::Type *> captureTypes;
   for (const auto &[_, c] : captures) {
     if (c.getMode() == BY_VALUE)
-      captureTypes.push_back(c.capturedEntry->getType().toLLVMType(context, currentScope));
+      captureTypes.push_back(c.capturedEntry->getQualType().toLLVMType(context, currentScope));
     else
       captureTypes.push_back(builder.getPtrTy());
   }
@@ -935,7 +936,7 @@ void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llv
   assert(!captures.empty());
   // If we have only one capture that is a ptr, we can just load the ptr
   const Capture &capture = captures.begin()->second;
-  if (captures.size() == 1 && (capture.capturedEntry->getType().isPtr() || capture.getMode() == BY_REFERENCE)) {
+  if (captures.size() == 1 && (capture.capturedEntry->getQualType().isPtr() || capture.getMode() == BY_REFERENCE)) {
     // Interpret capturesPtr as ptr to the first and only capture
     llvm::Value *captureAddress = val;
     capture.capturedEntry->pushAddress(captureAddress);

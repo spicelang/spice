@@ -17,19 +17,12 @@ namespace spice::compiler {
 const QualType &SymbolTableEntry::getQualType() const { return qualType; }
 
 /**
- * Retrieve the type of this symbol
- *
- * @return Type of this symbol
- */
-const Type &SymbolTableEntry::getType() const { return qualType.getType(); }
-
-/**
  * Update the type of this symbol.
  *
  * @param newType New type of the current symbol
  * @param overwriteExistingType Overwrites the existing type without throwing an error
  */
-void SymbolTableEntry::updateType(const Type &newType, bool overwriteExistingType) {
+void SymbolTableEntry::updateType(const Type &newType, [[maybe_unused]] bool overwriteExistingType) {
   assert(overwriteExistingType || qualType.isOneOf({TY_INVALID, TY_DYN}));
   qualType.setType(newType);
 }
@@ -40,7 +33,7 @@ void SymbolTableEntry::updateType(const Type &newType, bool overwriteExistingTyp
  * @param newType New type of the current symbol
  * @param overwriteExistingType Overwrites the existing type without throwing an error
  */
-void SymbolTableEntry::updateType(const QualType &newType, bool overwriteExistingType) {
+void SymbolTableEntry::updateType(const QualType &newType, [[maybe_unused]] bool overwriteExistingType) {
   assert(overwriteExistingType || qualType.isOneOf({TY_INVALID, TY_DYN}));
   qualType = newType;
 }

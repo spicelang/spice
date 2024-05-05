@@ -92,7 +92,7 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
   // Prepare flags
   llvm::DIScope *scope = diFile;
   llvm::DINode::DIFlags flags = llvm::DINode::FlagPrototyped;
-  if (spiceFunc->entry && spiceFunc->entry->getType().specifiers.isPublic)
+  if (spiceFunc->entry && spiceFunc->entry->getQualType().isPublic())
     flags |= llvm::DINode::FlagPublic;
 
   // Prepare spFlags
@@ -220,7 +220,7 @@ void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global
   const size_t lineNo = globalEntry->getDeclCodeLoc().line;
   llvm::StringRef name = global->getName();
   llvm::DIType *type = getDITypeForQualType(globalEntry->declNode, globalEntry->getQualType());
-  const bool isLocal = globalEntry->getType().isPublic();
+  const bool isLocal = globalEntry->getQualType().isPublic();
 
   global->addDebugInfo(diBuilder->createGlobalVariableExpression(compileUnit, name, name, diFile, lineNo, type, isLocal));
 }
@@ -335,7 +335,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
 
     // Retrieve information about the struct
     const size_t lineNo = spiceStruct->getDeclCodeLoc().line;
-    llvm::Type *structType = spiceStruct->entry->getType().toLLVMType(irGenerator->context, irGenerator->currentScope);
+    llvm::Type *structType = spiceStruct->entry->getQualType().toLLVMType(irGenerator->context, irGenerator->currentScope);
     assert(structType != nullptr);
     llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
     const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(structType));
@@ -384,7 +384,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
 
     // Retrieve information about the interface
     const size_t lineNo = spiceInterface->getDeclCodeLoc().line;
-    llvm::Type *interfaceType = spiceInterface->entry->getType().toLLVMType(irGenerator->context, irGenerator->currentScope);
+    llvm::Type *interfaceType = spiceInterface->entry->getQualType().toLLVMType(irGenerator->context, irGenerator->currentScope);
     assert(interfaceType != nullptr);
     llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
     const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(interfaceType));

@@ -124,9 +124,9 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
       substantiatedStruct->scope->isGenericScope = false;
 
       // Attach the template types to the new struct entry
-      Type entryType = substantiatedStruct->entry->getType();
-      entryType.setTemplateTypes(substantiatedStruct->getTemplateTypes());
-      entryType.setBodyScope(substantiatedStruct->scope);
+      QualType entryType = substantiatedStruct->entry->getQualType();
+      entryType.getType().setTemplateTypes(substantiatedStruct->getTemplateTypes());
+      entryType.getType().setBodyScope(substantiatedStruct->scope);
       substantiatedStruct->entry->updateType(entryType, true);
 
       // Replace symbol types of field entries with concrete types
@@ -141,7 +141,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
         QualType baseType = fieldType.getBase();
 
         // Set the body scope of fields that are of type <candidate-struct>*
-        if (baseType.matches(substantiatedStruct->entry->getType(), false, true, true)) {
+        if (baseType.matches(substantiatedStruct->entry->getQualType(), false, true, true)) {
           baseType.getType().setBodyScope(substantiatedStruct->scope);
           fieldType = fieldType.replaceBaseType(baseType);
         }
@@ -244,9 +244,9 @@ void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeM
   const size_t fieldCount = candidate.scope->getFieldCount() - candidate.fieldTypes.size();
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldEntry = candidate.scope->symbolTable.lookupStrictByIndex(i);
-    Type fieldType = fieldEntry->getType();
-    if (fieldType.hasAnyGenericParts()) {
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
+    QualType fieldType = fieldEntry->getQualType();
+    if (fieldType.getType().hasAnyGenericParts()) {
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType.getType(), typeMapping);
       fieldEntry->updateType(fieldType, true);
     }
   }

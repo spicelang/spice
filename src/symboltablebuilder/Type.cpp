@@ -282,7 +282,7 @@ llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) con
       std::vector<llvm::Type *> fieldTypes;
       bool isPacked = false;
       if (is(TY_STRUCT)) { // Struct
-        Struct *spiceStruct = structSymbol->getType().getStruct(structSymbol->declNode);
+        Struct *spiceStruct = structSymbol->getQualType().getType().getStruct(structSymbol->declNode);
         assert(spiceStruct != nullptr);
         const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
         structType = llvm::StructType::create(context, mangledName);
@@ -301,14 +301,14 @@ llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) con
         for (size_t i = 0; i < totalFieldCount; i++) {
           const SymbolTableEntry *fieldSymbol = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
           assert(fieldSymbol != nullptr);
-          fieldTypes.push_back(fieldSymbol->getType().toLLVMType(context, accessScope));
+          fieldTypes.push_back(fieldSymbol->getQualType().toLLVMType(context, accessScope));
         }
 
         // Check if the struct is declared as packed
         if (structDeclNode->attrs() && structDeclNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_PACKED))
           isPacked = structDeclNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
       } else { // Interface
-        Interface *spiceInterface = structSymbol->getType().getInterface(structSymbol->declNode);
+        Interface *spiceInterface = structSymbol->getQualType().getType().getInterface(structSymbol->declNode);
         assert(spiceInterface != nullptr);
         const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
         structType = llvm::StructType::create(context, mangledName);
@@ -499,7 +499,7 @@ bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList)
   // Check if the symbol type itself is generic
   if (baseType.is(TY_GENERIC)) {
     return std::ranges::any_of(genericTypeList, [&](GenericType &t) {
-      if (baseType.matches(t, true, true, true)) {
+      if (baseType.matches(t.getType(), true, true, true)) {
         t.used = true;
         return true;
       }
@@ -511,8 +511,8 @@ bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList)
   bool covered = true;
   // Check template types
   const std::vector<QualType> &baseTemplateTypes = baseType.getTemplateTypes();
-  covered &= std::ranges::all_of(
-      baseTemplateTypes, [&](const Type &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); });
+  auto lambda = [&](const QualType &templateType) { return templateType.getType().isCoveredByGenericTypeList(genericTypeList); };
+  covered &= std::ranges::all_of(baseTemplateTypes, lambda);
 
   // If function/procedure, check param and return types
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
@@ -561,7 +561,7 @@ void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic) co
  * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
-std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
+std::string Type::getName(bool withSize, bool ignorePublic) const {
   std::stringstream name;
   getName(name, withSize, ignorePublic);
   return name.str();
