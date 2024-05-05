@@ -123,7 +123,7 @@ public:
   llvm::Value *resolveValue(const QualType &qualType, LLVMExprResult &exprResult, Scope *accessScope = nullptr);
   llvm::Value *resolveAddress(const ASTNode *node);
   llvm::Value *resolveAddress(LLVMExprResult &exprResult);
-  [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const Type &symbolType);
+  [[nodiscard]] llvm::Constant *getDefaultValueForSymbolType(const QualType &symbolType);
   [[nodiscard]] static std::string getIRString(llvm::Module *llvmModule, bool withoutTargetInfo);
 
 private:
@@ -142,7 +142,7 @@ private:
                               const QualType &rhsSType, bool isDecl);
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
                                  const std::string &name = "", bool isVolatile = false);
-  void autoDeReferencePtr(llvm::Value *&ptr, Type &symbolType, Scope *accessScope) const;
+  void autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType, Scope *accessScope) const;
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant);
   llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
@@ -153,7 +153,7 @@ private:
   void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType);
 
   // Generate implicit
-  llvm::Value *doImplicitCast(llvm::Value *src, Type dstSTy, Type srcSTy);
+  llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   void generateScopeCleanup(const StmtLstNode *node) const;
   void generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
   void generateDeallocCall(llvm::Value *variableAddress) const;

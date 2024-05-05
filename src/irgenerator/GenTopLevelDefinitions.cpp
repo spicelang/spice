@@ -40,7 +40,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
       auto paramType = any_cast<llvm::Type *>(visit(param->dataType()));
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
-      paramSymbolTypes.push_back(paramSymbol->getType());
+      paramSymbolTypes.push_back(paramSymbol->getQualType());
       paramTypes.push_back(paramType);
     }
   }
@@ -133,7 +133,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
-    const bool isPublic = manifestation->entry->getType().isPublic();
+    const bool isPublic = manifestation->entry->getQualType().isPublic();
     if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
@@ -142,7 +142,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Change to struct scope
     if (manifestation->isMethod()) {
       const QualType &thisType = manifestation->thisType;
-      const std::string signature = Struct::getSignature(thisType.getType().getSubType(), thisType.getType().getTemplateTypes());
+      const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getType().getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
       assert(currentScope != nullptr);
     }
@@ -176,8 +176,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.getType().hasLambdaCaptures()) {
-          Type paramSymbolSymbolType = paramSymbol->getType();
-          paramSymbolSymbolType.setHasLambdaCaptures(true);
+          QualType paramSymbolSymbolType = paramSymbol->getQualType();
+          paramSymbolSymbolType.getType().setHasLambdaCaptures(true);
           paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
@@ -192,7 +192,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     llvm::Type *returnType = manifestation->returnType.getType().toLLVMType(context, currentScope);
 
     // Check if function is explicitly inlined
-    const bool explicitlyInlined = manifestation->entry->getType().isInline();
+    const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
     // Get function linkage
     bool externalLinkage = isPublic;
     if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_TEST))
@@ -218,7 +218,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       func->addParamAttr(0, llvm::Attribute::NoUndef);
       func->addParamAttr(0, llvm::Attribute::NonNull);
       assert(thisEntry != nullptr);
-      llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(context, currentScope);
       assert(structType != nullptr);
       func->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
       func->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
@@ -304,7 +304,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     assert(manifestation->entry != nullptr);
 
     // Check if the manifestation is substantiated or not public and not used by anybody
-    const bool isPublic = manifestation->entry->getType().isPublic();
+    const bool isPublic = manifestation->entry->getQualType().isPublic();
     if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
@@ -314,7 +314,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     // Change to struct scope
     if (manifestation->isMethod()) {
       const QualType &thisType = manifestation->thisType;
-      const std::string signature = Struct::getSignature(thisType.getType().getSubType(), thisType.getType().getTemplateTypes());
+      const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getType().getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
       assert(currentScope != nullptr);
     }
@@ -348,8 +348,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.getType().hasLambdaCaptures()) {
-          Type paramSymbolSymbolType = paramSymbol->getType();
-          paramSymbolSymbolType.setHasLambdaCaptures(true);
+          QualType paramSymbolSymbolType = paramSymbol->getQualType();
+          paramSymbolSymbolType.getType().setHasLambdaCaptures(true);
           paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
@@ -364,7 +364,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     llvm::Type *returnType = builder.getVoidTy();
 
     // Check if procedure is explicitly inlined
-    const bool explicitlyInlined = manifestation->entry->getType().isInline();
+    const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
     // Get procedure linkage
     llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
@@ -387,7 +387,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       proc->addParamAttr(0, llvm::Attribute::NoUndef);
       proc->addParamAttr(0, llvm::Attribute::NonNull);
       assert(thisEntry != nullptr);
-      llvm::Type *structType = thisEntry->getType().getContainedTy().toLLVMType(context, currentScope);
+      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(context, currentScope);
       assert(structType != nullptr);
       proc->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
       proc->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
@@ -474,7 +474,7 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
       continue;
 
     // Do not generate this struct if it is private and used by nobody
-    if (!spiceStruct->used && !spiceStruct->entry->getType().isPublic())
+    if (!spiceStruct->used && !spiceStruct->entry->getQualType().isPublic())
       continue;
 
     // Change scope to struct scope, specific to substantiation
@@ -492,13 +492,13 @@ std::any IRGenerator::visitStructDef(const StructDefNode *node) {
     }
 
     // Generate default ctor if required
-    const Type &thisType = structEntry->getType();
+    const QualType &thisType = structEntry->getQualType();
     const Function *ctorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, {}, true);
     if (ctorFunc != nullptr && ctorFunc->implicitDefault)
       generateDefaultCtor(ctorFunc);
 
     // Generate default copy ctor if required
-    const ArgList args = {{thisType.toConstReference(node), false /* always non-temporary */}};
+    const ArgList args = {{thisType.toConstRef(node), false /* always non-temporary */}};
     const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, thisType, args, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
       generateDefaultCopyCtor(copyCtorFunc);
@@ -530,7 +530,7 @@ std::any IRGenerator::visitInterfaceDef(const InterfaceDefNode *node) {
       continue;
 
     // Do not generate this interface if it is private and used by nobody
-    if (!spiceInterface->used && !spiceInterface->entry->getType().isPublic())
+    if (!spiceInterface->used && !spiceInterface->entry->getQualType().isPublic())
       continue;
 
     // Generate VTable information
@@ -556,7 +556,7 @@ std::any IRGenerator::visitAliasDef(const AliasDefNode *node) {
 std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
   // Retrieve some information about the variable
   assert(node->entry != nullptr);
-  const Type &entryType = node->entry->getType();
+  const QualType &entryType = node->entry->getQualType();
   const bool isPublic = entryType.isPublic();
   const bool isConst = entryType.isConst();
 
@@ -576,7 +576,7 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
     auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
     var->setInitializer(constantValue);
   } else if (cliOptions.buildMode == BuildMode::DEBUG) { // Set the default value as variable initializer
-    llvm::Constant *constantValue = getDefaultValueForSymbolType(node->entry->getType());
+    llvm::Constant *constantValue = getDefaultValueForSymbolType(node->entry->getQualType());
     var->setInitializer(constantValue);
   }
 

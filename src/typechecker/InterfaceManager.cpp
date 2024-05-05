@@ -120,9 +120,9 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
       substantiatedInterface->scope->isGenericScope = false;
 
       // Attach the template types to the new interface entry
-      Type entryType = substantiatedInterface->entry->getType();
-      entryType.setTemplateTypes(substantiatedInterface->getTemplateTypes());
-      entryType.setBodyScope(substantiatedInterface->scope);
+      QualType entryType = substantiatedInterface->entry->getQualType();
+      entryType.getType().setTemplateTypes(substantiatedInterface->getTemplateTypes());
+      entryType.getType().setBodyScope(substantiatedInterface->scope);
       substantiatedInterface->entry->updateType(entryType, true);
 
       // Replace symbol types of method entries with concrete types
@@ -181,15 +181,15 @@ bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vecto
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
     const QualType &reqType = reqTemplateTypes.at(i);
-    Type &candidateType = candidate.templateTypes.at(i);
+    QualType &candidateType = candidate.templateTypes.at(i);
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false))
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
-    if (candidateType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping);
+    if (candidateType.getType().hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateType.getType(), typeMapping);
   }
 
   return true;
@@ -214,7 +214,7 @@ void InterfaceManager::substantiateSignatures(Interface &candidate, TypeMapping 
 
     // Substantiate param types
     for (Param &paramType : method->paramList)
-      if (paramType.type.isBaseType(TY_GENERIC))
+      if (paramType.type.isBase(TY_GENERIC))
         TypeMatcher::substantiateTypeWithTypeMapping(paramType.type.getType(), typeMapping);
   }
 }

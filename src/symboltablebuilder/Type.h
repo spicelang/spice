@@ -147,7 +147,7 @@ public:
   [[nodiscard]] bool isStringObj() const;
   [[nodiscard]] bool isErrorObj() const;
   [[nodiscard]] bool implements(const Type &symbolType, const ASTNode *node) const;
-  [[nodiscard]] bool isBaseType(SuperType superType) const;
+  [[nodiscard]] bool isBase(SuperType superType) const;
   [[nodiscard]] ALWAYS_INLINE bool isOneOf(const std::initializer_list<SuperType> &superTypes) const {
     const SuperType superType = getSuperType();
     return std::ranges::any_of(superTypes, [&superType](SuperType type) { return type == superType; });
@@ -167,7 +167,7 @@ public:
     type.specifiers.isConst = false;
     return type;
   }
-  [[nodiscard]] Type getBaseType() const;
+  [[nodiscard]] Type getBase() const;
   [[nodiscard]] bool hasAnyGenericParts() const;
   void setTemplateTypes(const std::vector<QualType> &templateTypes);
   void setBaseTemplateTypes(const std::vector<QualType> &templateTypes);

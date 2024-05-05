@@ -162,13 +162,13 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         visit(field->defaultValue());
 
     // Build struct type
-    const Type structType = manifestation->entry->getType();
+    const QualType structType = manifestation->entry->getQualType();
 
     // Check if the struct implements all methods of all attached interfaces
     size_t vtableIndex = 0;
     for (const QualType &interfaceType : manifestation->interfaceTypes) {
       // Retrieve interface instance
-      const std::string interfaceName = interfaceType.getType().getSubType();
+      const std::string interfaceName = interfaceType.getSubType();
       Scope *matchScope = interfaceType.getType().getBodyScope()->parent;
       Interface *interface =
           InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getType().getTemplateTypes(), node);
@@ -178,12 +178,12 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       for (const Function *expectedMethod : interface->methods) {
         const std::string methodName = expectedMethod->name;
         std::vector<QualType> params = expectedMethod->getParamTypes();
-        Type returnType = expectedMethod->returnType;
+        QualType returnType = expectedMethod->returnType;
 
         // Substantiate
         TypeMatcher::substantiateTypesWithTypeMapping(params, interface->typeMapping);
-        if (returnType.hasAnyGenericParts())
-          TypeMatcher::substantiateTypeWithTypeMapping(returnType, interface->typeMapping);
+        if (returnType.getType().hasAnyGenericParts())
+          TypeMatcher::substantiateTypeWithTypeMapping(returnType.getType(), interface->typeMapping);
 
         // Build args list
         ArgList args;
@@ -210,7 +210,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       createDefaultCtorBody(ctorFunc);
 
     // Generate default copy ctor body if required
-    const ArgList args = {{structType.toConstReference(node), false /* always non-temporary */}};
+    const ArgList args = {{structType.toConstRef(node), false /* always non-temporary */}};
     const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, structType, args, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
       createDefaultCopyCtorBody(copyCtorFunc);

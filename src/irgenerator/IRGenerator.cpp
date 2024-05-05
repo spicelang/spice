@@ -119,8 +119,7 @@ llvm::Value *IRGenerator::resolveValue(const ASTNode *node, LLVMExprResult &expr
   return resolveValue(node->getEvaluatedSymbolType(manIdx), exprResult, accessScope);
 }
 
-llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult &exprResult,
-                                       Scope *accessScope /*=nullptr*/) {
+llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult &exprResult, Scope *accessScope /*=nullptr*/) {
   // Check if the value is already present
   if (exprResult.value != nullptr)
     return exprResult.value;
@@ -175,7 +174,7 @@ llvm::Value *IRGenerator::resolveAddress(LLVMExprResult &exprResult) {
   return exprResult.ptr;
 }
 
-llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType) { // NOLINT(misc-no-recursion)
+llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbolType) { // NOLINT(misc-no-recursion)
   // Double
   if (symbolType.is(TY_DOUBLE))
     return llvm::ConstantFP::get(context, llvm::APFloat(0.0));
@@ -211,13 +210,13 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType
   // Array
   if (symbolType.isArray()) {
     // Get array size
-    const size_t arraySize = symbolType.getArraySize();
+    const size_t arraySize = symbolType.getType().getArraySize();
 
     // Get default value for item
-    llvm::Constant *defaultItemValue = getDefaultValueForSymbolType(symbolType.getContainedTy());
+    llvm::Constant *defaultItemValue = getDefaultValueForSymbolType(symbolType.getContained());
 
     // Retrieve array and item type
-    llvm::Type *itemType = symbolType.getContainedTy().toLLVMType(context, currentScope);
+    llvm::Type *itemType = symbolType.getContained().toLLVMType(context, currentScope);
     llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
 
     // Create a constant array with n times the default value
@@ -230,17 +229,17 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType
     if (!llvmTypes.fatPtrType)
       llvmTypes.fatPtrType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
 
-    llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(Type(TY_PTR));
+    llvm::Constant *ptrDefaultValue = getDefaultValueForSymbolType(QualType(TY_PTR));
     return llvm::ConstantStruct::get(llvmTypes.fatPtrType, {ptrDefaultValue, ptrDefaultValue});
   }
 
   // Struct
   if (symbolType.is(TY_STRUCT)) {
     // Retrieve struct type
-    Scope *structScope = symbolType.getBodyScope();
+    Scope *structScope = symbolType.getType().getBodyScope();
     assert(structScope != nullptr);
     const size_t fieldCount = structScope->getFieldCount();
-    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, structScope));
+    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.getType().toLLVMType(context, structScope));
 
     // Get default values for all fields of the struct
     std::vector<llvm::Constant *> fieldConstants;
@@ -255,9 +254,9 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType
       // Retrieve default field value
       llvm::Constant *defaultFieldValue;
       if (const auto fieldNode = dynamic_cast<FieldNode *>(fieldEntry->declNode); fieldNode && fieldNode->defaultValue())
-        defaultFieldValue = getConst(fieldNode->defaultValue()->getCompileTimeValue(), fieldEntry->getType(), fieldNode);
+        defaultFieldValue = getConst(fieldNode->defaultValue()->getCompileTimeValue(), fieldEntry->getQualType(), fieldNode);
       else
-        defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getType());
+        defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getQualType());
 
       fieldConstants.push_back(defaultFieldValue);
     }
@@ -267,9 +266,9 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType
   // Interface
   if (symbolType.is(TY_INTERFACE)) {
     // Retrieve struct type
-    Scope *interfaceScope = symbolType.getBodyScope();
+    Scope *interfaceScope = symbolType.getType().getBodyScope();
     assert(interfaceScope != nullptr);
-    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, interfaceScope));
+    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.getType().toLLVMType(context, interfaceScope));
 
     return llvm::ConstantStruct::get(structType, llvm::Constant::getNullValue(builder.getPtrTy()));
   }
@@ -374,7 +373,7 @@ void IRGenerator::verifyModule(const CodeLoc &codeLoc) const {
 LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode) {
   // Get entry of left side
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
-  llvm::Value *lhsAddress = lhs.entry != nullptr && lhs.entry->getType().isRef() ? lhs.refPtr : lhs.ptr;
+  llvm::Value *lhsAddress = lhs.entry != nullptr && lhs.entry->getQualType().isRef() ? lhs.refPtr : lhs.ptr;
   return doAssignment(lhsAddress, lhs.entry, rhsNode);
 }
 
@@ -389,7 +388,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
 LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
                                          const QualType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
-  const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
+  const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getQualType().isRef();
   const bool needsCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !rhs.isTemporary();
 
   if (isRefAssign) {
@@ -461,12 +460,13 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   // Allocate new memory if the lhs address does not exist
   if (!lhsAddress) {
     assert(lhsEntry != nullptr);
-    lhsAddress = insertAlloca(lhsEntry->getType().toLLVMType(context, currentScope));
+    lhsAddress = insertAlloca(lhsEntry->getQualType().toLLVMType(context, currentScope));
     lhsEntry->updateAddress(lhsAddress);
   }
 
   // Check if we try to assign an array by value to a pointer. Here we have to store the address of the first element to the lhs
-  if (lhsEntry && lhsEntry->getType().isPtr() && rhsSType.isArray() && rhsSType.getType().getArraySize() != ARRAY_SIZE_UNKNOWN) {
+  if (lhsEntry && lhsEntry->getQualType().isPtr() && rhsSType.isArray() &&
+      rhsSType.getType().getArraySize() != ARRAY_SIZE_UNKNOWN) {
     // Get address of right side
     llvm::Value *rhsAddress = resolveAddress(rhs);
     assert(rhsAddress != nullptr);
@@ -505,10 +505,10 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
   return targetAddress;
 }
 
-void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, Type &symbolType, Scope *accessScope) const {
+void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType, Scope *accessScope) const {
   while (symbolType.isPtr() || symbolType.isRef()) {
-    ptr = insertLoad(symbolType.toLLVMType(context, accessScope), ptr);
-    symbolType = symbolType.getContainedTy();
+    ptr = insertLoad(symbolType.getType().toLLVMType(context, accessScope), ptr);
+    symbolType = symbolType.getContained();
   }
 }
 

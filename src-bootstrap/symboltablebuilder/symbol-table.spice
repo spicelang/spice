@@ -4,7 +4,7 @@ import "std/data/vector";
 
 // Own imports
 import "../ast/ast-nodes";
-import "../symboltablebuilder/symbol-type";
+import "../symboltablebuilder/type";
 import "../symboltablebuilder/symbol-table-entry";
 import "../symboltablebuilder/type-specifiers";
 import "../model/capture";

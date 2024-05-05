@@ -13,19 +13,19 @@
 namespace spice::compiler {
 
 // Typedefs
-using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/Type>;
+using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
-class GenericType : public Type {
+class GenericType : public QualType {
 public:
   // Constructors
-  explicit GenericType(const Type &type) : Type(type){};
-  explicit GenericType(const std::string &name) : Type(TY_GENERIC, name) {}
-  GenericType(const std::string &name, const std::vector<Type> &typeConditions)
-      : Type(TY_GENERIC, name), typeConditions(typeConditions) {}
+  explicit GenericType(const QualType &type) : QualType(type){};
+  explicit GenericType(const std::string &name) : QualType(TY_GENERIC, name) {}
+  GenericType(const std::string &name, const std::vector<QualType> &typeConditions)
+      : QualType(TY_GENERIC, name), typeConditions(typeConditions) {}
   GenericType() = default;
 
   // Public methods
-  [[nodiscard]] [[deprecated]] bool checkConditionsOf(const Type &type, bool ignoreArraySize = false,
+  [[nodiscard]] [[deprecated]] bool checkConditionsOf(const QualType &type, bool ignoreArraySize = false,
                                                       bool ignoreSpecifiers = false) const;
 
   // Public members
@@ -33,10 +33,10 @@ public:
 
 private:
   // Members
-  std::vector<Type> typeConditions = {Type(TY_DYN)};
+  std::vector<QualType> typeConditions = {QualType(TY_DYN)};
 
   // Private methods
-  [[nodiscard]] [[deprecated]] bool checkTypeConditionOf(const Type &type, bool ignoreArraySize,
+  [[nodiscard]] [[deprecated]] bool checkTypeConditionOf(const QualType &type, bool ignoreArraySize,
                                                          bool ignoreSpecifiers) const;
 };
 

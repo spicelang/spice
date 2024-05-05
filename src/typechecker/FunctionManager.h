@@ -44,9 +44,9 @@ public:
   static void substantiateOptionalParams(const Function &baseFunction, std::vector<Function> &manifestations);
   [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const std::vector<QualType> &paramTypes,
                                                    ASTNode *declNode);
-  [[nodiscard]] static const Function *lookupFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType,
+  [[nodiscard]] static const Function *lookupFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                                       const ArgList &reqArgs, bool strictSpecifierMatching);
-  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const Type &reqThisType, const ArgList &reqArgs,
+  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType, const ArgList &reqArgs,
                                  const std::vector<QualType> &templateTypeHints, bool strictSpecifierMatching,
                                  const ASTNode *callNode);
 
@@ -55,11 +55,11 @@ private:
   [[nodiscard]] static Function *insertSubstantiation(Scope *insertScope, const Function &newManifestation,
                                                       const ASTNode *declNode);
   [[nodiscard]] static MatchResult matchManifestation(Function &candidate, Scope *&matchScope, const std::string &reqName,
-                                                      const Type &reqThisType, const ArgList &reqArgs, TypeMapping &typeMapping,
-                                                      bool strictSpecifierMatching, bool &forceSubstantiation,
-                                                      const ASTNode *callNode);
+                                                      const QualType &reqThisType, const ArgList &reqArgs,
+                                                      TypeMapping &typeMapping, bool strictSpecifierMatching,
+                                                      bool &forceSubstantiation, const ASTNode *callNode);
   [[nodiscard]] static bool matchName(const Function &candidate, const std::string &reqName);
-  [[nodiscard]] static bool matchThisType(Function &candidate, const Type &reqThisType, TypeMapping &typeMapping,
+  [[nodiscard]] static bool matchThisType(Function &candidate, const QualType &reqThisType, TypeMapping &typeMapping,
                                           bool strictSpecifierMatching);
   [[nodiscard]] static bool matchArgTypes(Function &candidate, const ArgList &reqArgs, TypeMapping &typeMapping,
                                           bool strictSpecifierMatching, bool &needsSubstantiation, const ASTNode *callNode);

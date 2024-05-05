@@ -37,7 +37,7 @@ public:
   // Public members
   std::string name;
   std::vector<GenericType> templateTypes;
-  std::unordered_map<std::string, Type> typeMapping;
+  TypeMapping typeMapping;
   SymbolTableEntry *entry = nullptr;
   Scope *scope = nullptr;
   ASTNode *declNode;

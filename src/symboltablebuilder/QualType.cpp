@@ -10,6 +10,7 @@ namespace spice::compiler {
 
 QualType::QualType(Type t) : type(std::make_unique<Type>(std::move(t))) /*, specifiers(this->type->specifiers)*/ {}
 QualType::QualType(SuperType superType) : type(std::make_unique<Type>(superType)) {}
+QualType::QualType(SuperType superType, const std::string &subtype) : type(std::make_unique<Type>(superType, subtype)) {}
 QualType::QualType(Type t, TypeSpecifiers specifiers) : type(std::make_unique<Type>(std::move(t))) /*, specifiers(specifiers)*/ {}
 
 // ToDo: Delete those two later on
@@ -52,7 +53,7 @@ void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic
  * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
-std::string QualType::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
+std::string QualType::getName(bool withSize, bool ignorePublic) const {
   std::stringstream name;
   getName(name, withSize, ignorePublic);
   return name.str();
@@ -62,9 +63,9 @@ bool QualType::is(SuperType superType) const { return type->is(superType); }
 
 bool QualType::isOneOf(const std::initializer_list<SuperType> &superTypes) const { return type->isOneOf(superTypes); }
 
-bool QualType::isBaseType(SuperType superType) const { return type->isBaseType(superType); }
+bool QualType::isBase(SuperType superType) const { return type->isBase(superType); }
 
-QualType QualType::getBaseType() const { return type->getBaseType(); }
+QualType QualType::getBase() const { return type->getBase(); }
 
 void QualType::setType(const Type &newType) { type = std::make_unique<Type>(newType); }
 
@@ -125,16 +126,22 @@ void QualType::makeHeap(bool isHeap) {
 }
 
 bool QualType::isPtr() const { return type->isPtr(); }
+
+bool QualType::isPtrTo(SuperType superType) const { return isPtr() && getContained().is(superType); }
+
 bool QualType::isRef() const { return type->isRef(); }
+
+bool QualType::isRefTo(SuperType superType) const { return isRef() && getContained().is(superType); }
+
 bool QualType::isArray() const { return type->isArray(); }
 
-bool QualType::isConstRef() const { return isConst() && type->isRef(); }
+bool QualType::isArrayOf(SuperType superType) const { return isArray() && getContained().is(superType); }
 
-QualType QualType::toNonConst() const {
-  QualType qualType = *this;
-  qualType.type->specifiers.isConst = false;
-  return qualType;
-}
+bool QualType::isConstRef() const { return isConst() && isRef(); }
+
+SuperType QualType::getSuperType() const { return type->getSuperType(); }
+
+const std::string &QualType::getSubType() const { return type->getSubType(); }
 
 /**
  * Check if a certain input type can be bound (assigned) to the current type->
@@ -166,23 +173,40 @@ bool QualType::matches(const QualType &otherType, bool ignoreArraySize, bool ign
   return ignoreSpecifiers || type->specifiers.match(otherType.type->specifiers, allowConstify);
 }
 
-QualType QualType::toPtr(const ASTNode *node) const {
-  return {type->toPointer(node)};
+/**
+ * Convert the type to an LLVM type
+ *
+ * @param context LLVM context
+ * @param accessScope Access scope
+ * @return LLVM type
+ */
+llvm::Type *QualType::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const {
+  return type->toLLVMType(context, accessScope);
 }
 
-QualType QualType::toRef(const ASTNode *node) const {
-  return {type->toReference(node)};
+QualType QualType::toPtr(const ASTNode *node) const { return {type->toPointer(node)}; }
+
+QualType QualType::toRef(const ASTNode *node) const { return {type->toReference(node)}; }
+
+QualType QualType::toArray(const ASTNode *node, size_t size, bool skipDynCheck /*=false*/) const {
+  return {type->toArray(node, size, skipDynCheck)};
 }
 
-QualType QualType::toArray(const ASTNode *node, size_t size) const {
-  return {type->toArray(node, size)};
+QualType QualType::toNonConst() const {
+  QualType qualType = *this;
+  qualType.type->specifiers.isConst = false;
+  return qualType;
 }
+
+QualType QualType::toConstRef(const ASTNode *node) const { return {type->toConstReference(node)}; }
+
+QualType QualType::getContained() const { return {type->getContainedTy()}; }
 
 bool operator==(const QualType &lhs, const QualType &rhs) { return *lhs.type == *rhs.type; }
 
 bool operator!=(const QualType &lhs, const QualType &rhs) { return !(lhs == rhs); }
 
-QualType QualType::removeReferenceWrapper() const { return isRef() ? QualType(type->getContainedTy()) : *this; }
+QualType QualType::removeReferenceWrapper() const { return isRef() ? getContained() : *this; }
 
 /**
  * Replace the base type with another one

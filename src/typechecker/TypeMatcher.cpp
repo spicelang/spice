@@ -40,8 +40,8 @@ bool TypeMatcher::matchRequestedToCandidateType(Type candidateType, Type request
   }
 
   // Check if the candidate type itself is generic
-  if (candidateType.isBaseType(TY_GENERIC)) { // The candidate type itself is generic
-    const std::string genericTypeName = candidateType.getBaseType().getSubType();
+  if (candidateType.isBase(TY_GENERIC)) { // The candidate type itself is generic
+    const std::string genericTypeName = candidateType.getBase().getSubType();
 
     // Check if we know the concrete type for that generic type name already
     if (typeMapping.contains(genericTypeName)) { // This is a known generic type
@@ -115,13 +115,13 @@ void TypeMatcher::substantiateTypeWithTypeMapping(Type &type, const TypeMapping 
   assert(type.hasAnyGenericParts());
 
   // Check if the type itself is generic
-  if (type.isBaseType(TY_GENERIC)) { // The symbol type itself is generic
-    const std::string genericTypeName = type.getBaseType().getSubType();
+  if (type.isBase(TY_GENERIC)) { // The symbol type itself is generic
+    const std::string genericTypeName = type.getBase().getSubType();
     assert(typeMapping.contains(genericTypeName));
     const Type &replacementType = typeMapping.at(genericTypeName);
     type = type.replaceBaseType(replacementType);
   } else { // The symbol type itself is non-generic, but one or several template or param types are
-    if (type.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    if (type.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
       // Substantiate each param type
       std::vector<QualType> paramTypes = type.getFunctionParamAndReturnTypes();
       for (QualType &paramType : paramTypes)
@@ -131,7 +131,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(Type &type, const TypeMapping 
       type.setFunctionParamAndReturnTypes(paramTypes);
     } else {
       // Substantiate each template type
-      std::vector<QualType> templateTypes = type.getBaseType().getTemplateTypes();
+      std::vector<QualType> templateTypes = type.getBase().getTemplateTypes();
       for (QualType &templateType : templateTypes)
         if (templateType.getType().hasAnyGenericParts())
           substantiateTypeWithTypeMapping(templateType.getType(), typeMapping);

@@ -282,7 +282,7 @@ llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) con
       std::vector<llvm::Type *> fieldTypes;
       bool isPacked = false;
       if (is(TY_STRUCT)) { // Struct
-        Struct *spiceStruct = structSymbol->getType().getStruct(structSymbol->declNode);
+        Struct *spiceStruct = structSymbol->getQualType().getType().getStruct(structSymbol->declNode);
         assert(spiceStruct != nullptr);
         const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
         structType = llvm::StructType::create(context, mangledName);
@@ -301,14 +301,14 @@ llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) con
         for (size_t i = 0; i < totalFieldCount; i++) {
           const SymbolTableEntry *fieldSymbol = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
           assert(fieldSymbol != nullptr);
-          fieldTypes.push_back(fieldSymbol->getType().toLLVMType(context, accessScope));
+          fieldTypes.push_back(fieldSymbol->getQualType().toLLVMType(context, accessScope));
         }
 
         // Check if the struct is declared as packed
         if (structDeclNode->attrs() && structDeclNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_PACKED))
           isPacked = structDeclNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
       } else { // Interface
-        Interface *spiceInterface = structSymbol->getType().getInterface(structSymbol->declNode);
+        Interface *spiceInterface = structSymbol->getQualType().getType().getInterface(structSymbol->declNode);
         assert(spiceInterface != nullptr);
         const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
         structType = llvm::StructType::create(context, mangledName);
@@ -412,7 +412,7 @@ bool Type::implements(const Type &symbolType, const ASTNode *node) const {
  * @param superType Super type to check for
  * @return Applicable or not
  */
-bool Type::isBaseType(SuperType superType) const {
+bool Type::isBase(SuperType superType) const {
   assert(!typeChain.empty());
   return typeChain.front().superType == superType;
 }
@@ -433,7 +433,7 @@ bool Type::isSameContainerTypeAs(const Type &otherType) const {
  *
  * @return Base type
  */
-Type Type::getBaseType() const {
+Type Type::getBase() const {
   assert(!typeChain.empty());
   return Type({typeChain.front()}, specifiers);
 }
@@ -444,7 +444,7 @@ Type Type::getBaseType() const {
  * @return Contains generic parts or not
  */
 bool Type::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
-  const Type &baseType = getBaseType();
+  const Type &baseType = getBase();
 
   // Check if the type itself is generic
   if (baseType.is(TY_GENERIC))
@@ -477,7 +477,7 @@ void Type::setTemplateTypes(const std::vector<QualType> &templateTypes) {
  * Set the list of templates types of the base type
  */
 void Type::setBaseTemplateTypes(const std::vector<QualType> &templateTypes) {
-  assert(getBaseType().isOneOf({TY_STRUCT, TY_INTERFACE}));
+  assert(getBase().isOneOf({TY_STRUCT, TY_INTERFACE}));
   typeChain.front().templateTypes = templateTypes;
 }
 
@@ -495,11 +495,11 @@ const std::vector<QualType> &Type::getTemplateTypes() const { return typeChain.b
  * @return Has substantiation or not
  */
 bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const {
-  const Type baseType = getBaseType();
+  const Type baseType = getBase();
   // Check if the symbol type itself is generic
   if (baseType.is(TY_GENERIC)) {
     return std::ranges::any_of(genericTypeList, [&](GenericType &t) {
-      if (baseType.matches(t, true, true, true)) {
+      if (baseType.matches(t.getType(), true, true, true)) {
         t.used = true;
         return true;
       }
@@ -511,8 +511,8 @@ bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList)
   bool covered = true;
   // Check template types
   const std::vector<QualType> &baseTemplateTypes = baseType.getTemplateTypes();
-  covered &= std::ranges::all_of(
-      baseTemplateTypes, [&](const Type &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); });
+  auto lambda = [&](const QualType &templateType) { return templateType.getType().isCoveredByGenericTypeList(genericTypeList); };
+  covered &= std::ranges::all_of(baseTemplateTypes, lambda);
 
   // If function/procedure, check param and return types
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
@@ -533,7 +533,7 @@ bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList)
  */
 void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
   // Append the specifiers
-  const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBaseType().getSuperType());
+  const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBase().getSuperType());
   if (!ignorePublic && specifiers.isPublic && !defaultForSuperType.isPublic)
     name << "public ";
   if (specifiers.isInline && !defaultForSuperType.isInline)
@@ -561,7 +561,7 @@ void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic) co
  * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
-std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
+std::string Type::getName(bool withSize, bool ignorePublic) const {
   std::stringstream name;
   getName(name, withSize, ignorePublic);
   return name.str();
@@ -625,7 +625,7 @@ std::vector<QualType> Type::getFunctionParamTypes() const {
  * @param hasCaptures Has captures
  */
 void Type::setHasLambdaCaptures(bool hasCaptures) {
-  assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  assert(getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   typeChain.front().data.hasCaptures = hasCaptures;
 }
 
@@ -635,7 +635,7 @@ void Type::setHasLambdaCaptures(bool hasCaptures) {
  * @return Has captures
  */
 bool Type::hasLambdaCaptures() const {
-  assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  assert(getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   return typeChain.front().data.hasCaptures;
 }
 
@@ -645,7 +645,7 @@ bool Type::hasLambdaCaptures() const {
  * @param newParamAndReturnTypes Function param and return types (first is return type, rest are param types)
  */
 void Type::setFunctionParamAndReturnTypes(const std::vector<QualType> &newParamAndReturnTypes) {
-  assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  assert(getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   typeChain.front().paramTypes = newParamAndReturnTypes;
 }
 
@@ -655,7 +655,7 @@ void Type::setFunctionParamAndReturnTypes(const std::vector<QualType> &newParamA
  * @return Function param and return types (first is return type, rest are param types)
  */
 const std::vector<QualType> &Type::getFunctionParamAndReturnTypes() const {
-  assert(getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  assert(getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   return typeChain.front().paramTypes;
 }
 
@@ -766,7 +766,7 @@ void Type::unwrapBoth(Type &typeA, Type &typeB) {
     typeA = typeA.removeReferenceWrapper();
 
   // Remove reference wrapper of requested type if required
-  if (!typeA.isRef() && typeB.isRef() && !typeA.getBaseType().is(TY_GENERIC))
+  if (!typeA.isRef() && typeB.isRef() && !typeA.getBase().is(TY_GENERIC))
     typeB = typeB.removeReferenceWrapper();
 
   // Unwrap both types as far as possible

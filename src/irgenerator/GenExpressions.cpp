@@ -22,8 +22,8 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       return doAssignment(lhsNode, rhsNode);
     } else { // Compound assignment
       // Get symbol types of left and right side
-      const Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
-      const Type rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
+      const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+      const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
 
       // Retrieve rhs
       auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
@@ -230,14 +230,14 @@ std::any IRGenerator::visitBitwiseOrExpr(const BitwiseOrExprNode *node) {
   // It is a bitwise or expression
   // Evaluate first operand
   BitwiseXorExprNode *lhsNode = node->operands().front();
-  const Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands().size(); i++) {
     // Evaluate the operand
     BitwiseXorExprNode *rhsNode = node->operands()[i];
-    const Type rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+    const QualType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseOrInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
   }
@@ -256,14 +256,14 @@ std::any IRGenerator::visitBitwiseXorExpr(const BitwiseXorExprNode *node) {
   // It is a bitwise xor expression
   // Evaluate first operand
   BitwiseAndExprNode *lhsNode = node->operands().front();
-  const Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands().size(); i++) {
     // Evaluate the operand
     BitwiseAndExprNode *rhsNode = node->operands()[i];
-    const Type rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+    const QualType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseXorInst(node, result, lhsSTy, rhs, rhsSTy, currentScope);
   }
@@ -282,14 +282,14 @@ std::any IRGenerator::visitBitwiseAndExpr(const BitwiseAndExprNode *node) {
   // It is a bitwise and expression
   // Evaluate first operand
   EqualityExprNode *lhsNode = node->operands().front();
-  const Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate all additional operands
   for (size_t i = 1; i < node->operands().size(); i++) {
     // Evaluate the operand
     EqualityExprNode *rhsNode = node->operands()[i];
-    const Type rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+    const QualType rhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
     result = conversionManager.getBitwiseAndInst(rhsNode, result, lhsSTy, rhs, rhsSTy, currentScope, i - 1);
   }
@@ -308,12 +308,12 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
   // It is an equality expression
   // Evaluate lhs
   RelationalExprNode *lhsNode = node->operands()[0];
-  const Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
   RelationalExprNode *rhsNode = node->operands()[1];
-  const Type rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
   // Retrieve the result value, based on the exact operator
@@ -342,12 +342,12 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
   // It is a relational expression
   // Evaluate lhs
   ShiftExprNode *lhsNode = node->operands()[0];
-  const Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
   ShiftExprNode *rhsNode = node->operands()[1];
-  const Type rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
   // Retrieve the result value, based on the exact operator
@@ -382,12 +382,12 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
   // It is a shift expression
   // Evaluate lhs
   AdditiveExprNode *lhsNode = node->operands()[0];
-  const Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   // Evaluate rhs
   AdditiveExprNode *rhsNode = node->operands()[1];
-  const Type rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
   // Retrieve the result value, based on the exact operator
@@ -416,7 +416,7 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
   // It is an additive expression
   // Evaluate first operand
   MultiplicativeExprNode *lhsNode = node->operands()[0];
-  Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   auto opQueue = node->opQueue;
@@ -426,7 +426,7 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
     // Evaluate next operand
     MultiplicativeExprNode *rhsNode = node->operands()[operandIndex++];
     assert(rhsNode != nullptr);
-    const Type rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
+    const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
     // Retrieve the result, based on the exact operator
@@ -461,7 +461,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
   // It is an additive expression
   // Evaluate first operand
   CastExprNode *lhsNode = node->operands()[0];
-  Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto result = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   auto opQueue = node->opQueue;
@@ -471,7 +471,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
     // Evaluate next operand
     CastExprNode *rhsNode = node->operands()[operandIndex++];
     assert(rhsNode != nullptr);
-    const Type rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
+    const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
     auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
     // Retrieve the result, based on the exact operator
@@ -507,11 +507,11 @@ std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
 
   // It is a cast expression
   // Retrieve target symbol type
-  const Type targetSTy = node->getEvaluatedSymbolType(manIdx);
+  const QualType targetSTy = node->getEvaluatedSymbolType(manIdx);
 
   // Evaluate rhs
   PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr();
-  const Type rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
   // Retrieve the result value
@@ -530,7 +530,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
   // Evaluate lhs
   PrefixUnaryExprNode *lhsNode = node->prefixUnary();
-  Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   switch (node->op) {
@@ -656,7 +656,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
   // Evaluate lhs
   PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
-  Type lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
+  QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
   switch (node->op) {
@@ -664,13 +664,13 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     lhsSTy = lhsSTy.removeReferenceWrapper();
 
     // Get the LLVM type of the operand
-    llvm::Type *lhsTy = lhsSTy.toLLVMType(context, currentScope);
+    llvm::Type *lhsTy = lhsSTy.getType().toLLVMType(context, currentScope);
 
     // Get the index value
     AssignExprNode *indexExpr = node->assignExpr();
     llvm::Value *indexValue = resolveValue(indexExpr);
     // Come up with the address
-    if (lhsSTy.isArray() && lhsSTy.getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array
+    if (lhsSTy.isArray() && lhsSTy.getType().getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array
       // Make sure the address is present
       resolveAddress(lhs);
 
@@ -685,7 +685,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       // Now the pointer is the value
       lhs.ptr = lhs.value;
 
-      lhsTy = lhsSTy.getContainedTy().toLLVMType(context, currentScope);
+      lhsTy = lhsSTy.getContained().toLLVMType(context, currentScope);
       // Calculate address of pointer item
       lhs.ptr = insertInBoundsGEP(lhsTy, lhs.ptr, indexValue);
     }
@@ -706,20 +706,20 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
     // Retrieve struct scope
     const std::string &fieldName = node->identifier;
-    Scope *structScope = lhsSTy.getBodyScope();
+    Scope *structScope = lhsSTy.getType().getBodyScope();
 
     // Retrieve field entry
     std::vector<size_t> indexPath;
     lhs.entry = structScope->symbolTable.lookupInComposedFields(fieldName, indexPath);
     assert(lhs.entry != nullptr);
-    Type fieldSymbolType = lhs.entry->getType();
+    QualType fieldSymbolType = lhs.entry->getQualType();
 
     // Get address of the field in the struct instance
     std::vector<llvm::Value *> indices = {builder.getInt32(0)};
     for (size_t index : indexPath)
       indices.push_back(builder.getInt32(index));
     const std::string name = fieldName + "_addr";
-    llvm::Value *memberAddr = insertInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices, name);
+    llvm::Value *memberAddr = insertInBoundsGEP(lhsSTy.getType().toLLVMType(context, structScope->parent), lhs.ptr, indices, name);
 
     // Set as ptr or refPtr, depending on the type
     if (fieldSymbolType.isRef()) {
@@ -825,8 +825,8 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   assert(varEntry != nullptr);
   Scope *accessScope = data.accessScope;
   assert(accessScope != nullptr);
-  Type varSymbolType = varEntry->getType();
-  llvm::Type *varType = varSymbolType.toLLVMType(context, accessScope);
+  QualType varSymbolType = varEntry->getQualType();
+  llvm::Type *varType = varSymbolType.getType().toLLVMType(context, accessScope);
 
   // Check if external global variable
   if (varEntry->global && accessScope->isImportedBy(rootScope)) {

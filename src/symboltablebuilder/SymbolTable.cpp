@@ -44,7 +44,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
  * @param declNode AST node where the anonymous symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *SymbolTable::insertAnonymous(const Type &type, ASTNode *declNode, size_t numericSuffix) {
+SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &type, ASTNode *declNode, size_t numericSuffix) {
   // Check if the anonymous entry already exists
   if (SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc, numericSuffix))
     return anonSymbol;
@@ -97,7 +97,7 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-
       return nullptr;
 
     // Check if this scope requires capturing and capture the variable if appropriate
-    if (capturingRequired && !captures.contains(name) && !entry->getType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE})) {
+    if (capturingRequired && !captures.contains(name) && !entry->getQualType().isOneOf({TY_IMPORT, TY_FUNCTION, TY_PROCEDURE})) {
       // We need to make the symbol volatile if we are in an async scope and try to access a symbol that is not in an async scope
       entry->isVolatile = scope->isInAsyncScope() && !entry->scope->isInAsyncScope();
       // Add the capture to the current scope
@@ -150,14 +150,14 @@ SymbolTableEntry *SymbolTable::lookupInComposedFields(const std::string &name, /
     const SymbolTableEntry *fieldEntry = lookupStrictByIndex(i);
 
     // Skip all fields that are not composition fields
-    if (!fieldEntry->getType().specifiers.isComposition)
+    if (!fieldEntry->getQualType().getType().specifiers.isComposition)
       continue;
 
     // Add the current field's order index to the index path
     indexPath.push_back(fieldEntry->orderIndex);
 
     // Search in the composed field's body scope
-    Scope *searchScope = fieldEntry->getType().getBodyScope();
+    Scope *searchScope = fieldEntry->getQualType().getType().getBodyScope();
     assert(searchScope != nullptr);
     if (SymbolTableEntry *result = searchScope->symbolTable.lookupInComposedFields(name, indexPath))
       return result;

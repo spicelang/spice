@@ -124,9 +124,9 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
       substantiatedStruct->scope->isGenericScope = false;
 
       // Attach the template types to the new struct entry
-      Type entryType = substantiatedStruct->entry->getType();
-      entryType.setTemplateTypes(substantiatedStruct->getTemplateTypes());
-      entryType.setBodyScope(substantiatedStruct->scope);
+      QualType entryType = substantiatedStruct->entry->getQualType();
+      entryType.getType().setTemplateTypes(substantiatedStruct->getTemplateTypes());
+      entryType.getType().setBodyScope(substantiatedStruct->scope);
       substantiatedStruct->entry->updateType(entryType, true);
 
       // Replace symbol types of field entries with concrete types
@@ -138,10 +138,10 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
         SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
         assert(fieldEntry != nullptr && fieldEntry->isField());
         QualType &fieldType = substantiatedStruct->fieldTypes.at(i);
-        QualType baseType = fieldType.getBaseType();
+        QualType baseType = fieldType.getBase();
 
         // Set the body scope of fields that are of type <candidate-struct>*
-        if (baseType.matches(substantiatedStruct->entry->getType(), false, true, true)) {
+        if (baseType.matches(substantiatedStruct->entry->getQualType(), false, true, true)) {
           baseType.getType().setBodyScope(substantiatedStruct->scope);
           fieldType = fieldType.replaceBaseType(baseType);
         }
@@ -166,10 +166,10 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
         // Instantiate interface
         Scope *interfaceMatchScope = interfaceType.getType().getBodyScope()->parent;
         Interface *spiceInterface =
-            InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getType().getSubType(), templateTypes, node);
+            InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getSubType(), templateTypes, node);
         assert(spiceInterface != nullptr);
 
-        interfaceType = spiceInterface->entry->getType();
+        interfaceType = spiceInterface->entry->getQualType();
       }
 
       // Add to matched structs
@@ -219,15 +219,15 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Qual
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
     const QualType &reqType = reqTemplateTypes.at(i);
-    Type &candidateType = candidate.templateTypes.at(i);
+    QualType &candidateType = candidate.templateTypes.at(i);
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false))
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
-    if (candidateType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping);
+    if (candidateType.getType().hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateType.getType(), typeMapping);
   }
 
   return true;
@@ -244,9 +244,9 @@ void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeM
   const size_t fieldCount = candidate.scope->getFieldCount() - candidate.fieldTypes.size();
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldEntry = candidate.scope->symbolTable.lookupStrictByIndex(i);
-    Type fieldType = fieldEntry->getType();
-    if (fieldType.hasAnyGenericParts()) {
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
+    QualType fieldType = fieldEntry->getQualType();
+    if (fieldType.getType().hasAnyGenericParts()) {
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType.getType(), typeMapping);
       fieldEntry->updateType(fieldType, true);
     }
   }
