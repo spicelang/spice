@@ -8,11 +8,10 @@
 
 namespace spice::compiler {
 
-QualType::QualType(Type t) : type(std::make_unique<Type>(std::move(t))), specifiers(TypeSpecifiers::of(t.getSuperType())) {}
 QualType::QualType(SuperType superType) : type(std::make_unique<Type>(superType)), specifiers(TypeSpecifiers::of(superType)) {}
 QualType::QualType(SuperType superType, const std::string &subType)
     : type(std::make_unique<Type>(superType, subType)), specifiers(TypeSpecifiers::of(superType)) {}
-QualType::QualType(Type t, TypeSpecifiers specifiers) : type(std::make_unique<Type>(std::move(t))), specifiers(specifiers) {}
+QualType::QualType(const Type &t, TypeSpecifiers specifiers) : type(std::make_unique<Type>(t)), specifiers(specifiers) {}
 
 // ToDo: Delete those two later on
 QualType::QualType(const QualType &other) {

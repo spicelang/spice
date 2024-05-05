@@ -116,7 +116,7 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
     QualType lhsTypeCopy = lhsType;
     QualType rhsTypeCopy = rhsType;
     QualType::unwrapBoth(lhsTypeCopy, rhsTypeCopy);
-    if (lhsTypeCopy.getType().matchesInterfaceImplementedByStruct(rhsTypeCopy))
+    if (lhsTypeCopy.getType().matchesInterfaceImplementedByStruct(rhsTypeCopy.getType()))
       return lhsType;
   }
 

@@ -20,8 +20,6 @@ namespace spice::compiler {
 
 Type::Type(SuperType superType) : typeChain({TypeChainElement{superType}}) {}
 
-Type::Type(const QualType &qualType) : typeChain(qualType.getType().typeChain) {}
-
 Type::Type(SuperType superType, const std::string &subType) : typeChain({TypeChainElement{superType, subType}}) {}
 
 Type::Type(SuperType superType, const std::string &subType, uint64_t typeId, const Type::TypeChainElementData &data,
@@ -209,7 +207,7 @@ const Type *Type::replaceBase(const Type &newBaseType) const {
 
   // Create new type
   Type newType = *this;
-  TypeChain &newTypeChain = newType.typeChain;
+  TypeChain newTypeChain = newBaseType.typeChain;
   const bool doubleRef = newTypeChain.back().superType == TY_REF && typeChain.back().superType == TY_REF;
   for (size_t i = 1; i < typeChain.size(); i++)
     if (!doubleRef || i > 1)
@@ -381,9 +379,9 @@ bool Type::implements(const Type &symbolType, const ASTNode *node) const {
   assert(is(TY_STRUCT) && symbolType.is(TY_INTERFACE));
   Struct *spiceStruct = getStruct(node);
   assert(spiceStruct != nullptr);
-  return std::ranges::any_of(spiceStruct->interfaceTypes, [&](const Type &interfaceType) {
+  return std::ranges::any_of(spiceStruct->interfaceTypes, [&](const QualType &interfaceType) {
     assert(interfaceType.is(TY_INTERFACE));
-    return symbolType.matches(interfaceType, false, false, true);
+    return symbolType.matches(interfaceType.getType(), false, false, true);
   });
 }
 
@@ -436,13 +434,13 @@ bool Type::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
 
   // Check if the type has generic template types
   const auto templateTypes = baseType.getTemplateTypes();
-  if (std::ranges::any_of(templateTypes, [](const Type &t) { return t.hasAnyGenericParts(); }))
+  if (std::ranges::any_of(templateTypes, [](const QualType &t) { return t.hasAnyGenericParts(); }))
     return true;
 
   // Check param and return types or functions/procedures
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
     const auto paramTypes = baseType.getFunctionParamAndReturnTypes();
-    if (std::ranges::any_of(paramTypes, [](const Type &t) { return t.hasAnyGenericParts(); }))
+    if (std::ranges::any_of(paramTypes, [](const QualType &t) { return t.hasAnyGenericParts(); }))
       return true;
   }
 
@@ -501,8 +499,9 @@ bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList)
   // If function/procedure, check param and return types
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
     const std::vector<QualType> &paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
-    covered &= std::ranges::all_of(paramAndReturnTypes,
-                                   [&](const Type &paramType) { return paramType.isCoveredByGenericTypeList(genericTypeList); });
+    covered &= std::ranges::all_of(paramAndReturnTypes, [&](const QualType &paramType) {
+      return paramType.getType().isCoveredByGenericTypeList(genericTypeList);
+    });
   }
 
   return covered;
@@ -704,7 +703,7 @@ bool Type::matchesInterfaceImplementedByStruct(const Type &otherType) const {
   // Check if the rhs is a struct type that implements the lhs interface type
   const Struct *spiceStruct = otherType.getStruct(nullptr);
   assert(spiceStruct != nullptr);
-  const auto pred = [&](const Type &interfaceType) { return matches(interfaceType, false, false, true); };
+  const auto pred = [&](const QualType &interfaceType) { return matches(interfaceType.getType(), false, false, true); };
   return std::ranges::any_of(spiceStruct->interfaceTypes, pred);
 }
 

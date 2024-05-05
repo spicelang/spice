@@ -23,10 +23,9 @@ class QualType {
 public:
   // Constructors
   QualType() = default;
-  [[deprecated]] /*ToDo: explicit*/ QualType(Type type);
   explicit QualType(SuperType superType);
   QualType(SuperType superType, const std::string &subType);
-  QualType(Type type, TypeSpecifiers specifiers);
+  QualType(const Type &type, TypeSpecifiers specifiers);
 
   // ToDo: Remove those later on
   QualType(const QualType &other);

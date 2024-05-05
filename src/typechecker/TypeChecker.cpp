@@ -1228,7 +1228,7 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   // Get result type
   QualType resultType = opRuleManager.getCastResultType(node, dstType, src);
 
-  SymbolTableEntry *entry = src.type.getType().isSameContainerTypeAs(dstType) ? src.entry : nullptr;
+  SymbolTableEntry *entry = src.type.isSameContainerTypeAs(dstType) ? src.entry : nullptr;
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx), entry};
 }
 

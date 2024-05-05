@@ -146,8 +146,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       const QualType &expectedSTy = paramSTypes.at(i);
       const QualType &actualSTy = argNode->getEvaluatedSymbolType(manIdx);
 
-      const auto matchFct = [](const Type &lhsTy, const Type &rhsTy) {
-        return lhsTy.matches(rhsTy, false, true, true) || lhsTy.matchesInterfaceImplementedByStruct(rhsTy);
+      const auto matchFct = [](const QualType &lhsTy, const QualType &rhsTy) {
+        return lhsTy.matches(rhsTy, false, true, true) || lhsTy.getType().matchesInterfaceImplementedByStruct(rhsTy.getType());
       };
 
       // If the arrays are both of size -1 or 0, they are both pointers and do not need to be cast implicitly

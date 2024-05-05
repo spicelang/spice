@@ -101,13 +101,11 @@ public:
   using TypeChain = std::vector<TypeChainElement>;
 
   // Constructors
-  Type() = default;
   explicit Type(SuperType superType);
-  [[deprecated]] Type(const QualType &qualType); // ToDo: Remove
+  explicit Type(TypeChain types);
   Type(SuperType superType, const std::string &subType);
   Type(SuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
              const std::vector<QualType> &templateTypes);
-  explicit Type(TypeChain types);
 
   // Public methods
   [[nodiscard]] [[deprecated]] Type toPointer(const ASTNode *node) const;
