@@ -15,13 +15,13 @@ namespace spice::compiler {
 // Typedefs
 using TypeMapping = std::unordered_map</*typeName=*/std::string, /*concreteType=*/QualType>;
 
-class GenericType : public Type {
+class GenericType : public QualType {
 public:
   // Constructors
-  explicit GenericType(const Type &type) : Type(type){};
-  explicit GenericType(const std::string &name) : Type(TY_GENERIC, name) {}
+  explicit GenericType(const QualType &type) : QualType(type){};
+  explicit GenericType(const std::string &name) : QualType(TY_GENERIC, name) {}
   GenericType(const std::string &name, const std::vector<QualType> &typeConditions)
-      : Type(TY_GENERIC, name), typeConditions(typeConditions) {}
+      : QualType(TY_GENERIC, name), typeConditions(typeConditions) {}
   GenericType() = default;
 
   // Public methods

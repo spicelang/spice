@@ -181,15 +181,15 @@ bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vecto
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
     const QualType &reqType = reqTemplateTypes.at(i);
-    Type &candidateType = candidate.templateTypes.at(i);
+    QualType &candidateType = candidate.templateTypes.at(i);
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
     if (!TypeMatcher::matchRequestedToCandidateType(candidateType, reqType, typeMapping, genericTypeResolver, false))
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
-    if (candidateType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping);
+    if (candidateType.getType().hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateType.getType(), typeMapping);
   }
 
   return true;

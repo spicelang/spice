@@ -25,6 +25,7 @@ public:
   QualType() = default;
   [[deprecated]] /*ToDo: explicit*/ QualType(Type type);
   explicit QualType(SuperType superType);
+  QualType(SuperType superType, const std::string &subtype);
   QualType(Type type, TypeSpecifiers specifiers);
 
   // ToDo: Remove those later on
@@ -65,6 +66,7 @@ public:
   [[nodiscard]] bool isArrayOf(SuperType superType) const;
   [[nodiscard]] bool isConstRef() const;
   [[nodiscard]] SuperType getSuperType() const;
+  [[nodiscard]] const std::string &getSubType() const;
   [[nodiscard]] bool canBind(const QualType &otherType, bool isTemporary) const;
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;

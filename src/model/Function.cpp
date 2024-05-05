@@ -70,7 +70,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
 
   // Build this type string
   if (withThisType && !thisType.is(TY_DYN)) {
-    signature << thisType.getBase().getType().getSubType();
+    signature << thisType.getBase().getSubType();
     const std::vector<QualType> &thisTemplateTypes = thisType.getType().getTemplateTypes();
     if (!thisTemplateTypes.empty()) {
       signature << "<";

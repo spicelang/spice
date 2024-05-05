@@ -10,6 +10,7 @@ namespace spice::compiler {
 
 QualType::QualType(Type t) : type(std::make_unique<Type>(std::move(t))) /*, specifiers(this->type->specifiers)*/ {}
 QualType::QualType(SuperType superType) : type(std::make_unique<Type>(superType)) {}
+QualType::QualType(SuperType superType, const std::string &subtype) : type(std::make_unique<Type>(superType, subtype)) {}
 QualType::QualType(Type t, TypeSpecifiers specifiers) : type(std::make_unique<Type>(std::move(t))) /*, specifiers(specifiers)*/ {}
 
 // ToDo: Delete those two later on
@@ -139,6 +140,8 @@ bool QualType::isArrayOf(SuperType superType) const { return isArray() && getCon
 bool QualType::isConstRef() const { return isConst() && isRef(); }
 
 SuperType QualType::getSuperType() const { return type->getSuperType(); }
+
+const std::string &QualType::getSubType() const { return type->getSubType(); }
 
 /**
  * Check if a certain input type can be bound (assigned) to the current type->

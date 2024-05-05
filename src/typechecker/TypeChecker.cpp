@@ -472,7 +472,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
         return static_cast<std::vector<Function *> *>(nullptr);
       }
       // Convert generic symbol type to generic type
-      GenericType *genericType = rootScope->lookupGenericType(templateType.getType().getSubType());
+      GenericType *genericType = rootScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -575,8 +575,8 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       }
 
       // If this is a struct type, check if the type is known. If not, error out
-      if (localVarType.isBase(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBase().getType().getSubType())) {
-        const std::string structName = localVarType.getBase().getType().getSubType();
+      if (localVarType.isBase(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBase().getSubType())) {
+        const std::string structName = localVarType.getBase().getSubType();
         softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
         localVarType = QualType(TY_UNRESOLVED);
       }
@@ -599,7 +599,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       auto structDeclNode = spice_pointer_cast<StructDefNode *>(localVarType.getType().getStruct(node)->declNode);
       node->isCtorCallRequired = matchScope->hasRefFields() || structDeclNode->emitVTable;
       // Check if we have a no-args ctor to call
-      const std::string &structName = localVarType.getType().getSubType();
+      const std::string &structName = localVarType.getSubType();
       const QualType &thisType = localVarType;
       node->calledInitCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
       if (!node->calledInitCtor && node->isCtorCallRequired)
@@ -1360,7 +1360,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
       SOFT_ERROR_ER(node, INVALID_MEMBER_ACCESS, "Cannot apply member access operator on " + lhsType.getName(false))
 
     // Retrieve registry entry
-    const std::string &structName = lhsBaseTy.getType().getSubType();
+    const std::string &structName = lhsBaseTy.getSubType();
     Scope *structScope = lhsBaseTy.getType().getBodyScope();
 
     // If we only have the generic struct scope, lookup the concrete manifestation scope
@@ -1522,7 +1522,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Retrieve scope for the new scope path fragment
   if (baseType.is(TY_STRUCT)) {
     // Set access scope to struct scope
-    const std::string &structName = baseType.getType().getSubType();
+    const std::string &structName = baseType.getSubType();
     const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(structName);
     assert(nameRegistryEntry != nullptr);
 
@@ -1661,7 +1661,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     assert(aliasedTypeContainerEntry != nullptr);
     // Set alias entry used
     aliasEntry->used = true;
-    fqFunctionName = aliasedTypeContainerEntry->getType().getSubType();
+    fqFunctionName = aliasedTypeContainerEntry->getQualType().getSubType();
   }
 
   // Get the concrete template types
@@ -1769,7 +1769,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   SymbolTableEntry *anonymousSymbol = nullptr;
   if (returnType.isBase(TY_STRUCT)) {
     QualType returnBaseType = returnType.getBase();
-    const std::string structName = returnBaseType.getType().getSubType();
+    const std::string structName = returnBaseType.getSubType();
     Scope *matchScope = returnBaseType.getType().getBodyScope()->parent;
     assert(matchScope != nullptr);
     Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getType().getTemplateTypes(), node);
@@ -1971,13 +1971,13 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   std::string structName = node->fqStructName;
   SymbolTableEntry *aliasEntry = rootScope->lookupStrict(structName);
   SymbolTableEntry *aliasedTypeContainerEntry = nullptr;
-  const bool isAliasType = aliasEntry && aliasEntry->getType().is(TY_ALIAS);
+  const bool isAliasType = aliasEntry && aliasEntry->getQualType().is(TY_ALIAS);
   if (isAliasType) {
     aliasedTypeContainerEntry = rootScope->lookupStrict(aliasEntry->name + ALIAS_CONTAINER_SUFFIX);
     assert(aliasedTypeContainerEntry != nullptr);
     // Set alias entry used
     aliasEntry->used = true;
-    structName = aliasedTypeContainerEntry->getType().getSubType();
+    structName = aliasedTypeContainerEntry->getQualType().getSubType();
   }
 
   // Check if access scope was altered
@@ -2385,7 +2385,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
   // Check if it is a generic type
   const bool isImported = node->typeNameFragments.size() > 1;
-  const Type *genericType = rootScope->lookupGenericType(firstFragment);
+  const QualType *genericType = rootScope->lookupGenericType(firstFragment);
   if (!isImported && genericType) {
     // Take the concrete replacement type for the name of this generic type if available
     QualType symbolType = *genericType;
@@ -2560,7 +2560,7 @@ QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, 
 
   // The target source file does not know about the struct at all
   // -> show it how to find the struct
-  const std::string structName = symbolType.getBase().getType().getSubType();
+  const std::string structName = symbolType.getBase().getSubType();
   const NameRegistryEntry *origRegistryEntry = sourceFile->getNameRegistryEntry(structName);
   assert(origRegistryEntry != nullptr);
   const uint64_t targetTypeId = origRegistryEntry->typeId;
@@ -2590,11 +2590,11 @@ QualType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, 
 
   // This source file does not know about the struct at all
   // -> show it how to find the struct
-  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(baseType.getType().getSubType());
+  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(baseType.getSubType());
   assert(origRegistryEntry != nullptr);
   const uint64_t typeId = origRegistryEntry->typeId;
   SymbolTableEntry *targetEntry = origRegistryEntry->targetEntry;
-  sourceFile->addNameRegistryEntry(baseType.getType().getSubType(), typeId, targetEntry, origRegistryEntry->targetScope, false);
+  sourceFile->addNameRegistryEntry(baseType.getSubType(), typeId, targetEntry, origRegistryEntry->targetScope, false);
 
   return symbolType;
 }

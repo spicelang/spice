@@ -74,7 +74,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      GenericType *genericType = node->scope->lookupGenericType(templateType.getType().getSubType());
+      GenericType *genericType = node->scope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -94,7 +94,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     thisPtrType = thisType.toPtr(node);
     // Collect template types of 'this' type
     for (const QualType &templateType : thisType.getType().getTemplateTypes()) {
-      const auto lambda = [&](const GenericType &genericType) { return genericType == templateType.getType(); };
+      const auto lambda = [&](const GenericType &genericType) { return genericType == templateType; };
       if (std::ranges::none_of(usedGenericTypes, lambda))
         usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
@@ -216,7 +216,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      GenericType *genericType = node->scope->lookupGenericType(templateType.getType().getSubType());
+      GenericType *genericType = node->scope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedGenericTypes.push_back(*genericType);
     }
@@ -236,7 +236,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     thisPtrType = thisType.toPtr(node);
     // Collect template types of 'this' type
     for (const QualType &templateType : thisType.getType().getTemplateTypes()) {
-      const auto lambda = [&](const GenericType &genericType) { return genericType == templateType.getType(); };
+      const auto lambda = [&](const GenericType &genericType) { return genericType == templateType; };
       if (std::ranges::none_of(usedGenericTypes, lambda))
         usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
@@ -329,7 +329,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
       if (!templateType.is(TY_GENERIC))
         throw SemanticError(dataType, EXPECTED_GENERIC_TYPE, "A template list can only contain generic types");
       // Convert generic symbol type to generic type
-      GenericType *genericType = currentScope->lookupGenericType(templateType.getType().getSubType());
+      GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedTemplateTypes.push_back(*genericType);
       templateTypesGeneric.push_back(*genericType);
@@ -352,7 +352,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
       // Check for visibility
       if (interfaceType.getType().getBodyScope()->isImportedBy(rootScope) && !interfaceType.isPublic())
         throw SemanticError(node, INSUFFICIENT_VISIBILITY,
-                            "Cannot access interface '" + interfaceType.getType().getSubType() +
+                            "Cannot access interface '" + interfaceType.getSubType() +
                                 "' due to its private visibility");
       // Add to interface types
       interfaceTypes.push_back(interfaceType);
@@ -439,7 +439,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
         continue;
       }
       // Convert generic symbol type to generic type
-      GenericType *genericType = currentScope->lookupGenericType(templateType.getType().getSubType());
+      GenericType *genericType = currentScope->lookupGenericType(templateType.getSubType());
       assert(genericType != nullptr);
       usedTemplateTypes.push_back(*genericType);
       templateTypesGeneric.push_back(*genericType);
