@@ -46,16 +46,22 @@ public:
   void setType(const Type &newType);
 
   // Getters and setters on specifiers
+  [[nodiscard]] TypeSpecifiers &getSpecifiers() { return specifiers; }
+  [[nodiscard]] const TypeSpecifiers &getSpecifiers() const { return specifiers; }
   [[nodiscard]] bool isConst() const;
   void makeConst(bool isConst = true);
   [[nodiscard]] bool isSigned() const;
   void makeSigned(bool isSigned = true);
+  [[nodiscard]] bool isUnsigned() const;
+  void makeUnsigned(bool isUnsigned = true);
   [[nodiscard]] bool isInline() const;
   void makeInline(bool isInline = true);
   [[nodiscard]] bool isPublic() const;
   void makePublic(bool isPublic = true);
   [[nodiscard]] bool isHeap() const;
   void makeHeap(bool isHeap = true);
+  [[nodiscard]] bool isComposition() const;
+  void makeComposition(bool isComposition = true);
 
   // Queries on the type
   [[nodiscard]] bool isPtr() const;
@@ -95,10 +101,10 @@ public:
 private:
   // Private members
   std::unique_ptr<Type> type;
-  // TypeSpecifiers specifiers;
+  TypeSpecifiers specifiers;
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(QualType) == 8);
+static_assert(sizeof(QualType) == 16);
 
 } // namespace spice::compiler

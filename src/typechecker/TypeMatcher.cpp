@@ -48,7 +48,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       QualType knownConcreteType = typeMapping.at(genericTypeName);
 
       // Merge specifiers of candidate type and known concrete type together
-      knownConcreteType.getType().specifiers = knownConcreteType.getType().specifiers.merge(candidateType.getType().specifiers);
+      knownConcreteType.getSpecifiers() = knownConcreteType.getSpecifiers().merge(candidateType.getSpecifiers());
 
       // Remove reference wrapper of candidate type if required
       if (!requestedType.isRef())
@@ -67,12 +67,12 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
 
       // Zero out all specifiers in the requested type, that are present in the candidate type
       // This is to set all specifiers that are not present in the candidate type to the generic type replacement
-      requestedType.getType().specifiers.eraseWithMask(candidateType.getType().specifiers);
+      requestedType.getSpecifiers().eraseWithMask(candidateType.getSpecifiers());
 
       // Add to type mapping
       const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : requestedType;
       assert(newMappingType.is(TY_GENERIC) ||
-             newMappingType.getType().specifiers.isSigned != newMappingType.getType().specifiers.isUnsigned);
+             newMappingType.getSpecifiers().isSigned != newMappingType.getSpecifiers().isUnsigned);
       typeMapping.insert({genericTypeName, newMappingType});
 
       return true; // The type was successfully matched, by enriching the type mapping

@@ -14,22 +14,21 @@
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 
+#include <utility>
+
 namespace spice::compiler {
 
-Type::Type(SuperType superType) : typeChain({TypeChainElement{superType}}), specifiers(TypeSpecifiers::of(superType)) {}
+Type::Type(SuperType superType) : typeChain({TypeChainElement{superType}}) {}
 
-Type::Type(const QualType &qualType) : typeChain(qualType.getType().typeChain), specifiers(qualType.getType().specifiers) {}
+Type::Type(const QualType &qualType) : typeChain(qualType.getType().typeChain) {}
 
-Type::Type(SuperType superType, const std::string &subType)
-    : typeChain({TypeChainElement{superType, subType}}), specifiers(TypeSpecifiers::of(superType)) {}
+Type::Type(SuperType superType, const std::string &subType) : typeChain({TypeChainElement{superType, subType}}) {}
 
 Type::Type(SuperType superType, const std::string &subType, uint64_t typeId, const Type::TypeChainElementData &data,
            const std::vector<QualType> &templateTypes)
-    : typeChain({TypeChainElement(superType, subType, typeId, data, templateTypes)}), specifiers(TypeSpecifiers::of(superType)) {}
+    : typeChain({TypeChainElement(superType, subType, typeId, data, templateTypes)}) {}
 
-Type::Type(const TypeChain &types) : typeChain(types), specifiers(TypeSpecifiers::of(types.front().superType)) {}
-
-Type::Type(TypeChain types, TypeSpecifiers specifiers) : typeChain(std::move(types)), specifiers(specifiers) {}
+Type::Type(TypeChain types) : typeChain(std::move(types)) {}
 
 /**
  * Get the pointer type of the current type as a new type
@@ -46,7 +45,7 @@ Type Type::toPointer(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.emplace_back(TY_PTR);
-  return {newTypeChain, specifiers};
+  return Type(newTypeChain);
 }
 
 /**
@@ -86,7 +85,7 @@ Type Type::toReference(const ASTNode *node) const {
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.emplace_back(TY_REF);
-  return {newTypeChain, specifiers};
+  return Type(newTypeChain);
 }
 
 /**
@@ -112,18 +111,6 @@ const Type *Type::toRef(const ASTNode *node) const {
 }
 
 /**
- * Get the const reference type of the current type as a new type
- *
- * @param node AST node for error messages
- * @return Const reference type of the current type
- */
-Type Type::toConstReference(const ASTNode *node) const {
-  Type constRefType = toReference(node);
-  constRefType.specifiers.isConst = true;
-  return constRefType;
-}
-
-/**
  * Get the array type of the current type as a new type
  *
  * @param node AST node for error messages
@@ -137,7 +124,7 @@ Type Type::toArray(const ASTNode *node, unsigned int size, bool skipDynCheck /*=
 
   TypeChain newTypeChain = typeChain;
   newTypeChain.emplace_back(TY_ARRAY, TypeChainElementData{.arraySize = size});
-  return {newTypeChain, specifiers};
+  return Type(newTypeChain);
 }
 /**
  * Get the array type of the current type as a new type
@@ -170,7 +157,7 @@ Type Type::getContainedTy() const {
   assert(typeChain.size() > 1);
   TypeChain newTypeChain = typeChain;
   newTypeChain.pop_back();
-  return {newTypeChain, specifiers};
+  return Type(newTypeChain);
 }
 
 /**
@@ -207,11 +194,8 @@ Type Type::replaceBaseType(const Type &newBaseType) const {
     if (!doubleRef || i > 1)
       newTypeChain.push_back(typeChain.at(i));
 
-  // Create new specifiers
-  TypeSpecifiers newSpecifiers = specifiers.merge(newBaseType.specifiers);
-
   // Return the new chain as a symbol type
-  return {newTypeChain, newSpecifiers};
+  return Type(newTypeChain);
 }
 
 /**
@@ -230,9 +214,6 @@ const Type *Type::replaceBase(const Type &newBaseType) const {
   for (size_t i = 1; i < typeChain.size(); i++)
     if (!doubleRef || i > 1)
       newTypeChain.push_back(typeChain.at(i));
-
-  // Create new specifiers
-  newType.specifiers = specifiers.merge(newBaseType.specifiers);
 
   // Register new type or return if already registered
   return TypeRegistry::getOrInsert(newType);
@@ -352,8 +333,8 @@ llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) con
 bool Type::isIterator(const ASTNode *node) const {
   if (!is(TY_STRUCT))
     return false;
-  Type genericType(TY_GENERIC, "T");
-  Type iteratorType(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERATOR_INTERFACE, {.bodyScope = nullptr}, {genericType});
+  const QualType genericType(TY_GENERIC, "T");
+  const Type iteratorType(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERATOR_INTERFACE, {.bodyScope = nullptr}, {genericType});
   return implements(iteratorType, node);
 }
 
@@ -370,8 +351,8 @@ bool Type::isIterable(const ASTNode *node) const {
     return true; // Arrays are always considered iterable
   if (!is(TY_STRUCT))
     return false;
-  Type genericType(TY_GENERIC, "T");
-  Type iteratorType(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERABLE_INTERFACE, {.bodyScope = nullptr}, {genericType});
+  const QualType genericType(TY_GENERIC, "T");
+  const Type iteratorType(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERABLE_INTERFACE, {.bodyScope = nullptr}, {genericType});
   return implements(iteratorType, node);
 }
 
@@ -438,7 +419,7 @@ bool Type::isSameContainerTypeAs(const Type &other) const {
  */
 Type Type::getBase() const {
   assert(!typeChain.empty());
-  return Type({typeChain.front()}, specifiers);
+  return Type({typeChain.front()});
 }
 
 /**
@@ -531,27 +512,9 @@ bool Type::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList)
  * Get the name of the symbol type as a string
  *
  * @param withSize Include the array size for sized types
- * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
-void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic) const { // NOLINT(misc-no-recursion)
-  // Append the specifiers
-  const TypeSpecifiers defaultForSuperType = TypeSpecifiers::of(getBase().getSuperType());
-  if (!ignorePublic && specifiers.isPublic && !defaultForSuperType.isPublic)
-    name << "public ";
-  if (specifiers.isInline && !defaultForSuperType.isInline)
-    name << "inline ";
-  if (specifiers.isComposition && !defaultForSuperType.isComposition)
-    name << "compose ";
-  if (specifiers.isConst && !defaultForSuperType.isConst)
-    name << "const ";
-  if (specifiers.isHeap && !defaultForSuperType.isHeap)
-    name << "heap ";
-  if (specifiers.isSigned && !defaultForSuperType.isSigned)
-    name << "signed ";
-  if (!specifiers.isSigned && defaultForSuperType.isSigned)
-    name << "unsigned ";
-
+void Type::getName(std::stringstream &name, bool withSize) const { // NOLINT(misc-no-recursion)
   // Loop through all chain elements
   for (const TypeChainElement &chainElement : typeChain)
     name << chainElement.getName(withSize);
@@ -564,9 +527,9 @@ void Type::getName(std::stringstream &name, bool withSize, bool ignorePublic) co
  * @param ignorePublic Ignore any potential public specifier
  * @return Symbol type name
  */
-std::string Type::getName(bool withSize, bool ignorePublic) const {
+std::string Type::getName(bool withSize) const {
   std::stringstream name;
-  getName(name, withSize, ignorePublic);
+  getName(name, withSize);
   return name.str();
 }
 
@@ -690,7 +653,7 @@ Interface *Type::getInterface(const ASTNode *node) const {
   return InterfaceManager::matchInterface(interfaceDefScope, structName, templateTypes, node);
 }
 
-bool operator==(const Type &lhs, const Type &rhs) { return lhs.typeChain == rhs.typeChain && lhs.specifiers == rhs.specifiers; }
+bool operator==(const Type &lhs, const Type &rhs) { return lhs.typeChain == rhs.typeChain; }
 
 bool operator!=(const Type &lhs, const Type &rhs) { return !(lhs == rhs); }
 
@@ -724,7 +687,7 @@ bool Type::matches(const Type &otherType, bool ignoreArraySize, bool ignoreSpeci
   }
 
   // Ignore or compare specifiers
-  return ignoreSpecifiers || specifiers.match(otherType.specifiers, allowConstify);
+  return true;
 }
 
 /**
@@ -743,17 +706,6 @@ bool Type::matchesInterfaceImplementedByStruct(const Type &otherType) const {
   assert(spiceStruct != nullptr);
   const auto pred = [&](const Type &interfaceType) { return matches(interfaceType, false, false, true); };
   return std::ranges::any_of(spiceStruct->interfaceTypes, pred);
-}
-
-/**
- * Check if a certain input type can be bound (assigned) to the current type.
- *
- * @param inputType Type, which should be bound to the current type
- * @param isTemporary Is the input type a temporary type
- * @return Can be bound or not
- */
-bool Type::canBind(const Type &inputType, bool isTemporary) const {
-  return !isTemporary || inputType.isRef() || !isRef() || isConstRef();
 }
 
 /**

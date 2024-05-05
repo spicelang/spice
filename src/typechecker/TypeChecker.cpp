@@ -169,8 +169,8 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       Scope *matchScope = nameRegistryEntry->targetScope->parent;
       assert(matchScope->type == ScopeType::GLOBAL);
       QualType unsignedLongType(TY_LONG);
-      unsignedLongType.getType().specifiers.isSigned = false;
-      unsignedLongType.getType().specifiers.isUnsigned = true;
+      unsignedLongType.getSpecifiers().isSigned = false;
+      unsignedLongType.getSpecifiers().isUnsigned = true;
       const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
       const QualType thisType(TY_DYN);
       node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
@@ -522,7 +522,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
 
   // Prepare signature type
   QualType signatureType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
-  signatureType.getType().specifiers = node->signatureSpecifiers;
+  signatureType.getSpecifiers() = node->signatureSpecifiers;
   if (isFunction)
     signatureType.getType().setFunctionReturnType(returnType);
   signatureType.getType().setFunctionParamTypes(paramTypes);
@@ -1346,7 +1346,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     lhsType = lhsType.getContained();
 
     // Remove heap specifier
-    lhsType.getType().specifiers.isHeap = false;
+    lhsType.getSpecifiers().isHeap = false;
 
     break;
   }
@@ -1608,7 +1608,7 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
 
   // Create symbol type
   QualType symbolType(superType);
-  symbolType.getType().specifiers = TypeSpecifiers::of(superType);
+  symbolType.getSpecifiers() = TypeSpecifiers::of(superType);
 
   return ExprResult{node->setEvaluatedSymbolType(symbolType, manIdx)};
 }
@@ -1785,7 +1785,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Remove public specifier to not have public local variables
-  returnType.getType().specifiers.isPublic = false;
+  returnType.getSpecifiers().isPublic = false;
 
   // Check if the return value gets used
   if (isFct && !node->hasReturnValueReceiver())
@@ -2088,7 +2088,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables
-  structType.getType().specifiers.isPublic = false;
+  structType.getSpecifiers().isPublic = false;
 
   return ExprResult{node->setEvaluatedSymbolType(structType, manIdx), anonymousEntry};
 }
@@ -2294,17 +2294,17 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
     const QualType baseType = type.getBase();
     for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
       if (specifier->type == SpecifierNode::TY_CONST) {
-        type.getType().specifiers.isConst = true;
+        type.getSpecifiers().isConst = true;
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
           SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName(false))
-        type.getType().specifiers.isSigned = true;
-        type.getType().specifiers.isUnsigned = false;
+        type.getSpecifiers().isSigned = true;
+        type.getSpecifiers().isUnsigned = false;
       } else if (specifier->type == SpecifierNode::TY_UNSIGNED) {
         if (!baseType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BYTE, TY_CHAR, TY_GENERIC}))
           SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "Cannot use this specifier on type " + baseType.getName(false))
-        type.getType().specifiers.isSigned = false;
-        type.getType().specifiers.isUnsigned = true;
+        type.getSpecifiers().isSigned = false;
+        type.getSpecifiers().isUnsigned = true;
       } else if (specifier->type == SpecifierNode::TY_HEAP) {
         // Heap variables can only be pointers
         if (!type.removeReferenceWrapper().isOneOf({TY_PTR, TY_STRING}))
@@ -2312,13 +2312,13 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
                         "The heap specifier can only be applied to symbols of pointer type, you provided " +
                             baseType.getName(false))
 
-        type.getType().specifiers.isHeap = true;
+        type.getSpecifiers().isHeap = true;
       } else if (specifier->type == SpecifierNode::TY_COMPOSITION && node->isFieldType) {
         if (!type.is(TY_STRUCT))
           SOFT_ERROR_QT(specifier, SPECIFIER_AT_ILLEGAL_CONTEXT, "The compose specifier can only be used on plain struct fields")
-        type.getType().specifiers.isComposition = true;
+        type.getSpecifiers().isComposition = true;
       } else if (specifier->type == SpecifierNode::TY_PUBLIC && (node->isFieldType || node->isGlobalType)) {
-        type.getType().specifiers.isPublic = true;
+        type.getSpecifiers().isPublic = true;
       } else {
         const char *entryName = "local variable";
         if (node->isGlobalType)

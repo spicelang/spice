@@ -157,7 +157,7 @@ bool SymbolTableEntry::isField() const { return scope->type == ScopeType::STRUCT
 nlohmann::ordered_json SymbolTableEntry::toJSON() const {
   nlohmann::json result;
   result["name"] = name;
-  result["type"] = qualType.getType().getName(true);
+  result["type"] = qualType.getName(true);
   result["codeLoc"] = declNode->codeLoc.toString();
   result["orderIndex"] = orderIndex;
   result["state"] = lifecycle.getCurrentStateName();

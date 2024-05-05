@@ -32,7 +32,7 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
     QualType rhsModified = rhsType.getContained();
-    rhsModified.getType().specifiers.isConst = false;
+    rhsModified.getSpecifiers().isConst = false;
 
     if (lhsType.matches(rhsModified, false, !lhsType.isRef(), true))
       return lhsType;
@@ -104,7 +104,7 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
   if (lhsType.isArray() && rhsType.isArrayOf(TY_DYN))
     return lhsType;
   // Allow char* = string
-  if (lhsType.isPtrTo(TY_CHAR) && rhsType.is(TY_STRING) && lhsType.getType().specifiers == rhsType.getType().specifiers)
+  if (lhsType.isPtrTo(TY_CHAR) && rhsType.is(TY_STRING) && lhsType.getSpecifiers() == rhsType.getSpecifiers())
     return lhsType;
   // Allow array to pointer
   if (lhsType.isPtr() && rhsType.isArray() && lhsType.getContained().matches(rhsType.getContained(), false, false, true))
@@ -615,7 +615,7 @@ QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType,
   QualType rhsType = rhs.type.removeReferenceWrapper();
 
   // Only allow to cast the 'heap' specifier away, if we are in unsafe mode
-  if (lhsType.getType().specifiers.isHeap != rhsType.getType().specifiers.isHeap)
+  if (lhsType.getSpecifiers().isHeap != rhsType.getSpecifiers().isHeap)
     ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
 
   // Allow identity casts
@@ -712,7 +712,7 @@ QualType OpRuleManager::validateBinaryOperation(const ASTNode *node, const Binar
     if (std::get<0>(rule) == lhs.getSuperType() && std::get<1>(rule) == rhs.getSuperType()) {
       QualType resultType = QualType(SuperType(std::get<2>(rule)));
       if (preserveSpecifiersFromLhs)
-        resultType.getType().specifiers = lhs.getType().specifiers;
+        resultType.getSpecifiers() = lhs.getSpecifiers();
       return resultType;
     }
   }

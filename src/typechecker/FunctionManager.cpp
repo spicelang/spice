@@ -100,7 +100,7 @@ Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std:
   ParamList paramList;
   for (const QualType &paramType : paramTypes)
     paramList.push_back({paramType, false});
-  return {MAIN_FUNCTION_NAME, entry, Type(TY_DYN), Type(TY_INT), paramList, {}, declNode};
+  return {MAIN_FUNCTION_NAME, entry, QualType(TY_DYN), QualType(TY_INT), paramList, {}, declNode};
 }
 
 Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Function &newManifestation, const ASTNode *declNode) {
