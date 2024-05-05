@@ -255,8 +255,8 @@ void TypeChecker::createCtorBodyPreamble(Scope *bodyScope) {
     if (fieldSymbol->isImplicitField)
       continue;
     QualType fieldType = fieldSymbol->getQualType();
-    if (fieldType.getType().hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType.getType(), typeMapping);
+    if (fieldType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 
     if (fieldType.is(TY_STRUCT)) {
       auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
@@ -287,8 +287,8 @@ void TypeChecker::createCopyCtorBodyPreamble(Scope *bodyScope) {
     if (fieldSymbol->isImplicitField)
       continue;
     QualType fieldType = fieldSymbol->getQualType();
-    if (fieldType.getType().hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType.getType(), typeMapping);
+    if (fieldType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 
     if (fieldType.is(TY_STRUCT)) {
       auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
@@ -319,8 +319,8 @@ void TypeChecker::createDtorBodyPreamble(Scope *bodyScope) {
     if (fieldSymbol->isImplicitField)
       continue;
     QualType fieldType = fieldSymbol->getQualType();
-    if (fieldType.getType().hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType.getType(), typeMapping);
+    if (fieldType.hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
 
     if (fieldType.is(TY_STRUCT)) {
       auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);

@@ -182,8 +182,8 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
         // Substantiate
         TypeMatcher::substantiateTypesWithTypeMapping(params, interface->typeMapping);
-        if (returnType.getType().hasAnyGenericParts())
-          TypeMatcher::substantiateTypeWithTypeMapping(returnType.getType(), interface->typeMapping);
+        if (returnType.hasAnyGenericParts())
+          TypeMatcher::substantiateTypeWithTypeMapping(returnType, interface->typeMapping);
 
         // Build args list
         ArgList args;

@@ -32,9 +32,6 @@ public:
   SymbolTableEntry(std::string name, const QualType& qualType, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
       : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global),
         qualType(qualType){};
-  SymbolTableEntry(std::string name, const Type &type, Scope *scope, ASTNode *declNode, size_t orderIndex, const bool global)
-      : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global),
-        qualType(type){};
 
   // Public methods
   [[nodiscard]] const QualType &getQualType() const;

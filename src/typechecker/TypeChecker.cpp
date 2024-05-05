@@ -556,7 +556,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     localVarType = std::any_cast<QualType>(visit(node->dataType()));
 
     // Infer the type left to right if the right side is an empty array initialization
-    if (rhsTy.getType().isArrayOf(TY_DYN))
+    if (rhsTy.isArrayOf(TY_DYN))
       rhsTy = QualType(localVarType);
 
     // Check if type has to be inferred or both types are fixed
@@ -783,8 +783,8 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
       break;
     }
     case 's': {
-      if (!argType.is(TY_STRING) && !argType.getType().isStringObj() && !argType.getType().isPtrOf(TY_CHAR) &&
-          !argType.getType().isArrayOf(TY_CHAR))
+      if (!argType.is(TY_STRING) && !argType.getType().isStringObj() && !argType.isPtrTo(TY_CHAR) &&
+          !argType.isArrayOf(TY_CHAR))
         SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
                       "The placeholder string expects string, String, char* or char[], but got " + argType.getName(false))
       placeholderCount++;
@@ -1625,7 +1625,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       // Visit argument
       const auto argResult = std::any_cast<ExprResult>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_ER(argResult.type)
-      assert(!argResult.type.getType().hasAnyGenericParts());
+      assert(!argResult.type.hasAnyGenericParts());
       // Save arg type to arg types list
       data.argResults.push_back(argResult);
     }

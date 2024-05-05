@@ -19,10 +19,10 @@ public:
   // Public methods
   static bool matchRequestedToCandidateTypes(const std::vector<QualType> &candidateTypes, const std::vector<QualType> &reqTypes,
                                              TypeMapping &typeMapping, ResolverFct &resolverFct, bool strictSpecifiers);
-  static bool matchRequestedToCandidateType(Type candidateType, Type requestedType, TypeMapping &typeMapping,
+  static bool matchRequestedToCandidateType(QualType candidateType, QualType requestedType, TypeMapping &typeMapping,
                                             ResolverFct &resolverFct, bool strictSpecifierMatching);
   static void substantiateTypesWithTypeMapping(std::vector<QualType> &qualTypes, const TypeMapping &typeMapping);
-  static void substantiateTypeWithTypeMapping(Type &type, const TypeMapping &typeMapping);
+  static void substantiateTypeWithTypeMapping(QualType &type, const TypeMapping &typeMapping);
 };
 
 } // namespace spice::compiler

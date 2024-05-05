@@ -153,26 +153,24 @@ void NameMangling::mangleName(std::stringstream &out, const std::string &name, b
  * @param type Input symbol type
  * @return Mangled name
  */
-void NameMangling::mangleType(std::stringstream &out, QualType qt, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
-  Type type = qt.getType();
-
+void NameMangling::mangleType(std::stringstream &out, QualType type, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
   // Replace generic type with concrete type
   if (type.hasAnyGenericParts() && !typeMapping.empty())
     TypeMatcher::substantiateTypeWithTypeMapping(type, typeMapping);
 
   // Unwrap type chain
-  assert(!type.typeChain.empty());
-  for (size_t i = type.typeChain.size() - 1; i >= 1; i--)
-    mangleTypeChainElement(out, type.typeChain.at(i), typeMapping, false);
+  assert(!type.getType().typeChain.empty());
+  for (size_t i = type.getType().typeChain.size() - 1; i >= 1; i--)
+    mangleTypeChainElement(out, type.getType().typeChain.at(i), typeMapping, false);
 
   // Specifiers
-  assert(type.specifiers.isSigned == !type.specifiers.isUnsigned);
-  const bool signedness = type.specifiers.isSigned;
-  if (type.specifiers.isConst && type.typeChain.size() > 1)
+  assert(type.getType().specifiers.isSigned == !type.getType().specifiers.isUnsigned);
+  const bool signedness = type.getType().specifiers.isSigned;
+  if (type.getType().specifiers.isConst && type.getType().typeChain.size() > 1)
     out << "K";
 
   // Base chain element
-  mangleTypeChainElement(out, type.typeChain.front(), typeMapping, signedness);
+  mangleTypeChainElement(out, type.getType().typeChain.front(), typeMapping, signedness);
 }
 
 /**

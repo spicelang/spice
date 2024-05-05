@@ -67,6 +67,7 @@ public:
   [[nodiscard]] bool isConstRef() const;
   [[nodiscard]] SuperType getSuperType() const;
   [[nodiscard]] const std::string &getSubType() const;
+  [[nodiscard]] bool hasAnyGenericParts() const;
   [[nodiscard]] bool canBind(const QualType &otherType, bool isTemporary) const;
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;

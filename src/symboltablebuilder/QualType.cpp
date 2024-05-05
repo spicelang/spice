@@ -143,6 +143,8 @@ SuperType QualType::getSuperType() const { return type->getSuperType(); }
 
 const std::string &QualType::getSubType() const { return type->getSubType(); }
 
+bool QualType::hasAnyGenericParts() const { return type->hasAnyGenericParts(); }
+
 /**
  * Check if a certain input type can be bound (assigned) to the current type->
  *
