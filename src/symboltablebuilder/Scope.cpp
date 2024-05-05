@@ -147,7 +147,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     if (entry.used || name.starts_with(UNUSED_VARIABLE_NAME))
       continue;
 
-    switch (entry.getType().getSuperType()) {
+    switch (entry.getQualType().getSuperType()) {
     case TY_FUNCTION: {
       // Skip generic function entries
       if (!entry.getType().getTemplateTypes().empty())

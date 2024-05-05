@@ -33,9 +33,9 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   }
 
   // Prepare type of function
-  Type functionType(TY_FUNCTION);
-  functionType.setFunctionReturnType(returnType);
-  functionType.setFunctionParamTypes(paramTypes);
+  QualType functionType(TY_FUNCTION);
+  functionType.getType().setFunctionReturnType(returnType);
+  functionType.getType().setFunctionParamTypes(paramTypes);
 
   // Update main function symbol type
   SymbolTableEntry *functionEntry = rootScope->lookupStrict(node->getSignature());
@@ -81,8 +81,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   }
 
   // Retrieve 'this' type
-  Type thisType(TY_DYN); // If the function is not a method, the default this type is TY_DYN
-  Type thisPtrType = thisType;
+  QualType thisType(TY_DYN); // If the function is not a method, the default this type is TY_DYN
+  QualType thisPtrType = thisType;
   if (node->isMethod) {
     Scope *structParentScope = node->structScope->parent;
     SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->name->structName);
@@ -90,10 +90,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     // Set struct to used
     structEntry->used = true;
     // Get type and ptr type
-    thisType = structEntry->getType();
-    thisPtrType = thisType.toPointer(node);
+    thisType = structEntry->getQualType();
+    thisPtrType = thisType.toPtr(node);
     // Collect template types of 'this' type
-    for (const QualType &templateType : thisType.getTemplateTypes()) {
+    for (const QualType &templateType : thisType.getType().getTemplateTypes()) {
       const auto lambda = [&](const GenericType &genericType) { return genericType == templateType.getType(); };
       if (std::ranges::none_of(usedGenericTypes, lambda))
         usedGenericTypes.emplace_back(templateType);
@@ -223,8 +223,8 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   }
 
   // Retrieve 'this' type
-  Type thisType(TY_DYN); // If the procedure is not a method, the default this type is TY_DYN
-  Type thisPtrType = thisType;
+  QualType thisType(TY_DYN); // If the procedure is not a method, the default this type is TY_DYN
+  QualType thisPtrType = thisType;
   if (node->isMethod) {
     Scope *structParentScope = node->structScope->parent;
     SymbolTableEntry *structEntry = structParentScope->lookupStrict(node->name->structName);
@@ -232,10 +232,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     // Set struct to used
     structEntry->used = true;
     // Get type and ptr type
-    thisType = structEntry->getType();
-    thisPtrType = thisType.toPointer(node);
+    thisType = structEntry->getQualType();
+    thisPtrType = thisType.toPtr(node);
     // Collect template types of 'this' type
-    for (const QualType &templateType : thisType.getTemplateTypes()) {
+    for (const QualType &templateType : thisType.getType().getTemplateTypes()) {
       const auto lambda = [&](const GenericType &genericType) { return genericType == templateType.getType(); };
       if (std::ranges::none_of(usedGenericTypes, lambda))
         usedGenericTypes.emplace_back(templateType);
@@ -283,7 +283,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   procedureEntry->updateType(procedureType, false);
 
   // Build procedure object
-  Function spiceProc(node->name->name, procedureEntry, thisType, Type(TY_DYN), paramList, usedGenericTypes, node);
+  Function spiceProc(node->name->name, procedureEntry, thisType, QualType(TY_DYN), paramList, usedGenericTypes, node);
   spiceProc.bodyScope = node->scope;
   FunctionManager::insertFunction(currentScope, spiceProc, &node->manifestations);
 
@@ -448,8 +448,8 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
   // Update type of interface entry
   const Type::TypeChainElementData data = {.bodyScope = node->interfaceScope};
-  Type interfaceType(TY_INTERFACE, node->interfaceName, node->typeId, data, usedTemplateTypes);
-  interfaceType.specifiers = node->interfaceSpecifiers;
+  QualType interfaceType(Type(TY_INTERFACE, node->interfaceName, node->typeId, data, usedTemplateTypes));
+  interfaceType.getType().specifiers = node->interfaceSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(interfaceType, false);
 
@@ -547,7 +547,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 
 std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   // Retrieve type conditions
-  std::vector<Type> typeConditions;
+  std::vector<QualType> typeConditions;
   typeConditions.reserve(node->typeAltsLst()->dataTypes().size());
   for (const auto &typeAlt : node->typeAltsLst()->dataTypes()) {
     auto typeCondition = std::any_cast<QualType>(visit(typeAlt));

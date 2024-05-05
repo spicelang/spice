@@ -5,7 +5,7 @@ import "std/data/vector";
 // Own imports
 //import "../ast/abstract-ast-visitor";
 import "../reader/code-loc";
-//import "../symboltablebuilder/symbol-type";
+//import "../symboltablebuilder/type";
 
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks

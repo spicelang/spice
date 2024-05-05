@@ -298,7 +298,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
 
   // Primitive types
   llvm::DIType *baseDiType;
-  switch (ty.getType().getSuperType()) {
+  switch (ty.getSuperType()) {
   case TY_DOUBLE:
     baseDiType = doubleTy;
     break;

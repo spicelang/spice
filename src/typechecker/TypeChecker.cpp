@@ -176,8 +176,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
     } else { // Struct, implementing Iterator interface
       Scope *matchScope = iterableType.getType().getBodyScope();
-      node->getIteratorFct =
-          FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
+      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
     }
     assert(node->getIteratorFct != nullptr);
     iteratorType = QualType(node->getIteratorFct->returnType);
@@ -571,9 +570,8 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
         assert(matchScope != nullptr);
         // Check if we have a no-args ctor to call
         const QualType &thisType = localVarType;
-        const ArgList args = {{thisType.getType().toConstReference(node), false}};
-        node->calledCopyCtor =
-            FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType.getType(), args, {}, true, node);
+        const ArgList args = {{thisType.toConstRef(node), false}};
+        node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
       }
 
       // If this is a struct type, check if the type is known. If not, error out
@@ -1228,7 +1226,7 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   }
 
   // Get result type
-  Type resultType = opRuleManager.getCastResultType(node, dstType, src);
+  QualType resultType = opRuleManager.getCastResultType(node, dstType, src);
 
   SymbolTableEntry *entry = src.type.getType().isSameContainerTypeAs(dstType) ? src.entry : nullptr;
   return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx), entry};
@@ -1734,7 +1732,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       errArgTypes.reserve(data.argResults.size());
       for (const ExprResult &argResult : data.argResults)
         errArgTypes.push_back({argResult.type, false});
-      const std::string signature = Function::getSignature(functionName, data.thisType, Type(TY_DYN), errArgTypes, {});
+      const std::string signature = Function::getSignature(functionName, data.thisType, QualType(TY_DYN), errArgTypes, {});
       // Throw error
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + signature + "' could not be found")
     }
@@ -2188,7 +2186,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
 
   // Create function object
   const std::string fctName = "lambda." + node->codeLoc.toPrettyLineAndColumn();
-  node->manifestations.at(manIdx) = Function(fctName, nullptr, Type(TY_DYN), Type(TY_DYN), paramList, {}, node);
+  node->manifestations.at(manIdx) = Function(fctName, nullptr, QualType(TY_DYN), QualType(TY_DYN), paramList, {}, node);
   node->manifestations.at(manIdx).bodyScope = bodyScope;
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 

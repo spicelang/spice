@@ -162,7 +162,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         visit(field->defaultValue());
 
     // Build struct type
-    const Type structType = manifestation->entry->getType();
+    const QualType structType = manifestation->entry->getQualType();
 
     // Check if the struct implements all methods of all attached interfaces
     size_t vtableIndex = 0;
@@ -210,7 +210,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       createDefaultCtorBody(ctorFunc);
 
     // Generate default copy ctor body if required
-    const ArgList args = {{structType.toConstReference(node), false /* always non-temporary */}};
+    const ArgList args = {{structType.toConstRef(node), false /* always non-temporary */}};
     const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, structType, args, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
       createDefaultCopyCtorBody(copyCtorFunc);
