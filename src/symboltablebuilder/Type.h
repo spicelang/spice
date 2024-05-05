@@ -201,9 +201,9 @@ public:
     assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
     return typeChain.back().data.bodyScope;
   }
-  void setFunctionReturnType(const Type &returnType);
+  void setFunctionReturnType(const QualType &returnType);
   [[nodiscard]] const QualType &getFunctionReturnType() const;
-  void setFunctionParamTypes(const std::vector<Type> &paramTypes);
+  void setFunctionParamTypes(const std::vector<QualType> &paramTypes);
   [[nodiscard]] std::vector<QualType> getFunctionParamTypes() const;
   void setFunctionParamAndReturnTypes(const std::vector<QualType> &paramAndReturnTypes);
   [[nodiscard]] const std::vector<QualType> &getFunctionParamAndReturnTypes() const;

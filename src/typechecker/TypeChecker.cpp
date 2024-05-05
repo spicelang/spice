@@ -152,7 +152,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   AssignExprNode *iteratorNode = node->iteratorAssign();
   QualType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
-  iteratorOrIterableType = QualType(iteratorOrIterableType.removeReferenceWrapper());
+  iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
 
   // Retrieve iterator type
   QualType iteratorType = iteratorOrIterableType;
@@ -211,11 +211,11 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
 
   // Retrieve .get(), .getIdx(), .isValid() and .next() functions
   Scope *matchScope = iteratorType.getType().getBodyScope();
-  Type iteratorItemType;
+  QualType iteratorItemType;
   if (hasIdx) {
     node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType.getType(), {}, {}, false, node);
     assert(node->getIdxFct != nullptr);
-    iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
+    iteratorItemType = node->getIdxFct->returnType.getType().getTemplateTypes().back();
   } else {
     node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType.getType(), {}, {}, false, node);
     assert(node->getFct != nullptr);
@@ -237,11 +237,11 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     // Update evaluated symbol type of the declaration data type
     node->itemVarDecl()->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
     // Update item type
-    itemType = QualType(iteratorItemType);
+    itemType = iteratorItemType;
   } else {
     // Check item type
     const ExprResult itemResult = {itemType, itemVarSymbol};
-    const ExprResult iteratorItemResult = {QualType(iteratorItemType), nullptr /* always a temporary */};
+    const ExprResult iteratorItemResult = {iteratorItemType, nullptr /* always a temporary */};
     OpRuleManager::getAssignResultType(node->itemVarDecl(), itemResult, iteratorItemResult, true, ERROR_FOREACH_ITEM);
   }
 
@@ -436,7 +436,7 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
     }
 
     // Add parameter to named param list
-    namedParams.push_back({param->varName, paramType, metOptional});
+    namedParams.push_back({param->varName.c_str(), paramType, metOptional});
   }
 
   return namedParams;
@@ -492,7 +492,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Visit params
-  std::vector<Type> paramTypes;
+  std::vector<QualType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     paramList.reserve(node->paramTypeLst()->dataTypes().size());
@@ -750,7 +750,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
     // Visit assignment
     QualType argType = std::any_cast<ExprResult>(visit(assignment)).type;
     HANDLE_UNRESOLVED_TYPE_ER(argType)
-    argType = QualType(argType.removeReferenceWrapper());
+    argType = argType.removeReferenceWrapper();
 
     switch (node->templatedString.at(index + 1)) {
     case 'c': {
@@ -810,7 +810,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
   if (placeholderCount < node->args().size())
     SOFT_ERROR_ER(node, PRINTF_ARG_COUNT_ERROR, "The placeholder string contains less placeholders than arguments")
 
-  return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_BOOL), manIdx))};
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx)};
 }
 
 std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
@@ -820,7 +820,7 @@ std::any TypeChecker::visitSizeofCall(SizeofCallNode *node) {
     visit(node->assignExpr());
   }
 
-  return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_LONG), manIdx))};
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
@@ -830,13 +830,13 @@ std::any TypeChecker::visitAlignofCall(AlignofCallNode *node) {
     visit(node->assignExpr());
   }
 
-  return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_LONG), manIdx))};
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitLenCall(LenCallNode *node) {
   QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
-  argType = QualType(argType.removeReferenceWrapper());
+  argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.isArray() && !argType.is(TY_STRING))
@@ -846,19 +846,19 @@ std::any TypeChecker::visitLenCall(LenCallNode *node) {
   if (argType.is(TY_STRING) && !sourceFile->isStringRT())
     sourceFile->requestRuntimeModule(STRING_RT);
 
-  return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_LONG), manIdx))};
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_LONG), manIdx)};
 }
 
 std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
   QualType argType = std::any_cast<ExprResult>(visit(node->assignExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(argType)
-  argType = QualType(argType.removeReferenceWrapper());
+  argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
   if (!argType.getType().isErrorObj())
     SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
 
-  return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_DYN), manIdx))};
+  return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
 }
 
 std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
@@ -937,11 +937,11 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
 
   // Visit condition
   LogicalOrExprNode *condition = node->operands()[0];
-  Type conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
   HANDLE_UNRESOLVED_TYPE_ER(conditionType)
 
-  Type trueType;
-  Type falseType;
+  QualType trueType;
+  QualType falseType;
   if (node->isShortened) {
     trueType = conditionType;
     falseType = std::any_cast<ExprResult>(visit(node->operands()[1])).type;
@@ -957,8 +957,8 @@ std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
     SOFT_ERROR_ER(condition, OPERATOR_WRONG_DATA_TYPE, "Condition operand in ternary must be a bool")
 
   // Check if trueType and falseType are matching
-  const Type trueTypeModified = trueType.removeReferenceWrapper();
-  const Type falseTypeModified = falseType.removeReferenceWrapper();
+  const QualType trueTypeModified = trueType.removeReferenceWrapper();
+  const QualType falseTypeModified = falseType.removeReferenceWrapper();
   if (!trueTypeModified.matches(falseTypeModified, false, true, false))
     SOFT_ERROR_ER(node, OPERATOR_WRONG_DATA_TYPE,
                   "True and false operands in ternary must be of same data type. Got " + trueType.getName(true) + " and " +
@@ -1102,7 +1102,7 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check operator
-  Type resultType;
+  QualType resultType;
   if (node->op == RelationalExprNode::OP_LESS) // Operator was less
     resultType = OpRuleManager::getLessResultType(node, lhs, rhs);
   else if (node->op == RelationalExprNode::OP_GREATER) // Operator was greater
@@ -1333,8 +1333,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.")
 
     // Check if we have a hardcoded array index
-    if (lhsType.isArray() && lhsType.getType().getArraySize() != ARRAY_SIZE_UNKNOWN &&
-        indexAssignExpr->hasCompileTimeValue()) {
+    if (lhsType.isArray() && lhsType.getType().getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
       const int32_t constIndex = indexAssignExpr->getCompileTimeValue().intValue;
       const unsigned int constSize = lhsType.getType().getArraySize();
       // Check if we are accessing out-of-bounds memory
@@ -1381,7 +1380,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     SymbolTableEntry *memberEntry = structScope->symbolTable.lookupInComposedFields(fieldName, indexPath);
     if (!memberEntry)
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Field '" + node->identifier + "' not found in struct " + structName)
-    Type memberType = memberEntry->getType();
+    QualType memberType = memberEntry->getType();
 
     // Check for insufficient visibility
     if (structScope->isImportedBy(rootScope) && !memberEntry->getType().isPublic())
@@ -1484,7 +1483,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   assert(accessScope != nullptr);
   AtomicExprNode::VarAccessData &data = node->data.at(manIdx);
   data = {varEntry, accessScope, accessScope->symbolTable.lookupCapture(varEntry->name)};
-  Type varType = varEntry->getType();
+  QualType varType = varEntry->getType();
   HANDLE_UNRESOLVED_TYPE_ER(varType)
 
   if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->global) {
@@ -1504,8 +1503,8 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
     SOFT_ERROR_ER(node, USED_BEFORE_DECLARED, "Symbol '" + varEntry->name + "' was used before declared.")
 
   // The base type should be a primitive, struct, interface, function or procedure
-  const Type baseType = varType.getBaseType();
-  if (!baseType.isPrimitive() && !baseType.isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
+  const QualType baseType = varType.getBaseType();
+  if (!baseType.getType().isPrimitive() && !baseType.isOneOf({TY_STRUCT, TY_INTERFACE, TY_FUNCTION, TY_PROCEDURE, TY_DYN}))
     SOFT_ERROR_ER(node, INVALID_SYMBOL_ACCESS, "A symbol of type " + varType.getName(false) + " cannot be accessed here")
 
   // Check if is an imported variable
@@ -1526,7 +1525,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Retrieve scope for the new scope path fragment
   if (baseType.is(TY_STRUCT)) {
     // Set access scope to struct scope
-    const std::string &structName = baseType.getSubType();
+    const std::string &structName = baseType.getType().getSubType();
     const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(structName);
     assert(nameRegistryEntry != nullptr);
 
@@ -1700,7 +1699,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   if (data.isMethodCall()) {
     // This is a method call
     data.thisType = firstFragEntry->getType();
-    Scope *structBodyScope = data.thisType.getBaseType().getBodyScope();
+    Scope *structBodyScope = data.thisType.getBaseType().getType().getBodyScope();
     assert(structBodyScope != nullptr);
     bool success = visitMethodCall(node, structBodyScope, concreteTemplateTypes);
     if (!success) // Check if soft errors occurred
@@ -1772,13 +1771,13 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Initialize return type if required
   SymbolTableEntry *anonymousSymbol = nullptr;
   if (returnType.isBaseType(TY_STRUCT)) {
-    Type returnBaseType = returnType.getBaseType();
-    const std::string structName = returnBaseType.getSubType();
-    Scope *matchScope = returnBaseType.getBodyScope()->parent;
+    QualType returnBaseType = returnType.getBaseType();
+    const std::string structName = returnBaseType.getType().getSubType();
+    Scope *matchScope = returnBaseType.getType().getBodyScope()->parent;
     assert(matchScope != nullptr);
-    Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
+    Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getType().getTemplateTypes(), node);
     assert(spiceStruct != nullptr);
-    returnBaseType.setBodyScope(spiceStruct->scope);
+    returnBaseType.getType().setBodyScope(spiceStruct->scope);
     returnType = returnType.replaceBaseType(returnBaseType);
 
     returnType = mapImportedScopeTypeToLocalType(returnType.getBaseType().getType().getBodyScope(), returnType);
@@ -1851,7 +1850,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::vector<QualType> 
 
     // Set the 'this' type of the function to the struct type
     data.thisType = structEntry->getType();
-    data.thisType.setBodyScope(thisStruct->scope);
+    data.thisType.getType().setBodyScope(thisStruct->scope);
 
     // Get the fully qualified name, that can be used in the current source file to identify the struct
     knownStructName = structRegistryEntry->name;
@@ -1859,7 +1858,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::vector<QualType> 
 
   // Attach the concrete template types to the 'this' type
   if (!data.thisType.is(TY_DYN) && !templateTypes.empty())
-    data.thisType.setTemplateTypes(templateTypes);
+    data.thisType.getType().setTemplateTypes(templateTypes);
 
   // Map local arg types to imported types
   Scope *matchScope = data.calleeParentScope = functionRegistryEntry->targetScope;
@@ -1890,8 +1889,8 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const Type &functionType) c
   TypeMatcher::ResolverFct resolverFct = [](const std::string &genericTypeName) { return nullptr; };
 
   for (size_t i = 0; i < data.argResults.size(); i++) {
-    const Type &actualType = data.argResults.at(i).type;
-    const Type &expectedType = expectedArgTypes.at(i);
+    const QualType &actualType = data.argResults.at(i).type;
+    const QualType &expectedType = expectedArgTypes.at(i);
     TypeMapping tm;
     if (!TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
       SOFT_ERROR_BOOL(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
@@ -1920,7 +1919,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, std::ve
 
     // Get struct type and scope
     data.thisType = fieldEntry->getType();
-    structScope = data.thisType.getBaseType().getBodyScope();
+    structScope = data.thisType.getBaseType().getType().getBodyScope();
     assert(structScope != nullptr);
   }
 
@@ -2075,7 +2074,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
       }
     }
   } else {
-    for (Type &fieldType : spiceStruct->fieldTypes) {
+    for (QualType &fieldType : spiceStruct->fieldTypes) {
       if (fieldType.isRef())
         SOFT_ERROR_ER(node, REFERENCE_WITHOUT_INITIALIZER,
                       "The struct takes at least one reference field. You need to instantiate it with all fields.")
@@ -2119,7 +2118,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   resultVarEntry->used = true;
 
   // Visit parameters
-  std::vector<Type> paramTypes;
+  std::vector<QualType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -2163,7 +2162,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit parameters
-  std::vector<Type> paramTypes;
+  std::vector<QualType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -2206,7 +2205,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit parameters
-  std::vector<Type> paramTypes;
+  std::vector<QualType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -2221,7 +2220,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   }
 
   // Visit lambda expression
-  Type returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
+  QualType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
   HANDLE_UNRESOLVED_TYPE_ER(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -2494,7 +2493,7 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   }
 
   // Visit param types
-  std::vector<Type> paramTypes;
+  std::vector<QualType> paramTypes;
   if (const TypeLstNode *paramTypeListNode = node->paramTypeLst(); paramTypeListNode != nullptr) {
     for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes()) {
       auto paramType = std::any_cast<QualType>(visit(paramTypeNode));
@@ -2545,7 +2544,7 @@ bool TypeChecker::checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const Lambd
   return false; // Not violated
 }
 
-Type TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const {
+QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const {
   // Skip all types, except structs
   if (!symbolType.isBaseType(TY_STRUCT))
     return symbolType;
@@ -2574,7 +2573,7 @@ Type TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, cons
   return symbolType;
 }
 
-Type TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const {
+QualType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const {
   // Skip all types, except structs
   if (!symbolType.isBaseType(TY_STRUCT))
     return symbolType;
@@ -2585,20 +2584,20 @@ Type TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, cons
     return symbolType;
 
   // Match the scope of the symbol type against all scopes in the name registry of this source file
-  const Type baseType = symbolType.getBaseType();
+  const QualType baseType = symbolType.getBaseType();
   for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getType().isBaseType(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->scope == baseType.getBodyScope())
+        if (manifestation->scope == baseType.getType().getBodyScope())
           return symbolType;
 
   // This source file does not know about the struct at all
   // -> show it how to find the struct
-  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(baseType.getSubType());
+  const NameRegistryEntry *origRegistryEntry = sourceSourceFile->getNameRegistryEntry(baseType.getType().getSubType());
   assert(origRegistryEntry != nullptr);
   const uint64_t typeId = origRegistryEntry->typeId;
   SymbolTableEntry *targetEntry = origRegistryEntry->targetEntry;
-  sourceFile->addNameRegistryEntry(baseType.getSubType(), typeId, targetEntry, origRegistryEntry->targetScope, false);
+  sourceFile->addNameRegistryEntry(baseType.getType().getSubType(), typeId, targetEntry, origRegistryEntry->targetScope, false);
 
   return symbolType;
 }

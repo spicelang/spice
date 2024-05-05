@@ -141,8 +141,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Change to struct scope
     if (manifestation->isMethod()) {
-      const Type &thisType = manifestation->thisType;
-      const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
+      const QualType &thisType = manifestation->thisType;
+      const std::string signature = Struct::getSignature(thisType.getType().getSubType(), thisType.getType().getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
       assert(currentScope != nullptr);
     }
@@ -173,15 +173,15 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         // Get symbol table entry of param
         SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
-        const Type paramSymbolType = manifestation->getParamTypes().at(argIdx);
+        const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
-        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
+        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.getType().hasLambdaCaptures()) {
           Type paramSymbolSymbolType = paramSymbol->getType();
           paramSymbolSymbolType.setHasLambdaCaptures(true);
           paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
-        llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
+        llvm::Type *paramType = paramSymbolType.getType().toLLVMType(context, currentScope);
         // Add it to the lists
         paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
@@ -189,7 +189,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     }
 
     // Get return type
-    llvm::Type *returnType = manifestation->returnType.toLLVMType(context, currentScope);
+    llvm::Type *returnType = manifestation->returnType.getType().toLLVMType(context, currentScope);
 
     // Check if function is explicitly inlined
     const bool explicitlyInlined = manifestation->entry->getType().isInline();
@@ -313,8 +313,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
 
     // Change to struct scope
     if (manifestation->isMethod()) {
-      const Type &thisType = manifestation->thisType;
-      const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
+      const QualType &thisType = manifestation->thisType;
+      const std::string signature = Struct::getSignature(thisType.getType().getSubType(), thisType.getType().getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
       assert(currentScope != nullptr);
     }
@@ -345,15 +345,15 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         // Get symbol table entry of param
         SymbolTableEntry *paramSymbol = currentScope->lookupStrict(param->varName);
         assert(paramSymbol != nullptr);
-        const Type paramSymbolType = manifestation->getParamTypes().at(argIdx);
+        const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
-        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
+        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.getType().hasLambdaCaptures()) {
           Type paramSymbolSymbolType = paramSymbol->getType();
           paramSymbolSymbolType.setHasLambdaCaptures(true);
           paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
-        llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
+        llvm::Type *paramType = paramSymbolType.getType().toLLVMType(context, currentScope);
         // Add it to the lists
         paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
@@ -594,13 +594,13 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   assert(spiceFunc != nullptr);
   llvm::Type *returnType = builder.getVoidTy();
   if (!spiceFunc->returnType.is(TY_DYN))
-    returnType = spiceFunc->returnType.toLLVMType(context, currentScope);
+    returnType = spiceFunc->returnType.getType().toLLVMType(context, currentScope);
 
   // Get arg types
   std::vector<llvm::Type *> argTypes;
   argTypes.reserve(spiceFunc->paramList.size());
-  for (const Type &paramType : spiceFunc->getParamTypes())
-    argTypes.push_back(paramType.toLLVMType(context, currentScope));
+  for (const QualType &paramType : spiceFunc->getParamTypes())
+    argTypes.push_back(paramType.getType().toLLVMType(context, currentScope));
 
   // Declare function
   llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, node->isVarArg);

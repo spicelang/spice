@@ -137,12 +137,12 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
         // Replace field type with concrete template type
         SymbolTableEntry *fieldEntry = substantiatedStruct->scope->symbolTable.lookupStrictByIndex(explicitFieldsStartIdx + i);
         assert(fieldEntry != nullptr && fieldEntry->isField());
-        Type &fieldType = substantiatedStruct->fieldTypes.at(i);
-        Type baseType = fieldType.getBaseType();
+        QualType &fieldType = substantiatedStruct->fieldTypes.at(i);
+        QualType baseType = fieldType.getBaseType();
 
         // Set the body scope of fields that are of type <candidate-struct>*
         if (baseType.matches(substantiatedStruct->entry->getType(), false, true, true)) {
-          baseType.setBodyScope(substantiatedStruct->scope);
+          baseType.getType().setBodyScope(substantiatedStruct->scope);
           fieldType = fieldType.replaceBaseType(baseType);
         }
 
@@ -150,23 +150,23 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
 
         // Instantiate structs
         if (baseType.is(TY_STRUCT))
-          baseType.getStruct(node);
+          baseType.getType().getStruct(node);
       }
 
       // Instantiate implemented interfaces if required
-      for (Type &interfaceType : substantiatedStruct->interfaceTypes) {
+      for (QualType &interfaceType : substantiatedStruct->interfaceTypes) {
         // Skip non-generic interfaces
-        if (!interfaceType.hasAnyGenericParts())
+        if (!interfaceType.getType().hasAnyGenericParts())
           continue;
 
         // Build template types
-        std::vector<QualType> templateTypes = interfaceType.getTemplateTypes();
+        std::vector<QualType> templateTypes = interfaceType.getType().getTemplateTypes();
         TypeMatcher::substantiateTypesWithTypeMapping(templateTypes, typeMapping);
 
         // Instantiate interface
-        Scope *interfaceMatchScope = interfaceType.getBodyScope()->parent;
+        Scope *interfaceMatchScope = interfaceType.getType().getBodyScope()->parent;
         Interface *spiceInterface =
-            InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getSubType(), templateTypes, node);
+            InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getType().getSubType(), templateTypes, node);
         assert(spiceInterface != nullptr);
 
         interfaceType = spiceInterface->entry->getType();
@@ -218,7 +218,7 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<Qual
 
   // Loop over all template types
   for (size_t i = 0; i < typeCount; i++) {
-    const Type &reqType = reqTemplateTypes.at(i);
+    const QualType &reqType = reqTemplateTypes.at(i);
     Type &candidateType = candidate.templateTypes.at(i);
 
     // Check if the requested template type matches the candidate template type. The type mapping may be extended
@@ -252,9 +252,9 @@ void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeM
   }
 
   // Loop over all explicit field types and substantiate the generic ones
-  for (Type &fieldType : candidate.fieldTypes)
-    if (fieldType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
+  for (QualType &fieldType : candidate.fieldTypes)
+    if (fieldType.getType().hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType.getType(), typeMapping);
 }
 
 /**

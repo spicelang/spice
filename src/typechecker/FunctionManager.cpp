@@ -275,7 +275,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       if (presetFunction.isMethod() && !presetFunction.templateTypes.empty()) {
         SymbolTableEntry *thisEntry = childScope->lookupStrict(THIS_VARIABLE_NAME);
         assert(thisEntry != nullptr);
-        thisEntry->updateType(candidate.thisType.toPointer(callNode), /*overwriteExistingType=*/true);
+        thisEntry->updateType(candidate.thisType.getType().toPointer(callNode), /*overwriteExistingType=*/true);
       }
 
       // Add to matched functions
@@ -330,7 +330,7 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
       assert(spiceStruct != nullptr);
       matchScope = spiceStruct->scope;
     }
-    candidate.thisType.setBodyScope(matchScope);
+    candidate.thisType.getType().setBodyScope(matchScope);
   }
 
   return MatchResult::MATCHED;
@@ -356,7 +356,7 @@ bool FunctionManager::matchName(const Function &candidate, const std::string &re
  */
 bool FunctionManager::matchThisType(Function &candidate, const Type &reqThisType, TypeMapping &typeMapping,
                                     bool strictSpecifierMatching) {
-  Type &candidateThisType = candidate.thisType;
+  QualType &candidateThisType = candidate.thisType;
 
   // Shortcut for procedures
   if (candidateThisType.is(TY_DYN) && reqThisType.is(TY_DYN))
@@ -373,8 +373,8 @@ bool FunctionManager::matchThisType(Function &candidate, const Type &reqThisType
     return false;
 
   // Substantiate the candidate param type, based on the type mapping
-  if (candidateThisType.hasAnyGenericParts())
-    TypeMatcher::substantiateTypeWithTypeMapping(candidateThisType, typeMapping);
+  if (candidateThisType.getType().hasAnyGenericParts())
+    TypeMatcher::substantiateTypeWithTypeMapping(candidateThisType.getType(), typeMapping);
 
   return true;
 }
@@ -406,7 +406,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
   for (size_t i = 0; i < reqArgs.size(); i++) {
     // Retrieve actual and requested types
     assert(!candidateParamList.at(i).isOptional);
-    Type &candidateParamType = candidateParamList.at(i).type;
+    QualType &candidateParamType = candidateParamList.at(i).type;
     const Arg &requestedParamType = reqArgs.at(i);
     const Type &requestedType = requestedParamType.first;
     const bool isArgTemporary = requestedParamType.second;
@@ -417,8 +417,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
       return false;
 
     // Substantiate the candidate param type, based on the type mapping
-    if (candidateParamType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType, typeMapping);
+    if (candidateParamType.getType().hasAnyGenericParts())
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType.getType(), typeMapping);
 
     // Check if we try to bind a non-ref temporary to a non-const ref parameter
     if (!candidateParamType.canBind(requestedType, isArgTemporary)) {
@@ -429,7 +429,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
 
     // If we have a function/procedure type we need to take care of the information, if it takes captures
     if (requestedType.getBaseType().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
-      candidateParamType.setHasLambdaCaptures(true);
+      candidateParamType.getType().setHasLambdaCaptures(true);
       needsSubstantiation = true;
     }
   }
@@ -444,8 +444,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
  * @param typeMapping Concrete template type mapping
  */
 void FunctionManager::substantiateReturnType(Function &candidate, TypeMapping &typeMapping) {
-  if (candidate.returnType.hasAnyGenericParts())
-    TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType, typeMapping);
+  if (candidate.returnType.getType().hasAnyGenericParts())
+    TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType.getType(), typeMapping);
 }
 
 /**

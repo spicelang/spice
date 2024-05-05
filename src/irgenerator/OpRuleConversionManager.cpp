@@ -1707,7 +1707,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
     // Get returnType
     llvm::Type *returnType = builder.getVoidTy();
     if (!opFct->returnType.is(TY_DYN))
-      returnType = opFct->returnType.toLLVMType(context, accessScope);
+      returnType = opFct->returnType.getType().toLLVMType(context, accessScope);
 
     // Get arg types
     std::vector<llvm::Type *> argTypes;
@@ -1729,7 +1729,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   if (opFct->isProcedure())
     return {.constant = builder.getTrue()};
 
-  // Attach address to anonymous symbol to keep track of deallocation
+  // Attach address to anonymous symbol to keep track of de-allocation
   SymbolTableEntry *anonymousSymbol = nullptr;
   llvm::Value *resultPtr = nullptr;
   if (opFct->returnType.is(TY_STRUCT)) {

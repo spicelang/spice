@@ -25,7 +25,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   resultEntry->used = true;
 
   // Retrieve param types
-  std::vector<Type> paramTypes;
+  std::vector<QualType> paramTypes;
   if (node->takesArgs) {
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList)
@@ -109,8 +109,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   }
 
   // Visit parameters
-  std::vector<std::string> paramNames;
-  std::vector<Type> paramTypes;
+  std::vector<const char *> paramNames;
+  std::vector<QualType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -120,7 +120,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
       // Check if the type is present in the template for generic types
-      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
+      if (!param.type.getType().isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the function");
     }
@@ -251,8 +251,8 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   }
 
   // Visit parameters
-  std::vector<std::string> paramNames;
-  std::vector<Type> paramTypes;
+  std::vector<const char *> paramNames;
+  std::vector<QualType> paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -262,7 +262,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
       // Check if the type is present in the template for generic types
-      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
+      if (!param.type.getType().isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the procedure");
     }
@@ -337,7 +337,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   }
 
   // Retrieve implemented interfaces
-  std::vector<Type> interfaceTypes;
+  std::vector<QualType> interfaceTypes;
   if (node->hasInterfaces) {
     interfaceTypes.reserve(node->interfaceTypeLst()->dataTypes().size());
     for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes()) {
@@ -376,7 +376,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   assert(currentScope->type == ScopeType::STRUCT);
 
   // Retrieve field types
-  std::vector<Type> fieldTypes;
+  std::vector<QualType> fieldTypes;
   fieldTypes.reserve(node->fields().size());
   for (FieldNode *field : node->fields()) {
     // Visit field type
@@ -591,7 +591,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
   HANDLE_UNRESOLVED_TYPE_PTR(globalVarType)
 
   if (node->constant()) { // Variable is initialized here
-    Type rhsType = std::any_cast<ExprResult>(visit(node->constant())).type;
+    QualType rhsType = std::any_cast<ExprResult>(visit(node->constant())).type;
     HANDLE_UNRESOLVED_TYPE_PTR(rhsType)
     if (globalVarType.is(TY_DYN)) { // Perform type inference
       globalVarType = rhsType;
@@ -622,7 +622,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
 
 std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   // Collect argument types
-  std::vector<Type> argTypes;
+  std::vector<QualType> argTypes;
   ParamList argList;
   if (node->hasArgs) {
     argList.reserve(node->argTypeLst()->dataTypes().size());

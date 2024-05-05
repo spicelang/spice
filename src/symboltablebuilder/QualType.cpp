@@ -166,6 +166,18 @@ bool QualType::matches(const QualType &otherType, bool ignoreArraySize, bool ign
   return ignoreSpecifiers || type->specifiers.match(otherType.type->specifiers, allowConstify);
 }
 
+QualType QualType::toPtr(const ASTNode *node) const {
+  return {type->toPointer(node)};
+}
+
+QualType QualType::toRef(const ASTNode *node) const {
+  return {type->toReference(node)};
+}
+
+QualType QualType::toArray(const ASTNode *node, size_t size) const {
+  return {type->toArray(node, size)};
+}
+
 bool operator==(const QualType &lhs, const QualType &rhs) { return *lhs.type == *rhs.type; }
 
 bool operator!=(const QualType &lhs, const QualType &rhs) { return !(lhs == rhs); }

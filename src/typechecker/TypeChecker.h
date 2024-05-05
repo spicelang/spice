@@ -136,8 +136,8 @@ private:
   bool visitFctPtrCall(FctCallNode *node, const Type &functionType) const;
   bool visitMethodCall(FctCallNode *node, Scope *structScope, std::vector<QualType> &templateTypes) const;
   bool checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
-  [[nodiscard]] Type mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;
-  [[nodiscard]] Type mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const;
+  [[nodiscard]] QualType mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;
+  [[nodiscard]] QualType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const;
   static void autoDeReference(Type &symbolType);
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   void requestRevisitIfRequired(const Function *fct);

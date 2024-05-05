@@ -572,7 +572,7 @@ std::string Type::getName(bool withSize, bool ignorePublic) const { // NOLINT(mi
  *
  * @param returnType Function return type
  */
-void Type::setFunctionReturnType(const Type &returnType) {
+void Type::setFunctionReturnType(const QualType &returnType) {
   assert(is(TY_FUNCTION));
   std::vector<QualType> &paramTypes = typeChain.back().paramTypes;
   if (paramTypes.empty())
@@ -596,12 +596,12 @@ const QualType &Type::getFunctionReturnType() const {
  *
  * @param paramTypes Function param types
  */
-void Type::setFunctionParamTypes(const std::vector<Type> &newParamTypes) {
+void Type::setFunctionParamTypes(const std::vector<QualType> &newParamTypes) {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   std::vector<QualType> &paramTypes = typeChain.back().paramTypes;
   // Resize param types if required
   if (paramTypes.size() < newParamTypes.size() + 1)
-    paramTypes.resize(newParamTypes.size() + 1, Type(TY_DYN));
+    paramTypes.resize(newParamTypes.size() + 1, QualType(TY_DYN));
   // Set the function param types
   for (size_t i = 0; i < newParamTypes.size(); i++)
     paramTypes.at(i + 1) = newParamTypes.at(i);

@@ -80,13 +80,13 @@ llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {
 
 llvm::Function *StdFunctionManager::getIterateFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
-  llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(context, nullptr);
+  llvm::Type *iteratorType = spiceFunc->returnType.getType().toLLVMType(context, nullptr);
   return getFunction(functionName.c_str(), iteratorType, {builder.getPtrTy(), builder.getInt64Ty()});
 }
 
 llvm::Function *StdFunctionManager::getIteratorFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
-  llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(context, nullptr);
+  llvm::Type *iteratorType = spiceFunc->returnType.getType().toLLVMType(context, nullptr);
   return getFunction(functionName.c_str(), iteratorType, builder.getPtrTy());
 }
 
@@ -97,7 +97,7 @@ llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *spiceFunc)
 
 llvm::Function *StdFunctionManager::getIteratorGetIdxFct(const Function *spiceFunc, Scope *accessScope) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
-  llvm::Type *pairTy = spiceFunc->returnType.toLLVMType(context, accessScope);
+  llvm::Type *pairTy = spiceFunc->returnType.getType().toLLVMType(context, accessScope);
   return getFunction(functionName.c_str(), pairTy, builder.getPtrTy());
 }
 

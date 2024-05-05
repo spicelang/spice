@@ -128,7 +128,7 @@ public:
 
 private:
   // Private methods
-  llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const Type &type, const ASTNode *node);
+  llvm::Constant *getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node);
   llvm::BasicBlock *createBlock(const std::string &blockName = "");
   void switchToBlock(llvm::BasicBlock *block, llvm::Function *parentFct = nullptr);
   void insertJump(llvm::BasicBlock *targetBlock);
@@ -139,7 +139,7 @@ private:
   LLVMExprResult doAssignment(const ASTNode *lhsNode, const ASTNode *rhsNode);
   LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode, bool isDecl = false);
   LLVMExprResult doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
-                              const Type &rhsSType, bool isDecl);
+                              const QualType &rhsSType, bool isDecl);
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
                                  const std::string &name = "", bool isVolatile = false);
   void autoDeReferencePtr(llvm::Value *&ptr, Type &symbolType, Scope *accessScope) const;

@@ -24,7 +24,7 @@ class GenericType;
 // Typedefs
 using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, Function>;
 using FunctionRegistry = std::map</*fctId=*/std::string, /*manifestationList=*/FunctionManifestationList>;
-using Arg = std::pair</*type=*/Type, /*isTemporary=*/bool>;
+using Arg = std::pair</*type=*/QualType, /*isTemporary=*/bool>;
 using ArgList = std::vector<Arg>;
 
 enum class MatchResult : uint8_t {

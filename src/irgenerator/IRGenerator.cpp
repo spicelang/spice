@@ -277,7 +277,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const Type &symbolType
   throw CompilerError(INTERNAL_ERROR, "Cannot determine default value for symbol type"); // GCOV_EXCL_LINE
 }
 
-llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, const Type &type, const ASTNode *node) {
+llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) {
   if (type.is(TY_DOUBLE))
     return llvm::ConstantFP::get(context, llvm::APFloat(compileTimeValue.doubleValue));
 
@@ -381,13 +381,13 @@ LLVMExprResult IRGenerator::doAssignment(const ASTNode *lhsNode, const ASTNode *
 LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, const ASTNode *rhsNode,
                                          bool isDecl) {
   // Get symbol type of right side
-  const Type &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
+  const QualType &rhsSType = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
   return doAssignment(lhsAddress, lhsEntry, rhs, rhsSType, isDecl);
 }
 
 LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEntry *lhsEntry, LLVMExprResult &rhs,
-                                         const Type &rhsSType, bool isDecl) {
+                                         const QualType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getType().isRef();
   const bool needsCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !rhs.isTemporary();
@@ -430,8 +430,8 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     assert(rhsAddress != nullptr);
 
     // Check if we have a copy ctor
-    Scope *structScope = rhsSType.getBodyScope();
-    const ArgList args = {{rhsSType.toConstReference(nullptr), rhs.isTemporary()}};
+    Scope *structScope = rhsSType.getType().getBodyScope();
+    const ArgList args = {{rhsSType.getType().toConstReference(nullptr), rhs.isTemporary()}};
     auto copyCtor = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, rhsSType, args, {}, true, nullptr);
     if (copyCtor != nullptr) {
       // Call copy ctor
@@ -439,7 +439,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
       return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
     } else {
       // Create shallow copy
-      llvm::Type *rhsType = rhsSType.toLLVMType(context, currentScope);
+      llvm::Type *rhsType = rhsSType.getType().toLLVMType(context, currentScope);
       const std::string copyName = lhsEntry ? lhsEntry->name : "";
       llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
       // Set address of lhs to the copy
@@ -466,11 +466,11 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   }
 
   // Check if we try to assign an array by value to a pointer. Here we have to store the address of the first element to the lhs
-  if (lhsEntry && lhsEntry->getType().isPtr() && rhsSType.isArray() && rhsSType.getArraySize() != ARRAY_SIZE_UNKNOWN) {
+  if (lhsEntry && lhsEntry->getType().isPtr() && rhsSType.isArray() && rhsSType.getType().getArraySize() != ARRAY_SIZE_UNKNOWN) {
     // Get address of right side
     llvm::Value *rhsAddress = resolveAddress(rhs);
     assert(rhsAddress != nullptr);
-    llvm::Type *elementTy = rhsSType.toLLVMType(context, currentScope);
+    llvm::Type *elementTy = rhsSType.getType().toLLVMType(context, currentScope);
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
     llvm::Value *firstItemAddress = insertInBoundsGEP(elementTy, rhsAddress, indices);
     insertStore(firstItemAddress, lhsAddress);

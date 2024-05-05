@@ -18,12 +18,12 @@ struct CodeLoc;
 class SymbolTableEntry;
 
 struct Param {
-  Type type;
+  QualType type;
   bool isOptional = false;
 };
 struct NamedParam {
-  std::string name;
-  Type type;
+  const char *name;
+  QualType type;
   bool isOptional = false;
 };
 using ParamList = std::vector<Param>;
@@ -62,8 +62,8 @@ public:
 
   // Public members
   std::string name;
-  Type thisType = Type(TY_DYN);
-  Type returnType = Type(TY_DYN);
+  QualType thisType = QualType(TY_DYN);
+  QualType returnType = QualType(TY_DYN);
   ParamList paramList;
   std::vector<GenericType> templateTypes;
   std::unordered_map<std::string, Type> typeMapping;

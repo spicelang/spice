@@ -7,7 +7,7 @@
 #define SOFT_ERROR_ER(node, type, message)                                                                                       \
   {                                                                                                                              \
     resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx))};                                      \
+    return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};                                                \
   }
 
 #define SOFT_ERROR_QT(node, type, message)                                                                                       \
@@ -31,13 +31,13 @@
 #define HANDLE_UNRESOLVED_TYPE_ER(type)                                                                                          \
   {                                                                                                                              \
     if (type.is(TY_UNRESOLVED))                                                                                                  \
-      return ExprResult{QualType(node->setEvaluatedSymbolType(Type(TY_UNRESOLVED), manIdx))};                                    \
+      return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};                                          \
   }
 
 #define HANDLE_UNRESOLVED_TYPE_QT(qualType)                                                                                      \
   {                                                                                                                              \
     if (qualType.is(TY_UNRESOLVED))                                                                                              \
-      return QualType(node->setEvaluatedSymbolType(qualType.getType(), manIdx));                                                 \
+      return node->setEvaluatedSymbolType(qualType, manIdx);                                                                     \
   }
 
 #define HANDLE_UNRESOLVED_TYPE_PTR(type)                                                                                         \

@@ -215,7 +215,7 @@ void InterfaceManager::substantiateSignatures(Interface &candidate, TypeMapping 
     // Substantiate param types
     for (Param &paramType : method->paramList)
       if (paramType.type.isBaseType(TY_GENERIC))
-        TypeMatcher::substantiateTypeWithTypeMapping(paramType.type, typeMapping);
+        TypeMatcher::substantiateTypeWithTypeMapping(paramType.type.getType(), typeMapping);
   }
 }
 

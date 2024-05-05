@@ -13,6 +13,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class Type;
+class ASTNode;
 enum SuperType : uint8_t;
 
 class QualType {
@@ -60,6 +61,11 @@ public:
   [[nodiscard]] QualType toNonConst() const;
   [[nodiscard]] bool canBind(const QualType &otherType, bool isTemporary) const;
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
+
+  // Get new type, based on this one
+  [[nodiscard]] QualType toPtr(const ASTNode *node) const;
+  [[nodiscard]] QualType toRef(const ASTNode *node) const;
+  [[nodiscard]] QualType toArray(const ASTNode *node, size_t size) const;
 
   // Overloaded operators
   friend bool operator==(const QualType &lhs, const QualType &rhs);
