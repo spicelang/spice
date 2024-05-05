@@ -25,7 +25,7 @@ public:
   QualType() = default;
   [[deprecated]] /*ToDo: explicit*/ QualType(Type type);
   explicit QualType(SuperType superType);
-  QualType(SuperType superType, const std::string &subtype);
+  QualType(SuperType superType, const std::string &subType);
   QualType(Type type, TypeSpecifiers specifiers);
 
   // ToDo: Remove those later on
@@ -70,6 +70,7 @@ public:
   [[nodiscard]] bool hasAnyGenericParts() const;
   [[nodiscard]] bool canBind(const QualType &otherType, bool isTemporary) const;
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
+  [[nodiscard]] bool isSameContainerTypeAs(const QualType &other) const;
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
 
   // Get new type, based on this one

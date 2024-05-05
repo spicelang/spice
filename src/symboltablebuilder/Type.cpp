@@ -421,11 +421,14 @@ bool Type::isBase(SuperType superType) const {
  * Check if the current type is of the same container type like the other type.
  * Only TY_PTR, TY_REF and TY_ARRAY are considered as container types.
  *
- * @param otherType Other symbol type
+ * @param other Other symbol type
  * @return Same container type or not
  */
-bool Type::isSameContainerTypeAs(const Type &otherType) const {
-  return (isPtr() && otherType.isPtr()) || (isRef() && otherType.isRef()) || (isArray() && otherType.isArray());
+bool Type::isSameContainerTypeAs(const Type &other) const {
+  const bool bothPtr = isPtr() && other.isPtr();
+  const bool bothRef = isRef() && other.isRef();
+  const bool bothArray = isArray() && other.isArray();
+  return bothPtr || bothRef || bothArray;
 }
 
 /**

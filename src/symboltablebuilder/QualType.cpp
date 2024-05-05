@@ -10,7 +10,7 @@ namespace spice::compiler {
 
 QualType::QualType(Type t) : type(std::make_unique<Type>(std::move(t))) /*, specifiers(this->type->specifiers)*/ {}
 QualType::QualType(SuperType superType) : type(std::make_unique<Type>(superType)) {}
-QualType::QualType(SuperType superType, const std::string &subtype) : type(std::make_unique<Type>(superType, subtype)) {}
+QualType::QualType(SuperType superType, const std::string &subType) : type(std::make_unique<Type>(superType, subType)) {}
 QualType::QualType(Type t, TypeSpecifiers specifiers) : type(std::make_unique<Type>(std::move(t))) /*, specifiers(specifiers)*/ {}
 
 // ToDo: Delete those two later on
@@ -173,6 +173,10 @@ bool QualType::matches(const QualType &otherType, bool ignoreArraySize, bool ign
 
   // Ignore or compare specifiers
   return ignoreSpecifiers || type->specifiers.match(otherType.type->specifiers, allowConstify);
+}
+
+bool QualType::isSameContainerTypeAs(const QualType &other) const {
+  return type->isSameContainerTypeAs(*other.type);
 }
 
 /**

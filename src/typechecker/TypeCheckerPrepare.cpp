@@ -140,10 +140,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
 
   // Prepare type of function
-  Type functionType(TY_FUNCTION);
-  functionType.specifiers = node->specifiers;
-  functionType.setFunctionReturnType(returnType);
-  functionType.setFunctionParamTypes(paramTypes);
+  QualType functionType(TY_FUNCTION);
+  functionType.getType().specifiers = node->specifiers;
+  functionType.getType().setFunctionReturnType(returnType);
+  functionType.getType().setFunctionParamTypes(paramTypes);
 
   // Update type of function entry
   SymbolTableEntry *functionEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
@@ -273,9 +273,9 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
 
   // Prepare type of procedure
-  Type procedureType(TY_PROCEDURE);
-  procedureType.specifiers = node->specifiers;
-  procedureType.setFunctionParamTypes(paramTypes);
+  QualType procedureType(TY_PROCEDURE);
+  procedureType.getType().specifiers = node->specifiers;
+  procedureType.getType().setFunctionParamTypes(paramTypes);
 
   // Update type of procedure entry
   SymbolTableEntry *procedureEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
@@ -366,8 +366,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   // Update type of struct entry
   assert(node->entry != nullptr);
   const Type::TypeChainElementData data = {.bodyScope = node->structScope};
-  Type structType(TY_STRUCT, node->structName, node->typeId, data, usedTemplateTypes);
-  structType.specifiers = node->structSpecifiers;
+  QualType structType(Type(TY_STRUCT, node->structName, node->typeId, data, usedTemplateTypes));
+  structType.getType().specifiers = node->structSpecifiers;
   node->entry->updateType(structType, false);
 
   // Change to struct scope
@@ -495,8 +495,8 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Update type of enum entry
   const Type::TypeChainElementData data = {.bodyScope = node->enumScope};
-  Type enumType(TY_ENUM, node->enumName, node->typeId, data, {});
-  enumType.specifiers = node->enumSpecifiers;
+  QualType enumType(Type(TY_ENUM, node->enumName, node->typeId, data, {}));
+  enumType.getType().specifiers = node->enumSpecifiers;
   assert(node->entry != nullptr);
   node->entry->updateType(enumType, false);
 
@@ -522,7 +522,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 
   // Loop through all items without values
   uint32_t nextValue = 0;
-  Type intSymbolType(TY_INT);
+  QualType intSymbolType(TY_INT);
   for (EnumItemNode *enumItem : node->itemLst()->items()) {
     // Update type of enum item entry
     SymbolTableEntry *itemEntry = currentScope->lookupStrict(enumItem->itemName);
@@ -571,8 +571,8 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
   assert(node->entry != nullptr && node->aliasedTypeContainerEntry != nullptr);
 
   // Update type of alias entry
-  Type aliasType(TY_ALIAS, node->dataTypeString);
-  aliasType.specifiers = node->aliasSpecifiers;
+  QualType aliasType(TY_ALIAS, node->dataTypeString);
+  aliasType.getType().specifiers = node->aliasSpecifiers;
   node->entry->updateType(aliasType, false);
 
   // Update type of the aliased type container entry
@@ -668,10 +668,10 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   }
 
   // Prepare ext function type
-  Type extFunctionType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
+  QualType extFunctionType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
   if (isFunction)
-    extFunctionType.setFunctionReturnType(returnType);
-  extFunctionType.setFunctionParamTypes(argTypes);
+    extFunctionType.getType().setFunctionReturnType(returnType);
+  extFunctionType.getType().setFunctionParamTypes(argTypes);
 
   // Set type of external function
   node->entry->updateType(extFunctionType, false);
@@ -684,7 +684,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
 
 std::any TypeChecker::visitImportDefPrepare(ImportDefNode *node) {
   // Set entry to import type
-  const Type importType(TY_IMPORT, node->importName);
+  const QualType importType(TY_IMPORT, node->importName);
   assert(node->entry != nullptr);
   node->entry->updateType(importType, false);
 

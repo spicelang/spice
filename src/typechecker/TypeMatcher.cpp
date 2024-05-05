@@ -70,8 +70,9 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       requestedType.getType().specifiers.eraseWithMask(candidateType.getType().specifiers);
 
       // Add to type mapping
-      const Type newMappingType = requestedType.hasAnyGenericParts() ? candidateType : requestedType;
-      assert(newMappingType.is(TY_GENERIC) || newMappingType.specifiers.isSigned != newMappingType.specifiers.isUnsigned);
+      const QualType newMappingType = requestedType.hasAnyGenericParts() ? candidateType : requestedType;
+      assert(newMappingType.is(TY_GENERIC) ||
+             newMappingType.getType().specifiers.isSigned != newMappingType.getType().specifiers.isUnsigned);
       typeMapping.insert({genericTypeName, newMappingType});
 
       return true; // The type was successfully matched, by enriching the type mapping
@@ -118,7 +119,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
   if (type.isBase(TY_GENERIC)) { // The symbol type itself is generic
     const std::string genericTypeName = type.getBase().getSubType();
     assert(typeMapping.contains(genericTypeName));
-    const Type &replacementType = typeMapping.at(genericTypeName);
+    const QualType &replacementType = typeMapping.at(genericTypeName);
     type = type.replaceBaseType(replacementType);
   } else { // The symbol type itself is non-generic, but one or several template or param types are
     if (type.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {

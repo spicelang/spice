@@ -245,7 +245,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   }
 
   // Update type of item
-  itemVarSymbol->updateType(itemType.getType(), true);
+  itemVarSymbol->updateType(itemType, true);
 
   // Visit body
   visit(node->body());
@@ -521,11 +521,11 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   manifestation->used = true;
 
   // Prepare signature type
-  Type signatureType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
-  signatureType.specifiers = node->signatureSpecifiers;
+  QualType signatureType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
+  signatureType.getType().specifiers = node->signatureSpecifiers;
   if (isFunction)
-    signatureType.setFunctionReturnType(returnType);
-  signatureType.setFunctionParamTypes(paramTypes);
+    signatureType.getType().setFunctionReturnType(returnType);
+  signatureType.getType().setFunctionParamTypes(paramTypes);
 
   // Set entry to signature type
   assert(node->entry != nullptr);

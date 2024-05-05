@@ -142,7 +142,7 @@ public:
     const SuperType superType = getSuperType();
     return std::ranges::any_of(superTypes, [&superType](SuperType type) { return type == superType; });
   }
-  [[nodiscard]] bool isSameContainerTypeAs(const Type &otherType) const;
+  [[nodiscard]] bool isSameContainerTypeAs(const Type &other) const;
   [[nodiscard]] ALWAYS_INLINE SuperType getSuperType() const {
     assert(!typeChain.empty());
     return typeChain.back().superType;
@@ -152,11 +152,6 @@ public:
     return typeChain.back().subType;
   }
   [[nodiscard]] ALWAYS_INLINE Type removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
-  [[nodiscard]] ALWAYS_INLINE Type getNonConst() const {
-    Type type = *this;
-    type.specifiers.isConst = false;
-    return type;
-  }
   [[nodiscard]] Type getBase() const;
   [[nodiscard]] bool hasAnyGenericParts() const;
   void setTemplateTypes(const std::vector<QualType> &templateTypes);
@@ -174,15 +169,10 @@ public:
     assert(isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}));
     return specifiers.isSigned;
   }
-  [[nodiscard]] ALWAYS_INLINE bool isInline() const {
-    assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-    return specifiers.isInline;
-  }
   [[nodiscard]] ALWAYS_INLINE bool isPublic() const {
     assert(isPrimitive() /* Global variables */ || isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_ENUM, TY_STRUCT, TY_INTERFACE}));
     return specifiers.isPublic;
   }
-  [[nodiscard]] ALWAYS_INLINE bool isHeap() const { return specifiers.isHeap; }
   ALWAYS_INLINE void setBodyScope(Scope *bodyScope) {
     assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
     typeChain.back().data.bodyScope = bodyScope;
