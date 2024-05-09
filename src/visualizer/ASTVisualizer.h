@@ -20,8 +20,7 @@ namespace spice::compiler {
 class ASTVisualizer : private CompilerPass, public AbstractASTVisitor {
 public:
   // Constructors
-  ASTVisualizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile, const ASTNode *ast)
-      : CompilerPass(resourceManager, sourceFile), ast(ast){};
+  using CompilerPass::CompilerPass;
 
   // Visitor methods
   std::any visitEntry(EntryNode *ctx) override { return buildNode(ctx); }
@@ -107,7 +106,6 @@ public:
 
 private:
   // Members
-  const ASTNode *ast;
   const std::vector<std::string> nodeNames;
   int currentTabs = 1;
   std::stack<std::string> parentNodeIds;
@@ -130,26 +128,22 @@ private:
 
     // Link parent node with the current one
     if (!parentNodeIds.empty())
-      result << getSpaces() << parentNodeIds.top() << " -> " << nodeId << ";\n";
+      result << " " << parentNodeIds.top() << " -> " << nodeId << ";\n";
 
     parentNodeIds.push(nodeId); // Set parentNodeId for children
 
     // Visit all the children
-    for (ASTNode *child : node->children) {
-      if (child != nullptr) {
-        result << getSpaces();
-        result << std::any_cast<std::string>(visit(child));
-      }
-    }
+    for (ASTNode *child : node->children)
+      if (child != nullptr)
+        result << " " << std::any_cast<std::string>(visit(child));
 
     // Remove parent node id from the stack
     parentNodeIds.pop();
 
     return result.str();
   }
-  static std::string demangleTypeName(const char *mangledName);
 
-  [[nodiscard]] std::string getSpaces() const;
+  static std::string demangleTypeName(const char *mangledName);
 };
 
 } // namespace spice::compiler

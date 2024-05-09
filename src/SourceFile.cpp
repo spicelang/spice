@@ -157,7 +157,7 @@ void SourceFile::runASTVisualizer() {
   // Generate dot code for this source file
   std::stringstream dotCode;
   visualizerPreamble(dotCode);
-  ASTVisualizer astVisualizer(resourceManager, this, ast);
+  ASTVisualizer astVisualizer(resourceManager, this);
   dotCode << std::any_cast<std::string>(astVisualizer.visit(ast)) << "}";
 
   // Dump the serialized AST string and the SVG file

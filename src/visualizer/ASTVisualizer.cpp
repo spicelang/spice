@@ -8,13 +8,6 @@
 
 namespace spice::compiler {
 
-std::string ASTVisualizer::getSpaces() const {
-  std::string spaces;
-  for (int i = 0; i < currentTabs; i++)
-    spaces += " ";
-  return spaces;
-} // GCOVR_EXCL_LINE (false positive)
-
 std::string ASTVisualizer::demangleTypeName(const char *mangledName) {
   int status;
   char *demangled = abi::__cxa_demangle(mangledName, nullptr, nullptr, &status);
