@@ -128,7 +128,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
         if (paramType.hasAnyGenericParts())
           substantiateTypeWithTypeMapping(paramType, typeMapping);
       // Attach the list of concrete param types to the symbol type
-      type.getType().setFunctionParamAndReturnTypes(paramTypes);
+      type.setFunctionParamAndReturnTypes(paramTypes);
     } else {
       // Substantiate each template type
       QualTypeList templateTypes = type.getBase().getTemplateTypes();
@@ -136,7 +136,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
         if (templateType.hasAnyGenericParts())
           substantiateTypeWithTypeMapping(templateType, typeMapping);
       // Attach the list of concrete template types to the symbol type
-      type.getType().setBaseTemplateTypes(templateTypes);
+      type.setBaseTemplateTypes(templateTypes);
     }
   }
 }

@@ -125,7 +125,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     // Load fctPtr
     llvm::StructType *fatStructType = llvm::StructType::get(context, {builder.getPtrTy(), builder.getPtrTy()});
     fctPtr = insertStructGEP(fatStructType, fatPtr, 0);
-    if (firstFragEntry->getQualType().getType().hasLambdaCaptures()) {
+    if (firstFragEntry->getQualType().hasLambdaCaptures()) {
       // Load captures struct
       llvm::Value *capturesPtrPtr = insertStructGEP(fatStructType, fatPtr, 1);
       llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), capturesPtrPtr, false, CAPTURES_PARAM_NAME);

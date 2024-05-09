@@ -34,8 +34,8 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
 
   // Prepare type of function
   QualType functionType(TY_FUNCTION);
-  functionType.getType().setFunctionReturnType(returnType);
-  functionType.getType().setFunctionParamTypes(paramTypes);
+  functionType.setFunctionReturnType(returnType);
+  functionType.setFunctionParamTypes(paramTypes);
 
   // Update main function symbol type
   SymbolTableEntry *functionEntry = rootScope->lookupStrict(node->getSignature());
@@ -142,8 +142,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Prepare type of function
   QualType functionType(TY_FUNCTION);
   functionType.getSpecifiers() = node->specifiers;
-  functionType.getType().setFunctionReturnType(returnType);
-  functionType.getType().setFunctionParamTypes(paramTypes);
+  functionType.setFunctionReturnType(returnType);
+  functionType.setFunctionParamTypes(paramTypes);
 
   // Update type of function entry
   SymbolTableEntry *functionEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
@@ -275,7 +275,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Prepare type of procedure
   QualType procedureType(TY_PROCEDURE);
   procedureType.getSpecifiers() = node->specifiers;
-  procedureType.getType().setFunctionParamTypes(paramTypes);
+  procedureType.setFunctionParamTypes(paramTypes);
 
   // Update type of procedure entry
   SymbolTableEntry *procedureEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
@@ -605,7 +605,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
     SOFT_ERROR_BOOL(node->dataType(), GLOBAL_OF_TYPE_DYN, "Global variables must have an explicit data type")
 
   // Check if we would need to insert instructions in the global scope to initialize the variable
-  if (!globalVarType.getType().isPrimitive())
+  if (!globalVarType.isPrimitive())
     SOFT_ERROR_BOOL(node->dataType(), GLOBAL_OF_INVALID_TYPE, "Spice does only support global variables of primitive type")
 
   // Update type of global var entry
@@ -670,8 +670,8 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   // Prepare ext function type
   QualType extFunctionType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
   if (isFunction)
-    extFunctionType.getType().setFunctionReturnType(returnType);
-  extFunctionType.getType().setFunctionParamTypes(argTypes);
+    extFunctionType.setFunctionReturnType(returnType);
+  extFunctionType.setFunctionParamTypes(argTypes);
 
   // Set type of external function
   node->entry->updateType(extFunctionType, false);

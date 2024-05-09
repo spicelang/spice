@@ -329,7 +329,7 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
       assert(spiceStruct != nullptr);
       matchScope = spiceStruct->scope;
     }
-    candidate.thisType.getType().setBodyScope(matchScope);
+    candidate.thisType.setBodyScope(matchScope);
   }
 
   return MatchResult::MATCHED;
@@ -427,8 +427,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
     }
 
     // If we have a function/procedure type we need to take care of the information, if it takes captures
-    if (requestedType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.getType().hasLambdaCaptures()) {
-      candidateParamType.getType().setHasLambdaCaptures(true);
+    if (requestedType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
+      candidateParamType.setHasLambdaCaptures(true);
       needsSubstantiation = true;
     }
   }

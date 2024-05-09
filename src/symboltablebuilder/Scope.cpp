@@ -276,7 +276,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 void Scope::ensureSuccessfulTypeInference() const { // NOLINT(misc-no-recursion)
   // Check symbols in this scope
   for (auto &[name, entry] : symbolTable.symbols)
-    if (entry.getQualType().getType().is(TY_DYN))
+    if (entry.getQualType().is(TY_DYN))
       throw SemanticError(entry.declNode, UNEXPECTED_DYN_TYPE, "For the variable '" + name + "' no type could be inferred");
 
   // Check child scopes

@@ -121,8 +121,8 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
 
       // Attach the template types to the new interface entry
       QualType entryType = substantiatedInterface->entry->getQualType();
-      entryType.getType().setTemplateTypes(substantiatedInterface->getTemplateTypes());
-      entryType.getType().setBodyScope(substantiatedInterface->scope);
+      entryType.setTemplateTypes(substantiatedInterface->getTemplateTypes());
+      entryType.setBodyScope(substantiatedInterface->scope);
       substantiatedInterface->entry->updateType(entryType, true);
 
       // Replace symbol types of method entries with concrete types
