@@ -26,7 +26,7 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, QualType dstSTy, Qual
   // Unpack the pointers until a pointer of another type is met
   size_t loadCounter = 0;
   while (srcSTy.isPtr()) {
-    src = insertLoad(srcSTy.getType().toLLVMType(context, currentScope), src);
+    src = insertLoad(srcSTy.toLLVMType(context, currentScope), src);
     srcSTy = srcSTy.getContained();
     dstSTy = dstSTy.getContained();
     loadCounter++;
@@ -34,10 +34,10 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, QualType dstSTy, Qual
   // GEP or bit-cast
   if (dstSTy.isArray() && srcSTy.isArray()) { // Special case that is used for passing arrays as pointer to functions
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
-    src = insertInBoundsGEP(srcSTy.getType().toLLVMType(context, currentScope), src, indices);
+    src = insertInBoundsGEP(srcSTy.toLLVMType(context, currentScope), src, indices);
   } else {
-    src = insertLoad(srcSTy.getType().toLLVMType(context, currentScope), src);
-    src = builder.CreateBitCast(src, dstSTy.getType().toLLVMType(context, currentScope));
+    src = insertLoad(srcSTy.toLLVMType(context, currentScope), src);
+    src = builder.CreateBitCast(src, dstSTy.toLLVMType(context, currentScope));
   }
   // Pack the pointers together again
   for (; loadCounter > 0; loadCounter--) {
@@ -124,7 +124,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
     return nullptr;
 
   // Retrieve return type
-  llvm::Type *returnType = spiceFunc->returnType.getType().toLLVMType(context, currentScope);
+  llvm::Type *returnType = spiceFunc->returnType.toLLVMType(context, currentScope);
 
   // Get 'this' entry
   std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
@@ -140,7 +140,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
   // Get parameter types
   for (const Param &param : spiceFunc->paramList) {
     assert(!param.isOptional);
-    paramTypes.push_back(param.type.getType().toLLVMType(context, currentScope));
+    paramTypes.push_back(param.type.toLLVMType(context, currentScope));
   }
 
   // Get function linkage
@@ -231,7 +231,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   // Get parameter types
   for (const Param &param : spiceProc->paramList) {
     assert(!param.isOptional);
-    paramTypes.push_back(param.type.getType().toLLVMType(context, currentScope));
+    paramTypes.push_back(param.type.toLLVMType(context, currentScope));
   }
 
   // Get function linkage
@@ -317,7 +317,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   llvm::Type *structType = structSymbolType.toLLVMType(context, structScope);
 
   // Store VTable to first struct field if required
-  Struct *spiceStruct = structSymbolType.getType().getStruct(nullptr);
+  Struct *spiceStruct = structSymbolType.getStruct(nullptr);
   assert(spiceStruct != nullptr);
   if (spiceStruct->vTableData.vtable != nullptr) {
     assert(spiceStruct->vTableData.vtableType != nullptr);
@@ -340,7 +340,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
     auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
     if (fieldType.is(TY_STRUCT)) {
       // Lookup ctor function and call if available
-      Scope *matchScope = fieldType.getType().getBodyScope();
+      Scope *matchScope = fieldType.getBodyScope();
       const Function *ctorFunction = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false);
       if (ctorFunction)
         generateCtorOrDtorCall(fieldSymbol, ctorFunction, {});
@@ -403,7 +403,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
     const QualType &fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
       // Lookup copy ctor function and call if available
-      Scope *matchScope = fieldType.getType().getBodyScope();
+      Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(nullptr), false /* we have the field as storage */}};
       const Function *ctorFct = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false);
       if (ctorFct) {
@@ -449,7 +449,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
     if (fieldType.is(TY_STRUCT)) {
       // Lookup dtor function and generate call if found
       const Function *dtorFct =
-          FunctionManager::lookupFunction(fieldType.getType().getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
+          FunctionManager::lookupFunction(fieldType.getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
       if (dtorFct)
         generateCtorOrDtorCall(fieldSymbol, dtorFct, {});
       continue;

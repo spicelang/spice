@@ -93,7 +93,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     thisType = structEntry->getQualType();
     thisPtrType = thisType.toPtr(node);
     // Collect template types of 'this' type
-    for (const QualType &templateType : thisType.getType().getTemplateTypes()) {
+    for (const QualType &templateType : thisType.getTemplateTypes()) {
       const auto lambda = [&](const GenericType &genericType) { return genericType == templateType; };
       if (std::ranges::none_of(usedGenericTypes, lambda))
         usedGenericTypes.emplace_back(templateType);
@@ -120,7 +120,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
       // Check if the type is present in the template for generic types
-      if (!param.type.getType().isCoveredByGenericTypeList(usedGenericTypes))
+      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the function");
     }
@@ -131,7 +131,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   HANDLE_UNRESOLVED_TYPE_PTR(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_BOOL(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
-  if (!returnType.getType().isCoveredByGenericTypeList(usedGenericTypes))
+  if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
     SOFT_ERROR_BOOL(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                     "Generic return type not included in the template type list of the function")
 
@@ -235,7 +235,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     thisType = structEntry->getQualType();
     thisPtrType = thisType.toPtr(node);
     // Collect template types of 'this' type
-    for (const QualType &templateType : thisType.getType().getTemplateTypes()) {
+    for (const QualType &templateType : thisType.getTemplateTypes()) {
       const auto lambda = [&](const GenericType &genericType) { return genericType == templateType; };
       if (std::ranges::none_of(usedGenericTypes, lambda))
         usedGenericTypes.emplace_back(templateType);
@@ -262,7 +262,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
       // Check if the type is present in the template for generic types
-      if (!param.type.getType().isCoveredByGenericTypeList(usedGenericTypes))
+      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the procedure");
     }
@@ -350,7 +350,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
         throw SemanticError(interfaceNode, EXPECTED_INTERFACE_TYPE,
                             "Expected interface type, got " + interfaceType.getName(false));
       // Check for visibility
-      if (interfaceType.getType().getBodyScope()->isImportedBy(rootScope) && !interfaceType.isPublic())
+      if (interfaceType.getBodyScope()->isImportedBy(rootScope) && !interfaceType.isPublic())
         throw SemanticError(node, INSUFFICIENT_VISIBILITY,
                             "Cannot access interface '" + interfaceType.getSubType() + "' due to its private visibility");
       // Add to interface types
@@ -385,7 +385,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
     // Check for struct with infinite size.
     // This can happen if the struct A has a field with type A
-    if (fieldType.is(TY_STRUCT) && fieldType.getType().getBodyScope() == node->structScope)
+    if (fieldType.is(TY_STRUCT) && fieldType.getBodyScope() == node->structScope)
       throw SemanticError(field, STRUCT_INFINITE_SIZE, "Struct with infinite size detected");
 
     // Add to field types
@@ -397,7 +397,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     fieldEntry->updateType(fieldType, false);
 
     // Check if the template type list contains this type
-    if (!fieldType.getType().isCoveredByGenericTypeList(templateTypesGeneric))
+    if (!fieldType.isCoveredByGenericTypeList(templateTypesGeneric))
       throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
   }
 

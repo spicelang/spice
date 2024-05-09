@@ -44,7 +44,7 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
       const auto structSignature =
-          Struct::getSignature(node->name->structName, manifestation->thisType.getType().getTemplateTypes());
+          Struct::getSignature(node->name->structName, manifestation->thisType.getTemplateTypes());
       changeToScope(STRUCT_SCOPE_PREFIX + structSignature, ScopeType::STRUCT);
     }
 
@@ -101,7 +101,7 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
     // Change scope to concrete struct specialization scope
     if (node->isMethod) {
       const auto structSignature =
-          Struct::getSignature(node->name->structName, manifestation->thisType.getType().getTemplateTypes());
+          Struct::getSignature(node->name->structName, manifestation->thisType.getTemplateTypes());
       changeToScope(STRUCT_SCOPE_PREFIX + structSignature, ScopeType::STRUCT);
     }
 
@@ -169,9 +169,9 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     for (const QualType &interfaceType : manifestation->interfaceTypes) {
       // Retrieve interface instance
       const std::string interfaceName = interfaceType.getSubType();
-      Scope *matchScope = interfaceType.getType().getBodyScope()->parent;
+      Scope *matchScope = interfaceType.getBodyScope()->parent;
       Interface *interface =
-          InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getType().getTemplateTypes(), node);
+          InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
       assert(interface != nullptr);
 
       // Check for all methods, that it is implemented by the struct

@@ -186,7 +186,7 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
 
     fieldEntries.push_back(capture.capturedEntry);
     fieldSymbolTypes.push_back(captureType);
-    fieldTypes.push_back(captureType.getType().toLLVMType(irGenerator->context, irGenerator->currentScope));
+    fieldTypes.push_back(captureType.toLLVMType(irGenerator->context, irGenerator->currentScope));
   }
   llvm::StructType *structType = llvm::StructType::get(irGenerator->context, fieldTypes, CAPTURES_PARAM_NAME);
   const llvm::StructLayout *structLayout = irGenerator->module->getDataLayout().getStructLayout(structType);
@@ -291,7 +291,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
   // Array ty
   if (ty.isArray()) {
     llvm::DIType *itemTy = getDITypeForQualType(node, ty.getContained());
-    const size_t size = ty.getType().getArraySize();
+    const size_t size = ty.getArraySize();
     llvm::DINodeArray subscripts = diBuilder->getOrCreateArray({});
     return diBuilder->createArrayType(size, 0, itemTy, subscripts);
   }
@@ -324,7 +324,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     baseDiType = boolTy;
     break;
   case TY_STRUCT: {
-    Struct *spiceStruct = ty.getType().getStruct(node);
+    Struct *spiceStruct = ty.getStruct(node);
     assert(spiceStruct != nullptr);
 
     // Check if we already know the DI ty
@@ -373,7 +373,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     break;
   }
   case TY_INTERFACE: {
-    Interface *spiceInterface = ty.getType().getInterface(node);
+    Interface *spiceInterface = ty.getInterface(node);
     assert(spiceInterface != nullptr);
 
     // Check if we already know the DI ty

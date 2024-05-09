@@ -325,9 +325,9 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (matchScope->isGenericScope) {
       const std::string structName = thisType.getSubType();
-      Scope *scope = thisType.getType().getBodyScope()->parent;
+      Scope *scope = thisType.getBodyScope()->parent;
       Struct *spiceStruct =
-          StructManager::matchStruct(scope, structName, thisType.getType().getTemplateTypes(), candidate.declNode);
+          StructManager::matchStruct(scope, structName, thisType.getTemplateTypes(), candidate.declNode);
       assert(spiceStruct != nullptr);
       matchScope = spiceStruct->scope;
     }

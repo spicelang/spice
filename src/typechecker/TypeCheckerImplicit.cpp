@@ -95,8 +95,8 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
 
     const QualType fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
-      Scope *bodyScope = fieldType.getType().getBodyScope();
-      Struct *fieldStruct = fieldType.getType().getStruct(node);
+      Scope *bodyScope = fieldType.getBodyScope();
+      Struct *fieldStruct = fieldType.getStruct(node);
       // Check if we are required to call a ctor
       const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
       const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
@@ -150,8 +150,8 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
 
     const QualType fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
-      Scope *bodyScope = fieldType.getType().getBodyScope();
-      Struct *fieldStruct = fieldType.getType().getStruct(node);
+      Scope *bodyScope = fieldType.getBodyScope();
+      Struct *fieldStruct = fieldType.getStruct(node);
       // Check if we are required to call a ctor
       const auto structDeclNode = spice_pointer_cast<StructDefNode *>(fieldStruct->declNode);
       const bool isCtorCallRequired = bodyScope->hasRefFields() || structDeclNode->emitVTable;
@@ -204,7 +204,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
     hasHeapFields |= fieldSymbol->getQualType().isHeap();
     if (fieldSymbol->getQualType().is(TY_STRUCT)) {
-      Scope *fieldScope = fieldSymbol->getQualType().getType().getBodyScope();
+      Scope *fieldScope = fieldSymbol->getQualType().getBodyScope();
       // Lookup dtor function
       const QualType &thisType = fieldSymbol->getQualType();
       const Function *dtorFct = FunctionManager::matchFunction(fieldScope, DTOR_FUNCTION_NAME, thisType, {}, {}, true, node);
@@ -261,10 +261,10 @@ void TypeChecker::createCtorBodyPreamble(Scope *bodyScope) {
     if (fieldType.is(TY_STRUCT)) {
       auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
       // Match ctor function, create the concrete manifestation and set it to used
-      Scope *matchScope = fieldType.getType().getBodyScope();
+      Scope *matchScope = fieldType.getBodyScope();
       Function *spiceFunc = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
       if (spiceFunc != nullptr) {
-        fieldType.getType().setBodyScope(spiceFunc->thisType.getType().getBodyScope());
+        fieldType.getType().setBodyScope(spiceFunc->thisType.getBodyScope());
         fieldSymbol->updateType(fieldType, true);
       }
     }
@@ -293,11 +293,11 @@ void TypeChecker::createCopyCtorBodyPreamble(Scope *bodyScope) {
     if (fieldType.is(TY_STRUCT)) {
       auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
       // Match ctor function, create the concrete manifestation and set it to used
-      Scope *matchScope = fieldType.getType().getBodyScope();
+      Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(fieldNode), false /* we always have the field as storage */}};
       Function *spiceFunc = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, args, {}, false, fieldNode);
       if (spiceFunc != nullptr) {
-        fieldType.getType().setBodyScope(spiceFunc->thisType.getType().getBodyScope());
+        fieldType.getType().setBodyScope(spiceFunc->thisType.getBodyScope());
         fieldSymbol->updateType(fieldType, true);
       }
     }
@@ -325,7 +325,7 @@ void TypeChecker::createDtorBodyPreamble(Scope *bodyScope) {
     if (fieldType.is(TY_STRUCT)) {
       auto fieldNode = spice_pointer_cast<FieldNode *>(fieldSymbol->declNode);
       // Match ctor function, create the concrete manifestation and set it to used
-      Scope *matchScope = fieldType.getType().getBodyScope();
+      Scope *matchScope = fieldType.getBodyScope();
       FunctionManager::matchFunction(matchScope, DTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
     }
   }
@@ -343,7 +343,7 @@ Function *TypeChecker::implicitlyCallStructMethod(SymbolTableEntry *entry, const
                                                   const ASTNode *node) {
   QualType thisType = entry->getQualType();
   assert(thisType.is(TY_STRUCT));
-  Scope *matchScope = thisType.getType().getBodyScope();
+  Scope *matchScope = thisType.getBodyScope();
   assert(matchScope->type == ScopeType::STRUCT);
 
   // Search for dtor

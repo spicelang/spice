@@ -44,7 +44,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   // Template types
   bool isSelfGeneric = !spiceFunc.templateTypes.empty();
   if (spiceFunc.isMethod())
-    isSelfGeneric = spiceFunc.templateTypes.size() > spiceFunc.thisType.getType().getTemplateTypes().size();
+    isSelfGeneric = spiceFunc.templateTypes.size() > spiceFunc.thisType.getTemplateTypes().size();
   if (isSelfGeneric) {
     mangledName << "I";
     // Template types themselves

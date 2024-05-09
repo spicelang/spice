@@ -150,7 +150,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     switch (entry.getQualType().getSuperType()) {
     case TY_FUNCTION: {
       // Skip generic function entries
-      if (!entry.getQualType().getType().getTemplateTypes().empty())
+      if (!entry.getQualType().getTemplateTypes().empty())
         continue;
 
       if (type == ScopeType::GLOBAL) {
@@ -170,7 +170,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     }
     case TY_PROCEDURE: {
       // Skip generic procedure entries
-      if (!entry.getQualType().getType().getTemplateTypes().empty())
+      if (!entry.getQualType().getTemplateTypes().empty())
         continue;
 
       if (type == ScopeType::GLOBAL) {
@@ -195,7 +195,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     case TY_STRUCT: {
       if (entry.scope->type == ScopeType::GLOBAL) {
         // Skip generic struct entries
-        if (!entry.getQualType().getType().getTemplateTypes().empty())
+        if (!entry.getQualType().getTemplateTypes().empty())
           continue;
 
         warningType = UNUSED_STRUCT;
@@ -209,7 +209,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     case TY_INTERFACE: {
       if (entry.scope->type == ScopeType::GLOBAL) {
         // Skip generic struct entries
-        if (!entry.getQualType().getType().getTemplateTypes().empty())
+        if (!entry.getQualType().getTemplateTypes().empty())
           continue;
 
         warningType = UNUSED_INTERFACE;

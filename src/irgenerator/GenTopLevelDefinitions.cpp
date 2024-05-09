@@ -142,7 +142,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Change to struct scope
     if (manifestation->isMethod()) {
       const QualType &thisType = manifestation->thisType;
-      const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getType().getTemplateTypes());
+      const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
       assert(currentScope != nullptr);
     }
@@ -181,7 +181,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
           paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
-        llvm::Type *paramType = paramSymbolType.getType().toLLVMType(context, currentScope);
+        llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
         // Add it to the lists
         paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
@@ -189,7 +189,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     }
 
     // Get return type
-    llvm::Type *returnType = manifestation->returnType.getType().toLLVMType(context, currentScope);
+    llvm::Type *returnType = manifestation->returnType.toLLVMType(context, currentScope);
 
     // Check if function is explicitly inlined
     const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
@@ -314,7 +314,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     // Change to struct scope
     if (manifestation->isMethod()) {
       const QualType &thisType = manifestation->thisType;
-      const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getType().getTemplateTypes());
+      const std::string signature = Struct::getSignature(thisType.getSubType(), thisType.getTemplateTypes());
       currentScope = currentScope->getChildScope(STRUCT_SCOPE_PREFIX + signature);
       assert(currentScope != nullptr);
     }
@@ -353,7 +353,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
           paramSymbol->updateType(paramSymbolSymbolType, true);
         }
         // Retrieve type of param
-        llvm::Type *paramType = paramSymbolType.getType().toLLVMType(context, currentScope);
+        llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
         // Add it to the lists
         paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
@@ -594,13 +594,13 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   assert(spiceFunc != nullptr);
   llvm::Type *returnType = builder.getVoidTy();
   if (!spiceFunc->returnType.is(TY_DYN))
-    returnType = spiceFunc->returnType.getType().toLLVMType(context, currentScope);
+    returnType = spiceFunc->returnType.toLLVMType(context, currentScope);
 
   // Get arg types
   std::vector<llvm::Type *> argTypes;
   argTypes.reserve(spiceFunc->paramList.size());
   for (const QualType &paramType : spiceFunc->getParamTypes())
-    argTypes.push_back(paramType.getType().toLLVMType(context, currentScope));
+    argTypes.push_back(paramType.toLLVMType(context, currentScope));
 
   // Declare function
   llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, node->isVarArg);

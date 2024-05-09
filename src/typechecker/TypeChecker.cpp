@@ -157,7 +157,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   // Retrieve iterator type
   QualType iteratorType = iteratorOrIterableType;
 
-  if (iteratorOrIterableType.getType().isIterable(node)) {
+  if (iteratorOrIterableType.isIterable(node)) {
     const QualType &iterableType = iteratorOrIterableType;
     if (iteratorOrIterableType.getType().isArray()) { // Array
       const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(ARRAY_ITERATOR_NAME);
@@ -175,7 +175,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       const QualType thisType(TY_DYN);
       node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
     } else { // Struct, implementing Iterator interface
-      Scope *matchScope = iterableType.getType().getBodyScope();
+      Scope *matchScope = iterableType.getBodyScope();
       node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
     }
     assert(node->getIteratorFct != nullptr);
@@ -185,14 +185,14 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   }
 
   // Check iterator type
-  if (!iteratorType.getType().isIterator(node)) {
+  if (!iteratorType.isIterator(node)) {
     const std::string errMsg =
         "Can only iterate over arrays or data structures, inheriting from IIterator or IIterable. You provided " +
         iteratorType.getName(false);
     softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }
-  const std::vector<QualType> &iteratorTemplateTypes = iteratorType.getType().getTemplateTypes();
+  const std::vector<QualType> &iteratorTemplateTypes = iteratorType.getTemplateTypes();
   if (iteratorTemplateTypes.empty())
     SOFT_ERROR_ER(node->iteratorAssign(), INVALID_ITERATOR,
                   "Iterator has no generic arguments so that the item type could not be inferred")
@@ -209,12 +209,12 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   }
 
   // Retrieve .get(), .getIdx(), .isValid() and .next() functions
-  Scope *matchScope = iteratorType.getType().getBodyScope();
+  Scope *matchScope = iteratorType.getBodyScope();
   QualType iteratorItemType;
   if (hasIdx) {
     node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType, {}, {}, false, node);
     assert(node->getIdxFct != nullptr);
-    iteratorItemType = node->getIdxFct->returnType.getType().getTemplateTypes().back();
+    iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
   } else {
     node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, {}, false, node);
     assert(node->getFct != nullptr);
@@ -485,7 +485,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
     if (returnType.is(TY_UNRESOLVED))
       return static_cast<std::vector<Function *> *>(nullptr);
 
-    if (!returnType.getType().isCoveredByGenericTypeList(usedGenericTypes))
+    if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
       softError(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                 "Generic return type not included in the template type list of the function");
   }
@@ -501,7 +501,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
         return static_cast<std::vector<Function *> *>(nullptr);
 
       // Check if the type is present in the template for generic types
-      if (!paramType.getType().isCoveredByGenericTypeList(usedGenericTypes)) {
+      if (!paramType.isCoveredByGenericTypeList(usedGenericTypes)) {
         softError(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                   "Generic param type not included in the template type list of the function");
         continue;
@@ -566,7 +566,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
 
       // Call copy ctor if required
       if (localVarType.is(TY_STRUCT) && !node->isParam && !rhs.isTemporary()) {
-        Scope *matchScope = localVarType.getType().getBodyScope();
+        Scope *matchScope = localVarType.getBodyScope();
         assert(matchScope != nullptr);
         // Check if we have a no-args ctor to call
         const QualType &thisType = localVarType;
@@ -593,10 +593,10 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
 
     // If this is a struct, check for the default ctor
     if (localVarType.is(TY_STRUCT) && !node->isParam && !node->isForEachItem) {
-      Scope *matchScope = localVarType.getType().getBodyScope();
+      Scope *matchScope = localVarType.getBodyScope();
       assert(matchScope != nullptr);
       // Check if we are required to call a ctor
-      auto structDeclNode = spice_pointer_cast<StructDefNode *>(localVarType.getType().getStruct(node)->declNode);
+      auto structDeclNode = spice_pointer_cast<StructDefNode *>(localVarType.getStruct(node)->declNode);
       node->isCtorCallRequired = matchScope->hasRefFields() || structDeclNode->emitVTable;
       // Check if we have a no-args ctor to call
       const std::string &structName = localVarType.getSubType();
@@ -783,8 +783,7 @@ std::any TypeChecker::visitPrintfCall(PrintfCallNode *node) {
       break;
     }
     case 's': {
-      if (!argType.is(TY_STRING) && !argType.getType().isStringObj() && !argType.isPtrTo(TY_CHAR) &&
-          !argType.isArrayOf(TY_CHAR))
+      if (!argType.is(TY_STRING) && !argType.isStringObj() && !argType.isPtrTo(TY_CHAR) && !argType.isArrayOf(TY_CHAR))
         SOFT_ERROR_ER(assignment, PRINTF_TYPE_ERROR,
                       "The placeholder string expects string, String, char* or char[], but got " + argType.getName(false))
       placeholderCount++;
@@ -852,7 +851,7 @@ std::any TypeChecker::visitPanicCall(PanicCallNode *node) {
   argType = argType.removeReferenceWrapper();
 
   // Check if arg is of type array
-  if (!argType.getType().isErrorObj())
+  if (!argType.isErrorObj())
     SOFT_ERROR_ER(node->assignExpr(), EXPECTED_ERROR_TYPE, "The panic builtin can only work with errors")
 
   return ExprResult{node->setEvaluatedSymbolType(QualType(TY_DYN), manIdx)};
@@ -1330,9 +1329,9 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.")
 
     // Check if we have a hardcoded array index
-    if (lhsType.isArray() && lhsType.getType().getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
+    if (lhsType.isArray() && lhsType.getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
       const int32_t constIndex = indexAssignExpr->getCompileTimeValue().intValue;
-      const unsigned int constSize = lhsType.getType().getArraySize();
+      const unsigned int constSize = lhsType.getArraySize();
       // Check if we are accessing out-of-bounds memory
       if (constIndex >= static_cast<int32_t>(constSize)) {
         const std::string idxStr = std::to_string(constIndex);
@@ -1361,12 +1360,12 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // Retrieve registry entry
     const std::string &structName = lhsBaseTy.getSubType();
-    Scope *structScope = lhsBaseTy.getType().getBodyScope();
+    Scope *structScope = lhsBaseTy.getBodyScope();
 
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (structScope->isGenericScope) {
       Scope *matchScope = structScope->parent;
-      Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, lhsBaseTy.getType().getTemplateTypes(), node);
+      Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
       assert(spiceStruct != nullptr);
       structScope = spiceStruct->scope;
     }
@@ -1668,7 +1667,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   std::vector<QualType> concreteTemplateTypes;
   if (isAliasType) {
     // Retrieve concrete template types from type alias
-    concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getType().getTemplateTypes();
+    concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
       SOFT_ERROR_BOOL(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
@@ -1696,7 +1695,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   if (data.isMethodCall()) {
     // This is a method call
     data.thisType = firstFragEntry->getQualType();
-    Scope *structBodyScope = data.thisType.getBase().getType().getBodyScope();
+    Scope *structBodyScope = data.thisType.getBase().getBodyScope();
     assert(structBodyScope != nullptr);
     bool success = visitMethodCall(node, structBodyScope, concreteTemplateTypes);
     if (!success) // Check if soft errors occurred
@@ -1754,7 +1753,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   const bool isFct = data.isFctPtrCall() ? firstFragEntry->getQualType().getBase().is(TY_FUNCTION) : data.callee->isFunction();
   QualType returnType;
   if (data.isFctPtrCall()) {
-    returnType = isFct ? firstFragEntry->getQualType().getBase().getType().getFunctionReturnType() : QualType(TY_BOOL);
+    returnType = isFct ? firstFragEntry->getQualType().getBase().getFunctionReturnType() : QualType(TY_BOOL);
   } else if (data.isCtorCall()) {
     // Set return type to 'this' type
     returnType = data.thisType;
@@ -1770,14 +1769,14 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   if (returnType.isBase(TY_STRUCT)) {
     QualType returnBaseType = returnType.getBase();
     const std::string structName = returnBaseType.getSubType();
-    Scope *matchScope = returnBaseType.getType().getBodyScope()->parent;
+    Scope *matchScope = returnBaseType.getBodyScope()->parent;
     assert(matchScope != nullptr);
-    Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getType().getTemplateTypes(), node);
+    Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
     assert(spiceStruct != nullptr);
     returnBaseType.getType().setBodyScope(spiceStruct->scope);
     returnType = returnType.replaceBaseType(returnBaseType);
 
-    returnType = mapImportedScopeTypeToLocalType(returnType.getBase().getType().getBodyScope(), returnType);
+    returnType = mapImportedScopeTypeToLocalType(returnType.getBase().getBodyScope(), returnType);
 
     // Add anonymous symbol to keep track of de-allocation
     if (returnType.is(TY_STRUCT))
@@ -1878,7 +1877,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const QualType &functionTyp
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if the given argument types match the type
-  const std::vector<QualType> expectedArgTypes = functionType.getType().getFunctionParamTypes();
+  const std::vector<QualType> expectedArgTypes = functionType.getFunctionParamTypes();
   if (data.argResults.size() != expectedArgTypes.size())
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
 
@@ -1916,7 +1915,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, std::ve
 
     // Get struct type and scope
     data.thisType = fieldEntry->getQualType();
-    structScope = data.thisType.getBase().getType().getBodyScope();
+    structScope = data.thisType.getBase().getBodyScope();
     assert(structScope != nullptr);
   }
 
@@ -1999,7 +1998,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   std::vector<QualType> concreteTemplateTypes;
   if (isAliasType) {
     // Retrieve concrete template types from type alias
-    concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getType().getTemplateTypes();
+    concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!concreteTemplateTypes.empty() && node->templateTypeLst())
       SOFT_ERROR_ER(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
@@ -2252,7 +2251,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
     DataTypeNode::TypeModifier typeModifier = tmQueue.front();
 
     // Only the outermost array can have an unknown size
-    if (type.getType().isArray() && type.getType().getArraySize() == ARRAY_SIZE_UNKNOWN)
+    if (type.getType().isArray() && type.getArraySize() == ARRAY_SIZE_UNKNOWN)
       SOFT_ERROR_QT(node, ARRAY_SIZE_INVALID,
                     "Usage of incomplete array type. Only the outermost array type may have unknown size")
 
@@ -2393,7 +2392,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       symbolType = typeMapping.at(firstFragment);
 
     // Check if the replacement is a String type
-    if (!isImported && symbolType.getType().isStringObj() && !sourceFile->isStringRT())
+    if (!isImported && symbolType.isStringObj() && !sourceFile->isStringRT())
       sourceFile->requestRuntimeModule(STRING_RT);
 
     return node->setEvaluatedSymbolType(symbolType, manIdx);
@@ -2555,7 +2554,7 @@ QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, 
   for (const auto &[_, entry] : targetSourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getQualType().isBase(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->scope == symbolType.getBase().getType().getBodyScope())
+        if (manifestation->scope == symbolType.getBase().getBodyScope())
           return symbolType;
 
   // The target source file does not know about the struct at all
@@ -2585,7 +2584,7 @@ QualType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, 
   for (const auto &[_, entry] : sourceFile->exportedNameRegistry)
     if (entry.targetEntry != nullptr && entry.targetEntry->getQualType().isBase(TY_STRUCT))
       for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->scope == baseType.getType().getBodyScope())
+        if (manifestation->scope == baseType.getBodyScope())
           return symbolType;
 
   // This source file does not know about the struct at all

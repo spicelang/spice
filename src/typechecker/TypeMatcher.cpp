@@ -33,7 +33,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
   // If the candidate does not contain any generic parts, we can simply check for type equality
   if (!candidateType.hasAnyGenericParts()) {
     // Check if the right one is a struct that implements the interface on the left
-    if (candidateType.getType().matchesInterfaceImplementedByStruct(requestedType.getType()))
+    if (candidateType.matchesInterfaceImplementedByStruct(requestedType))
       return true;
     // Normal equality check
     return candidateType.matches(requestedType, true, !strictSpecifierMatching, true);
@@ -85,19 +85,19 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
     // If we have a function/procedure type, check the param and return types. Otherwise, check the template types
     if (candidateType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
       // Check param  and return types
-      const std::vector<QualType> &candidatePRTypes = candidateType.getType().getFunctionParamAndReturnTypes();
-      const std::vector<QualType> &requestedPRTypes = requestedType.getType().getFunctionParamAndReturnTypes();
+      const std::vector<QualType> &candidatePRTypes = candidateType.getFunctionParamAndReturnTypes();
+      const std::vector<QualType> &requestedPRTypes = requestedType.getFunctionParamAndReturnTypes();
       if (!matchRequestedToCandidateTypes(candidatePRTypes, requestedPRTypes, typeMapping, resolverFct, strictSpecifierMatching))
         return false;
     } else {
       if (requestedType.getSubType() != candidateType.getSubType())
         return false;
-      if (requestedType.getType().getBodyScope()->parent != candidateType.getType().getBodyScope()->parent)
+      if (requestedType.getBodyScope()->parent != candidateType.getBodyScope()->parent)
         return false;
 
       // Check template types
-      const std::vector<QualType> &candidateTTypes = candidateType.getType().getTemplateTypes();
-      const std::vector<QualType> &requestedTTypes = requestedType.getType().getTemplateTypes();
+      const std::vector<QualType> &candidateTTypes = candidateType.getTemplateTypes();
+      const std::vector<QualType> &requestedTTypes = requestedType.getTemplateTypes();
       if (!matchRequestedToCandidateTypes(candidateTTypes, requestedTTypes, typeMapping, resolverFct, strictSpecifierMatching))
         return false;
     }
@@ -124,7 +124,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
   } else { // The symbol type itself is non-generic, but one or several template or param types are
     if (type.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
       // Substantiate each param type
-      std::vector<QualType> paramTypes = type.getType().getFunctionParamAndReturnTypes();
+      std::vector<QualType> paramTypes = type.getFunctionParamAndReturnTypes();
       for (QualType &paramType : paramTypes)
         if (paramType.hasAnyGenericParts())
           substantiateTypeWithTypeMapping(paramType, typeMapping);
@@ -132,7 +132,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
       type.getType().setFunctionParamAndReturnTypes(paramTypes);
     } else {
       // Substantiate each template type
-      std::vector<QualType> templateTypes = type.getBase().getType().getTemplateTypes();
+      std::vector<QualType> templateTypes = type.getBase().getTemplateTypes();
       for (QualType &templateType : templateTypes)
         if (templateType.hasAnyGenericParts())
           substantiateTypeWithTypeMapping(templateType, typeMapping);
