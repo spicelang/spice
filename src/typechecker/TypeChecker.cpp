@@ -169,8 +169,8 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       Scope *matchScope = nameRegistryEntry->targetScope->parent;
       assert(matchScope->type == ScopeType::GLOBAL);
       QualType unsignedLongType(TY_LONG);
-      unsignedLongType.getSpecifiers().isSigned = false;
-      unsignedLongType.getSpecifiers().isUnsigned = true;
+      unsignedLongType.makeSigned(false);
+      unsignedLongType.makeUnsigned(true);
       const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
       const QualType thisType(TY_DYN);
       node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);

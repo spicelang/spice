@@ -710,7 +710,7 @@ QualType OpRuleManager::validateBinaryOperation(const ASTNode *node, const Binar
   for (size_t i = 0; i < opRulesSize; i++) {
     const BinaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType() && std::get<1>(rule) == rhs.getSuperType()) {
-      QualType resultType = QualType(SuperType(std::get<2>(rule)));
+      QualType resultType(SuperType(std::get<2>(rule)));
       if (preserveSpecifiersFromLhs)
         resultType.setSpecifiers(lhs.getSpecifiers());
       return resultType;

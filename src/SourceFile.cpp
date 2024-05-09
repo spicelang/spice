@@ -6,6 +6,7 @@
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/CompilerError.h>
 #include <global/GlobalResourceManager.h>
+#include <global/TypeRegistry.h>
 #include <importcollector/ImportCollector.h>
 #include <irgenerator/IRGenerator.h>
 #include <iroptimizer/IROptimizer.h>
@@ -554,6 +555,7 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
       CHECK_ABORT_FLAG_V()
       std::cout << "\nSuccessfully compiled " << std::to_string(resourceManager.sourceFiles.size()) << " source file(s)";
       std::cout << " or " << std::to_string(resourceManager.getTotalLineCount()) << " lines in total.\n";
+      std::cout << "Total number of types: " << std::to_string(TypeRegistry::getTypeCount()) << "\n";
       std::cout << "Total compile time: " << std::to_string(resourceManager.totalTimer.getDurationMilliseconds()) << " ms\n";
     }
   }
@@ -582,8 +584,8 @@ bool SourceFile::imports(const SourceFile *sourceFile) const {
   return std::ranges::any_of(dependencies, [=](const auto &dependency) { return dependency.second == sourceFile; });
 }
 
-bool SourceFile::isAlreadyImported(const std::string &filePathSearch,
-                                   std::vector<const SourceFile *> &circle) const { // NOLINT(misc-no-recursion)
+bool SourceFile::isAlreadyImported(const std::string &filePathSearch, // NOLINT(misc-no-recursion)
+                                   std::vector<const SourceFile *> &circle) const {
   circle.push_back(this);
   // Check if the current source file corresponds to the path to search
   if (std::filesystem::equivalent(filePath, filePathSearch))

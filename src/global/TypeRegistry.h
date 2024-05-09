@@ -23,6 +23,7 @@ public:
   static const Type *getOrInsert(SuperType superType, const std::string &subType, uint64_t typeId,
                                  const TypeChainElementData &data, const QualTypeList &templateTypes);
   static const Type *getOrInsert(const TypeChain& typeChain);
+  static const size_t getTypeCount();
 
 private:
   // Private members

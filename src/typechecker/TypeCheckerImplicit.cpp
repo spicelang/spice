@@ -29,7 +29,7 @@ void TypeChecker::createDefaultStructMethod(const Struct &spiceStruct, const std
 
   // Procedure type
   QualType procedureType(TY_PROCEDURE);
-  procedureType.getSpecifiers().isPublic = true; // Always public
+  procedureType.makePublic(); // Always public
 
   // Insert symbol for function into the symbol table
   const std::string entryName = Function::getSymbolTableEntryName(methodName, node->codeLoc);
@@ -229,7 +229,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
     // Set dealloc function to used
     const QualType thisType(TY_DYN);
     QualType bytePtrRefType = QualType(TY_BYTE).toPtr(node).toRef(node);
-    bytePtrRefType.getSpecifiers().isHeap = true;
+    bytePtrRefType.makeHeap();
     const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
     Function *deallocFct = FunctionManager::matchFunction(matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
     assert(deallocFct != nullptr);

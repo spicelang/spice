@@ -461,7 +461,7 @@ QualType QualType::toRef(const ASTNode *node) const {
  */
 QualType QualType::toConstRef(const ASTNode *node) const {
   QualType qualType = toRef(node);
-  qualType.specifiers.isConst = true;
+  qualType.makeConst();
   return qualType;
 }
 
