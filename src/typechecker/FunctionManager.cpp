@@ -95,8 +95,7 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
     manifestations.push_back(baseFunction);
 }
 
-Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const std::vector<QualType> &paramTypes,
-                                             ASTNode *declNode) {
+Function FunctionManager::createMainFunction(SymbolTableEntry *entry, const QualTypeList &paramTypes, ASTNode *declNode) {
   ParamList paramList;
   for (const QualType &paramType : paramTypes)
     paramList.push_back({paramType, false});
@@ -190,7 +189,7 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * @return Matched function or nullptr
  */
 Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
-                                         const ArgList &reqArgs, const std::vector<QualType> &templateTypeHints,
+                                         const ArgList &reqArgs, const QualTypeList &templateTypeHints,
                                          bool strictSpecifierMatching, const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
 
@@ -325,13 +324,12 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (matchScope->isGenericScope) {
       const std::string structName = thisType.getSubType();
-      Scope *scope = thisType.getType().getBodyScope()->parent;
-      Struct *spiceStruct =
-          StructManager::matchStruct(scope, structName, thisType.getType().getTemplateTypes(), candidate.declNode);
+      Scope *scope = thisType.getBodyScope()->parent;
+      Struct *spiceStruct = StructManager::matchStruct(scope, structName, thisType.getTemplateTypes(), candidate.declNode);
       assert(spiceStruct != nullptr);
       matchScope = spiceStruct->scope;
     }
-    candidate.thisType.getType().setBodyScope(matchScope);
+    candidate.thisType.setBodyScope(matchScope);
   }
 
   return MatchResult::MATCHED;
@@ -429,8 +427,8 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
     }
 
     // If we have a function/procedure type we need to take care of the information, if it takes captures
-    if (requestedType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.getType().hasLambdaCaptures()) {
-      candidateParamType.getType().setHasLambdaCaptures(true);
+    if (requestedType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
+      candidateParamType.setHasLambdaCaptures(true);
       needsSubstantiation = true;
     }
   }

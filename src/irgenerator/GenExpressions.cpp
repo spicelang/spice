@@ -102,8 +102,8 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
   } else {
     const QualType &op1Type = node->operands()[1]->getEvaluatedSymbolType(manIdx);
     const QualType &op2Type = node->operands()[2]->getEvaluatedSymbolType(manIdx);
-    llvm::Type *op1Ty = op1Type.getType().toLLVMType(context, currentScope);
-    llvm::Type *op2Ty = op2Type.getType().toLLVMType(context, currentScope);
+    llvm::Type *op1Ty = op1Type.toLLVMType(context, currentScope);
+    llvm::Type *op2Ty = op2Type.toLLVMType(context, currentScope);
     trueValue = resolveValue(node->operands()[1]);
     falseValue = resolveValue(node->operands()[2]);
   }
@@ -664,13 +664,13 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     lhsSTy = lhsSTy.removeReferenceWrapper();
 
     // Get the LLVM type of the operand
-    llvm::Type *lhsTy = lhsSTy.getType().toLLVMType(context, currentScope);
+    llvm::Type *lhsTy = lhsSTy.toLLVMType(context, currentScope);
 
     // Get the index value
     AssignExprNode *indexExpr = node->assignExpr();
     llvm::Value *indexValue = resolveValue(indexExpr);
     // Come up with the address
-    if (lhsSTy.isArray() && lhsSTy.getType().getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array
+    if (lhsSTy.isArray() && lhsSTy.getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array
       // Make sure the address is present
       resolveAddress(lhs);
 
@@ -706,7 +706,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
     // Retrieve struct scope
     const std::string &fieldName = node->identifier;
-    Scope *structScope = lhsSTy.getType().getBodyScope();
+    Scope *structScope = lhsSTy.getBodyScope();
 
     // Retrieve field entry
     std::vector<size_t> indexPath;
@@ -719,7 +719,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     for (size_t index : indexPath)
       indices.push_back(builder.getInt32(index));
     const std::string name = fieldName + "_addr";
-    llvm::Value *memberAddr = insertInBoundsGEP(lhsSTy.getType().toLLVMType(context, structScope->parent), lhs.ptr, indices, name);
+    llvm::Value *memberAddr = insertInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices, name);
 
     // Set as ptr or refPtr, depending on the type
     if (fieldSymbolType.isRef()) {
@@ -826,7 +826,7 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   Scope *accessScope = data.accessScope;
   assert(accessScope != nullptr);
   QualType varSymbolType = varEntry->getQualType();
-  llvm::Type *varType = varSymbolType.getType().toLLVMType(context, accessScope);
+  llvm::Type *varType = varSymbolType.toLLVMType(context, accessScope);
 
   // Check if external global variable
   if (varEntry->global && accessScope->isImportedBy(rootScope)) {

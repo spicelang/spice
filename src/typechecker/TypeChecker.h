@@ -132,9 +132,9 @@ private:
   bool typeCheckedMainFct = false;
 
   // Private methods
-  bool visitOrdinaryFctCall(FctCallNode *node, std::vector<QualType> &templateTypes, const std::string &fqFunctionName);
+  bool visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, const std::string &fqFunctionName);
   bool visitFctPtrCall(FctCallNode *node, const QualType &functionType) const;
-  bool visitMethodCall(FctCallNode *node, Scope *structScope, std::vector<QualType> &templateTypes) const;
+  bool visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes) const;
   bool checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
   [[nodiscard]] QualType mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;
   [[nodiscard]] QualType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const;

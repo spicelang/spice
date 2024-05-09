@@ -13,8 +13,8 @@ namespace spice::compiler {
  *
  * @return Vector of parameter types
  */
-std::vector<QualType> Function::getParamTypes() const {
-  std::vector<QualType> newParamTypes;
+QualTypeList Function::getParamTypes() const {
+  QualTypeList newParamTypes;
   for (const Param &param : paramList)
     newParamTypes.push_back(param.type);
   return newParamTypes;
@@ -31,7 +31,7 @@ std::vector<QualType> Function::getParamTypes() const {
  * @return String representation as function signature
  */
 std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePublic /*=false*/) const {
-  std::vector<QualType> concreteTemplateTypes;
+  QualTypeList concreteTemplateTypes;
   concreteTemplateTypes.reserve(templateTypes.size());
   for (const GenericType &genericType : templateTypes) {
     if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
@@ -58,7 +58,7 @@ std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePubli
  * @return Function signature
  */
 std::string Function::getSignature(const std::string &name, const QualType &thisType, const QualType &returnType,
-                                   const ParamList &paramList, const std::vector<QualType> &concreteTemplateTypes,
+                                   const ParamList &paramList, const QualTypeList &concreteTemplateTypes,
                                    bool withThisType /*=true*/, bool ignorePublic /*=false*/) {
   std::stringstream signature;
 
@@ -71,7 +71,7 @@ std::string Function::getSignature(const std::string &name, const QualType &this
   // Build this type string
   if (withThisType && !thisType.is(TY_DYN)) {
     signature << thisType.getBase().getSubType();
-    const std::vector<QualType> &thisTemplateTypes = thisType.getType().getTemplateTypes();
+    const QualTypeList &thisTemplateTypes = thisType.getTemplateTypes();
     if (!thisTemplateTypes.empty()) {
       signature << "<";
       for (size_t i = 0; i < thisTemplateTypes.size(); i++) {

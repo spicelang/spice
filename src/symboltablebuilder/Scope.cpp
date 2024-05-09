@@ -150,7 +150,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     switch (entry.getQualType().getSuperType()) {
     case TY_FUNCTION: {
       // Skip generic function entries
-      if (!entry.getQualType().getType().getTemplateTypes().empty())
+      if (!entry.getQualType().getTemplateTypes().empty())
         continue;
 
       if (type == ScopeType::GLOBAL) {
@@ -170,7 +170,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     }
     case TY_PROCEDURE: {
       // Skip generic procedure entries
-      if (!entry.getQualType().getType().getTemplateTypes().empty())
+      if (!entry.getQualType().getTemplateTypes().empty())
         continue;
 
       if (type == ScopeType::GLOBAL) {
@@ -195,7 +195,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     case TY_STRUCT: {
       if (entry.scope->type == ScopeType::GLOBAL) {
         // Skip generic struct entries
-        if (!entry.getQualType().getType().getTemplateTypes().empty())
+        if (!entry.getQualType().getTemplateTypes().empty())
           continue;
 
         warningType = UNUSED_STRUCT;
@@ -209,7 +209,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     case TY_INTERFACE: {
       if (entry.scope->type == ScopeType::GLOBAL) {
         // Skip generic struct entries
-        if (!entry.getQualType().getType().getTemplateTypes().empty())
+        if (!entry.getQualType().getTemplateTypes().empty())
           continue;
 
         warningType = UNUSED_INTERFACE;
@@ -276,7 +276,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 void Scope::ensureSuccessfulTypeInference() const { // NOLINT(misc-no-recursion)
   // Check symbols in this scope
   for (auto &[name, entry] : symbolTable.symbols)
-    if (entry.getQualType().getType().is(TY_DYN))
+    if (entry.getQualType().is(TY_DYN))
       throw SemanticError(entry.declNode, UNEXPECTED_DYN_TYPE, "For the variable '" + name + "' no type could be inferred");
 
   // Check child scopes

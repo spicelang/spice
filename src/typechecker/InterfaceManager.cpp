@@ -49,8 +49,8 @@ Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface 
  * @param node Instantiation AST node for printing error messages
  * @return Matched interface or nullptr
  */
-Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string &reqName,
-                                            const std::vector<QualType> &reqTemplateTypes, const ASTNode *node) {
+Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string &reqName, const QualTypeList &reqTemplateTypes,
+                                            const ASTNode *node) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   InterfaceRegistry interfaceRegistry = matchScope->interfaces;
   // Loop over interface registry to find interfaces, that match the requirements of the instantiation
@@ -121,8 +121,8 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
 
       // Attach the template types to the new interface entry
       QualType entryType = substantiatedInterface->entry->getQualType();
-      entryType.getType().setTemplateTypes(substantiatedInterface->getTemplateTypes());
-      entryType.getType().setBodyScope(substantiatedInterface->scope);
+      entryType.setTemplateTypes(substantiatedInterface->getTemplateTypes());
+      entryType.setBodyScope(substantiatedInterface->scope);
       substantiatedInterface->entry->updateType(entryType, true);
 
       // Replace symbol types of method entries with concrete types
@@ -166,8 +166,7 @@ bool InterfaceManager::matchName(const Interface &candidate, const std::string &
  * @param reqTemplateTypes Requested interface template types
  * @return Fulfilled or not
  */
-bool InterfaceManager::matchTemplateTypes(Interface &candidate, const std::vector<QualType> &reqTemplateTypes,
-                                          TypeMapping &typeMapping) {
+bool InterfaceManager::matchTemplateTypes(Interface &candidate, const QualTypeList &reqTemplateTypes, TypeMapping &typeMapping) {
   // Check if the number of types match
   const size_t typeCount = reqTemplateTypes.size();
   if (typeCount != candidate.templateTypes.size())

@@ -157,7 +157,7 @@ SymbolTableEntry *SymbolTable::lookupInComposedFields(const std::string &name, /
     indexPath.push_back(fieldEntry->orderIndex);
 
     // Search in the composed field's body scope
-    Scope *searchScope = fieldEntry->getQualType().getType().getBodyScope();
+    Scope *searchScope = fieldEntry->getQualType().getBodyScope();
     assert(searchScope != nullptr);
     if (SymbolTableEntry *result = searchScope->symbolTable.lookupInComposedFields(name, indexPath))
       return result;

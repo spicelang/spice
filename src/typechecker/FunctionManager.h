@@ -42,12 +42,11 @@ public:
   static Function *insertFunction(Scope *insertScope, const Function &baseFunction,
                                   std::vector<Function *> *nodeFunctionList = nullptr);
   static void substantiateOptionalParams(const Function &baseFunction, std::vector<Function> &manifestations);
-  [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const std::vector<QualType> &paramTypes,
-                                                   ASTNode *declNode);
+  [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const QualTypeList &paramTypes, ASTNode *declNode);
   [[nodiscard]] static const Function *lookupFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                                       const ArgList &reqArgs, bool strictSpecifierMatching);
-  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType, const ArgList &reqArgs,
-                                 const std::vector<QualType> &templateTypeHints, bool strictSpecifierMatching,
+  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
+                                 const ArgList &reqArgs, const QualTypeList &templateTypeHints, bool strictSpecifierMatching,
                                  const ASTNode *callNode);
 
 private:

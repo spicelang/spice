@@ -458,8 +458,7 @@ void SourceFile::runObjectEmitter() {
   objectEmitter.emit(objectFilePath);
 
   // Save assembly string in the compiler output
-  if (cliOptions.isNativeTarget &&
-      (cliOptions.dumpSettings.dumpAssembly || cliOptions.testMode))
+  if (cliOptions.isNativeTarget && (cliOptions.dumpSettings.dumpAssembly || cliOptions.testMode))
     objectEmitter.getASMString(compilerOutput.asmString);
 
   // Dump assembly code

@@ -17,11 +17,11 @@ public:
   using ResolverFct = std::function<const GenericType *(const std::string &)>;
 
   // Public methods
-  static bool matchRequestedToCandidateTypes(const std::vector<QualType> &candidateTypes, const std::vector<QualType> &reqTypes,
+  static bool matchRequestedToCandidateTypes(const QualTypeList &candidateTypes, const QualTypeList &reqTypes,
                                              TypeMapping &typeMapping, ResolverFct &resolverFct, bool strictSpecifiers);
   static bool matchRequestedToCandidateType(QualType candidateType, QualType requestedType, TypeMapping &typeMapping,
                                             ResolverFct &resolverFct, bool strictSpecifierMatching);
-  static void substantiateTypesWithTypeMapping(std::vector<QualType> &qualTypes, const TypeMapping &typeMapping);
+  static void substantiateTypesWithTypeMapping(QualTypeList &qualTypes, const TypeMapping &typeMapping);
   static void substantiateTypeWithTypeMapping(QualType &type, const TypeMapping &typeMapping);
 };
 

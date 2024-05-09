@@ -321,18 +321,13 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   // Opt levels
   subCmd->add_flag_callback(
       "-O0", [&]() { cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
-  subCmd->add_flag_callback(
-      "-O1", [&]() { cliOptions.optLevel = OptLevel::O1; }, "Only basic optimization is executed.");
-  subCmd->add_flag_callback(
-      "-O2", [&]() { cliOptions.optLevel = OptLevel::O2; }, "More advanced optimization is applied.");
+  subCmd->add_flag_callback("-O1", [&]() { cliOptions.optLevel = OptLevel::O1; }, "Only basic optimization is executed.");
+  subCmd->add_flag_callback("-O2", [&]() { cliOptions.optLevel = OptLevel::O2; }, "More advanced optimization is applied.");
   subCmd->add_flag_callback(
       "-O3", [&]() { cliOptions.optLevel = OptLevel::O3; }, "Aggressive optimization for best performance.");
-  subCmd->add_flag_callback(
-      "-Os", [&]() { cliOptions.optLevel = OptLevel::Os; }, "Size optimization for output executable.");
-  subCmd->add_flag_callback(
-      "-Oz", [&]() { cliOptions.optLevel = OptLevel::Oz; }, "Aggressive optimization for best size.");
-  subCmd->add_flag_callback(
-      "-lto", [&]() { cliOptions.useLTO = true; }, "Enable link time optimization (LTO)");
+  subCmd->add_flag_callback("-Os", [&]() { cliOptions.optLevel = OptLevel::Os; }, "Size optimization for output executable.");
+  subCmd->add_flag_callback("-Oz", [&]() { cliOptions.optLevel = OptLevel::Oz; }, "Aggressive optimization for best size.");
+  subCmd->add_flag_callback("-lto", [&]() { cliOptions.useLTO = true; }, "Enable link time optimization (LTO)");
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");

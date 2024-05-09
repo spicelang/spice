@@ -669,10 +669,10 @@ private:
   ExprResult isOperatorOverloadingFctAvailable(ASTNode *node, const char *fctName, const std::array<ExprResult, N> &op,
                                                size_t opIdx);
   static QualType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
-                                     const QualType &lhs);
+                                         const QualType &lhs);
   static QualType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize, const char *name,
-                                      const QualType &lhs, const QualType &rhs, bool preserveSpecifiersFromLhs = false,
-                                      const char *customMessagePrefix = "");
+                                          const QualType &lhs, const QualType &rhs, bool preserveSpecifiersFromLhs = false,
+                                          const char *customMessagePrefix = "");
   static SemanticError getExceptionUnary(const ASTNode *node, const char *name, const QualType &lhs);
   static SemanticError getExceptionBinary(const ASTNode *node, const char *name, const QualType &lhs, const QualType &rhs,
                                           const char *messagePrefix);

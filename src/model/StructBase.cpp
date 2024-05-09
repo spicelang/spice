@@ -15,7 +15,7 @@ namespace spice::compiler {
  * @return String representation as struct signature
  */
 std::string StructBase::getSignature() const {
-  std::vector<QualType> templateSymbolTypes;
+  QualTypeList templateSymbolTypes;
   templateSymbolTypes.reserve(templateTypes.size());
   for (const GenericType &genericType : templateTypes) {
     if (genericType.is(TY_GENERIC) && !typeMapping.empty()) {
@@ -39,7 +39,7 @@ std::string StructBase::getSignature() const {
  * @param concreteTemplateTypes Concrete template types
  * @return Signature
  */
-std::string StructBase::getSignature(const std::string &name, const std::vector<QualType> &concreteTemplateTypes) {
+std::string StructBase::getSignature(const std::string &name, const QualTypeList &concreteTemplateTypes) {
   // Build template type string
   std::stringstream templateTyStr;
   if (!concreteTemplateTypes.empty()) {
@@ -79,8 +79,8 @@ bool StructBase::isFullySubstantiated() const { return hasSubstantiatedGenerics(
  *
  * @return Template types as vector of symbol types
  */
-std::vector<QualType> StructBase::getTemplateTypes() const {
-  std::vector<QualType> templateSymbolTypes;
+QualTypeList StructBase::getTemplateTypes() const {
+  QualTypeList templateSymbolTypes;
   for (const GenericType &genericTemplateType : templateTypes)
     templateSymbolTypes.push_back(genericTemplateType);
   return templateSymbolTypes;

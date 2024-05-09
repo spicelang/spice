@@ -7,7 +7,7 @@
 #define SOFT_ERROR_ER(node, type, message)                                                                                       \
   {                                                                                                                              \
     resourceManager.errorManager.addSoftError(node, type, message);                                                              \
-    return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};                                                \
+    return ExprResult{node->setEvaluatedSymbolType(QualType(TY_UNRESOLVED), manIdx)};                                            \
   }
 
 #define SOFT_ERROR_QT(node, type, message)                                                                                       \

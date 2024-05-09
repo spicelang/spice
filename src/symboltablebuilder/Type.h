@@ -73,10 +73,9 @@ public:
     explicit TypeChainElement(SuperType superType) : superType(superType), typeId(superType){};
     TypeChainElement(SuperType superType, std::string subType)
         : superType(superType), subType(std::move(subType)), typeId(superType){};
-    TypeChainElement(SuperType superType, TypeChainElementData data)
-        : superType(superType), typeId(superType), data(data){};
+    TypeChainElement(SuperType superType, TypeChainElementData data) : superType(superType), typeId(superType), data(data){};
     TypeChainElement(SuperType superType, std::string subType, uint64_t typeId, TypeChainElementData data,
-                     const std::vector<QualType> &templateTypes)
+                     const QualTypeList &templateTypes)
         : superType(superType), subType(std::move(subType)), typeId(typeId), data(data), templateTypes(templateTypes){};
 
     // Overloaded operators
@@ -90,8 +89,8 @@ public:
     std::string subType;
     uint64_t typeId = TY_INVALID;
     TypeChainElementData data = {.arraySize = 0};
-    std::vector<QualType> templateTypes;
-    std::vector<QualType> paramTypes; // First type is the return type
+    QualTypeList templateTypes;
+    QualTypeList paramTypes; // First type is the return type
   };
 
   // Make sure we have no unexpected increases in memory consumption
@@ -105,9 +104,48 @@ public:
   explicit Type(TypeChain types);
   Type(SuperType superType, const std::string &subType);
   Type(SuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
-             const std::vector<QualType> &templateTypes);
+       const QualTypeList &templateTypes);
 
-  // Public methods
+  // Getters and setters on type parts
+  [[nodiscard]] SuperType getSuperType() const;
+  [[nodiscard]] const std::string &getSubType() const;
+  [[nodiscard]] unsigned int getArraySize() const;
+  [[nodiscard]] Scope *getBodyScope() const;
+  void setBodyScope(Scope *bodyScope);
+  [[nodiscard]] const QualType &getFunctionReturnType() const;
+  void setFunctionReturnType(const QualType &returnType);
+  [[nodiscard]] QualTypeList getFunctionParamTypes() const;
+  void setFunctionParamTypes(const QualTypeList &paramTypes);
+  [[nodiscard]] const QualTypeList &getFunctionParamAndReturnTypes() const;
+  void setFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes);
+  [[nodiscard]] bool hasLambdaCaptures() const;
+  void setHasLambdaCaptures(bool hasCaptures);
+  [[nodiscard]] const QualTypeList &getTemplateTypes() const;
+  void setTemplateTypes(const QualTypeList &templateTypes);
+  void setBaseTemplateTypes(const QualTypeList &templateTypes);
+
+  // Queries on the type
+  [[nodiscard]] bool is(SuperType superType) const;
+  [[nodiscard]] bool isOneOf(const std::initializer_list<SuperType> &superTypes) const;
+  [[nodiscard]] bool isBase(SuperType superType) const;
+  [[nodiscard]] bool isPrimitive() const;
+  [[nodiscard]] bool isPtr() const;
+  [[nodiscard]] bool isRef() const;
+  [[nodiscard]] bool isArray() const;
+  [[nodiscard]] bool hasAnyGenericParts() const;
+
+  // Complex queries on the type
+  [[nodiscard]] bool isSameContainerTypeAs(const Type &other) const;
+  [[nodiscard]] bool matches(const Type &otherType, bool ignoreArraySize) const;
+
+  // Serialization
+  void getName(std::stringstream &name, bool withSize = false) const;
+  [[nodiscard]] std::string getName(bool withSize = false) const;
+
+  // LLVM helpers
+  [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
+
+  // Get new type, based on this one
   [[nodiscard]] [[deprecated]] Type toPointer(const ASTNode *node) const;
   [[nodiscard]] const Type *toPtr(const ASTNode *node) const;
   [[nodiscard]] [[deprecated]] Type toReference(const ASTNode *node) const;
@@ -118,70 +156,14 @@ public:
   [[nodiscard]] const Type *getContained() const;
   [[nodiscard]] [[deprecated]] Type replaceBaseType(const Type &newBaseType) const;
   [[nodiscard]] const Type *replaceBase(const Type &newBaseType) const;
-  [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
-  [[nodiscard]] ALWAYS_INLINE bool isPtr() const { return getSuperType() == TY_PTR; }
-  [[nodiscard]] ALWAYS_INLINE bool isRef() const { return getSuperType() == TY_REF; }
-  [[nodiscard]] ALWAYS_INLINE bool isArray() const { return getSuperType() == TY_ARRAY; }
-  [[nodiscard]] ALWAYS_INLINE bool is(SuperType superType) const { return getSuperType() == superType; }
-  [[nodiscard]] ALWAYS_INLINE bool isPrimitive() const {
-    return isOneOf({TY_DOUBLE, TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_STRING, TY_BOOL});
-  }
-  [[nodiscard]] bool isIterator(const ASTNode *node) const;
-  [[nodiscard]] bool isIterable(const ASTNode *node) const;
-  [[nodiscard]] bool isStringObj() const;
-  [[nodiscard]] bool isErrorObj() const;
-  [[nodiscard]] bool implements(const Type &symbolType, const ASTNode *node) const;
-  [[nodiscard]] bool isBase(SuperType superType) const;
-  [[nodiscard]] ALWAYS_INLINE bool isOneOf(const std::initializer_list<SuperType> &superTypes) const {
-    const SuperType superType = getSuperType();
-    return std::ranges::any_of(superTypes, [&superType](SuperType type) { return type == superType; });
-  }
-  [[nodiscard]] bool isSameContainerTypeAs(const Type &other) const;
-  [[nodiscard]] ALWAYS_INLINE SuperType getSuperType() const {
-    assert(!typeChain.empty());
-    return typeChain.back().superType;
-  }
-  [[nodiscard]] ALWAYS_INLINE const std::string &getSubType() const {
-    assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
-    return typeChain.back().subType;
-  }
-  [[nodiscard]] ALWAYS_INLINE Type removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
+  [[nodiscard]] Type removeReferenceWrapper() const;
   [[nodiscard]] Type getBase() const;
-  [[nodiscard]] bool hasAnyGenericParts() const;
-  void setTemplateTypes(const std::vector<QualType> &templateTypes);
-  void setBaseTemplateTypes(const std::vector<QualType> &templateTypes);
-  [[nodiscard]] const std::vector<QualType> &getTemplateTypes() const;
-  [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
-  void getName(std::stringstream &name, bool withSize = false) const;
-  [[nodiscard]] std::string getName(bool withSize = false) const;
-  [[nodiscard]] ALWAYS_INLINE unsigned int getArraySize() const {
-    assert(getSuperType() == TY_ARRAY);
-    return typeChain.back().data.arraySize;
-  }
-  ALWAYS_INLINE void setBodyScope(Scope *bodyScope) {
-    assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
-    typeChain.back().data.bodyScope = bodyScope;
-  }
-  [[nodiscard]] ALWAYS_INLINE Scope *getBodyScope() const {
-    assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
-    return typeChain.back().data.bodyScope;
-  }
-  void setFunctionReturnType(const QualType &returnType);
-  [[nodiscard]] const QualType &getFunctionReturnType() const;
-  void setFunctionParamTypes(const std::vector<QualType> &paramTypes);
-  [[nodiscard]] std::vector<QualType> getFunctionParamTypes() const;
-  void setFunctionParamAndReturnTypes(const std::vector<QualType> &paramAndReturnTypes);
-  [[nodiscard]] const std::vector<QualType> &getFunctionParamAndReturnTypes() const;
-  void setHasLambdaCaptures(bool hasCaptures);
-  [[nodiscard]] bool hasLambdaCaptures() const;
-  Struct *getStruct(const ASTNode *node) const;
-  [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
+
+  // Overloaded operators
   friend bool operator==(const Type &lhs, const Type &rhs);
   friend bool operator!=(const Type &lhs, const Type &rhs);
-  [[nodiscard]] bool matches(const Type &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
-  [[nodiscard]] bool matchesInterfaceImplementedByStruct(const Type &otherType) const;
 
-  // Static util methods
+  // Public static methods
   static void unwrapBoth(Type &typeA, Type &typeB);
 
   // Public members

@@ -78,7 +78,7 @@ if (NOT DEFINED ANTLR4_WITH_STATIC_CRT)
 endif ()
 
 if (ANTLR4_ZIP_REPOSITORY)
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
         ExternalProject_Add(
                 antlr4_runtime
                 PREFIX antlr4_runtime
@@ -100,7 +100,7 @@ if (ANTLR4_ZIP_REPOSITORY)
                 INSTALL_COMMAND ""
                 EXCLUDE_FROM_ALL 1
                 DOWNLOAD_EXTRACT_TIMESTAMP 0)
-    else()
+    else ()
         ExternalProject_Add(
                 antlr4_runtime
                 PREFIX antlr4_runtime
@@ -118,9 +118,9 @@ if (ANTLR4_ZIP_REPOSITORY)
                 INSTALL_COMMAND ""
                 EXCLUDE_FROM_ALL 1
                 DOWNLOAD_EXTRACT_TIMESTAMP 0)
-    endif()
+    endif ()
 else ()
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
         ExternalProject_Add(
                 antlr4_runtime
                 PREFIX antlr4_runtime
@@ -143,7 +143,7 @@ else ()
                 INSTALL_COMMAND ""
                 EXCLUDE_FROM_ALL 1
                 DOWNLOAD_EXTRACT_TIMESTAMP 0)
-    else()
+    else ()
         ExternalProject_Add(
                 antlr4_runtime
                 PREFIX antlr4_runtime
@@ -162,7 +162,7 @@ else ()
                 INSTALL_COMMAND ""
                 EXCLUDE_FROM_ALL 1
                 DOWNLOAD_EXTRACT_TIMESTAMP 0)
-    endif()
+    endif ()
 endif ()
 
 # Separate build step as rarely people want both

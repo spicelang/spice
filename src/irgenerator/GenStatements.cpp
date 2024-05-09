@@ -41,8 +41,8 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   // Get LLVM type of variable
   Scope *accessScope = currentScope;
   if (varSymbolType.is(TY_STRUCT))
-    accessScope = varSymbolType.getType().getBodyScope()->parent;
-  llvm::Type *varTy = varSymbolType.getType().toLLVMType(context, accessScope);
+    accessScope = varSymbolType.getBodyScope()->parent;
+  llvm::Type *varTy = varSymbolType.toLLVMType(context, accessScope);
 
   // Check if right side is dyn array. If this is the case we have an empty array initializer and need the default value
   const bool rhsIsDynArray = node->hasAssignment && node->assignExpr()->getEvaluatedSymbolType(manIdx).isArrayOf(TY_DYN);

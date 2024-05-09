@@ -25,7 +25,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   resultEntry->used = true;
 
   // Retrieve param types
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   if (node->takesArgs) {
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList)
@@ -34,8 +34,8 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
 
   // Prepare type of function
   QualType functionType(TY_FUNCTION);
-  functionType.getType().setFunctionReturnType(returnType);
-  functionType.getType().setFunctionParamTypes(paramTypes);
+  functionType.setFunctionReturnType(returnType);
+  functionType.setFunctionParamTypes(paramTypes);
 
   // Update main function symbol type
   SymbolTableEntry *functionEntry = rootScope->lookupStrict(node->getSignature());
@@ -93,7 +93,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     thisType = structEntry->getQualType();
     thisPtrType = thisType.toPtr(node);
     // Collect template types of 'this' type
-    for (const QualType &templateType : thisType.getType().getTemplateTypes()) {
+    for (const QualType &templateType : thisType.getTemplateTypes()) {
       const auto lambda = [&](const GenericType &genericType) { return genericType == templateType; };
       if (std::ranges::none_of(usedGenericTypes, lambda))
         usedGenericTypes.emplace_back(templateType);
@@ -110,7 +110,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Visit parameters
   std::vector<const char *> paramNames;
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -120,7 +120,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
       // Check if the type is present in the template for generic types
-      if (!param.type.getType().isCoveredByGenericTypeList(usedGenericTypes))
+      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the function");
     }
@@ -131,7 +131,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   HANDLE_UNRESOLVED_TYPE_PTR(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_BOOL(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
-  if (!returnType.getType().isCoveredByGenericTypeList(usedGenericTypes))
+  if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
     SOFT_ERROR_BOOL(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                     "Generic return type not included in the template type list of the function")
 
@@ -142,8 +142,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Prepare type of function
   QualType functionType(TY_FUNCTION);
   functionType.getSpecifiers() = node->specifiers;
-  functionType.getType().setFunctionReturnType(returnType);
-  functionType.getType().setFunctionParamTypes(paramTypes);
+  functionType.setFunctionReturnType(returnType);
+  functionType.setFunctionParamTypes(paramTypes);
 
   // Update type of function entry
   SymbolTableEntry *functionEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
@@ -235,7 +235,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     thisType = structEntry->getQualType();
     thisPtrType = thisType.toPtr(node);
     // Collect template types of 'this' type
-    for (const QualType &templateType : thisType.getType().getTemplateTypes()) {
+    for (const QualType &templateType : thisType.getTemplateTypes()) {
       const auto lambda = [&](const GenericType &genericType) { return genericType == templateType; };
       if (std::ranges::none_of(usedGenericTypes, lambda))
         usedGenericTypes.emplace_back(templateType);
@@ -252,7 +252,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Visit parameters
   std::vector<const char *> paramNames;
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -262,7 +262,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
       paramTypes.push_back(param.type);
       paramList.push_back({param.type, param.isOptional});
       // Check if the type is present in the template for generic types
-      if (!param.type.getType().isCoveredByGenericTypeList(usedGenericTypes))
+      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the procedure");
     }
@@ -275,7 +275,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Prepare type of procedure
   QualType procedureType(TY_PROCEDURE);
   procedureType.getSpecifiers() = node->specifiers;
-  procedureType.getType().setFunctionParamTypes(paramTypes);
+  procedureType.setFunctionParamTypes(paramTypes);
 
   // Update type of procedure entry
   SymbolTableEntry *procedureEntry = currentScope->lookupStrict(node->getSymbolTableEntryName());
@@ -313,7 +313,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 }
 
 std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
-  std::vector<QualType> usedTemplateTypes;
+  QualTypeList usedTemplateTypes;
   std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve struct template types
@@ -337,7 +337,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   }
 
   // Retrieve implemented interfaces
-  std::vector<QualType> interfaceTypes;
+  QualTypeList interfaceTypes;
   if (node->hasInterfaces) {
     interfaceTypes.reserve(node->interfaceTypeLst()->dataTypes().size());
     for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes()) {
@@ -350,7 +350,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
         throw SemanticError(interfaceNode, EXPECTED_INTERFACE_TYPE,
                             "Expected interface type, got " + interfaceType.getName(false));
       // Check for visibility
-      if (interfaceType.getType().getBodyScope()->isImportedBy(rootScope) && !interfaceType.isPublic())
+      if (interfaceType.getBodyScope()->isImportedBy(rootScope) && !interfaceType.isPublic())
         throw SemanticError(node, INSUFFICIENT_VISIBILITY,
                             "Cannot access interface '" + interfaceType.getSubType() + "' due to its private visibility");
       // Add to interface types
@@ -375,7 +375,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   assert(currentScope->type == ScopeType::STRUCT);
 
   // Retrieve field types
-  std::vector<QualType> fieldTypes;
+  QualTypeList fieldTypes;
   fieldTypes.reserve(node->fields().size());
   for (FieldNode *field : node->fields()) {
     // Visit field type
@@ -385,7 +385,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
     // Check for struct with infinite size.
     // This can happen if the struct A has a field with type A
-    if (fieldType.is(TY_STRUCT) && fieldType.getType().getBodyScope() == node->structScope)
+    if (fieldType.is(TY_STRUCT) && fieldType.getBodyScope() == node->structScope)
       throw SemanticError(field, STRUCT_INFINITE_SIZE, "Struct with infinite size detected");
 
     // Add to field types
@@ -397,7 +397,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
     fieldEntry->updateType(fieldType, false);
 
     // Check if the template type list contains this type
-    if (!fieldType.getType().isCoveredByGenericTypeList(templateTypesGeneric))
+    if (!fieldType.isCoveredByGenericTypeList(templateTypesGeneric))
       throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
   }
 
@@ -421,7 +421,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 }
 
 std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
-  std::vector<QualType> usedTemplateTypes;
+  QualTypeList usedTemplateTypes;
   std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve interface template types
@@ -546,7 +546,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 
 std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   // Retrieve type conditions
-  std::vector<QualType> typeConditions;
+  QualTypeList typeConditions;
   typeConditions.reserve(node->typeAltsLst()->dataTypes().size());
   for (const auto &typeAlt : node->typeAltsLst()->dataTypes()) {
     auto typeCondition = std::any_cast<QualType>(visit(typeAlt));
@@ -605,7 +605,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
     SOFT_ERROR_BOOL(node->dataType(), GLOBAL_OF_TYPE_DYN, "Global variables must have an explicit data type")
 
   // Check if we would need to insert instructions in the global scope to initialize the variable
-  if (!globalVarType.getType().isPrimitive())
+  if (!globalVarType.isPrimitive())
     SOFT_ERROR_BOOL(node->dataType(), GLOBAL_OF_INVALID_TYPE, "Spice does only support global variables of primitive type")
 
   // Update type of global var entry
@@ -621,7 +621,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
 
 std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   // Collect argument types
-  std::vector<QualType> argTypes;
+  QualTypeList argTypes;
   ParamList argList;
   if (node->hasArgs) {
     argList.reserve(node->argTypeLst()->dataTypes().size());
@@ -670,8 +670,8 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   // Prepare ext function type
   QualType extFunctionType(isFunction ? TY_FUNCTION : TY_PROCEDURE);
   if (isFunction)
-    extFunctionType.getType().setFunctionReturnType(returnType);
-  extFunctionType.getType().setFunctionParamTypes(argTypes);
+    extFunctionType.setFunctionReturnType(returnType);
+  extFunctionType.setFunctionParamTypes(argTypes);
 
   // Set type of external function
   node->entry->updateType(extFunctionType, false);
