@@ -5,12 +5,11 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
+
+#include <symboltablebuilder/Type.h>
 
 namespace spice::compiler {
-
-// Forward declarations
-class Type;
-enum SuperType : uint8_t;
 
 class TypeRegistry {
 public:
@@ -19,13 +18,18 @@ public:
   TypeRegistry(const TypeRegistry &) = delete;
 
   // Public methods
-  static const Type *get(const std::string &name);
-  static const Type *getOrInsert(Type type);
   static const Type *getOrInsert(SuperType superType);
+  static const Type *getOrInsert(SuperType superType, const std::string &subType);
+  static const Type *getOrInsert(SuperType superType, const std::string &subType, uint64_t typeId,
+                                 const TypeChainElementData &data, const QualTypeList &templateTypes);
+  static const Type *getOrInsert(const TypeChain& typeChain);
 
 private:
   // Private members
-  static std::unordered_map<std::string, std::unique_ptr<Type>> types;
+  static std::unordered_map<uint64_t, std::unique_ptr<Type>> types;
+
+  // Private methods
+  static const Type *getOrInsert(const Type &&type);
 };
 
 } // namespace spice::compiler

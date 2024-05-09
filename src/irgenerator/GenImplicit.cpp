@@ -496,8 +496,8 @@ void IRGenerator::generateTestMain() {
 
   // Prepare entry for test main
   QualType functionType(TY_FUNCTION);
-  functionType.getSpecifiers() = TypeSpecifiers::of(TY_FUNCTION);
-  functionType.getSpecifiers().isPublic = true;
+  functionType.setSpecifiers(TypeSpecifiers::of(TY_FUNCTION));
+  functionType.makePublic();
   SymbolTableEntry entry(MAIN_FUNCTION_NAME, functionType, rootScope, nullptr, 0, false);
 
   // Prepare test main function

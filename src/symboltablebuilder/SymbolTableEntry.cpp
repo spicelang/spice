@@ -22,17 +22,6 @@ const QualType &SymbolTableEntry::getQualType() const { return qualType; }
  * @param newType New type of the current symbol
  * @param overwriteExistingType Overwrites the existing type without throwing an error
  */
-void SymbolTableEntry::updateType(const Type &newType, [[maybe_unused]] bool overwriteExistingType) {
-  assert(overwriteExistingType || qualType.isOneOf({TY_INVALID, TY_DYN}));
-  qualType.setType(newType);
-}
-
-/**
- * Update the type of this symbol.
- *
- * @param newType New type of the current symbol
- * @param overwriteExistingType Overwrites the existing type without throwing an error
- */
 void SymbolTableEntry::updateType(const QualType &newType, [[maybe_unused]] bool overwriteExistingType) {
   assert(overwriteExistingType || qualType.isOneOf({TY_INVALID, TY_DYN}));
   qualType = newType;

@@ -124,9 +124,9 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
       substantiatedStruct->scope->isGenericScope = false;
 
       // Attach the template types to the new struct entry
-      QualType entryType = substantiatedStruct->entry->getQualType();
-      entryType.setTemplateTypes(substantiatedStruct->getTemplateTypes());
-      entryType.setBodyScope(substantiatedStruct->scope);
+      QualType entryType = substantiatedStruct->entry->getQualType()
+                               .getWithTemplateTypes(substantiatedStruct->getTemplateTypes())
+                               .getWithBodyScope(substantiatedStruct->scope);
       substantiatedStruct->entry->updateType(entryType, true);
 
       // Replace symbol types of field entries with concrete types
@@ -141,10 +141,8 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
         QualType baseType = fieldType.getBase();
 
         // Set the body scope of fields that are of type <candidate-struct>*
-        if (baseType.matches(substantiatedStruct->entry->getQualType(), false, true, true)) {
-          baseType.setBodyScope(substantiatedStruct->scope);
-          fieldType = fieldType.replaceBaseType(baseType);
-        }
+        if (baseType.matches(substantiatedStruct->entry->getQualType(), false, true, true))
+          fieldType = fieldType.replaceBaseType(baseType.getWithBodyScope(substantiatedStruct->scope));
 
         fieldEntry->updateType(fieldType, /*overwriteExistingType=*/true);
 

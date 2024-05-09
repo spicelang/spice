@@ -175,11 +175,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         assert(paramSymbol != nullptr);
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
-        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
-          QualType paramSymbolSymbolType = paramSymbol->getQualType();
-          paramSymbolSymbolType.setHasLambdaCaptures(true);
-          paramSymbol->updateType(paramSymbolSymbolType, true);
-        }
+        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures())
+          paramSymbol->updateType(paramSymbol->getQualType().getWithLambdaCaptures(), true);
         // Retrieve type of param
         llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
         // Add it to the lists
@@ -347,11 +344,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         assert(paramSymbol != nullptr);
         const QualType paramSymbolType = manifestation->getParamTypes().at(argIdx);
         // Pass the information if captures are taken for function/procedure types
-        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures()) {
-          QualType paramSymbolSymbolType = paramSymbol->getQualType();
-          paramSymbolSymbolType.setHasLambdaCaptures(true);
-          paramSymbol->updateType(paramSymbolSymbolType, true);
-        }
+        if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures())
+          paramSymbol->updateType(paramSymbol->getQualType().getWithLambdaCaptures(), true);
         // Retrieve type of param
         llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
         // Add it to the lists

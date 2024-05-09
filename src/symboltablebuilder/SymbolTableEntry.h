@@ -35,7 +35,6 @@ public:
 
   // Public methods
   [[nodiscard]] const QualType &getQualType() const;
-  void updateType(const Type &newType, bool overwriteExistingType);
   void updateType(const QualType &newType, bool overwriteExistingType);
   void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;

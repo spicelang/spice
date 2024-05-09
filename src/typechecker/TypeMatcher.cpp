@@ -47,7 +47,7 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       QualType knownConcreteType = typeMapping.at(genericTypeName);
 
       // Merge specifiers of candidate type and known concrete type together
-      knownConcreteType.getSpecifiers() = knownConcreteType.getSpecifiers().merge(candidateType.getSpecifiers());
+      knownConcreteType.setSpecifiers(knownConcreteType.getSpecifiers().merge(candidateType.getSpecifiers()));
 
       // Remove reference wrapper of candidate type if required
       if (!requestedType.isRef())
@@ -122,13 +122,13 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     type = type.replaceBaseType(replacementType);
   } else { // The symbol type itself is non-generic, but one or several template or param types are
     if (type.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-      // Substantiate each param type
-      QualTypeList paramTypes = type.getFunctionParamAndReturnTypes();
-      for (QualType &paramType : paramTypes)
-        if (paramType.hasAnyGenericParts())
-          substantiateTypeWithTypeMapping(paramType, typeMapping);
+      // Substantiate each param or return type
+      QualTypeList paramAndReturnTypes = type.getFunctionParamAndReturnTypes();
+      for (QualType &paramOrReturnType : paramAndReturnTypes)
+        if (paramOrReturnType.hasAnyGenericParts())
+          substantiateTypeWithTypeMapping(paramOrReturnType, typeMapping);
       // Attach the list of concrete param types to the symbol type
-      type.setFunctionParamAndReturnTypes(paramTypes);
+      type = type.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
     } else {
       // Substantiate each template type
       QualTypeList templateTypes = type.getBase().getTemplateTypes();
@@ -136,7 +136,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
         if (templateType.hasAnyGenericParts())
           substantiateTypeWithTypeMapping(templateType, typeMapping);
       // Attach the list of concrete template types to the symbol type
-      type.setBaseTemplateTypes(templateTypes);
+      type = type.getWithBaseTemplateTypes(templateTypes);
     }
   }
 }

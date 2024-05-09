@@ -20,8 +20,8 @@ public:
   // Constructors
   explicit GenericType(const QualType &type) : QualType(type){};
   explicit GenericType(const std::string &name) : QualType(TY_GENERIC, name) {}
-  GenericType(const std::string &name, const QualTypeList &typeConditions)
-      : QualType(TY_GENERIC, name), typeConditions(typeConditions) {}
+  GenericType(const std::string &name, QualTypeList typeConditions)
+      : QualType(TY_GENERIC, name), typeConditions(std::move(typeConditions)) {}
   GenericType() = default;
 
   // Public methods
@@ -35,7 +35,7 @@ private:
   QualTypeList typeConditions = {QualType(TY_DYN)};
 
   // Private methods
-  [[nodiscard]] [[deprecated]] bool checkTypeConditionOf(const QualType &type, bool ignoreArraySize, bool ignoreSpecifiers) const;
+  [[nodiscard]] bool checkTypeConditionOf(const QualType &type, bool ignoreArraySize, bool ignoreSpecifiers) const;
 };
 
 } // namespace spice::compiler

@@ -263,10 +263,8 @@ void TypeChecker::createCtorBodyPreamble(Scope *bodyScope) {
       // Match ctor function, create the concrete manifestation and set it to used
       Scope *matchScope = fieldType.getBodyScope();
       Function *spiceFunc = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, {}, false, fieldNode);
-      if (spiceFunc != nullptr) {
-        fieldType.setBodyScope(spiceFunc->thisType.getBodyScope());
-        fieldSymbol->updateType(fieldType, true);
-      }
+      if (spiceFunc != nullptr)
+        fieldSymbol->updateType(fieldType.getWithBodyScope(spiceFunc->thisType.getBodyScope()), true);
     }
   }
 }
@@ -296,10 +294,8 @@ void TypeChecker::createCopyCtorBodyPreamble(Scope *bodyScope) {
       Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(fieldNode), false /* we always have the field as storage */}};
       Function *spiceFunc = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, args, {}, false, fieldNode);
-      if (spiceFunc != nullptr) {
-        fieldType.setBodyScope(spiceFunc->thisType.getBodyScope());
-        fieldSymbol->updateType(fieldType, true);
-      }
+      if (spiceFunc != nullptr)
+        fieldSymbol->updateType(fieldType.getWithBodyScope(spiceFunc->thisType.getBodyScope()), true);
     }
   }
 }
