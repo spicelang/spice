@@ -110,7 +110,7 @@ private:
   const ASTNode *ast;
   const std::vector<std::string> nodeNames;
   int currentTabs = 1;
-  std::string parentNodeId;
+  std::stack<std::string> parentNodeIds;
 
   // Private methods
   template <typename T>
@@ -129,10 +129,10 @@ private:
     result << nodeId << R"( [color="lightgreen",label=")" << nodeName << "\"];\n";
 
     // Link parent node with the current one
-    std::string parentNodeIdBackup = parentNodeId;
-    if (!parentNodeId.empty())
-      result << getSpaces() << parentNodeId << " -> " << nodeId << ";\n";
-    parentNodeId = nodeId; // Set parentNodeId for children
+    if (!parentNodeIds.empty())
+      result << getSpaces() << parentNodeIds.top() << " -> " << nodeId << ";\n";
+
+    parentNodeIds.push(nodeId); // Set parentNodeId for children
 
     // Visit all the children
     for (ASTNode *child : node->children) {
@@ -142,8 +142,8 @@ private:
       }
     }
 
-    // Restore parent node id
-    parentNodeId = parentNodeIdBackup;
+    // Remove parent node id from the stack
+    parentNodeIds.pop();
 
     return result.str();
   }
