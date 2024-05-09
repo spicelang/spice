@@ -130,26 +130,22 @@ private:
 
     // Link parent node with the current one
     if (!parentNodeIds.empty())
-      result << getSpaces() << parentNodeIds.top() << " -> " << nodeId << ";\n";
+      result << " " << parentNodeIds.top() << " -> " << nodeId << ";\n";
 
     parentNodeIds.push(nodeId); // Set parentNodeId for children
 
     // Visit all the children
-    for (ASTNode *child : node->children) {
-      if (child != nullptr) {
-        result << getSpaces();
-        result << std::any_cast<std::string>(visit(child));
-      }
-    }
+    for (ASTNode *child : node->children)
+      if (child != nullptr)
+        result << " " << std::any_cast<std::string>(visit(child));
 
     // Remove parent node id from the stack
     parentNodeIds.pop();
 
     return result.str();
   }
-  static std::string demangleTypeName(const char *mangledName);
 
-  [[nodiscard]] std::string getSpaces() const;
+  static std::string demangleTypeName(const char *mangledName);
 };
 
 } // namespace spice::compiler
