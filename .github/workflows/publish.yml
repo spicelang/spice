@@ -51,7 +51,7 @@ jobs:
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -Wno-dev -Wattributes ../llvm
-          cmake --build . -j$(nproc)
+          cmake --build .
 
       - name: Download Libs
         run: |
@@ -65,7 +65,7 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
-          cmake --build . --target spice -j$(nproc)
+          cmake --build . --target spice
 
       - name: Process build output
         working-directory: bin
@@ -136,7 +136,7 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake cmake -GNinja -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ -DSPICE_LTO=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
-          cmake --build . --target spice -j$(nproc)
+          cmake --build . --target spice
 
       - name: Process build output
         working-directory: bin
@@ -199,7 +199,7 @@ jobs:
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja -Wno-dev -Wattributes ../llvm
-          cmake --build . -j 4
+          cmake --build .
 
       - name: Download Libs
         run: .\setup-libs.bat
@@ -214,7 +214,7 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSPICE_LINK_STATIC=ON -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DSPICE_VERSION="${{ github.ref_name }}" -DSPICE_BUILT_BY="ghactions" ..
-          cmake --build . --target spice -j 4
+          cmake --build . --target spice
 
       - name: Process build output
         working-directory: bin
