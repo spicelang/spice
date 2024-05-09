@@ -74,7 +74,7 @@ jobs:
           mkdir ./llvm/build
           cd ./llvm/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE="-O2" -DLLVM_ENABLE_RTTI=ON -GNinja ../llvm
-          cmake --build . -j$(nproc)
+          cmake --build .
 
       - name: Download Libs
         run: |
@@ -90,7 +90,7 @@ jobs:
           mkdir ./bin
           cd ./bin
           cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_LINK_STATIC=OFF -DSPICE_LTO=ON -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
-          cmake --build . --target spicetest -j$(nproc)
+          cmake --build . --target spicetest
 
 #      - name: Build Test target
 #        if: github.event_name == 'pull_request'
@@ -101,7 +101,7 @@ jobs:
 #          mkdir ./bin
 #          cd ./bin
 #          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSPICE_BUILT_BY="ghactions" -DSPICE_PROF_COMPILE=ON -DSPICE_LINK_STATIC=OFF -DSPICE_RUN_COVERAGE=ON -GNinja -Wattributes ..
-#          cmake --build . --target spicetest -j$(nproc)
+#          cmake --build . --target spicetest
 
       - name: Run Test target
 #        if: github.event_name != 'pull_request'
