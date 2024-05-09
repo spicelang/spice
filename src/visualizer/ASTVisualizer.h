@@ -20,8 +20,7 @@ namespace spice::compiler {
 class ASTVisualizer : private CompilerPass, public AbstractASTVisitor {
 public:
   // Constructors
-  ASTVisualizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
-      : CompilerPass(resourceManager, sourceFile){};
+  using CompilerPass::CompilerPass;
 
   // Visitor methods
   std::any visitEntry(EntryNode *ctx) override { return buildNode(ctx); }
