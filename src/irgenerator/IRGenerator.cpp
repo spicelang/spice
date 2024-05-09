@@ -465,8 +465,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   }
 
   // Check if we try to assign an array by value to a pointer. Here we have to store the address of the first element to the lhs
-  if (lhsEntry && lhsEntry->getQualType().isPtr() && rhsSType.isArray() &&
-      rhsSType.getArraySize() != ARRAY_SIZE_UNKNOWN) {
+  if (lhsEntry && lhsEntry->getQualType().isPtr() && rhsSType.isArray() && rhsSType.getArraySize() != ARRAY_SIZE_UNKNOWN) {
     // Get address of right side
     llvm::Value *rhsAddress = resolveAddress(rhs);
     assert(rhsAddress != nullptr);

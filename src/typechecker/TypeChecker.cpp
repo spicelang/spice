@@ -192,7 +192,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }
-  const std::vector<QualType> &iteratorTemplateTypes = iteratorType.getTemplateTypes();
+  const QualTypeList &iteratorTemplateTypes = iteratorType.getTemplateTypes();
   if (iteratorTemplateTypes.empty())
     SOFT_ERROR_ER(node->iteratorAssign(), INVALID_ITERATOR,
                   "Iterator has no generic arguments so that the item type could not be inferred")
@@ -491,7 +491,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   }
 
   // Visit params
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     paramList.reserve(node->paramTypeLst()->dataTypes().size());
@@ -1664,7 +1664,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   }
 
   // Get the concrete template types
-  std::vector<QualType> concreteTemplateTypes;
+  QualTypeList concreteTemplateTypes;
   if (isAliasType) {
     // Retrieve concrete template types from type alias
     concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
@@ -1793,8 +1793,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }
 
-bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::vector<QualType> &templateTypes,
-                                       const std::string &fqFunctionName) {
+bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, const std::string &fqFunctionName) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if this is a ctor call to the String type
@@ -1877,7 +1876,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const QualType &functionTyp
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if the given argument types match the type
-  const std::vector<QualType> expectedArgTypes = functionType.getFunctionParamTypes();
+  const QualTypeList expectedArgTypes = functionType.getFunctionParamTypes();
   if (data.argResults.size() != expectedArgTypes.size())
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, "Expected and actual number of arguments do not match")
 
@@ -1895,7 +1894,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const QualType &functionTyp
   return true;
 }
 
-bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, std::vector<QualType> &templateTypes) const {
+bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes) const {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
@@ -1995,7 +1994,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   QualType structType = structEntry->getQualType();
 
   // Get the concrete template types
-  std::vector<QualType> concreteTemplateTypes;
+  QualTypeList concreteTemplateTypes;
   if (isAliasType) {
     // Retrieve concrete template types from type alias
     concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
@@ -2035,7 +2034,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   structType.getType().setBodyScope(structScope);
 
   // Set template types to the struct
-  std::vector<QualType> templateTypes;
+  QualTypeList templateTypes;
   for (const GenericType &genericType : spiceStruct->templateTypes)
     templateTypes.emplace_back(genericType);
   structType.getType().setTemplateTypes(templateTypes);
@@ -2114,7 +2113,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   resultVarEntry->used = true;
 
   // Visit parameters
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -2158,7 +2157,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit parameters
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -2201,7 +2200,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit parameters
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -2431,7 +2430,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
     // Collect the concrete template types
     bool allTemplateTypesConcrete = true;
-    std::vector<QualType> templateTypes;
+    QualTypeList templateTypes;
     if (node->templateTypeLst()) {
       templateTypes.reserve(node->templateTypeLst()->dataTypes().size());
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
@@ -2489,7 +2488,7 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   }
 
   // Visit param types
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   if (const TypeLstNode *paramTypeListNode = node->paramTypeLst(); paramTypeListNode != nullptr) {
     for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes()) {
       auto paramType = std::any_cast<QualType>(visit(paramTypeNode));

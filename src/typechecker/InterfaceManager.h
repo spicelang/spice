@@ -25,13 +25,13 @@ public:
   // Public methods
   static Interface *insertInterface(Scope *insertScope, Interface &spiceInterface, std::vector<Interface *> *nodeInterfaceList);
   [[nodiscard]] static Interface *matchInterface(Scope *matchScope, const std::string &reqName,
-                                                 const std::vector<QualType> &reqTemplateTypes, const ASTNode *node);
+                                                 const QualTypeList &reqTemplateTypes, const ASTNode *node);
 
 private:
   // Private methods
   [[nodiscard]] static Interface *insertSubstantiation(Scope *insertScope, Interface &newManifestation, const ASTNode *declNode);
   [[nodiscard]] static bool matchName(const Interface &candidate, const std::string &reqName);
-  [[nodiscard]] static bool matchTemplateTypes(Interface &candidate, const std::vector<QualType> &reqTemplateTypes,
+  [[nodiscard]] static bool matchTemplateTypes(Interface &candidate, const QualTypeList &reqTemplateTypes,
                                                TypeMapping &typeMapping);
   static void substantiateSignatures(Interface &candidate, TypeMapping &typeMapping);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Interface &candidate,

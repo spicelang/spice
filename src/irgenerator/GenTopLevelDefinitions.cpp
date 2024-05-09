@@ -25,7 +25,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
 
   // Visit parameters
   std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
-  std::vector<QualType> paramSymbolTypes;
+  QualTypeList paramSymbolTypes;
   std::vector<llvm::Type *> paramTypes;
   if (node->takesArgs) {
     const size_t numOfParams = node->paramLst()->params().size();

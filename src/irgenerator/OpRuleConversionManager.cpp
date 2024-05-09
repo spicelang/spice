@@ -1681,7 +1681,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   assert(accessScope != nullptr);
 
   // Get arg values
-  const std::vector<QualType> &paramTypes = opFct->getParamTypes();
+  const QualTypeList &paramTypes = opFct->getParamTypes();
   assert(paramTypes.size() == N);
   llvm::Value *argValues[N];
   argValues[0] = paramTypes[0].isRef() ? opV[1]() : opV[0]();

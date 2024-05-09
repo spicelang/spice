@@ -138,7 +138,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   if (node->hasArgs) {
     argValues.reserve(node->argLst()->args().size());
     const std::vector<AssignExprNode *> args = node->argLst()->args();
-    const std::vector<QualType> paramSTypes =
+    const QualTypeList paramSTypes =
         data.isFctPtrCall() ? firstFragEntry->getQualType().getBase().getFunctionParamTypes() : spiceFunc->getParamTypes();
     assert(paramSTypes.size() == args.size());
     for (size_t i = 0; i < args.size(); i++) {
@@ -170,7 +170,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // Retrieve return and param types
   QualType returnSType(TY_DYN);
-  std::vector<QualType> paramSTypes;
+  QualTypeList paramSTypes;
   if (data.isFctPtrCall()) {
     if (firstFragEntry->getQualType().isBase(TY_FUNCTION))
       returnSType = firstFragEntry->getQualType().getBase().getFunctionReturnType();
@@ -337,7 +337,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   // Get struct object
   const Struct *spiceStruct = node->instantiatedStructs.at(manIdx);
   assert(spiceStruct != nullptr);
-  const std::vector<QualType> &fieldTypes = spiceStruct->fieldTypes;
+  const QualTypeList &fieldTypes = spiceStruct->fieldTypes;
 
   // Can only be constant if none of the fields is of type reference
   bool canBeConstant = !spiceStruct->hasReferenceFields();

@@ -90,28 +90,28 @@ void QualType::setFunctionReturnType(const QualType &returnType) { type->setFunc
  *
  * @return Function parameter types
  */
-std::vector<QualType> QualType::getFunctionParamTypes() const { return type->getFunctionParamTypes(); }
+QualTypeList QualType::getFunctionParamTypes() const { return type->getFunctionParamTypes(); }
 
 /**
  * Set the function parameter types of the underlying type
  *
  * @param paramTypes New parameter types
  */
-void QualType::setFunctionParamTypes(const std::vector<QualType> &paramTypes) { type->setFunctionParamTypes(paramTypes); }
+void QualType::setFunctionParamTypes(const QualTypeList &paramTypes) { type->setFunctionParamTypes(paramTypes); }
 
 /**
  * Get the function parameter and return types of the underlying type
  *
  * @return Function parameter and return types
  */
-const std::vector<QualType> &QualType::getFunctionParamAndReturnTypes() const { return type->getFunctionParamAndReturnTypes(); }
+const QualTypeList &QualType::getFunctionParamAndReturnTypes() const { return type->getFunctionParamAndReturnTypes(); }
 
 /**
  * Set the function parameter and return types of the underlying type
  *
  * @param paramAndReturnTypes New parameter and return types
  */
-void QualType::setFunctionParamAndReturnTypes(const std::vector<QualType> &paramAndReturnTypes) {
+void QualType::setFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes) {
   type->setFunctionParamAndReturnTypes(paramAndReturnTypes);
 }
 
@@ -134,21 +134,21 @@ void QualType::setHasLambdaCaptures(bool hasCaptures) { type->setHasLambdaCaptur
  *
  * @return Template types
  */
-const std::vector<QualType> &QualType::getTemplateTypes() const { return type->getTemplateTypes(); }
+const QualTypeList &QualType::getTemplateTypes() const { return type->getTemplateTypes(); }
 
 /**
  * Set the template types of the underlying type
  *
  * @param templateTypes New template types
  */
-void QualType::setTemplateTypes(const std::vector<QualType> &templateTypes) { type->setTemplateTypes(templateTypes); }
+void QualType::setTemplateTypes(const QualTypeList &templateTypes) { type->setTemplateTypes(templateTypes); }
 
 /**
  * Set the template types of the underlying base type
  *
  * @param templateTypes New template types
  */
-void QualType::setBaseTemplateTypes(const std::vector<QualType> &templateTypes) { type->setBaseTemplateTypes(templateTypes); }
+void QualType::setBaseTemplateTypes(const QualTypeList &templateTypes) { type->setBaseTemplateTypes(templateTypes); }
 
 /**
  * Get the struct instance for a struct type
@@ -160,7 +160,7 @@ Struct *QualType::getStruct(const ASTNode *node) const {
   assert(is(TY_STRUCT));
   Scope *structDefScope = getBodyScope()->parent;
   const std::string structName = getSubType();
-  const std::vector<QualType> &templateTypes = getTemplateTypes();
+  const QualTypeList &templateTypes = getTemplateTypes();
   return StructManager::matchStruct(structDefScope, structName, templateTypes, node);
 }
 
@@ -174,7 +174,7 @@ Interface *QualType::getInterface(const ASTNode *node) const {
   assert(is(TY_INTERFACE));
   Scope *interfaceDefScope = getBodyScope()->parent;
   const std::string structName = getSubType();
-  const std::vector<QualType> &templateTypes = getTemplateTypes();
+  const QualTypeList &templateTypes = getTemplateTypes();
   return InterfaceManager::matchInterface(interfaceDefScope, structName, templateTypes, node);
 }
 
@@ -417,13 +417,13 @@ bool QualType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeL
   // If the type is non-generic check template types
   bool covered = true;
   // Check template types
-  const std::vector<QualType> &baseTemplateTypes = baseType.getTemplateTypes();
+  const QualTypeList &baseTemplateTypes = baseType.getTemplateTypes();
   auto outerPred = [&](const QualType &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); };
   covered &= std::ranges::all_of(baseTemplateTypes, outerPred);
 
   // If function/procedure, check param and return types
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-    const std::vector<QualType> &paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
+    const QualTypeList &paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
     const auto innerPred = [&](const QualType &paramType) { return paramType.isCoveredByGenericTypeList(genericTypeList); };
     covered &= std::ranges::all_of(paramAndReturnTypes, innerPred);
   }

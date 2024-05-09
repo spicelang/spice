@@ -176,7 +176,7 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
   // Get LLVM type for struct
   std::vector<llvm::Type *> fieldTypes;
   std::vector<SymbolTableEntry *> fieldEntries;
-  std::vector<QualType> fieldSymbolTypes;
+  QualTypeList fieldSymbolTypes;
   for (const auto &[_, capture] : captures) {
     QualType captureType = capture.capturedEntry->getQualType();
 

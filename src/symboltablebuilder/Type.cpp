@@ -23,7 +23,7 @@ Type::Type(SuperType superType) : typeChain({TypeChainElement{superType}}) {}
 Type::Type(SuperType superType, const std::string &subType) : typeChain({TypeChainElement{superType, subType}}) {}
 
 Type::Type(SuperType superType, const std::string &subType, uint64_t typeId, const Type::TypeChainElementData &data,
-           const std::vector<QualType> &templateTypes)
+           const QualTypeList &templateTypes)
     : typeChain({TypeChainElement(superType, subType, typeId, data, templateTypes)}) {}
 
 Type::Type(TypeChain types) : typeChain(std::move(types)) {}
@@ -272,9 +272,7 @@ const Type *Type::replaceBase(const Type &newBaseType) const {
  *
  * @return Type without reference wrapper
  */
-Type Type::removeReferenceWrapper() const {
-  return isRef() ? getContainedTy() : *this;
-}
+Type Type::removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
 
 /**
  * Return the LLVM type for this symbol type
@@ -474,7 +472,7 @@ bool Type::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
 /**
  * Set the list of templates types
  */
-void Type::setTemplateTypes(const std::vector<QualType> &templateTypes) {
+void Type::setTemplateTypes(const QualTypeList &templateTypes) {
   assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
   typeChain.back().templateTypes = templateTypes;
 }
@@ -484,12 +482,12 @@ void Type::setTemplateTypes(const std::vector<QualType> &templateTypes) {
  *
  * @return Vector of template types
  */
-const std::vector<QualType> &Type::getTemplateTypes() const { return typeChain.back().templateTypes; }
+const QualTypeList &Type::getTemplateTypes() const { return typeChain.back().templateTypes; }
 
 /**
  * Set the list of templates types of the base type
  */
-void Type::setBaseTemplateTypes(const std::vector<QualType> &templateTypes) {
+void Type::setBaseTemplateTypes(const QualTypeList &templateTypes) {
   assert(getBase().isOneOf({TY_STRUCT, TY_INTERFACE}));
   typeChain.front().templateTypes = templateTypes;
 }
@@ -553,7 +551,7 @@ const QualType &Type::getFunctionReturnType() const {
  */
 void Type::setFunctionReturnType(const QualType &returnType) {
   assert(is(TY_FUNCTION));
-  std::vector<QualType> &paramTypes = typeChain.back().paramTypes;
+  QualTypeList &paramTypes = typeChain.back().paramTypes;
   if (paramTypes.empty())
     paramTypes.resize(1);
   paramTypes.at(0) = returnType;
@@ -564,7 +562,7 @@ void Type::setFunctionReturnType(const QualType &returnType) {
  *
  * @return Function param types
  */
-std::vector<QualType> Type::getFunctionParamTypes() const {
+QualTypeList Type::getFunctionParamTypes() const {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   if (typeChain.back().paramTypes.empty())
     return {};
@@ -576,9 +574,9 @@ std::vector<QualType> Type::getFunctionParamTypes() const {
  *
  * @param paramTypes Function param types
  */
-void Type::setFunctionParamTypes(const std::vector<QualType> &newParamTypes) {
+void Type::setFunctionParamTypes(const QualTypeList &newParamTypes) {
   assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  std::vector<QualType> &paramTypes = typeChain.back().paramTypes;
+  QualTypeList &paramTypes = typeChain.back().paramTypes;
   // Resize param types if required
   if (paramTypes.size() < newParamTypes.size() + 1)
     paramTypes.resize(newParamTypes.size() + 1, QualType(TY_DYN));
@@ -612,7 +610,7 @@ void Type::setHasLambdaCaptures(bool hasCaptures) {
  *
  * @return Function param and return types (first is return type, rest are param types)
  */
-const std::vector<QualType> &Type::getFunctionParamAndReturnTypes() const {
+const QualTypeList &Type::getFunctionParamAndReturnTypes() const {
   assert(getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   return typeChain.front().paramTypes;
 }
@@ -622,7 +620,7 @@ const std::vector<QualType> &Type::getFunctionParamAndReturnTypes() const {
  *
  * @param newParamAndReturnTypes Function param and return types (first is return type, rest are param types)
  */
-void Type::setFunctionParamAndReturnTypes(const std::vector<QualType> &newParamAndReturnTypes) {
+void Type::setFunctionParamAndReturnTypes(const QualTypeList &newParamAndReturnTypes) {
   assert(getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   typeChain.front().paramTypes = newParamAndReturnTypes;
 }

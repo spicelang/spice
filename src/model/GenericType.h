@@ -20,7 +20,7 @@ public:
   // Constructors
   explicit GenericType(const QualType &type) : QualType(type){};
   explicit GenericType(const std::string &name) : QualType(TY_GENERIC, name) {}
-  GenericType(const std::string &name, const std::vector<QualType> &typeConditions)
+  GenericType(const std::string &name, const QualTypeList &typeConditions)
       : QualType(TY_GENERIC, name), typeConditions(typeConditions) {}
   GenericType() = default;
 
@@ -32,7 +32,7 @@ public:
 
 private:
   // Members
-  std::vector<QualType> typeConditions = {QualType(TY_DYN)};
+  QualTypeList typeConditions = {QualType(TY_DYN)};
 
   // Private methods
   [[nodiscard]] [[deprecated]] bool checkTypeConditionOf(const QualType &type, bool ignoreArraySize, bool ignoreSpecifiers) const;

@@ -33,7 +33,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   const std::string mangledName = NameMangling::mangleTypeInfo(spiceStruct);
   llvm::PointerType *ptrTy = builder.getPtrTy();
 
-  std::vector<QualType> interfaceTypes;
+  QualTypeList interfaceTypes;
   if (spiceStruct->entry->getQualType().is(TY_STRUCT)) {
     auto spiceStructEnsured = reinterpret_cast<Struct *>(spiceStruct);
     interfaceTypes = spiceStructEnsured->interfaceTypes;

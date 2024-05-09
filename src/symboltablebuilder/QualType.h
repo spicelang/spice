@@ -20,7 +20,11 @@ class Scope;
 class Struct;
 class Interface;
 class GenericType;
+class QualType;
 enum SuperType : uint8_t;
+
+// Typedefs
+using QualTypeList = std::vector<QualType>;
 
 class QualType {
 public:
@@ -47,15 +51,15 @@ public:
   void setBodyScope(Scope *newBodyScope);
   [[nodiscard]] const QualType &getFunctionReturnType() const;
   void setFunctionReturnType(const QualType &returnType);
-  [[nodiscard]] std::vector<QualType> getFunctionParamTypes() const;
-  void setFunctionParamTypes(const std::vector<QualType> &paramTypes);
-  [[nodiscard]] const std::vector<QualType> &getFunctionParamAndReturnTypes() const;
-  void setFunctionParamAndReturnTypes(const std::vector<QualType> &paramAndReturnTypes);
+  [[nodiscard]] QualTypeList getFunctionParamTypes() const;
+  void setFunctionParamTypes(const QualTypeList &paramTypes);
+  [[nodiscard]] const QualTypeList &getFunctionParamAndReturnTypes() const;
+  void setFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes);
   [[nodiscard]] bool hasLambdaCaptures() const;
   void setHasLambdaCaptures(bool hasCaptures);
-  [[nodiscard]] const std::vector<QualType> &getTemplateTypes() const;
-  void setTemplateTypes(const std::vector<QualType> &templateTypes);
-  void setBaseTemplateTypes(const std::vector<QualType> &templateTypes);
+  [[nodiscard]] const QualTypeList &getTemplateTypes() const;
+  void setTemplateTypes(const QualTypeList &templateTypes);
+  void setBaseTemplateTypes(const QualTypeList &templateTypes);
   [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
 

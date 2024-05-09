@@ -73,10 +73,9 @@ public:
     explicit TypeChainElement(SuperType superType) : superType(superType), typeId(superType){};
     TypeChainElement(SuperType superType, std::string subType)
         : superType(superType), subType(std::move(subType)), typeId(superType){};
-    TypeChainElement(SuperType superType, TypeChainElementData data)
-        : superType(superType), typeId(superType), data(data){};
+    TypeChainElement(SuperType superType, TypeChainElementData data) : superType(superType), typeId(superType), data(data){};
     TypeChainElement(SuperType superType, std::string subType, uint64_t typeId, TypeChainElementData data,
-                     const std::vector<QualType> &templateTypes)
+                     const QualTypeList &templateTypes)
         : superType(superType), subType(std::move(subType)), typeId(typeId), data(data), templateTypes(templateTypes){};
 
     // Overloaded operators
@@ -90,8 +89,8 @@ public:
     std::string subType;
     uint64_t typeId = TY_INVALID;
     TypeChainElementData data = {.arraySize = 0};
-    std::vector<QualType> templateTypes;
-    std::vector<QualType> paramTypes; // First type is the return type
+    QualTypeList templateTypes;
+    QualTypeList paramTypes; // First type is the return type
   };
 
   // Make sure we have no unexpected increases in memory consumption
@@ -105,7 +104,7 @@ public:
   explicit Type(TypeChain types);
   Type(SuperType superType, const std::string &subType);
   Type(SuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
-             const std::vector<QualType> &templateTypes);
+       const QualTypeList &templateTypes);
 
   // Getters and setters on type parts
   [[nodiscard]] SuperType getSuperType() const;
@@ -115,15 +114,15 @@ public:
   void setBodyScope(Scope *bodyScope);
   [[nodiscard]] const QualType &getFunctionReturnType() const;
   void setFunctionReturnType(const QualType &returnType);
-  [[nodiscard]] std::vector<QualType> getFunctionParamTypes() const;
-  void setFunctionParamTypes(const std::vector<QualType> &paramTypes);
-  [[nodiscard]] const std::vector<QualType> &getFunctionParamAndReturnTypes() const;
-  void setFunctionParamAndReturnTypes(const std::vector<QualType> &paramAndReturnTypes);
+  [[nodiscard]] QualTypeList getFunctionParamTypes() const;
+  void setFunctionParamTypes(const QualTypeList &paramTypes);
+  [[nodiscard]] const QualTypeList &getFunctionParamAndReturnTypes() const;
+  void setFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes);
   [[nodiscard]] bool hasLambdaCaptures() const;
   void setHasLambdaCaptures(bool hasCaptures);
-  [[nodiscard]] const std::vector<QualType> &getTemplateTypes() const;
-  void setTemplateTypes(const std::vector<QualType> &templateTypes);
-  void setBaseTemplateTypes(const std::vector<QualType> &templateTypes);
+  [[nodiscard]] const QualTypeList &getTemplateTypes() const;
+  void setTemplateTypes(const QualTypeList &templateTypes);
+  void setBaseTemplateTypes(const QualTypeList &templateTypes);
 
   // Queries on the type
   [[nodiscard]] bool is(SuperType superType) const;

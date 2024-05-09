@@ -25,7 +25,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   resultEntry->used = true;
 
   // Retrieve param types
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   if (node->takesArgs) {
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList)
@@ -110,7 +110,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Visit parameters
   std::vector<const char *> paramNames;
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -252,7 +252,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Visit parameters
   std::vector<const char *> paramNames;
-  std::vector<QualType> paramTypes;
+  QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
@@ -313,7 +313,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 }
 
 std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
-  std::vector<QualType> usedTemplateTypes;
+  QualTypeList usedTemplateTypes;
   std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve struct template types
@@ -337,7 +337,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   }
 
   // Retrieve implemented interfaces
-  std::vector<QualType> interfaceTypes;
+  QualTypeList interfaceTypes;
   if (node->hasInterfaces) {
     interfaceTypes.reserve(node->interfaceTypeLst()->dataTypes().size());
     for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes()) {
@@ -375,7 +375,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   assert(currentScope->type == ScopeType::STRUCT);
 
   // Retrieve field types
-  std::vector<QualType> fieldTypes;
+  QualTypeList fieldTypes;
   fieldTypes.reserve(node->fields().size());
   for (FieldNode *field : node->fields()) {
     // Visit field type
@@ -421,7 +421,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 }
 
 std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
-  std::vector<QualType> usedTemplateTypes;
+  QualTypeList usedTemplateTypes;
   std::vector<GenericType> templateTypesGeneric;
 
   // Retrieve interface template types
@@ -546,7 +546,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 
 std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   // Retrieve type conditions
-  std::vector<QualType> typeConditions;
+  QualTypeList typeConditions;
   typeConditions.reserve(node->typeAltsLst()->dataTypes().size());
   for (const auto &typeAlt : node->typeAltsLst()->dataTypes()) {
     auto typeCondition = std::any_cast<QualType>(visit(typeAlt));
@@ -621,7 +621,7 @@ std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
 
 std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   // Collect argument types
-  std::vector<QualType> argTypes;
+  QualTypeList argTypes;
   ParamList argList;
   if (node->hasArgs) {
     argList.reserve(node->argTypeLst()->dataTypes().size());

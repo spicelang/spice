@@ -27,10 +27,10 @@ public:
 
   // Public methods
   [[nodiscard]] std::string getSignature() const;
-  static std::string getSignature(const std::string &name, const std::vector<QualType> &concreteTemplateTypes);
+  static std::string getSignature(const std::string &name, const QualTypeList &concreteTemplateTypes);
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
-  [[nodiscard]] std::vector<QualType> getTemplateTypes() const;
+  [[nodiscard]] QualTypeList getTemplateTypes() const;
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] bool isGenericSubstantiation() const;
 

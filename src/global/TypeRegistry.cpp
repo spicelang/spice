@@ -7,7 +7,7 @@
 namespace spice::compiler {
 
 // Static member initialization
-std::unordered_map<std::string, std::unique_ptr<Type>>TypeRegistry::types = {};
+std::unordered_map<std::string, std::unique_ptr<Type>> TypeRegistry::types = {};
 
 const Type *TypeRegistry::get(const std::string &name) {
   const auto it = types.find(name);
@@ -27,8 +27,6 @@ const Type *TypeRegistry::getOrInsert(Type type) {
   return insertedElement.first->second.get();
 }
 
-const Type *TypeRegistry::getOrInsert(SuperType superType) {
-  return getOrInsert(Type(superType));
-}
+const Type *TypeRegistry::getOrInsert(SuperType superType) { return getOrInsert(Type(superType)); }
 
 } // namespace spice::compiler

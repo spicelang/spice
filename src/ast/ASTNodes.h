@@ -159,7 +159,7 @@ public:
   ASTNode *parent = nullptr;
   std::vector<ASTNode *> children;
   const CodeLoc codeLoc;
-  std::vector<QualType> symbolTypes;
+  QualTypeList symbolTypes;
   bool unreachable = false;
 };
 

@@ -132,7 +132,7 @@ void Type::TypeChainElement::getName(std::stringstream &name, bool withSize) con
   case TY_IMPORT:
     name << "import";
     break;
-  case TY_INVALID:   // GCOV_EXCL_LINE
+  case TY_INVALID:     // GCOV_EXCL_LINE
     name << "invalid"; // GCOV_EXCL_LINE
     break;
   default:

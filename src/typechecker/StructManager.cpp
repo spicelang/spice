@@ -53,7 +53,7 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  * @param node Instantiation AST node for printing error messages
  * @return Matched struct or nullptr
  */
-Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const std::vector<QualType> &reqTemplateTypes,
+Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const QualTypeList &reqTemplateTypes,
                                    const ASTNode *node) {
   // Copy the registry to prevent iterating over items, that are created within the loop
   StructRegistry structRegistry = matchScope->structs;
@@ -160,7 +160,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
           continue;
 
         // Build template types
-        std::vector<QualType> templateTypes = interfaceType.getTemplateTypes();
+        QualTypeList templateTypes = interfaceType.getTemplateTypes();
         TypeMatcher::substantiateTypesWithTypeMapping(templateTypes, typeMapping);
 
         // Instantiate interface
@@ -204,8 +204,7 @@ bool StructManager::matchName(const Struct &candidate, const std::string &reqNam
  * @param reqTemplateTypes Requested struct template types
  * @return Fulfilled or not
  */
-bool StructManager::matchTemplateTypes(Struct &candidate, const std::vector<QualType> &reqTemplateTypes,
-                                       TypeMapping &typeMapping) {
+bool StructManager::matchTemplateTypes(Struct &candidate, const QualTypeList &reqTemplateTypes, TypeMapping &typeMapping) {
   // Check if the number of types match
   const size_t typeCount = reqTemplateTypes.size();
   if (typeCount != candidate.templateTypes.size())
