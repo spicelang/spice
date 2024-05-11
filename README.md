@@ -4,13 +4,13 @@
   <h3 align="center">Spice Programming Language</h3>
   <p align="center">Compiler and standard library for the Spice programming language.</p>
   <p align="center">
-    <a target="_blank" href="https://github.com/spicelang/spice/releases/latest"><img src="https://img.shields.io/github/v/release/spicelang/spice?include_prereleases"></a>
-    <a target="_blank" href="https://hub.docker.com/r/chillibits/spice"><img src="https://img.shields.io/docker/pulls/chillibits/spice"></a>
-	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
-	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml"><img src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
-    <a target="_blank" href="https://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
-    <a target="_blank" href="./LICENSE.md"><img src="https://img.shields.io/github/license/spicelang/spice"></a>
-    <a target="_blank" href="https://discord.gg/D6sCsJyWPg"><img src="https://dcbadge.vercel.app/api/server/D6sCsJyWPg?style=flat"></a>
+    <a target="_blank" href="https://github.com/spicelang/spice/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/spicelang/spice?include_prereleases"></a>
+    <a target="_blank" href="https://hub.docker.com/r/chillibits/spice"><img alt="Docker pulls" src="https://img.shields.io/docker/pulls/chillibits/spice"></a>
+	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml"><img alt="CI status" src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
+	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml"><img alt="CodeQL status" src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
+    <a target="_blank" href="https://makeapullrequest.com"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+    <a target="_blank" href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/spicelang/spice"></a>
+    <a target="_blank" href="https://discord.gg/D6sCsJyWPg"><img alt="Discord server" src="https://dcbadge.vercel.app/api/server/D6sCsJyWPg?style=flat"></a>
   </p>
 </p>
 

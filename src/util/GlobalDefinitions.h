@@ -20,7 +20,7 @@ template <typename T> ALWAYS_INLINE static T spice_pointer_cast(auto source) {
 }
 
 // Fail with an assertion error message
-#define assert_fail(msg) assert(false && msg)
+#define assert_fail(msg) assert(false && (msg))
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

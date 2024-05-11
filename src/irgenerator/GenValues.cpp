@@ -864,7 +864,7 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
 
 llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesStructType, llvm::Value *lambda) {
   // Create capture struct if required
-  llvm::Value *capturesPtr;
+  llvm::Value *capturesPtr = nullptr;
   if (capturesStructType != nullptr) {
     assert(bodyScope != nullptr);
     // If we have a single capture of ptr type, we can directly store it into the fat ptr. Otherwise, we need a stack allocated
@@ -908,7 +908,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
   llvm::Value *fctPtr = insertStructGEP(llvmTypes.fatPtrType, fatFctPtr, 0);
   insertStore(lambda, fctPtr);
   llvm::Value *capturePtr = insertStructGEP(llvmTypes.fatPtrType, fatFctPtr, 1);
-  insertStore(capturesStructType != nullptr ? capturesPtr : llvm::PoisonValue::get(builder.getPtrTy()), capturePtr);
+  insertStore(capturesPtr != nullptr ? capturesPtr : llvm::PoisonValue::get(builder.getPtrTy()), capturePtr);
 
   return fatFctPtr;
 }
