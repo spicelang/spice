@@ -137,16 +137,21 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     for (QualType &templateType : templateTypes)
       if (templateType.hasAnyGenericParts())
         substantiateTypeWithTypeMapping(templateType, typeMapping);
+    // Attach the list of concrete template types to the symbol type
+    type = type.getWithBaseTemplateTypes(templateTypes);
     // Lookup the scope of the concrete struct or interface type
-    Scope *matchScope = baseType.getBodyScope()->parent;
-    StructBase *spiceStructBase;
-    if (baseType.is(TY_STRUCT)) // Struct
-      spiceStructBase = StructManager::matchStruct(matchScope, baseType.getSubType(), templateTypes, nullptr);
-    else // Interface
-      spiceStructBase = InterfaceManager::matchInterface(matchScope, baseType.getSubType(), templateTypes, nullptr);
-    assert(spiceStructBase != nullptr);
-    // Attach the list of concrete template types and the body scope to the symbol type
-    type = type.getWithBaseTemplateTypes(templateTypes).getWithBodyScope(spiceStructBase->scope);
+    // Only do this, if the struct or interface is not self-referencing, because in that case we'd end up in an infinite recursion
+    if (!baseType.isSelfReferencingStructType()) {
+      Scope *matchScope = baseType.getBodyScope()->parent;
+      StructBase *spiceStructBase;
+      if (baseType.is(TY_STRUCT)) // Struct
+        spiceStructBase = StructManager::matchStruct(matchScope, baseType.getSubType(), templateTypes, nullptr);
+      else // Interface
+        spiceStructBase = InterfaceManager::matchInterface(matchScope, baseType.getSubType(), templateTypes, nullptr);
+      assert(spiceStructBase != nullptr);
+      // Attach the body scope to the symbol type
+      type = type.getWithBodyScope(spiceStructBase->scope);
+    }
   }
 }
 

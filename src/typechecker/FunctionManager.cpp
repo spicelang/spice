@@ -140,6 +140,11 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
                                                 const ArgList &reqArgs, bool strictSpecifierMatching) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT}));
 
+  // Do cache lookup
+  const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqThisType, reqArgs, {});
+  if (lookupCache.contains(cacheKey))
+    return lookupCache.at(cacheKey);
+
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call

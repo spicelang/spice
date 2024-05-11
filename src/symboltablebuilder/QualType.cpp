@@ -337,6 +337,34 @@ bool QualType::matchesInterfaceImplementedByStruct(const QualType &otherType) co
 bool QualType::isSameContainerTypeAs(const QualType &other) const { return type->isSameContainerTypeAs(other.type); }
 
 /**
+ * Check if the current type is a self-referencing struct type
+ *
+ * @return Self-referencing struct type or not
+ */
+bool QualType::isSelfReferencingStructType(const QualType *typeToCompareWith) const { // NOLINT(*-no-recursion)
+  if (!is(TY_STRUCT))
+    return false;
+
+  // If no type was set by a previous iteration, we set it to the current type
+  if (typeToCompareWith == nullptr)
+    typeToCompareWith = this;
+
+  Scope *baseTypeBodyScope = getBodyScope();
+  for (size_t i = 0; i < baseTypeBodyScope->getFieldCount(); i++) {
+    const SymbolTableEntry *field = baseTypeBodyScope->symbolTable.lookupStrictByIndex(i);
+    // Check if the base type of the field matches with the current type, which is also a base type
+    // If yes, this is a self-referencing struct type
+    if (field->getQualType().getBase() == *typeToCompareWith)
+      return true;
+
+    // If the field is a struct, check if it is a self-referencing struct type
+    if (field->getQualType().isSelfReferencingStructType(typeToCompareWith))
+      return true;
+  }
+  return false;
+}
+
+/**
  * Check if the given generic type list has a substantiation for the current (generic) type
  *
  * @param genericTypeList Generic type list

@@ -85,6 +85,7 @@ public:
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
   [[nodiscard]] bool matchesInterfaceImplementedByStruct(const QualType &otherType) const;
   [[nodiscard]] bool isSameContainerTypeAs(const QualType &other) const;
+  [[nodiscard]] bool isSelfReferencingStructType(const QualType *typeToCompareWith = nullptr) const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
 
   // Serialization
