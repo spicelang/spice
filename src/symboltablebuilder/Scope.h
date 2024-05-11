@@ -87,7 +87,6 @@ public:
   [[nodiscard]] bool isInAsyncScope() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
   [[nodiscard]] bool isImportedBy(const Scope *askingScope) const;
-  const StructRegistry &getStructs() const { return structs; }
   [[nodiscard]] nlohmann::json getSymbolTableJSON() const;
 
   // Wrapper methods for symbol table

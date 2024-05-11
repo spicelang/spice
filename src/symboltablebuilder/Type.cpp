@@ -74,24 +74,6 @@ Scope *Type::getBodyScope() const {
  * @param node AST node for error messages
  * @return Pointer type of the current type
  */
-Type Type::toPointer(const ASTNode *node) const {
-  // Do not allow pointers of dyn
-  if (is(TY_DYN))
-    throw SemanticError(node, DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead");
-  if (isRef())
-    throw SemanticError(node, REF_POINTERS_ARE_NOT_ALLOWED, "Pointers to references are not allowed. Use pointer instead");
-
-  TypeChain newTypeChain = typeChain;
-  newTypeChain.emplace_back(TY_PTR);
-  return Type(newTypeChain);
-}
-
-/**
- * Get the pointer type of the current type as a new type
- *
- * @param node AST node for error messages
- * @return Pointer type of the current type
- */
 const Type *Type::toPtr(const ASTNode *node) const {
   // Do not allow pointers of dyn
   if (is(TY_DYN))
@@ -105,25 +87,6 @@ const Type *Type::toPtr(const ASTNode *node) const {
 
   // Register new type or return if already registered
   return TypeRegistry::getOrInsert(newTypeChain);
-}
-
-/**
- * Get the reference type of the current type as a new type
- *
- * @param node AST node for error messages
- * @return Reference type of the current type
- */
-Type Type::toReference(const ASTNode *node) const {
-  // Do not allow references of dyn
-  if (is(TY_DYN))
-    throw SemanticError(node, DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead");
-  // Do not allow references of references
-  if (isRef())
-    throw SemanticError(node, MULTI_REF_NOT_ALLOWED, "References to references are not allowed");
-
-  TypeChain newTypeChain = typeChain;
-  newTypeChain.emplace_back(TY_REF);
-  return Type(newTypeChain);
 }
 
 /**
@@ -155,22 +118,6 @@ const Type *Type::toRef(const ASTNode *node) const {
  * @param size Size of the array
  * @return Array type of the current type
  */
-Type Type::toArray(const ASTNode *node, unsigned int size, bool skipDynCheck /*=false*/) const {
-  // Do not allow arrays of dyn
-  if (!skipDynCheck && typeChain.back().superType == TY_DYN)
-    throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
-
-  TypeChain newTypeChain = typeChain;
-  newTypeChain.emplace_back(TY_ARRAY, TypeChainElementData{.arraySize = size});
-  return Type(newTypeChain);
-}
-/**
- * Get the array type of the current type as a new type
- *
- * @param node AST node for error messages
- * @param size Size of the array
- * @return Array type of the current type
- */
 const Type *Type::toArr(const ASTNode *node, unsigned int size, bool skipDynCheck /*=false*/) const {
   // Do not allow arrays of dyn
   if (!skipDynCheck && typeChain.back().superType == TY_DYN)
@@ -189,20 +136,6 @@ const Type *Type::toArr(const ASTNode *node, unsigned int size, bool skipDynChec
  *
  * @return Base type
  */
-Type Type::getContainedTy() const {
-  if (is(TY_STRING))
-    return Type(TY_CHAR);
-  assert(typeChain.size() > 1);
-  TypeChain newTypeChain = typeChain;
-  newTypeChain.pop_back();
-  return Type(newTypeChain);
-}
-
-/**
- * Retrieve the base type of an array or a pointer
- *
- * @return Base type
- */
 const Type *Type::getContained() const {
   if (is(TY_STRING))
     return TypeRegistry::getOrInsert(TY_CHAR);
@@ -214,26 +147,6 @@ const Type *Type::getContained() const {
 
   // Register new type or return if already registered
   return TypeRegistry::getOrInsert(newTypeChain);
-}
-
-/**
- * Replace the base type with another one
- *
- * @param newBaseType New base type
- * @return The new type
- */
-Type Type::replaceBaseType(const Type &newBaseType) const {
-  assert(!typeChain.empty());
-
-  // Create new type chain
-  TypeChain newTypeChain = newBaseType.typeChain;
-  const bool doubleRef = newTypeChain.back().superType == TY_REF && typeChain.back().superType == TY_REF;
-  for (size_t i = 1; i < typeChain.size(); i++)
-    if (!doubleRef || i > 1)
-      newTypeChain.push_back(typeChain.at(i));
-
-  // Return the new chain as a symbol type
-  return Type(newTypeChain);
 }
 
 /**

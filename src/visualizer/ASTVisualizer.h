@@ -107,7 +107,6 @@ public:
 private:
   // Members
   const std::vector<std::string> nodeNames;
-  int currentTabs = 1;
   std::stack<std::string> parentNodeIds;
 
   // Private methods

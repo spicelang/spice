@@ -64,15 +64,10 @@ public:
   [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
 
   // Get new type, based on this one
-  [[nodiscard]] [[deprecated]] Type toPointer(const ASTNode *node) const;
   [[nodiscard]] const Type *toPtr(const ASTNode *node) const;
-  [[nodiscard]] [[deprecated]] Type toReference(const ASTNode *node) const;
   [[nodiscard]] const Type *toRef(const ASTNode *node) const;
-  [[nodiscard]] [[deprecated]] Type toArray(const ASTNode *node, unsigned int size = 0, bool skipDynCheck = false) const;
   [[nodiscard]] const Type *toArr(const ASTNode *node, unsigned int size = 0, bool skipDynCheck = false) const;
-  [[nodiscard]] [[deprecated]] Type getContainedTy() const;
   [[nodiscard]] const Type *getContained() const;
-  [[nodiscard]] [[deprecated]] Type replaceBaseType(const Type &newBaseType) const;
   [[nodiscard]] const Type *replaceBase(const Type *newBaseType) const;
   [[nodiscard]] const Type *removeReferenceWrapper() const;
   [[nodiscard]] const Type *getBase() const;
