@@ -1,122 +1,53 @@
-import "bootstrap/bindings/llvm/llvm" as llvm;
-import "std/data/vector";
+import "std/data/doubly-linked-list";
 
 f<int> main() {
-    llvm::initializeNativeTarget();
-    llvm::initializeNativeAsmPrinter();
-
-    heap string targetTriple = llvm::getDefaultTargetTriple();
-    string error;
-    llvm::Target target = llvm::getTargetFromTriple(targetTriple, &error);
-    llvm::TargetMachine targetMachine = target.createTargetMachine(targetTriple, "generic", "", llvm::LLVMCodeGenOptLevel::Default, llvm::LLVMRelocMode::Default, llvm::LLVMCodeModel::Default);
-
-    llvm::LLVMContext context;
-    llvm::Module module = llvm::Module("test", context);
-    module.setDataLayout(targetMachine.createDataLayout());
-    //module.setTargetTriple(targetTriple); // This emits target dependent information in the IR, which is not what we want here.
-    llvm::Builder builder = llvm::Builder(context);
-
-    llvm::Type returnType = builder.getInt32Ty();
-    Vector<llvm::Type> argTypes;
-    llvm::Type funcType = llvm::getFunctionType(returnType, argTypes);
-    llvm::Function func = llvm::Function(module, "main", funcType);
-    func.setLinkage(llvm::LLVMLinkage::ExternalLinkage);
-
-    llvm::BasicBlock entry = llvm::BasicBlock(context, "");
-    func.pushBack(entry);
-    builder.setInsertPoint(entry);
-
-    llvm::Value calcResult = builder.createAdd(builder.getInt32(1), builder.getInt32(2), "calcResult");
-
-    llvm::Value helloWorldStr = builder.createGlobalStringPtr("Hello, world!\n", "helloWorldStr");
-    Vector<llvm::Type> printfArgTypes;
-    printfArgTypes.pushBack(builder.getPtrTy());
-    printfArgTypes.pushBack(builder.getInt32Ty());
-    llvm::Type printfFuncType = llvm::getFunctionType(builder.getInt32Ty(), printfArgTypes, true);
-    llvm::Function printfFunc = module.getOrInsertFunction("printf", printfFuncType);
-
-    Vector<llvm::Value> printfArgs;
-    printfArgs.pushBack(helloWorldStr);
-    printfArgs.pushBack(calcResult);
-    builder.createCall(printfFunc, printfArgs);
-
-    builder.createRet(builder.getInt32(0));
-
-    assert !llvm::verifyFunction(func);
-    string output;
-    assert !llvm::verifyModule(module, &output);
-
-    printf("Unoptimized IR:\n%s", module.print());
-
-    llvm::PassBuilderOptions pto;
-    llvm::PassBuilder passBuilder = llvm::PassBuilder(pto);
-    passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
-    passBuilder.addPass(llvm::AlwaysInlinerPass());
-    passBuilder.run(module, targetMachine);
-
-    printf("Optimized IR:\n%s", module.print());
-
-    targetMachine.emitToFile(module, "this-is-a-test.o", llvm::LLVMCodeGenFileType::ObjectFile);
+    DoublyLinkedList<String> list;
+    assert list.getSize() == 0;
+    assert list.isEmpty();
+    list.pushBack(String("Hello"));
+    assert list.getSize() == 1;
+    assert !list.isEmpty();
+    String var = String("World");
+    list.pushBack(var);
+    assert list.getSize() == 2;
+    list.pushFront(String("Hi"));
+    assert list.getSize() == 3;
+    assert list.getFront() == String("Hi");
+    assert list.getBack() == String("World");
+    list.removeFront();
+    assert list.getSize() == 2;
+    assert list.getFront() == String("Hello");
+    list.removeBack();
+    assert list.getSize() == 1;
+    assert list.getBack() == String("Hello");
+    list.pushBack(String("World"));
+    list.pushFront(String("Hi"));
+    list.pushBack(String("Programmers"));
+    assert list.getSize() == 4;
+    list.remove(String("World"));
+    assert list.getSize() == 3;
+    assert list.get(0) == String("Hi");
+    assert list.get(1) == String("Hello");
+    assert list.get(2) == String("Programmers");
+    list.removeAt(1);
+    assert list.getSize() == 2;
+    assert list.get(0) == String("Hi");
+    assert list.get(1) == String("Programmers");
+    printf("All assertions passed!\n");
 }
 
-/*import "std/iterator/array-iterator";
-import "std/data/pair";
+/*import "std/iterator/number-iterator";
 
 f<int> main() {
-    // Create test array to iterate over
-    int[5] a = [ 123, 4321, 9876, 321, -99 ];
+    NumberIterator<int> itInt = range(1, 10);
+    dyn idxAndValueInt = itInt.getIdx();
+    assert idxAndValueInt.getSecond() == 4;
+}*/
 
-    // Test base functionality
-    dyn it = iterate(a, len(a));
-    assert it.isValid();
-    assert it.get() == 123;
-    assert it.get() == 123;
-    it.next();
-    assert it.get() == 4321;
-    assert it.isValid();
-    it.next();
-    dyn pair = it.getIdx();
-    assert pair.getFirst() == 2;
-    assert pair.getSecond() == 9876;
-    it.next();
+/*import "std/data/hash-table";
 
-    // Test overloaded operators
-    it -= 3;
-    assert it.get() == 123;
-    assert it.isValid();
-    it++;
-    assert it.get() == 4321;
-    it--;
-    assert it.get() == 123;
-    it += 4;
-    assert it.get() == -99;
-    it.next();
-    assert !it.isValid();
-
-    // Test foreach value
-    foreach int item : iterate(a, len(a)) {
-        item++;
-    }
-    assert a[0] == 123;
-    assert a[1] == 4321;
-    assert a[2] == 9876;
-
-    // Test foreach ref
-    foreach int& item : iterate(a, len(a)) {
-        item++;
-    }
-    assert a[0] == 124;
-    assert a[1] == 4322;
-    assert a[2] == 9877;
-
-    foreach long idx, int& item : iterate(a, len(a)) {
-        item += idx;
-    }
-    assert a[0] == 124;
-    assert a[1] == 4323;
-    assert a[2] == 9879;
-
-    printf("All assertions passed!");
+f<int> main() {
+    HashTable<int, string> map = HashTable<int, string>(3l);
 }*/
 
 /*import "bootstrap/util/block-allocator";

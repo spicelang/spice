@@ -26,8 +26,12 @@ public:
   static Interface *insertInterface(Scope *insertScope, Interface &spiceInterface, std::vector<Interface *> *nodeInterfaceList);
   [[nodiscard]] static Interface *matchInterface(Scope *matchScope, const std::string &reqName,
                                                  const QualTypeList &reqTemplateTypes, const ASTNode *node);
+  static void clear();
 
 private:
+  // Private members
+  static std::unordered_map<uint64_t, Interface *> lookupCache;
+
   // Private methods
   [[nodiscard]] static Interface *insertSubstantiation(Scope *insertScope, Interface &newManifestation, const ASTNode *declNode);
   [[nodiscard]] static bool matchName(const Interface &candidate, const std::string &reqName);
@@ -36,6 +40,7 @@ private:
   static void substantiateSignatures(Interface &candidate, TypeMapping &typeMapping);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Interface &candidate,
                                                                           const std::string &templateTypeName);
+  [[nodiscard]] static uint64_t getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes);
 };
 
 } // namespace spice::compiler

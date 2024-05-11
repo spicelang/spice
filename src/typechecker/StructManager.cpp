@@ -8,8 +8,12 @@
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
 #include <util/CodeLoc.h>
+#include <util/CustomHashFunctions.h>
 
 namespace spice::compiler {
+
+// Static member initialization
+std::unordered_map<uint64_t, Struct *> StructManager::lookupCache = {};
 
 Struct *StructManager::insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
@@ -55,6 +59,11 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  */
 Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const QualTypeList &reqTemplateTypes,
                                    const ASTNode *node) {
+  // Do cache lookup
+  const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqTemplateTypes);
+  if (lookupCache.contains(cacheKey))
+    return lookupCache.at(cacheKey);
+
   // Copy the registry to prevent iterating over items, that are created within the loop
   StructRegistry structRegistry = matchScope->structs;
   // Loop over struct registry to find structs, that match the requirements of the instantiation
@@ -112,8 +121,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
       // Copy struct entry
       const std::string newSignature = substantiatedStruct->getSignature();
       matchScope->lookupStrict(substantiatedStruct->name)->used = true;
-      matchScope->symbolTable.copySymbol(substantiatedStruct->name, newSignature);
-      substantiatedStruct->entry = matchScope->lookupStrict(newSignature);
+      substantiatedStruct->entry = matchScope->symbolTable.copySymbol(substantiatedStruct->name, newSignature);
       assert(substantiatedStruct->entry != nullptr);
 
       // Copy struct scope
@@ -182,6 +190,9 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
   // Check if more than one struct matches the requirements
   if (matches.size() > 1)
     throw SemanticError(node, STRUCT_AMBIGUITY, "Multiple structs match the requested signature");
+
+  // Insert into cache
+  lookupCache[cacheKey] = matches.front();
 
   return matches.front();
 }
@@ -270,5 +281,30 @@ const GenericType *StructManager::getGenericTypeOfCandidateByName(const Struct &
   }
   return nullptr;
 }
+
+/**
+ * Calculate the cache key for the struct lookup cache
+ *
+ * @param scope Scope to match against
+ * @param name Struct name requirement
+ * @param templateTypes Template types to substantiate generic types
+ * @return Cache key
+ */
+uint64_t StructManager::getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes) {
+  const auto pred = [](size_t acc, const QualType &val) {
+    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
+    return acc * 31 + std::hash<QualType>{}(val);
+  };
+  // Calculate the cache key
+  const uint64_t scopeHash = std::hash<Scope *>{}(scope);
+  const uint64_t hashName = std::hash<std::string>{}(name);
+  const uint64_t hashTemplateTypes = std::accumulate(templateTypes.begin(), templateTypes.end(), 0u, pred);
+  return scopeHash ^ (hashName << 1) ^ (hashTemplateTypes << 2);
+}
+
+/**
+ * Clear all statics
+ */
+void StructManager::clear() { lookupCache.clear(); }
 
 } // namespace spice::compiler

@@ -15,19 +15,14 @@ bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
   switch (lhs.superType) {
   case TY_ARRAY:
     return lhs.data.arraySize == rhs.data.arraySize;
-  case TY_STRUCT:    // fall-through
-  case TY_INTERFACE: // fall-through
-  case TY_ENUM: {
-    if (lhs.superType == TY_STRUCT) {
-      assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
-      return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
-    } else if (lhs.superType == TY_INTERFACE) {
-      return lhs.typeId == rhs.typeId;
-    } else {
-      assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
-      return lhs.typeId == rhs.typeId && lhs.data.bodyScope == rhs.data.bodyScope;
-    }
-  }
+  case TY_STRUCT:
+    assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
+    return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
+  case TY_INTERFACE:
+    return lhs.typeId == rhs.typeId;
+  case TY_ENUM:
+    assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
+    return lhs.typeId == rhs.typeId && lhs.data.bodyScope == rhs.data.bodyScope;
   case TY_FUNCTION: // fall-through
   case TY_PROCEDURE:
     if (lhs.paramTypes.size() != rhs.paramTypes.size())

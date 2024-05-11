@@ -8,11 +8,6 @@
 
 namespace std {
 
-// Implement hash functionality for the TypeChainElementData union
-template <> struct hash<spice::compiler::TypeChainElementData> {
-  size_t operator()(const spice::compiler::TypeChainElementData &data) const;
-};
-
 // Implement hash functionality for the TypeChainElement struct
 template <> struct hash<spice::compiler::TypeChainElement> {
   size_t operator()(const spice::compiler::TypeChainElement &tce) const;

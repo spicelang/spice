@@ -75,6 +75,8 @@ const Type *TypeRegistry::getOrInsert(const TypeChain &typeChain) { return getOr
  *
  * @return The number of types in the type registry
  */
-const size_t TypeRegistry::getTypeCount() { return types.size(); }
+size_t TypeRegistry::getTypeCount() { return types.size(); }
+
+void TypeRegistry::clear() { types.clear();}
 
 } // namespace spice::compiler

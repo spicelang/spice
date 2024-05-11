@@ -560,7 +560,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     // Check if type has to be inferred or both types are fixed
     if (!localVarType.is(TY_UNRESOLVED) && !rhsTy.is(TY_UNRESOLVED)) {
       const ExprResult lhsResult = {localVarType, localVarEntry};
-      localVarType = QualType(OpRuleManager::getAssignResultType(node, lhsResult, rhs, true));
+      localVarType = OpRuleManager::getAssignResultType(node, lhsResult, rhs, true);
 
       // Call copy ctor if required
       if (localVarType.is(TY_STRUCT) && !node->isParam && !rhs.isTemporary()) {
@@ -669,7 +669,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   const ExprResult returnResult = {returnType, returnVar};
   OpRuleManager::getAssignResultType(node->assignExpr(), returnResult, rhs, true, ERROR_MSG_RETURN);
 
-  // Manager dtor call
+  // Manage dtor call
   if (rhs.entry != nullptr) {
     if (rhs.entry->anonymous) {
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
@@ -1374,7 +1374,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     SymbolTableEntry *memberEntry = structScope->symbolTable.lookupInComposedFields(fieldName, indexPath);
     if (!memberEntry)
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Field '" + node->identifier + "' not found in struct " + structName)
-    QualType memberType = memberEntry->getQualType();
+    const QualType memberType = memberEntry->getQualType();
 
     // Check for insufficient visibility
     if (structScope->isImportedBy(rootScope) && !memberEntry->getQualType().isPublic())
@@ -1477,7 +1477,7 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   assert(accessScope != nullptr);
   AtomicExprNode::VarAccessData &data = node->data.at(manIdx);
   data = {varEntry, accessScope, accessScope->symbolTable.lookupCapture(varEntry->name)};
-  QualType varType = varEntry->getQualType();
+  const QualType varType = varEntry->getQualType();
   HANDLE_UNRESOLVED_TYPE_ER(varType)
 
   if (varType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && varEntry->global) {
@@ -1766,7 +1766,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   SymbolTableEntry *anonymousSymbol = nullptr;
   if (returnType.isBase(TY_STRUCT)) {
     QualType returnBaseType = returnType.getBase();
-    const std::string structName = returnBaseType.getSubType();
+    const std::string& structName = returnBaseType.getSubType();
     Scope *matchScope = returnBaseType.getBodyScope()->parent;
     assert(matchScope != nullptr);
     Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
@@ -2465,9 +2465,8 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return node->setEvaluatedSymbolType(entryType, manIdx);
   }
 
-  const std::string errorMessage =
-      entryType.is(TY_INVALID) ? "Used type before declared" : "Expected type, but got " + entryType.getName(false);
-  SOFT_ERROR_QT(node, EXPECTED_TYPE, errorMessage)
+  const bool isInvalid = entryType.is(TY_INVALID);
+  SOFT_ERROR_QT(node, EXPECTED_TYPE, isInvalid ? "Used type before declared" : "Expected type, but got " + entryType.getName())
 }
 
 std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {

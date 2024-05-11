@@ -27,10 +27,14 @@ class StructManager {
 public:
   // Public methods
   static Struct *insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList);
-  [[nodiscard]] static Struct *matchStruct(Scope *matchScope, const std::string &reqName, const QualTypeList &reqTemplateTypes,
+  [[nodiscard]] static Struct *matchStruct(Scope *matchScope, const std::string &qt, const QualTypeList &reqTemplateTypes,
                                            const ASTNode *node);
+  static void clear();
 
 private:
+  // Private members
+  static std::unordered_map<uint64_t, Struct *> lookupCache;
+
   // Private methods
   [[nodiscard]] static Struct *insertSubstantiation(Scope *insertScope, Struct &newManifestation, const ASTNode *declNode);
   [[nodiscard]] static bool matchName(const Struct &candidate, const std::string &reqName);
@@ -38,6 +42,7 @@ private:
   static void substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Struct &candidate,
                                                                           const std::string &templateTypeName);
+  [[nodiscard]] static uint64_t getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes);
 };
 
 } // namespace spice::compiler

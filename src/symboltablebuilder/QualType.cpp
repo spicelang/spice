@@ -302,7 +302,7 @@ bool QualType::canBind(const QualType &inputType, bool isTemporary) const {
  */
 bool QualType::matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const {
   // Compare type
-  if (!type->matches(*otherType.type, ignoreArraySize))
+  if (!type->matches(otherType.type, ignoreArraySize))
     return false;
 
   // Ignore or compare specifiers
@@ -734,7 +734,7 @@ void QualType::makeComposition(bool isComposition) { specifiers.isComposition = 
  * @param rhs Right-hand side type
  * @return Equal or not
  */
-bool operator==(const QualType &lhs, const QualType &rhs) { return *lhs.type == *rhs.type; }
+bool operator==(const QualType &lhs, const QualType &rhs) { return lhs.type == rhs.type; }
 
 /**
  * Check if two types are not equal

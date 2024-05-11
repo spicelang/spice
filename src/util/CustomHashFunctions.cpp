@@ -4,11 +4,6 @@
 
 namespace std {
 
-size_t hash<spice::compiler::TypeChainElementData>::operator()(const spice::compiler::TypeChainElementData &data) const {
-  // Hash the body scope pointer, since it is the larges field
-  return std::hash<spice::compiler::Scope *>{}(data.bodyScope);
-}
-
 size_t hash<spice::compiler::TypeChainElement>::operator()(const spice::compiler::TypeChainElement &tce) const {
   // Hasher for QualTypeList
   const auto pred = [](size_t acc, const spice::compiler::QualType &val) {
@@ -19,7 +14,7 @@ size_t hash<spice::compiler::TypeChainElement>::operator()(const spice::compiler
   const size_t hashSuperType = std::hash<spice::compiler::SuperType>{}(tce.superType);
   const size_t hashSubType = std::hash<std::string>{}(tce.subType) << 1;
   const size_t hashTypeId = std::hash<uint64_t>{}(tce.typeId) << 2;
-  const size_t hashData = std::hash<spice::compiler::TypeChainElementData>{}(tce.data) << 3;
+  const size_t hashData = std::hash<spice::compiler::Scope *>{}(tce.data.bodyScope) << 3;
   const size_t hashTemplateTypes = accumulate(tce.templateTypes.begin(), tce.templateTypes.end(), 0u, pred) << 4;
   const size_t hashParamTypes = accumulate(tce.paramTypes.begin(), tce.paramTypes.end(), 0u, pred) << 5;
   return hashSuperType ^ hashSubType ^ hashTypeId ^ hashData ^ hashTemplateTypes ^ hashParamTypes;

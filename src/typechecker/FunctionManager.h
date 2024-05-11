@@ -48,8 +48,12 @@ public:
   static Function *matchFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                  const ArgList &reqArgs, const QualTypeList &templateTypeHints, bool strictSpecifierMatching,
                                  const ASTNode *callNode);
+  static void clear();
 
 private:
+  // Private members
+  static std::unordered_map<uint64_t, Function *> lookupCache;
+
   // Private methods
   [[nodiscard]] static Function *insertSubstantiation(Scope *insertScope, const Function &newManifestation,
                                                       const ASTNode *declNode);
@@ -65,6 +69,8 @@ private:
   static void substantiateReturnType(Function &candidate, TypeMapping &typeMapping);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Function &candidate,
                                                                           const std::string &templateTypeName);
+  [[nodiscard]] static uint64_t getCacheKey(Scope *scope, const std::string &name, const QualType &thisType,
+                                            const ArgList &args, const QualTypeList &templateTypes);
 };
 
 } // namespace spice::compiler

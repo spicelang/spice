@@ -628,10 +628,6 @@ const QualTypeList &Type::getFunctionParamAndReturnTypes() const {
   return typeChain.front().paramTypes;
 }
 
-bool operator==(const Type &lhs, const Type &rhs) { return lhs.typeChain == rhs.typeChain; }
-
-bool operator!=(const Type &lhs, const Type &rhs) { return !(lhs == rhs); }
-
 /**
  * Check for the matching compatibility of two types.
  * Useful for struct and function matching as well as assignment type validation and function arg matching.
@@ -640,15 +636,15 @@ bool operator!=(const Type &lhs, const Type &rhs) { return !(lhs == rhs); }
  * @param ignoreArraySize Ignore array sizes
  * @return Matching or not
  */
-bool Type::matches(const Type &otherType, bool ignoreArraySize) const {
+bool Type::matches(const Type *otherType, bool ignoreArraySize) const {
   // If the size does not match, it is not equal
-  if (typeChain.size() != otherType.typeChain.size())
+  if (typeChain.size() != otherType->typeChain.size())
     return false;
 
   // Compare the elements
   for (size_t i = 0; i < typeChain.size(); i++) {
     const TypeChainElement &lhsElement = typeChain.at(i);
-    const TypeChainElement &rhsElement = otherType.typeChain.at(i);
+    const TypeChainElement &rhsElement = otherType->typeChain.at(i);
 
     // Ignore differences in array size
     if (ignoreArraySize && lhsElement.superType == TY_ARRAY && rhsElement.superType == TY_ARRAY)

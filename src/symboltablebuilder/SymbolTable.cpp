@@ -68,10 +68,12 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &type, ASTNode *de
  * @param originalName Original symbol name
  * @param newName New symbol name
  */
-void SymbolTable::copySymbol(const std::string &originalName, const std::string &newName) {
+SymbolTableEntry *SymbolTable::copySymbol(const std::string &originalName, const std::string &newName) {
   SymbolTableEntry *entryToCopy = lookupStrict(originalName);
   assert(entryToCopy != nullptr);
-  symbols.insert({newName, *entryToCopy});
+  auto [it, success] = symbols.insert({newName, *entryToCopy});
+  assert(success);
+  return &it->second;
 }
 
 /**

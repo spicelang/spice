@@ -54,7 +54,7 @@ public:
 
   // Complex queries on the type
   [[nodiscard]] bool isSameContainerTypeAs(const Type *other) const;
-  [[nodiscard]] bool matches(const Type &otherType, bool ignoreArraySize) const;
+  [[nodiscard]] bool matches(const Type *otherType, bool ignoreArraySize) const;
 
   // Serialization
   void getName(std::stringstream &name, bool withSize = false) const;
@@ -81,10 +81,6 @@ public:
   [[nodiscard]] const Type *getWithTemplateTypes(const QualTypeList &templateTypes) const;
   [[nodiscard]] const Type *getWithBaseTemplateTypes(const QualTypeList &templateTypes) const;
   [[nodiscard]] const Type *getWithFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes) const;
-
-  // Overloaded operators
-  friend bool operator==(const Type &lhs, const Type &rhs);
-  friend bool operator!=(const Type &lhs, const Type &rhs);
 
   // Public static methods
   static void unwrapBoth(const Type *&typeA, const Type *&typeB);

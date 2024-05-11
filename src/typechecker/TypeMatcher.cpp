@@ -3,6 +3,7 @@
 #include "TypeMatcher.h"
 
 #include <symboltablebuilder/Scope.h>
+#include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
 
@@ -120,24 +121,32 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     assert(typeMapping.contains(genericTypeName));
     const QualType &replacementType = typeMapping.at(genericTypeName);
     type = type.replaceBaseType(replacementType);
-  } else { // The symbol type itself is non-generic, but one or several template or param types are
-    if (type.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-      // Substantiate each param or return type
-      QualTypeList paramAndReturnTypes = type.getFunctionParamAndReturnTypes();
-      for (QualType &paramOrReturnType : paramAndReturnTypes)
-        if (paramOrReturnType.hasAnyGenericParts())
-          substantiateTypeWithTypeMapping(paramOrReturnType, typeMapping);
-      // Attach the list of concrete param types to the symbol type
-      type = type.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
-    } else {
-      // Substantiate each template type
-      QualTypeList templateTypes = type.getBase().getTemplateTypes();
-      for (QualType &templateType : templateTypes)
-        if (templateType.hasAnyGenericParts())
-          substantiateTypeWithTypeMapping(templateType, typeMapping);
-      // Attach the list of concrete template types to the symbol type
-      type = type.getWithBaseTemplateTypes(templateTypes);
-    }
+  } else if (type.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE})) { // The base type is a function or procedure
+    // Substantiate each param or return type
+    QualTypeList paramAndReturnTypes = type.getFunctionParamAndReturnTypes();
+    for (QualType &paramOrReturnType : paramAndReturnTypes)
+      if (paramOrReturnType.hasAnyGenericParts())
+        substantiateTypeWithTypeMapping(paramOrReturnType, typeMapping);
+    // Attach the list of concrete param types to the symbol type
+    type = type.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
+  } else { // The base type is a struct or interface
+    assert(type.getBase().isOneOf({TY_STRUCT, TY_INTERFACE}));
+    // Substantiate each template type
+    const QualType baseType = type.getBase();
+    QualTypeList templateTypes = baseType.getTemplateTypes();
+    for (QualType &templateType : templateTypes)
+      if (templateType.hasAnyGenericParts())
+        substantiateTypeWithTypeMapping(templateType, typeMapping);
+    // Lookup the scope of the concrete struct or interface type
+    Scope *matchScope = baseType.getBodyScope()->parent;
+    StructBase *spiceStructBase;
+    if (baseType.is(TY_STRUCT)) // Struct
+      spiceStructBase = StructManager::matchStruct(matchScope, baseType.getSubType(), templateTypes, nullptr);
+    else // Interface
+      spiceStructBase = InterfaceManager::matchInterface(matchScope, baseType.getSubType(), templateTypes, nullptr);
+    assert(spiceStructBase != nullptr);
+    // Attach the list of concrete template types and the body scope to the symbol type
+    type = type.getWithBaseTemplateTypes(templateTypes).getWithBodyScope(spiceStructBase->scope);
   }
 }
 

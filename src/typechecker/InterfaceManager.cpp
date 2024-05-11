@@ -7,8 +7,12 @@
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
+#include <util/CustomHashFunctions.h>
 
 namespace spice::compiler {
+
+// Static member initialization
+std::unordered_map<uint64_t, Interface *> InterfaceManager::lookupCache = {};
 
 Interface *InterfaceManager::insertInterface(Scope *insertScope, Interface &spiceInterface,
                                              std::vector<Interface *> *nodeInterfaceList) {
@@ -51,6 +55,11 @@ Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface 
  */
 Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string &reqName, const QualTypeList &reqTemplateTypes,
                                             const ASTNode *node) {
+  // Do cache lookup
+  const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqTemplateTypes);
+  if (lookupCache.contains(cacheKey))
+    return lookupCache.at(cacheKey);
+
   // Copy the registry to prevent iterating over items, that are created within the loop
   InterfaceRegistry interfaceRegistry = matchScope->interfaces;
   // Loop over interface registry to find interfaces, that match the requirements of the instantiation
@@ -108,8 +117,7 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
       // Copy interface entry
       const std::string newSignature = substantiatedInterface->getSignature();
       matchScope->lookupStrict(substantiatedInterface->name)->used = true;
-      matchScope->symbolTable.copySymbol(substantiatedInterface->name, newSignature);
-      substantiatedInterface->entry = matchScope->lookupStrict(newSignature);
+      substantiatedInterface->entry = matchScope->symbolTable.copySymbol(substantiatedInterface->name, newSignature);
       assert(substantiatedInterface->entry != nullptr);
 
       // Copy interface scope
@@ -125,15 +133,6 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
                                .getWithBodyScope(substantiatedInterface->scope);
       substantiatedInterface->entry->updateType(entryType, true);
 
-      // Replace symbol types of method entries with concrete types
-      /*assert(substantiatedInterface->interfaceScope != nullptr);
-      for (size_t i = 0; i < substantiatedInterface->methods.size(); i++) {
-        // Replace field type with concrete template type
-        SymbolTableEntry *methodEntry = substantiatedInterface->interfaceScope->symbolTable.lookupByIndex(i);
-        assert(methodEntry != nullptr);
-        methodEntry->updateType(substantiatedInterface->methods.at(i), true);
-      }*/
-
       // Add to matched interfaces
       matches.push_back(substantiatedInterface);
     }
@@ -146,6 +145,9 @@ Interface *InterfaceManager::matchInterface(Scope *matchScope, const std::string
   // Check if more than one interface matches the requirements
   if (matches.size() > 1)
     throw SemanticError(node, INTERFACE_AMBIGUITY, "Multiple interfaces match the requested signature");
+
+  // Insert into cache
+  lookupCache[cacheKey] = matches.front();
 
   return matches.front();
 }
@@ -235,5 +237,30 @@ const GenericType *InterfaceManager::getGenericTypeOfCandidateByName(const Inter
   }
   return nullptr;
 }
+
+/**
+ * Calculate the cache key for the interface lookup cache
+ *
+ * @param scope Scope to match against
+ * @param name Interface name requirement
+ * @param templateTypes Template types to substantiate generic types
+ * @return Cache key
+ */
+uint64_t InterfaceManager::getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes) {
+  const auto pred = [](size_t acc, const QualType &val) {
+    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
+    return acc * 31 + std::hash<QualType>{}(val);
+  };
+  // Calculate the cache key
+  const uint64_t scopeHash = std::hash<Scope *>{}(scope);
+  const uint64_t hashName = std::hash<std::string>{}(name);
+  const uint64_t hashTemplateTypes = std::accumulate(templateTypes.begin(), templateTypes.end(), 0u, pred);
+  return scopeHash ^ (hashName << 1) ^ (hashTemplateTypes << 2);
+}
+
+/**
+ * Clear all statics
+ */
+void InterfaceManager::clear() { lookupCache.clear(); }
 
 } // namespace spice::compiler
