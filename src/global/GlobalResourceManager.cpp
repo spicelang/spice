@@ -4,6 +4,9 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <global/TypeRegistry.h>
+#include <typechecker/FunctionManager.h>
+#include <typechecker/StructManager.h>
 #include <util/FileUtil.h>
 
 #include <llvm/MC/TargetRegistry.h>
@@ -61,7 +64,12 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
 }
 
 GlobalResourceManager::~GlobalResourceManager() {
-  // Cleanup all global LLVM resources
+  // Cleanup all statics
+  TypeRegistry::clear();
+  FunctionManager::clear();
+  StructManager::clear();
+  InterfaceManager::clear();
+  // Cleanup all LLVM statics
   llvm::llvm_shutdown();
 }
 

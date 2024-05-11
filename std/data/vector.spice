@@ -275,7 +275,8 @@ public inline f<T&> VectorIterator.get() {
  * @return Pair of current index and reference to current item
  */
 public inline f<Pair<unsigned long, T&>> VectorIterator.getIdx() {
-    return Pair<unsigned long, T&>(this.cursor, this.vector.get(this.cursor));
+    T& item = this.vector.get(this.cursor);
+    return Pair<unsigned long, T&>(this.cursor, item);
 }
 
 /**

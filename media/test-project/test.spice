@@ -1,26 +1,54 @@
-type T int|long;
-
-type TestStruct<T> struct {
-    T _f1
-    unsigned long length
-}
-
-p TestStruct.ctor(const unsigned long initialLength) {
-    this.length = initialLength;
-}
-
-p TestStruct.printLength() {
-    printf("%d\n", this.length);
-}
-
-type Alias alias TestStruct<long>;
+import "std/data/doubly-linked-list";
 
 f<int> main() {
-    Alias a = Alias{12345l, (unsigned long) 54321l};
-    a.printLength();
-    dyn b = Alias(12l);
-    b.printLength();
+    DoublyLinkedList<String> list;
+    assert list.getSize() == 0;
+    assert list.isEmpty();
+    list.pushBack(String("Hello"));
+    assert list.getSize() == 1;
+    assert !list.isEmpty();
+    String var = String("World");
+    list.pushBack(var);
+    assert list.getSize() == 2;
+    list.pushFront(String("Hi"));
+    assert list.getSize() == 3;
+    assert list.getFront() == String("Hi");
+    assert list.getBack() == String("World");
+    list.removeFront();
+    assert list.getSize() == 2;
+    assert list.getFront() == String("Hello");
+    list.removeBack();
+    assert list.getSize() == 1;
+    assert list.getBack() == String("Hello");
+    list.pushBack(String("World"));
+    list.pushFront(String("Hi"));
+    list.pushBack(String("Programmers"));
+    assert list.getSize() == 4;
+    list.remove(String("World"));
+    assert list.getSize() == 3;
+    assert list.get(0) == String("Hi");
+    assert list.get(1) == String("Hello");
+    assert list.get(2) == String("Programmers");
+    list.removeAt(1);
+    assert list.getSize() == 2;
+    assert list.get(0) == String("Hi");
+    assert list.get(1) == String("Programmers");
+    printf("All assertions passed!\n");
 }
+
+/*import "std/iterator/number-iterator";
+
+f<int> main() {
+    NumberIterator<int> itInt = range(1, 10);
+    dyn idxAndValueInt = itInt.getIdx();
+    assert idxAndValueInt.getSecond() == 4;
+}*/
+
+/*import "std/data/hash-table";
+
+f<int> main() {
+    HashTable<int, string> map = HashTable<int, string>(3l);
+}*/
 
 /*import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";

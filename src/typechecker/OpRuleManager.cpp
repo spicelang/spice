@@ -110,7 +110,7 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
   if (lhsType.isPtr() && rhsType.isArray() && lhsType.getContained().matches(rhsType.getContained(), false, false, true))
     return lhsType;
   // Allow interface* = struct* or interface& = struct that implements this interface
-  const bool sameChainDepth = lhsType.getType().typeChain.size() == rhsType.getType().typeChain.size();
+  const bool sameChainDepth = Type::hasSameTypeChainDepth(lhsType.getType(), rhsType.getType());
   const bool typesCompatible = (lhsType.isPtr() && rhsType.isPtr() && sameChainDepth) || lhsType.isRef();
   if (typesCompatible && lhsType.isBase(TY_INTERFACE) && rhsType.isBase(TY_STRUCT)) {
     QualType lhsTypeCopy = lhsType;
@@ -710,9 +710,9 @@ QualType OpRuleManager::validateBinaryOperation(const ASTNode *node, const Binar
   for (size_t i = 0; i < opRulesSize; i++) {
     const BinaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType() && std::get<1>(rule) == rhs.getSuperType()) {
-      QualType resultType = QualType(SuperType(std::get<2>(rule)));
+      QualType resultType(SuperType(std::get<2>(rule)));
       if (preserveSpecifiersFromLhs)
-        resultType.getSpecifiers() = lhs.getSpecifiers();
+        resultType.setSpecifiers(lhs.getSpecifiers());
       return resultType;
     }
   }

@@ -10,8 +10,12 @@
 #include <typechecker/ExprResult.h>
 #include <typechecker/TypeMatcher.h>
 #include <util/CodeLoc.h>
+#include <util/CustomHashFunctions.h>
 
 namespace spice::compiler {
+
+// Static member initialization
+std::unordered_map<uint64_t, Function *> FunctionManager::lookupCache = {};
 
 Function *FunctionManager::insertFunction(Scope *insertScope, const Function &baseFunction,
                                           std::vector<Function *> *nodeFunctionList) {
@@ -136,6 +140,11 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
                                                 const ArgList &reqArgs, bool strictSpecifierMatching) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT}));
 
+  // Do cache lookup
+  const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqThisType, reqArgs, {});
+  if (lookupCache.contains(cacheKey))
+    return lookupCache.at(cacheKey);
+
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
   // Loop over function registry to find functions, that match the requirements of the call
@@ -192,6 +201,11 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
                                          const ArgList &reqArgs, const QualTypeList &templateTypeHints,
                                          bool strictSpecifierMatching, const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
+
+  // Do cache lookup
+  const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqThisType, reqArgs, templateTypeHints);
+  if (lookupCache.contains(cacheKey))
+    return lookupCache.at(cacheKey);
 
   // Copy the registry to prevent iterating over items, that are created within the loop
   FunctionRegistry functionRegistry = matchScope->functions;
@@ -255,8 +269,7 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
       // Copy function entry
       const std::string newSignature = substantiatedFunction->getSignature(false);
       matchScope->lookupStrict(presetFunction.entry->name)->used = true;
-      matchScope->symbolTable.copySymbol(presetFunction.entry->name, newSignature);
-      substantiatedFunction->entry = matchScope->lookupStrict(newSignature);
+      substantiatedFunction->entry = matchScope->symbolTable.copySymbol(presetFunction.entry->name, newSignature);
       assert(substantiatedFunction->entry != nullptr);
 
       // Copy function scope
@@ -292,6 +305,9 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
   if (matches.size() > 1)
     throw SemanticError(callNode, FUNCTION_AMBIGUITY, "Multiple functions match the requested signature");
 
+  // Insert into cache
+  lookupCache[cacheKey] = matches.front();
+
   // Return the very match
   return matches.front();
 }
@@ -323,13 +339,13 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
   if (!thisType.is(TY_DYN)) {
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (matchScope->isGenericScope) {
-      const std::string structName = thisType.getSubType();
+      const std::string &structName = thisType.getSubType();
       Scope *scope = thisType.getBodyScope()->parent;
       Struct *spiceStruct = StructManager::matchStruct(scope, structName, thisType.getTemplateTypes(), candidate.declNode);
       assert(spiceStruct != nullptr);
       matchScope = spiceStruct->scope;
     }
-    candidate.thisType.setBodyScope(matchScope);
+    candidate.thisType = candidate.thisType.getWithBodyScope(matchScope);
   }
 
   return MatchResult::MATCHED;
@@ -428,7 +444,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
 
     // If we have a function/procedure type we need to take care of the information, if it takes captures
     if (requestedType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}) && requestedType.hasLambdaCaptures()) {
-      candidateParamType.setHasLambdaCaptures(true);
+      candidateParamType = candidateParamType.getWithLambdaCaptures();
       needsSubstantiation = true;
     }
   }
@@ -462,5 +478,42 @@ const GenericType *FunctionManager::getGenericTypeOfCandidateByName(const Functi
   }
   return nullptr;
 }
+
+/**
+ * Calculate the cache key for the function lookup cache
+ *
+ * @param scope Scope to match against
+ * @param name Function name requirement
+ * @param thisType This type requirement
+ * @param args Argument requirement
+ * @param templateTypes Template type requirement
+ * @return Cache key
+ */
+uint64_t FunctionManager::getCacheKey(Scope *scope, const std::string &name, const QualType &thisType, const ArgList &args,
+                                      const QualTypeList &templateTypes) {
+  const auto pred1 = [](size_t acc, const Arg &val) {
+    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
+    const uint64_t typeHash = std::hash<QualType>{}(val.first);
+    const uint64_t temporaryHash = std::hash<bool>{}(val.second);
+    const uint64_t newHash = typeHash ^ (temporaryHash << 1);
+    return acc * 31 + newHash;
+  };
+  const auto pred2 = [](size_t acc, const QualType &val) {
+    // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
+    return acc * 31 + std::hash<QualType>{}(val);
+  };
+  // Calculate the cache key
+  const uint64_t scopeHash = std::hash<Scope *>{}(scope);
+  const uint64_t hashName = std::hash<std::string>{}(name);
+  const uint64_t hashThisType = std::hash<QualType>{}(thisType);
+  const uint64_t hashArgs = std::accumulate(args.begin(), args.end(), 0u, pred1);
+  const uint64_t hashTemplateTypes = std::accumulate(templateTypes.begin(), templateTypes.end(), 0u, pred2);
+  return scopeHash ^ (hashName << 1) ^ (hashThisType << 2) ^ (hashArgs << 3) ^ (hashTemplateTypes << 4);
+}
+
+/**
+ * Clear all statics
+ */
+void FunctionManager::clear() { lookupCache.clear(); }
 
 } // namespace spice::compiler

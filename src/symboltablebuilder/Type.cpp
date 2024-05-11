@@ -22,11 +22,11 @@ Type::Type(SuperType superType) : typeChain({TypeChainElement{superType}}) {}
 
 Type::Type(SuperType superType, const std::string &subType) : typeChain({TypeChainElement{superType, subType}}) {}
 
-Type::Type(SuperType superType, const std::string &subType, uint64_t typeId, const Type::TypeChainElementData &data,
+Type::Type(SuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
            const QualTypeList &templateTypes)
     : typeChain({TypeChainElement(superType, subType, typeId, data, templateTypes)}) {}
 
-Type::Type(TypeChain types) : typeChain(std::move(types)) {}
+Type::Type(TypeChain typeChain) : typeChain(std::move(typeChain)) {}
 
 /**
  * Get the super type of the current type
@@ -69,16 +69,6 @@ Scope *Type::getBodyScope() const {
 }
 
 /**
- * Set the body scope of the current type
- *
- * @param bodyScope Body scope
- */
-void Type::setBodyScope(Scope *bodyScope) {
-  assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
-  typeChain.back().data.bodyScope = bodyScope;
-}
-
-/**
  * Get the pointer type of the current type as a new type
  *
  * @param node AST node for error messages
@@ -109,12 +99,12 @@ const Type *Type::toPtr(const ASTNode *node) const {
   if (isRef())
     throw SemanticError(node, REF_POINTERS_ARE_NOT_ALLOWED, "Pointers to references are not allowed. Use pointer instead");
 
-  // Create new type
-  Type newType = *this;
-  newType.typeChain.emplace_back(TY_PTR);
+  // Create new type chain
+  TypeChain newTypeChain = typeChain;
+  newTypeChain.emplace_back(TY_PTR);
 
   // Register new type or return if already registered
-  return TypeRegistry::getOrInsert(newType);
+  return TypeRegistry::getOrInsert(newTypeChain);
 }
 
 /**
@@ -150,12 +140,12 @@ const Type *Type::toRef(const ASTNode *node) const {
   if (isRef())
     throw SemanticError(node, MULTI_REF_NOT_ALLOWED, "References to references are not allowed");
 
-  // Create new type
-  Type newType = *this;
-  newType.typeChain.emplace_back(TY_REF);
+  // Create new type chain
+  TypeChain newTypeChain = typeChain;
+  newTypeChain.emplace_back(TY_REF);
 
   // Register new type or return if already registered
-  return TypeRegistry::getOrInsert(newType);
+  return TypeRegistry::getOrInsert(newTypeChain);
 }
 
 /**
@@ -186,12 +176,12 @@ const Type *Type::toArr(const ASTNode *node, unsigned int size, bool skipDynChec
   if (!skipDynCheck && typeChain.back().superType == TY_DYN)
     throw SemanticError(node, DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
 
-  // Create new type
-  Type newType = *this;
-  newType.typeChain.emplace_back(TY_ARRAY, TypeChainElementData{.arraySize = size});
+  // Create new type chain
+  TypeChain newTypeChain = typeChain;
+  newTypeChain.emplace_back(TY_ARRAY, TypeChainElementData{.arraySize = size});
 
   // Register new type or return if already registered
-  return TypeRegistry::getOrInsert(newType);
+  return TypeRegistry::getOrInsert(newTypeChain);
 }
 
 /**
@@ -217,13 +207,13 @@ const Type *Type::getContained() const {
   if (is(TY_STRING))
     return TypeRegistry::getOrInsert(TY_CHAR);
 
-  // Create new type
-  Type newType = *this;
-  assert(newType.typeChain.size() > 1);
-  newType.typeChain.pop_back();
+  // Create new type chain
+  TypeChain newTypeChain = typeChain;
+  assert(newTypeChain.size() > 1);
+  newTypeChain.pop_back();
 
   // Register new type or return if already registered
-  return TypeRegistry::getOrInsert(newType);
+  return TypeRegistry::getOrInsert(newTypeChain);
 }
 
 /**
@@ -252,19 +242,18 @@ Type Type::replaceBaseType(const Type &newBaseType) const {
  * @param newBaseType New base type
  * @return The new type
  */
-const Type *Type::replaceBase(const Type &newBaseType) const {
+const Type *Type::replaceBase(const Type *newBaseType) const {
   assert(!typeChain.empty());
 
   // Create new type
-  Type newType = *this;
-  TypeChain newTypeChain = newBaseType.typeChain;
+  TypeChain newTypeChain = newBaseType->typeChain;
   const bool doubleRef = newTypeChain.back().superType == TY_REF && typeChain.back().superType == TY_REF;
   for (size_t i = 1; i < typeChain.size(); i++)
     if (!doubleRef || i > 1)
       newTypeChain.push_back(typeChain.at(i));
 
   // Register new type or return if already registered
-  return TypeRegistry::getOrInsert(newType);
+  return TypeRegistry::getOrInsert(newTypeChain);
 }
 
 /**
@@ -272,7 +261,7 @@ const Type *Type::replaceBase(const Type &newBaseType) const {
  *
  * @return Type without reference wrapper
  */
-Type Type::removeReferenceWrapper() const { return isRef() ? getContainedTy() : *this; }
+const Type *Type::removeReferenceWrapper() const { return isRef() ? getContained() : this; }
 
 /**
  * Return the LLVM type for this symbol type
@@ -372,7 +361,7 @@ llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) con
   }
 
   if (isArray()) {
-    llvm::Type *containedType = getContainedTy().toLLVMType(context, accessScope);
+    llvm::Type *containedType = getContained()->toLLVMType(context, accessScope);
     return llvm::ArrayType::get(containedType, getArraySize());
   }
 
@@ -425,10 +414,10 @@ bool Type::isArray() const { return getSuperType() == TY_ARRAY; }
  * @param other Other symbol type
  * @return Same container type or not
  */
-bool Type::isSameContainerTypeAs(const Type &other) const {
-  const bool bothPtr = isPtr() && other.isPtr();
-  const bool bothRef = isRef() && other.isRef();
-  const bool bothArray = isArray() && other.isArray();
+bool Type::isSameContainerTypeAs(const Type *other) const {
+  const bool bothPtr = isPtr() && other->isPtr();
+  const bool bothRef = isRef() && other->isRef();
+  const bool bothArray = isArray() && other->isArray();
   return bothPtr || bothRef || bothArray;
 }
 
@@ -437,9 +426,88 @@ bool Type::isSameContainerTypeAs(const Type &other) const {
  *
  * @return Base type
  */
-Type Type::getBase() const {
+const Type *Type::getBase() const {
   assert(!typeChain.empty());
-  return Type({typeChain.front()});
+
+  // Create new type chain
+  const TypeChain newTypeChain = {typeChain.front()};
+
+  // Register new type or return if already registered
+  return TypeRegistry::getOrInsert(newTypeChain);
+}
+
+/**
+ * Retrieve the same type, but with lambda captures
+ *
+ * @return Type with lambda captures
+ */
+const Type *Type::getWithLambdaCaptures(bool enabled) const {
+  assert(getBase()->isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+
+  // Create new type chain
+  TypeChain newTypeChain = typeChain;
+  newTypeChain.front().data.hasCaptures = enabled;
+
+  // Register new type or return if already registered
+  return TypeRegistry::getOrInsert(newTypeChain);
+}
+
+/**
+ * Retrieve the same type, but with the body scope removed
+ *
+ * @return Type with body scope removed
+ */
+const Type *Type::getWithBodyScope(Scope *bodyScope) const {
+  assert(getBase()->isOneOf({TY_STRUCT, TY_INTERFACE}));
+
+  // Create new type chain
+  TypeChain newTypeChain = typeChain;
+  newTypeChain.front().data.bodyScope = bodyScope;
+
+  // Register new type or return if already registered
+  return TypeRegistry::getOrInsert(newTypeChain);
+}
+
+/**
+ * Retrieve the same type, but with the given template types
+ *
+ * @return Type with new template types
+ */
+const Type *Type::getWithTemplateTypes(const QualTypeList &templateTypes) const {
+  assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
+  return getWithBaseTemplateTypes(templateTypes);
+}
+
+/**
+ * Retrieve the same type, but with the given base template types
+ *
+ * @return Type with new base template types
+ */
+const Type *Type::getWithBaseTemplateTypes(const QualTypeList &templateTypes) const {
+  assert(getBase()->isOneOf({TY_STRUCT, TY_INTERFACE}));
+
+  // Create new type chain
+  TypeChain newTypeChain = typeChain;
+  newTypeChain.front().templateTypes = templateTypes;
+
+  // Register new type or return if already registered
+  return TypeRegistry::getOrInsert(newTypeChain);
+}
+
+/**
+ * Retrieve the same type, but with the param and return types removed
+ *
+ * @return Type with param and return types removed
+ */
+const Type *Type::getWithFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes) const {
+  assert(getBase()->isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+
+  // Create new type chain
+  TypeChain newTypeChain = typeChain;
+  newTypeChain.front().paramTypes = paramAndReturnTypes;
+
+  // Register new type or return if already registered
+  return TypeRegistry::getOrInsert(newTypeChain);
 }
 
 /**
@@ -448,20 +516,20 @@ Type Type::getBase() const {
  * @return Contains generic parts or not
  */
 bool Type::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
-  const Type &baseType = getBase();
+  const Type *baseType = getBase();
 
   // Check if the type itself is generic
-  if (baseType.is(TY_GENERIC))
+  if (baseType->is(TY_GENERIC))
     return true;
 
   // Check if the type has generic template types
-  const auto templateTypes = baseType.getTemplateTypes();
+  const auto templateTypes = baseType->getTemplateTypes();
   if (std::ranges::any_of(templateTypes, [](const QualType &t) { return t.hasAnyGenericParts(); }))
     return true;
 
   // Check param and return types or functions/procedures
-  if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
-    const auto paramTypes = baseType.getFunctionParamAndReturnTypes();
+  if (baseType->isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+    const auto paramTypes = baseType->getFunctionParamAndReturnTypes();
     if (std::ranges::any_of(paramTypes, [](const QualType &t) { return t.hasAnyGenericParts(); }))
       return true;
   }
@@ -470,27 +538,11 @@ bool Type::hasAnyGenericParts() const { // NOLINT(misc-no-recursion)
 }
 
 /**
- * Set the list of templates types
- */
-void Type::setTemplateTypes(const QualTypeList &templateTypes) {
-  assert(isOneOf({TY_STRUCT, TY_INTERFACE}));
-  typeChain.back().templateTypes = templateTypes;
-}
-
-/**
  * Retrieve template types of the current type
  *
  * @return Vector of template types
  */
 const QualTypeList &Type::getTemplateTypes() const { return typeChain.back().templateTypes; }
-
-/**
- * Set the list of templates types of the base type
- */
-void Type::setBaseTemplateTypes(const QualTypeList &templateTypes) {
-  assert(getBase().isOneOf({TY_STRUCT, TY_INTERFACE}));
-  typeChain.front().templateTypes = templateTypes;
-}
 
 /**
  * Check if the current type is of a certain super type
@@ -545,19 +597,6 @@ const QualType &Type::getFunctionReturnType() const {
 }
 
 /**
- * Set the return type of a function type
- *
- * @param returnType Function return type
- */
-void Type::setFunctionReturnType(const QualType &returnType) {
-  assert(is(TY_FUNCTION));
-  QualTypeList &paramTypes = typeChain.back().paramTypes;
-  if (paramTypes.empty())
-    paramTypes.resize(1);
-  paramTypes.at(0) = returnType;
-}
-
-/**
  * Get the param types of a function or procedure type
  *
  * @return Function param types
@@ -570,39 +609,13 @@ QualTypeList Type::getFunctionParamTypes() const {
 }
 
 /**
- * Set the param types of a function or procedure type
- *
- * @param paramTypes Function param types
- */
-void Type::setFunctionParamTypes(const QualTypeList &newParamTypes) {
-  assert(isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  QualTypeList &paramTypes = typeChain.back().paramTypes;
-  // Resize param types if required
-  if (paramTypes.size() < newParamTypes.size() + 1)
-    paramTypes.resize(newParamTypes.size() + 1, QualType(TY_DYN));
-  // Set the function param types
-  for (size_t i = 0; i < newParamTypes.size(); i++)
-    paramTypes.at(i + 1) = newParamTypes.at(i);
-}
-
-/**
  * Check if a function or procedure type has captures
  *
  * @return Has captures
  */
 bool Type::hasLambdaCaptures() const {
-  assert(getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  assert(getBase()->isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   return typeChain.front().data.hasCaptures;
-}
-
-/**
- * Set has captures of a function or procedure type
- *
- * @param hasCaptures Has captures
- */
-void Type::setHasLambdaCaptures(bool hasCaptures) {
-  assert(getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  typeChain.front().data.hasCaptures = hasCaptures;
 }
 
 /**
@@ -611,23 +624,9 @@ void Type::setHasLambdaCaptures(bool hasCaptures) {
  * @return Function param and return types (first is return type, rest are param types)
  */
 const QualTypeList &Type::getFunctionParamAndReturnTypes() const {
-  assert(getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
+  assert(getBase()->isOneOf({TY_FUNCTION, TY_PROCEDURE}));
   return typeChain.front().paramTypes;
 }
-
-/**
- * Set the param and return types of a function or procedure base type
- *
- * @param newParamAndReturnTypes Function param and return types (first is return type, rest are param types)
- */
-void Type::setFunctionParamAndReturnTypes(const QualTypeList &newParamAndReturnTypes) {
-  assert(getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}));
-  typeChain.front().paramTypes = newParamAndReturnTypes;
-}
-
-bool operator==(const Type &lhs, const Type &rhs) { return lhs.typeChain == rhs.typeChain; }
-
-bool operator!=(const Type &lhs, const Type &rhs) { return !(lhs == rhs); }
 
 /**
  * Check for the matching compatibility of two types.
@@ -637,15 +636,15 @@ bool operator!=(const Type &lhs, const Type &rhs) { return !(lhs == rhs); }
  * @param ignoreArraySize Ignore array sizes
  * @return Matching or not
  */
-bool Type::matches(const Type &otherType, bool ignoreArraySize) const {
+bool Type::matches(const Type *otherType, bool ignoreArraySize) const {
   // If the size does not match, it is not equal
-  if (typeChain.size() != otherType.typeChain.size())
+  if (typeChain.size() != otherType->typeChain.size())
     return false;
 
   // Compare the elements
   for (size_t i = 0; i < typeChain.size(); i++) {
-    const Type::TypeChainElement &lhsElement = typeChain.at(i);
-    const Type::TypeChainElement &rhsElement = otherType.typeChain.at(i);
+    const TypeChainElement &lhsElement = typeChain.at(i);
+    const TypeChainElement &rhsElement = otherType->typeChain.at(i);
 
     // Ignore differences in array size
     if (ignoreArraySize && lhsElement.superType == TY_ARRAY && rhsElement.superType == TY_ARRAY)
@@ -667,20 +666,31 @@ bool Type::matches(const Type &otherType, bool ignoreArraySize) const {
  * @param typeA Candidate type
  * @param typeB Requested type
  */
-void Type::unwrapBoth(Type &typeA, Type &typeB) {
+void Type::unwrapBoth(const Type *&typeA, const Type *&typeB) {
   // Remove reference wrapper of front type if required
-  if (typeA.isRef() && !typeB.isRef())
-    typeA = typeA.removeReferenceWrapper();
+  if (typeA->isRef() && !typeB->isRef())
+    typeA = typeA->removeReferenceWrapper();
 
   // Remove reference wrapper of requested type if required
-  if (!typeA.isRef() && typeB.isRef() && !typeA.getBase().is(TY_GENERIC))
-    typeB = typeB.removeReferenceWrapper();
+  if (!typeA->isRef() && typeB->isRef() && !typeA->getBase()->is(TY_GENERIC))
+    typeB = typeB->removeReferenceWrapper();
 
   // Unwrap both types as far as possible
-  while (typeA.isSameContainerTypeAs(typeB)) {
-    typeB = typeB.getContainedTy();
-    typeA = typeA.getContainedTy();
+  while (typeA->isSameContainerTypeAs(typeB)) {
+    typeB = typeB->getContained();
+    typeA = typeA->getContained();
   }
+}
+
+/**
+ * Check if two types have the same type chain depth
+ *
+ * @param typeA First type
+ * @param typeB Second type
+ * @return Same depth or not
+ */
+bool Type::hasSameTypeChainDepth(const Type *typeA, const Type *typeB) {
+  return typeA->typeChain.size() == typeB->typeChain.size();
 }
 
 } // namespace spice::compiler

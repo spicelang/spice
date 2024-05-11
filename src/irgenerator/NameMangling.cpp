@@ -146,31 +146,33 @@ void NameMangling::mangleName(std::stringstream &out, const std::string &name, b
 }
 
 /**
- * Mangle a symbol type
+ * Mangle a symbol qualType
  * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
  *
  * @param out Output string stream
- * @param type Input symbol type
+ * @param qualType Input symbol qualType
  * @return Mangled name
  */
-void NameMangling::mangleType(std::stringstream &out, QualType type, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
-  // Replace generic type with concrete type
-  if (type.hasAnyGenericParts() && !typeMapping.empty())
-    TypeMatcher::substantiateTypeWithTypeMapping(type, typeMapping);
+void NameMangling::mangleType(std::stringstream &out, QualType qualType, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
+  const Type *type = qualType.getType();
 
-  // Unwrap type chain
-  assert(!type.getType().typeChain.empty());
-  for (size_t i = type.getType().typeChain.size() - 1; i >= 1; i--)
-    mangleTypeChainElement(out, type.getType().typeChain.at(i), typeMapping, false);
+  // Replace generic qualType with concrete qualType
+  if (qualType.hasAnyGenericParts() && !typeMapping.empty())
+    TypeMatcher::substantiateTypeWithTypeMapping(qualType, typeMapping);
+
+  // Unwrap qualType chain
+  assert(!type->typeChain.empty());
+  for (size_t i = type->typeChain.size() - 1; i >= 1; i--)
+    mangleTypeChainElement(out, type->typeChain.at(i), typeMapping, false);
 
   // Specifiers
-  assert(type.getSpecifiers().isSigned == !type.getSpecifiers().isUnsigned);
-  const bool signedness = type.getSpecifiers().isSigned;
-  if (type.getSpecifiers().isConst && type.getType().typeChain.size() > 1)
+  assert(qualType.getSpecifiers().isSigned == !qualType.getSpecifiers().isUnsigned);
+  const bool signedness = qualType.getSpecifiers().isSigned;
+  if (qualType.getSpecifiers().isConst && type->typeChain.size() > 1)
     out << "K";
 
   // Base chain element
-  mangleTypeChainElement(out, type.getType().typeChain.front(), typeMapping, signedness);
+  mangleTypeChainElement(out, type->typeChain.front(), typeMapping, signedness);
 }
 
 /**

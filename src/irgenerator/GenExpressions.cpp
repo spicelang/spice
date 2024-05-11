@@ -100,10 +100,6 @@ std::any IRGenerator::visitTernaryExpr(const TernaryExprNode *node) {
     trueValue = condValue;
     falseValue = resolveValue(node->operands()[1]);
   } else {
-    const QualType &op1Type = node->operands()[1]->getEvaluatedSymbolType(manIdx);
-    const QualType &op2Type = node->operands()[2]->getEvaluatedSymbolType(manIdx);
-    llvm::Type *op1Ty = op1Type.toLLVMType(context, currentScope);
-    llvm::Type *op2Ty = op2Type.toLLVMType(context, currentScope);
     trueValue = resolveValue(node->operands()[1]);
     falseValue = resolveValue(node->operands()[2]);
   }

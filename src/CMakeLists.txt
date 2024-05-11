@@ -50,11 +50,14 @@ set(SOURCES
         symboltablebuilder/SymbolTable.h
         symboltablebuilder/SymbolTableEntry.cpp
         symboltablebuilder/SymbolTableEntry.h
+        symboltablebuilder/QualType.cpp
+        symboltablebuilder/QualType.h
         symboltablebuilder/Capture.cpp
         symboltablebuilder/Capture.h
         symboltablebuilder/Type.cpp
         symboltablebuilder/Type.h
         symboltablebuilder/TypeChain.cpp
+        symboltablebuilder/TypeChain.h
         symboltablebuilder/TypeSpecifiers.cpp
         symboltablebuilder/TypeSpecifiers.h
         symboltablebuilder/Lifecycle.cpp
@@ -143,6 +146,8 @@ set(SOURCES
         util/CommonUtil.h
         util/FileUtil.cpp
         util/FileUtil.h
+        util/CustomHashFunctions.cpp
+        util/CustomHashFunctions.h
         util/CodeLoc.cpp
         util/CodeLoc.h
         util/CompilerWarning.cpp
@@ -153,8 +158,6 @@ set(SOURCES
         util/Memory.h
         util/RawStringOStream.cpp
         util/RawStringOStream.h
-        symboltablebuilder/QualType.cpp
-        symboltablebuilder/QualType.h
 )
 
 add_executable(spice ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})

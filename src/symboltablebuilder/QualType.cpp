@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include <SourceFile.h>
+#include <global/TypeRegistry.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/Type.h>
@@ -13,28 +14,17 @@
 
 namespace spice::compiler {
 
-QualType::QualType(SuperType superType) : type(std::make_unique<Type>(superType)), specifiers(TypeSpecifiers::of(superType)) {}
+QualType::QualType(SuperType superType) : type(TypeRegistry::getOrInsert(superType)), specifiers(TypeSpecifiers::of(superType)) {}
 QualType::QualType(SuperType superType, const std::string &subType)
-    : type(std::make_unique<Type>(superType, subType)), specifiers(TypeSpecifiers::of(superType)) {}
-QualType::QualType(const Type &t, TypeSpecifiers specifiers) : type(std::make_unique<Type>(t)), specifiers(specifiers) {}
-
-// ToDo: Delete those two later on
-QualType::QualType(const QualType &other) {
-  type = std::make_unique<Type>(*other.type);
-  specifiers = other.specifiers;
-}
-QualType &QualType::operator=(const spice::compiler::QualType &other) {
-  type = std::make_unique<Type>(*other.type);
-  specifiers = other.specifiers;
-  return *this;
-}
+    : type(TypeRegistry::getOrInsert(superType, subType)), specifiers(TypeSpecifiers::of(superType)) {}
+QualType::QualType(const Type *t, TypeSpecifiers specifiers) : type(t), specifiers(specifiers) {}
 
 /**
  * Set the underlying type
  *
  * @return Type
  */
-void QualType::setType(const Type &newType) { type = std::make_unique<Type>(newType); }
+void QualType::setType(const Type *newType) { type = newType; }
 
 /**
  * Get the super type of the underlying type
@@ -65,25 +55,11 @@ unsigned int QualType::getArraySize() const { return type->getArraySize(); }
 Scope *QualType::getBodyScope() const { return type->getBodyScope(); }
 
 /**
- * Set the body scope of the underlying type
- *
- * @param newBodyScope New body scope
- */
-void QualType::setBodyScope(Scope *newBodyScope) { type->setBodyScope(newBodyScope); }
-
-/**
  * Get the function parameter types of the underlying type
  *
  * @return Function parameter types
  */
 const QualType &QualType::getFunctionReturnType() const { return type->getFunctionReturnType(); }
-
-/**
- * Set the function return type of the underlying type
- *
- * @param returnType New return type
- */
-void QualType::setFunctionReturnType(const QualType &returnType) { type->setFunctionReturnType(returnType); }
 
 /**
  * Get the function parameter types of the underlying type
@@ -93,27 +69,11 @@ void QualType::setFunctionReturnType(const QualType &returnType) { type->setFunc
 QualTypeList QualType::getFunctionParamTypes() const { return type->getFunctionParamTypes(); }
 
 /**
- * Set the function parameter types of the underlying type
- *
- * @param paramTypes New parameter types
- */
-void QualType::setFunctionParamTypes(const QualTypeList &paramTypes) { type->setFunctionParamTypes(paramTypes); }
-
-/**
  * Get the function parameter and return types of the underlying type
  *
  * @return Function parameter and return types
  */
 const QualTypeList &QualType::getFunctionParamAndReturnTypes() const { return type->getFunctionParamAndReturnTypes(); }
-
-/**
- * Set the function parameter and return types of the underlying type
- *
- * @param paramAndReturnTypes New parameter and return types
- */
-void QualType::setFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes) {
-  type->setFunctionParamAndReturnTypes(paramAndReturnTypes);
-}
 
 /**
  * Check if the underlying type has lambda captures
@@ -123,32 +83,11 @@ void QualType::setFunctionParamAndReturnTypes(const QualTypeList &paramAndReturn
 bool QualType::hasLambdaCaptures() const { return type->hasLambdaCaptures(); }
 
 /**
- * Set if the underlying type has lambda captures
- *
- * @param hasCaptures Has lambda captures or not
- */
-void QualType::setHasLambdaCaptures(bool hasCaptures) { type->setHasLambdaCaptures(hasCaptures); }
-
-/**
  * Get the template types of the underlying type
  *
  * @return Template types
  */
 const QualTypeList &QualType::getTemplateTypes() const { return type->getTemplateTypes(); }
-
-/**
- * Set the template types of the underlying type
- *
- * @param templateTypes New template types
- */
-void QualType::setTemplateTypes(const QualTypeList &templateTypes) { type->setTemplateTypes(templateTypes); }
-
-/**
- * Set the template types of the underlying base type
- *
- * @param templateTypes New template types
- */
-void QualType::setBaseTemplateTypes(const QualTypeList &templateTypes) { type->setBaseTemplateTypes(templateTypes); }
 
 /**
  * Get the struct instance for a struct type
@@ -273,8 +212,9 @@ bool QualType::isIterator(const ASTNode *node) const {
     return false;
 
   const QualType genericType(TY_GENERIC, "T");
-  const Type iteratorType(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERATOR_INTERFACE, {.bodyScope = nullptr}, {genericType});
-  const QualType iteratorQualType(iteratorType, TypeSpecifiers::of(TY_INTERFACE));
+  const TypeChainElementData data = {.bodyScope = nullptr};
+  const Type *itType = TypeRegistry::getOrInsert(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERATOR_INTERFACE, data, {genericType});
+  const QualType iteratorQualType(itType, TypeSpecifiers::of(TY_INTERFACE));
   return doesImplement(iteratorQualType, node);
 }
 
@@ -295,8 +235,9 @@ bool QualType::isIterable(const ASTNode *node) const {
     return false;
 
   const QualType genericType(TY_GENERIC, "T");
-  const Type iteratorType(Type(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERABLE_INTERFACE, {.bodyScope = nullptr}, {genericType}));
-  const QualType iteratorQualType(iteratorType, TypeSpecifiers::of(TY_INTERFACE));
+  const TypeChainElementData data = {.bodyScope = nullptr};
+  const Type *itType = TypeRegistry::getOrInsert(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERABLE_INTERFACE, data, {genericType});
+  const QualType iteratorQualType(itType, TypeSpecifiers::of(TY_INTERFACE));
   return doesImplement(iteratorQualType, node);
 }
 
@@ -361,7 +302,7 @@ bool QualType::canBind(const QualType &inputType, bool isTemporary) const {
  */
 bool QualType::matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const {
   // Compare type
-  if (!type->matches(*otherType.type, ignoreArraySize))
+  if (!type->matches(otherType.type, ignoreArraySize))
     return false;
 
   // Ignore or compare specifiers
@@ -393,7 +334,35 @@ bool QualType::matchesInterfaceImplementedByStruct(const QualType &otherType) co
  * @param other Other type
  * @return Same container type or not
  */
-bool QualType::isSameContainerTypeAs(const QualType &other) const { return type->isSameContainerTypeAs(*other.type); }
+bool QualType::isSameContainerTypeAs(const QualType &other) const { return type->isSameContainerTypeAs(other.type); }
+
+/**
+ * Check if the current type is a self-referencing struct type
+ *
+ * @return Self-referencing struct type or not
+ */
+bool QualType::isSelfReferencingStructType(const QualType *typeToCompareWith) const { // NOLINT(*-no-recursion)
+  if (!is(TY_STRUCT))
+    return false;
+
+  // If no type was set by a previous iteration, we set it to the current type
+  if (typeToCompareWith == nullptr)
+    typeToCompareWith = this;
+
+  Scope *baseTypeBodyScope = getBodyScope();
+  for (size_t i = 0; i < baseTypeBodyScope->getFieldCount(); i++) {
+    const SymbolTableEntry *field = baseTypeBodyScope->symbolTable.lookupStrictByIndex(i);
+    // Check if the base type of the field matches with the current type, which is also a base type
+    // If yes, this is a self-referencing struct type
+    if (field->getQualType().getBase() == *typeToCompareWith)
+      return true;
+
+    // If the field is a struct, check if it is a self-referencing struct type
+    if (field->getQualType().isSelfReferencingStructType(typeToCompareWith))
+      return true;
+  }
+  return false;
+}
 
 /**
  * Check if the given generic type list has a substantiation for the current (generic) type
@@ -401,7 +370,7 @@ bool QualType::isSameContainerTypeAs(const QualType &other) const { return type-
  * @param genericTypeList Generic type list
  * @return Has substantiation or not
  */
-bool QualType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const {
+bool QualType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const { // NOLINT(*-no-recursion)
   const QualType baseType = getBase();
   // Check if the symbol type itself is generic
   if (baseType.is(TY_GENERIC)) {
@@ -418,13 +387,17 @@ bool QualType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeL
   bool covered = true;
   // Check template types
   const QualTypeList &baseTemplateTypes = baseType.getTemplateTypes();
-  auto outerPred = [&](const QualType &templateType) { return templateType.isCoveredByGenericTypeList(genericTypeList); };
+  auto outerPred = [&](const QualType &templateType) { // NOLINT(*-no-recursion)
+    return templateType.isCoveredByGenericTypeList(genericTypeList);
+  };
   covered &= std::ranges::all_of(baseTemplateTypes, outerPred);
 
   // If function/procedure, check param and return types
   if (baseType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
     const QualTypeList &paramAndReturnTypes = baseType.getFunctionParamAndReturnTypes();
-    const auto innerPred = [&](const QualType &paramType) { return paramType.isCoveredByGenericTypeList(genericTypeList); };
+    const auto innerPred = [&](const QualType &paramType) { // NOLINT(*-no-recursion)
+      return paramType.isCoveredByGenericTypeList(genericTypeList);
+    };
     covered &= std::ranges::all_of(paramAndReturnTypes, innerPred);
   }
 
@@ -492,7 +465,7 @@ llvm::Type *QualType::toLLVMType(llvm::LLVMContext &context, Scope *accessScope)
  */
 QualType QualType::toPtr(const ASTNode *node) const {
   QualType newType = *this;
-  newType.type = std::make_unique<Type>(type->toPointer(node));
+  newType.type = type->toPtr(node);
   return newType;
 }
 
@@ -504,7 +477,7 @@ QualType QualType::toPtr(const ASTNode *node) const {
  */
 QualType QualType::toRef(const ASTNode *node) const {
   QualType newType = *this;
-  newType.type = std::make_unique<Type>(type->toReference(node));
+  newType.type = type->toRef(node);
   return newType;
 }
 
@@ -516,7 +489,7 @@ QualType QualType::toRef(const ASTNode *node) const {
  */
 QualType QualType::toConstRef(const ASTNode *node) const {
   QualType qualType = toRef(node);
-  qualType.specifiers.isConst = true;
+  qualType.makeConst();
   return qualType;
 }
 
@@ -530,7 +503,7 @@ QualType QualType::toConstRef(const ASTNode *node) const {
  */
 QualType QualType::toArray(const ASTNode *node, size_t size, bool skipDynCheck /*=false*/) const {
   QualType newType = *this;
-  newType.type = std::make_unique<Type>(type->toArray(node, size, skipDynCheck));
+  newType.type = type->toArr(node, size, skipDynCheck);
   return newType;
 }
 
@@ -554,7 +527,7 @@ QualType QualType::toNonConst() const {
 QualType QualType::getContained() const {
   assert(isOneOf({TY_PTR, TY_ARRAY, TY_REF, TY_STRING}));
   QualType qualType = *this;
-  qualType.type = std::make_unique<Type>(type->getContainedTy());
+  qualType.type = type->getContained();
   return qualType;
 }
 
@@ -565,7 +538,7 @@ QualType QualType::getContained() const {
  */
 QualType QualType::getBase() const {
   QualType qualType = *this;
-  qualType.type = std::make_unique<Type>(type->getBase());
+  qualType.type = type->getBase();
   return qualType;
 }
 
@@ -584,11 +557,80 @@ QualType QualType::removeReferenceWrapper() const { return isRef() ? getContaine
  */
 QualType QualType::replaceBaseType(const QualType &newBaseType) const {
   // Create new type
-  Type newType = type->replaceBaseType(newBaseType.getType());
+  const Type *newType = type->replaceBase(newBaseType.getType());
   // Create new specifiers
   TypeSpecifiers newSpecifiers = specifiers.merge(newBaseType.specifiers);
   // Return the new qualified type
   return {newType, newSpecifiers};
+}
+
+/**
+ * Retrieve the same type, but with lambda captures enabled
+ *
+ * @return Same type with lambda captures
+ */
+QualType QualType::getWithLambdaCaptures(bool enabled /*=true*/) const {
+  // Create new type
+  const Type *newType = type->getWithLambdaCaptures(enabled);
+  // Return the new qualified type
+  return {newType, specifiers};
+}
+
+/**
+ * Retrieve the same type, but with a new body scope
+ *
+ * @return Same type with body scope
+ */
+QualType QualType::getWithBodyScope(Scope *bodyScope) const {
+  // Create new type
+  const Type *newType = type->getWithBodyScope(bodyScope);
+  // Return the new qualified type
+  return {newType, specifiers};
+}
+
+/**
+ * Retrieve the same type, but with new template types
+ *
+ * @param templateTypes New template types
+ * @return Same type with new template types
+ */
+QualType QualType::getWithTemplateTypes(const QualTypeList &templateTypes) const {
+  // Create new type
+  const Type *newType = type->getWithTemplateTypes(templateTypes);
+  // Return the new qualified type
+  return {newType, specifiers};
+}
+
+/**
+ * Retrieve the same type, but with new base template types
+ *
+ * @param paramAndReturnTypes New base template types
+ * @return Same type with new base template types
+ */
+QualType QualType::getWithBaseTemplateTypes(const QualTypeList &templateTypes) const {
+  // Create new type
+  const Type *newType = type->getWithBaseTemplateTypes(templateTypes);
+  // Return the new qualified type
+  return {newType, specifiers};
+}
+
+/**
+ * Retrieve the same type, but with new function parameter and return types
+ *
+ * @param paramAndReturnTypes New parameter types
+ * @return Same type with new parameter types
+ */
+QualType QualType::getWithFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes) const {
+  // Create new type
+  const Type *newType = type->getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
+  // Return the new qualified type
+  return {newType, specifiers};
+}
+
+QualType QualType::getWithFunctionParamAndReturnTypes(const QualType &returnType, const QualTypeList &paramTypes) const {
+  QualTypeList paramAndReturnTypes = paramTypes;
+  paramAndReturnTypes.insert(paramAndReturnTypes.begin(), returnType);
+  return getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
 }
 
 /**
@@ -720,7 +762,7 @@ void QualType::makeComposition(bool isComposition) { specifiers.isComposition = 
  * @param rhs Right-hand side type
  * @return Equal or not
  */
-bool operator==(const QualType &lhs, const QualType &rhs) { return *lhs.type == *rhs.type; }
+bool operator==(const QualType &lhs, const QualType &rhs) { return lhs.type == rhs.type; }
 
 /**
  * Check if two types are not equal
@@ -738,6 +780,6 @@ bool operator!=(const QualType &lhs, const QualType &rhs) { return !(lhs == rhs)
  * @param typeA Candidate type
  * @param typeB Requested type
  */
-void QualType::unwrapBoth(QualType &typeA, QualType &typeB) { Type::unwrapBoth(*typeA.type, *typeB.type); }
+void QualType::unwrapBoth(QualType &typeA, QualType &typeB) { Type::unwrapBoth(typeA.type, typeB.type); }
 
 } // namespace spice::compiler

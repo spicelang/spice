@@ -780,7 +780,7 @@ public f<Value> Builder.getStruct(const Vector<Value>& values, bool packed = fal
 public f<Value> Builder.getArray(Type ty, const Vector<Value>& values) {
     unsafe {
         LLVMValueRef* valuesRef = (LLVMValueRef*) values.getDataPtr();
-        LLVMValueRef valueRef = LLVMConstArray2(ty.self, valuesRef, (unsigned long) values.getSize());
+        LLVMValueRef valueRef = LLVMConstArray2(ty.self, valuesRef, values.getSize());
         return Value{ valueRef };
     }
 }

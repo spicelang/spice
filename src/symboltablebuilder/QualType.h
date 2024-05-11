@@ -23,6 +23,16 @@ class GenericType;
 class QualType;
 enum SuperType : uint8_t;
 
+// Constants
+const char *const STROBJ_NAME = "String";
+const char *const RESULTOBJ_NAME = "Result";
+const char *const ERROBJ_NAME = "Error";
+const char *const TIOBJ_NAME = "TypeInfo";
+const char *const IITERATOR_NAME = "IIterator";
+const char *const ARRAY_ITERATOR_NAME = "ArrayIterator";
+const uint64_t TYPE_ID_ITERATOR_INTERFACE = 255;
+const uint64_t TYPE_ID_ITERABLE_INTERFACE = 256;
+
 // Typedefs
 using QualTypeList = std::vector<QualType>;
 
@@ -32,35 +42,23 @@ public:
   QualType() = default;
   explicit QualType(SuperType superType);
   QualType(SuperType superType, const std::string &subType);
-  QualType(const Type &type, TypeSpecifiers specifiers);
-
-  // ToDo: Remove those later on
-  QualType(const QualType &other);
-  QualType &operator=(const QualType &other);
+  QualType(const Type *type, TypeSpecifiers specifiers);
 
   // Getters and setters on type
-  [[nodiscard]] Type &getType() { return *type; }
-  [[nodiscard]] const Type &getType() const { return *type; }
-  void setType(const Type &newType);
+  [[nodiscard]] const Type *getType() const { return type; }
+  void setType(const Type *newType);
 
   // Getters on type parts
   [[nodiscard]] SuperType getSuperType() const;
   [[nodiscard]] const std::string &getSubType() const;
   [[nodiscard]] unsigned int getArraySize() const;
   [[nodiscard]] Scope *getBodyScope() const;
-  void setBodyScope(Scope *newBodyScope);
   [[nodiscard]] const QualType &getFunctionReturnType() const;
-  void setFunctionReturnType(const QualType &returnType);
   [[nodiscard]] QualTypeList getFunctionParamTypes() const;
-  void setFunctionParamTypes(const QualTypeList &paramTypes);
   [[nodiscard]] const QualTypeList &getFunctionParamAndReturnTypes() const;
-  void setFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes);
   [[nodiscard]] bool hasLambdaCaptures() const;
-  void setHasLambdaCaptures(bool hasCaptures);
   [[nodiscard]] const QualTypeList &getTemplateTypes() const;
-  void setTemplateTypes(const QualTypeList &templateTypes);
-  void setBaseTemplateTypes(const QualTypeList &templateTypes);
-  [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
+  Struct *getStruct(const ASTNode *node) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
 
   // Queries on the type
@@ -87,6 +85,7 @@ public:
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
   [[nodiscard]] bool matchesInterfaceImplementedByStruct(const QualType &otherType) const;
   [[nodiscard]] bool isSameContainerTypeAs(const QualType &other) const;
+  [[nodiscard]] bool isSelfReferencingStructType(const QualType *typeToCompareWith = nullptr) const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
 
   // Serialization
@@ -106,10 +105,17 @@ public:
   [[nodiscard]] QualType getBase() const;
   [[nodiscard]] QualType removeReferenceWrapper() const;
   [[nodiscard]] QualType replaceBaseType(const QualType &newBaseType) const;
+  [[nodiscard]] QualType getWithLambdaCaptures(bool enabled = true) const;
+  [[nodiscard]] QualType getWithBodyScope(Scope *bodyScope) const;
+  [[nodiscard]] QualType getWithTemplateTypes(const QualTypeList &templateTypes) const;
+  [[nodiscard]] QualType getWithBaseTemplateTypes(const QualTypeList &templateTypes) const;
+  [[nodiscard]] QualType getWithFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes) const;
+  [[nodiscard]] QualType getWithFunctionParamAndReturnTypes(const QualType &returnType, const QualTypeList &paramTypes) const;
 
-  // Getters on specifiers
+  // Getters and setters on specifiers
   [[nodiscard]] TypeSpecifiers &getSpecifiers() { return specifiers; }
   [[nodiscard]] const TypeSpecifiers &getSpecifiers() const { return specifiers; }
+  void setSpecifiers(TypeSpecifiers newSpecifiers) { specifiers = newSpecifiers; }
 
   // Getters and setters on specifier parts
   [[nodiscard]] bool isConst() const;
@@ -136,7 +142,7 @@ public:
 
 private:
   // Private members
-  std::unique_ptr<Type> type;
+  const Type *type = nullptr;
   TypeSpecifiers specifiers;
 };
 

@@ -56,12 +56,9 @@ public:
   [[nodiscard]] static std::string mangleVTable(const std::string &typeName);
 
 private:
-  // Typedefs
-  using TypeChainElement = Type::TypeChainElement;
-
   // Private methods
   static void mangleName(std::stringstream &out, const std::string &name, bool &nestedType);
-  static void mangleType(std::stringstream &out, QualType type, const TypeMapping &typeMapping);
+  static void mangleType(std::stringstream &out, QualType qualType, const TypeMapping &typeMapping);
   static void mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, const TypeMapping &typeMapping,
                                      bool signedness);
 };

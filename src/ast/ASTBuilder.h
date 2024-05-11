@@ -6,8 +6,13 @@
 #include <functional>
 #include <utility>
 
-#include <CompilerPass.h>
+// Ignore some warnings in ANTLR generated code
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include <SpiceVisitor.h>
+#pragma GCC diagnostic pop
+
+#include <CompilerPass.h>
 #include <util/CodeLoc.h>
 #include <util/GlobalDefinitions.h>
 

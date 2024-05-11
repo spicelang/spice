@@ -1,12 +1,12 @@
 // Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
-#include "Type.h"
+#include "TypeChain.h"
 
 #include <exception/CompilerError.h>
 
 namespace spice::compiler {
 
-bool operator==(const Type::TypeChainElement &lhs, const Type::TypeChainElement &rhs) {
+bool operator==(const TypeChainElement &lhs, const TypeChainElement &rhs) {
   // Check super type
   if (lhs.superType != rhs.superType)
     return false;
@@ -15,19 +15,14 @@ bool operator==(const Type::TypeChainElement &lhs, const Type::TypeChainElement 
   switch (lhs.superType) {
   case TY_ARRAY:
     return lhs.data.arraySize == rhs.data.arraySize;
-  case TY_STRUCT:    // fall-through
-  case TY_INTERFACE: // fall-through
-  case TY_ENUM: {
-    if (lhs.superType == TY_STRUCT) {
-      assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
-      return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
-    } else if (lhs.superType == TY_INTERFACE) {
-      return lhs.typeId == rhs.typeId;
-    } else {
-      assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
-      return lhs.typeId == rhs.typeId && lhs.data.bodyScope == rhs.data.bodyScope;
-    }
-  }
+  case TY_STRUCT:
+    assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
+    return lhs.typeId == rhs.typeId && lhs.templateTypes == rhs.templateTypes;
+  case TY_INTERFACE:
+    return lhs.typeId == rhs.typeId;
+  case TY_ENUM:
+    assert(lhs.data.bodyScope != nullptr && rhs.data.bodyScope != nullptr);
+    return lhs.typeId == rhs.typeId && lhs.data.bodyScope == rhs.data.bodyScope;
   case TY_FUNCTION: // fall-through
   case TY_PROCEDURE:
     if (lhs.paramTypes.size() != rhs.paramTypes.size())
@@ -43,9 +38,9 @@ bool operator==(const Type::TypeChainElement &lhs, const Type::TypeChainElement 
   }
 }
 
-bool operator!=(const Type::TypeChainElement &lhs, const Type::TypeChainElement &rhs) { return !(lhs == rhs); }
+bool operator!=(const TypeChainElement &lhs, const TypeChainElement &rhs) { return !(lhs == rhs); }
 
-void Type::TypeChainElement::getName(std::stringstream &name, bool withSize) const {
+void TypeChainElement::getName(std::stringstream &name, bool withSize) const {
   switch (superType) {
   case TY_PTR:
     name << "*";
@@ -146,7 +141,7 @@ void Type::TypeChainElement::getName(std::stringstream &name, bool withSize) con
  * @param withSize Also encode array sizes
  * @return Name as string
  */
-std::string Type::TypeChainElement::getName(bool withSize) const {
+std::string TypeChainElement::getName(bool withSize) const {
   std::stringstream name;
   getName(name, withSize);
   return name.str();
