@@ -58,9 +58,8 @@ public:
 private:
   // Private methods
   static void mangleName(std::stringstream &out, const std::string &name, bool &nestedType);
-  static void mangleType(std::stringstream &out, QualType qualType, const TypeMapping &typeMapping);
-  static void mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, const TypeMapping &typeMapping,
-                                     bool signedness);
+  static void mangleType(std::stringstream &out, QualType qualType);
+  static void mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, bool signedness);
 };
 
 } // namespace spice::compiler

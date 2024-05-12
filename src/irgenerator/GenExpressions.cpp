@@ -62,7 +62,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
       case AssignExprNode::OP_XOR_EQUAL:
         result = conversionManager.getXorEqualInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope);
         break;
-      default:
+      default:                                                           // GCOV_EXCL_LINE
         throw CompilerError(UNHANDLED_BRANCH, "Assign op fall-through"); // GCOV_EXCL_LINE
       }
 
@@ -320,7 +320,7 @@ std::any IRGenerator::visitEqualityExpr(const EqualityExprNode *node) {
   case EqualityExprNode::OP_NOT_EQUAL:
     result = conversionManager.getNotEqualInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
-  default:
+  default:                                                              // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
   }
 
@@ -360,7 +360,7 @@ std::any IRGenerator::visitRelationalExpr(const RelationalExprNode *node) {
   case RelationalExprNode::OP_GREATER_EQUAL:
     result = conversionManager.getGreaterEqualInst(node, result, lhsSTy, rhs, rhsSTy, currentScope);
     break;
-  default:
+  default:                                                              // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
   }
 
@@ -394,7 +394,7 @@ std::any IRGenerator::visitShiftExpr(const ShiftExprNode *node) {
   case ShiftExprNode::OP_SHIFT_RIGHT:
     result = conversionManager.getShiftRightInst(node, result, lhsSTy, rhs, rhsSTy, currentScope, 0);
     break;
-  default:
+  default:                                                           // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "ShiftExpr fall-through"); // GCOV_EXCL_LINE
   }
 
@@ -433,7 +433,7 @@ std::any IRGenerator::visitAdditiveExpr(const AdditiveExprNode *node) {
     case AdditiveExprNode::OP_MINUS:
       lhs = conversionManager.getMinusInst(node, lhs, lhsSTy, rhs, rhsSTy, currentScope, operatorIndex);
       break;
-    default:
+    default:                                                              // GCOV_EXCL_LINE
       throw CompilerError(UNHANDLED_BRANCH, "AdditiveExpr fall-through"); // GCOV_EXCL_LINE
     }
 
@@ -481,7 +481,7 @@ std::any IRGenerator::visitMultiplicativeExpr(const MultiplicativeExprNode *node
     case MultiplicativeExprNode::OP_REM:
       result = conversionManager.getRemInst(node, result, lhsSTy, rhs, rhsSTy, currentScope);
       break;
-    default:
+    default:                                                                    // GCOV_EXCL_LINE
       throw CompilerError(UNHANDLED_BRANCH, "MultiplicativeExpr fall-through"); // GCOV_EXCL_LINE
     }
 
@@ -636,7 +636,7 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
     break;
   }
-  default:
+  default:                                                                 // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }
 
@@ -776,7 +776,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     }
     break;
   }
-  default:
+  default:                                                                  // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE
   }
 

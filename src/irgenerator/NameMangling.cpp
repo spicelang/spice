@@ -34,7 +34,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   // This type
   if (spiceFunc.isMethod()) {
     mangledName << "N";
-    mangleType(mangledName, spiceFunc.thisType, spiceFunc.typeMapping);
+    mangleType(mangledName, spiceFunc.thisType);
   }
 
   // Function name
@@ -51,7 +51,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
     for (const GenericType &genericTemplateType : spiceFunc.templateTypes) {
       assert(spiceFunc.typeMapping.contains(genericTemplateType.getSubType()));
       const QualType &actualType = spiceFunc.typeMapping.at(genericTemplateType.getSubType());
-      mangleType(mangledName, actualType, spiceFunc.typeMapping);
+      mangleType(mangledName, actualType);
     }
     mangledName << "E";
 
@@ -61,7 +61,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
 
     // Return type
     if (spiceFunc.isFunction())
-      mangleType(mangledName, spiceFunc.returnType, spiceFunc.typeMapping);
+      mangleType(mangledName, spiceFunc.returnType);
     else
       mangledName << "v";
 
@@ -72,7 +72,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   // Parameter types
   for (const Param &param : spiceFunc.paramList) {
     assert(!param.isOptional);
-    mangleType(mangledName, param.type, spiceFunc.typeMapping);
+    mangleType(mangledName, param.type);
   }
   if (spiceFunc.paramList.empty())
     mangledName << "v";
@@ -153,17 +153,14 @@ void NameMangling::mangleName(std::stringstream &out, const std::string &name, b
  * @param qualType Input symbol qualType
  * @return Mangled name
  */
-void NameMangling::mangleType(std::stringstream &out, QualType qualType, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
+void NameMangling::mangleType(std::stringstream &out, QualType qualType) { // NOLINT(*-no-recursion)
   const Type *type = qualType.getType();
-
-  // Replace generic qualType with concrete qualType
-  if (qualType.hasAnyGenericParts() && !typeMapping.empty())
-    TypeMatcher::substantiateTypeWithTypeMapping(qualType, typeMapping);
+  assert(!qualType.hasAnyGenericParts());
 
   // Unwrap qualType chain
   assert(!type->typeChain.empty());
   for (size_t i = type->typeChain.size() - 1; i >= 1; i--)
-    mangleTypeChainElement(out, type->typeChain.at(i), typeMapping, false);
+    mangleTypeChainElement(out, type->typeChain.at(i), false);
 
   // Specifiers
   assert(qualType.getSpecifiers().isSigned == !qualType.getSpecifiers().isUnsigned);
@@ -172,7 +169,7 @@ void NameMangling::mangleType(std::stringstream &out, QualType qualType, const T
     out << "K";
 
   // Base chain element
-  mangleTypeChainElement(out, type->typeChain.front(), typeMapping, signedness);
+  mangleTypeChainElement(out, type->typeChain.front(), signedness);
 }
 
 /**
@@ -183,8 +180,7 @@ void NameMangling::mangleType(std::stringstream &out, QualType qualType, const T
  * @param signedness Signedness of the type
  * @return Mangled name
  */
-void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement,
-                                          const TypeMapping &typeMapping, bool signedness) {
+void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChainElement &chainElement, bool signedness) {
   switch (chainElement.superType) {
   case TY_PTR: // fall-through
   case TY_ARRAY:
@@ -226,7 +222,7 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     if (!chainElement.templateTypes.empty()) {
       out << "I";
       for (const QualType &templateType : chainElement.templateTypes)
-        mangleType(out, templateType, typeMapping);
+        mangleType(out, templateType);
       out << "E";
     }
     if (nestedType)
@@ -243,29 +239,26 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
   case TY_FUNCTION: {
     out << (chainElement.data.hasCaptures ? "PFC" : "PF");
     for (const QualType &paramType : chainElement.paramTypes)
-      mangleType(out, paramType, typeMapping);
+      mangleType(out, paramType);
     out << "E";
     break;
   }
   case TY_PROCEDURE: {
     out << (chainElement.data.hasCaptures ? "PFCv" : "PFv");
     for (size_t i = 1; i < chainElement.paramTypes.size(); i++)
-      mangleType(out, chainElement.paramTypes.at(i), typeMapping);
+      mangleType(out, chainElement.paramTypes.at(i));
     out << "E";
     break;
   }
-  case TY_GENERIC:
-    out << chainElement.subType.size() << chainElement.subType; // <length><name>
-    break;
-  default:
-    throw CompilerError(INTERNAL_ERROR, "Type " + chainElement.getName(false) + " cannot be mangled");
+  default:                                                                                             // GCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Type " + chainElement.getName(false) + " cannot be mangled"); // GCOV_EXCL_LINE
   }
 }
 
 std::string NameMangling::mangleTypeInfoName(const StructBase *structBase) {
   std::stringstream out;
   out << "_ZTS";
-  mangleType(out, structBase->entry->getQualType(), {});
+  mangleType(out, structBase->entry->getQualType());
   return out.str();
 }
 
@@ -274,14 +267,14 @@ std::string NameMangling::mangleTypeInfoValue(const std::string &value) { return
 std::string NameMangling::mangleTypeInfo(const StructBase *structBase) {
   std::stringstream out;
   out << "_ZTI";
-  mangleType(out, structBase->entry->getQualType(), {});
+  mangleType(out, structBase->entry->getQualType());
   return out.str();
 }
 
 std::string NameMangling::mangleVTable(const StructBase *structBase) {
   std::stringstream out;
   out << "_ZTV";
-  mangleType(out, structBase->entry->getQualType(), {});
+  mangleType(out, structBase->entry->getQualType());
   return out.str();
 }
 
