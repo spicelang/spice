@@ -2,6 +2,8 @@
 
 #include "TypeRegistry.h"
 
+#include <sstream>
+
 #include <util/CustomHashFunctions.h>
 
 namespace spice::compiler {
@@ -77,6 +79,26 @@ const Type *TypeRegistry::getOrInsert(const TypeChain &typeChain) { return getOr
  */
 size_t TypeRegistry::getTypeCount() { return types.size(); }
 
-void TypeRegistry::clear() { types.clear();}
+/**
+ * Dump all types in the type registry
+ */
+std::string TypeRegistry::dump() {
+  std::vector<std::string> typeStrings;
+  typeStrings.reserve(types.size());
+  for (const auto &type : types)
+    typeStrings.push_back(type.second->getName());
+  // Sort to ensure deterministic output
+  std::sort(typeStrings.begin(), typeStrings.end());
+  // Serialize type registry
+  std::stringstream typeRegistryString;
+  for (const std::string &typeString : typeStrings)
+    typeRegistryString << typeString << "\n";
+  return typeRegistryString.str();
+}
+
+/**
+ * Clear the type registry
+ */
+void TypeRegistry::clear() { types.clear(); }
 
 } // namespace spice::compiler

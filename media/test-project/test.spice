@@ -1,32 +1,28 @@
-import "std/os/env";
-import "bootstrap/lexer/lexer";
+import "std/os/thread";
 
-f<int> main() {
-    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-lexer-test/test-file.spice";
-    Lexer lexer = Lexer(filePath.getRaw());
-    unsigned long tokenCount = 0l;
-    while (!lexer.isEOF()) {
-        Token token = lexer.getToken();
-        token.print();
-        lexer.advance();
-        tokenCount++;
-    }
-    printf("\nLexed tokens: %d\n", tokenCount);
+f<int> fib(int n) {
+    if n <= 2 { return 1; }
+    return fib(n - 1) + fib(n - 2);
 }
 
-/*import "std/iterator/number-iterator";
-
 f<int> main() {
-    NumberIterator<int> itInt = range(1, 10);
-    dyn idxAndValueInt = itInt.getIdx();
-    assert idxAndValueInt.getSecond() == 4;
-}*/
-
-/*import "std/data/hash-table";
-
-f<int> main() {
-    HashTable<int, string> map = HashTable<int, string>(3l);
-}*/
+    int threadCount = 8;
+    Thread[8] threads = [];
+    for unsigned int i = 0; i < threadCount; i++ {
+        threads[i] = Thread(p() {
+            int res = fib(30);
+            printf("Thread returned with result: %d\n", res);
+        });
+        Thread& thread = threads[i];
+        thread.run();
+    }
+    printf("Started all threads. Waiting for results ...\n");
+    for unsigned int i = 0; i < threadCount; i++ {
+        Thread& thread = threads[i];
+        thread.join();
+    }
+    printf("Program finished");
+}
 
 /*import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";

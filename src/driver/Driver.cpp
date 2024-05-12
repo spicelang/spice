@@ -337,6 +337,8 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dumpSettings.dumpAST, "Dump AST as serialized string and SVG image");
   // --dump-symtab
   subCmd->add_flag<bool>("--dump-symtab,-symtab", cliOptions.dumpSettings.dumpSymbolTable, "Dump serialized symbol tables");
+  // --dump-types
+  subCmd->add_flag<bool>("--dump-types,-types", cliOptions.dumpSettings.dumpTypes, "Dump all used types");
   // --dump-ir
   subCmd->add_flag<bool>("--dump-ir,-ir", cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
   // --dump-assembly

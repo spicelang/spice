@@ -27,6 +27,7 @@ You can apply following options to the `test` subcommand:
 | `-cst`       | `--dump-cst`         | Dump CST as serialized string and SVG image                                                 |
 | `-ast`       | `--dump-ast`         | Dump AST as serialized string and SVG image                                                 |
 | `-symtab`    | `--dump-symtab`      | Dump serialized symbol tables                                                               |
+| `-types`     | `--dump-types`       | Dump all used types                                                                         |
 | `-ir`        | `--dump-ir`          | Dump LLVM-IR                                                                                |
 | `-s`, `-asm` | `--dump-assembly`    | Dump Assembly code                                                                          |
 | `-j <n>`     | `--jobs <n>`         | Set number of jobs to parallelize compilation (default is auto)                             |

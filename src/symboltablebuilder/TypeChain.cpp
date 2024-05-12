@@ -102,7 +102,9 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize) const {
     name << "f";
     if (data.hasCaptures)
       name << "[]";
-    name << "<" << paramTypes.front().getName(true) << ">(";
+    if (!paramTypes.empty())
+      name << "<" << paramTypes.front().getName(true) << ">";
+    name << "(";
     for (size_t i = 1; i < paramTypes.size(); i++) {
       if (i > 1)
         name << ",";

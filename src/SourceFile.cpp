@@ -483,6 +483,14 @@ void SourceFile::concludeCompilation() {
   if (!cliOptions.ignoreCache)
     resourceManager.cacheManager.cacheSourceFile(this);
 
+  // Save type registry as string in the compiler output
+  if (mainFile && (cliOptions.dumpSettings.dumpTypes || cliOptions.testMode))
+    compilerOutput.typesString = TypeRegistry::dump();
+
+  // Dump type registry
+  if (mainFile && cliOptions.dumpSettings.dumpTypes)
+    dumpOutput(compilerOutput.typesString, "Type Registry", "type-registry.out");
+
   // Print warning if verifier is disabled
   if (parent == nullptr && cliOptions.disableVerifier) {
     const std::string warningMessage =

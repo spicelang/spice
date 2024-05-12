@@ -1,0 +1,7 @@
+bool
+dyn
+f()
+f<int>()
+f<int>(int,int)
+int
+invalid
