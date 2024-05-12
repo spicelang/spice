@@ -6,7 +6,7 @@ namespace std {
 
 size_t hash<spice::compiler::TypeChainElement>::operator()(const spice::compiler::TypeChainElement &tce) const {
   // Hasher for QualTypeList
-  const auto pred = [](size_t acc, const spice::compiler::QualType &val) {
+  constexpr auto pred = [](size_t acc, const spice::compiler::QualType &val) {
     // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
     return acc * 31 + std::hash<spice::compiler::QualType>{}(val);
   };

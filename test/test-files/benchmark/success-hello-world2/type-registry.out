@@ -1,7 +1,7 @@
-f()
+bool
 char
-long
+f()
+f<int>()
 int
 invalid
-bool
-f<int>()
+long

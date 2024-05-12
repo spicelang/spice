@@ -1,17 +1,27 @@
-import "std/os/env";
-import "bootstrap/lexer/lexer";
+import "std/os/thread";
+
+f<int> fib(int n) {
+    if n <= 2 { return 1; }
+    return fib(n - 1) + fib(n - 2);
+}
 
 f<int> main() {
-    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-lexer-test/test-file.spice";
-    Lexer lexer = Lexer(filePath.getRaw());
-    unsigned long tokenCount = 0l;
-    while (!lexer.isEOF()) {
-        Token token = lexer.getToken();
-        token.print();
-        lexer.advance();
-        tokenCount++;
+    int threadCount = 8;
+    Thread[8] threads = [];
+    for unsigned int i = 0; i < threadCount; i++ {
+        threads[i] = Thread(p() {
+            int res = fib(30);
+            printf("Thread returned with result: %d\n", res);
+        });
+        Thread& thread = threads[i];
+        thread.run();
     }
-    printf("\nLexed tokens: %d\n", tokenCount);
+    printf("Started all threads. Waiting for results ...\n");
+    for unsigned int i = 0; i < threadCount; i++ {
+        Thread& thread = threads[i];
+        thread.join();
+    }
+    printf("Program finished");
 }
 
 /*import "bootstrap/util/block-allocator";

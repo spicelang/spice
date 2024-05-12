@@ -1,5 +1,5 @@
+bool
 f()
+f<int>()
 int
 invalid
-bool
-f<int>()

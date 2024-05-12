@@ -1,6 +1,6 @@
+bool
 f()
-long
+f<int>()
 int
 invalid
-bool
-f<int>()
+long

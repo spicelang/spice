@@ -83,18 +83,16 @@ size_t TypeRegistry::getTypeCount() { return types.size(); }
  * Dump all types in the type registry
  */
 std::string TypeRegistry::dump() {
-  // Sort the keys of the unordered map to get a deterministic output
-  std::vector<uint64_t> keys;
-  keys.reserve(types.size());
-  for (const auto &it : types)
-    keys.push_back(it.first);
-  std::sort(keys.begin(), keys.end());
+  std::vector<std::string> typeStrings;
+  typeStrings.reserve(types.size());
+  for (const auto &type : types)
+    typeStrings.push_back(type.second->getName());
+  // Sort to ensure deterministic output
+  std::sort(typeStrings.begin(), typeStrings.end());
   // Serialize type registry
   std::stringstream typeRegistryString;
-  for (const uint64_t &key : keys) {
-    types.at(key)->getName(typeRegistryString);
-    typeRegistryString << "\n";
-  }
+  for (const std::string &typeString : typeStrings)
+    typeRegistryString << typeString << "\n";
   return typeRegistryString.str();
 }
 

@@ -1,7 +1,7 @@
-f<int>(int)
+bool
+dyn
 f()
+f<int>()
+f<int>(int)
 int
 invalid
-dyn
-bool
-f<int>()
