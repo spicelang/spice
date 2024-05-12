@@ -87,7 +87,7 @@ void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction,
     return;
 
   const ASTNode *node = spiceFunc->declNode;
-  const size_t lineNo = spiceFunc->getDeclCodeLoc().line;
+  const uint32_t lineNo = spiceFunc->getDeclCodeLoc().line;
 
   // Prepare flags
   llvm::DIScope *scope = diFile;
@@ -154,8 +154,8 @@ void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
 
-  const size_t line = node->codeLoc.line;
-  const size_t col = node->codeLoc.col;
+  const uint32_t line = node->codeLoc.line;
+  const uint32_t col = node->codeLoc.col;
   llvm::DILexicalBlock *lexicalBlock = diBuilder->createLexicalBlock(lexicalBlocks.top(), diFile, line, col);
   lexicalBlocks.push(lexicalBlock);
 }
@@ -171,7 +171,7 @@ void DebugInfoGenerator::popLexicalBlock() {
 llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const Function *spiceFunc) {
   const CaptureMap &captures = spiceFunc->bodyScope->symbolTable.captures;
   const ASTNode *node = spiceFunc->declNode;
-  const size_t lineNo = node->codeLoc.line;
+  const uint32_t lineNo = node->codeLoc.line;
 
   // Get LLVM type for struct
   std::vector<llvm::Type *> fieldTypes;
@@ -217,7 +217,7 @@ void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
 
-  const size_t lineNo = globalEntry->getDeclCodeLoc().line;
+  const uint32_t lineNo = globalEntry->getDeclCodeLoc().line;
   llvm::StringRef name = global->getName();
   llvm::DIType *type = getDITypeForQualType(globalEntry->declNode, globalEntry->getQualType());
   const bool isLocal = globalEntry->getQualType().isPublic();
@@ -227,7 +227,7 @@ void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global
 
 void DebugInfoGenerator::generateGlobalStringDebugInfo(llvm::GlobalVariable *global, const std::string &name, size_t length,
                                                        const CodeLoc &codeLoc) {
-  const size_t lineNo = codeLoc.line;
+  const uint32_t lineNo = codeLoc.line;
   const size_t sizeInBits = (length + 1) * 8; // +1 because of null-terminator
 
   llvm::DIStringType *stringType = diBuilder->createStringType(name, sizeInBits);
@@ -245,7 +245,7 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
   // Build debug info
   llvm::DIScope *scope = lexicalBlocks.top();
   llvm::DIType *diType = getDITypeForQualType(variableEntry->declNode, variableEntry->getQualType());
-  const size_t lineNo = variableEntry->declNode->codeLoc.line;
+  const uint32_t lineNo = variableEntry->declNode->codeLoc.line;
 
   llvm::DILocalVariable *varInfo;
   if (argNumber != SIZE_MAX)
@@ -334,7 +334,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     }
 
     // Retrieve information about the struct
-    const size_t lineNo = spiceStruct->getDeclCodeLoc().line;
+    const uint32_t lineNo = spiceStruct->getDeclCodeLoc().line;
     llvm::Type *structType = spiceStruct->entry->getQualType().toLLVMType(irGenerator->context, irGenerator->currentScope);
     assert(structType != nullptr);
     llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
@@ -358,7 +358,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
         continue;
 
       const QualType &fieldType = fieldEntry->getQualType();
-      const size_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
+      const uint32_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
       const size_t offsetInBits = structLayout->getElementOffsetInBits(i);
 
       llvm::DIType *fieldDiType = getDITypeForQualType(node, fieldType);
@@ -383,7 +383,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     }
 
     // Retrieve information about the interface
-    const size_t lineNo = spiceInterface->getDeclCodeLoc().line;
+    const uint32_t lineNo = spiceInterface->getDeclCodeLoc().line;
     llvm::Type *interfaceType = spiceInterface->entry->getQualType().toLLVMType(irGenerator->context, irGenerator->currentScope);
     assert(interfaceType != nullptr);
     llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
