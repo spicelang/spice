@@ -70,15 +70,15 @@ public:
   SymbolTableEntry *entry = nullptr;
   ASTNode *declNode = nullptr;
   Scope *bodyScope = nullptr;
-  bool mangleFunctionName = true;
   std::string predefinedMangledName;
   std::string mangleSuffix;
   Function *genericPreset = nullptr;
+  bool mangleFunctionName = true;
   bool alreadyTypeChecked = false;
   bool used = false;
   bool implicitDefault = false;
-  llvm::Function *llvmFunction = nullptr;
   bool isVirtual = false;
+  llvm::Function *llvmFunction = nullptr;
   size_t vtableIndex = 0;
 };
 
