@@ -1,39 +1,17 @@
-import "std/data/doubly-linked-list";
+import "std/os/env";
+import "bootstrap/lexer/lexer";
 
 f<int> main() {
-    DoublyLinkedList<String> list;
-    assert list.getSize() == 0;
-    assert list.isEmpty();
-    list.pushBack(String("Hello"));
-    assert list.getSize() == 1;
-    assert !list.isEmpty();
-    String var = String("World");
-    list.pushBack(var);
-    assert list.getSize() == 2;
-    list.pushFront(String("Hi"));
-    assert list.getSize() == 3;
-    assert list.getFront() == String("Hi");
-    assert list.getBack() == String("World");
-    list.removeFront();
-    assert list.getSize() == 2;
-    assert list.getFront() == String("Hello");
-    list.removeBack();
-    assert list.getSize() == 1;
-    assert list.getBack() == String("Hello");
-    list.pushBack(String("World"));
-    list.pushFront(String("Hi"));
-    list.pushBack(String("Programmers"));
-    assert list.getSize() == 4;
-    list.remove(String("World"));
-    assert list.getSize() == 3;
-    assert list.get(0) == String("Hi");
-    assert list.get(1) == String("Hello");
-    assert list.get(2) == String("Programmers");
-    list.removeAt(1);
-    assert list.getSize() == 2;
-    assert list.get(0) == String("Hi");
-    assert list.get(1) == String("Programmers");
-    printf("All assertions passed!\n");
+    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-lexer-test/test-file.spice";
+    Lexer lexer = Lexer(filePath.getRaw());
+    unsigned long tokenCount = 0l;
+    while (!lexer.isEOF()) {
+        Token token = lexer.getToken();
+        token.print();
+        lexer.advance();
+        tokenCount++;
+    }
+    printf("\nLexed tokens: %d\n", tokenCount);
 }
 
 /*import "std/iterator/number-iterator";
