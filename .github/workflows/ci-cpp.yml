@@ -20,7 +20,7 @@ on:
 jobs:
   build-linux:
     name: C++ CI
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -32,31 +32,21 @@ jobs:
           distribution: zulu
           java-version: 11
 
-      - name: Setup latest GCC and build dependencies
-        run: |
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/ppa
-          sudo apt update
-          sudo apt install gcc-13 g++-13 gdb
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 110 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-13 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-13
-
-      - name: Setup Ninja
-        run: sudo apt-get install ninja-build
-
-      - name: Setup Graphviz
-        run: sudo apt-get install graphviz
-
-      - name: Setup Valgrind
-        if: github.event_name == 'pull_request'
-        run: sudo apt-get install valgrind
-
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
       - name: Setup CCache
         uses: hendrikmuhs/ccache-action@v1
 
+      - name: Setup Dependencies
+        run: sudo apt-get install ninja-build graphviz pipx uuid-dev
+
+      - name: Setup Valgrind
+        if: github.event_name == 'pull_request'
+        run: sudo apt-get install valgrind
+
       - name: Setup Gcovr
-        run: sudo pip install gcovr
+        run: sudo pipx install gcovr
 
       - name: Cache LLVM
         id: cache-llvm
@@ -131,7 +121,7 @@ jobs:
         run: |
           cd ./bin
           sudo chmod +x coverage.sh
-          sudo ./coverage.sh
+          ./coverage.sh
 
       - name: Upload coverage report - coverage.spicelang.com
         uses: sebastianpopp/ftp-action@releases/v2
