@@ -55,7 +55,7 @@ class Scope {
 public:
   // Constructors
   Scope(Scope *parent, SourceFile *sourceFile, ScopeType scopeType, const CodeLoc *codeLoc)
-      : parent(parent), sourceFile(sourceFile), type(scopeType), codeLoc(codeLoc) {}
+      : parent(parent), sourceFile(sourceFile), codeLoc(codeLoc), type(scopeType) {}
 
   // Friend classes
   friend class FunctionManager;
@@ -100,9 +100,9 @@ public:
   Scope *parent;
   SourceFile *sourceFile;
   std::unordered_map<std::string, std::shared_ptr<Scope>> children;
-  const ScopeType type;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable, this);
   const CodeLoc *codeLoc = nullptr;
+  const ScopeType type;
   bool isGenericScope = false;
   bool isAsyncScope = false;
   bool isDtorScope = false;

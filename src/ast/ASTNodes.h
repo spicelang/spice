@@ -90,11 +90,9 @@ public:
 
   virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {         // LCOV_EXCL_LINE
     assert_fail("The given node does not overload the getOpFctPointers function"); // LCOV_EXCL_LINE
-    return nullptr;                                                                // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
   [[nodiscard]] virtual const std::vector<std::vector<const Function *>> *getOpFctPointers() const { // LCOV_EXCL_LINE
     assert_fail("The given node does not overload the getOpFctPointers function");                   // LCOV_EXCL_LINE
-    return nullptr;                                                                                  // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
 
   virtual void customItemsInitialization(size_t) {} // Noop
@@ -133,17 +131,14 @@ public:
 
   [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &) {                 // LCOV_EXCL_LINE
     assert_fail("Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
-    return nullptr;                                                                                          // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() { // LCOV_EXCL_LINE
     assert_fail("Must be called on a StructDefNode");                      // LCOV_EXCL_LINE
-    return nullptr;                                                        // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() { // LCOV_EXCL_LINE
     assert_fail("Must be called on a InterfaceDefNode");                         // LCOV_EXCL_LINE
-    return nullptr;                                                              // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
@@ -250,9 +245,9 @@ public:
   [[nodiscard]] bool isFctOrProcDef() const override { return true; }
 
   // Public members
+  bool takesArgs = false;
   SymbolTableEntry *entry = nullptr;
   Scope *bodyScope = nullptr;
-  bool takesArgs = false;
 };
 
 // ========================================================== FctNameNode =======================================================
@@ -294,12 +289,12 @@ public:
   bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
-  FctNameNode *name;
   bool isMethod = false;
   bool hasTemplateTypes = false;
   bool hasParams = false;
-  SymbolTableEntry *entry = nullptr;
   TypeSpecifiers specifiers = TypeSpecifiers::of(TY_FUNCTION);
+  FctNameNode *name;
+  SymbolTableEntry *entry = nullptr;
   Scope *structScope = nullptr;
   Scope *scope = nullptr;
   std::vector<Function *> manifestations;
@@ -369,13 +364,13 @@ public:
   [[nodiscard]] bool isStructDef() const override { return true; }
 
   // Public members
-  std::string structName;
-  uint64_t typeId;
   bool hasTemplateTypes = false;
   bool hasInterfaces = false;
   bool emitVTable = false;
-  SymbolTableEntry *entry = nullptr;
   TypeSpecifiers structSpecifiers = TypeSpecifiers::of(TY_STRUCT);
+  std::string structName;
+  uint64_t typeId;
+  SymbolTableEntry *entry = nullptr;
   std::vector<Struct *> structManifestations;
   std::map<const std::string, std::vector<Function *>> defaultFctManifestations;
   Scope *structScope = nullptr;
@@ -402,11 +397,11 @@ public:
   std::vector<Interface *> *getInterfaceManifestations() override { return &interfaceManifestations; }
 
   // Public members
+  bool hasTemplateTypes = false;
+  TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
   std::string interfaceName;
   uint64_t typeId;
-  bool hasTemplateTypes = false;
   SymbolTableEntry *entry = nullptr;
-  TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
   std::vector<Interface *> interfaceManifestations;
   Scope *interfaceScope = nullptr;
 };
@@ -427,10 +422,10 @@ public:
   [[nodiscard]] EnumItemLstNode *itemLst() const { return getChild<EnumItemLstNode>(); }
 
   // Public members
+  TypeSpecifiers enumSpecifiers = TypeSpecifiers::of(TY_ENUM);
   std::string enumName;
   uint64_t typeId;
   SymbolTableEntry *entry = nullptr;
-  TypeSpecifiers enumSpecifiers = TypeSpecifiers::of(TY_ENUM);
   Scope *enumScope;
 };
 
@@ -469,10 +464,10 @@ public:
   [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
 
   // Public members
+  TypeSpecifiers aliasSpecifiers = TypeSpecifiers::of(TY_ALIAS);
   std::string aliasName;
   std::string dataTypeString;
   SymbolTableEntry *entry = nullptr;
-  TypeSpecifiers aliasSpecifiers = TypeSpecifiers::of(TY_ALIAS);
   SymbolTableEntry *aliasedTypeContainerEntry = nullptr;
 };
 
@@ -496,9 +491,9 @@ public:
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
+  bool hasValue = false;
   std::string varName;
   SymbolTableEntry *entry = nullptr;
-  bool hasValue = false;
 };
 
 // ========================================================== ExtDeclNode ========================================================
@@ -525,13 +520,13 @@ public:
   }
 
   // Public members
+  bool hasArgs = false;
+  bool isVarArg = false;
+  bool hasReturnType = false;
   std::string extFunctionName;
   SymbolTableEntry *entry = nullptr;
   Function *extFunction = nullptr;
   std::vector<Function *> extFunctionManifestations;
-  bool hasArgs = false;
-  bool isVarArg = false;
-  bool hasReturnType = false;
 };
 
 // ======================================================== ImportDefNode ========================================================
@@ -921,9 +916,9 @@ public:
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEnumItem(this); }
 
   // Public members
-  std::string itemName;
-  uint32_t itemValue;
   bool hasValue = false;
+  uint32_t itemValue;
+  std::string itemName;
   SymbolTableEntry *entry = nullptr;
   EnumDefNode *enumDef = nullptr;
 };
@@ -976,12 +971,12 @@ public:
   std::vector<Function *> *getFctManifestations(const std::string &) override { return &signatureManifestations; }
 
   // Public members
-  SignatureType signatureType = SignatureNode::TYPE_NONE;
-  std::string methodName;
-  SymbolTableEntry *entry = nullptr;
-  TypeSpecifiers signatureSpecifiers;
   bool hasParams = false;
   bool hasTemplateTypes = false;
+  SignatureType signatureType = SignatureNode::TYPE_NONE;
+  TypeSpecifiers signatureSpecifiers;
+  std::string methodName;
+  SymbolTableEntry *entry = nullptr;
   std::vector<Function *> signatureManifestations;
 };
 
@@ -1005,12 +1000,12 @@ public:
   [[nodiscard]] bool isParamNode() const override { return isParam; }
 
   // Public members
-  std::string varName;
   bool hasAssignment = false;
-  std::vector<SymbolTableEntry *> entries;
   bool isParam = false;
   bool isForEachItem = false;
   bool isCtorCallRequired = false; // For struct, in case there are reference fields, we need to call a user-defined ctor
+  std::string varName;
+  std::vector<SymbolTableEntry *> entries;
   Function *calledInitCtor = nullptr;
   Function *calledCopyCtor = nullptr;
 };
@@ -1158,9 +1153,9 @@ public:
   [[nodiscard]] const CompileTimeValue *getValue() const;
 
   // Public members
-  std::string key;
   AttrType type = ATTR_TYPE_INVALID;
   AttrTarget target = TARGET_INVALID;
+  std::string key;
 };
 
 // ======================================================== CaseConstantNode =====================================================
@@ -1887,8 +1882,8 @@ public:
   [[nodiscard]] bool hasCompileTimeValue() const override { return true; }
 
   // Public members
-  CompileTimeValue compileTimeValue;
   PrimitiveValueType type = TYPE_NONE;
+  CompileTimeValue compileTimeValue;
 };
 
 // ====================================================== FctCallNode ============================================================
@@ -1938,10 +1933,10 @@ public:
   [[nodiscard]] bool hasReturnValueReceiver() const;
 
   // Public members
-  std::string fqFunctionName;
-  std::vector<std::string> functionNameFragments;
   bool hasArgs = false;
   bool hasTemplateTypes = false;
+  std::string fqFunctionName;
+  std::vector<std::string> functionNameFragments;
   std::vector<FctCallData> data;
 };
 
@@ -2096,11 +2091,11 @@ public:
   void setFieldTypeRecursive();
 
   // Public members
-  std::queue<TypeModifier> tmQueue;
   bool isParamType = false;
   bool isGlobalType = false;
   bool isFieldType = false;
   bool isReturnType = false;
+  std::queue<TypeModifier> tmQueue;
 };
 
 // ==================================================== BaseDataTypeNode =========================================================
@@ -2180,8 +2175,8 @@ public:
   void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount); }
 
   // Public members
-  std::vector<SymbolTableEntry *> customTypes;
   bool isFunction = false; // Function or procedure
+  std::vector<SymbolTableEntry *> customTypes;
 };
 
 } // namespace spice::compiler

@@ -32,7 +32,7 @@ class GlobalResourceManager;
 class EntryNode;
 class ASTNode;
 class Timer;
-class CliOptions;
+struct CliOptions;
 
 enum CompileStageType : uint8_t {
   NONE,

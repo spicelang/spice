@@ -43,7 +43,6 @@ public:
   ASTNode *declNode;
   size_t manifestationIndex = 0;
   StructBase *genericPreset = nullptr;
-  bool used = false;
   llvm::DICompositeType *diType = nullptr;
   struct {
     llvm::StructType *typeInfoType = nullptr;
@@ -52,6 +51,7 @@ public:
     llvm::Constant *typeInfo = nullptr;
     llvm::Constant *vtable = nullptr;
   } vTableData;
+  bool used = false;
 };
 
 } // namespace spice::compiler
