@@ -26,8 +26,8 @@ public:
   // Public members
   SourceFile *sourceFile = nullptr;
   const antlr4::misc::Interval sourceInterval;
-  size_t line;
-  size_t col;
+  uint32_t line;
+  uint32_t col;
 
   // Public methods
   [[nodiscard]] std::string toString() const;
@@ -46,6 +46,6 @@ public:
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(CodeLoc) == 40);
+static_assert(sizeof(CodeLoc) == 32);
 
 } // namespace spice::compiler

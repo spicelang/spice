@@ -164,7 +164,7 @@ public:
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(ASTNode) == 112);
+static_assert(sizeof(ASTNode) == 104);
 
 // ========================================================== EntryNode ==========================================================
 
