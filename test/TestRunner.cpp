@@ -17,6 +17,7 @@
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
+#include <global/TypeRegistry.h>
 #include <symboltablebuilder/SymbolTable.h>
 #include <util/FileUtil.h>
 
@@ -55,6 +56,7 @@ void execTestCase(const TestCase &testCase) {
           /* dumpCST= */ false,
           /* dumpAST= */ false,
           /* dumpSymbolTables= */ false,
+          /* dumpTypes= */ false,
           /* dumpIR= */ false,
           /* dumpAssembly= */ false,
           /* dumpObjectFile= */ false,
@@ -71,6 +73,7 @@ void execTestCase(const TestCase &testCase) {
       /* disableVerifier= */ false,
       /* testMode= */ true,
   };
+  static_assert(sizeof(CliOptions::DumpSettings) == 9, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions) == 360, "CliOptions struct size changed");
 
   // Instantiate GlobalResourceManager
@@ -195,6 +198,9 @@ void execTestCase(const TestCase &testCase) {
       resourceManager.linker.prepare();
       resourceManager.linker.link();
     }
+
+    // Check type registry output
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_TYPE_REGISTRY, [&]() { return TypeRegistry::dump(); });
 
     // Check if the execution output matches the expected output
     TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, [&]() {

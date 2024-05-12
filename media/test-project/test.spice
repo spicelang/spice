@@ -14,20 +14,6 @@ f<int> main() {
     printf("\nLexed tokens: %d\n", tokenCount);
 }
 
-/*import "std/iterator/number-iterator";
-
-f<int> main() {
-    NumberIterator<int> itInt = range(1, 10);
-    dyn idxAndValueInt = itInt.getIdx();
-    assert idxAndValueInt.getSecond() == 4;
-}*/
-
-/*import "std/data/hash-table";
-
-f<int> main() {
-    HashTable<int, string> map = HashTable<int, string>(3l);
-}*/
-
 /*import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
 
