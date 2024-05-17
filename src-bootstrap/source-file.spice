@@ -1,6 +1,7 @@
 // Imports
 import "std/text/print";
 import "std/data/pair";
+import "std/io/filepath";
 import "./driver";
 import "./global/global-resource-manager";
 import "./ast/ast-nodes";
@@ -11,7 +12,6 @@ type CompileStageType enum {
     PARSER,
     CST_VISUALIZER,
     AST_BUILDER,
-    AST_OPTIMIZER,
     AST_VISUALIZER,
     IMPORT_COLLECTOR,
     SYMBOL_TABLE_BUILDER,
@@ -19,7 +19,8 @@ type CompileStageType enum {
     TYPE_CHECKER_POST,
     IR_GENERATOR,
     IR_OPTIMIZER,
-    OBJECT_EMITTER
+    OBJECT_EMITTER,
+    FINISHED
 }
 
 type CompileStageIOType enum {
@@ -44,7 +45,6 @@ type TimerOutput struct {
   unsigned long irGenerator = 0l
   unsigned long irOptimizer = 0l
   unsigned long objectEmitter = 0l
-  unsigned long executionEngine = 0l
 }
 
 /**
@@ -57,16 +57,17 @@ type CompilerOutput struct {
     String irString
     String irOptString
     String asmString
+    String typesString
     Vector<CompilerWarning> warnings
     TimerOutput times
 }
 
 type NameRegistryEntry struct {
     String name
+    unsigned long typeId // Set for structs, interfaces and enums
     SymbolTableEntry* targetEntry
     Scope* targetScope
-    SymbolTableEntry* importEntry
-    String predecessorName
+    SymbolTableEntry* importEntry = nil<SymbolTableEntry*>
 }
 
 /**
@@ -75,22 +76,26 @@ type NameRegistryEntry struct {
 public type SourceFile struct {
     public String name
     public String fileName
-    public String filePath
+    public FilePath filePath
     public String fileDir
-    public String objectFilePath
     public bool stdFile = false
     public bool mainFile = true
+    public bool alwaysKeepSymbolsOnNameCollision = false
+    public bool ignoreWarnings = false
+    public CompileStageType previousStage = CompileStageType::NONE
     public CompilerOutput compilerOutput
     public SourceFile* parent
     public String cacheKey
     public bool restoredFromCache = false
-    public EntryNode ast
-    public Scope globalScope
+    public EntryNode* ast = nil<EntryNode*>
+    public heap Scope* globalScope
     //public llvm::Module llvmModule
-    public Map<String, Pair<SourceFile, const ASTNode*>> dependencies
+    public Vector<const SourceFile*> dependants
     public Map<String, NameRegistryEntry> exportedNameRegistry
+    public Vector<const Function*> testFunctions
 
     GlobalResourceManager& resourceManager
+    CliOptions& cliOptions
     unsigned short importedRuntimeModules = 0s
     unsigned short totalTypeCheckerRuns = 0s
 }
