@@ -98,12 +98,12 @@ public f<heap T*> sNew<T>(const T& val) {
  * @param val The value to put into the heap-allocated memory
  * @return A pointer to the heap-allocated instance
  */
-public f<heap T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
+public f<T*> sPlacementNew<T>(heap byte* ptr, const T& val) {
     unsafe {
         // Copy the value into the heap-allocated memory
-        sCopy((heap byte*) &val, (heap byte*) ptr, sizeof(type T));
+        sCopy((heap byte*) &val, ptr, sizeof(type T));
+        return (T*) ptr;
     }
-    return ptr;
 }
 
 /**

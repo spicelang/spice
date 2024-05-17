@@ -188,7 +188,7 @@ private:
   const CliOptions &cliOptions;
   BS::synced_stream &tout;
   uint8_t importedRuntimeModules = 0;
-  unsigned short totalTypeCheckerRuns = 0;
+  uint8_t totalTypeCheckerRuns = 0;
 
   // Private methods
   bool haveAllDependantsBeenTypeChecked() const;

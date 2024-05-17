@@ -6,18 +6,21 @@ import "std/os/system";
 import "../util/memory";
 
 type Base dyn;
+type T dyn;
 
 public type BlockAllocator<Base> struct {
-    IMemoryManager* memoryManager
+    IMemoryManager& memoryManager
     Vector<byte*> memoryBlocks
     Vector<Base*> allocatedObjects
     unsigned long blockSize
     unsigned long offsetInBlock = 0l
 }
 
-public p BlockAllocator.ctor(IMemoryManager* memoryManager, unsigned long blockSize = 0l) {
+public p BlockAllocator.ctor(IMemoryManager& memoryManager, unsigned long blockSize = 0l) {
     this.memoryManager = memoryManager;
     this.blockSize = blockSize == 0l ? (unsigned long) getPageSize() : blockSize;
+    // We do not allow allocating objects that exceed the block size
+    assert sizeof(type Base) <= this.blockSize;
     // Allocate the first block
     this.allocateNewBlock();
 }
@@ -30,10 +33,32 @@ public p BlockAllocator.dtor() {
     this.allocatedObjects.clear();
 
     // Free all memory blocks
-    foreach byte* block : this.memoryBlocks {
+    foreach heap byte* block : this.memoryBlocks {
         this.memoryManager.deallocate(block);
     }
     this.memoryBlocks.clear();
+}
+
+public f<T*> BlockAllocator.allocate<T>(const T& obj) {
+    // We do not allow allocating objects that exceed the block size
+    const unsigned long objSize = sizeof(type T);
+    assert objSize <= this.blockSize;
+
+    // Check if we need a new block
+    if this.offsetInBlock + objSize > this.blockSize {
+        this.allocateNewBlock();
+    }
+
+    // Construct object at the offset address
+    heap byte* destAddr = this.memoryBlocks.back();
+    unsafe {
+        destAddr += this.offsetInBlock;
+    }
+    T* ptr = sPlacementNew<T>(destAddr, obj);
+
+    // Update offset to be ready to store the next object
+    this.offsetInBlock += objSize;
+    return ptr;
 }
 
 public p BlockAllocator.allocateNewBlock() {

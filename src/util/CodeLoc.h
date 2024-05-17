@@ -21,7 +21,7 @@ public:
   CodeLoc(const antlr4::Token *token, size_t startIdx, size_t stopIdx, SourceFile *sourceFile = nullptr)
       : sourceFile(sourceFile), sourceInterval(startIdx, stopIdx), line(token->getLine()),
         col(token->getCharPositionInLine() + 1){};
-  CodeLoc(size_t line, size_t col, SourceFile *sourceFile = nullptr) : sourceFile(sourceFile), line(line), col(col) {}
+  CodeLoc(uint32_t line, uint32_t col, SourceFile *sourceFile = nullptr) : sourceFile(sourceFile), line(line), col(col) {}
 
   // Public members
   SourceFile *sourceFile = nullptr;

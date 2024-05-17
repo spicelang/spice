@@ -90,9 +90,11 @@ public:
 
   virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {         // LCOV_EXCL_LINE
     assert_fail("The given node does not overload the getOpFctPointers function"); // LCOV_EXCL_LINE
+    return nullptr;                                                                // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
   [[nodiscard]] virtual const std::vector<std::vector<const Function *>> *getOpFctPointers() const { // LCOV_EXCL_LINE
     assert_fail("The given node does not overload the getOpFctPointers function");                   // LCOV_EXCL_LINE
+    return nullptr;                                                                                  // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
 
   virtual void customItemsInitialization(size_t) {} // Noop
@@ -131,14 +133,17 @@ public:
 
   [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &) {                 // LCOV_EXCL_LINE
     assert_fail("Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
+    return nullptr;                                                                                          // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() { // LCOV_EXCL_LINE
     assert_fail("Must be called on a StructDefNode");                      // LCOV_EXCL_LINE
+    return nullptr;                                                        // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() { // LCOV_EXCL_LINE
     assert_fail("Must be called on a InterfaceDefNode");                         // LCOV_EXCL_LINE
+    return nullptr;                                                              // LCOV_EXCL_LINE
   } // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }

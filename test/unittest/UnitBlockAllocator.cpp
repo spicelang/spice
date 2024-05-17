@@ -35,7 +35,7 @@ public:
 
 TEST(BlockAllocatorTest, TestBlockAllocatorLarge) {
   destructedDummyNodes = 0;             // Reset destruction counter
-  constexpr size_t NODE_COUNT = 100000; // 100.000 * 176 bytes = 17.6 MB
+  constexpr size_t NODE_COUNT = 100000; // 100.000 * 104 bytes = 10.4 MB
 
   {
     // Create allocator, that can hold 5 nodes per block
@@ -60,7 +60,7 @@ TEST(BlockAllocatorTest, TestBlockAllocatorLarge) {
 
 TEST(BlockAllocatorTest, TestBlockAllocatorUnevenBlockSize) {
   destructedDummyNodes = 0;           // Reset destruction counter
-  constexpr size_t NODE_COUNT = 1000; // 1.000 * 176 bytes = 176 KB
+  constexpr size_t NODE_COUNT = 1000; // 1.000 * 104 bytes = 104 KB
 
   {
     // Create allocator, that can hold 4.5 nodes per block
@@ -85,7 +85,7 @@ TEST(BlockAllocatorTest, TestBlockAllocatorUnevenBlockSize) {
 
 TEST(BlockAllocatorTest, TestBlockAllocatorOOM) {
   destructedDummyNodes = 0;         // Reset destruction counter
-  constexpr size_t NODE_COUNT = 10; // 10 * 176 bytes = 1.76 KB
+  constexpr size_t NODE_COUNT = 10; // 10 * 104 bytes = 1.04 KB
 
   // Prepare mock methods
   MockMemoryManager mockMemoryManager;

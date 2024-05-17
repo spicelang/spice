@@ -3,6 +3,7 @@ import "std/type/byte";
 import "std/data/vector";
 import "std/data/unordered-map";
 import "std/time/timer";
+import "std/io/filepath";
 
 // Own imports
 import "../global/runtime-module-manager";
@@ -25,7 +26,7 @@ public const string LTO_FILE_NAME = "lto-module";
  */
 public type GlobalResourceManager struct {
     public llvm::Context context
-    public llvm::IRBuilder builder
+    public llvm::IRBuilder builder = llvm::IRBuilder(context)
     public llvm::Module ltoModule
     public llvm::TargetMachine targetMachine
     public DefaultMemoryManager memoryManager
@@ -39,6 +40,7 @@ public type GlobalResourceManager struct {
     public RuntimeModuleManager runtimeModuleManager
     public Timer totalTimer
     public ErrorManager errorManager
+    public bool abortCompilation = false
     unsigned long nextCustomTypeId = BYTE_MAX_VALUE + 1 // Start at 256 because all primitive types come first
 }
 
@@ -77,7 +79,9 @@ public p GlobalResourceManager.ctor(const CliOptions& cliOptions) {
 }
 
 public p GlobalResourceManager.dtor() {
-    // Shutdown LLVM
+    // Cleanup all statics
+    // ToDo: Implement
+    // Cleanup all LLVM statics
     llvm::llvm_shutdown();
 }
 
@@ -96,4 +100,12 @@ public f<heap SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* pa
 
 public f<unsigned long> GlobalResourceManager.getNextCustomTypeId() {
     return nextCustomTypeId++;
+}
+
+public f<unsigned long> GlobalResourceManager.getTotalLineCount() {
+    unsigned long totalLineCount = 0l;
+    foreach const SourceFile* sourceFile : sourceFiles {
+        totalLineCount += sourceFile.value.getLineCount();
+    }
+    return totalLineCount;
 }
