@@ -9,7 +9,7 @@ on:
 jobs:
   build-compiler-linux-x86:
     name: Build compiler - Linux/x86_64
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -21,21 +21,14 @@ jobs:
           distribution: zulu
           java-version: 11
 
-      - name: Setup latest GCC and build dependencies
-        run: |
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/ppa
-          sudo apt update
-          sudo apt install gcc-13 g++-13
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 110 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13 --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-13 --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-13
-
-      - name: Setup Ninja
-        run: sudo apt-get install ninja-build
-
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
       - name: Setup CCache
         uses: hendrikmuhs/ccache-action@v1
+
+      - name: Setup Dependencies
+        run: sudo apt-get install ninja-build pipx uuid-dev
 
       - name: Cache LLVM
         id: cache-llvm
@@ -81,7 +74,7 @@ jobs:
 
   build-compiler-linux-aarch64:
     name: Build compiler - Linux/AArch64
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -285,7 +278,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
-          version: v1.25.1
+          version: v1.26.1
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

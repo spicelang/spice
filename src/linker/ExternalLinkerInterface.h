@@ -30,7 +30,7 @@ private:
   const CliOptions &cliOptions;
   std::vector<std::string> objectFilePaths;
   std::vector<std::string> linkerFlags = {
-      "-flto", // Enable LTO
+      // "-flto", // Enable LTO
   };
 };
 
