@@ -1,9 +1,10 @@
 // Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
 #include "TypeChecker.h"
-#include "ast/Attributes.h"
 
 #include <SourceFile.h>
+#include <ast/Attributes.h>
+#include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 

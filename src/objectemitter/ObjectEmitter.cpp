@@ -25,9 +25,8 @@ void ObjectEmitter::emit(const std::filesystem::path &objectPath) const {
     throw CompilerError(CANT_OPEN_OUTPUT_FILE, "File '" + objectPathString + "' could not be opened"); // GCOV_EXCL_LINE
 
   llvm::legacy::PassManager passManager;
-  const std::unique_ptr<llvm::TargetMachine> &targetMachine = resourceManager.targetMachine;
   const llvm::CodeGenFileType fileType = llvm::CodeGenFileType::ObjectFile;
-  if (targetMachine->addPassesToEmitFile(passManager, stream, nullptr, fileType, cliOptions.disableVerifier))
+  if (sourceFile->targetMachine->addPassesToEmitFile(passManager, stream, nullptr, fileType, cliOptions.disableVerifier))
     throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
 
   // Emit object file
@@ -38,9 +37,8 @@ void ObjectEmitter::emit(const std::filesystem::path &objectPath) const {
 void ObjectEmitter::getASMString(std::string &output) const {
   RawStringOStream ostream(output);
   llvm::legacy::PassManager passManager;
-  const std::unique_ptr<llvm::TargetMachine> &targetMachine = resourceManager.targetMachine;
   const llvm::CodeGenFileType fileType = llvm::CodeGenFileType::AssemblyFile;
-  if (targetMachine->addPassesToEmitFile(passManager, ostream, nullptr, fileType, cliOptions.disableVerifier))
+  if (sourceFile->targetMachine->addPassesToEmitFile(passManager, ostream, nullptr, fileType, cliOptions.disableVerifier))
     throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
 
   // Emit object file

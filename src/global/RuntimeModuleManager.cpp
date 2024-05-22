@@ -46,7 +46,7 @@ SourceFile *RuntimeModuleManager::loadModule(SourceFile *parentSourceFile, Runti
 
   // Instruct the global resource manager to create a new source file
   SourceFile *moduleSourceFile = resourceManager.createSourceFile(parentSourceFile, importName, filePath, true);
-  moduleSourceFile->mainFile = false;
+  moduleSourceFile->isMainFile = false;
 
   // Run frontend and first type checker run for the loaded source file
   moduleSourceFile->runFrontEnd();

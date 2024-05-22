@@ -660,7 +660,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     lhsSTy = lhsSTy.removeReferenceWrapper();
 
     // Get the LLVM type of the operand
-    llvm::Type *lhsTy = lhsSTy.toLLVMType(context, currentScope);
+    llvm::Type *lhsTy = lhsSTy.toLLVMType(sourceFile);
 
     // Get the index value
     AssignExprNode *indexExpr = node->assignExpr();
@@ -681,7 +681,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
       // Now the pointer is the value
       lhs.ptr = lhs.value;
 
-      lhsTy = lhsSTy.getContained().toLLVMType(context, currentScope);
+      lhsTy = lhsSTy.getContained().toLLVMType(sourceFile);
       // Calculate address of pointer item
       lhs.ptr = insertInBoundsGEP(lhsTy, lhs.ptr, indexValue);
     }
@@ -697,7 +697,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     lhsSTy = lhsSTy.removeReferenceWrapper();
 
     // Auto de-reference pointer
-    autoDeReferencePtr(lhs.ptr, lhsSTy, currentScope);
+    autoDeReferencePtr(lhs.ptr, lhsSTy);
     assert(lhsSTy.is(TY_STRUCT));
 
     // Retrieve struct scope
@@ -715,7 +715,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     for (size_t index : indexPath)
       indices.push_back(builder.getInt32(index));
     const std::string name = fieldName + "_addr";
-    llvm::Value *memberAddr = insertInBoundsGEP(lhsSTy.toLLVMType(context, structScope->parent), lhs.ptr, indices, name);
+    llvm::Value *memberAddr = insertInBoundsGEP(lhsSTy.toLLVMType(sourceFile), lhs.ptr, indices, name);
 
     // Set as ptr or refPtr, depending on the type
     if (fieldSymbolType.isRef()) {
@@ -822,7 +822,7 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   Scope *accessScope = data.accessScope;
   assert(accessScope != nullptr);
   QualType varSymbolType = varEntry->getQualType();
-  llvm::Type *varType = varSymbolType.toLLVMType(context, accessScope);
+  llvm::Type *varType = varSymbolType.toLLVMType(sourceFile);
 
   // Check if external global variable
   if (varEntry->global && accessScope->isImportedBy(rootScope)) {

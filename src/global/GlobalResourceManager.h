@@ -10,10 +10,7 @@
 #include <util/CodeLoc.h>
 #include <util/Timer.h>
 
-#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/LegacyPassManager.h>
-#include <llvm/Target/TargetMachine.h>
 
 #include "../../lib/thread-pool/thread-pool-utils.hpp"
 #include "../../lib/thread-pool/thread-pool.hpp"
@@ -46,10 +43,10 @@ public:
   size_t getTotalLineCount() const;
 
   // Public members
-  llvm::LLVMContext context;
-  llvm::IRBuilder<> builder = llvm::IRBuilder<>(context);
+  std::string cpuName;
+  std::string cpuFeatures;
+  llvm::LLVMContext ltoContext;
   std::unique_ptr<llvm::Module> ltoModule;
-  std::unique_ptr<llvm::TargetMachine> targetMachine;
   DefaultMemoryManager memoryManager;
   std::vector<std::string> compileTimeStringValues;
   BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>(memoryManager); // Used to allocate all AST nodes

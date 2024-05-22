@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <global/GlobalResourceManager.h>
 #include <global/RuntimeModuleManager.h>
 #include <typechecker/TypeChecker.h>
 

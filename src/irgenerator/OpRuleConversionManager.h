@@ -4,7 +4,6 @@
 
 #include <utility>
 
-#include <global/GlobalResourceManager.h>
 #include <irgenerator/LLVMExprResult.h>
 #include <symboltablebuilder/Type.h>
 
@@ -14,6 +13,7 @@
 namespace spice::compiler {
 
 // Forward declarations
+class SourceFile;
 class IRGenerator;
 class StdFunctionManager;
 class SymbolTableEntry;
@@ -22,7 +22,7 @@ struct CodeLoc;
 // Typedefs
 using ResolverFct = const std::function<llvm::Value *()>;
 
-#define COMB(en1, en2) (en1 | (en2 << 16))
+#define COMB(en1, en2) ((en1) | ((en2) << 16))
 
 /**
  * Helper class for the IRGenerator to resolve operator instructions for each valid operator/type combination
@@ -30,7 +30,7 @@ using ResolverFct = const std::function<llvm::Value *()>;
 class OpRuleConversionManager {
 public:
   // Constructors
-  OpRuleConversionManager(GlobalResourceManager &resourceManager, IRGenerator *irGenerator);
+  OpRuleConversionManager(SourceFile *sourceFile, IRGenerator *irGenerator);
 
   // Public methods
   LLVMExprResult getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy, LLVMExprResult &rhs, QualType rhsSTy,

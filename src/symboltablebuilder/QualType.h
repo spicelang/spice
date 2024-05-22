@@ -14,6 +14,7 @@
 namespace spice::compiler {
 
 // Forward declarations
+class SourceFile;
 class Type;
 class ASTNode;
 class Scope;
@@ -93,7 +94,7 @@ public:
   [[nodiscard]] std::string getName(bool withSize = false, bool ignorePublic = false) const;
 
   // LLVM helpers
-  [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
+  [[nodiscard]] llvm::Type *toLLVMType(SourceFile *sourceFile) const;
 
   // Get new type, based on this one
   [[nodiscard]] QualType toPtr(const ASTNode *node) const;

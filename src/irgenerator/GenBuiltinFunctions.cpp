@@ -25,11 +25,11 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
     if (argSymbolType.isArray()) {
       llvm::Value *argValPtr = resolveAddress(arg);
       llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
-      llvm::Type *argType = argSymbolType.toLLVMType(context, currentScope);
+      llvm::Type *argType = argSymbolType.toLLVMType(sourceFile);
       argVal = insertInBoundsGEP(argType, argValPtr, indices);
     } else if (argSymbolType.getBase().isStringObj()) {
       llvm::Value *argValPtr = resolveAddress(arg);
-      llvm::Type *argBaseType = argSymbolType.getBase().toLLVMType(context, currentScope);
+      llvm::Type *argBaseType = argSymbolType.getBase().toLLVMType(sourceFile);
       argValPtr = insertStructGEP(argBaseType, argValPtr, 0);
       argVal = insertLoad(builder.getPtrTy(), argValPtr);
     } else {
@@ -61,7 +61,7 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
   if (node->isType) { // Size of type
     type = any_cast<llvm::Type *>(visit(node->dataType()));
   } else { // Size of value
-    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
+    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
   }
   // Calculate size at compile-time
   const llvm::TypeSize sizeInBits = module->getDataLayout().getTypeSizeInBits(type);
@@ -76,7 +76,7 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
   if (node->isType) { // Align of type
     type = any_cast<llvm::Type *>(visit(node->dataType()));
   } else { // Align of value
-    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(context, currentScope);
+    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
   }
   // Calculate size at compile-time
   const llvm::Align align = module->getDataLayout().getABITypeAlign(type);

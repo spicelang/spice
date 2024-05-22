@@ -5,6 +5,8 @@
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
+#include <driver/Driver.h>
+#include <global/GlobalResourceManager.h>
 #include <model/Function.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
@@ -26,7 +28,7 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, QualType dstSTy, Qual
   // Unpack the pointers until a pointer of another type is met
   size_t loadCounter = 0;
   while (srcSTy.isPtr()) {
-    src = insertLoad(srcSTy.toLLVMType(context, currentScope), src);
+    src = insertLoad(srcSTy.toLLVMType(sourceFile), src);
     srcSTy = srcSTy.getContained();
     dstSTy = dstSTy.getContained();
     loadCounter++;
@@ -34,10 +36,10 @@ llvm::Value *IRGenerator::doImplicitCast(llvm::Value *src, QualType dstSTy, Qual
   // GEP or bit-cast
   if (dstSTy.isArray() && srcSTy.isArray()) { // Special case that is used for passing arrays as pointer to functions
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
-    src = insertInBoundsGEP(srcSTy.toLLVMType(context, currentScope), src, indices);
+    src = insertInBoundsGEP(srcSTy.toLLVMType(sourceFile), src, indices);
   } else {
-    src = insertLoad(srcSTy.toLLVMType(context, currentScope), src);
-    src = builder.CreateBitCast(src, dstSTy.toLLVMType(context, currentScope));
+    src = insertLoad(srcSTy.toLLVMType(sourceFile), src);
+    src = builder.CreateBitCast(src, dstSTy.toLLVMType(sourceFile));
   }
   // Pack the pointers together again
   for (; loadCounter > 0; loadCounter--) {
@@ -85,7 +87,7 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
     const SymbolTableEntry *thisVar = currentScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisVar != nullptr);
     assert(thisVar->getQualType().isPtr() && thisVar->getQualType().getContained().is(TY_STRUCT));
-    llvm::Type *thisType = thisVar->getQualType().getContained().toLLVMType(context, currentScope);
+    llvm::Type *thisType = thisVar->getQualType().getContained().toLLVMType(sourceFile);
     llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), thisVar->getAddress());
     // Add field offset
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(entry->orderIndex)};
@@ -124,7 +126,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
     return nullptr;
 
   // Retrieve return type
-  llvm::Type *returnType = spiceFunc->returnType.toLLVMType(context, currentScope);
+  llvm::Type *returnType = spiceFunc->returnType.toLLVMType(sourceFile);
 
   // Get 'this' entry
   std::vector<std::pair<std::string, SymbolTableEntry *>> paramInfoList;
@@ -140,7 +142,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
   // Get parameter types
   for (const Param &param : spiceFunc->paramList) {
     assert(!param.isOptional);
-    paramTypes.push_back(param.type.toLLVMType(context, currentScope));
+    paramTypes.push_back(param.type.toLLVMType(sourceFile));
   }
 
   // Get function linkage
@@ -159,7 +161,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
     fct->addParamAttr(0, llvm::Attribute::NoUndef);
     fct->addParamAttr(0, llvm::Attribute::NonNull);
     assert(thisEntry != nullptr);
-    llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(context, currentScope);
+    llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(sourceFile);
     assert(structType != nullptr);
     fct->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
     fct->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
@@ -231,7 +233,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   // Get parameter types
   for (const Param &param : spiceProc->paramList) {
     assert(!param.isOptional);
-    paramTypes.push_back(param.type.toLLVMType(context, currentScope));
+    paramTypes.push_back(param.type.toLLVMType(sourceFile));
   }
 
   // Get function linkage
@@ -250,7 +252,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
     fct->addParamAttr(0, llvm::Attribute::NoUndef);
     fct->addParamAttr(0, llvm::Attribute::NonNull);
     assert(thisEntry != nullptr);
-    llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(context, currentScope);
+    llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(sourceFile);
     assert(structType != nullptr);
     fct->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
     fct->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
@@ -314,7 +316,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
   QualType structSymbolType = thisEntry->getQualType().getBase();
-  llvm::Type *structType = structSymbolType.toLLVMType(context, structScope);
+  llvm::Type *structType = structSymbolType.toLLVMType(sourceFile);
 
   // Store VTable to first struct field if required
   Struct *spiceStruct = structSymbolType.getStruct(nullptr);
@@ -390,7 +392,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
-  llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(context, structScope);
+  llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
@@ -435,7 +437,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
   llvm::Value *thisAddress = thisEntry->getAddress();
   assert(thisAddress != nullptr);
   llvm::Value *thisAddressLoaded = nullptr;
-  llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(context, structScope);
+  llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {

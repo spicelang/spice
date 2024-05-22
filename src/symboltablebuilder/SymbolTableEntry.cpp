@@ -57,26 +57,6 @@ void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node
 const CodeLoc &SymbolTableEntry::getDeclCodeLoc() const { return declNode->codeLoc; }
 
 /**
- * Retrieve the llvm type of the current struct symbol
- *
- * @return LLVM type of the current struct symbol
- */
-llvm::StructType *SymbolTableEntry::getStructLLVMType() const {
-  assert(qualType.isOneOf({TY_STRUCT, TY_INTERFACE}));
-  return llvmStructType;
-}
-
-/**
- * Update the struct LLVM type of a symbol
- *
- * @param newStructType New struct LLVM type
- */
-void SymbolTableEntry::setStructLLVMType(llvm::StructType *newStructType) {
-  assert(qualType.isOneOf({TY_STRUCT, TY_INTERFACE}));
-  llvmStructType = newStructType;
-}
-
-/**
  * Retrieve the address of the assigned value
  *
  * @return Address of the value in memory

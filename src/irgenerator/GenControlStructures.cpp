@@ -170,11 +170,11 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   // Get the current iterator values
   if (hasIdx) {
     // Allocate space to save pair
-    llvm::Type *pairTy = node->getIdxFct->returnType.toLLVMType(context, currentScope);
+    llvm::Type *pairTy = node->getIdxFct->returnType.toLLVMType(sourceFile);
     llvm::Value *pairPtr = insertAlloca(pairTy, "pair_addr");
     // Call .getIdx() on iterator
     assert(node->getIdxFct);
-    llvm::Function *getIdxFct = stdFunctionManager.getIteratorGetIdxFct(node->getIdxFct, currentScope);
+    llvm::Function *getIdxFct = stdFunctionManager.getIteratorGetIdxFct(node->getIdxFct);
     llvm::Value *pair = builder.CreateCall(getIdxFct, iteratorPtr);
     pair->setName("pair");
     insertStore(pair, pairPtr);

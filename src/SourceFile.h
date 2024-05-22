@@ -21,6 +21,7 @@
 #include <util/CompilerWarning.h>
 
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/Target/TargetMachine.h>
 
 #include "../lib/thread-pool/thread-pool-utils.hpp"
 #include "../lib/thread-pool/thread-pool.hpp"
@@ -152,6 +153,7 @@ public:
   void addNameRegistryEntry(const std::string &symbolName, uint64_t typeId, SymbolTableEntry *entry, Scope *scope,
                             bool keepNewOnCollision = true, SymbolTableEntry *importEntry = nullptr);
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(const std::string &symbolName) const;
+  [[nodiscard]] llvm::Type *getLLVMType(const Type *type);
   void checkForSoftErrors();
   void collectAndPrintWarnings();
   const SourceFile *getRootSourceFile() const;
@@ -164,8 +166,8 @@ public:
   std::string fileName;
   std::filesystem::path filePath;
   std::string fileDir;
-  bool stdFile = false;
-  bool mainFile = true;
+  bool isStdFile = false;
+  bool isMainFile = true;
   bool alwaysKeepSymbolsOnNameCollision = false;
   bool ignoreWarnings = false;
   CompileStageType previousStage = NONE;
@@ -176,6 +178,9 @@ public:
   bool restoredFromCache = false;
   EntryNode *ast = nullptr;
   std::unique_ptr<Scope> globalScope;
+  llvm::LLVMContext context;
+  llvm::IRBuilder<> builder;
+  std::unique_ptr<llvm::TargetMachine> targetMachine;
   std::unique_ptr<llvm::Module> llvmModule;
   std::unordered_map<std::string, SourceFile *> dependencies;
   std::vector<const SourceFile *> dependants;
@@ -187,6 +192,7 @@ private:
   GlobalResourceManager &resourceManager;
   const CliOptions &cliOptions;
   BS::synced_stream &tout;
+  std::unordered_map<const Type *, llvm::Type *> typeToLLVMTypeMapping;
   uint8_t importedRuntimeModules = 0;
   uint8_t totalTypeCheckerRuns = 0;
 

@@ -22,19 +22,38 @@
 #include <visualizer/ASTVisualizer.h>
 #include <visualizer/CSTVisualizer.h>
 
+#include <llvm/MC/TargetRegistry.h>
+
 namespace spice::compiler {
 
 SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name,
                        const std::filesystem::path &filePath, bool stdFile)
-    : name(std::move(name)), filePath(filePath), stdFile(stdFile), parent(parent), resourceManager(resourceManager),
+    : name(std::move(name)), filePath(filePath), isStdFile(stdFile), parent(parent),
+      builder(resourceManager.cliOptions.useLTO ? resourceManager.ltoContext : context), resourceManager(resourceManager),
       cliOptions(resourceManager.cliOptions), tout(resourceManager.tout) {
   // Deduce fileName and fileDir
   fileName = std::filesystem::path(filePath).filename().string();
   fileDir = std::filesystem::path(filePath).parent_path().string();
+
+  // Search after selected target
+  std::string error;
+  const llvm::Target *target = llvm::TargetRegistry::lookupTarget(cliOptions.targetTriple, error);
+  if (!target)
+    throw CompilerError(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // GCOV_EXCL_LINE
+
+  // Create target machine
+  llvm::TargetOptions opt;
+  opt.MCOptions.AsmVerbose = true;
+  opt.MCOptions.PreserveAsmComments = true;
+  const std::string &cpuName = resourceManager.cpuName;
+  const std::string &features = resourceManager.cpuFeatures;
+  const std::string &targetTriple = cliOptions.targetTriple;
+  llvm::TargetMachine *targetMachineRaw = target->createTargetMachine(targetTriple, cpuName, features, opt, llvm::Reloc::PIC_);
+  targetMachine = std::unique_ptr<llvm::TargetMachine>(targetMachineRaw);
 }
 
 void SourceFile::runLexer() {
-  if (mainFile)
+  if (isMainFile)
     resourceManager.totalTimer.start();
 
   // Check if this stage has already been done
@@ -297,7 +316,8 @@ void SourceFile::runIRGenerator() {
   timer.start();
 
   // Create LLVM module for this source file
-  llvmModule = std::make_unique<llvm::Module>(filePath.filename().string(), resourceManager.context);
+  llvm::LLVMContext &llvmContext = cliOptions.useLTO ? resourceManager.ltoContext : context;
+  llvmModule = std::make_unique<llvm::Module>(filePath.filename().string(), llvmContext);
 
   // Generate this source file
   IRGenerator irGenerator(resourceManager, this);
@@ -383,7 +403,7 @@ void SourceFile::runBitcodeLinker() {
   assert(cliOptions.useLTO);
 
   // Skip if this is not the main source file
-  if (!mainFile)
+  if (!isMainFile)
     return;
 
   // Skip if restored from cache or this stage has already been done
@@ -404,7 +424,7 @@ void SourceFile::runPostLinkIROptimizer() {
   assert(cliOptions.useLTO);
 
   // Skip if this is not the main source file
-  if (!mainFile)
+  if (!isMainFile)
     return;
 
   // Skip if restored from cache or this stage has already been done
@@ -444,7 +464,7 @@ void SourceFile::runObjectEmitter() {
     return;
 
   // Skip if LTO is enabled and this is not the main source file
-  if (cliOptions.useLTO && !mainFile)
+  if (cliOptions.useLTO && !isMainFile)
     return;
 
   Timer timer(&compilerOutput.times.objectEmitter);
@@ -484,11 +504,11 @@ void SourceFile::concludeCompilation() {
     resourceManager.cacheManager.cacheSourceFile(this);
 
   // Save type registry as string in the compiler output
-  if (mainFile && (cliOptions.dumpSettings.dumpTypes || cliOptions.testMode))
+  if (isMainFile && (cliOptions.dumpSettings.dumpTypes || cliOptions.testMode))
     compilerOutput.typesString = TypeRegistry::dump();
 
   // Dump type registry
-  if (mainFile && cliOptions.dumpSettings.dumpTypes)
+  if (isMainFile && cliOptions.dumpSettings.dumpTypes)
     dumpOutput(compilerOutput.typesString, "Type Registry", "type-registry.out");
 
   // Print warning if verifier is disabled
@@ -557,7 +577,7 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   // Wait until all compile tasks for all depending source files are done
   resourceManager.threadPool.wait();
 
-  if (mainFile) {
+  if (isMainFile) {
     resourceManager.totalTimer.stop();
     if (cliOptions.printDebugOutput) {
       CHECK_ABORT_FLAG_V()
@@ -581,7 +601,7 @@ void SourceFile::addDependency(SourceFile *sourceFile, const ASTNode *declNode, 
   }
 
   // Add the dependency
-  sourceFile->mainFile = false;
+  sourceFile->isMainFile = false;
   dependencies.insert({dependencyName, sourceFile});
 
   // Add the dependant
@@ -634,6 +654,18 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(const std::string &sym
   return entry;
 }
 
+llvm::Type *SourceFile::getLLVMType(const Type *type) {
+  // Check if the type is already in the mapping
+  const auto it = typeToLLVMTypeMapping.find(type);
+  if (it != typeToLLVMTypeMapping.end())
+    return it->second;
+
+  // If not, generate the LLVM type
+  llvm::Type *llvmType = type->toLLVMType(this);
+  typeToLLVMTypeMapping[type] = llvmType;
+  return llvmType;
+}
+
 void SourceFile::checkForSoftErrors() {
   // Check if there are any soft errors and if so, print them
   if (!resourceManager.errorManager.softErrors.empty()) {
@@ -648,7 +680,7 @@ void SourceFile::checkForSoftErrors() {
 void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
   // Print warnings for all dependencies
   for (const auto &dependency : dependencies) {
-    if (!dependency.second->stdFile)
+    if (!dependency.second->isStdFile)
       dependency.second->collectAndPrintWarnings();
   }
   // Collect warnings for this file

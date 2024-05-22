@@ -246,14 +246,14 @@ bool QualType::isIterable(const ASTNode *node) const {
  *
  * @return String object or not
  */
-bool QualType::isStringObj() const { return is(TY_STRUCT) && getSubType() == STROBJ_NAME && getBodyScope()->sourceFile->stdFile; }
+bool QualType::isStringObj() const { return is(TY_STRUCT) && getSubType() == STROBJ_NAME && getBodyScope()->sourceFile->isStdFile; }
 
 /**
  * Check if the current type is a error object
  *
  * @return Error object or not
  */
-bool QualType::isErrorObj() const { return is(TY_STRUCT) && getSubType() == ERROBJ_NAME && getBodyScope()->sourceFile->stdFile; }
+bool QualType::isErrorObj() const { return is(TY_STRUCT) && getSubType() == ERROBJ_NAME && getBodyScope()->sourceFile->isStdFile; }
 
 /**
  * Check if the current type has any generic parts
@@ -449,12 +449,11 @@ std::string QualType::getName(bool withSize, bool ignorePublic) const {
 /**
  * Convert the type to an LLVM type
  *
- * @param context LLVM context
- * @param accessScope Access scope
+ * @param sourceFile Source file
  * @return LLVM type
  */
-llvm::Type *QualType::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const {
-  return type->toLLVMType(context, accessScope);
+llvm::Type *QualType::toLLVMType(SourceFile *sourceFile) const {
+  return sourceFile->getLLVMType(type);
 }
 
 /**

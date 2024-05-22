@@ -5,6 +5,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <driver/Driver.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
@@ -12,7 +13,7 @@ namespace spice::compiler {
 
 std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   // Ignore main function definitions if this is not the main source file
-  if (!sourceFile->mainFile)
+  if (!sourceFile->isMainFile)
     return nullptr;
 
   // Do not generate main function if it is explicitly specified
@@ -178,7 +179,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures())
           paramSymbol->updateType(paramSymbol->getQualType().getWithLambdaCaptures(), true);
         // Retrieve type of param
-        llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
+        llvm::Type *paramType = paramSymbolType.toLLVMType(sourceFile);
         // Add it to the lists
         paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
@@ -186,7 +187,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     }
 
     // Get return type
-    llvm::Type *returnType = manifestation->returnType.toLLVMType(context, currentScope);
+    llvm::Type *returnType = manifestation->returnType.toLLVMType(sourceFile);
 
     // Check if function is explicitly inlined
     const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
@@ -215,7 +216,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       func->addParamAttr(0, llvm::Attribute::NoUndef);
       func->addParamAttr(0, llvm::Attribute::NonNull);
       assert(thisEntry != nullptr);
-      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(context, currentScope);
+      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(sourceFile);
       assert(structType != nullptr);
       func->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
       func->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
@@ -347,7 +348,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
         if (paramSymbolType.isOneOf({TY_FUNCTION, TY_PROCEDURE}) && paramSymbolType.hasLambdaCaptures())
           paramSymbol->updateType(paramSymbol->getQualType().getWithLambdaCaptures(), true);
         // Retrieve type of param
-        llvm::Type *paramType = paramSymbolType.toLLVMType(context, currentScope);
+        llvm::Type *paramType = paramSymbolType.toLLVMType(sourceFile);
         // Add it to the lists
         paramInfoList.emplace_back(param->varName, paramSymbol);
         paramTypes.push_back(paramType);
@@ -381,7 +382,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       proc->addParamAttr(0, llvm::Attribute::NoUndef);
       proc->addParamAttr(0, llvm::Attribute::NonNull);
       assert(thisEntry != nullptr);
-      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(context, currentScope);
+      llvm::Type *structType = thisEntry->getQualType().getContained().toLLVMType(sourceFile);
       assert(structType != nullptr);
       proc->addDereferenceableParamAttr(0, module->getDataLayout().getTypeStoreSize(structType));
       proc->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(structType)));
@@ -588,13 +589,13 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
   assert(spiceFunc != nullptr);
   llvm::Type *returnType = builder.getVoidTy();
   if (!spiceFunc->returnType.is(TY_DYN))
-    returnType = spiceFunc->returnType.toLLVMType(context, currentScope);
+    returnType = spiceFunc->returnType.toLLVMType(sourceFile);
 
   // Get arg types
   std::vector<llvm::Type *> argTypes;
   argTypes.reserve(spiceFunc->paramList.size());
   for (const QualType &paramType : spiceFunc->getParamTypes())
-    argTypes.push_back(paramType.toLLVMType(context, currentScope));
+    argTypes.push_back(paramType.toLLVMType(sourceFile));
 
   // Declare function
   llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, node->isVarArg);

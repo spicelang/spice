@@ -3,6 +3,7 @@
 #include "IRGenerator.h"
 
 #include <SourceFile.h>
+#include <global/GlobalResourceManager.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
@@ -12,12 +13,12 @@
 namespace spice::compiler {
 
 IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
-    : CompilerPass(resourceManager, sourceFile), context(resourceManager.context), builder(resourceManager.builder),
-      module(sourceFile->llvmModule.get()),
-      stdFunctionManager(StdFunctionManager(resourceManager, sourceFile->llvmModule.get())) {
+    : CompilerPass(resourceManager, sourceFile), context(cliOptions.useLTO ? resourceManager.ltoContext : sourceFile->context),
+      builder(sourceFile->builder), module(sourceFile->llvmModule.get()), conversionManager(sourceFile, this),
+      stdFunctionManager(sourceFile, resourceManager, module) {
   // Attach information to the module
   module->setTargetTriple(cliOptions.targetTriple);
-  module->setDataLayout(resourceManager.targetMachine->createDataLayout());
+  module->setDataLayout(sourceFile->targetMachine->createDataLayout());
 
   // Initialize debug info generator
   if (cliOptions.generateDebugInfo)
@@ -29,7 +30,7 @@ std::any IRGenerator::visitEntry(const EntryNode *node) {
   visitChildren(node);
 
   // Generate test main if required
-  if (sourceFile->mainFile && cliOptions.generateTestMain)
+  if (sourceFile->isMainFile && cliOptions.generateTestMain)
     generateTestMain();
 
   // Execute deferred VTable initializations
@@ -142,7 +143,7 @@ llvm::Value *IRGenerator::resolveValue(const QualType &qualType, LLVMExprResult 
     exprResult.ptr = insertLoad(builder.getPtrTy(), exprResult.refPtr, exprResult.entry && exprResult.entry->isVolatile);
 
   // Load the value from the pointer
-  llvm::Type *valueTy = referencedType.toLLVMType(context, accessScope);
+  llvm::Type *valueTy = referencedType.toLLVMType(sourceFile);
   exprResult.value = insertLoad(valueTy, exprResult.ptr, exprResult.entry && exprResult.entry->isVolatile);
 
   return exprResult.value;
@@ -216,7 +217,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     llvm::Constant *defaultItemValue = getDefaultValueForSymbolType(symbolType.getContained());
 
     // Retrieve array and item type
-    llvm::Type *itemType = symbolType.getContained().toLLVMType(context, currentScope);
+    llvm::Type *itemType = symbolType.getContained().toLLVMType(sourceFile);
     llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, arraySize);
 
     // Create a constant array with n times the default value
@@ -239,7 +240,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     Scope *structScope = symbolType.getBodyScope();
     assert(structScope != nullptr);
     const size_t fieldCount = structScope->getFieldCount();
-    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, structScope));
+    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
 
     // Get default values for all fields of the struct
     std::vector<llvm::Constant *> fieldConstants;
@@ -266,9 +267,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
   // Interface
   if (symbolType.is(TY_INTERFACE)) {
     // Retrieve struct type
-    Scope *interfaceScope = symbolType.getBodyScope();
-    assert(interfaceScope != nullptr);
-    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(context, interfaceScope));
+    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
 
     return llvm::ConstantStruct::get(structType, llvm::Constant::getNullValue(builder.getPtrTy()));
   }
@@ -438,7 +437,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
       return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
     } else {
       // Create shallow copy
-      llvm::Type *rhsType = rhsSType.toLLVMType(context, currentScope);
+      llvm::Type *rhsType = rhsSType.toLLVMType(sourceFile);
       const std::string copyName = lhsEntry ? lhsEntry->name : "";
       llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
       // Set address of lhs to the copy
@@ -460,7 +459,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   // Allocate new memory if the lhs address does not exist
   if (!lhsAddress) {
     assert(lhsEntry != nullptr);
-    lhsAddress = insertAlloca(lhsEntry->getQualType().toLLVMType(context, currentScope));
+    lhsAddress = insertAlloca(lhsEntry->getQualType().toLLVMType(sourceFile));
     lhsEntry->updateAddress(lhsAddress);
   }
 
@@ -469,7 +468,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     // Get address of right side
     llvm::Value *rhsAddress = resolveAddress(rhs);
     assert(rhsAddress != nullptr);
-    llvm::Type *elementTy = rhsSType.toLLVMType(context, currentScope);
+    llvm::Type *elementTy = rhsSType.toLLVMType(sourceFile);
     llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
     llvm::Value *firstItemAddress = insertInBoundsGEP(elementTy, rhsAddress, indices);
     insertStore(firstItemAddress, lhsAddress);
@@ -504,9 +503,9 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
   return targetAddress;
 }
 
-void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType, Scope *accessScope) const {
+void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) const {
   while (symbolType.isPtr() || symbolType.isRef()) {
-    ptr = insertLoad(symbolType.toLLVMType(context, accessScope), ptr);
+    ptr = insertLoad(symbolType.toLLVMType(sourceFile), ptr);
     symbolType = symbolType.getContained();
   }
 }
