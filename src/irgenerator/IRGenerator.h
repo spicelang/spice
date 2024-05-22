@@ -142,7 +142,7 @@ private:
                               bool isDecl);
   llvm::Value *createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
                                  const std::string &name = "", bool isVolatile = false);
-  void autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType, Scope *accessScope) const;
+  void autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) const;
   llvm::GlobalVariable *createGlobalConst(const std::string &baseName, llvm::Constant *constant);
   llvm::Constant *createGlobalStringConst(const std::string &baseName, const std::string &value, const CodeLoc &codeLoc);
   [[nodiscard]] std::string getUnusedGlobalName(const std::string &baseName) const;
@@ -177,7 +177,7 @@ private:
   llvm::LLVMContext &context;
   llvm::IRBuilder<> &builder;
   llvm::Module *module;
-  OpRuleConversionManager conversionManager = OpRuleConversionManager(resourceManager, this);
+  OpRuleConversionManager conversionManager;
   const StdFunctionManager stdFunctionManager;
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);
   struct CommonLLVMTypes {

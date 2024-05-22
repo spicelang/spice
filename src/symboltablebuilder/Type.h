@@ -60,9 +60,6 @@ public:
   void getName(std::stringstream &name, bool withSize = false) const;
   [[nodiscard]] std::string getName(bool withSize = false) const;
 
-  // LLVM helpers
-  [[nodiscard]] llvm::Type *toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const;
-
   // Get new type, based on this one
   [[nodiscard]] const Type *toPtr(const ASTNode *node) const;
   [[nodiscard]] const Type *toRef(const ASTNode *node) const;
@@ -76,6 +73,9 @@ public:
   [[nodiscard]] const Type *getWithTemplateTypes(const QualTypeList &templateTypes) const;
   [[nodiscard]] const Type *getWithBaseTemplateTypes(const QualTypeList &templateTypes) const;
   [[nodiscard]] const Type *getWithFunctionParamAndReturnTypes(const QualTypeList &paramAndReturnTypes) const;
+
+  // LLVM helpers
+  [[nodiscard]] llvm::Type *toLLVMType(SourceFile *sourceFile) const;
 
   // Public static methods
   static void unwrapBoth(const Type *&typeA, const Type *&typeB);

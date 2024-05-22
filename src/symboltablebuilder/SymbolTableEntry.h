@@ -38,8 +38,6 @@ public:
   void updateType(const QualType &newType, bool overwriteExistingType);
   void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
-  [[nodiscard]] llvm::StructType *getStructLLVMType() const;
-  void setStructLLVMType(llvm::StructType *newStructType);
   [[nodiscard]] virtual llvm::Value *getAddress() const;
   void updateAddress(llvm::Value *address);
   void pushAddress(llvm::Value *address);
@@ -64,7 +62,6 @@ public:
 private:
   // Members
   QualType qualType;
-  llvm::StructType *llvmStructType = nullptr; // For structs and interfaces only
   std::stack<llvm::Value *> memAddress;
   Lifecycle lifecycle;
 };

@@ -180,16 +180,16 @@ const Type *Type::removeReferenceWrapper() const { return isRef() ? getContained
  * Return the LLVM type for this symbol type
  *
  * @param context LLVM context
- * @param accessScope Access scope for structs
  * @return Corresponding LLVM type
  */
-llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) const { // NOLINT(misc-no-recursion)
-  assert(!typeChain.empty() && !isOneOf({TY_DYN, TY_INVALID}));
+llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-recursion)
+  assert(!typeChain.empty() && !is(TY_INVALID));
+  llvm::LLVMContext &context = sourceFile->llvmModule->getContext();
 
   if (is(TY_DOUBLE))
     return llvm::Type::getDoubleTy(context);
 
-  if (is(TY_INT))
+  if (isOneOf({TY_INT, TY_ENUM}))
     return llvm::Type::getInt32Ty(context);
 
   if (is(TY_SHORT))
@@ -201,9 +201,6 @@ llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) con
   if (isOneOf({TY_CHAR, TY_BYTE}))
     return llvm::Type::getInt8Ty(context);
 
-  if (is(TY_STRING))
-    return llvm::PointerType::get(context, 0);
-
   if (is(TY_BOOL))
     return llvm::Type::getInt1Ty(context);
 
@@ -212,60 +209,52 @@ llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) con
     const std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
     SymbolTableEntry *structSymbol = structBodyScope->parent->lookupStrict(structSignature);
     assert(structSymbol != nullptr);
-    llvm::StructType *structType = structSymbol->getStructLLVMType();
 
-    // If the type is not known yet, build the LLVM type
-    if (!structType) {
-      // Collect concrete field types
-      std::vector<llvm::Type *> fieldTypes;
-      bool isPacked = false;
-      if (is(TY_STRUCT)) { // Struct
-        Struct *spiceStruct = structSymbol->getQualType().getStruct(structSymbol->declNode);
-        assert(spiceStruct != nullptr);
-        const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
-        structType = llvm::StructType::create(context, mangledName);
-        structSymbol->setStructLLVMType(structType);
+    // Collect concrete field types
+    llvm::StructType *structType;
+    std::vector<llvm::Type *> fieldTypes;
+    bool isPacked = false;
+    if (is(TY_STRUCT)) { // Struct
+      Struct *spiceStruct = structSymbol->getQualType().getStruct(structSymbol->declNode);
+      assert(spiceStruct != nullptr);
+      const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
+      structType = llvm::StructType::create(context, mangledName);
 
-        const size_t totalFieldCount = spiceStruct->scope->getFieldCount();
-        fieldTypes.reserve(totalFieldCount);
+      const size_t totalFieldCount = spiceStruct->scope->getFieldCount();
+      fieldTypes.reserve(totalFieldCount);
 
-        // If the struct has no interface types, but a vtable was requested, add another ptr field type
-        assert(structSymbol->declNode->isStructDef());
-        auto structDeclNode = spice_pointer_cast<StructDefNode *>(structSymbol->declNode);
-        if (!structDeclNode->hasInterfaces && structDeclNode->emitVTable)
-          fieldTypes.push_back(llvm::PointerType::get(context, 0));
-
-        // Collect all field types
-        for (size_t i = 0; i < totalFieldCount; i++) {
-          const SymbolTableEntry *fieldSymbol = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
-          assert(fieldSymbol != nullptr);
-          fieldTypes.push_back(fieldSymbol->getQualType().toLLVMType(context, accessScope));
-        }
-
-        // Check if the struct is declared as packed
-        if (structDeclNode->attrs() && structDeclNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_PACKED))
-          isPacked = structDeclNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
-      } else { // Interface
-        Interface *spiceInterface = structSymbol->getQualType().getInterface(structSymbol->declNode);
-        assert(spiceInterface != nullptr);
-        const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
-        structType = llvm::StructType::create(context, mangledName);
-        structSymbol->setStructLLVMType(structType);
-
+      // If the struct has no interface types, but a vtable was requested, add another ptr field type
+      assert(structSymbol->declNode->isStructDef());
+      auto structDeclNode = spice_pointer_cast<StructDefNode *>(structSymbol->declNode);
+      if (!structDeclNode->hasInterfaces && structDeclNode->emitVTable)
         fieldTypes.push_back(llvm::PointerType::get(context, 0));
+
+      // Collect all field types
+      for (size_t i = 0; i < totalFieldCount; i++) {
+        const SymbolTableEntry *fieldSymbol = spiceStruct->scope->symbolTable.lookupStrictByIndex(i);
+        assert(fieldSymbol != nullptr);
+        fieldTypes.push_back(sourceFile->getLLVMType(fieldSymbol->getQualType().getType()));
       }
 
-      // Set field types to struct type
-      structType->setBody(fieldTypes, isPacked);
+      // Check if the struct is declared as packed
+      if (structDeclNode->attrs() && structDeclNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_PACKED))
+        isPacked = structDeclNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
+    } else { // Interface
+      Interface *spiceInterface = structSymbol->getQualType().getInterface(structSymbol->declNode);
+      assert(spiceInterface != nullptr);
+      const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
+      structType = llvm::StructType::create(context, mangledName);
+
+      fieldTypes.push_back(llvm::PointerType::get(context, 0));
     }
+
+    // Set field types to struct type
+    structType->setBody(fieldTypes, isPacked);
 
     return structType;
   }
 
-  if (is(TY_ENUM))
-    return llvm::Type::getInt32Ty(context);
-
-  if (isPtr() || isRef() || (isArray() && getArraySize() == 0))
+  if (isOneOf({TY_PTR, TY_REF, TY_STRING}) || (isArray() && getArraySize() == 0))
     return llvm::PointerType::get(context, 0);
 
   if (isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
@@ -274,7 +263,8 @@ llvm::Type *Type::toLLVMType(llvm::LLVMContext &context, Scope *accessScope) con
   }
 
   if (isArray()) {
-    llvm::Type *containedType = getContained()->toLLVMType(context, accessScope);
+    assert(getArraySize() > 0);
+    llvm::Type *containedType = sourceFile->getLLVMType(getContained());
     return llvm::ArrayType::get(containedType, getArraySize());
   }
 

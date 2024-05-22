@@ -40,7 +40,9 @@ size_t hash<spice::compiler::TypeSpecifiers>::operator()(const spice::compiler::
 
 size_t hash<spice::compiler::QualType>::operator()(const spice::compiler::QualType &qualType) const {
   const size_t hashType = std::hash<const spice::compiler::Type *>{}(qualType.getType());
-  const size_t hashQualifiers = std::hash<spice::compiler::TypeSpecifiers>{}(qualType.getSpecifiers()) << 1;
+  spice::compiler::TypeSpecifiers specifiers = qualType.getSpecifiers();
+  specifiers.isPublic = false; // Ignore the public specifier for hashing
+  const size_t hashQualifiers = std::hash<spice::compiler::TypeSpecifiers>{}(specifiers) << 1;
   return hashType ^ hashQualifiers;
 }
 

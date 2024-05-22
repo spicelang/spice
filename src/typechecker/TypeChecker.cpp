@@ -5,6 +5,7 @@
 #include <SourceFile.h>
 #include <ast/ASTBuilder.h>
 #include <ast/Attributes.h>
+#include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
@@ -1766,7 +1767,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   SymbolTableEntry *anonymousSymbol = nullptr;
   if (returnType.isBase(TY_STRUCT)) {
     QualType returnBaseType = returnType.getBase();
-    const std::string& structName = returnBaseType.getSubType();
+    const std::string &structName = returnBaseType.getSubType();
     Scope *matchScope = returnBaseType.getBodyScope()->parent;
     assert(matchScope != nullptr);
     Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);

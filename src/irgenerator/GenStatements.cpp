@@ -3,6 +3,7 @@
 #include "IRGenerator.h"
 
 #include <ast/ASTNodes.h>
+#include <driver/Driver.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
@@ -39,10 +40,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   const QualType varSymbolType = varEntry->getQualType();
 
   // Get LLVM type of variable
-  Scope *accessScope = currentScope;
-  if (varSymbolType.is(TY_STRUCT))
-    accessScope = varSymbolType.getBodyScope()->parent;
-  llvm::Type *varTy = varSymbolType.toLLVMType(context, accessScope);
+  llvm::Type *varTy = varSymbolType.toLLVMType(sourceFile);
 
   // Check if right side is dyn array. If this is the case we have an empty array initializer and need the default value
   const bool rhsIsDynArray = node->hasAssignment && node->assignExpr()->getEvaluatedSymbolType(manIdx).isArrayOf(TY_DYN);
@@ -133,7 +131,7 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
   } else { // Try to load return variable value
     SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (resultEntry != nullptr) {
-      llvm::Type *resultSTy = resultEntry->getQualType().toLLVMType(context, currentScope);
+      llvm::Type *resultSTy = resultEntry->getQualType().toLLVMType(sourceFile);
       llvm::Value *returnValueAddr = resultEntry->getAddress();
       returnValue = insertLoad(resultSTy, returnValueAddr);
     }

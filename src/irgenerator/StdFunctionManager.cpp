@@ -2,10 +2,16 @@
 
 #include "StdFunctionManager.h"
 
+#include <SourceFile.h>
+#include <global/GlobalResourceManager.h>
 #include <irgenerator/NameMangling.h>
 #include <model/Function.h>
 
 namespace spice::compiler {
+
+StdFunctionManager::StdFunctionManager(SourceFile *sourceFile, GlobalResourceManager &resourceManager, llvm::Module *module)
+    : sourceFile(sourceFile), context(resourceManager.cliOptions.useLTO ? resourceManager.ltoContext : sourceFile->context),
+      builder(sourceFile->builder), module(module) {}
 
 llvm::Function *StdFunctionManager::getPrintfFct() const {
   llvm::Function *printfFct = getFunction("printf", builder.getInt32Ty(), builder.getPtrTy(), true);
@@ -80,13 +86,13 @@ llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {
 
 llvm::Function *StdFunctionManager::getIterateFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
-  llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(context, nullptr);
+  llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(sourceFile);
   return getFunction(functionName.c_str(), iteratorType, {builder.getPtrTy(), builder.getInt64Ty()});
 }
 
 llvm::Function *StdFunctionManager::getIteratorFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
-  llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(context, nullptr);
+  llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(sourceFile);
   return getFunction(functionName.c_str(), iteratorType, builder.getPtrTy());
 }
 
@@ -95,9 +101,9 @@ llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *spiceFunc)
   return getFunction(functionName.c_str(), builder.getPtrTy(), builder.getPtrTy());
 }
 
-llvm::Function *StdFunctionManager::getIteratorGetIdxFct(const Function *spiceFunc, Scope *accessScope) const {
+llvm::Function *StdFunctionManager::getIteratorGetIdxFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
-  llvm::Type *pairTy = spiceFunc->returnType.toLLVMType(context, accessScope);
+  llvm::Type *pairTy = spiceFunc->returnType.toLLVMType(sourceFile);
   return getFunction(functionName.c_str(), pairTy, builder.getPtrTy());
 }
 

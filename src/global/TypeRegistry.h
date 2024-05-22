@@ -22,7 +22,7 @@ public:
   static const Type *getOrInsert(SuperType superType, const std::string &subType);
   static const Type *getOrInsert(SuperType superType, const std::string &subType, uint64_t typeId,
                                  const TypeChainElementData &data, const QualTypeList &templateTypes);
-  static const Type *getOrInsert(const TypeChain& typeChain);
+  static const Type *getOrInsert(const TypeChain &typeChain);
   static size_t getTypeCount();
   static std::string dump();
   static void clear();

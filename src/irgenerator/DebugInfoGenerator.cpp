@@ -3,6 +3,7 @@
 #include "DebugInfoGenerator.h"
 
 #include <ast/ASTNodes.h>
+#include <driver/Driver.h>
 #include <irgenerator/IRGenerator.h>
 #include <irgenerator/NameMangling.h>
 #include <model/Function.h>
@@ -61,14 +62,14 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   voidTy = diBuilder->createBasicType("void", 0, llvm::dwarf::DW_ATE_unsigned);
 
   // Initialize fat ptr type
-  llvm::Type *ptrTy = llvm::PointerType::get(irGenerator->context, 0);
+  llvm::Type *ptrTy = llvm::PointerType::get(context, 0);
   if (!irGenerator->llvmTypes.fatPtrType)
-    irGenerator->llvmTypes.fatPtrType = llvm::StructType::get(irGenerator->context, {ptrTy, ptrTy});
+    irGenerator->llvmTypes.fatPtrType = llvm::StructType::get(context, {ptrTy, ptrTy});
 
-  const llvm::StructLayout *structLayout =
-      irGenerator->module->getDataLayout().getStructLayout(irGenerator->llvmTypes.fatPtrType);
-  const uint32_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(irGenerator->llvmTypes.fatPtrType).value();
-  const uint32_t ptrAlignInBits = irGenerator->module->getDataLayout().getABITypeAlign(ptrTy).value();
+  const llvm::DataLayout &dataLayout = module->getDataLayout();
+  const llvm::StructLayout *structLayout = dataLayout.getStructLayout(irGenerator->llvmTypes.fatPtrType);
+  const uint32_t alignInBits = dataLayout.getABITypeAlign(irGenerator->llvmTypes.fatPtrType).value();
+  const uint32_t ptrAlignInBits = dataLayout.getABITypeAlign(ptrTy).value();
 
   fatPtrTy = diBuilder->createStructType(diFile, "_fat_ptr", diFile, 0, structLayout->getSizeInBits(), alignInBits,
                                          llvm::DINode::FlagTypePassByValue | llvm::DINode::FlagNonTrivial, nullptr, {}, 0,
@@ -79,7 +80,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
                                                                llvm::DINode::FlagZero, voidPtrDIType);
   llvm::DIDerivedType *secondType = diBuilder->createMemberType(fatPtrTy, "second", diFile, 0, pointerWidth, ptrAlignInBits,
                                                                 pointerWidth, llvm::DINode::FlagZero, voidPtrDIType);
-  fatPtrTy->replaceElements(llvm::MDTuple::get(irGenerator->context, {firstType, secondType}));
+  fatPtrTy->replaceElements(llvm::MDTuple::get(context, {firstType, secondType}));
 }
 
 void DebugInfoGenerator::generateFunctionDebugInfo(llvm::Function *llvmFunction, const Function *spiceFunc, bool isLambda) {
@@ -148,6 +149,7 @@ void DebugInfoGenerator::concludeFunctionDebugInfo() {
 
   assert(!lexicalBlocks.empty());
   lexicalBlocks.pop();
+  assert(lexicalBlocks.empty());
 }
 
 void DebugInfoGenerator::pushLexicalBlock(const ASTNode *node) {
@@ -186,9 +188,9 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
 
     fieldEntries.push_back(capture.capturedEntry);
     fieldSymbolTypes.push_back(captureType);
-    fieldTypes.push_back(captureType.toLLVMType(irGenerator->context, irGenerator->currentScope));
+    fieldTypes.push_back(captureType.toLLVMType(irGenerator->sourceFile));
   }
-  llvm::StructType *structType = llvm::StructType::get(irGenerator->context, fieldTypes, CAPTURES_PARAM_NAME);
+  llvm::StructType *structType = llvm::StructType::get(irGenerator->context, fieldTypes);
   const llvm::StructLayout *structLayout = irGenerator->module->getDataLayout().getStructLayout(structType);
   const size_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value();
 
@@ -327,17 +329,11 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     Struct *spiceStruct = ty.getStruct(node);
     assert(spiceStruct != nullptr);
 
-    // Check if we already know the DI ty
-    if (spiceStruct->diType != nullptr) {
-      baseDiType = spiceStruct->diType;
-      break;
-    }
-
     // Retrieve information about the struct
     const uint32_t lineNo = spiceStruct->getDeclCodeLoc().line;
-    llvm::Type *structType = spiceStruct->entry->getQualType().toLLVMType(irGenerator->context, irGenerator->currentScope);
+    llvm::Type *structType = spiceStruct->entry->getQualType().toLLVMType(irGenerator->sourceFile);
     assert(structType != nullptr);
-    llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
+    const llvm::DataLayout &dataLayout = irGenerator->module->getDataLayout();
     const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(structType));
     const uint32_t alignInBits = dataLayout.getABITypeAlign(structType).value();
 
@@ -346,7 +342,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     llvm::DICompositeType *structDiType = diBuilder->createStructType(
         diFile, spiceStruct->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
         llvm::DINode::FlagTypePassByReference | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
-    baseDiType = spiceStruct->diType = structDiType;
+    baseDiType = structDiType;
 
     // Collect DI types for fields
     std::vector<llvm::Metadata *> fieldTypes;
@@ -376,15 +372,9 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     Interface *spiceInterface = ty.getInterface(node);
     assert(spiceInterface != nullptr);
 
-    // Check if we already know the DI ty
-    if (spiceInterface->diType != nullptr) {
-      baseDiType = spiceInterface->diType;
-      break;
-    }
-
     // Retrieve information about the interface
     const uint32_t lineNo = spiceInterface->getDeclCodeLoc().line;
-    llvm::Type *interfaceType = spiceInterface->entry->getQualType().toLLVMType(irGenerator->context, irGenerator->currentScope);
+    llvm::Type *interfaceType = spiceInterface->entry->getQualType().toLLVMType(irGenerator->sourceFile);
     assert(interfaceType != nullptr);
     llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
     const llvm::StructLayout *structLayout = dataLayout.getStructLayout(reinterpret_cast<llvm::StructType *>(interfaceType));
@@ -399,7 +389,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     // Set vtable holder to itself for interfaces
     interfaceDiType->replaceVTableHolder(interfaceDiType);
 
-    baseDiType = spiceInterface->diType = interfaceDiType;
+    baseDiType = interfaceDiType;
     break;
   }
   case TY_FUNCTION: // fall-through

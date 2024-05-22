@@ -21,7 +21,7 @@ std::any SymbolTableBuilder::visitEntry(EntryNode *node) {
   visitChildren(node);
 
   // Check if the main function exists
-  if (sourceFile->mainFile && !cliOptions.noEntryFct && !hasMainFunction)
+  if (sourceFile->isMainFile && !cliOptions.noEntryFct && !hasMainFunction)
     throw SemanticError(node, MISSING_MAIN_FUNCTION, "No main function found", false);
 
   return nullptr;
@@ -631,12 +631,12 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   std::vector<const CompileTimeValue *> values = attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG);
   linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   // core.linux.linker.flag
-  if (resourceManager.targetMachine->getTargetTriple().isOSLinux()) {
+  if (sourceFile->targetMachine->getTargetTriple().isOSLinux()) {
     values = attrs->getAttrValuesByName(ATTR_CORE_LINUX_LINKER_FLAG);
     linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   }
   // core.windows.linker.flag
-  if (resourceManager.targetMachine->getTargetTriple().isOSWindows()) {
+  if (sourceFile->targetMachine->getTargetTriple().isOSWindows()) {
     values = attrs->getAttrValuesByName(ATTR_CORE_WINDOWS_LINKER_FLAG);
     linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   }

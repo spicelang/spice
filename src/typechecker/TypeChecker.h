@@ -15,6 +15,9 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+class LambdaBaseNode;
+
 enum TypeCheckerMode : bool {
   TC_MODE_PRE,
   TC_MODE_POST,

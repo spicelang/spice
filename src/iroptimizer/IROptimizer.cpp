@@ -6,7 +6,6 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
 #include <driver/Driver.h>
-#include <global/GlobalResourceManager.h>
 
 namespace spice::compiler {
 
@@ -14,7 +13,7 @@ void IROptimizer::prepare() {
   llvm::PipelineTuningOptions pto;
   if (!resourceManager.cliOptions.testMode)
     si.registerCallbacks(pic, &moduleAnalysisMgr);
-  passBuilder = std::make_unique<llvm::PassBuilder>(resourceManager.targetMachine.get(), pto, std::nullopt, &pic);
+  passBuilder = std::make_unique<llvm::PassBuilder>(sourceFile->targetMachine.get(), pto, std::nullopt, &pic);
 
   functionAnalysisMgr.registerPass([&] { return passBuilder->buildDefaultAAPipeline(); });
 

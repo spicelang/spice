@@ -16,6 +16,7 @@ namespace spice::compiler {
 // Forward declarations
 class ASTNode;
 class TypeChecker;
+class GlobalResourceManager;
 
 // Helper macro to get the length of an array
 #define ARRAY_LENGTH(array) sizeof(array) / sizeof(*array)

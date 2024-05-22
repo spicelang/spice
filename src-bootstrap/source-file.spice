@@ -78,8 +78,8 @@ public type SourceFile struct {
     public String fileName
     public FilePath filePath
     public String fileDir
-    public bool stdFile = false
-    public bool mainFile = true
+    public bool isStdFile = false
+    public bool isMainFile = true
     public bool alwaysKeepSymbolsOnNameCollision = false
     public bool ignoreWarnings = false
     public CompileStageType previousStage = CompileStageType::NONE
@@ -100,13 +100,13 @@ public type SourceFile struct {
     unsigned short totalTypeCheckerRuns = 0s
 }
 
-public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* parent, const String& name, const String& filePath, bool stdFile) {
+public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* parent, const String& name, const String& filePath, bool isStdFile) {
     // Copy data
     this.resourceManager = resourceManager;
     this.parent = parent;
     this.name = name;
     this.filePath = filePath;
-    this.stdFile = stdFile;
+    this.isStdFile = isStdFile;
 
     // Deduce fileName and fileDir
     /*this.fileName = ;

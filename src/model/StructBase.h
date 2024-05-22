@@ -43,7 +43,6 @@ public:
   ASTNode *declNode;
   size_t manifestationIndex = 0;
   StructBase *genericPreset = nullptr;
-  llvm::DICompositeType *diType = nullptr;
   struct {
     llvm::StructType *typeInfoType = nullptr;
     llvm::StructType *vtableType = nullptr;

@@ -4,15 +4,18 @@
 
 #include <stdexcept>
 
+#include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <driver/Driver.h>
+#include <global/GlobalResourceManager.h>
 #include <irgenerator/IRGenerator.h>
 #include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
 
-OpRuleConversionManager::OpRuleConversionManager(GlobalResourceManager &resourceManager, IRGenerator *irGenerator)
-    : context(resourceManager.context), builder(resourceManager.builder), irGenerator(irGenerator),
-      stdFunctionManager(irGenerator->stdFunctionManager) {}
+OpRuleConversionManager::OpRuleConversionManager(SourceFile *sourceFile, IRGenerator *irGenerator)
+    : context(irGenerator->cliOptions.useLTO ? irGenerator->resourceManager.ltoContext : sourceFile->context),
+      builder(sourceFile->builder), irGenerator(irGenerator), stdFunctionManager(irGenerator->stdFunctionManager) {}
 
 LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LLVMExprResult &lhs, QualType lhsSTy,
                                                          LLVMExprResult &rhs, QualType rhsSTy, Scope *accessScope, size_t opIdx) {
@@ -22,7 +25,7 @@ LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LL
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -60,7 +63,7 @@ LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LL
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {
-    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(context, accessScope);
+    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
     llvm::Value *rhsVExt = builder.CreateSExt(rhsV(), builder.getInt64Ty());
     return {.value = builder.CreateGEP(elementTy, lhsV(), rhsVExt)};
   }
@@ -78,7 +81,7 @@ LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, L
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -116,7 +119,7 @@ LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, L
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {
-    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(context, accessScope);
+    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
     llvm::Value *rhsVExt = builder.CreateSExt(rhsV(), builder.getInt64Ty());
     llvm::Value *rhsVNeg = builder.CreateNeg(rhsVExt);
     return {.value = builder.CreateGEP(elementTy, lhsV(), rhsVNeg)};
@@ -134,7 +137,7 @@ LLVMExprResult OpRuleConversionManager::getMulEqualInst(const ASTNode *node, LLV
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -181,7 +184,7 @@ LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLV
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -226,7 +229,7 @@ LLVMExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, LLV
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -267,7 +270,7 @@ LLVMExprResult OpRuleConversionManager::getSHLEqualInst(const ASTNode *node, LLV
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -300,7 +303,7 @@ LLVMExprResult OpRuleConversionManager::getSHREqualInst(const ASTNode *node, LLV
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -333,7 +336,7 @@ LLVMExprResult OpRuleConversionManager::getAndEqualInst(const ASTNode *node, LLV
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -366,7 +369,7 @@ LLVMExprResult OpRuleConversionManager::getOrEqualInst(const ASTNode *node, LLVM
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -399,7 +402,7 @@ LLVMExprResult OpRuleConversionManager::getXorEqualInst(const ASTNode *node, LLV
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_INT, TY_INT):
@@ -493,8 +496,8 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -627,8 +630,8 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -760,8 +763,8 @@ LLVMExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, LLVMExp
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -824,8 +827,8 @@ LLVMExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, LLVM
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -888,8 +891,8 @@ LLVMExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, LL
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -952,8 +955,8 @@ LLVMExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node,
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1018,7 +1021,7 @@ LLVMExprResult OpRuleConversionManager::getShiftLeftInst(const ASTNode *node, LL
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -1065,7 +1068,7 @@ LLVMExprResult OpRuleConversionManager::getShiftRightInst(const ASTNode *node, L
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -1111,8 +1114,8 @@ LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExp
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -1142,7 +1145,7 @@ LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExp
     return {.value = builder.CreateAdd(lhsLong, rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
   case COMB(TY_INT, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(context, accessScope), rhsV(), lhsV())};
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
   case COMB(TY_SHORT, TY_DOUBLE): {
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFAdd(lhsFP, rhsV())};
@@ -1158,7 +1161,7 @@ LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExp
     return {.value = builder.CreateAdd(lhsLong, rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
   case COMB(TY_SHORT, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(context, accessScope), rhsV(), lhsV())};
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
   case COMB(TY_LONG, TY_DOUBLE): {
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFAdd(lhsFP, rhsV())};
@@ -1171,14 +1174,14 @@ LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExp
   case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateAdd(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   case COMB(TY_LONG, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(context, accessScope), rhsV(), lhsV())};
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder.CreateAdd(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):
-    return {.value = builder.CreateGEP(lhsSTy.getContained().toLLVMType(context, accessScope), lhsV(), rhsV())};
+    return {.value = builder.CreateGEP(lhsSTy.getContained().toLLVMType(irGenerator->sourceFile), lhsV(), rhsV())};
   default:                                                            // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +"); // GCOV_EXCL_LINE
   }
@@ -1192,8 +1195,8 @@ LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMEx
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -1223,7 +1226,7 @@ LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMEx
     return {.value = builder.CreateSub(lhsLong, rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
   case COMB(TY_INT, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(context, accessScope), rhsV(), lhsV())};
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
   case COMB(TY_SHORT, TY_DOUBLE): {
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFSub(lhsFP, rhsV())};
@@ -1239,7 +1242,7 @@ LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMEx
     return {.value = builder.CreateSub(lhsLong, rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
   case COMB(TY_SHORT, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(context, accessScope), rhsV(), lhsV())};
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
   case COMB(TY_LONG, TY_DOUBLE): {
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFSub(lhsFP, rhsV())};
@@ -1252,14 +1255,14 @@ LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMEx
   case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateSub(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   case COMB(TY_LONG, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(context, accessScope), rhsV(), lhsV())};
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder.CreateSub(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG):
-    return {.value = builder.CreateGEP(lhsSTy.getContained().toLLVMType(context, accessScope), lhsV(), rhsV())};
+    return {.value = builder.CreateGEP(lhsSTy.getContained().toLLVMType(irGenerator->sourceFile), lhsV(), rhsV())};
   default:                                                            // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
   }
@@ -1273,8 +1276,8 @@ LLVMExprResult OpRuleConversionManager::getMulInst(const ASTNode *node, LLVMExpr
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -1342,8 +1345,8 @@ LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExpr
   ResolverFct rhsP = [&]() { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   // Handle operator overloads
   if (callsOverloadedOpFct(node, opIdx))
@@ -1410,8 +1413,8 @@ LLVMExprResult OpRuleConversionManager::getRemInst(const ASTNode *node, LLVMExpr
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
-  llvm::Type *rhsT = rhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
+  llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1479,7 +1482,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixPlusPlusInst(const ASTNode *nod
   case TY_LONG:
     return {.value = builder.CreateAdd(lhsV(), builder.getInt64(1), "", false, lhsSTy.isSigned())};
   case TY_PTR: {
-    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(context, accessScope);
+    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
     return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(1))};
   }
   default:
@@ -1501,7 +1504,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixMinusMinusInst(const ASTNode *n
   case TY_LONG:
     return {.value = builder.CreateSub(lhsV(), builder.getInt64(1), "", false, lhsSTy.isSigned())};
   case TY_PTR: {
-    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(context, accessScope);
+    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
     return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(-1))};
   }
   default:
@@ -1558,7 +1561,7 @@ LLVMExprResult OpRuleConversionManager::getPostfixPlusPlusInst(const ASTNode *no
   case TY_LONG:
     return {.value = builder.CreateAdd(lhsV(), builder.getInt64(1), "", false, lhsSTy.isSigned())};
   case TY_PTR: {
-    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(context, accessScope);
+    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
     return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(1))};
   }
   default:
@@ -1585,7 +1588,7 @@ LLVMExprResult OpRuleConversionManager::getPostfixMinusMinusInst(const ASTNode *
   case TY_LONG:
     return {.value = builder.CreateSub(lhsV(), builder.getInt64(1), "", false, lhsSTy.isSigned())};
   case TY_PTR: {
-    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(context, accessScope);
+    llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
     return {.value = builder.CreateGEP(elementTy, lhsV(), builder.getInt64(-1))};
   }
   default:
@@ -1599,7 +1602,7 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
   ResolverFct rhsV = [&]() { return irGenerator->resolveValue(rhsSTy, rhs, accessScope); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
-  llvm::Type *lhsT = lhsSTy.toLLVMType(context, accessScope);
+  llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -1693,12 +1696,12 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
     // Get returnType
     llvm::Type *returnType = builder.getVoidTy();
     if (!opFct->returnType.is(TY_DYN))
-      returnType = opFct->returnType.toLLVMType(context, accessScope);
+      returnType = opFct->returnType.toLLVMType(irGenerator->sourceFile);
 
     // Get arg types
     std::vector<llvm::Type *> argTypes;
     for (const QualType &paramType : opFct->getParamTypes())
-      argTypes.push_back(paramType.toLLVMType(context, accessScope));
+      argTypes.push_back(paramType.toLLVMType(irGenerator->sourceFile));
 
     llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
     irGenerator->module->getOrInsertFunction(mangledName, fctType);

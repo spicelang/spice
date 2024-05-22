@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <global/GlobalResourceManager.h>
-
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
 
@@ -11,12 +9,13 @@ namespace spice::compiler {
 
 // Forward declarations
 class Function;
+class GlobalResourceManager;
+class SourceFile;
 
 class StdFunctionManager {
 public:
   // Constructors
-  StdFunctionManager(GlobalResourceManager &resourceManager, llvm::Module *module)
-      : context(resourceManager.context), builder(resourceManager.builder), module(module) {}
+  StdFunctionManager(SourceFile *sourceFile, GlobalResourceManager &resourceManager, llvm::Module *module);
 
   // Public methods for function retrieval
   [[nodiscard]] llvm::Function *getPrintfFct() const;
@@ -30,12 +29,13 @@ public:
   [[nodiscard]] llvm::Function *getIterateFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorGetFct(const Function *spiceFunc) const;
-  [[nodiscard]] llvm::Function *getIteratorGetIdxFct(const Function *spiceFunc, Scope *accessScope) const;
+  [[nodiscard]] llvm::Function *getIteratorGetIdxFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorIsValidFct(const Function *spiceFunc) const;
   [[nodiscard]] llvm::Function *getIteratorNextFct(const Function *spiceFunc) const;
 
 private:
   // Members
+  SourceFile *sourceFile;
   llvm::LLVMContext &context;
   llvm::IRBuilder<> &builder;
   llvm::Module *module;

@@ -8,6 +8,7 @@
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
 #include <exception/ParserError.h>
+#include <global/GlobalResourceManager.h>
 #include <typechecker/OpRuleManager.h>
 #include <util/CommonUtil.h>
 #include <util/GlobalDefinitions.h>
@@ -1502,7 +1503,7 @@ std::string ASTBuilder::getIdentifier(TerminalNode *terminal) {
   std::string identifier = terminal->getText();
 
   // Check if the identifier is 'String' and this is no std source file
-  bool isReserved = !sourceFile->stdFile && (identifier == STROBJ_NAME || identifier == RESULTOBJ_NAME);
+  bool isReserved = !sourceFile->isStdFile && (identifier == STROBJ_NAME || identifier == RESULTOBJ_NAME);
   // Check if the list of reserved keywords contains the given identifier
   isReserved |= std::find(std::begin(RESERVED_KEYWORDS), std::end(RESERVED_KEYWORDS), identifier) != std::end(RESERVED_KEYWORDS);
   // Print error message
