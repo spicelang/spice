@@ -3,7 +3,7 @@ source_filename = "source.spice"
 
 %struct.NumberIterator = type { %interface.IIterator, i16, i16, i16 }
 %interface.IIterator = type { ptr }
-%struct.NumberIterator.1 = type { %interface.IIterator, i64, i64, i64 }
+%struct.NumberIterator.0 = type { %interface.IIterator, i64, i64, i64 }
 
 @printf.str.0 = private unnamed_addr constant [10 x i8] c"Short %d\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [9 x i8] c"Long %d\0A\00", align 1
@@ -14,7 +14,7 @@ define dso_local i32 @main() #0 {
   %result = alloca i32, align 4
   %shortIterator = alloca %struct.NumberIterator, align 8
   %s = alloca i16, align 2
-  %1 = alloca %struct.NumberIterator.1, align 8
+  %1 = alloca %struct.NumberIterator.0, align 8
   %l = alloca ptr, align 8
   %2 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
@@ -40,8 +40,8 @@ foreach.body.L5:                                  ; preds = %foreach.head.L5
   br i1 %13, label %if.then.L7, label %if.exit.L7
 
 if.then.L7:                                       ; preds = %foreach.body.L5
-  %14 = call %struct.NumberIterator.1 @_Z5rangeIlE14NumberIteratorIlEll(i64 1, i64 2)
-  store %struct.NumberIterator.1 %14, ptr %1, align 8
+  %14 = call %struct.NumberIterator.0 @_Z5rangeIlE14NumberIteratorIlEll(i64 1, i64 2)
+  store %struct.NumberIterator.0 %14, ptr %1, align 8
   br label %foreach.head.L8
 
 foreach.head.L8:                                  ; preds = %foreach.tail.L8, %if.then.L7
@@ -85,7 +85,7 @@ declare ptr @_ZN14NumberIteratorIsE3getEv(ptr)
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
-declare %struct.NumberIterator.1 @_Z5rangeIlE14NumberIteratorIlEll(i64, i64)
+declare %struct.NumberIterator.0 @_Z5rangeIlE14NumberIteratorIlEll(i64, i64)
 
 declare i1 @_ZN14NumberIteratorIlE7isValidEv(ptr)
 
