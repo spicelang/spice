@@ -1680,8 +1680,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   assert(opFct != nullptr);
 
   const std::string mangledName = opFct->getMangledName();
-  Scope *accessScope = opFct->entry->scope;
-  assert(accessScope != nullptr);
+  assert(opFct->entry->scope != nullptr);
 
   // Get arg values
   const QualTypeList &paramTypes = opFct->getParamTypes();

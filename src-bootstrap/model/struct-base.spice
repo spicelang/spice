@@ -1,0 +1,105 @@
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/model/generic-type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/ast/ast-nodes";
+
+public type VTableData struct {
+    llvm::StructType* typeInfoType = nil<llvm::StructType*>
+    llvm::StructType* vTableType = nil<llvm::StructType*>
+    llvm::Constant* typeInfoName = nil<llvm::Constant*>
+    llvm::Constant* typeInfo = nil<llvm::Constant*>
+    llvm::Constant* vTable = nil<llvm::Constant*>
+}
+
+public type StructBase struct {
+    public String name
+    public Vector<GenericType> templateTypes
+    public TypeMapping typeMapping
+    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
+    public Scope* scope = nil<Scope*>
+    public ASTNode* declNode
+    public unsigned long manifestationIndex = 0l
+    public StructBase* genericPreset = nil<StructBase*>
+    public VTableData vTableData
+    public bool used = false
+}
+
+public f<String> StructBase.getSignature() {
+    // ToDo: Implement
+}
+
+/**
+ * Get the signature from the struct name and the concrete template types
+ *
+ * Example:
+ * Pair<int,double>
+ *
+ * @param name Struct name
+ * @param concreteTemplateTypes Concrete template types
+ * @return Signature
+ */
+public f<String> StructBase.getSignature(const String& name, const QualTypeList& concreteTemplateTypes) {
+    String templateTyStr;
+    if !this.concreteTemplateTypes.isEmpty() {
+
+    }
+    // ToDo: Implement
+}
+
+/**
+ * Checks if a struct contains template types.
+ * This would imply that the struct is not substantiated by its generic types yet.
+ *
+ * @return Substantiated generics or not
+ */
+public f<bool> StructBase.hasSubstantiatedGenerics() {
+    foreach const GenericType& genericType : this.templateTypes {
+        if genericType.hasAnyGenericTypes() {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Checks if a struct has generic types present.
+ * This would imply that the struct is not fully substantiated yet.
+ *
+ * @return Fully substantiated or not
+ */
+public f<bool> StructBase.isFullySubstantiated() {
+    return this.hasSubstantiatedGenerics();
+}
+
+/**
+ * Retrieve the template types as vector of symbol types
+ *
+ * @return Template types as vector of symbol types
+ */
+public f<QualTypeList> StructBase.getTemplateTypes() {
+    foreach GenericType& genericType : this.templateTypes {
+        result.pushBack(genericType.qualType);
+    }
+}
+
+/**
+ * Retrieve the declaration code location of this struct
+ *
+ * @return Declaration code location
+ */
+public f<const CodeLoc&> StructBase.getDeclCodeLoc() {
+    return this.declNode.codeLoc;
+}
+
+/**
+ * Returns, if this struct is a substantiation of a generic one.
+ *
+ * @return Generic substantiation or not
+ */
+public f<bool> StructBase.isGenericSubstantiation() {
+    return this.genericPreset != nil<StructBase*>;
+}

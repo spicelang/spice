@@ -5,29 +5,65 @@ import "std/io/cli-parser";
 import "std/io/cli-subcommand";
 import "std/io/cli-option";
 
-/**
- * Representation of the various cli options
- */
-public type CliOptions struct {
-    public String mainSourceFile // e.g. main.spice
-    public String targetTriple   // In format: <arch><sub>-<vendor>-<sys>-<abi>
-    public String targetArch
-    public String targetVendor
-    public String targetOs
-    public bool execute = false
-    public bool isNativeTarget = true
-    public String cacheDir
-    public String outputDir      // Where the object files go. Should always be a temp directory
-    public String outputPath     // Where the output binary goes.
-    public unsigned short compileJobCount = 0s // O for auto
-    public bool ignoreCache = false
-    public bool printDebugOutput = false
+// Constants
+const string TARGET_UNKNOWN = "unknown";
+const string TARGET_WASM32 = "wasm32";
+const string TARGET_WASM64 = "wasm64";
+const string ENV_VAR_DOCKERIZED = "SPICE_DOCKERIZED";
+
+public type OptLevel enum {
+    O0 = 0, // No optimization
+    O1 = 1, // Only basic optimizations
+    O2 = 2, // Default optimization level
+    O3 = 3, // Aggressively optimize for performance
+    Os = 4, // Optimize for code size
+    Oz = 5  // Aggressively optimize for code size
+}
+
+public type BuildMode enum {
+    DEBUG = 0,   // Default build mode, uses -O0 per default
+    RELEASE = 1, // Build without debug information and with -O2 per default
+    TEST = 2     // Build with test main function and always emit assertions
+}
+const string BUILD_MODE_DEBUG = "debug";
+const string BUILD_MODE_RELEASE = "release";
+const string BUILD_MODE_TEST = "test";
+
+public type DumpSettings struct {
     public bool dumpCST = false
     public bool dumpAST = false
     public bool dumpIR = false
     public bool dumpAssembly = false
     public bool dumpSymbolTable = false
-    public short optLevel = 2s // -O0 = 0, -O1 = 1, -O2 = 2, -O3 = 3, -Os = 4, -Oz = 5
+}
+
+/**
+ * Representation of the various cli options
+ */
+public type CliOptions struct {
+    public FilePath mainSourceFile // e.g. main.spice
+    public String targetTriple   // In format: <arch><sub>-<vendor>-<sys>-<abi>
+    public String targetArch = TARGET_UNKNOWN
+    public String targetVendor = TARGET_UNKNOWN
+    public String targetOs = TARGET_UNKNOWN
+    public bool isNativeTarget = true
+    public bool useCPUFeatures = true
+    public bool execute = false
+    public FilePath cacheDir                      // Where the cache files go. Should always be a temp directory
+    public FilePath outputDir                     // Where the object files go. Should always be a temp directory
+    public FilePath outputPath                    // Where the output binary goes.
+    public BuildMode buildMode = BuildMode::DEBUG // Default build mode is debug
+    public unsigned short compileJobCount = 0s    // O for auto
+    public bool ignoreCache = false
+    public String llvmArgs
+    public bool printDebugOutput = false
+    public DumpSettings dumpSettings
+    public bool namesForIRValues = false
+    public OptLevel optLevel = OptLevel::O0 // Default optimization level for debug build mode is O0
+    public bool useLTO = false
+    public bool noEntryFct = false
+    public bool generateTestMain = false
+    public bool staticLinking = false
     public bool generateDebugInfo = false
     public bool disableVerifier = false
     public bool testMode = false
@@ -41,10 +77,11 @@ public type Driver struct {
     public CliOptions cliOptions
     public bool shouldCompile = false
     public bool shouldInstall = false
+    public bool shouldUninstall = false
     public bool shouldExecute = false
 }
 
-public p Driver.create() {
+public p Driver.init() {
     this.cliParser = CliParser("Spice", "Spice programming language");
     this.cliParser.setFooter("(c) Marc Auberer 2021-2024");
 
@@ -58,6 +95,17 @@ public p Driver.create() {
     this.addUninstallSubcommand();
 
     // ToDo: extend
+}
+
+/**
+ * Start the parsing process
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Return code
+ */
+public f<int> Driver.parse(int argc, string[] argv) {
+    return this.cliParser.parse(argc, argv);
 }
 
 /**
@@ -178,25 +226,14 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--ignore-cache", this.cliOptions.ignoreCache, "Force re-compilation of all source files");
 
     // Opt levels
-    //subCmd.addFlag("-O0", [&]() { this.cliOptions.optLevel = 0; }, "Disable optimization for the output executable.");
-    //subCmd.addFlag("-O1", [&]() { this.cliOptions.optLevel = 1; }, "Optimization level 1. Only basic optimization is executed.");
-    //subCmd.addFlag("-O2", [&]() { this.cliOptions.optLevel = 2; }, "Optimization level 2. More advanced optimization is applied.");
-    //subCmd.addFlag("-O3", [&]() { this.cliOptions.optLevel = 3; }, "Optimization level 3. Aggressive optimization for best performance.");
-    //subCmd.addFlag("-Os", [&]() { this.cliOptions.optLevel = 4; }, "Optimization level s. Size optimization for output executable.");
-    //subCmd.addFlag("-Oz", [&]() { this.cliOptions.optLevel = 5; }, "Optimization level z. Aggressive optimization for best size.");
+    //subCmd.addFlag("-O0", [&]() { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
+    //subCmd.addFlag("-O1", [&]() { this.cliOptions.optLevel = OptLevel::O1; }, "Optimization level 1. Only basic optimization is executed.");
+    //subCmd.addFlag("-O2", [&]() { this.cliOptions.optLevel = OptLevel::O2; }, "Optimization level 2. More advanced optimization is applied.");
+    //subCmd.addFlag("-O3", [&]() { this.cliOptions.optLevel = OptLevel::O3; }, "Optimization level 3. Aggressive optimization for best performance.");
+    //subCmd.addFlag("-Os", [&]() { this.cliOptions.optLevel = OptLevel::Os; }, "Optimization level s. Size optimization for output executable.");
+    //subCmd.addFlag("-Oz", [&]() { this.cliOptions.optLevel = OptLevel::Oz; }, "Optimization level z. Aggressive optimization for best size.");
 
     CliOption<string>& fileOption = subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "MainSourceFile");
     fileOption.setRequired();
     fileOption.check(CliOption::EXISTING_FILE);
-}
-
-/**
- * Start the parsing process
- *
- * @param argc Argument count
- * @param argv Argument vector
- * @return Return code
- */
-public f<int> Driver.parse(int argc, string[] argv) {
-    return this.cliParser.parse(argc, argv);
 }

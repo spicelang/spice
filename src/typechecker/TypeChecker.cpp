@@ -2119,8 +2119,8 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
 
-      paramTypes.push_back(param.type);
-      paramList.push_back({param.type, param.isOptional});
+      paramTypes.push_back(param.qualType);
+      paramList.push_back({param.qualType, param.isOptional});
     }
   }
 
@@ -2162,8 +2162,8 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
 
-      paramTypes.push_back(param.type);
-      paramList.push_back({param.type, param.isOptional});
+      paramTypes.push_back(param.qualType);
+      paramList.push_back({param.qualType, param.isOptional});
     }
   }
 
@@ -2205,8 +2205,8 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
 
-      paramTypes.push_back(param.type);
-      paramList.push_back({param.type, param.isOptional});
+      paramTypes.push_back(param.qualType);
+      paramList.push_back({param.qualType, param.isOptional});
     }
   }
 

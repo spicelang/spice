@@ -142,7 +142,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
   // Get parameter types
   for (const Param &param : spiceFunc->paramList) {
     assert(!param.isOptional);
-    paramTypes.push_back(param.type.toLLVMType(sourceFile));
+    paramTypes.push_back(param.qualType.toLLVMType(sourceFile));
   }
 
   // Get function linkage
@@ -233,7 +233,7 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
   // Get parameter types
   for (const Param &param : spiceProc->paramList) {
     assert(!param.isOptional);
-    paramTypes.push_back(param.type.toLLVMType(sourceFile));
+    paramTypes.push_back(param.qualType.toLLVMType(sourceFile));
   }
 
   // Get function linkage

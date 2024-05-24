@@ -101,6 +101,22 @@ void Driver::init() {
 }
 
 /**
+ * Start the parsing process
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Return code
+ */
+int Driver::parse(int argc, char **argv) {
+  try {
+    app.parse(argc, argv);
+    return EXIT_SUCCESS;
+  } catch (const CLI::ParseError &parseError) {
+    return app.exit(parseError);
+  }
+}
+
+/**
  * Initialize the cli options based on the input of the user
  */
 void Driver::enrich() {
@@ -360,22 +376,6 @@ void Driver::ensureNotDockerized() {
   if (envValue != nullptr && std::strcmp(envValue, "true") == 0)
     throw CliError(FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED,
                    "This feature is not supported in a containerized environment. Please use the standalone version of Spice.");
-}
-
-/**
- * Start the parsing process
- *
- * @param argc Argument count
- * @param argv Argument vector
- * @return Return code
- */
-int Driver::parse(int argc, char **argv) {
-  try {
-    app.parse(argc, argv);
-    return EXIT_SUCCESS;
-  } catch (const CLI::ParseError &parseError) {
-    return app.exit(parseError);
-  }
 }
 
 } // namespace spice::compiler

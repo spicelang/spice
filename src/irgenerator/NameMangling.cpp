@@ -72,7 +72,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   // Parameter types
   for (const Param &param : spiceFunc.paramList) {
     assert(!param.isOptional);
-    mangleType(mangledName, param.type);
+    mangleType(mangledName, param.qualType);
   }
   if (spiceFunc.paramList.empty())
     mangledName << "v";
@@ -80,7 +80,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
 #ifndef NDEBUG
   const TypeMapping &typeMapping = spiceFunc.typeMapping;
   const bool returnTypeIsFctOrProc = spiceFunc.returnType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE});
-  const auto paramPredicate = [](const Param &p) { return p.type.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}); };
+  const auto paramPredicate = [](const Param &p) { return p.qualType.getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE}); };
   const bool paramTypeIsFctOrProc = std::ranges::any_of(spiceFunc.paramList, paramPredicate);
   const auto templateTypePredicate = [&](const GenericType &t) {
     return typeMapping.at(t.getSubType()).getBase().isOneOf({TY_FUNCTION, TY_PROCEDURE});

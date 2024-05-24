@@ -1,0 +1,32 @@
+// Std imports
+import "std/data/unordered-map";
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+
+// Constants
+public const string ATTR_CORE_LINKER_FLAG = "core.linker.flag";
+public const string ATTR_CORE_LINUX_LINKER_FLAG = "core.linux.linker.flag";
+public const string ATTR_CORE_WINDOWS_LINKER_FLAG = "core.windows.linker.flag";
+public const string ATTR_CORE_LINKER_ADDITIONAL_SOURCE = "core.linker.additional_source";
+public const string ATTR_CORE_LINKER_DLL = "core.linker.dll";
+public const string ATTR_CORE_COMPILER_MANGLE = "core.compiler.mangle";
+public const string ATTR_CORE_COMPILER_MANGLED_NAME = "core.compiler.mangledName";
+public const string ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION = "core.compiler.alwaysKeepOnNameCollision";
+public const string ATTR_CORE_COMPILER_FIXED_TYPE_ID = "core.compiler.fixedTypeId";
+public const string ATTR_CORE_COMPILER_EMIT_VTABLE = "core.compiler.alwaysEmitVTable";
+public const string ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
+public const string ATTR_CORE_COMPILER_WARNINGS_IGNORE = "core.compiler.warnings.ignore";
+public const string ATTR_TEST = "test";
+public const string ATTR_TEST_NAME = "test.name";
+public const string ATTR_TEST_SKIP = "test.skip";
+public const string ATTR_ASYNC = "async";
+
+// Structs
+type AttrConfigValue struct {
+    unsigned byte target
+    AttrType attrType
+}
+
+// Data
+// ToDo
