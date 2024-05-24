@@ -1,5 +1,5 @@
 // Imports
-import "../util/code-loc";
+import "bootstrap/util/code-loc";
 
 public type ParserErrorType enum {
     PARSING_FAILED,
@@ -42,6 +42,6 @@ f<string> ParserError.getMessagePrefix(const ParserErrorType errorType) {
         case ParserErrorType::INVALID_CHAR_LITERAL: { return "Invalid char literal"; }
         case ParserErrorType::INVALID_ATTR_VALUE_TYPE: { return "Invalid attribute value type"; }
         case ParserErrorType::RESERVED_KEYWORD: { return "Usage of reserved keyword"; }
-        default: { return "Unknown error"; }
+        default: { panic(Error("Unknown error")); }
     }
 }

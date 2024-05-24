@@ -6,14 +6,14 @@ import "std/time/timer";
 import "std/io/filepath";
 
 // Own imports
-import "../global/runtime-module-manager";
-import "../linker/external-linker-interface";
-import "../reader/code-loc";
-import "../util/memory";
-import "../util/block-allocator";
-import "../bindings/llvm/llvm";
-import "../source-file";
-import "../driver";
+import "bootstrap/global/runtime-module-manager";
+import "bootstrap/linker/external-linker-interface";
+import "bootstrap/reader/code-loc";
+import "bootstrap/util/memory";
+import "bootstrap/util/block-allocator";
+import "bootstrap/bindings/llvm/llvm";
+import "bootstrap/source-file";
+import "bootstrap/driver";
 
 // Constants
 public const string MAIN_FILE_NAME = "root";

@@ -1,5 +1,22 @@
+// Std imports
 
+// Own imports
+import "bootstrap/symboltablebuilder/type";
 
 public type QualType struct {
+    const Type* rawType
+    TypeQualifiers qualifiers
+}
 
+public p QualType.ctor(SuperType superType) {
+
+}
+
+public p QualType.ctor(SuperType superType, const String& subType) {
+
+}
+
+public p QualType.ctor(const Type* rawType, TypeQualifiers qualifiers) {
+    this.rawType = rawType;
+    this.qualifiers = qualifiers;
 }

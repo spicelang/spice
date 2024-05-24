@@ -4,7 +4,7 @@ import "std/io/file";
 import "std/os/os";
 
 // Own imports
-import "../reader/code-loc";
+import "bootstrap/reader/code-loc";
 
 public type Reader struct {
     File file

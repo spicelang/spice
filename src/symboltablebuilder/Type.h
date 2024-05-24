@@ -26,10 +26,10 @@ class Type {
 public:
   // Constructors
   explicit Type(SuperType superType);
-  explicit Type(TypeChain typeChain);
   Type(SuperType superType, const std::string &subType);
   Type(SuperType superType, const std::string &subType, uint64_t typeId, const TypeChainElementData &data,
        const QualTypeList &templateTypes);
+  explicit Type(TypeChain typeChain);
 
   // Getters and setters on type parts
   [[nodiscard]] SuperType getSuperType() const;

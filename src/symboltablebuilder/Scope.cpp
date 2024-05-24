@@ -51,6 +51,11 @@ Scope *Scope::copyChildScope(const std::string &oldName, const std::string &newN
   return newScope.get();
 }
 
+/**
+ * Deep copy the current scope and all its children
+ *
+ * @return Deep copy of the current scope
+ */
 std::shared_ptr<Scope> Scope::deepCopyScope() { // NOLINT(misc-no-recursion)
   const std::shared_ptr<Scope> newScope = std::make_shared<Scope>(*this);
   for (const auto &[childName, oldChild] : children) {

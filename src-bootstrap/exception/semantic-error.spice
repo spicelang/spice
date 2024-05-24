@@ -1,6 +1,6 @@
 // Own imports
-import "../ast/ast-nodes";
-import "../reader/code-loc";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/reader/code-loc";
 
 public type SemanticErrorType enum {
     REFERENCED_UNDEFINED_FUNCTION,
@@ -125,6 +125,6 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::STRUCT_AMBIGUITY: { return "Struct ambiguity"; }
         case SemanticErrorType::VARIABLE_DECLARED_TWICE: { return "Multiple declarations of the same variable"; }
         case SemanticErrorType::FUNCTION_DECLARED_TWICE: { return "Multiple declarations of a function/procedure"; }
-        default: { return "Unknown error"; }
+        default: { panic(Error("Unknown error")); }
     }
 }

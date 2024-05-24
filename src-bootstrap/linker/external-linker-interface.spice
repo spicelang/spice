@@ -3,7 +3,7 @@ import "std/data/vector";
 import "std/io/filepath";
 
 // Own imports
-import "../driver";
+import "bootstrap/driver";
 
 public type ExternalLinkerInterface struct {
     CliOptions& cliOptions

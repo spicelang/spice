@@ -2,10 +2,10 @@
 import "std/data/stack";
 
 // Own imports
-import "../compiler-pass";
-import "../lexer/lexer";
-import "../lexer/token";
-import "../ast/ast-nodes";
+import "bootstrap/compiler-pass";
+import "bootstrap/lexer/lexer";
+import "bootstrap/lexer/token";
+import "bootstrap/ast/ast-nodes";
 
 // Generic types
 type T dyn;

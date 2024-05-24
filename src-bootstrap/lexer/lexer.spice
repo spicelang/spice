@@ -4,11 +4,11 @@ import "std/text/format";
 import "std/text/analysis";
 
 // Own imports
-//import "../source-file";
-//import "../compiler-pass";
-import "../lexer/token";
-import "../reader/reader";
-import "../reader/code-loc";
+//import "bootstrap/source-file";
+//import "bootstrap/compiler-pass";
+import "bootstrap/lexer/token";
+import "bootstrap/reader/reader";
+import "bootstrap/reader/code-loc";
 
 public type Lexer struct/* : ICompilerPass*/ {
     //compose CompilerPass compilerPass

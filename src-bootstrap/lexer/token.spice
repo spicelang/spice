@@ -1,5 +1,5 @@
 // Imports
-import "../reader/code-loc";
+import "bootstrap/reader/code-loc";
 
 // Enums
 public type TokenType enum {

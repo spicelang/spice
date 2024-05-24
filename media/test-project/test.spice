@@ -1,14 +1,13 @@
-import "std/io/file";
+import "std/os/env";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/lexer/lexer";
+import "bootstrap/parser/parser";
 
 f<int> main() {
-    string filename = "./test-file.txt";
-    deleteFile(filename); // Ensure that the file is not present in the beginning
-
-    assert !fileExists(filename);
-    assert createFile(filename);
-    assert fileExists(filename);
-    assert deleteFile(filename);
-    assert !fileExists(filename);
-
-    printf("All assertions passed!");
+    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-parser-test/test-file.spice";
+    Lexer lexer = Lexer(filePath.getRaw());
+    Parser parser = Parser(lexer);
+    ASTEntryNode* ast = parser.parse();
+    assert ast != nil<ASTEntryNode*>;
+    printf("All assertions passed!\n");
 }
