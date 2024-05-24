@@ -18,12 +18,12 @@ struct CodeLoc;
 class SymbolTableEntry;
 
 struct Param {
-  QualType type;
+  QualType qualType;
   bool isOptional = false;
 };
 struct NamedParam {
-  const char *name;
-  QualType type;
+  const char *name = nullptr;
+  QualType qualType;
   bool isOptional = false;
 };
 using ParamList = std::vector<Param>;

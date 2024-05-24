@@ -72,7 +72,7 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   // Parameter types
   for (const Param &param : spiceFunc.paramList) {
     assert(!param.isOptional);
-    mangleType(mangledName, param.type);
+    mangleType(mangledName, param.qualType);
   }
   if (spiceFunc.paramList.empty())
     mangledName << "v";

@@ -1,10 +1,8 @@
+// Own imports
 import "bootstrap/global/global-resource-manager";
-
-type ICompilerPass interface {
-    p changeToScope(Scope*, const ScopeType&);
-    p changeToScope(const String&, const ScopeType&);
-    p changeToParentScope(ScopeType);
-}
+import "bootstrap/driver";
+import "bootstrap/source-file";
+import "bootstrap/symboltablebuilder/scope";
 
 type CompilerPass struct {
     GlobalResourceManager& resourceManager
@@ -15,6 +13,51 @@ type CompilerPass struct {
     Scope* currentScope
 }
 
-p CompilerPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
+p CompilerPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile = nil<SourceFile*>) {
+    this.resourceManager = resourceManager;
+    this.cliOptions = resourceManager.cliOptions;
+    this.sourceFile = sourceFile;
+    this.rootScope = sourceFile != nil<SourceFile*> ? sourceFile.globalScope : nil<Scope*>;
+    this.currentScope = this.rootScope;
+}
 
+/**
+ * Change to the passed scope.
+ * For nested scopes in generic functions/procedures it is important to have the right parent for symbol lookups
+ * Therefore, changeToScope sets the children's parent to the old scope to always have the right parent
+ *
+ * @param scope Scope to change to
+ * @param scopeType Expected type of the given scope
+ */
+p CompilerPass.changeToScope(Scope* scope, ScopeType scopeType) {
+    assert scope != nil<Scope*>;
+    assert scope.scopeType == scopeType;
+    assert !script.isGenericScope;
+    // Adjust members of the new scope
+    scope.parent = this.currentScope;
+    scope.symbolTable.parent = &this.currentScope.symbolTable;
+    // Set the scope
+    this.currentScope = scope;
+}
+
+/**
+ * Change to the scope with the given name.
+ *
+ * @param scopeName Name of the scope to change to
+ * @param scopeType Expected type of the given scope
+ */
+p CompilerPass.changeToScope(const String& scopeName, ScopeType scopeType) {
+    assert !scopeName.isEmtpy();
+    this.changeToScope(this.currentScope.getChildScope(scopeName), scopeType);
+}
+
+/**
+ * Change to the parent scope of the current.
+ *
+ * @param oldScopeType Expected type of the scope to leave
+ */
+p CompilerPass.changeToParentScope(ScopeType oldScopeType) {
+    assert this.currentScope.scopeType == oldScopeType;
+    assert this.currentScope.parent != nil<Scope*>;
+    this.currentScope = this.currentScope.parent;
 }

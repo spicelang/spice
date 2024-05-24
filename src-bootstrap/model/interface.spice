@@ -1,0 +1,19 @@
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/model/struct-base";
+import "bootstrap/model/function";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/scope";
+
+public type Interface struct {
+    public compose StructBase structBase
+    Vector<Function*> methods
+}
+
+public p Interface.ctor(const String& name, SymbolTableEntry* entry, Scope* scope, const Vector<Function*>& methods, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
+    this.structBase = StructBase(name, entry, scope, templateTypes, declNode);
+    this.methods = methods;
+}

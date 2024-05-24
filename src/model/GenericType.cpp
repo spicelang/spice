@@ -5,32 +5,32 @@
 namespace spice::compiler {
 
 /**
- * Checks if the given symbol type matches all conditions to get a manifestation of the current generic type
+ * Checks if the given symbol qualType matches all conditions to get a manifestation of the current generic qualType
  *
- * @param type Qualified type to be checked
- * @param ignoreArraySize Ignore the array size for type comparison
- * @param ignoreSpecifiers Ignore the type specifiers for type comparison
+ * @param qualType Qualified qualType to be checked
+ * @param ignoreArraySize Ignore the array size for qualType comparison
+ * @param ignoreSpecifiers Ignore the qualType specifiers for qualType comparison
  * @return True or false
  */
-bool GenericType::checkConditionsOf(const QualType &type, bool ignoreArraySize, bool ignoreSpecifiers) const {
-  return checkTypeConditionOf(type, ignoreArraySize, ignoreSpecifiers);
+bool GenericType::checkConditionsOf(const QualType &qualType, bool ignoreArraySize, bool ignoreSpecifiers) const {
+  return checkTypeConditionOf(qualType, ignoreArraySize, ignoreSpecifiers);
 }
 
 /**
- * Checks if the given symbol type matches all type conditions to get a manifestation of the current generic type
+ * Checks if the given symbol qualType matches all qualType conditions to get a manifestation of the current generic qualType
  *
- * @param type Qualified type to be checked
- * @param ignoreArraySize Ignore the array size for type comparison
- * @param ignoreSpecifiers Ignore the type specifiers for type comparison
+ * @param qualType Qualified qualType to be checked
+ * @param ignoreArraySize Ignore the array size for qualType comparison
+ * @param ignoreSpecifiers Ignore the qualType specifiers for qualType comparison
  * @return True or false
  */
-bool GenericType::checkTypeConditionOf(const QualType &type, bool ignoreArraySize, bool ignoreSpecifiers) const {
-  // Succeed if no type conditions are set
+bool GenericType::checkTypeConditionOf(const QualType &qualType, bool ignoreArraySize, bool ignoreSpecifiers) const {
+  // Succeed if no qualType conditions are set
   if (typeConditions.empty())
     return true;
   // Check type conditions
   return std::ranges::any_of(typeConditions, [&](const QualType &typeCondition) {
-    return typeCondition.is(TY_DYN) || typeCondition.matches(type, ignoreArraySize, ignoreSpecifiers, ignoreSpecifiers);
+    return typeCondition.is(TY_DYN) || typeCondition.matches(qualType, ignoreArraySize, ignoreSpecifiers, ignoreSpecifiers);
   });
 }
 

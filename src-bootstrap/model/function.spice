@@ -2,16 +2,20 @@
 import "std/data/vector";
 import "std/data/map";
 
+// Own imports
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/generic-type";
+
 // Helper structs
 public type Param struct {
-    Type sType
-    bool isOptional
+    QualType qualType
+    bool isOptional = false
 }
 
 public type NamedParam struct {
-    String name
-    Type sType
-    bool isOptional
+    string name = nil<string>
+    QualType qualType
+    bool isOptional = false
 }
 
 // Type aliases
@@ -20,11 +24,11 @@ type NamedParamList alias Vector<NamedParam>;
 
 public type Function struct {
     String name
-    Type thisType
-    Type returnType
-    ParamLits paramList
+    QualType thisType = QualType(SuperType::TY_DYN)
+    QualType returnType = QualType(SuperType::TY_DYN)
+    ParamList paramList
     Vector<GenericType> templateTypes
-    Map<String, Type> typeMapping
+    Map<String, QualType> typeMapping
     SymbolTableEntry* entry
     ASTNode* declNode
     bool genericSubstantiation

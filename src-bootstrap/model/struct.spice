@@ -1,0 +1,35 @@
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/model/struct-base";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/scope";
+
+public type Struct struct {
+    public compose StructBase structBase
+    public QualTypeList fieldTypes
+    public QualTypeList interfaceTypes
+}
+
+public p Struct.ctor(const String& name, SymbolTableEntry* entry, Scope* scope, const QualTypeList& fieldTypes, const Vector<GenericType>& templateTypes, const QualTypeList& interfaceTypes, ASTNode* declNode) {
+    this.structBase = StructBase(name, entry, scope, templateTypes, declNode);
+    this.fieldTypes = fieldTypes;
+    this.interfaceTypes = interfaceTypes;
+}
+
+/**
+ * Checks at least one field is a reference.
+ * This is used to prohibit constant instantiations.
+ *
+ * @return Has reference as field type or not
+ */
+public f<bool> Struct.hasReferenceFields() {
+    foreach const QualType& fieldType : this.fieldTypes {
+        if fieldType.isRef() {
+            return true;
+        }
+    }
+    return false;
+}

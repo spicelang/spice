@@ -1,0 +1,61 @@
+// Std imports
+import "std/data/unordered-map";
+
+// Own imports
+import "bootstrap/symboltablebuilder/qual-type";
+
+// Type aliases
+public type TypeMapping alias UnorderedMap</*typeName=*/String, /*concreteType=*/QualType>;
+
+public type GenericType struct {
+    public compose QualType qualType
+    QualTypeList typeConditions = [QualType(SuperType::TY_DYN)]
+    public bool used = false
+}
+
+public p GenericType.ctor(const QualType& qualType) {
+    this.qualType = qualType;
+}
+
+public p GenericType.ctor(const String& name) {
+    this.qualType = QualType(SuperType::TY_GENERIC, name);
+}
+
+public p GenericType.ctor(const String& name, const QualTypeList& typeConditions) {
+    this.qualType = QualType(SuperType::TY_GENERIC, name);
+    this.typeConditions = typeConditions;
+}
+
+/**
+ * Checks if the given symbol type matches all conditions to get a manifestation of the current generic type
+ *
+ * @param qualType Qualified type to be checked
+ * @param ignoreArraySize Ignore the array size for type comparison
+ * @param ignoreSpecifiers Ignore the type specifiers for type comparison
+ * @return True or false
+ */
+public f<bool> GenericType.checkConditionsOf(const QualTyp& qualType, bool ignoreArraySize = false, bool ignoreSpecifiers = false) {
+    return this.checkTypeConditionOf(qualType, ignoreArraySize, ignoreSpecifiers);
+}
+
+/**
+ * Checks if the given symbol type matches all type conditions to get a manifestation of the current generic type
+ *
+ * @param qualType Qualified type to be checked
+ * @param ignoreArraySize Ignore the array size for type comparison
+ * @param ignoreSpecifiers Ignore the type specifiers for type comparison
+ * @return True or false
+ */
+f<bool> GenericType.checkConditionOf(const QualType& qualType, bool ignoreArraySize, bool ignoreSpecifiers) {
+    // Succeed if no qualType conditions are set
+    if this.typeConditions.isEmpty() {
+        return true;
+    }
+    // Check type conditions
+    foreach const QualType& typeCondition : this.typeConditions {
+        if typeCondition.is(SuperType::TY_DYN) || typeCondition.matches(qualType, ignoreArraySize, ignoreSpecifiers, ignoreSpecifiers) {
+            return true;
+        }
+    }
+    return false;
+}

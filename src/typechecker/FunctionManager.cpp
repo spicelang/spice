@@ -76,7 +76,7 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
   for (const Param &param : baseFunction.paramList) {
     // Check if we have a mandatory parameter
     if (!param.isOptional) {
-      currentFunctionParamTypes.push_back({param.type, /*optional=*/false});
+      currentFunctionParamTypes.push_back({param.qualType, /*optional=*/false});
       continue;
     }
 
@@ -89,7 +89,7 @@ void FunctionManager::substantiateOptionalParams(const Function &baseFunction, s
     }
 
     // Add substantiation with the optional parameter
-    currentFunctionParamTypes.push_back({param.type, /*optional=*/false});
+    currentFunctionParamTypes.push_back({param.qualType, /*optional=*/false});
     manifestation.paramList = currentFunctionParamTypes;
     manifestations.push_back(manifestation);
   }
@@ -421,7 +421,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
   for (size_t i = 0; i < reqArgs.size(); i++) {
     // Retrieve actual and requested types
     assert(!candidateParamList.at(i).isOptional);
-    QualType &candidateParamType = candidateParamList.at(i).type;
+    QualType &candidateParamType = candidateParamList.at(i).qualType;
     const Arg &requestedParamType = reqArgs.at(i);
     const QualType &requestedType = requestedParamType.first;
     const bool isArgTemporary = requestedParamType.second;

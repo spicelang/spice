@@ -31,7 +31,7 @@ std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   if (node->takesArgs) {
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList)
-      paramTypes.push_back(param.type);
+      paramTypes.push_back(param.qualType);
   }
 
   // Prepare type of function
@@ -117,10 +117,10 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList) {
       paramNames.push_back(param.name);
-      paramTypes.push_back(param.type);
-      paramList.push_back({param.type, param.isOptional});
+      paramTypes.push_back(param.qualType);
+      paramList.push_back({param.qualType, param.isOptional});
       // Check if the type is present in the template for generic types
-      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
+      if (!param.qualType.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the function");
     }
@@ -257,10 +257,10 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
     for (const NamedParam &param : namedParamList) {
       paramNames.push_back(param.name);
-      paramTypes.push_back(param.type);
-      paramList.push_back({param.type, param.isOptional});
+      paramTypes.push_back(param.qualType);
+      paramList.push_back({param.qualType, param.isOptional});
       // Check if the type is present in the template for generic types
-      if (!param.type.isCoveredByGenericTypeList(usedGenericTypes))
+      if (!param.qualType.isCoveredByGenericTypeList(usedGenericTypes))
         throw SemanticError(node->paramLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
                             "Generic param type not included in the template type list of the procedure");
     }

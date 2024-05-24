@@ -1,0 +1,8 @@
+// Std imports
+import "bootstrap/data/unordered-map";
+
+// Own imports
+
+public type TypeRegistry struct {
+
+}
