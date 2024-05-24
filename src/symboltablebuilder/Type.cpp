@@ -44,6 +44,7 @@ SuperType Type::getSuperType() const {
  * @return Sub type
  */
 const std::string &Type::getSubType() const {
+  assert(!typeChain.empty());
   assert(isOneOf({TY_STRUCT, TY_INTERFACE, TY_ENUM, TY_GENERIC}));
   return typeChain.back().subType;
 }

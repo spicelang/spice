@@ -1,3 +1,8 @@
+// Std imports
+import "std/data/unordered-map";
+
+// Own imports
+import "bootstrap/util/file-util";
 
 const string STRING_RT_IMPORT_NAME = "__rt_string";
 const string RESULT_RT_IMPORT_NAME = "__rt_result";
@@ -9,8 +14,8 @@ public type RuntimeModule enum {
     STRING_RT = 1,
     RESULT_RT = 2,
     ERROR_RT  = 4,
-    ARRAY_RT  = 8,
-    OBJECT_RT = 16
+    MEMORY_RT  = 8,
+    RTTI_RT = 16
 }
 
 type ModuleNamePair struct {
@@ -59,7 +64,7 @@ public f<bool> RuntimeModuleManager.isModuleAvailable(RuntimeModule requestedMod
 
 public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
     const ModuleNamePair namePair = resolveNamePair(requestedModule);
-    const string filePath = FileUtil::getStdDir() / "runtime" / fileName / ".spice";
+    const string filePath = getStdDir() / "runtime" / fileName / ".spice";
     assert filePath != parentSourceFile.filePath;
 
     // Instruct the global resource manager to create a new source file
@@ -75,17 +80,23 @@ public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceF
 
 public f<ModuleNamePair> RuntimeModuleManager.resolveNamePair(RuntimeModule requestedModule) {
     switch requestedModule {
-        case RuntimeModule::STRING_RT:
+        case RuntimeModule::STRING_RT: {
             return ModuleNamePair{STRING_RT_IMPORT_NAME, "string_rt"};
-        case RuntimeModule::RESULT_RT:
+        }
+        case RuntimeModule::RESULT_RT: {
             return ModuleNamePair{RESULT_RT_IMPORT_NAME, "result_rt"};
-        case RuntimeModule::ERROR_RT:
+        }
+        case RuntimeModule::ERROR_RT: {
             return ModuleNamePair{ERROR_RT_IMPORT_NAME, "error_rt"};
-        case RuntimeModule::ARRAY_RT:
+        }
+        case RuntimeModule::ARRAY_RT: {
             return ModuleNamePair{MEMORY_RT_IMPORT_NAME, "memory_rt"};
-        case RuntimeModule::OBJECT_RT:
+        }
+        case RuntimeModule::OBJECT_RT: {
             return ModuleNamePair{RTTI_RT_IMPORT_NAME, "rtti_rt"};
-        default:
+        }
+        default: {
             panic(Error("Requested unknown runtime module"));
+        }
     }
 }

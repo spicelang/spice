@@ -1,17 +1,164 @@
 // Std imports
+import "std/data/stack";
 
 // Own imports
-
-// Enums
-public type SymbolState enum {
-    DECLARED,
-    INITIALIZED
-}
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/lifecycle";
+import "bootstrap/bindings/llvm/llvm";
 
 public type SymbolTableEntry struct {
-
+    // Public fields
+    public String name
+    public Scope* scope
+    public ASTNode* declNode
+    public unsigned long orderIndex
+    public bool global
+    public bool isVolatile = false
+    public bool isParam = false
+    public bool anonymous = false
+    public bool used = false
+    public bool omitDtorCall = false
+    public bool isImplicitField = false
+    // Private fields
+    QualType qualType
+    Stack<llvm::Value*> memAddress
+    Lifecycle lifecycle
 }
 
-public p SymbolTableEntry.ctor() {
+public p SymbolTableEntry.ctor(const String& name, const QualType& qualType, Scope* scope, ASTNode* declNode, unsigned long orderIndex, bool global) {
+    this.name = name;
+    this.qualType = qualType;
+    this.scope = scope;
+    this.declNode = declNode;
+    this.orderIndex = orderIndex;
+    this.global = global;
+}
 
+/**
+ * Retrieve the qualified type of this symbol
+ *
+ * @return Qualified type of this symbol
+ */
+public f<const QualType&> SymbolTableEntry.getQualType() {
+    return this.qualType;
+}
+
+/**
+ * Update the type of this symbol.
+ *
+ * @param newType New type of the current symbol
+ * @param overwriteExistingType Overwrites the existing type without throwing an error
+ */
+public p SymbolTableEntry.updateType(const QualType& newType, bool overwriteExistingType) {
+    assert overwriteExistingType || qualType.isOneOf([TY_INVALID, TY_DYN]);
+}
+
+/**
+ * Update the state of the current symbol
+ *
+ * @throws SemanticError When trying to re-assign a constant variable
+ * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
+ *
+ * @param newState New state of the current symbol
+ * @param node AST node where the update takes place
+ * @param force Force update. This can only be used compiler-internal
+ */
+public p SymbolTableEntry.updateState(const LifecycleState& newState, ASTNode* node, bool force = false) {
+    const LifecycleState oldState = this.lifecycle.getCurrentState();
+    // Check if this is a constant variable and is already initialized
+    if newState != LifecycleState::DEAD && oldState != LifecycleState::DECLARED && this.qualType.isConst() && !force {
+        // throw internal error
+    }
+    if newState != LifecycleState::DEAD && oldState == LifecycleState::DECLARED {
+        // throw internal error
+    }
+    if newState == LifecycleState::DEAD && oldState == LifecycleState::DEAD {
+        // throw internal error
+    }
+    this.lifecycle.addEvent(LifecycleEvent{newState, node});
+}
+
+/**
+ * Retrieve the code location where the symbol was declared
+ *
+ * @return Declaration code location
+ */
+public f<const CodeLoc &> SymbolTableEntry.getDeclCodeLoc() {
+    return this.declNode.codeLoc;
+}
+
+/**
+ * Retrieve the address of the assigned value
+ *
+ * @return Address of the value in memory
+ */
+public f<llvm::Value*> SymbolTableEntry.getAddress() {
+    return this.memAddress.isEmpty() ? nil<llvm::Value*> : this.memAddress.top();
+}
+
+/**
+ * Update the address of a symbol. This is used to save the allocated address where the symbol lives.
+ *
+ * @param address Address of the symbol in memory
+ */
+public p SymbolTableEntry.updateAddress(llvm::Value* address) {
+    assert address != nil<llvm::Value*>;
+    // Ensure that structs fields get no addresses assigned, as the addresses are meant for the struct instances
+    assert (scope.scopeType != ScopeType::STRUCT && scope.scopeType != ScopeType::INTERFACE) || qualType.isOneOf([TY_FUNCTION, TY_PROCEDURE]);
+    if this.memAddress.isEmpty() {
+        this.memAddress.push(address);
+    } else {
+        this.memAddress.top() = address;
+    }
+}
+
+/**
+ * Push a new address to the stack
+ *
+ * @param address Address to push
+ */
+public p SymbolTableEntry.pushAddress(llvm::Value* address) {
+    assert address != nil<llvm::Value*>;
+    this.memAddress.push(address);
+}
+
+/**
+ * Remove the last address from the stack
+ */
+public p SymbolTableEntry.popAddress() {
+    assert !this.memAddress.isEmpty();
+    this.memAddress.pop();
+}
+
+/**
+ * Check if this symbol is a struct field
+ *
+ * @return Struct field or not
+ */
+public f<bool> SymbolTableEntry.isField() {
+    return this.scope.scopeType == ScopeType::STRUCT && orderIndex < this.scope.getFieldCount();
+}
+
+/**
+ * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.
+ *
+ * Example:
+ * {
+ *   "name": "testIden",
+ *   "type": "int[]*",
+ *   "orderIndex": 4,
+ *   "state": "initialized",
+ *   "specifiers: [
+ *     "const": true,
+ *     "signed": false
+ *   ],
+ *   "isGlobal": false,
+ *   "isVolatile": false
+ * }
+ *
+ * @return Symbol table entry as a JSON object
+ */
+public f<String> SymbolTableEntry.toJSON() {
+    return String();
 }

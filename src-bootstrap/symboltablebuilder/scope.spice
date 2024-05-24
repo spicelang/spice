@@ -1,8 +1,9 @@
 // Std imports
-import "std/data/map";
+import "std/data/unordered-map";
 
 // Own imports
-//import "../reader/code-loc";
+import "bootstrap/reader/code-loc";
+//import "bootstrap/source-file";
 
 type ScopeType enum {
     GLOBAL,
@@ -44,16 +45,17 @@ type Scope struct {
     public Scope* parent
     public SourceFile* sourceFile
     public Map<String, Scope> children
-    public ScopeType scopeType
     public SymbolTable symbolTable
     public CodeLoc* codeLoc = nil<CodeLoc*>
+    public ScopeType scopeType
     public bool isGenericScope = false
+    public bool isAsyncScope = false
     public bool isDtorScope = false
     // Private members
     FunctionRegistry functions
     StructRegistry structs
     InterfaceRegistry interfaces
-    Map<String, GenericType> genericTypes
+    UnorderedMap<String, GenericType> genericTypes
 }
 
 p Scope.ctor(Scope* parent, SourceFile* sourceFile, ScopeType scopeType, const CodeLoc *codeLoc) {
@@ -69,11 +71,11 @@ p Scope.ctor(Scope* parent, SourceFile* sourceFile, ScopeType scopeType, const C
  *
  * @param scopeName Name of the child scope
  * @param scopeType Type of the child scope
- * @param codeLoc Code location of the scope
+ * @param declCodeLoc Code location of the scope
  * @return Child scope (heap allocated)
  */
-f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc *codeLoc) {
-    children[scopeName] = Scope(this, sourceFile, scopeType, codeLoc);
+f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
+    children[scopeName] = Scope(this, sourceFile, scopeType, declCodeLoc);
     return &children[scopeName];
 }
 
@@ -85,7 +87,7 @@ f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, c
  * @param newName New name of the child table
  */
 p Scope.renameChildScope(const String& oldName, const String& newName) {
-    assert children.constains(oldName) && !children.contains(newName);
+    assert children.contains(oldName) && !children.contains(newName);
     children[newName] = children[oldName];
     children.erase(oldName);
 }
@@ -105,7 +107,67 @@ p Scope.copyChildScope(const String& oldName, const String& newName) {
     children[newName] = newScope;
 }
 
+/**
+ * Deep copy the current scope and all its children
+ *
+ * @return Deep copy of the current scope
+ */
 f<heap Scope*> Scope.deepCopyScope() {
     const heap Scope* newScope; // ToDo: Extend
     return newScope;
+}
+
+/**
+ * Get a child scope of the current scope by its name
+ *
+ * @param scopeName Child scope name
+ * @return Child scope
+ */
+f<Scope*> Scope.getChildScope(const String& scopeName) {
+    if this.children.isEmpty() && this.children.contains(scopeName) {
+        return this.children.get(scopeName);
+    }
+    return nil<Scope*>;
+}
+
+/**
+ * Retrieve all variables in the current scope, that have reached the end of their lifetime at the end of this scope
+ *
+ * @return Collection of EOL variables
+ */
+f<Vector<SymbolTableEntry*>> Scope.getVarsGoingOutOfScope() {
+    assert this.parent != nil<Scope*>; // Should not be called in root scope
+    Vector<SymbolTableEntry*> varsGoingOutOfScope;
+
+    // Collect all variables in this scope
+    foreach const Pair<String, SymbolTableEntry*> symbol : this.symbolTable.symbols {
+        const String& name = symbol.getFirst();
+        const SymbolTableEntry* entry = symbol.getSecond();
+        // Skip 'this' and result variables
+        if name == THIS_VARIABLE_NAME || name == RETURN_VARIABLE_NAME {
+            continue;
+        }
+        // Skip parameters (ToDo: Remove when copy constructors work for by-value argument passing)
+        if entry.isParam {
+            continue;
+        }
+        // Found variable, that goes out of scope
+        varsGoingOutOfScope.push(&this.symbolTable.symbols.get(name));
+    }
+
+    // If this is the scope of a dtor, also return all fields of the struct
+    if this.isDtorScope {
+        assert this.parent != nil<Scope*> && this.parent.scopeType == ScopeType::STRUCT;
+        // Get all fields of the struct
+        foreach const Pair<String, SymbolTableEntry*> field : paren.symbolTable.symbols {
+            const String& name = symbol.getFirst();
+            const SymbolTableEntry* entry = symbol.getSecond();
+            const QualType& qualType = entry.getQualType();
+            if !qualType.isOneOf([TY_FUNCTION, TY_PROCEDURE]) {
+                varsGoingOutOfScope.push(&field.getSecond());
+            }
+        }
+    }
+
+    return varsGoingOutOfScope;
 }

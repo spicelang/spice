@@ -1,5 +1,5 @@
 // Own imports
-import "../util/code-loc";
+import "bootstrap/util/code-loc";
 
 public type LinkerErrorType enum {
     LINKER_NOT_FOUND,
@@ -31,6 +31,6 @@ f<string> LinkerError.getMessagePrefix(const LinkerErrorType errorType) {
     switch errorType {
         case LinkerErrorType::LINKER_NOT_FOUND: { return "Linker not found"; }
         case LinkerErrorType::LINKER_ERROR: { return "Linker error occurred"; }
-        default: { return "Unknown error"; }
+        default: { panic(Error("Unknown error")); }
     }
 }

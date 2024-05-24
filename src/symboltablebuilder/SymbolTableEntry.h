@@ -29,8 +29,7 @@ union CompileTimeValue;
 class SymbolTableEntry {
 public:
   // Constructors
-  SymbolTableEntry(std::string name, const QualType &qualType, Scope *scope, ASTNode *declNode, size_t orderIndex,
-                   const bool global)
+  SymbolTableEntry(std::string name, const QualType &qualType, Scope *scope, ASTNode *declNode, size_t orderIndex, bool global)
       : name(std::move(name)), scope(scope), declNode(declNode), orderIndex(orderIndex), global(global), qualType(qualType){};
 
   // Public methods

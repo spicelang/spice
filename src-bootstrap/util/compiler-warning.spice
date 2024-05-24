@@ -1,5 +1,5 @@
 // Own imports
-import "../reader/code-loc";
+import "bootstrap/reader/code-loc";
 
 public type CompilerWarningType enum {
     UNUSED_FUNCTION,
@@ -86,6 +86,6 @@ f<string> CompilerWarning.getMessagePrefix(const CompilerWarningType warningType
         case CompilerWarningType::ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION: { return "Lambda violates async lambda capture rule"; }
         case CompilerWarningType::UNINSTALL_FAILED: { return "Uninstall failed"; }
         case CompilerWarningType::VERIFIER_DISABLED: { return "Verifier disabled"; }
-        default: { return "Unknown warning"; }
+        default: { panic(Error("Unknown warning")); }
     }
 }

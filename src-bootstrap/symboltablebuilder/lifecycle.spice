@@ -1,0 +1,92 @@
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+
+type LifecycleState enum {
+    DEAD,
+    DECLARED,
+    INITIALIZED
+}
+
+/**
+ * A lifecycle event represents one change of a symbol in time.
+ * It keeps track of the state of the symbol at that point of time and the event issuer AST node.
+ */
+type LifecycleEvent struct {
+    LifecycleState state
+    ASTNode* issuer
+}
+
+/**
+ * A lifecycle represents a collection of timely events that occur for a symbol.
+ *
+ * Usually a lifecycle looks e.g. like this:
+ * - dead
+ * - declared
+ * - initialized
+ * - dead
+ */
+type Lifecycle struct {
+    Vector<LifecycleEvent> events
+}
+
+/**
+ * Add an event to the lifecycle
+ *
+ * @param event New lifecycle event
+ */
+public p Lifecycle.addEvent(const LifecycleEvent& event) {
+    this.events.pushBack(event);
+}
+
+/**
+ * Retrieve the current state of a symbol
+ *
+ * @return Current state
+ */
+public f<LifecycleState> Lifecycle.getCurrentState() {
+    if (this.events.isEmpty()) { return LifecycleState::DEAD; }
+    return this.events.back().state;
+}
+
+/**
+ * Retrieve the name of the  current state of a symbol
+ *
+ * @return Current state name
+ */
+public f<string> Lifecycle.getCurrentStateName() {
+    switch (this.getCurrentState()) {
+        case LifecycleState::DECLARED: { return "declared"; }
+        case LifecycleState::INITIALIZED: { return "initialized"; }
+        default: { return "dead"; }
+    }
+}
+
+/**
+ * Check if the symbol is dead
+ *
+ * @return Dead or not
+ */
+public f<bool> Lifecycle.isDead() {
+    return this.getCurrentState() == LifecycleState::DEAD;
+}
+
+/**
+ * Check if the symbol is declared
+ *
+ * @return Declared or not
+ */
+public f<bool> Lifecycle.isDeclared() {
+    return this.getCurrentState() == LifecycleState::DECLARED;
+}
+
+/**
+ * Check if the symbol is initialized
+ *
+ * @return Initialized or not
+ */
+public f<bool> Lifecycle.isInitialized() {
+    return this.getCurrentState() == LifecycleState::INITIALIZED;
+}

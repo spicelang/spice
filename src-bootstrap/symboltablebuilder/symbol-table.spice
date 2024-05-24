@@ -3,14 +3,14 @@ import "std/data/map";
 import "std/data/vector";
 
 // Own imports
-import "../ast/ast-nodes";
-import "../symboltablebuilder/type";
-import "../symboltablebuilder/symbol-table-entry";
-import "../symboltablebuilder/type-specifiers";
-import "../model/capture";
-import "../model/generic-type";
-import "../model/function";
-import "../model/interface";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/symboltablebuilder/type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/type-specifiers";
+import "bootstrap/model/capture";
+import "bootstrap/model/generic-type";
+import "bootstrap/model/function";
+import "bootstrap/model/interface";
 
 public type ScopeType enum {
     GLOBAL,
