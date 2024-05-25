@@ -512,7 +512,7 @@ void SourceFile::concludeCompilation() {
     dumpOutput(compilerOutput.typesString, "Type Registry", "type-registry.out");
 
   // Print warning if verifier is disabled
-  if (parent == nullptr && cliOptions.disableVerifier) {
+  if (isMainFile && cliOptions.disableVerifier) {
     const std::string warningMessage =
         CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.")
             .warningMessage;
@@ -693,7 +693,7 @@ void SourceFile::collectAndPrintWarnings() { // NOLINT(misc-no-recursion)
 }
 
 const SourceFile *SourceFile::getRootSourceFile() const { // NOLINT(misc-no-recursion)
-  return parent == nullptr ? this : parent->getRootSourceFile();
+  return isMainFile ? this : parent->getRootSourceFile();
 }
 
 bool SourceFile::isRT(RuntimeModule runtimeModule) const {
@@ -762,7 +762,7 @@ void SourceFile::dumpOutput(const std::string &content, const std::string &capti
 }
 
 void SourceFile::visualizerPreamble(std::stringstream &output) const {
-  if (parent == nullptr)
+  if (isMainFile)
     output << "digraph {\n rankdir=\"TB\";\n";
   else
     output << "subgraph {\n";
