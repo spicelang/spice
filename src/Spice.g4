@@ -9,7 +9,7 @@ functionDef: topLevelDefAttr? specifierLst? F LESS dataType GREATER fctName (LES
 procedureDef: topLevelDefAttr? specifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst;
 fctName: (TYPE_IDENTIFIER DOT)? IDENTIFIER | OPERATOR overloadableOp;
 structDef: topLevelDefAttr? specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE;
-interfaceDef: topLevelDefAttr? specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature+ RBRACE;
+interfaceDef: topLevelDefAttr? specifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature* RBRACE;
 enumDef: specifierLst? TYPE TYPE_IDENTIFIER ENUM LBRACE enumItemLst RBRACE;
 genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON;
 aliasDef: specifierLst? TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON;
