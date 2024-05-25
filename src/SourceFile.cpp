@@ -619,7 +619,8 @@ bool SourceFile::isAlreadyImported(const std::string &filePathSearch, // NOLINT(
   if (std::filesystem::equivalent(filePath, filePathSearch))
     return true;
   // Check parent recursively
-  return parent != nullptr && parent->isAlreadyImported(filePathSearch, circle);
+  const auto pred = [&](const SourceFile *d) { return d->isAlreadyImported(filePathSearch, circle); }; // NOLINT(*-no-recursion)
+  return std::ranges::any_of(dependants, pred);
 }
 
 SourceFile *SourceFile::requestRuntimeModule(RuntimeModule runtimeModule) {

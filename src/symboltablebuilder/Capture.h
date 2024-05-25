@@ -10,7 +10,7 @@
 
 namespace spice::compiler {
 
-enum CaptureMode : uint8_t {
+enum CapturePassMode : uint8_t {
   BY_VALUE,
   BY_REFERENCE,
 };
@@ -28,16 +28,16 @@ public:
   // Public methods
   [[nodiscard]] std::string getName() const;
   void setAccessType(CaptureAccessType captureAccessType);
-  [[nodiscard]] CaptureMode getMode() const;
+  [[nodiscard]] CapturePassMode getMode() const;
   [[nodiscard]] nlohmann::ordered_json toJSON() const;
 
   // Public members
-  SymbolTableEntry *capturedEntry;
+  SymbolTableEntry *capturedSymbol;
 
 private:
   // Members
   CaptureAccessType accessType = READ_ONLY;
-  CaptureMode captureMode = BY_VALUE;
+  CapturePassMode captureMode = BY_VALUE;
 };
 
 } // namespace spice::compiler

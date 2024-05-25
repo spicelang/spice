@@ -180,13 +180,13 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
   std::vector<SymbolTableEntry *> fieldEntries;
   QualTypeList fieldSymbolTypes;
   for (const auto &[_, capture] : captures) {
-    QualType captureType = capture.capturedEntry->getQualType();
+    QualType captureType = capture.capturedSymbol->getQualType();
 
     // Capture by reference
     if (capture.getMode() == BY_REFERENCE)
       captureType = captureType.toRef(node);
 
-    fieldEntries.push_back(capture.capturedEntry);
+    fieldEntries.push_back(capture.capturedSymbol);
     fieldSymbolTypes.push_back(captureType);
     fieldTypes.push_back(captureType.toLLVMType(irGenerator->sourceFile));
   }

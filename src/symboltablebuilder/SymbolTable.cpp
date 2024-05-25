@@ -124,7 +124,7 @@ SymbolTableEntry *SymbolTable::lookupStrict(const std::string &name) {
     return &symbols.at(name);
   // Check if a capture with this name exists in this scope
   if (captures.contains(name))
-    return captures.at(name).capturedEntry;
+    return captures.at(name).capturedSymbol;
   // Otherwise, return a nullptr
   return nullptr;
 }

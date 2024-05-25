@@ -106,7 +106,7 @@ bool CommonUtil::isValidMangledName(const std::string &mangledName) {
 /**
  * Generate a circular import message from the given source files
  *
- * @param sourceFiles Source files building the circular dependency chain
+ * @param sourceFiles Source files that form the circular dependency chain
  * @return Error message
  */
 std::string CommonUtil::getCircularImportMessage(const std::vector<const SourceFile *> &sourceFiles) {
