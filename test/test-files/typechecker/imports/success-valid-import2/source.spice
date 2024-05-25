@@ -1,0 +1,8 @@
+import "source1";
+
+f<int> main() {
+    TestStruct ts;
+    TestInterface ti;
+    TestEnum te;
+    TestAlias ta;
+}

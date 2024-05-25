@@ -1,4 +1,10 @@
-import "std/os/env";
+import "test2";
+
+f<int> main() {
+    TestAlias ta;
+}
+
+/*import "std/os/env";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/lexer/lexer";
 import "bootstrap/parser/parser";
@@ -10,4 +16,4 @@ f<int> main() {
     ASTEntryNode* ast = parser.parse();
     assert ast != nil<ASTEntryNode*>;
     printf("All assertions passed!\n");
-}
+}*/

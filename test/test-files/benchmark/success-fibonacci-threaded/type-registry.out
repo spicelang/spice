@@ -5,6 +5,7 @@ Error*
 Pthread_attr_t
 Pthread_attr_t&
 Pthread_attr_t*
+Pthread_t
 Thread
 Thread
 Thread&
@@ -26,7 +27,6 @@ f<long>()
 import
 int
 invalid
-long
 long
 long*
 p()

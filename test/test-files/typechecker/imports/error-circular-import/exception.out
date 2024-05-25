@@ -3,11 +3,11 @@ Circular import detected: Circular import detected while importing 'source.spice
 
 *-----*
 |     |
-|  source2.spice
+|  source.spice
 |     |
 |  source1.spice
 |     |
-|  source.spice
+|  source2.spice
 |     |
 *-----*
 

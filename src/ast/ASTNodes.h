@@ -472,6 +472,7 @@ public:
   TypeSpecifiers aliasSpecifiers = TypeSpecifiers::of(TY_ALIAS);
   std::string aliasName;
   std::string dataTypeString;
+  uint64_t typeId;
   SymbolTableEntry *entry = nullptr;
   SymbolTableEntry *aliasedTypeContainerEntry = nullptr;
 };

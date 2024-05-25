@@ -1,0 +1,11 @@
+public type TestStruct struct {}
+
+public type TestInterface interface {}
+
+public type TestEnum enum {
+    A,
+    B,
+    C
+}
+
+public type TestAlias alias TestStruct*;

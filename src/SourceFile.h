@@ -100,7 +100,7 @@ struct CompilerOutput {
 
 struct NameRegistryEntry {
   std::string name;
-  uint64_t typeId; // Set for structs, interfaces and enums
+  uint64_t typeId; // Set for structs, interfaces, enums and aliases
   SymbolTableEntry *targetEntry;
   Scope *targetScope;
   SymbolTableEntry *importEntry = nullptr;

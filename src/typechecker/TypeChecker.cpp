@@ -2392,18 +2392,6 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     return node->setEvaluatedSymbolType(symbolType, manIdx);
   }
 
-  // Check if it is a type alias
-  SymbolTableEntry *aliasEntry = rootScope->lookupStrict(firstFragment);
-  if (!isImported && aliasEntry && aliasEntry->getQualType().is(TY_ALIAS)) {
-    // Set alias entry used
-    aliasEntry->used = true;
-    // Get type of aliased type container entry
-    const std::string aliasedContainerEntryName = aliasEntry->name + ALIAS_CONTAINER_SUFFIX;
-    SymbolTableEntry *aliasedTypeContainerEntry = rootScope->lookupStrict(aliasedContainerEntryName);
-    assert(aliasedTypeContainerEntry != nullptr);
-    return node->setEvaluatedSymbolType(aliasedTypeContainerEntry->getQualType(), manIdx);
-  }
-
   // Check if the type exists in the exported names registry
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqTypeName);
   if (!registryEntry)
@@ -2411,6 +2399,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *entry = registryEntry->targetEntry;
   assert(entry != nullptr);
+  entry->used = true;
   localAccessScope = registryEntry->targetScope->parent;
 
   // Get struct type
@@ -2465,6 +2454,14 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     }
 
     return node->setEvaluatedSymbolType(entryType, manIdx);
+  }
+
+  if (entryType.is(TY_ALIAS)) {
+    // Get type of aliased type container entry
+    const std::string aliasedContainerEntryName = entry->name + ALIAS_CONTAINER_SUFFIX;
+    SymbolTableEntry *aliasedTypeContainerEntry = entry->scope->lookupStrict(aliasedContainerEntryName);
+    assert(aliasedTypeContainerEntry != nullptr);
+    return node->setEvaluatedSymbolType(aliasedTypeContainerEntry->getQualType(), manIdx);
   }
 
   const bool isInvalid = entryType.is(TY_INVALID);

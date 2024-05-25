@@ -338,6 +338,8 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
 
   // Add the alias to the symbol table
   node->entry = rootScope->insert(node->aliasName, node);
+  // Register the name in the exported name registry
+  sourceFile->addNameRegistryEntry(node->aliasName, node->typeId, node->entry, rootScope, true);
 
   // Add another symbol for the aliased type container
   const std::string aliasedTypeContainerName = node->aliasName + ALIAS_CONTAINER_SUFFIX;

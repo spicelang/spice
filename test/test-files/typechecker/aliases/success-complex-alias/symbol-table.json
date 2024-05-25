@@ -300,7 +300,7 @@
       "name": "Alias",
       "orderIndex": 2,
       "state": "declared",
-      "type": "TestStruct<long>"
+      "type": "Alias"
     },
     {
       "codeLoc": "L3C1",
