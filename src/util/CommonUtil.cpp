@@ -109,16 +109,22 @@ bool CommonUtil::isValidMangledName(const std::string &mangledName) {
  * @param sourceFiles Source files that form the circular dependency chain
  * @return Error message
  */
-std::string CommonUtil::getCircularImportMessage(const std::vector<const SourceFile *> &sourceFiles) {
+std::string CommonUtil::getCircularImportMessage(std::stack<const SourceFile *> &sourceFiles) {
+  // Reverse the stack to print source files in the correct order
+  std::stack<const char *> sourceFileNames;
+  while (!sourceFiles.empty()) {
+    sourceFileNames.push(sourceFiles.top()->fileName.c_str());
+    sourceFiles.pop();
+  }
+
   std::stringstream message;
   message << "*-----*\n";
   message << "|     |\n";
-  for (size_t i = 0; i < sourceFiles.size(); i++) {
-    if (i != 0)
-      message << "|     |\n";
-    message << "|  " << sourceFiles.at(i)->fileName.c_str() << "\n";
+  while (!sourceFileNames.empty()) {
+    message << "|  " << sourceFileNames.top() << "\n";
+    message << "|     |\n";
+    sourceFileNames.pop();
   }
-  message << "|     |\n";
   message << "*-----*";
   return message.str();
 }
