@@ -6,18 +6,18 @@ import "bootstrap/symboltablebuilder/scope";
 
 type CompilerPass struct {
     GlobalResourceManager& resourceManager
-    const CliOptions& cliOptions
+    CliOptions& cliOptions
     SourceFile* sourceFile
-    Scope* rootScope
-    unsigned long manIdx = 0
-    Scope* currentScope
+    heap Scope* rootScope
+    unsigned long manIdx = 0l
+    heap Scope* currentScope
 }
 
 p CompilerPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile = nil<SourceFile*>) {
     this.resourceManager = resourceManager;
     this.cliOptions = resourceManager.cliOptions;
     this.sourceFile = sourceFile;
-    this.rootScope = sourceFile != nil<SourceFile*> ? sourceFile.globalScope : nil<Scope*>;
+    this.rootScope = sourceFile != nil<SourceFile*> ? sourceFile.globalScope : nil<heap Scope*>;
     this.currentScope = this.rootScope;
 }
 

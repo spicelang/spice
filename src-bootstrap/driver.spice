@@ -4,6 +4,7 @@ import "std/os/cmd";
 import "std/io/cli-parser";
 import "std/io/cli-subcommand";
 import "std/io/cli-option";
+import "std/io/filepath";
 
 // Constants
 const string TARGET_UNKNOWN = "unknown";
@@ -43,9 +44,9 @@ public type DumpSettings struct {
 public type CliOptions struct {
     public FilePath mainSourceFile // e.g. main.spice
     public String targetTriple   // In format: <arch><sub>-<vendor>-<sys>-<abi>
-    public String targetArch = TARGET_UNKNOWN
-    public String targetVendor = TARGET_UNKNOWN
-    public String targetOs = TARGET_UNKNOWN
+    public String targetArch = String(TARGET_UNKNOWN)
+    public String targetVendor = String(TARGET_UNKNOWN)
+    public String targetOs = String(TARGET_UNKNOWN)
     public bool isNativeTarget = true
     public bool useCPUFeatures = true
     public bool execute = false

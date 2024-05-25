@@ -8,17 +8,17 @@ import "bootstrap/reader/code-loc";
 
 public type Reader struct {
     File file
-    string filename
+    FilePath filePath
     char curChar = '\0'
     CodeLoc curCodeLoc
 }
 
-public p Reader.ctor(string inputFileName) {
-    this.filename = inputFileName;
-    this.curCodeLoc = CodeLoc(1l, 0l, inputFileName);
+public p Reader.ctor(const FilePath& inputPath) {
+    this.filePath = inputPath;
+    this.curCodeLoc = CodeLoc(1l, 0l, inputPath.toString());
 
     // Open the file input stream
-    Result<File> result = openFile(inputFileName, MODE_READ);
+    Result<File> result = openFile(inputPath.toString(), MODE_READ);
     if !result.isOk() {
         panic(Error("Source file cannot be opened"));
     }

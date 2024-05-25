@@ -1,0 +1,22 @@
+// Std imports
+import "std/io/filepath";
+
+// Own imports
+import "bootstrap/source-file";
+
+public type CacheManager struct {
+    const FilePath &cacheDir
+}
+
+public p CacheManager.ctor(const FilePath &cacheDir) {
+    this.cacheDir = cacheDir;
+}
+
+public f<bool> CacheManager.lookupSourceFile(SourceFile* sourceFile) {
+    // ToDo: Implement
+    return false;
+}
+
+public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
+    // ToDo: Implement
+}

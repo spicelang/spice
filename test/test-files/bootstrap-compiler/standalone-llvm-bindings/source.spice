@@ -14,7 +14,7 @@ f<int> main() {
     llvm::Module module = llvm::Module("test", context);
     module.setDataLayout(targetMachine.createDataLayout());
     //module.setTargetTriple(targetTriple); // This emits target dependent information in the IR, which is not what we want here.
-    llvm::Builder builder = llvm::Builder(context);
+    llvm::IRBuilder builder = llvm::IRBuilder(context);
 
     llvm::Type returnType = builder.getInt32Ty();
     Vector<llvm::Type> argTypes;

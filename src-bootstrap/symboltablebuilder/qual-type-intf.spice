@@ -1,0 +1,7 @@
+// Std imports
+import "std/data/vector";
+
+public type IQualType interface {}
+
+// Type aliases
+public type QualTypeList alias Vector<IQualType>;

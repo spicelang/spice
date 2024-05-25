@@ -1,0 +1,191 @@
+// Own imports
+import "bootstrap/symboltablebuilder/type-chain";
+
+// Constants
+const unsigned short BIT_INDEX_COMPOSITION = 0s;
+const unsigned short BIT_INDEX_INLINE = 1s;
+const unsigned short BIT_INDEX_PUBLIC = 2s;
+const unsigned short BIT_INDEX_HEAP = 3s;
+const unsigned short BIT_INDEX_UNSIGNED = 4s;
+const unsigned short BIT_INDEX_SIGNED = 5s;
+const unsigned short BIT_INDEX_CONST = 6s;
+const unsigned short BIT_INDEX_MAX = 6s; // Please adjust if something changes above
+
+public type TypeQualifiers struct {
+    bool isConst = false
+    bool isSigned = false
+    bool isUnsigned = false
+    bool isHeap = false
+    bool isPublic = false
+    bool isInline = false
+    bool isComposition = false
+}
+
+public p TypeQualifiers.ctor() {}
+
+public p TypeQualifiers.ctor(bool isConst, bool isSigned, bool isUnsigned, bool isHeap) {
+    this.isConst = isConst;
+    this.isSigned = isSigned;
+    this.isUnsigned = isUnsigned;
+    this.isHeap = isHeap;
+}
+
+public f<TypeQualifiers> getTypeQualifiersOf(unsigned short superType) {
+    switch superType {
+        case SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG: {
+            return TypeQualifiers{
+                /*isConst=*/false,
+                /*isSigned*/false,
+                /*isUnsigned*/false,
+                /*isHeap*/false,
+                /*isPublic*/false,
+                /*isInline*/false,
+                /*isComposition*/false
+            };
+        }
+        case SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_STRING, SuperType::TY_BOOL, SuperType::TY_PTR, SuperType::TY_REF, SuperType::TY_ARRAY, SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE: {
+            return TypeQualifiers{
+                /*isConst=*/false,
+                /*isSigned*/false,
+                /*isUnsigned*/true,
+                /*isHeap*/false,
+                /*isPublic*/false,
+                /*isInline*/false,
+                /*isComposition*/false
+            };
+        }
+        case SuperType::TY_GENERIC: {
+            // Generics must be non-signed and non-unsigned at the same time to ensure a proper function matching
+            return TypeQualifiers{
+                /*isConst=*/false,
+                /*isSigned*/false,
+                /*isUnsigned*/false,
+                /*isHeap*/false,
+                /*isPublic*/false,
+                /*isInline*/false,
+                /*isComposition*/false
+            };
+        }
+        case SuperType::TY_ENUM, SuperType::TY_ALIAS, SuperType::TY_IMPORT: {
+            return TypeQualifiers{
+                /*isConst=*/true,
+                /*isSigned*/false,
+                /*isUnsigned*/true,
+                /*isHeap*/false,
+                /*isPublic*/false,
+                /*isInline*/false,
+                /*isComposition*/false
+            };
+        }
+        case SuperType::TY_DYN, SuperType::TY_INVALID, SuperType::TY_UNRESOLVED: {
+            return TypeQualifiers{
+                /*isConst=*/false,
+                /*isSigned*/false,
+                /*isUnsigned*/false,
+                /*isHeap*/false,
+                /*isPublic*/false,
+                /*isInline*/false,
+                /*isComposition*/false
+            };
+        }
+        default: {
+            panic(Error("Symbol qualifier fallthrough"));
+        }
+    }
+}
+
+/**
+ * Merge two sets of type qualifiers. If possible, prefer the opposite of the default of the super type
+ *
+ * @param other Other TypeQualifiers object
+ * @return Merged specifiers object
+ */
+public f<TypeQualifiers> TypeQualifiers.merge(const TypeQualifiers& other) {
+    result = TypeQualifiers();
+    const bool isGeneric = !this.getBit(BIT_INDEX_SIGNED) && !this.getBit(BIT_INDEX_UNSIGNED);
+    for unsigned short i = 0s; i < BIT_INDEX_MAX; i++ {
+        const bool x = this.getBit(i);
+        const bool y = other.getBit(i);
+
+        if i == BIT_INDEX_SIGNED || i == BIT_INDEX_UNSIGNED {
+            result.setBit(i, isGeneric ? y : x);
+        } else {
+            result.setBit(i, x | y);
+        }
+    }
+}
+
+/**
+ * Check if two sets of type qualifiers match
+ *
+ * @param otherQualifiers The rhs qualifiers
+ * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
+ * @return Matching or not
+ */
+public f<bool> TypeQualifiers.match(TypeQualifiers otherQualifiers, bool allowConstify) {
+    const TypeQualifiers thisQualifiers = *this;
+
+    // If allowConstify is enabled, only allow to match lhs=const and rhs=non-const
+    if allowConstify && thisQualifiers.isConst && !otherQualifiers.isConst {
+        otherSpecifiers.isConst = true;
+    }
+
+    // Check if qualifiers are equal
+    return thisQualifiers == otherQualifiers;
+}
+
+/**
+ * Erase all qualifiers that are set in the mask. This is used in type matching.
+ *
+ * @param mask Bitmask to erase with
+ */
+public p TypeQualifiers.eraseWithMask(const TypeQualifiers& mask) {
+    // Zero out all bits that are set in the mask
+    for unsigned short i = 0s; i < BIT_INDEX_MAX; i++ {
+        if mask.getBit(i) {
+            // Zero out the bit
+            this.setBit(i, false);
+
+            // If we set the signed/unsigned bit to zero, we need to set the other to one
+              if i == BIT_INDEX_SIGNED {
+                this.setBit(BIT_INDEX_UNSIGNED, true);
+              } else if i == BIT_INDEX_UNSIGNED {
+                this.setBit(BIT_INDEX_SIGNED, true);
+              }
+        }
+    }
+}
+
+public p operator==(const TypeQualifiers& lhs, const TypeQualifiers& rhs) {
+    const bool isConst = lhs.isConst == rhs.isConst;
+    const bool isSigned = lhs.isSigned == rhs.isSigned;
+    const bool isUnsigned = lhs.isUnsigned == rhs.isUnsigned;
+    const bool isHeap = lhs.isHeap == rhs.isHeap;
+    return isConst && isSigned && isUnsigned && isHeap;
+}
+
+f<bool> TypeQualifiers.getBit(unsigned short index) {
+    switch index {
+        case BIT_INDEX_CONST: { return this.isConst; }
+        case BIT_INDEX_SIGNED: { return this.isSigned; }
+        case BIT_INDEX_UNSIGNED: { return this.isUnsigned; }
+        case BIT_INDEX_HEAP: { return this.isHeap; }
+        case BIT_INDEX_PUBLIC: { return this.isPublic; }
+        case BIT_INDEX_INLINE: { return this.isInline; }
+        case BIT_INDEX_COMPOSITION: { return this.isComposition; }
+        default: { panic(Error("Bit index fallthrough")); }
+    }
+}
+
+p TypeQualifiers.setBit(unsigned short index, bool value) {
+    switch index {
+        case BIT_INDEX_CONST: { this.isConst = value; }
+        case BIT_INDEX_SIGNED: { this.isSigned = value; }
+        case BIT_INDEX_UNSIGNED: { this.isUnsigned = value; }
+        case BIT_INDEX_HEAP: { this.isHeap = value; }
+        case BIT_INDEX_PUBLIC: { this.isPublic = value; }
+        case BIT_INDEX_INLINE: { this.isInline = value; }
+        case BIT_INDEX_COMPOSITION: { this.isComposition = value; }
+        default: { panic(Error("Bit index fallthrough")); }
+    }
+}

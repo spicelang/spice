@@ -9,9 +9,10 @@ type CommonLLVMTypes struct {
     llvm::StructType fatPtrType
 }
 
-public type IRGenerator struct/* : ICompilerPass*/ {
-    llvm::Context& context
-    llvm::Builder& builder
+public type IRGenerator struct {
+    compose CompilerPass compilerPass
+    llvm::LLVMContext& context
+    llvm::IRBuilder& builder
     llvm::Module* module
     //OpRuleConversionManager conversionManager
     //StdFunctionManager stdFunctionManager

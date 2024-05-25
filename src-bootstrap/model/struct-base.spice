@@ -2,10 +2,13 @@
 import "std/data/vector";
 
 // Own imports
-import "bootstrap/model/generic-type";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/ast/ast-nodes";
+import "bootstrap/reader/code-loc";
+import "bootstrap/model/generic-type";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/bindings/llvm/llvm" as llvm;
 
 public type VTableData struct {
     llvm::StructType* typeInfoType = nil<llvm::StructType*>
@@ -20,7 +23,7 @@ public type StructBase struct {
     public Vector<GenericType> templateTypes
     public TypeMapping typeMapping
     public SymbolTableEntry* entry = nil<SymbolTableEntry*>
-    public Scope* scope = nil<Scope*>
+    public IScope* scope = nil<IScope*>
     public ASTNode* declNode
     public unsigned long manifestationIndex = 0l
     public StructBase* genericPreset = nil<StructBase*>
@@ -28,8 +31,17 @@ public type StructBase struct {
     public bool used = false
 }
 
+public p StructBase.ctor(const String& name, SymbolTableEntry* entry, IScope* scope, const Vector<GenericType>& templateTypes, ASTNode* declNode) {
+    this.name = name;
+    this.entry = entry;
+    this.scope = scope;
+    this.templateTypes = templateTypes;
+    this.declNode = declNode;
+}
+
 public f<String> StructBase.getSignature() {
     // ToDo: Implement
+    return String();
 }
 
 /**
@@ -48,6 +60,7 @@ public f<String> StructBase.getSignature(const String& name, const QualTypeList&
 
     }
     // ToDo: Implement
+    return String();
 }
 
 /**
@@ -81,6 +94,7 @@ public f<bool> StructBase.isFullySubstantiated() {
  * @return Template types as vector of symbol types
  */
 public f<QualTypeList> StructBase.getTemplateTypes() {
+    result = QualTypeList();
     foreach GenericType& genericType : this.templateTypes {
         result.pushBack(genericType.qualType);
     }

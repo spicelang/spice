@@ -1,0 +1,14 @@
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/reader/code-loc";
+
+public type SoftError struct {
+    CodeLoc codeLoc
+    String message
+}
+
+public type ErrorManager struct {
+    Vector<SoftError> softErrors
+}

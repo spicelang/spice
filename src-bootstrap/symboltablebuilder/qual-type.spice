@@ -1,9 +1,13 @@
 // Std imports
+import "std/data/vector";
 
 // Own imports
+import "bootstrap/symboltablebuilder/qual-type-intf";
 import "bootstrap/symboltablebuilder/type";
+import "bootstrap/symboltablebuilder/type-chain";
+import "bootstrap/symboltablebuilder/type-qualifiers";
 
-public type QualType struct {
+public type QualType struct : IQualType {
     const Type* rawType
     TypeQualifiers qualifiers
 }
@@ -20,3 +24,5 @@ public p QualType.ctor(const Type* rawType, TypeQualifiers qualifiers) {
     this.rawType = rawType;
     this.qualifiers = qualifiers;
 }
+
+public type QualTypeList alias Vector<QualType>;

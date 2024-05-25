@@ -120,6 +120,7 @@ public f<String> File.readLine() {
 /**
  * Writes a single character to the file.
  *
+ * @param value Character to write
  * @return True if successful, false if not
  */
 public f<bool> File.write(char value) {
@@ -129,6 +130,7 @@ public f<bool> File.write(char value) {
 /**
  * Writes a string to the file.
  *
+ * @param value String to write
  * @return True if successful, false if not
  */
 public f<bool> File.write(string value) {
@@ -138,6 +140,7 @@ public f<bool> File.write(string value) {
 /**
  * Writes a string to the file.
  *
+ * @param value String to write
  * @return True if successful, false if not
  */
 public f<bool> File.write(String value) {
@@ -173,6 +176,7 @@ public inline f<bool> File.isEOF() {
 /**
  * Creates an empty file on disk similar to the 'touch' command on Linux.
  *
+ * @param path Path to the file
  * @return True if successful, false if not
  */
 public f<bool> createFile(string path) {
@@ -184,6 +188,8 @@ public f<bool> createFile(string path) {
 /**
  * Changes the permissions of a file.
  *
+ * @param path Path to the file
+ * @param mode New permissions
  * @return True if successful, false if not
  */
 public f<bool> changeFilePermissions(string path, short mode) {
@@ -193,6 +199,7 @@ public f<bool> changeFilePermissions(string path, short mode) {
 /**
  * Deletes a file from disk.
  *
+ * @param path Path to the file
  * @return True if successful, false if not
  */
 public f<bool> deleteFile(string path) {
@@ -206,6 +213,8 @@ public f<bool> deleteFile(string path) {
  * MODE_READ, MODE_WRITE, MODE_APPEND,
  * MODE_READ_WRITE, MODE_READ_WRITE_OVERWRITE, MODE_READ_WRITE_APPEND
  *
+ * @param path Path to the file
+ * @param mode Mode to open the file in
  * @return File pointer
  */
 public f<Result<File>> openFile(string path, string mode = MODE_READ) {
@@ -217,6 +226,7 @@ public f<Result<File>> openFile(string path, string mode = MODE_READ) {
 /**
  * Reads a whole file from a given path.
  *
+ * @param path Path to the file
  * @return Content in form of a string
  */
 public f<Result<String>> readFile(string path) {
@@ -241,6 +251,8 @@ public f<Result<String>> readFile(string path) {
 /**
  * Writes a string to a file at a given path.
  *
+ * @param path Path to the file
+ * @param content Content to write
  * @return True if successful, false if not
  */
 public f<Result<bool>> writeFile(string path, string content) {
@@ -261,6 +273,7 @@ public f<Result<bool>> writeFile(string path, string content) {
 /**
  * Returns the size of the file at the given paths in bytes.
  *
+ * @param path Path to the file
  * @return File size in bytes
  */
 public f<Result<unsigned long>> getFileSize(string path) {
@@ -281,6 +294,7 @@ public f<Result<unsigned long>> getFileSize(string path) {
 /**
  * Checks if a file exists. The function also returns true if the specified path points to a directory.
  *
+ * @param path Path to the file
  * @return Existing / not existing
  */
 public f<bool> fileExists(string path) {
@@ -290,6 +304,7 @@ public f<bool> fileExists(string path) {
 /**
  * Checks if the read permissions to a file are given.
  *
+ * @param path Path to the file
  * @return Readable / not readable
  */
 public f<bool> isFileReadable(string path) {
@@ -299,6 +314,7 @@ public f<bool> isFileReadable(string path) {
 /**
  * Checks if the write permissions to a file are given.
  *
+ * @param path Path to the file
  * @return Writable / not writable
  */
 public f<bool> isFileWritable(string path) {
@@ -308,6 +324,7 @@ public f<bool> isFileWritable(string path) {
 /**
  * Checks if the execute permissions to a file are given.
  *
+ * @param path Path to the file
  * @return Executable / not executable
  */
 public f<bool> isFileExecutable(string path) {

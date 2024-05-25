@@ -1,0 +1,77 @@
+// Own imports
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+
+public type CapturePassMode enum {
+    BY_VALUE,
+    BY_REFERENCE
+}
+
+public type CaptureAccessType enum {
+    READ_ONLY,
+    READ_WRITE
+}
+
+public type Capture struct {
+    SymbolTableEntry* capturedSymbol
+    CaptureAccessType accessType = CaptureAccessType::READ_ONLY
+    CapturePassMode captureMode = CapturePassMode::BY_VALUE
+}
+
+public p Capture.ctor(SymbolTableEntry* capturedSymbol) {
+    this.capturedSymbol = capturedSymbol;
+    // Set the capture mode depending on the symbol type
+    // All types with guaranteed size <= 64 bit are captured by value, all others by reference.
+    const QualType capturedType = capturedSymbol.getQualType();
+    const bool canBeOver64Bit = capturedType.isOneOf([SuperType::TY_STRUCT, SuperType::TY_INTERFACE]);
+    this.captureMode = canBeOver64Bit ? CapturePassMode::BY_REFERENCE : CapturePassMode::BY_VALUE;
+}
+
+/**
+ * Retrieve the name of the capture
+ *
+ * @return Capture name or symbol name if no capture name was set
+ */
+public f<String> Capture.getName() {
+    return this.capturedSymbol.name;
+}
+
+/**
+ * Set the access type of this capture.
+ * Possible values are READ_ONLY and READ_WRITE
+ *
+ * @param captureAccessType Capture access type
+ */
+public p Capture.setAccessType(CaptureAccessType captureAccessType) {
+    this.accessType = captureAccessType;
+    // If we write to the captured symbol, we need to set the symbol to be a reference
+    if captureAccessType == CaptureAccessType::READ_WRITE {
+        this.captureMode = CapturePassMode::BY_REFERENCE;
+    }
+}
+
+/**
+ * Retrieve the mode of this capture.
+ * Possible values are BY_VALUE and BY_REFERENCE
+ *
+ * @return Capture mode
+ */
+public f<CapturePassMode> Capture.getMode() {
+    return this.captureMode;
+}
+
+/**
+ * Stringify the current capture to a human-readable form. Used to dump whole symbol tables with their contents.
+ *
+ * Example:
+ * {
+ *   "name": "testIdentifier",
+ *   "accessType": "READ_ONLY",
+ *   "mode": "BY_VALUE"
+ * }
+ *
+ * @return Capture as a JSON object
+ */
+public f<String> Capture.toString() {
+    // ToDo: Implement this
+    return String();
+}

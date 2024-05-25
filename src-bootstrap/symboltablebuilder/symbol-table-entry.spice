@@ -3,14 +3,16 @@ import "std/data/stack";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
-import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/lifecycle";
-import "bootstrap/bindings/llvm/llvm";
+import "bootstrap/reader/code-loc";
+import "bootstrap/bindings/llvm/llvm" as llvm;
 
 public type SymbolTableEntry struct {
     // Public fields
     public String name
-    public Scope* scope
+    public IScope* scope
     public ASTNode* declNode
     public unsigned long orderIndex
     public bool global
@@ -26,7 +28,7 @@ public type SymbolTableEntry struct {
     Lifecycle lifecycle
 }
 
-public p SymbolTableEntry.ctor(const String& name, const QualType& qualType, Scope* scope, ASTNode* declNode, unsigned long orderIndex, bool global) {
+public p SymbolTableEntry.ctor(const String& name, const QualType& qualType, IScope* scope, ASTNode* declNode, unsigned long orderIndex, bool global) {
     this.name = name;
     this.qualType = qualType;
     this.scope = scope;

@@ -1,0 +1,7 @@
+// Std imports
+
+// Own imports
+
+public type ISourceFile interface {
+
+}

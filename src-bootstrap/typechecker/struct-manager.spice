@@ -1,0 +1,10 @@
+// Std imports
+import "std/data/map";
+import "std/data/unordered-map";
+
+// Own imports
+import "bootstrap/model/struct";
+
+// Type aliases
+public type StructManifestationList alias UnorderedMap</*mangledName=*/String, Struct>;
+public type StructRegistry alias Map</*structId=*/String, /*manifestationList=*/StructManifestationList>;
