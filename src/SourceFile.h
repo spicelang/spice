@@ -147,7 +147,7 @@ public:
   // Public methods
   void addDependency(SourceFile *sourceFile, const ASTNode *declNode, const std::string &dependencyName, const std::string &path);
   [[nodiscard]] bool imports(const SourceFile *sourceFile) const;
-  [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch, std::vector<const SourceFile *> &circle) const;
+  [[nodiscard]] bool isAlreadyImported(const std::string &filePathSearch, std::stack<const SourceFile *> &circle) const;
   SourceFile *requestRuntimeModule(RuntimeModule runtimeModule);
   bool isRuntimeModuleAvailable(RuntimeModule runtimeModule) const;
   void addNameRegistryEntry(const std::string &symbolName, uint64_t typeId, SymbolTableEntry *entry, Scope *scope,
