@@ -1900,10 +1900,11 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
 
     // Retrieve field entry
     SymbolTableEntry *fieldEntry = structScope->lookupStrict(identifier);
-    if (!fieldEntry)
+    if (!fieldEntry) {
+      const std::string name = data.thisType.getBase().getName(false, true);
       SOFT_ERROR_BOOL(node, ACCESS_TO_NON_EXISTING_MEMBER,
-                      "The type " + data.thisType.getBase().getName(false) + " does not have a member with the name '" +
-                          identifier + "'")
+                      "The type '" + name + "' does not have a member with the name '" + identifier + "'")
+    }
     if (!fieldEntry->getQualType().getBase().isOneOf({TY_STRUCT, TY_INTERFACE}))
       SOFT_ERROR_BOOL(node, INVALID_MEMBER_ACCESS,
                       "Cannot call a method on '" + identifier + "', since it is no struct or interface")
@@ -2519,7 +2520,7 @@ bool TypeChecker::checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const Lambd
 
   // Check for the capture rules
   const Capture &capture = captures.begin()->second;
-  if (captures.size() > 1 || !capture.capturedEntry->getQualType().isPtr() || capture.getMode() != BY_VALUE) {
+  if (captures.size() > 1 || !capture.capturedSymbol->getQualType().isPtr() || capture.getMode() != BY_VALUE) {
     const char *warningMessage =
         "Async lambdas can only capture one pointer by value without storing captures in the caller stack frame, which can lead "
         "to bugs due to references, outliving the validity scope of the referenced variable.";

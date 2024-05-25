@@ -544,7 +544,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Pop capture addresses
   if (hasCaptures)
     for (const auto &[_, capture] : captures)
-      capture.capturedEntry->popAddress();
+      capture.capturedSymbol->popAddress();
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
@@ -686,7 +686,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
   // Pop capture addresses
   if (hasCaptures)
     for (const auto &[_, capture] : captures)
-      capture.capturedEntry->popAddress();
+      capture.capturedSymbol->popAddress();
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
@@ -828,7 +828,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Pop capture addresses
   if (hasCaptures)
     for (const std::pair<const std::string, Capture> &capture : captures)
-      capture.second.capturedEntry->popAddress();
+      capture.second.capturedSymbol->popAddress();
 
   // Conclude debug info for function
   diGenerator.concludeFunctionDebugInfo();
@@ -873,16 +873,16 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
       assert(captures.size() == 1);
       const Capture &capture = captures.begin()->second;
       if (capture.getMode() == BY_VALUE) {
-        llvm::Type *varType = capture.capturedEntry->getQualType().toLLVMType(sourceFile);
-        capturesPtr = insertLoad(varType, capture.capturedEntry->getAddress());
+        llvm::Type *varType = capture.capturedSymbol->getQualType().toLLVMType(sourceFile);
+        capturesPtr = insertLoad(varType, capture.capturedSymbol->getAddress());
       } else {
-        capturesPtr = capture.capturedEntry->getAddress();
+        capturesPtr = capture.capturedSymbol->getAddress();
       }
     } else {
       capturesPtr = insertAlloca(capturesStructType, CAPTURES_PARAM_NAME);
       size_t captureIdx = 0;
       for (const auto &[_, capture] : bodyScope->symbolTable.captures) {
-        const SymbolTableEntry *capturedEntry = capture.capturedEntry;
+        const SymbolTableEntry *capturedEntry = capture.capturedSymbol;
         // Get address or value of captured variable, depending on the capturing mode
         llvm::Value *capturedValue = capturedEntry->getAddress();
         assert(capturedValue != nullptr);
@@ -917,14 +917,14 @@ llvm::Type *IRGenerator::buildCapturesContainerType(const CaptureMap &captures) 
 
   // If we have only one capture that is a ptr, we can just use that ptr type
   const Capture &capture = captures.begin()->second;
-  if (captures.size() == 1 && (capture.capturedEntry->getQualType().isPtr() || capture.getMode() == BY_REFERENCE))
+  if (captures.size() == 1 && (capture.capturedSymbol->getQualType().isPtr() || capture.getMode() == BY_REFERENCE))
     return builder.getPtrTy();
 
   // Create captures struct type
   std::vector<llvm::Type *> captureTypes;
   for (const auto &[_, c] : captures) {
     if (c.getMode() == BY_VALUE)
-      captureTypes.push_back(c.capturedEntry->getQualType().toLLVMType(sourceFile));
+      captureTypes.push_back(c.capturedSymbol->getQualType().toLLVMType(sourceFile));
     else
       captureTypes.push_back(builder.getPtrTy());
   }
@@ -935,10 +935,10 @@ void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llv
   assert(!captures.empty());
   // If we have only one capture that is a ptr, we can just load the ptr
   const Capture &capture = captures.begin()->second;
-  if (captures.size() == 1 && (capture.capturedEntry->getQualType().isPtr() || capture.getMode() == BY_REFERENCE)) {
+  if (captures.size() == 1 && (capture.capturedSymbol->getQualType().isPtr() || capture.getMode() == BY_REFERENCE)) {
     // Interpret capturesPtr as ptr to the first and only capture
     llvm::Value *captureAddress = val;
-    capture.capturedEntry->pushAddress(captureAddress);
+    capture.capturedSymbol->pushAddress(captureAddress);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(capture.getName(), captureAddress);
   } else {
@@ -949,7 +949,7 @@ void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llv
     for (const auto &[name, c] : captures) {
       const std::string valueName = c.getMode() == BY_REFERENCE ? name + ".addr" : name;
       llvm::Value *captureAddress = insertStructGEP(structType, capturesPtr, captureIdx, valueName);
-      c.capturedEntry->pushAddress(captureAddress);
+      c.capturedSymbol->pushAddress(captureAddress);
       // Generate debug info
       diGenerator.generateLocalVarDebugInfo(c.getName(), captureAddress);
       captureIdx++;

@@ -4,7 +4,7 @@
 
 namespace spice::compiler {
 
-Capture::Capture(SymbolTableEntry *entry) : capturedEntry(entry) {
+Capture::Capture(SymbolTableEntry *entry) : capturedSymbol(entry) {
   // Set the capture mode depending on the symbol type
   // All types with guaranteed size <= 64 bit are captured by value, all others by reference.
   captureMode = entry->getQualType().isOneOf({TY_STRUCT, TY_INTERFACE}) ? BY_REFERENCE : BY_VALUE;
@@ -15,7 +15,7 @@ Capture::Capture(SymbolTableEntry *entry) : capturedEntry(entry) {
  *
  * @return Capture name or symbol name if no capture name was set
  */
-std::string Capture::getName() const { return capturedEntry->name; }
+std::string Capture::getName() const { return capturedSymbol->name; }
 
 /**
  * Set the access type of this capture.
@@ -36,7 +36,7 @@ void Capture::setAccessType(CaptureAccessType captureAccessType) {
  *
  * @return Capture mode
  */
-CaptureMode Capture::getMode() const { return captureMode; }
+CapturePassMode Capture::getMode() const { return captureMode; }
 
 /**
  * Stringify the current capture to a human-readable form. Used to dump whole symbol tables with their contents.
@@ -52,7 +52,7 @@ CaptureMode Capture::getMode() const { return captureMode; }
  */
 nlohmann::ordered_json Capture::toJSON() const {
   nlohmann::json result;
-  result["name"] = capturedEntry->name;
+  result["name"] = capturedSymbol->name;
   result["accessType"] = accessType == READ_ONLY ? "READ_ONLY" : "READ_WRITE";
   result["mode"] = captureMode == BY_VALUE ? "BY_VALUE" : "BY_REFERENCE";
   return result;

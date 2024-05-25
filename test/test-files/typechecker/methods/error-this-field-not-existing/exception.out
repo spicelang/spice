@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:9:5:
-Access to non-existing member: The type TestStruct does not have a member with the name 'nonExisting'
+Access to non-existing member: The type 'TestStruct' does not have a member with the name 'nonExisting'
 
 9  ts.f3.f3.nonExisting.testFunc();
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
