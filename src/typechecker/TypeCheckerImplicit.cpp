@@ -81,6 +81,7 @@ void TypeChecker::createDefaultCtorIfRequired(const Struct &spiceStruct, Scope *
   bool hasFieldsToConstruct = false;
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
+    assert(fieldSymbol != nullptr);
     const QualType &thisType = fieldSymbol->getQualType();
 
     // Abort if we have a field, that is a reference

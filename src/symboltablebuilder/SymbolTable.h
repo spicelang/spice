@@ -22,7 +22,7 @@ class Type;
 struct CodeLoc;
 
 using CaptureMap = std::unordered_map<std::string /*name*/, Capture /*capture*/>;
-using SymbolMap = std::unordered_map<std::string /*name*/, SymbolTableEntry /*symbol table entry*/>;
+using SymbolMap = std::unordered_map<std::string /*name*/, SymbolTableEntry /*entry*/>;
 
 /**
  * Class for storing information about symbols of the program.
@@ -38,8 +38,8 @@ public:
   friend class Scope;
 
   // Public methods
-  SymbolTableEntry *insert(const std::string &name, ASTNode *declNode);
-  SymbolTableEntry *insertAnonymous(const QualType &type, ASTNode *declNode, size_t numericSuffix = 0);
+  SymbolTableEntry *insert(const std::string &name, ASTNode *declNode, bool isAnonymousSymbol = false);
+  SymbolTableEntry *insertAnonymous(const QualType &qualType, ASTNode *declNode, size_t numericSuffix = 0);
   SymbolTableEntry *copySymbol(const std::string &originalName, const std::string &newName);
   SymbolTableEntry *lookup(const std::string &symbolName);
   SymbolTableEntry *lookupStrict(const std::string &symbolName);

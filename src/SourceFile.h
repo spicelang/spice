@@ -6,14 +6,6 @@
 #include <string>
 #include <utility>
 
-// Ignore some warnings in ANTLR generated code
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#include <SpiceLexer.h>
-#include <SpiceParser.h>
-#include <Token.h>
-#pragma GCC diagnostic pop
-
 #include <ast/ASTNodes.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <global/RuntimeModuleManager.h>
@@ -25,6 +17,14 @@
 
 #include "../lib/thread-pool/thread-pool-utils.hpp"
 #include "../lib/thread-pool/thread-pool.hpp"
+
+// Ignore some warnings in ANTLR generated code
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+#include <SpiceLexer.h>
+#include <SpiceParser.h>
+#include <Token.h>
+#pragma GCC diagnostic pop
 
 namespace spice::compiler {
 

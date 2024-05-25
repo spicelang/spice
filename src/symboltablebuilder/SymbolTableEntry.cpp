@@ -37,7 +37,7 @@ void SymbolTableEntry::updateType(const QualType &newType, [[maybe_unused]] bool
  * @param node AST node where the update takes place
  * @param force Force update. This can only be used compiler-internal
  */
-void SymbolTableEntry::updateState(const LifecycleState &newState, ASTNode *node, bool force) {
+void SymbolTableEntry::updateState(const LifecycleState &newState, const ASTNode *node, bool force) {
   const LifecycleState oldState = lifecycle.getCurrentState();
   // Check if this is a constant variable and is already initialized
   if (newState != DEAD && oldState != DECLARED && qualType.isConst() && !force)                   // GCOV_EXCL_LINE
@@ -102,7 +102,9 @@ void SymbolTableEntry::popAddress() {
  *
  * @return Struct field or not
  */
-bool SymbolTableEntry::isField() const { return scope->type == ScopeType::STRUCT && orderIndex < scope->getFieldCount(); }
+bool SymbolTableEntry::isField() const {
+  return scope->type == ScopeType::STRUCT && orderIndex < scope->getFieldCount() && !anonymous;
+}
 
 /**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.

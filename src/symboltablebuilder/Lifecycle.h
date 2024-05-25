@@ -23,7 +23,7 @@ enum LifecycleState : uint8_t {
  */
 struct LifecycleEvent {
   LifecycleState state;
-  ASTNode *issuer;
+  const ASTNode *issuer;
 };
 
 /**

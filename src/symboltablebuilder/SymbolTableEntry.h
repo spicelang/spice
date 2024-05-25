@@ -35,7 +35,7 @@ public:
   // Public methods
   [[nodiscard]] const QualType &getQualType() const;
   void updateType(const QualType &newType, bool overwriteExistingType);
-  void updateState(const LifecycleState &newState, ASTNode *node, bool force = false);
+  void updateState(const LifecycleState &newState, const ASTNode *node, bool force = false);
   [[nodiscard]] const CodeLoc &getDeclCodeLoc() const;
   [[nodiscard]] virtual llvm::Value *getAddress() const;
   void updateAddress(llvm::Value *address);
