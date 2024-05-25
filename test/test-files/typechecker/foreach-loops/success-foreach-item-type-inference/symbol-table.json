@@ -353,7 +353,7 @@
               "isGlobal": false,
               "isVolatile": false,
               "name": "anon.L30C24",
-              "orderIndex": 1,
+              "orderIndex": 18446744073709551615,
               "state": "initialized",
               "type": "MockIterator<short>"
             },

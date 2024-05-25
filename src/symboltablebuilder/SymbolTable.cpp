@@ -18,9 +18,11 @@ namespace spice::compiler {
  * @param declNode AST node where the symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode) {
-  bool isGlobal = parent == nullptr;
-  size_t orderIndex = symbols.size();
+SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode, bool isAnonymousSymbol) {
+  const bool isGlobal = parent == nullptr;
+  size_t orderIndex = SIZE_MAX;
+  if (!isAnonymousSymbol)
+    orderIndex = std::ranges::count_if(symbols, [](const auto &entry) { return !entry.second.anonymous; });
   // Insert into symbols map. The type is 'dyn', because concrete types are determined by the type checker later on
   symbols.insert({name, SymbolTableEntry(name, QualType(TY_INVALID), scope, declNode, orderIndex, isGlobal)});
   // Set entry to declared
@@ -40,11 +42,11 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
  * Insert a new anonymous symbol into the current symbol table.
  * The anonymous symbol will be identified via the definition code location
  *
- * @param type Type of the symbol
+ * @param qualType Type of the symbol
  * @param declNode AST node where the anonymous symbol is declared
  * @return Inserted entry
  */
-SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &type, ASTNode *declNode, size_t numericSuffix) {
+SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &qualType, ASTNode *declNode, size_t numericSuffix) {
   // Check if the anonymous entry already exists
   if (SymbolTableEntry *anonSymbol = lookupAnonymous(declNode->codeLoc, numericSuffix))
     return anonSymbol;
@@ -53,8 +55,8 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &type, ASTNode *de
   name << "anon." << declNode->codeLoc.toString();
   if (numericSuffix > 0)
     name << "." << std::to_string(numericSuffix);
-  SymbolTableEntry *anonSymbol = insert(name.str(), declNode);
-  anonSymbol->updateType(type, false);
+  SymbolTableEntry *anonSymbol = insert(name.str(), declNode, true);
+  anonSymbol->updateType(qualType, false);
   anonSymbol->updateState(DECLARED, declNode);
   anonSymbol->updateState(INITIALIZED, declNode);
   anonSymbol->anonymous = true;
@@ -67,6 +69,7 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &type, ASTNode *de
  *
  * @param originalName Original symbol name
  * @param newName New symbol name
+ * @return Copied entry
  */
 SymbolTableEntry *SymbolTable::copySymbol(const std::string &originalName, const std::string &newName) {
   SymbolTableEntry *entryToCopy = lookupStrict(originalName);
@@ -106,7 +109,6 @@ SymbolTableEntry *SymbolTable::lookup(const std::string &name) { // NOLINT(misc-
       captures.insert({name, Capture(entry)});
     }
   }
-
   return entry;
 }
 

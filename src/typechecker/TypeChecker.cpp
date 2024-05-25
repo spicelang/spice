@@ -1378,7 +1378,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     const QualType memberType = memberEntry->getQualType();
 
     // Check for insufficient visibility
-    if (structScope->isImportedBy(rootScope) && !memberEntry->getQualType().isPublic())
+    if (structScope->isImportedBy(rootScope) && !memberEntry->getQualType().getBase().isPublic())
       SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Cannot access field '" + fieldName + "' due to its private visibility")
 
     // Set field to used
