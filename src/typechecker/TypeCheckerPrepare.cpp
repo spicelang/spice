@@ -566,9 +566,8 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
   assert(node->entry != nullptr && node->aliasedTypeContainerEntry != nullptr);
 
   // Update type of alias entry
-  QualType aliasType(TY_ALIAS, node->dataTypeString);
-  aliasType.setSpecifiers(node->aliasSpecifiers);
-  node->entry->updateType(aliasType, false);
+  const Type *type = TypeRegistry::getOrInsert(TY_ALIAS, node->aliasName, node->typeId, {}, {});
+  node->entry->updateType(QualType(type, node->aliasSpecifiers), false);
 
   // Update type of the aliased type container entry
   auto aliasedType = std::any_cast<QualType>(visit(node->dataType()));

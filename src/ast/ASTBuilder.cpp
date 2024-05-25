@@ -192,6 +192,7 @@ std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
   // Enrich
   aliasDefNode->aliasName = getIdentifier(ctx->TYPE_IDENTIFIER());
   aliasDefNode->dataTypeString = ctx->dataType()->getText();
+  aliasDefNode->typeId = resourceManager.getNextCustomTypeId();
 
   // Visit children
   visitChildren(ctx);

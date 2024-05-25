@@ -1,3 +1,1 @@
-public f<int> functionInModuleB(int x, int y) {
-  return x + y;
-}
+public type TestAlias alias int;
