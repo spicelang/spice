@@ -1791,7 +1791,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   return ExprResult{node->setEvaluatedSymbolType(returnType, manIdx), anonymousSymbol};
 }
 
-bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, const std::string &fqFunctionName) {
+bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, std::string fqFunctionName) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Check if this is a ctor call to the String type
@@ -1802,6 +1802,14 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
     for (const auto &[fctName, runtimeModule] : FCT_NAME_TO_RT_MODULE_MAPPING)
       if (fqFunctionName == fctName && !sourceFile->isRT(runtimeModule))
         sourceFile->requestRuntimeModule(runtimeModule);
+  }
+
+  // Check if the type is generic (possible in case of ctor call)
+  const QualType *genericType = rootScope->lookupGenericType(fqFunctionName);
+  if (genericType && typeMapping.contains(fqFunctionName)) {
+    const QualType &replacementType = typeMapping.at(fqFunctionName);
+    if (replacementType.is(TY_STRUCT))
+      fqFunctionName = replacementType.getSubType();
   }
 
   // Check if the exported name registry contains that function name

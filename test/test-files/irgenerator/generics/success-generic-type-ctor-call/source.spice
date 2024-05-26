@@ -1,0 +1,19 @@
+type T dyn;
+
+type Nested struct {
+    int i = 1
+}
+
+p Nested.ctor() {}
+
+type Test<T> struct {}
+
+p Test.testFunc() {
+    T t = T();
+    printf("%d", t.i);
+}
+
+f<int> main() {
+    Test<Nested> test;
+    test.testFunc();
+}

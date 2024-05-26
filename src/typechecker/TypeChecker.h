@@ -135,7 +135,7 @@ private:
   bool typeCheckedMainFct = false;
 
   // Private methods
-  bool visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, const std::string &fqFunctionName);
+  bool visitOrdinaryFctCall(FctCallNode *node, QualTypeList &templateTypes, std::string fqFunctionName);
   bool visitFctPtrCall(FctCallNode *node, const QualType &functionType) const;
   bool visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes) const;
   bool checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
