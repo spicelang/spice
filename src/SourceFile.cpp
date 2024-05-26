@@ -317,7 +317,7 @@ void SourceFile::runIRGenerator() {
 
   // Create LLVM module for this source file
   llvm::LLVMContext &llvmContext = cliOptions.useLTO ? resourceManager.ltoContext : context;
-  llvmModule = std::make_unique<llvm::Module>(filePath.filename().string(), llvmContext);
+  llvmModule = std::make_unique<llvm::Module>(fileName, llvmContext);
 
   // Generate this source file
   IRGenerator irGenerator(resourceManager, this);

@@ -43,6 +43,7 @@ const std::unordered_map<const char *, RuntimeModule> FCT_NAME_TO_RT_MODULE_MAPP
     {"sNew", MEMORY_RT},
     {"sPlacementNew", MEMORY_RT},
     {"sDelete", MEMORY_RT},
+    {"sNonOwned", MEMORY_RT},
     // Result RT
     {"ok", RESULT_RT},
     {"err", RESULT_RT},

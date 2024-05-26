@@ -119,3 +119,15 @@ public p sDelete<T>(heap T*& ptr) {
         sDealloc((heap byte*&) ptr);
     }
 }
+
+/**
+ * Creates a non-owned pointer to the given heap-allocated instance.
+ *
+ * @param ptr The pointer to the heap-allocated instance
+ * @return A non-owned pointer to the heap-allocated instance
+ */
+public f<T*> sNonOwned<T>(heap T* ptr) {
+    unsafe {
+        return ptr;
+    }
+}
