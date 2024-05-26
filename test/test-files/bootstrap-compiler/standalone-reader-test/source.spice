@@ -1,9 +1,11 @@
 import "std/os/env";
+import "std/io/filepath";
 import "bootstrap/reader/reader";
 
 f<int> main() {
-    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-reader-test/test-file.spice";
-    Reader reader = Reader(filePath.getRaw());
+    String filePathString = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-reader-test/test-file.spice";
+    FilePath filePath = FilePath(filePathString);
+    Reader reader = Reader(filePath);
     assert !reader.isEOF();
     assert reader.getCodeLoc().line == 1 && reader.getCodeLoc().col == 1;
     reader.expect('f');

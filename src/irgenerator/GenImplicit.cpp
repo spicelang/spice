@@ -62,6 +62,26 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
 
 void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor,
                                          const std::vector<llvm::Value *> &args) const {
+  // Retrieve address of the struct variable. For fields this is the 'this' variable, otherwise use the normal address
+  llvm::Value *structAddr;
+  if (entry->isField()) {
+    // Take 'this' var as base pointer
+    const SymbolTableEntry *thisVar = currentScope->lookupStrict(THIS_VARIABLE_NAME);
+    assert(thisVar != nullptr);
+    assert(thisVar->getQualType().isPtr() && thisVar->getQualType().getContained().is(TY_STRUCT));
+    llvm::Type *thisType = thisVar->getQualType().getContained().toLLVMType(sourceFile);
+    llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), thisVar->getAddress());
+    // Add field offset
+    llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(entry->orderIndex)};
+    structAddr = insertInBoundsGEP(thisType, thisPtr, indices);
+  } else {
+    structAddr = entry->getAddress();
+  }
+  assert(structAddr != nullptr);
+  generateCtorOrDtorCall(structAddr, ctorOrDtor, args);
+}
+
+void IRGenerator::generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const {
   assert(ctorOrDtor != nullptr);
 
   // Retrieve metadata for the function
@@ -80,25 +100,8 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
   llvm::Function *callee = module->getFunction(mangledName);
   assert(callee != nullptr);
 
-  // Retrieve address of the struct variable. For fields this is the 'this' variable, otherwise use the normal address
-  llvm::Value *structPtr;
-  if (entry->isField()) {
-    // Take 'this' var as base pointer
-    const SymbolTableEntry *thisVar = currentScope->lookupStrict(THIS_VARIABLE_NAME);
-    assert(thisVar != nullptr);
-    assert(thisVar->getQualType().isPtr() && thisVar->getQualType().getContained().is(TY_STRUCT));
-    llvm::Type *thisType = thisVar->getQualType().getContained().toLLVMType(sourceFile);
-    llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), thisVar->getAddress());
-    // Add field offset
-    llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(entry->orderIndex)};
-    structPtr = insertInBoundsGEP(thisType, thisPtr, indices);
-  } else {
-    structPtr = entry->getAddress();
-  }
-  assert(structPtr != nullptr);
-
   // Build parameter list
-  std::vector<llvm::Value *> argValues = {structPtr};
+  std::vector<llvm::Value *> argValues = {structAddr};
   argValues.insert(argValues.end(), args.begin(), args.end());
 
   // Generate function call

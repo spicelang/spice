@@ -5,14 +5,14 @@ import "std/text/analysis";
 import "std/io/filepath";
 
 // Own imports
-import "bootstrap/source-file";
-import "bootstrap/compiler-pass";
+//import "bootstrap/source-file";
+//import "bootstrap/compiler-pass";
 import "bootstrap/lexer/token";
 import "bootstrap/reader/reader";
 import "bootstrap/reader/code-loc";
 
 public type Lexer struct {
-    compose CompilerPass compilerPass
+    //compose CompilerPass compilerPass
     Reader reader
     Token curTok
 }
@@ -25,9 +25,9 @@ public p Lexer.ctor(const FilePath& filePath) {
     this.advance();
 }
 
-public p Lexer.ctor(SourceFile* sourceFile) {
+/*public p Lexer.ctor(SourceFile* sourceFile) {
     this.ctor(sourceFile.filePath);
-}
+}*/
 
 public f<const Token&> Lexer.getToken() {
     return this.curTok;
