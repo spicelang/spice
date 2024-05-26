@@ -79,12 +79,13 @@ struct CliOptions {
 class Driver {
 public:
   // Constructors
-  explicit Driver() = default;
+  Driver() = default;
+  explicit Driver(bool dryRun) : dryRun(dryRun) {}
   Driver(const Driver &) = delete;
 
   // Public methods
   void init();
-  int parse(int argc, char **argv);
+  int parse(int argc, const char *argv[]);
   void enrich();
   void runBinary() const;
 
@@ -94,6 +95,7 @@ public:
   bool shouldInstall = false;
   bool shouldUninstall = false;
   bool shouldExecute = false;
+  bool dryRun = false; // For unit testing purposes
 
 private:
   // Private methods

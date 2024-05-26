@@ -81,7 +81,8 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
   generateCtorOrDtorCall(structAddr, ctorOrDtor, args);
 }
 
-void IRGenerator::generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const {
+void IRGenerator::generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor,
+                                         const std::vector<llvm::Value *> &args) const {
   assert(ctorOrDtor != nullptr);
 
   // Retrieve metadata for the function

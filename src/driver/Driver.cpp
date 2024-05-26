@@ -40,7 +40,8 @@ void Driver::init() {
       // Prepare the installation path
       std::filesystem::path installPath = FileUtil::getSpiceBinDir();
       installPath /= cliOptions.mainSourceFile.stem();
-      std::filesystem::create_directories(installPath);
+      if (!dryRun)
+        std::filesystem::create_directories(installPath);
 #if OS_WINDOWS
       installPath.replace_extension("exe");
 #endif
@@ -50,7 +51,7 @@ void Driver::init() {
         cliOptions.outputPath = installPath;
 
       // If the binary should be uninstalled, check if the executable exists and uninstall it
-      if (shouldUninstall) {
+      if (shouldUninstall && !dryRun) {
         if (std::filesystem::exists(installPath) && std::filesystem::remove(installPath))
           std::cout << "Successfully uninstalled.\n";
         else
@@ -107,7 +108,7 @@ void Driver::init() {
  * @param argv Argument vector
  * @return Return code
  */
-int Driver::parse(int argc, char **argv) {
+int Driver::parse(int argc, const char *argv[]) {
   try {
     app.parse(argc, argv);
     return EXIT_SUCCESS;
