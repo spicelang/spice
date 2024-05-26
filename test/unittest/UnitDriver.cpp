@@ -14,6 +14,8 @@ TEST(DriverTest, TestBuildSubcommandMinimal) {
   Driver driver = Driver(true);
   driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
   ASSERT_TRUE(driver.shouldCompile);
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
@@ -33,6 +35,8 @@ TEST(DriverTest, TestBuildSubcommandComplex) {
   Driver driver = Driver(true);
   driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
   ASSERT_TRUE(driver.shouldCompile);
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
@@ -56,6 +60,8 @@ TEST(DriverTest, TestRunSubcommandMinimal) {
   Driver driver = Driver(true);
   driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
   ASSERT_TRUE(driver.shouldCompile);
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
@@ -74,6 +80,8 @@ TEST(DriverTest, TestRunSubcommandComplex) {
   Driver driver = Driver(true);
   driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
   ASSERT_TRUE(driver.shouldCompile);
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
@@ -94,6 +102,8 @@ TEST(DriverTest, TestTestSubcommandMinimal) {
   Driver driver = Driver(true);
   driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
   ASSERT_TRUE(driver.shouldCompile);
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
@@ -112,6 +122,8 @@ TEST(DriverTest, TestTestSubcommandComplex) {
   Driver driver = Driver(true);
   driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
   ASSERT_TRUE(driver.shouldCompile);
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
@@ -132,6 +144,8 @@ TEST(DriverTest, TestInstallSubcommandMinimal) {
   Driver driver = Driver(true);
   driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
   ASSERT_TRUE(driver.shouldCompile);
   ASSERT_TRUE(driver.shouldInstall);
   ASSERT_FALSE(driver.shouldUninstall);
@@ -150,6 +164,8 @@ TEST(DriverTest, TestUninstallSubcommandMinimal) {
   Driver driver = Driver(true);
   driver.init();
   ASSERT_EQ(EXIT_SUCCESS, driver.parse(argc, argv));
+  driver.enrich();
+
   ASSERT_FALSE(driver.shouldCompile);
   ASSERT_FALSE(driver.shouldInstall);
   ASSERT_TRUE(driver.shouldUninstall);
