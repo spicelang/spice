@@ -21,8 +21,6 @@ You can apply following options to the `test` subcommand:
 
 | Option       | Long                 | Description                                                                                 |
 |--------------|----------------------|---------------------------------------------------------------------------------------------|
-| `-a`         | `--run-all`          | Print compiler output for debugging.                                                        |
-| `-t`         | `--test`             | Runs a single test case by its name                                                         |
 | `-d`         | `--debug-output`     | Print compiler output for debugging.                                                        |
 | `-cst`       | `--dump-cst`         | Dump CST as serialized string and SVG image                                                 |
 | `-ast`       | `--dump-ast`         | Dump AST as serialized string and SVG image                                                 |

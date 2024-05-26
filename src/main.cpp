@@ -63,7 +63,7 @@ bool compileProject(CliOptions &cliOptions) {
  * @param argv Argument vector
  * @return Return code
  */
-int main(int argc, char **argv) {
+int main(int argc, const char *argv[]) {
   // Initialize command line parser
   Driver driver;
   driver.init();
