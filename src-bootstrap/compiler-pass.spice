@@ -1,24 +1,24 @@
 // Own imports
-import "bootstrap/global/global-resource-manager";
+import "bootstrap/global/global-resource-manager-intf";
 import "bootstrap/driver";
-import "bootstrap/source-file";
+import "bootstrap/source-file-intf";
 import "bootstrap/symboltablebuilder/scope";
 
 type CompilerPass struct {
-    GlobalResourceManager& resourceManager
-    const CliOptions& cliOptions
-    SourceFile* sourceFile
+    IGlobalResourceManager& resourceManager
+    CliOptions& cliOptions
+    ISourceFile* sourceFile
     heap Scope* rootScope
     unsigned long manIdx = 0l
     Scope* currentScope
 }
 
-p CompilerPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile = nil<SourceFile*>) {
+p CompilerPass.ctor(IGlobalResourceManager& resourceManager, ISourceFile* sourceFile = nil<ISourceFile*>) {
     this.resourceManager = resourceManager;
     this.cliOptions = resourceManager.cliOptions;
     this.sourceFile = sourceFile;
-    this.rootScope = sourceFile != nil<SourceFile*> ? sourceFile.globalScope : nil<heap Scope*>;
-    this.currentScope = (Scope*) this.rootScope;
+    this.rootScope = sourceFile != nil<ISourceFile*> ? sourceFile.globalScope : nil<heap Scope*>;
+    this.currentScope = sNonOwned(this.rootScope);
 }
 
 /**
@@ -32,7 +32,7 @@ p CompilerPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFi
 p CompilerPass.changeToScope(Scope* scope, ScopeType scopeType) {
     assert scope != nil<Scope*>;
     assert scope.scopeType == scopeType;
-    assert !script.isGenericScope;
+    assert !scope.isGenericScope;
     // Adjust members of the new scope
     scope.parent = this.currentScope;
     scope.symbolTable.parent = &this.currentScope.symbolTable;
@@ -47,7 +47,7 @@ p CompilerPass.changeToScope(Scope* scope, ScopeType scopeType) {
  * @param scopeType Expected type of the given scope
  */
 p CompilerPass.changeToScope(const String& scopeName, ScopeType scopeType) {
-    assert !scopeName.isEmtpy();
+    assert !scopeName.isEmpty();
     this.changeToScope(this.currentScope.getChildScope(scopeName), scopeType);
 }
 

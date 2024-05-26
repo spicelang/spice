@@ -13,7 +13,7 @@ import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
 import "bootstrap/source-file-intf";
 
-type ScopeType enum {
+public type ScopeType enum {
     GLOBAL,
     FUNC_PROC_BODY,
     LAMBDA_BODY,
@@ -48,7 +48,7 @@ type ScopeType enum {
  * - if statements
  * - anonymous scopes
  */
-type Scope struct : IScope {
+public type Scope struct : IScope {
     // Public members
     public Scope* parent
     public ISourceFile* sourceFile
@@ -66,7 +66,7 @@ type Scope struct : IScope {
     UnorderedMap<String, GenericType> genericTypes
 }
 
-p Scope.ctor(Scope* parent, ISourceFile* sourceFile, ScopeType scopeType, const CodeLoc *codeLoc) {
+public p Scope.ctor(Scope* parent, ISourceFile* sourceFile, ScopeType scopeType, CodeLoc *codeLoc) {
     this.parent = parent;
     this.sourceFile = sourceFile;
     this.scopeType = scopeType;
@@ -82,9 +82,9 @@ p Scope.ctor(Scope* parent, ISourceFile* sourceFile, ScopeType scopeType, const 
  * @param declCodeLoc Code location of the scope
  * @return Child scope (heap allocated)
  */
-f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
-    children[scopeName] = Scope(this, sourceFile, scopeType, declCodeLoc);
-    return &children[scopeName];
+public f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
+    this.children.upsert(scopeName, Scope(this, this.sourceFile, scopeType, declCodeLoc));
+    return &this.children.get(scopeName);
 }
 
 /**
@@ -94,10 +94,10 @@ f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, c
  * @param oldName Old name of the child table
  * @param newName New name of the child table
  */
-p Scope.renameChildScope(const String& oldName, const String& newName) {
-    assert children.contains(oldName) && !children.contains(newName);
-    children[newName] = children[oldName];
-    children.erase(oldName);
+public p Scope.renameChildScope(const String& oldName, const String& newName) {
+    assert this.children.contains(oldName) && !this.children.contains(newName);
+    this.children.upsert(newName, this.children.get(oldName));
+    this.children.remove(oldName);
 }
 
 /**
@@ -106,13 +106,13 @@ p Scope.renameChildScope(const String& oldName, const String& newName) {
  * @param oldName Old name of the child block
  * @param newName New block name
  */
-p Scope.copyChildScope(const String& oldName, const String& newName) {
-    assert children.constains(oldName) && !children.contains(newName);
+public p Scope.copyChildScope(const String& oldName, const String& newName) {
+    assert this.children.contains(oldName) && !this.children.contains(newName);
     // Create copy
-    Scope* child = children.at(oldName);
-    const heap Scope* newScope = child.deepCopyScope();
+    Scope* child = &this.children.get(oldName);
+    const Scope* newScope = child.deepCopyScope();
     // Save copy under new name
-    children[newName] = newScope;
+    this.children.upsert(newName, newScope);
 }
 
 /**
@@ -120,8 +120,8 @@ p Scope.copyChildScope(const String& oldName, const String& newName) {
  *
  * @return Deep copy of the current scope
  */
-f<heap Scope*> Scope.deepCopyScope() {
-    const heap Scope* newScope; // ToDo: Extend
+public f<Scope*> Scope.deepCopyScope() {
+    Scope* newScope; // ToDo: Extend
     return newScope;
 }
 
@@ -131,9 +131,9 @@ f<heap Scope*> Scope.deepCopyScope() {
  * @param scopeName Child scope name
  * @return Child scope
  */
-f<Scope*> Scope.getChildScope(const String& scopeName) {
+public f<Scope*> Scope.getChildScope(const String& scopeName) {
     if this.children.isEmpty() && this.children.contains(scopeName) {
-        return this.children.get(scopeName);
+        return &this.children.get(scopeName);
     }
     return nil<Scope*>;
 }
@@ -143,7 +143,7 @@ f<Scope*> Scope.getChildScope(const String& scopeName) {
  *
  * @return Collection of EOL variables
  */
-f<Vector<SymbolTableEntry*>> Scope.getVarsGoingOutOfScope() {
+public f<Vector<SymbolTableEntry*>> Scope.getVarsGoingOutOfScope() {
     assert this.parent != nil<Scope*>; // Should not be called in root scope
     Vector<SymbolTableEntry*> varsGoingOutOfScope;
 
@@ -167,7 +167,7 @@ f<Vector<SymbolTableEntry*>> Scope.getVarsGoingOutOfScope() {
     if this.isDtorScope {
         assert this.parent != nil<Scope*> && this.parent.scopeType == ScopeType::STRUCT;
         // Get all fields of the struct
-        foreach const Pair<String, SymbolTableEntry*> field : paren.symbolTable.symbols {
+        foreach const Pair<String, SymbolTableEntry*> field : this.parent.symbolTable.symbols {
             const String& name = symbol.getFirst();
             const SymbolTableEntry* entry = symbol.getSecond();
             const QualType& qualType = entry.getQualType();

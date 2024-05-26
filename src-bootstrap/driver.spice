@@ -7,10 +7,10 @@ import "std/io/cli-option";
 import "std/io/filepath";
 
 // Constants
-const string TARGET_UNKNOWN = "unknown";
-const string TARGET_WASM32 = "wasm32";
-const string TARGET_WASM64 = "wasm64";
-const string ENV_VAR_DOCKERIZED = "SPICE_DOCKERIZED";
+public const string TARGET_UNKNOWN = "unknown";
+public const string TARGET_WASM32 = "wasm32";
+public const string TARGET_WASM64 = "wasm64";
+public const string ENV_VAR_DOCKERIZED = "SPICE_DOCKERIZED";
 
 public type OptLevel enum {
     O0 = 0, // No optimization

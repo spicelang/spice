@@ -1242,6 +1242,6 @@ public p getVersion(unsigned int* major, unsigned int* minor, unsigned int* patc
     LLVMGetVersion(major, minor, patch);
 }
 
-public p shutdown() {
+public p llvm_shutdown() {
     LLVMShutdown();
 }

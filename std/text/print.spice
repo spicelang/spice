@@ -1,12 +1,15 @@
 import "std/text/analysis";
 
+// Generic type definitions
+type StrTy String|string;
+
 // Prints the given string to the console
-public inline p print(string text) {
+public inline p print<StrTy>(StrTy text) {
     printf("%s", text);
 }
 
 // Prints the given string to the console with a trailing line break
-public inline p println(string text) {
+public inline p println<StrTy>(StrTy text) {
     printf("%s\n", text);
 }
 
