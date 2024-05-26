@@ -15,10 +15,6 @@ OpRuleManager::OpRuleManager(TypeChecker *typeChecker)
 
 QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool isDecl,
                                             const char *errMsgPrefix) {
-  // Check if we try to assign a constant value
-  if (!isDecl)
-    ensureNoConstAssign(node, lhs.type);
-
   // Retrieve types
   QualType lhsType = lhs.type;
   QualType rhsType = rhs.type;
@@ -26,15 +22,18 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
   // Skip type compatibility check if the lhs is of type dyn -> perform type inference
   if (lhsType.is(TY_DYN))
     return rhsType;
+
+  // Check if we try to assign a constant value
+  if (!isDecl)
+    ensureNoConstAssign(node, lhsType);
+
   // Allow pointers and arrays of the same type straight away
   if (lhsType.isOneOf({TY_PTR, TY_REF}) && lhsType.matches(rhsType, false, false, true))
     return rhsType;
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
-    QualType rhsModified = rhsType.getContained();
-    rhsModified.getSpecifiers().isConst = false;
-
+    const QualType rhsModified = rhsType.getContained().toNonConst();
     if (lhsType.matches(rhsModified, false, !lhsType.isRef(), true))
       return lhsType;
   }
@@ -54,14 +53,14 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
 
 QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, bool imm,
                                                  bool isDecl) {
-  // Check if we try to assign a constant value
-  if (!isDecl)
-    ensureNoConstAssign(node, lhs.type);
-
   // Retrieve types
   QualType lhsType = lhs.type;
   QualType rhsType = rhs.type;
   assert(!lhsType.is(TY_DYN));
+
+  // Check if we try to assign a constant value
+  if (!isDecl)
+    ensureNoConstAssign(node, lhsType);
 
   // Allow pointers and arrays of the same type straight away
   if (lhsType.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhsType == rhsType)
@@ -76,7 +75,7 @@ QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Expr
   if (rhsType.isConstRef() && lhsType.matches(rhsType.getContained().toNonConst(), false, false, true))
     return lhsType;
   // Allow immediate value to const ref of the same contained type straight away
-  if (lhsType.isRef() && lhsType.getContained().isConst() && imm)
+  if (lhsType.isConstRef() && imm)
     return rhsType;
 
   // Check common type combinations

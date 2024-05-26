@@ -388,7 +388,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
                                          const QualType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getQualType().isRef();
-  const bool needsCopy = !isDecl && !isRefAssign && rhsSType.is(TY_STRUCT) && !rhs.isTemporary();
+  const bool needsCopy = !isDecl && !isRefAssign && rhsSType.removeReferenceWrapper().is(TY_STRUCT) && !rhs.isTemporary();
 
   if (isRefAssign) {
     assert(lhsEntry != nullptr);
@@ -428,16 +428,17 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     assert(rhsAddress != nullptr);
 
     // Check if we have a copy ctor
-    Scope *structScope = rhsSType.getBodyScope();
-    const ArgList args = {{rhsSType.toConstRef(nullptr), rhs.isTemporary()}};
-    auto copyCtor = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, rhsSType, args, {}, true, nullptr);
+    const QualType rhsSTypeNonRef = rhsSType.removeReferenceWrapper().toNonConst();
+    Scope *structScope = rhsSTypeNonRef.getBodyScope();
+    const ArgList args = {{rhsSTypeNonRef.toConstRef(nullptr), rhs.isTemporary()}};
+    auto copyCtor = FunctionManager::matchFunction(structScope, CTOR_FUNCTION_NAME, rhsSTypeNonRef, args, {}, true, nullptr);
     if (copyCtor != nullptr) {
       // Call copy ctor
-      generateCtorOrDtorCall(lhsEntry, copyCtor, {rhsAddress});
+      generateCtorOrDtorCall(lhsAddress, copyCtor, {rhsAddress});
       return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
     } else {
       // Create shallow copy
-      llvm::Type *rhsType = rhsSType.toLLVMType(sourceFile);
+      llvm::Type *rhsType = rhsSTypeNonRef.toLLVMType(sourceFile);
       const std::string copyName = lhsEntry ? lhsEntry->name : "";
       llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
       // Set address of lhs to the copy

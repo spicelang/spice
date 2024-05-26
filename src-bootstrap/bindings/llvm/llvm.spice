@@ -421,6 +421,10 @@ ext f<LLVMValueRef> LLVMConstStructInContext(LLVMContextRef /*C*/, LLVMValueRef*
 ext f<LLVMValueRef> LLVMConstArray2(LLVMTypeRef /*ElementTy*/, LLVMValueRef* /*ConstantVals*/, unsigned long /*Length*/);
 ext p LLVMDumpModule(LLVMModuleRef /*M*/);
 ext p LLVMDumpType(LLVMTypeRef /*Val*/);
+ext f<LLVMTypeRef> LLVMStructTypeInContext(LLVMContextRef /*C*/, LLVMTypeRef* /*ElementTypes*/, unsigned int /*ElementCount*/, bool /*Packed*/);
+ext f<LLVMTypeRef> LLVMStructCreateNamed(LLVMContextRef /*C*/, string /*Name*/);
+ext f<string> LLVMGetStructName(LLVMTypeRef /*Ty*/);
+ext p LLVMStructSetBody(LLVMTypeRef /*StructTy*/, LLVMTypeRef* /*ElementTypes*/, unsigned int /*ElementCount*/, bool /*Packed*/);
 ext p LLVMDumpValue(LLVMValueRef /*Val*/);
 ext f<LLVMBool> LLVMVerifyModule(LLVMModuleRef /*M*/, LLVMVerifierFailureAction /*Action*/, string* /*OutMessage*/);
 ext f<LLVMBool> LLVMVerifyFunction(LLVMFunctionRef /*Fn*/, LLVMVerifierFailureAction /*Action*/);
@@ -539,6 +543,19 @@ public f<string> LLVMError.getMessage() {
     return this.message = LLVMGetErrorMessage(this.self);
 }
 
+// ===== LLVMContext =====
+public type LLVMContext struct {
+    LLVMContextRef self
+}
+
+public p LLVMContext.ctor() {
+    this.self = LLVMContextCreate();
+}
+
+public p LLVMContext.dtor() {
+    LLVMContextDispose(this.self);
+}
+
 // ===== Type =====
 public type Type struct {
     LLVMTypeRef self
@@ -561,17 +578,32 @@ public p Value.dump() {
     LLVMDumpValue(this.self);
 }
 
-// ===== LLVMContext =====
-public type LLVMContext struct {
-    LLVMContextRef self
+// ===== Constant =====
+public type Constant alias Value;
+
+// ===== StructType =====
+public type StructType struct {
+    LLVMTypeRef self
 }
 
-public p LLVMContext.ctor() {
-    this.self = LLVMContextCreate();
+public p StructType.ctor(const LLVMContext& context, const Vector<Type>& elementTypes, bool packed = false) {
+    this.self = LLVMStructTypeInContext(context.self, &elementTypes.getDataPtr().self, (unsigned int) elementTypes.getSize(), packed);
 }
 
-public p LLVMContext.dtor() {
-    LLVMContextDispose(this.self);
+public p StructType.ctor(const LLVMContext& context, string name = "") {
+    this.self = LLVMStructCreateNamed(context.self, name);
+}
+
+public f<string> StructType.getName() {
+    return LLVMGetStructName(this.self);
+}
+
+public p StructType.setBody(const Vector<Type>& elementTypes, bool packed = false) {
+    LLVMStructSetBody(this.self, &elementTypes.getDataPtr().self, (unsigned int) elementTypes.getSize(), packed);
+}
+
+public p StructType.dump() {
+    LLVMDumpType(this.self);
 }
 
 // ===== DataLayout =====
@@ -687,89 +719,89 @@ public f<Function> Module.getOrInsertFunction(string name, Type fctType) {
 }
 
 // ===== LLVMBuilder =====
-public type Builder struct {
+public type IRBuilder struct {
     LLVMBuilderRef self
     LLVMContextRef ctx
 }
 
-public p Builder.ctor(const LLVMContext& parentCtx) {
+public p IRBuilder.ctor(const LLVMContext& parentCtx) {
     this.ctx = parentCtx.self;
     this.self = LLVMCreateBuilderInContext(this.ctx);
 }
 
-public p Builder.dtor() {
+public p IRBuilder.dtor() {
     LLVMDisposeBuilder(this.self);
 }
 
-public f<Type> Builder.getInt1Ty() {
+public f<Type> IRBuilder.getInt1Ty() {
     return Type{ LLVMInt1TypeInContext(this.ctx) };
 }
 
-public f<Type> Builder.getInt8Ty() {
+public f<Type> IRBuilder.getInt8Ty() {
     return Type{ LLVMInt8TypeInContext(this.ctx) };
 }
 
-public f<Type> Builder.getInt16Ty() {
+public f<Type> IRBuilder.getInt16Ty() {
     return Type{ LLVMInt16TypeInContext(this.ctx) };
 }
 
-public f<Type> Builder.getInt32Ty() {
+public f<Type> IRBuilder.getInt32Ty() {
     return Type{ LLVMInt32TypeInContext(this.ctx) };
 }
 
-public f<Type> Builder.getInt64Ty() {
+public f<Type> IRBuilder.getInt64Ty() {
     return Type{ LLVMInt64TypeInContext(this.ctx) };
 }
 
-public f<Type> Builder.getPtrTy() {
+public f<Type> IRBuilder.getPtrTy() {
     return Type{ LLVMPointerTypeInContext(this.ctx, 0) };
 }
 
-public f<Value> Builder.getInt1<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+public f<Value> IRBuilder.getInt1<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.ctx);
     return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
 }
 
-public f<Value> Builder.getInt8<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+public f<Value> IRBuilder.getInt8<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt8TypeInContext(this.ctx);
     return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
 }
 
-public f<Value> Builder.getInt16<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+public f<Value> IRBuilder.getInt16<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt16TypeInContext(this.ctx);
     return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
 }
 
-public f<Value> Builder.getInt32<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+public f<Value> IRBuilder.getInt32<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt32TypeInContext(this.ctx);
     return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
 }
 
-public f<Value> Builder.getInt64<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
+public f<Value> IRBuilder.getInt64<ShortIntLong>(ShortIntLong value, LLVMBool isSigned = false) {
     LLVMTypeRef typeRef = LLVMInt64TypeInContext(this.ctx);
     return Value{ LLVMConstInt(typeRef, (unsigned long) value, isSigned) };
 }
 
-public f<Value> Builder.getFalse() {
+public f<Value> IRBuilder.getFalse() {
     LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.ctx);
     return Value{ LLVMConstInt(typeRef, 0l, false) };
 }
 
-public f<Value> Builder.getTrue() {
+public f<Value> IRBuilder.getTrue() {
     LLVMTypeRef typeRef = LLVMInt1TypeInContext(this.ctx);
     return Value{ LLVMConstInt(typeRef, 1l, false) };
 }
 
-public f<Value> Builder.getDouble(double value) {
+public f<Value> IRBuilder.getDouble(double value) {
     LLVMTypeRef typeRef = LLVMDoubleTypeInContext(this.ctx);
     return Value{ LLVMConstReal(typeRef, value) };
 }
 
-public f<Value> Builder.getNull(Type ty) {
+public f<Value> IRBuilder.getNull(Type ty) {
     return Value{ LLVMConstNull(ty.self) };
 }
 
-public f<Value> Builder.getStruct(const Vector<Value>& values, bool packed = false) {
+public f<Value> IRBuilder.getStruct(const Vector<Value>& values, bool packed = false) {
     unsafe {
         LLVMValueRef* valuesRef = (LLVMValueRef*) values.getDataPtr();
         LLVMValueRef valueRef = LLVMConstStructInContext(this.ctx, valuesRef, (unsigned int) values.getSize(), packed);
@@ -777,7 +809,7 @@ public f<Value> Builder.getStruct(const Vector<Value>& values, bool packed = fal
     }
 }
 
-public f<Value> Builder.getArray(Type ty, const Vector<Value>& values) {
+public f<Value> IRBuilder.getArray(Type ty, const Vector<Value>& values) {
     unsafe {
         LLVMValueRef* valuesRef = (LLVMValueRef*) values.getDataPtr();
         LLVMValueRef valueRef = LLVMConstArray2(ty.self, valuesRef, values.getSize());
@@ -785,19 +817,19 @@ public f<Value> Builder.getArray(Type ty, const Vector<Value>& values) {
     }
 }
 
-public f<BasicBlock> Builder.getInsertBlock() {
+public f<BasicBlock> IRBuilder.getInsertBlock() {
     return BasicBlock{ LLVMGetInsertBlock(this.self) };
 }
 
-public p Builder.setInsertPoint(BasicBlock bb) {
+public p IRBuilder.setInsertPoint(BasicBlock bb) {
     LLVMPositionBuilderAtEnd(this.self, bb.self);
 }
 
-public f<Value> Builder.createGlobalStringPtr(string content, string name) {
+public f<Value> IRBuilder.createGlobalStringPtr(string content, string name) {
     return Value{ LLVMBuildGlobalStringPtr(this.self, content, name) };
 }
 
-public f<Value> Builder.createAlloca(Type ty, Value arraySize = Value(), string name = "") {
+public f<Value> IRBuilder.createAlloca(Type ty, Value arraySize = Value(), string name = "") {
     if arraySize.self == nil<LLVMValueRef> {
         return Value{ LLVMBuildAlloca(this.self, ty.self, name) };
     } else {
@@ -805,7 +837,7 @@ public f<Value> Builder.createAlloca(Type ty, Value arraySize = Value(), string 
     }
 }
 
-public f<Value> Builder.createStore(Value value, Value ptr, bool volatile = false) {
+public f<Value> IRBuilder.createStore(Value value, Value ptr, bool volatile = false) {
     LLVMValueRef valueRef = LLVMBuildStore(this.self, value.self, ptr.self);
     if volatile {
         LLVMSetVolatile(valueRef);
@@ -813,7 +845,7 @@ public f<Value> Builder.createStore(Value value, Value ptr, bool volatile = fals
     return Value{ valueRef };
 }
 
-public f<Value> Builder.createLoad(Value ptr, Type ty, string name = "", bool volatile = false) {
+public f<Value> IRBuilder.createLoad(Value ptr, Type ty, string name = "", bool volatile = false) {
     LLVMValueRef valueRef = LLVMBuildLoad2(this.self, ty.self, ptr.self, name);
     if volatile {
         LLVMSetVolatile(valueRef);
@@ -821,7 +853,7 @@ public f<Value> Builder.createLoad(Value ptr, Type ty, string name = "", bool vo
     return Value{ valueRef };
 }
 
-public f<Value> Builder.createGEP(Value ptr, const Vector<Value>& indices, string name = "") {
+public f<Value> IRBuilder.createGEP(Value ptr, const Vector<Value>& indices, string name = "") {
     unsafe {
         LLVMValueRef* indicesRef = (LLVMValueRef*) indices.getDataPtr();
         LLVMValueRef valueRef = LLVMBuildGEP2(this.self, ptr.self, indicesRef, (unsigned int) indices.getSize(), name);
@@ -829,7 +861,7 @@ public f<Value> Builder.createGEP(Value ptr, const Vector<Value>& indices, strin
     }
 }
 
-public f<Value> Builder.createInBoundsGEP(Value ptr, const Vector<Value>& indices, string name = "") {
+public f<Value> IRBuilder.createInBoundsGEP(Value ptr, const Vector<Value>& indices, string name = "") {
     unsafe {
         LLVMValueRef* indicesRef = (LLVMValueRef*) indices.getDataPtr();
         LLVMValueRef valueRef = LLVMBuildInBoundsGEP2(this.self, ptr.self, indicesRef, (unsigned int) indices.getSize(), name);
@@ -837,112 +869,112 @@ public f<Value> Builder.createInBoundsGEP(Value ptr, const Vector<Value>& indice
     }
 }
 
-public f<Value> Builder.createStructGEP(Value ptr, unsigned int index, string name = "") {
+public f<Value> IRBuilder.createStructGEP(Value ptr, unsigned int index, string name = "") {
     LLVMValueRef valueRef = LLVMBuildStructGEP2(this.self, ptr.self, index, name);
     return Value{ valueRef };
 }
 
-public f<Value> Builder.createSelect(Value condition, Value thenValue, Value elseValue, string name = "") {
+public f<Value> IRBuilder.createSelect(Value condition, Value thenValue, Value elseValue, string name = "") {
     return Value{ LLVMBuildSelect(this.self, condition.self, thenValue.self, elseValue.self, name) };
 }
 
-public f<Value> Builder.createPhi(Type ty, string name = "") {
+public f<Value> IRBuilder.createPhi(Type ty, string name = "") {
     return Value{ LLVMBuildPhi(this.self, ty.self, name) };
 }
 
-public f<Value> Builder.createAdd(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createAdd(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildAdd(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createSub(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createSub(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildSub(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createMul(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createMul(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildMul(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createSDiv(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createSDiv(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildSDiv(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createUDiv(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createUDiv(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildUDiv(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createURem(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createURem(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildURem(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createSRem(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createSRem(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildSRem(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createFRem(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createFRem(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildFRem(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createFAdd(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createFAdd(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildFAdd(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createFSub(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createFSub(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildFSub(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createFMul(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createFMul(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildFMul(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createFDiv(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createFDiv(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildFDiv(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createICmp(LLVMIntPredicate predicate, Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createICmp(LLVMIntPredicate predicate, Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildICmp(this.self, predicate, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createFCmp(LLVMRealPredicate predicate, Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createFCmp(LLVMRealPredicate predicate, Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildFCmp(this.self, predicate, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createShl(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createShl(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildShl(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createLShr(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createLShr(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildLShr(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createAShr(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createAShr(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildAShr(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createAnd(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createAnd(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildAnd(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createOr(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createOr(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildOr(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createXor(Value lhs, Value rhs, string name = "") {
+public f<Value> IRBuilder.createXor(Value lhs, Value rhs, string name = "") {
     return Value{ LLVMBuildXor(this.self, lhs.self, rhs.self, name) };
 }
 
-public f<Value> Builder.createNeg(Value value, string name = "") {
+public f<Value> IRBuilder.createNeg(Value value, string name = "") {
     return Value{ LLVMBuildNeg(this.self, value.self, name) };
 }
 
-public f<Value> Builder.createFNeg(Value value, string name = "") {
+public f<Value> IRBuilder.createFNeg(Value value, string name = "") {
     return Value{ LLVMBuildFNeg(this.self, value.self, name) };
 }
 
-public f<Value> Builder.createNot(Value value, string name = "") {
+public f<Value> IRBuilder.createNot(Value value, string name = "") {
     return Value{ LLVMBuildNot(this.self, value.self, name) };
 }
 
-public f<Value> Builder.createCall(Function callee, const Vector<Value>& args, string name = "") {
+public f<Value> IRBuilder.createCall(Function callee, const Vector<Value>& args, string name = "") {
     unsafe {
         LLVMValueRef* argsRef = (LLVMValueRef*) args.getDataPtr();
         LLVMValueRef valueRef = LLVMBuildCall2(this.self, callee.fctType.self, callee.self, argsRef, (unsigned int) args.getSize(), name);
@@ -950,23 +982,23 @@ public f<Value> Builder.createCall(Function callee, const Vector<Value>& args, s
     }
 }
 
-public f<Value> Builder.createRet(Value returnValue) {
+public f<Value> IRBuilder.createRet(Value returnValue) {
     return Value{ LLVMBuildRet(this.self, returnValue.self) };
 }
 
-public f<Value> Builder.createRetVoid() {
+public f<Value> IRBuilder.createRetVoid() {
     return Value{ LLVMBuildRetVoid(this.self) };
 }
 
-public f<Value> Builder.createBr(BasicBlock bb) {
+public f<Value> IRBuilder.createBr(BasicBlock bb) {
     return Value{ LLVMBuildBr(this.self, bb.self) };
 }
 
-public f<Value> Builder.createCondBr(Value condition, BasicBlock thenBB, BasicBlock elseBB) {
+public f<Value> IRBuilder.createCondBr(Value condition, BasicBlock thenBB, BasicBlock elseBB) {
     return Value{ LLVMBuildCondBr(this.self, condition.self, thenBB.self, elseBB.self) };
 }
 
-public f<Value> Builder.createUnreachable() {
+public f<Value> IRBuilder.createUnreachable() {
     return Value{ LLVMBuildUnreachable(this.self) };
 }
 

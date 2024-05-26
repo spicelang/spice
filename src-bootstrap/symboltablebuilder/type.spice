@@ -3,10 +3,13 @@ import "std/data/vector";
 
 // Own imports
 import "bootstrap/util/common-util";
+import "bootstrap/ast/ast-nodes";
 import "bootstrap/symboltablebuilder/type-chain";
-import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/qual-type-intf";
+import "bootstrap/symboltablebuilder/type-intf";
+import "bootstrap/symboltablebuilder/scope-intf";
 
-public type Type struct {
+public type Type struct : IType {
     Vector<TypeChainElement> typeChain
     bool isBaseTypeSigned
 }
@@ -64,7 +67,7 @@ public f<unsigned int> Type.getArraySize() {
  *
  * @return Body scope
  */
-public f<Scope*> Type.getBodyScope() {
+public f<IScope*> Type.getBodyScope() {
     assert !this.typeChain.isEmpty();
     assert(isOneOf([SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_ENUM, SuperType::TY_GENERIC]));
     return this.typeChain.back().data.bodyScope;

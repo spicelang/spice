@@ -2,6 +2,7 @@
 import "std/data/vector";
 import "std/text/format";
 import "std/text/analysis";
+import "std/io/filepath";
 
 // Own imports
 //import "bootstrap/source-file";
@@ -10,13 +11,13 @@ import "bootstrap/lexer/token";
 import "bootstrap/reader/reader";
 import "bootstrap/reader/code-loc";
 
-public type Lexer struct/* : ICompilerPass*/ {
+public type Lexer struct {
     //compose CompilerPass compilerPass
     Reader reader
     Token curTok
 }
 
-public p Lexer.ctor(string filePath) {
+public p Lexer.ctor(const FilePath& filePath) {
     this.reader = Reader(filePath);
     this.curTok = Token(TokenType::INVALID);
 

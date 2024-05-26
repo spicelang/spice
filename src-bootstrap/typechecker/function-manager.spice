@@ -1,0 +1,22 @@
+// Std imports
+import "std/data/vector";
+import "std/data/map";
+import "std/data/unordered-map";
+import "std/data/pair";
+
+// Own imports
+import "bootstrap/model/function";
+import "bootstrap/symboltablebuilder/qual-type";
+
+// Aliases
+public type FunctionManifestationList alias UnorderedMap</*mangledName=*/String, Function>;
+public type FunctionRegistry alias Map</*fctId=*/String, /*manifestaionList=*/FunctionManifestationList>;
+public type Arg alias Pair</*type=*/QualType, /*isTemporary=*/bool>;
+public type ArgList alias Vector</*arg=*/Arg>;
+
+type MatchResult enum {
+    MATCHED,
+    SKIP_MANIFESTATION,
+    SKIP_FUNCTION
+}
+

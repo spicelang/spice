@@ -1,9 +1,11 @@
 import "std/os/env";
+import "std/io/filepath";
 import "bootstrap/lexer/lexer";
 
 f<int> main() {
-    String filePath = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-lexer-test/test-file.spice";
-    Lexer lexer = Lexer(filePath.getRaw());
+    String filePathString = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-lexer-test/test-file.spice";
+    FilePath filePath = FilePath(filePathString);
+    Lexer lexer = Lexer(filePath);
     unsigned long tokenCount = 0l;
     while (!lexer.isEOF()) {
         Token token = lexer.getToken();

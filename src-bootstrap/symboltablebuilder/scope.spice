@@ -1,9 +1,17 @@
 // Std imports
 import "std/data/unordered-map";
+import "std/data/vector";
 
 // Own imports
 import "bootstrap/reader/code-loc";
-//import "bootstrap/source-file";
+import "bootstrap/symboltablebuilder/symbol-table";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/scope-intf";
+import "bootstrap/model/generic-type";
+import "bootstrap/typechecker/function-manager";
+import "bootstrap/typechecker/struct-manager";
+import "bootstrap/typechecker/interface-manager";
+import "bootstrap/source-file-intf";
 
 type ScopeType enum {
     GLOBAL,
@@ -40,11 +48,11 @@ type ScopeType enum {
  * - if statements
  * - anonymous scopes
  */
-type Scope struct {
+type Scope struct : IScope {
     // Public members
     public Scope* parent
-    public SourceFile* sourceFile
-    public Map<String, Scope> children
+    public ISourceFile* sourceFile
+    public UnorderedMap<String, Scope> children
     public SymbolTable symbolTable
     public CodeLoc* codeLoc = nil<CodeLoc*>
     public ScopeType scopeType
@@ -58,7 +66,7 @@ type Scope struct {
     UnorderedMap<String, GenericType> genericTypes
 }
 
-p Scope.ctor(Scope* parent, SourceFile* sourceFile, ScopeType scopeType, const CodeLoc *codeLoc) {
+p Scope.ctor(Scope* parent, ISourceFile* sourceFile, ScopeType scopeType, const CodeLoc *codeLoc) {
     this.parent = parent;
     this.sourceFile = sourceFile;
     this.scopeType = scopeType;

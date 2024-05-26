@@ -1,0 +1,11 @@
+// Std imports
+import "std/data/map";
+import "std/data/unordered-map";
+
+// Own imports
+import "bootstrap/reader/code-loc";
+import "bootstrap/model/interface";
+
+// Type aliases
+public type InterfaceManifestationList alias UnorderedMap</*mangledName=*/String, Interface>;
+public type InterfaceRegistry alias Map<CodeLoc, InterfaceManifestationList>;

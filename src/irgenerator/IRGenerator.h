@@ -156,6 +156,7 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   void generateScopeCleanup(const StmtLstNode *node) const;
   void generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
+  void generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
   void generateDeallocCall(llvm::Value *variableAddress) const;
   llvm::Function *generateImplicitFunction(const std::function<void(void)> &generateBody, const Function *spiceFunc);
   llvm::Function *generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceProc);

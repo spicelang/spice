@@ -6,12 +6,16 @@ import "std/time/timer";
 import "std/io/filepath";
 
 // Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/global/cache-manager";
 import "bootstrap/global/runtime-module-manager";
+import "bootstrap/exception/error-manager";
 import "bootstrap/linker/external-linker-interface";
 import "bootstrap/reader/code-loc";
 import "bootstrap/util/memory";
 import "bootstrap/util/block-allocator";
-import "bootstrap/bindings/llvm/llvm";
+import "bootstrap/bindings/llvm/llvm" as llvm;
 import "bootstrap/source-file";
 import "bootstrap/driver";
 
@@ -24,14 +28,14 @@ public const string LTO_FILE_NAME = "lto-module";
  * This component owns all SourceFile instances and AST nodes and therefore is the resource root of the compiler.
  * Other components of the compiler can request the required global resources from the GlobalResourceManager.
  */
-public type GlobalResourceManager struct {
-    public llvm::Context context
-    public llvm::IRBuilder builder = llvm::IRBuilder(context)
+public type GlobalResourceManager struct : IGlobalResourceManager {
+    public llvm::LLVMContext context
+    public llvm::IRBuilder builder
     public llvm::Module ltoModule
     public llvm::TargetMachine targetMachine
     public DefaultMemoryManager memoryManager
     public Vector<String> compileTimeStringValues
-    public BlockAllocator<ASTNode> astNodeAlloc = BlockAllocator<ASTNode>(memoryManager) // Used to allocate all AST nodes
+    public BlockAllocator<ASTNode> astNodeAlloc // Used to allocate all AST nodes
     public UnorderedMap<String, heap SourceFile*> sourceFiles // The GlobalResourceManager owns all source files
     public Vector<ASTNode*> astNodes
     public const CliOptions& cliOptions
@@ -41,11 +45,13 @@ public type GlobalResourceManager struct {
     public Timer totalTimer
     public ErrorManager errorManager
     public bool abortCompilation = false
-    unsigned long nextCustomTypeId = BYTE_MAX_VALUE + 1 // Start at 256 because all primitive types come first
+    unsigned long nextCustomTypeId = BYTE_MAX_VALUE + 1l // Start at 256 because all primitive types come first
 }
 
 public p GlobalResourceManager.ctor(const CliOptions& cliOptions) {
     this.cliOptions = cliOptions;
+    this.builder = llvm::IRBuilder(this.context);
+    this.astNodeAlloc = BlockAllocator<ASTNode>(this.memoryManager);
 
     // Initialize the required LLVM targets
     if cliOptions.isNativeTarget {

@@ -2,7 +2,9 @@
 import "std/data/unordered-map";
 
 // Own imports
+import "bootstrap/source-file";
 import "bootstrap/util/file-util";
+import "bootstrap/global/global-resource-manager-intf";
 
 const string STRING_RT_IMPORT_NAME = "__rt_string";
 const string RESULT_RT_IMPORT_NAME = "__rt_result";
@@ -24,11 +26,11 @@ type ModuleNamePair struct {
 }
 
 public type RuntimeModuleManager struct {
-    GlobalResourceManager &resourceManager
+    IGlobalResourceManager &resourceManager
     UnorderedMap<RuntimeModule, SourceFile *> modules
 }
 
-public p RuntimeModuleManager.ctor(GlobalResourceManager &resourceManager) {
+public p RuntimeModuleManager.ctor(IGlobalResourceManager &resourceManager) {
     this.resourceManager = resourceManager;
 }
 

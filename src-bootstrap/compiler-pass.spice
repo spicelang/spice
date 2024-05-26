@@ -8,8 +8,8 @@ type CompilerPass struct {
     GlobalResourceManager& resourceManager
     const CliOptions& cliOptions
     SourceFile* sourceFile
-    Scope* rootScope
-    unsigned long manIdx = 0
+    heap Scope* rootScope
+    unsigned long manIdx = 0l
     Scope* currentScope
 }
 
@@ -17,8 +17,8 @@ p CompilerPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFi
     this.resourceManager = resourceManager;
     this.cliOptions = resourceManager.cliOptions;
     this.sourceFile = sourceFile;
-    this.rootScope = sourceFile != nil<SourceFile*> ? sourceFile.globalScope : nil<Scope*>;
-    this.currentScope = this.rootScope;
+    this.rootScope = sourceFile != nil<SourceFile*> ? sourceFile.globalScope : nil<heap Scope*>;
+    this.currentScope = (Scope*) this.rootScope;
 }
 
 /**

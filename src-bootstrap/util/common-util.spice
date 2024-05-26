@@ -1,3 +1,9 @@
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/source-file-intf";
+
 /**
  * Split the given haystack by the needle and return the last fragment
  *
@@ -19,12 +25,12 @@ public f<String> getLastFragment(const String &haystack, const string needle) {
  * @param sourceFiles Source files building the circular dependency chain
  * @return Error message
  */
-public f<String> getCircularImportMessage(const Vector<const SourceFile*>& sourceFiles) {
+public f<String> getCircularImportMessage(const Vector<const ISourceFile*>& sourceFiles) {
     String message;
     message += "*-----*\n";
     message += "|     |\n";
     for unsigned long i = 0l; i < sourceFiles.getSize(); i++ {
-        const SourceFile* sourceFile = sourceFiles[i];
+        const ISourceFile* sourceFile = sourceFiles.get(i);
         if i != 0 { message += "|     |\n"; }
         message += "|  ";
         message += sourceFile.fileName;

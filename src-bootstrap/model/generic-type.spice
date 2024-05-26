@@ -2,6 +2,7 @@
 import "std/data/unordered-map";
 
 // Own imports
+import "bootstrap/symboltablebuilder/type-chain";
 import "bootstrap/symboltablebuilder/qual-type";
 
 // Type aliases
@@ -9,16 +10,18 @@ public type TypeMapping alias UnorderedMap</*typeName=*/String, /*concreteType=*
 
 public type GenericType struct {
     public compose QualType qualType
-    QualTypeList typeConditions = [QualType(SuperType::TY_DYN)]
+    QualTypeList typeConditions
     public bool used = false
 }
 
 public p GenericType.ctor(const QualType& qualType) {
     this.qualType = qualType;
+    this.typeConditions.pushBack(QualType(SuperType::TY_DYN));
 }
 
 public p GenericType.ctor(const String& name) {
     this.qualType = QualType(SuperType::TY_GENERIC, name);
+    this.typeConditions.pushBack(QualType(SuperType::TY_DYN));
 }
 
 public p GenericType.ctor(const String& name, const QualTypeList& typeConditions) {
@@ -34,7 +37,7 @@ public p GenericType.ctor(const String& name, const QualTypeList& typeConditions
  * @param ignoreSpecifiers Ignore the type specifiers for type comparison
  * @return True or false
  */
-public f<bool> GenericType.checkConditionsOf(const QualTyp& qualType, bool ignoreArraySize = false, bool ignoreSpecifiers = false) {
+public f<bool> GenericType.checkConditionsOf(const QualType& qualType, bool ignoreArraySize = false, bool ignoreSpecifiers = false) {
     return this.checkTypeConditionOf(qualType, ignoreArraySize, ignoreSpecifiers);
 }
 

@@ -10,8 +10,8 @@ import "bootstrap/ast/ast-nodes";
 // Generic types
 type T dyn;
 
-public type Parser struct : ICompilerPass {
-    //compose CompilerPass compilerPass
+public type Parser struct {
+    compose CompilerPass compilerPass
     Lexer& lexer
     Stack<ASTNode*> parentStack
 }
