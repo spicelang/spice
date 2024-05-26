@@ -3,7 +3,8 @@ import "std/data/vector";
 import "std/os/system";
 
 // Own imports
-import "../util/memory";
+import "bootstrap/util/memory";
+import "bootstrap/ast/ast-nodes";
 
 type Base dyn;
 type T dyn;

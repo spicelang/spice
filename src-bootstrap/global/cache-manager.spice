@@ -5,10 +5,10 @@ import "std/io/filepath";
 import "bootstrap/source-file";
 
 public type CacheManager struct {
-    const FilePath &cacheDir
+    FilePath &cacheDir
 }
 
-public p CacheManager.ctor(const FilePath &cacheDir) {
+public p CacheManager.ctor(FilePath &cacheDir) {
     this.cacheDir = cacheDir;
 }
 

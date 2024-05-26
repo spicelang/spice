@@ -4,24 +4,26 @@ import "std/data/pair";
 import "std/data/map";
 import "std/data/unordered-map";
 import "std/data/vector";
+import "std/data/stack";
 import "std/io/filepath";
+import "std/time/timer";
 
 // Own imports
 import "bootstrap/driver";
 import "bootstrap/global/global-resource-manager-intf";
+import "bootstrap/global/runtime-module-manager";
 import "bootstrap/source-file-intf";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/bindings/llvm/llvm" as llvm;
 import "bootstrap/util/compiler-warning";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/lexer/lexer";
+import "bootstrap/parser/parser";
 
 type CompileStageType enum {
     NONE,
-    LEXER,
-    PARSER,
-    CST_VISUALIZER,
-    AST_BUILDER,
+    LEXER_AND_PARSER,
     AST_VISUALIZER,
     IMPORT_COLLECTOR,
     SYMBOL_TABLE_BUILDER,
@@ -35,7 +37,6 @@ type CompileStageType enum {
 
 type CompileStageIOType enum {
     IO_CODE,
-    IO_TOKENS,
     IO_CST,
     IO_AST,
     IO_IR,
@@ -43,10 +44,7 @@ type CompileStageIOType enum {
 }
 
 type TimerOutput struct {
-  unsigned long lexer = 0l
-  unsigned long parser = 0l
-  unsigned long cstVisualizer = 0l
-  unsigned long astBuilder = 0l
+  unsigned long lexerAndParser = 0l
   unsigned long astVisualizer = 0l
   unsigned long importCollector = 0l
   unsigned long symbolTableBuilder = 0l
@@ -61,7 +59,6 @@ type TimerOutput struct {
  * Collects the output of the compiler for debugging
  */
 type CompilerOutput struct {
-    String cstString
     String astString
     String symbolTableString
     String irString
@@ -102,111 +99,495 @@ public type SourceFile struct : ISourceFile {
     public heap Scope* globalScope
     public llvm::LLVMContext context
     public llvm::IRBuilder builder
-    public heap llvm::TargetMachine* targetMachine
-    public heap llvm::Module* llvmModule
+    public llvm::TargetMachine targetMachine
+    public llvm::Module llvmModule
     public UnorderedMap<String, SourceFile*> dependencies
     public Vector<const SourceFile*> dependants
     public Map<String, NameRegistryEntry> exportedNameRegistry
     public Vector<const Function*> testFunctions
+    public unsigned int importedRuntimeModules = 0
     // Private fields
     IGlobalResourceManager& resourceManager
     CliOptions& cliOptions
     UnorderedMap<const Type*, llvm::Type*> llvmTypeMapping
-    unsigned short importedRuntimeModules = 0s
     unsigned short totalTypeCheckerRuns = 0s
 }
 
-public p SourceFile.ctor(IGlobalResourceManager &resourceManager, SourceFile* parent, const String& name, const String& filePath, bool isStdFile) {
+public p SourceFile.ctor(IGlobalResourceManager &resourceManager, SourceFile* parent, const String& name, const FilePath& filePath, bool isStdFile) {
     // Copy data
-    this.resourceManager = resourceManager;
-    this.parent = parent;
     this.name = name;
     this.filePath = filePath;
     this.isStdFile = isStdFile;
+    this.parent = parent;
+    this.builder = llvm::IRBuilder(this.resourceManager.cliOptions.useLTO ? resourceManager.ltoContext : this.context);
+    this.resourceManager = resourceManager;
+    this.cliOptions = resourceManager.cliOptions;
 
     // Deduce fileName and fileDir
-    /*this.fileName = ;
-    this.fileDir = ;*/
-}
+    const FilePath path = FilePath(filePath);
+    this.fileName = path.getFileName();
+    this.fileDir = path.getParentDirectory();
 
-public p SourceFile.runLexer() {
-    // Lex this source file
+    // Search after selected target
+    String error;
+    const llvm::Target* target = llvm::getTargetFromTriple(this.resourceManager.targetTriple, error);
+    if target == nil<llvm::Target*> {
+        panic(Error(error.getRaw()));
+    }
+
+    // Create target machine
+    const string cpuName = resourceManager.cpuName.getRaw();
+    const string features = resourceManager.cpuFeatures.getRaw();
+    const string targetTriple = resourceManager.targetTriple.getRaw();
+    this.targetMachine = target.createTargetMachine(targetTriple, cpuName, features, llvm::LLVMCodeGenOptLevel::Default, llvm::LLVMRelocMode::Default, llvm::LLVMCodeModel::Default);
 }
 
 public p SourceFile.runParser() {
-    // Parse this source file
-}
+    if this.isMainFile {
+        this.resourceManager.totalTimer.start();
+    }
 
-public p SourceFile.runCSTVisualizer(string* output) {
-    // Only execute if enabled
-    if !cliOptions.dumpCST && !cliOptions.testMode { return; }
+    // Check if this stage has already been done
+    if this.previousStage >= CompileStageType::LEXER_AND_PARSER {
+        return;
+    }
 
-    // ToDo: Extend
-}
+    Timer timer;
+    timer.start();
 
-public p SourceFile.runASTBuilder() {
-    // Transform the imported source files
-    // ToDo: Extend
+    // Parse the source file
+    Lexer lexer = Lexer(this.filePath);
+    Parser parser = Parser(lexer);
+    this.ast = parser.parse();
+    assert this.ast != nil<ASTEntryNode*>;
+
+    this.previousStage = CompileStageType::LEXER_AND_PARSER;
+    timer.stop();
+    this.compilerOutput.times.lexerAndParser = timer.getDurationInMillis();
+    this.printStatusMessage("Parser", CompileStageIOType::IO_CODE, CompileStageIOType::IO_AST, this.compilerOutput.times.lexerAndParser);
 }
 
 public p SourceFile.runASTVisualizer(string* output) {
     // Only execute if enabled
-    if !cliOptions.dumpAST && !cliOptions.testMode { return; }
+    if this.resotredFromCache || (!this.cliOptions.dumpSettings.dumpAST && !this.cliOptions.testMode) {
+        return;
+    }
+    // Check if this stage has already been done
+    if this.previousStage >= CompileStageType::AST_VISUALIZER {
+        return;
+    }
 
-    // ToDo: Extend
+    Timer timer;
+    timer.start();
+
+    // Generate dot code for this source file
+    String dotCode;
+    this.visualizerPreamble(dotCode);
+    ASTVisualizer visualizer = ASTVisualizer(this.resouceManager, this);
+    dotCode += visualizer.visit(this.ast);
+    dotCode += "}";
+
+    // Dump the serialized AST string and the SVG file
+    if this.cliOptions.dumpSettings.dumpAST || this.cliOptions.testMode {
+        this.compilerOutput.astString = dotCode;
+    }
+
+    if this.cliOptions.dumpSettings.dumpAST {
+        this.visualizerOutput("AST", this.compilerOutput.astString);
+    }
+
+    this.previousStage = CompileStageType::AST_VISUALIZER;
+    timer.stop();
+    this.compilerOutput.times.astVisualizer = timer.getDurationInMillis();
+    this.printStatusMessage("AST Visualizer", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.astVisualizer);
 }
 
 public p SourceFile.runImportCollector() {
+    // Skip if restored from cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::IMPORT_COLLECTOR {
+        return;
+    }
 
+    Timer timer;
+    timer.start();
+
+    // Collect imports
+    ImportCollector importCollector = ImportCollector(this.resourceManager, this);
+    importCollector.visit(this.ast);
+
+    this.previousStage = CompileStageType::IMPORT_COLLECTOR;
+    timer.stop();
+    this.compilerOutput.times.importCollector = timer.getDurationInMillis();
+
+    // Run first part of pipeline for the imported source file
+    foreach dyn dependency : this.dependencies {
+        SourceFile* sourceFile = dependency.getSecond();
+        sourceFile.runFrontend();
+    }
+
+    this.printStatusMessage("Import Collector", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.importCollector);
 }
 
 public p SourceFile.runSymbolTableBuilder() {
+    // Skip if restored from cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::SYMBOL_TABLE_BUILDER {
+        return;
+    }
 
+    Timer timer;
+    timer.start();
+
+    // The symbol tables of all dependencies are present at this point, so we can merge the exported name registries in
+    foreach dyn dependency : this.dependencies {
+        const String& importName = dependency.getFirst();
+        const SourceFile* sourceFile = dependency.getSecond();
+        this.mergeNameRegistries(*sourceFile, importName);
+    }
+
+    // Build the symbol table
+    SymbolTableBuilder symbolTableBuilder = SymbolTableBuilder(this.resourceManager, this);
+    symbolTableBuilder.visit(this.ast);
+
+    this.previousStage = CompileStageType::SYMBOL_TABLE_BUILDER;
+    timer.stop();
+    this.compilerOutput.times.symbolTableBuilder = timer.getDurationInMillis();
+    this.printStatusMessage("Symbol Table Builder", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.symbolTableBuilder);
 }
 
 public p SourceFile.runTypeChecker() {
-
+    // We need two runs here due to generics.
+    // The first run to determine all concrete substantiations of potentially generic elements
+    this.runTypeCheckerPre(); // Visit dependency tree from bottom to top
+    // The second run to ensure, also generic scopes are type-checked properly
+    this.runTypeCheckerPost(); // Visit dependency tree from top to bottom
 }
 
 p SourceFile.runTypeCheckerPre() {
+    // Skip if restored from cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::TYPE_CHECKER_PRE {
+        return;
+    }
 
+    // Type-check all dependencies first
+    foreach dyn dependency : this.dependencies {
+        SourceFile* sourceFile = dependency.getSecond();
+        sourceFile.runTypeCheckerPre();
+    }
+
+    Timer timer;
+    timer.start();
+
+    // Type check the AST
+    TypeChecker typeChecker = TypeChecker(this.resourceManager, this, TypeCheckerMode::TC_MODE_PRE);
+    typeChecker.visit(this.ast);
+
+    this.previousStage = CompileStageType::TYPE_CHECKER_PRE;
+    timer.stop();
+    this.compilerOutput.times.typeCheckerPre = timer.getDurationInMillis();
+    this.printStatusMessage("Type Checker Pre", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.typeCheckerPre);
 }
 
 p SourceFile.runTypeCheckerPost() {
+    // Skip if restored from cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::TYPE_CHECKER_POST {
+        return;
+    }
 
+    Timer timer;
+    timer.start();
+
+    // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
+    TypeChecker typeChecker = TypeChecker(this.resourceManager, this, TypeCheckerMode::TC_MODE_POST);
+    unsigned short typeCheckerRuns = 0s;
+    do {
+        typeCheckerRuns++;
+        this.totalTypeCheckerRuns++;
+
+        // Type-check the current file first. Multiple times, if requested
+        timer.resume();
+        typeChecker.visit(this.ast);
+        timer.pause();
+
+        // Then type-check all dependencies
+        foreach dyn dependency : this.dependencies {
+            SourceFile* sourceFile = dependency.getSecond();
+            sourceFile.runTypeCheckerPost();
+        }
+    } while (typeChecker.reVisitRequested);
+
+    this.checkForSoftErrors();
+
+    // Check if all dyn variables were type-inferred successfully
+    this.globalScope.ensureSuccessfulTypeInference();
+
+    this.previousStage = CompileStageType::TYPE_CHECKER_POST;
+    timer.stop();
+    this.compilerOutput.times.typeCheckerPost = timer.getDurationInMillis();
+    this.printStatusMessage("Type Checker Post", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.typeCheckerPost);
+
+    // Save the JSON version in the compiler output
+    if this.cliOptions.dumpSettings.dumpSymbolTable || this.cliOptions.testMode {
+        this.compilerOutput.symbolTableString = this.globalScope.getSymbolTableJSON();
+    }
+
+    // Dump symbol table
+    if this.cliOptions.dumpSettings.dumpSymbolTable {
+        this.dumpOutput(this.compilerOutput.symbolTableString, "Symbol Table", "symbol-table.json");
+    }
 }
 
 public p SourceFile.runIRGenerator() {
+    // Skip if restored from cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::IR_GENERATOR {
+        return;
+    }
 
+    Timer timer;
+    timer.start();
+
+    // Create LLVM module for this source file
+    llvm::LLVMContext& llvmContext = this.cliOptions.useLTO ? this.resourceManager.ltoContext : this.context;
+    this.llvmModule = llvm::Module(this.fileName, llvmContext);
+
+    // Generate this source file
+    IRGenerator irGenerator = IRGenerator(this.resourceManager, this);
+    irGenerator.visit(this.ast);
+
+    // Save the ir string in the compiler output
+    if this.cliOptions.dumpSettings.dumpIR || this.cliOptions.testMode {
+        this.compilerOutput.irString = getIRString(this.llvmModule, this.cliOptions.testMode);
+    }
+
+    // Dump unoptimized IR code
+    if this.cliOptions.dumpSettings.dumpIR {
+        this.dumpOutput(this.compilerOutput.irString, "Unoptimized IR Code", "ir-code.ll");
+    }
+
+    this.previousStage = CompileStageType::IR_GENERATOR;
+    timer.stop();
+    this.compilerOutput.times.irGenerator = timer.getDurationInMillis();
+    this.printStatusMessage("IR Generator", CompileStageIOType::IO_AST, CompileStageIOType::IO_IR, this.compilerOutput.times.irGenerator);
 }
 
 public p SourceFile.runDefaultIROptimizer() {
+    // Skip if restored from cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::IR_OPTIMIZER {
+        return;
+    }
+
+    // Skip this stage if optimization is disabled
+    const OptLevel optLevel = this.cliOptions.optLevel;
+    if optLevel < OptLevel::O1 || optLevel > OptLevel::Oz {
+        return;
+    }
+
+    Timer timer = Timer;
+    timer.start();
+
+    // Optimize the IR code
+    IROptimizer irOptimizer = IROptimizer(this.resourceManager, this);
+    irOptimizer.prepare();
+    irOptimizer.optimizeDefault();
+
+    // Save the optimized ir string in the compiler output
+    if this.cliOptions.dumpSettings.dumpIROpt || this.cliOptions.testMode {
+        this.compilerOutput.irOptString = getIRString(this.llvmModule, this.cliOptions.testMode);
+    }
+
+    // Dump optimized IR code
+    if this.cliOptions.dumpSettings.dumpIROpt {
+        this.dumpOutput(this.compilerOutput.irOptString, "Optimized IR Code", "ir-code-O" + toString(optLevel) + ".ll");
+    }
+
+    this.previousStage = CompileStageType::IR_OPTIMIZER;
+    timer.stop();
+    this.compilerOutput.times.irOptimizer = timer.getDurationInMillis();
+    this.printStatusMessage("IR Optimizer", CompileStageIOType::IO_IR, CompileStageIOType::IO_IR, this.compilerOutput.times.irOptimizer);
+}
+
+public p SourceFile.runPreLinkIROptimizer() {
+    assert this.cliOptions.useLTO;
+
+}
+
+public p SourceFile.runBitcodeLinker() {
+    assert this.cliOptions.useLTO;
+
+}
+
+public p SourceFile.runPostLinkIROptimizer() {
+    assert this.cliOptions.useLTO;
 
 }
 
 public p SourceFile.runObjectEmitter() {
+    // Skip if restored from cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::OBJECT_EMITTER {
+        return;
+    }
 
+    // Skip if LTO is enabled and this is not the main source file
+    if this.cliOptions.useLTO && !this.isMainFile {
+        return;
+    }
+
+    Timer timer;
+    timer.start();
+
+    // ToDo: Emit object file
+
+    this.previousStage = CompileStageType::OBJECT_EMITTER;
+    timer.stop();
+    this.compilerOutput.times.objectEmitter = timer.getDurationInMillis();
+    this.printStatusMessage("Object Emitter", CompileStageIOType::IO_IR, CompileStageIOType::IO_OBJECT_FILE, this.compilerOutput.times.objectEmitter);
 }
 
 public p SourceFile.concludeCompilation() {
+    // Skip if restored from cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::FINISHED {
+        return;
+    }
 
+    // Cache the source file
+    if !this.cliOptions.ignoreCache {
+        this.resourceManager.cacheSourceFile(this);
+    }
+
+    // Save type registry as string in the compiler output
+    if this.isMainFile && this.cliOptions.dumpSettings.dumpTypes || this.cliOptions.testMode {
+        this.compilerOutput.typesString = dumpTypeRegistry();
+    }
+
+    // Dump type registry
+    if this.isMainFile && this.cliOptions.dumpSettings.dumpTypes {
+        this.dumpOutput(this.compilerOutput.typesString, "Type Registry", "type-registry.out");
+    }
+
+    // Print warning if verifier is disabled
+    if this.isMainFile && this.cliOptions.disableVerifier {
+        println("\nThe LLVM verifier passes are disabled. Please use the cli option carefully.");
+    }
+
+    if this.cliOptions.printDebugOutput {
+        println("Finished compiling " + this.fileName);
+    }
+
+    this.previousStage = CompileStageType::FINISHED;
 }
 
 public p SourceFile.runFrontEnd() {
-
+    this.runParser();
+    this.runASTVisualizer();
+    this.runImportCollector();
+    this.runSymbolTableBuilder();
 }
 
 public p SourceFile.runMiddleEnd() {
-
+    this.runTypeCheckerPre();
+    this.runTypeCheckerPost();
 }
 
 public p SourceFile.runBackEnd() {
+    // Run backend for all dependencies first
+    foreach dyn dependency : this.dependencies {
+        SourceFile* sourceFile = dependency.getSecond();
+        sourceFile.runBackEnd();
+    }
 
+    // Submit source file compilation to the task queue
+
+
+    if this.isMainFile {
+        this.resourceManager.totalTimer.stop();
+        if this.cliOptions.printDebugOutput {
+            print("\nSuccessfully compiled " + toString(this.resourceManager.sourceFiles.getSize()) + " source file(s)");
+            print(" or " + toString(this.resourceManager.getTotalLineCount()) + " lines in total.\n");
+            print("Total number of types: " + toString(getTypeCount()) + "\n");
+            print("Total compilation time: " + toString(this.resourceManager.totalTimer.getDurationMilliseconds()) + " ms\n");
+        }
+    }
 }
 
-f<bool> SourceFile.isAlreadyImported(const String& filePathSearch) {
+public p SourceFile.addDependency(SourceFile* sourceFile, const ASTNode* declNode, const String& dependencyName, const String& path) {
+    // Check if this would cause a circular dependency
+    Stack<const SourceFile*> dependencyCircle;
+    if this.isAlreadyImported(path, dependencyCircle) {
+        // Build error message
+        String errorMessage = "Circular dependency detected while importing '" + sourceFile.fileName + "':\n\n";
+        errorMessage += getCircularImportMessage(dependencyCircle);
+        panic(Error(errorMessage));
+    }
+
+    // Add the dependency
+    sourceFile.isMainFile = false;
+    this.dependencies.upsert(dependencyName, sourceFile);
+
+    // Add the dependant
+    sourceFile.dependants.pushBack(this);
+}
+
+public f<bool> SourceFile.imports(const SourceFile* sourceFile) {
+    foreach dyn dependency : this.dependencies {
+        if dependency.getSecond() == sourceFile {
+            return true;
+        }
+    }
+    return false;
+}
+
+f<bool> SourceFile.isAlreadyImported(const FilePath& filePathSearch, Stack<const SourceFile*>& circle) {
+    circle.push(this);
+
     // Check if the current source file corresponds to the path to search
-    if this.filePath == filePathSearch { return true; }
-    // Check parent recursively
-    return this.parent != nil<SourceFile*> && this.parent.isAlreadyImported(filePathSearch);
+    if this.filePath == filePathSearch {
+        return true;
+    }
+
+    // Check dependants recursively
+    foreach dyn dependant : this.dependants {
+        if dependant.isAlreadyImported(filePathSearch, circle) {
+            return true;
+        }
+    }
+
+    // If no dependant was found, remote the current source file from the circle to continue with the next sibling
+    circle.pop();
+    return false;
+}
+
+public f<SourceFile*> SourceFile.requestRuntimeModule(RuntimeModule runtimeModule) {
+    // Check if the module was already imported
+    if this.isRuntimeModuleAvailable(runtimeModule) {
+        return this.resourceManager.runtimeModuleManager.getModule(runtimeModule);
+    }
+    return this.resourceManager.runtimeModuleManager.requestModule(this, runtimeModule);
+}
+
+public f<bool> SourceFile.isRuntimeModuleAvailable(RuntimeModule runtimeModule) {
+    return (this.importedRuntimeModules & runtimeModule) != 0;
+}
+
+public p SourceFile.addNameRegistryEntry(const String& symbolName, unsigned long typeId, SymbolTableEntry* entry, Scope* scope, bool keepNewOnCollision, SymbolTableEntry* importEntry) {
+    if keepNewOnCollision || !this.exportedNameRegistry.contains(symbolName) { // Overwrite potential existing entry
+        this.exportedNameRegistry.upsert(symbolName, NameRegistryEntry(symbolName, typeId, entry, scope, importEntry));
+    } else { // Name collision => we must remove the existing entry
+        this.exportedNameRegistry.remove(symbolName);
+    }
+}
+
+public f<const NameRegistryEntry*> SourceFile.getNameRegistryEntry(const String& symbolName) {
+    if !this.exportedNameRegistry.contains(symbolName) {
+        return nil<NameRegistryEntry*>;
+    }
+
+    // Resolve registry entry for the given name
+    assert this.exportedNameRegistry.contains(symbolName);
+    const NameRegistryEntry* entry = &this.exportedNameRegistry.get(symbolName);
+
+    // Mark the import entry as used
+    if entry.importEntry != nil<SymbolTableEntry*> {
+        entry.importEntry.used = true;
+    }
+
+    return entry;
 }

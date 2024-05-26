@@ -2,10 +2,11 @@
 import "std/data/unordered-map";
 
 // Own imports
-import "bootstrap/source-file";
+import "bootstrap/source-file-intf";
 import "bootstrap/util/file-util";
 import "bootstrap/global/global-resource-manager-intf";
 
+// Constants
 const string STRING_RT_IMPORT_NAME = "__rt_string";
 const string RESULT_RT_IMPORT_NAME = "__rt_result";
 const string ERROR_RT_IMPORT_NAME = "__rt_error";
@@ -16,8 +17,8 @@ public type RuntimeModule enum {
     STRING_RT = 1,
     RESULT_RT = 2,
     ERROR_RT  = 4,
-    MEMORY_RT  = 8,
-    RTTI_RT = 16
+    MEMORY_RT = 8,
+    RTTI_RT   = 16
 }
 
 type ModuleNamePair struct {
@@ -27,24 +28,24 @@ type ModuleNamePair struct {
 
 public type RuntimeModuleManager struct {
     IGlobalResourceManager &resourceManager
-    UnorderedMap<RuntimeModule, SourceFile *> modules
+    UnorderedMap<RuntimeModule, ISourceFile *> modules
 }
 
 public p RuntimeModuleManager.ctor(IGlobalResourceManager &resourceManager) {
     this.resourceManager = resourceManager;
 }
 
-public f<SourceFile *> RuntimeModuleManager.requestModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
-    const string importName = resolveNamePair(requestedModule).importName;
+public f<ISourceFile *> RuntimeModuleManager.requestModule(ISourceFile* parentSourceFile, RuntimeModule requestedModule) {
+    const String importName = String(this.resolveNamePair(requestedModule).importName);
 
     // Check if the requested module is available already, if not load it
-    dyn rtFile = isModuleAvailable(requestedModule) ? getModule(requestedModule) : loadModule(parentSourceFile, requestedModule);
+    dyn rtFile = this.isModuleAvailable(requestedModule) ? this.getModule(requestedModule) : this.loadModule(parentSourceFile, requestedModule);
 
     // Add the dependency to the parent source file
-    parentSourceFile.addDependency(rtFile, parentSourceFile.ast, importName, rtFile.filePath.str());
+    parentSourceFile.addDependency(rtFile, parentSourceFile.ast, importName, rtFile.filePath.toString());
     assert parentSourceFile.dependencies.contains(importName);
-    SourceFile* runtimeFile = parentSourceFile.dependencies.get(importName);
-    modules.insert(requestedModule, runtimeFile);
+    ISourceFile* runtimeFile = parentSourceFile.dependencies.get(importName);
+    this.modules.upsert(requestedModule, runtimeFile);
 
     // Merge the module name registry with the one of the source file
     parentSourceFile.mergeNameRegistries(*rtFile, importName);
@@ -55,22 +56,22 @@ public f<SourceFile *> RuntimeModuleManager.requestModule(SourceFile* parentSour
     return runtimeFile;
 }
 
-public f<SourceFile *> RuntimeModuleManager.getModule(RuntimeModule requestedModule) {
-    assert modules.contains(requestedModule);
-    return modules.get(requestedModule);
+public f<ISourceFile *> RuntimeModuleManager.getModule(RuntimeModule requestedModule) {
+    assert this.modules.contains(requestedModule);
+    return this.modules.get(requestedModule);
 }
 
 public f<bool> RuntimeModuleManager.isModuleAvailable(RuntimeModule requestedModule) {
-    return modules.contains(requestedModule);
+    return this.modules.contains(requestedModule);
 }
 
-public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
-    const ModuleNamePair namePair = resolveNamePair(requestedModule);
-    const string filePath = getStdDir() / "runtime" / fileName / ".spice";
+public f<ISourceFile *> RuntimeModuleManager.loadModule(ISourceFile* parentSourceFile, RuntimeModule requestedModule) {
+    const ModuleNamePair namePair = this.resolveNamePair(requestedModule);
+    const FilePath filePath = getStdDir() / "runtime" / namePair.fileName / ".spice";
     assert filePath != parentSourceFile.filePath;
 
     // Instruct the global resource manager to create a new source file
-    SourceFile* moduleSourceFile = resourceManager.createSourceFile(parentSourceFile, importName, filrPath, true);
+    SourceFile* moduleSourceFile = this.resourceManager.createSourceFile(parentSourceFile, namePair.importName, filePath, true);
     moduleSourceFile.isMainFile = false;
 
     // Run frontend and first type checker run for the loaded source file
@@ -91,10 +92,10 @@ public f<ModuleNamePair> RuntimeModuleManager.resolveNamePair(RuntimeModule requ
         case RuntimeModule::ERROR_RT: {
             return ModuleNamePair{ERROR_RT_IMPORT_NAME, "error_rt"};
         }
-        case RuntimeModule::ARRAY_RT: {
+        case RuntimeModule::MEMORY_RT: {
             return ModuleNamePair{MEMORY_RT_IMPORT_NAME, "memory_rt"};
         }
-        case RuntimeModule::OBJECT_RT: {
+        case RuntimeModule::RTTI_RT: {
             return ModuleNamePair{RTTI_RT_IMPORT_NAME, "rtti_rt"};
         }
         default: {

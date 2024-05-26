@@ -8,11 +8,11 @@ import "bootstrap/driver";
 public type ExternalLinkerInterface struct {
     CliOptions& cliOptions
     public FilePath outputPath
-    Vector<string> objectFilePaths
-    Vector<string> linkerFlags
+    Vector<FilePath> objectFilePaths
+    Vector<String> linkerFlags
 }
 
-public p ExternalLinkerInterface.ctor(const CliOptions& cliOptions) {
+public p ExternalLinkerInterface.ctor(CliOptions& cliOptions) {
     this.cliOptions = cliOptions;
     this.outputPath = cliOptions.outputPath;
 }
@@ -43,7 +43,6 @@ public p ExternalLinkerInterface.prepare() {
  * Start the linking process
  */
 public p ExternalLinkerInterface.link() {
-    assert !this.outputPath.isEmpty();
 
     // ToDo
 }
@@ -53,7 +52,7 @@ public p ExternalLinkerInterface.link() {
  *
  * @param objectFilePath Path to the object file
  */
-public p ExternalLinkerInterface.addObjectFilePath(string objectFilePath) {
+public p ExternalLinkerInterface.addObjectFilePath(const FilePath& objectFilePath) {
     this.objectFilePaths.pushBack(objectFilePath);
 }
 
@@ -63,6 +62,15 @@ public p ExternalLinkerInterface.addObjectFilePath(string objectFilePath) {
  * @param linkerFlag Linker flag
  */
 public p ExternalLinkerInterface.addLinkerFlag(string linkerFlag) {
+    this.linkerFlags.pushBack(String(linkerFlag));
+}
+
+/**
+ * Add another linker flag for the call to the linker executable
+ *
+ * @param linkerFlag Linker flag
+ */
+public p ExternalLinkerInterface.addLinkerFlag(const String& linkerFlag) {
     this.linkerFlags.pushBack(linkerFlag);
 }
 
@@ -74,9 +82,10 @@ public p ExternalLinkerInterface.addLinkerFlag(string linkerFlag) {
 public p ExternalLinkerInterface.addAdditionalSourcePath(FilePath additionalSource) {
     // Check if the file exists
     if !additionalSource.exists() {
-        panic(Error("The additional source file '" + additionalSource.toGenericString() + "' does not exist"));
+        const String msg = "The additional source file '" + additionalSource.toGenericString() + "' does not exist";
+        panic(Error(msg.getRaw()));
     }
 
     // Add the file to the linker
-    this.addObjectFilePath(additionalSource.toNativeString());
+    this.addObjectFilePath(additionalSource);
 }

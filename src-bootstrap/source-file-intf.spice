@@ -3,5 +3,5 @@
 // Own imports
 
 public type ISourceFile interface {
-
+    public f<unsigned long> getLineCount();
 }
