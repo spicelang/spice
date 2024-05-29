@@ -165,19 +165,27 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
   // Enrich
   interfaceDefNode->interfaceName = getIdentifier(ctx->TYPE_IDENTIFIER());
   interfaceDefNode->typeId = resourceManager.getNextCustomTypeId();
-  interfaceDefNode->hasTemplateTypes = ctx->LESS();
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->topLevelDefAttr()) {
+    interfaceDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
 
-  // Tell the attributes that they are interface attributes
-  if (interfaceDefNode->attrs())
-    for (AttrNode *attr : interfaceDefNode->attrs()->attrLst->attributes)
+    // Tell the attributes that they are struct attributes
+    for (AttrNode *attr : interfaceDefNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_INTERFACE;
 
-  // Check if a custom type id was set
-  if (interfaceDefNode->attrs() && interfaceDefNode->attrs()->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
-    interfaceDefNode->typeId = interfaceDefNode->attrs()->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+    // Check if a custom type id was set
+    if (interfaceDefNode->attrs && interfaceDefNode->attrs->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
+      interfaceDefNode->typeId = interfaceDefNode->attrs->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+  }
+  if (ctx->specifierLst())
+    interfaceDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  if (ctx->LESS()) {
+    interfaceDefNode->hasTemplateTypes = true;
+    interfaceDefNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
+  }
+  for (SpiceParser::SignatureContext *signature : ctx->signature())
+    interfaceDefNode->signatures.push_back(std::any_cast<SignatureNode *>(visit(signature)));
 
   return concludeNode(interfaceDefNode);
 }

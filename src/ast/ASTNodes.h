@@ -386,16 +386,14 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitInterfaceDef(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitInterfaceDef(this); }
 
-  // Public get methods
-  [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] std::vector<SignatureNode *> signatures() const { return getChildren<SignatureNode>(); }
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
-
   // Other methods
   std::vector<Interface *> *getInterfaceManifestations() override { return &interfaceManifestations; }
 
   // Public members
+  TopLevelDefinitionAttrNode *attrs = nullptr;
+  SpecifierLstNode *specifierLst = nullptr;
+  std::vector<SignatureNode *> signatures;
+  TypeLstNode *templateTypeLst = nullptr;
   bool hasTemplateTypes = false;
   TypeSpecifiers interfaceSpecifiers = TypeSpecifiers::of(TY_INTERFACE);
   std::string interfaceName;

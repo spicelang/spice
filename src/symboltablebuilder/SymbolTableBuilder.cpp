@@ -240,8 +240,8 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 
 std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Check if this name already exists
   if (rootScope->lookupStrict(node->interfaceName))
@@ -252,14 +252,14 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
       rootScope->createChildScope(INTERFACE_SCOPE_PREFIX + node->interfaceName, ScopeType::INTERFACE, &node->codeLoc);
 
   // Visit signatures
-  for (SignatureNode *signature : node->signatures())
+  for (SignatureNode *signature : node->signatures)
     visit(signature);
 
   // Leave the interface scope
   currentScope = node->interfaceScope->parent;
 
   // Build interface specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->interfaceSpecifiers.isPublic = true;

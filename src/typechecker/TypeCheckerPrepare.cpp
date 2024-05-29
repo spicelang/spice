@@ -422,9 +422,9 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
   // Retrieve interface template types
   if (node->hasTemplateTypes) {
-    usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes.size());
-    templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes.size());
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
+    usedTemplateTypes.reserve(node->templateTypeLst->dataTypes.size());
+    templateTypesGeneric.reserve(node->templateTypeLst->dataTypes.size());
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_PTR(templateType)
@@ -455,8 +455,8 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
   // Visit methods
   size_t vtableIndex = 0;
   std::vector<Function *> methods;
-  methods.reserve(node->signatures().size());
-  for (SignatureNode *signature : node->signatures()) {
+  methods.reserve(node->signatures.size());
+  for (SignatureNode *signature : node->signatures) {
     auto method = std::any_cast<std::vector<Function *> *>(visit(signature));
     if (!method)
       return nullptr;
