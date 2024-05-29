@@ -412,7 +412,7 @@ std::any TypeChecker::visitParamLst(ParamLstNode *node) {
   NamedParamList namedParams;
   bool metOptional = false;
 
-  for (DeclStmtNode *param : node->params()) {
+  for (DeclStmtNode *param : node->params) {
     // Visit param
     const auto paramType = std::any_cast<QualType>(visit(param));
     if (paramType.is(TY_UNRESOLVED))

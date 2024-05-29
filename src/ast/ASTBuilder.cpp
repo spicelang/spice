@@ -431,12 +431,11 @@ std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
   auto paramLstNode = createNode<ParamLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
-
-  // Tell all params and param types that they are such
-  for (DeclStmtNode *param : paramLstNode->params()) {
+  for (SpiceParser::DeclStmtContext *declStmt : ctx->declStmt()) {
+    auto param = std::any_cast<DeclStmtNode *>(visit(declStmt));
     param->isParam = true;
     param->dataType()->isParamType = true;
+    paramLstNode->params.push_back(param);
   }
 
   return concludeNode(paramLstNode);
