@@ -421,7 +421,8 @@ std::any ASTBuilder::visitTypeAltsLst(SpiceParser::TypeAltsLstContext *ctx) {
   auto typeAltsLstNode = createNode<TypeAltsLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::DataTypeContext *dataType : ctx->dataType())
+    typeAltsLstNode->dataTypes.push_back(std::any_cast<DataTypeNode *>(visit(dataType)));
 
   return concludeNode(typeAltsLstNode);
 }

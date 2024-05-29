@@ -542,8 +542,8 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   // Retrieve type conditions
   QualTypeList typeConditions;
-  typeConditions.reserve(node->typeAltsLst()->dataTypes().size());
-  for (const auto &typeAlt : node->typeAltsLst()->dataTypes()) {
+  typeConditions.reserve(node->typeAltsLst()->dataTypes.size());
+  for (const auto &typeAlt : node->typeAltsLst()->dataTypes) {
     auto typeCondition = std::any_cast<QualType>(visit(typeAlt));
     HANDLE_UNRESOLVED_TYPE_PTR(typeCondition)
     if (!typeCondition.is(TY_DYN))
