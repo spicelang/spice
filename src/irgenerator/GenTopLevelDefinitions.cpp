@@ -38,7 +38,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
       SymbolTableEntry *paramSymbol = node->bodyScope->lookupStrict(param->varName);
       assert(paramSymbol != nullptr);
       // Retrieve type of param
-      auto paramType = any_cast<llvm::Type *>(visit(param->dataType()));
+      auto paramType = any_cast<llvm::Type *>(visit(param->dataType));
       // Add it to the lists
       paramInfoList.emplace_back(param->varName, paramSymbol);
       paramSymbolTypes.push_back(paramSymbol->getQualType());

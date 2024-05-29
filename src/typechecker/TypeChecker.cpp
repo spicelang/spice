@@ -234,7 +234,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   HANDLE_UNRESOLVED_TYPE_PTR(itemType)
   if (itemType.is(TY_DYN)) { // Perform type inference
     // Update evaluated symbol type of the declaration data type
-    node->itemVarDecl->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
+    node->itemVarDecl->dataType->setEvaluatedSymbolType(iteratorItemType, manIdx);
     // Update item type
     itemType = iteratorItemType;
   } else {
@@ -539,7 +539,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
   QualType localVarType;
   if (node->hasAssignment) {
     // Visit the right side
-    auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr()));
+    auto rhs = std::any_cast<ExprResult>(visit(node->assignExpr));
     auto [rhsTy, rhsEntry] = rhs;
 
     // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
@@ -549,7 +549,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     }
 
     // Visit data type
-    localVarType = std::any_cast<QualType>(visit(node->dataType()));
+    localVarType = std::any_cast<QualType>(visit(node->dataType));
 
     // Infer the type left to right if the right side is an empty array initialization
     if (rhsTy.isArrayOf(TY_DYN))
@@ -573,7 +573,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       // If this is a struct type, check if the type is known. If not, error out
       if (localVarType.isBase(TY_STRUCT) && !sourceFile->getNameRegistryEntry(localVarType.getBase().getSubType())) {
         const std::string structName = localVarType.getBase().getSubType();
-        softError(node->dataType(), UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
+        softError(node->dataType, UNKNOWN_DATATYPE, "Unknown struct type '" + structName + "'. Forgot to import?");
         localVarType = QualType(TY_UNRESOLVED);
       }
     } else {
@@ -581,7 +581,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
     }
   } else {
     // Visit data type
-    localVarType = std::any_cast<QualType>(visit(node->dataType()));
+    localVarType = std::any_cast<QualType>(visit(node->dataType));
 
     // References with no initialization are illegal
     if (localVarType.isRef() && !node->isParam && !node->isForEachItem)

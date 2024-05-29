@@ -969,15 +969,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDeclStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDeclStmt(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { entries.resize(manifestationCount); }
   [[nodiscard]] bool isParamNode() const override { return isParam; }
 
   // Public members
+  DataTypeNode *dataType = nullptr;
+  AssignExprNode *assignExpr = nullptr;
   bool hasAssignment = false;
   bool isParam = false;
   bool isForEachItem = false;

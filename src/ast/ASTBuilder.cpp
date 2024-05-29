@@ -434,7 +434,7 @@ std::any ASTBuilder::visitParamLst(SpiceParser::ParamLstContext *ctx) {
   for (SpiceParser::DeclStmtContext *declStmt : ctx->declStmt()) {
     auto param = std::any_cast<DeclStmtNode *>(visit(declStmt));
     param->isParam = true;
-    param->dataType()->isParamType = true;
+    param->dataType->isParamType = true;
     paramLstNode->params.push_back(param);
   }
 
@@ -527,10 +527,13 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
 
   // Enrich
   declStmtNode->varName = getIdentifier(ctx->IDENTIFIER());
-  declStmtNode->hasAssignment = ctx->ASSIGN();
 
   // Visit children
-  visitChildren(ctx);
+  declStmtNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  if (ctx->assignExpr()) {
+    declStmtNode->hasAssignment = true;
+    declStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  }
 
   return concludeNode(declStmtNode);
 }

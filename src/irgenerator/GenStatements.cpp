@@ -43,7 +43,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   llvm::Type *varTy = varSymbolType.toLLVMType(sourceFile);
 
   // Check if right side is dyn array. If this is the case we have an empty array initializer and need the default value
-  const bool rhsIsDynArray = node->hasAssignment && node->assignExpr()->getEvaluatedSymbolType(manIdx).isArrayOf(TY_DYN);
+  const bool rhsIsDynArray = node->hasAssignment && node->assignExpr->getEvaluatedSymbolType(manIdx).isArrayOf(TY_DYN);
 
   // Check if the declaration is with an assignment or the default value
   llvm::Value *varAddress = nullptr;
@@ -53,16 +53,16 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
       varAddress = insertAlloca(varTy);
       varEntry->updateAddress(varAddress);
       // Call copy ctor
-      llvm::Value *rhsAddress = resolveAddress(node->assignExpr());
+      llvm::Value *rhsAddress = resolveAddress(node->assignExpr);
       assert(rhsAddress != nullptr);
       generateCtorOrDtorCall(varEntry, node->calledCopyCtor, {rhsAddress});
     } else {
       // Assign rhs to lhs
 #ifndef NDEBUG
-      LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
+      LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr, true);
       assert(assignResult.entry == varEntry);
 #else
-      doAssignment(varAddress, varEntry, node->assignExpr(), true);
+      doAssignment(varAddress, varEntry, node->assignExpr, true);
 #endif
       varAddress = varEntry->getAddress();
       varEntry->updateAddress(varAddress);
