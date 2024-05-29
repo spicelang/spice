@@ -605,19 +605,14 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitForeachLoop(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitForeachLoop(this); }
 
-  // Public get methods
-  [[nodiscard]] DeclStmtNode *idxVarDecl() const {
-    std::vector<DeclStmtNode *> declStmtNodes = getChildren<DeclStmtNode>();
-    return declStmtNodes.size() == 2 ? declStmtNodes.front() : nullptr;
-  }
-  [[nodiscard]] DeclStmtNode *itemVarDecl() const { return getChildren<DeclStmtNode>().back(); }
-  [[nodiscard]] AssignExprNode *iteratorAssign() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "foreach:" + codeLoc.toString(); }
 
   // Public members
+  DeclStmtNode *idxVarDecl = nullptr;
+  DeclStmtNode *itemVarDecl = nullptr;
+  AssignExprNode *iteratorAssign = nullptr;
+  StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
   Function *getIteratorFct = nullptr;
   Function *getFct = nullptr;

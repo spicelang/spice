@@ -94,19 +94,18 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   continueBlocks.push_back(bTail);
 
   // Resolve iterator
-  AssignExprNode *iteratorAssignNode = node->iteratorAssign();
-  QualType iteratorOrIterableType = iteratorAssignNode->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
+  QualType iteratorOrIterableType = node->iteratorAssign->getEvaluatedSymbolType(manIdx).removeReferenceWrapper();
   QualType iteratorType = iteratorOrIterableType;
   llvm::Value *iteratorPtr;
   if (node->getIteratorFct != nullptr) { // The iteratorAssignExpr is of type Iterable
     iteratorType = node->getIteratorFct->returnType;
-    llvm::Value *iterablePtr = resolveAddress(iteratorAssignNode);
+    llvm::Value *iterablePtr = resolveAddress(node->iteratorAssign);
 
     llvm::Value *iterator;
     if (!node->getIteratorFct->isMethod() && node->getIteratorFct->getParamTypes().front().isArray()) { // Array as iterable
       // Call iterate() function from std/iterator/array-iterator
       llvm::Function *iterateFct = stdFunctionManager.getIterateFct(node->getIteratorFct);
-      const size_t arraySize = iteratorAssignNode->getEvaluatedSymbolType(manIdx).getArraySize();
+      const size_t arraySize = node->iteratorAssign->getEvaluatedSymbolType(manIdx).getArraySize();
       assert(arraySize > 0);
       iterator = builder.CreateCall(iterateFct, {iterablePtr, builder.getInt64(arraySize)});
     } else { // Struct as iterable
@@ -116,15 +115,15 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     }
 
     // Resolve address of iterator
-    LLVMExprResult callResult = {.value = iterator, .node = iteratorAssignNode};
+    LLVMExprResult callResult = {.value = iterator, .node = node->iteratorAssign};
     iteratorPtr = resolveAddress(callResult);
 
     // Attach address to anonymous symbol to keep track of de-allocation
-    SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(iteratorAssignNode->codeLoc);
+    SymbolTableEntry *returnSymbol = currentScope->symbolTable.lookupAnonymous(node->iteratorAssign->codeLoc);
     assert(returnSymbol != nullptr);
     returnSymbol->updateAddress(iteratorPtr);
   } else { // The iteratorAssignExpr is of type Iterator
-    iteratorPtr = resolveAddress(iteratorAssignNode);
+    iteratorPtr = resolveAddress(node->iteratorAssign);
   }
 
   const QualType &itemSTy = iteratorType.getTemplateTypes().front();
@@ -133,7 +132,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   assert(!node->getIdxFct || itemRefSTy == node->getIdxFct->returnType.getTemplateTypes().back());
 
   // Visit idx variable declaration if required
-  const DeclStmtNode *idxDeclNode = node->idxVarDecl();
+  const DeclStmtNode *idxDeclNode = node->idxVarDecl;
   const bool hasIdx = idxDeclNode != nullptr;
   SymbolTableEntry *idxEntry = nullptr;
   llvm::Value *idxAddress = nullptr;
@@ -146,7 +145,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   }
 
   // Visit item variable declaration
-  const DeclStmtNode *itemDeclNode = node->itemVarDecl();
+  const DeclStmtNode *itemDeclNode = node->itemVarDecl;
   visit(itemDeclNode);
   // Get address of item variable
   SymbolTableEntry *itemEntry = itemDeclNode->entries.at(manIdx);
@@ -196,7 +195,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     doAssignment(itemAddress, itemEntry, getResult, itemRefSTy, true);
   }
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump from body to tail block
   insertJump(bTail);
 

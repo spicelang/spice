@@ -282,17 +282,28 @@ std::any ASTBuilder::visitForeachLoop(SpiceParser::ForeachLoopContext *ctx) {
   auto foreachLoopNode = createNode<ForeachLoopNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  visit(ctx->foreachHead());
+  foreachLoopNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   // Tell the foreach item that it is one
-  foreachLoopNode->itemVarDecl()->isForEachItem = true;
+  foreachLoopNode->itemVarDecl->isForEachItem = true;
 
   return concludeNode(foreachLoopNode);
 }
 
 std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
+  auto foreachLoopNode = resumeForExpansion<ForeachLoopNode>();
+
   // Visit children
-  visitChildren(ctx);
+  if (ctx->declStmt().size() == 1) {
+    foreachLoopNode->itemVarDecl = std::any_cast<DeclStmtNode *>(visit(ctx->declStmt(0)));
+  } else if (ctx->declStmt().size() == 2) {
+    foreachLoopNode->idxVarDecl = std::any_cast<DeclStmtNode *>(visit(ctx->declStmt(0)));
+    foreachLoopNode->itemVarDecl = std::any_cast<DeclStmtNode *>(visit(ctx->declStmt(1)));
+  } else {
+    assert_fail("Invalid number of decl statements in foreach loop"); // GCOV_EXCL_LINE
+  }
+  foreachLoopNode->iteratorAssign = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   return nullptr;
 }

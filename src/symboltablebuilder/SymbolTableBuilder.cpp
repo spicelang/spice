@@ -421,17 +421,17 @@ std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
 std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
   // Create scope for the loop body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::FOREACH_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::FOREACH_BODY, &node->body->codeLoc);
 
   // Visit index variable declaration
-  if (node->idxVarDecl())
-    visit(node->idxVarDecl());
+  if (node->idxVarDecl)
+    visit(node->idxVarDecl);
 
   // Visit item variable declaration
-  visit(node->itemVarDecl());
+  visit(node->itemVarDecl);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave foreach body scope
   currentScope = node->bodyScope->parent;

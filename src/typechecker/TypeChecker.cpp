@@ -150,8 +150,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
 
   // Visit iterator assignment
-  AssignExprNode *iteratorNode = node->iteratorAssign();
-  QualType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
+  QualType iteratorOrIterableType = std::any_cast<ExprResult>(visit(node->iteratorAssign)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(iteratorOrIterableType)
   iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
 
@@ -174,15 +173,15 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       unsignedLongType.makeUnsigned(true);
       const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
       const QualType thisType(TY_DYN);
-      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
+      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, node->iteratorAssign);
     } else { // Struct, implementing Iterator interface
       Scope *matchScope = iterableType.getBodyScope();
-      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
+      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, node->iteratorAssign);
     }
     assert(node->getIteratorFct != nullptr);
     iteratorType = QualType(node->getIteratorFct->returnType);
     // Create anonymous entry for the iterator
-    currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
+    currentScope->symbolTable.insertAnonymous(iteratorType, node->iteratorAssign);
   }
 
   // Check iterator type
@@ -190,22 +189,22 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     const std::string errMsg =
         "Can only iterate over arrays or data structures, inheriting from IIterator or IIterable. You provided " +
         iteratorType.getName(false);
-    softError(node->iteratorAssign(), OPERATOR_WRONG_DATA_TYPE, errMsg);
+    softError(node->iteratorAssign, OPERATOR_WRONG_DATA_TYPE, errMsg);
     return nullptr;
   }
   const QualTypeList &iteratorTemplateTypes = iteratorType.getTemplateTypes();
   if (iteratorTemplateTypes.empty())
-    SOFT_ERROR_ER(node->iteratorAssign(), INVALID_ITERATOR,
+    SOFT_ERROR_ER(node->iteratorAssign, INVALID_ITERATOR,
                   "Iterator has no generic arguments so that the item type could not be inferred")
 
-  const bool hasIdx = node->idxVarDecl();
+  const bool hasIdx = node->idxVarDecl;
   if (hasIdx) {
     // Visit index declaration or assignment
-    auto indexType = std::any_cast<QualType>(visit(node->idxVarDecl()));
+    auto indexType = std::any_cast<QualType>(visit(node->idxVarDecl));
     HANDLE_UNRESOLVED_TYPE_PTR(indexType)
     // Check if index type is int
     if (!indexType.is(TY_LONG))
-      SOFT_ERROR_ER(node->idxVarDecl(), FOREACH_IDX_NOT_LONG,
+      SOFT_ERROR_ER(node->idxVarDecl, FOREACH_IDX_NOT_LONG,
                     "Index in foreach loop must be of type long. You provided " + indexType.getName(false))
   }
 
@@ -227,29 +226,29 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   assert(node->nextFct != nullptr);
 
   // Retrieve item variable entry
-  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl()->varName);
+  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl->varName);
   assert(itemVarSymbol != nullptr);
 
   // Check type of the item
-  auto itemType = std::any_cast<QualType>(visit(node->itemVarDecl()));
+  auto itemType = std::any_cast<QualType>(visit(node->itemVarDecl));
   HANDLE_UNRESOLVED_TYPE_PTR(itemType)
   if (itemType.is(TY_DYN)) { // Perform type inference
     // Update evaluated symbol type of the declaration data type
-    node->itemVarDecl()->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
+    node->itemVarDecl->dataType()->setEvaluatedSymbolType(iteratorItemType, manIdx);
     // Update item type
     itemType = iteratorItemType;
   } else {
     // Check item type
     const ExprResult itemResult = {itemType, itemVarSymbol};
     const ExprResult iteratorItemResult = {iteratorItemType, nullptr /* always a temporary */};
-    OpRuleManager::getAssignResultType(node->itemVarDecl(), itemResult, iteratorItemResult, true, ERROR_FOREACH_ITEM);
+    OpRuleManager::getAssignResultType(node->itemVarDecl, itemResult, iteratorItemResult, true, ERROR_FOREACH_ITEM);
   }
 
   // Update type of item
   itemVarSymbol->updateType(itemType, true);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
