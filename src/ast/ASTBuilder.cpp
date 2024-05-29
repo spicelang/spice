@@ -393,7 +393,7 @@ std::any ASTBuilder::visitAnonymousBlockStmt(SpiceParser::AnonymousBlockStmtCont
   auto anonymousBlockStmtNode = createNode<AnonymousBlockStmtNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  anonymousBlockStmtNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(anonymousBlockStmtNode);
 }

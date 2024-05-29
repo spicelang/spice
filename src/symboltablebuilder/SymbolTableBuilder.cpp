@@ -543,10 +543,10 @@ std::any SymbolTableBuilder::visitDefaultBranch(DefaultBranchNode *node) {
 std::any SymbolTableBuilder::visitAnonymousBlockStmt(AnonymousBlockStmtNode *node) {
   // Create scope for the anonymous block body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, &node->body->codeLoc);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;

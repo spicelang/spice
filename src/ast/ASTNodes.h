@@ -780,13 +780,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAnonymousBlockStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAnonymousBlockStmt(this); }
 
-  // Public get methods
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "anon:" + codeLoc.toString(); }
 
   // Public members
+  StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
 };
 
