@@ -866,8 +866,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitArgLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitArgLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<AssignExprNode *> args() const { return getChildren<AssignExprNode>(); }
+  // Public members
+  std::vector<AssignExprNode *> args;
 };
 
 // ======================================================== EnumItemLstNode ======================================================

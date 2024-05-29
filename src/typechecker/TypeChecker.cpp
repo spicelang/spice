@@ -1614,7 +1614,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Retrieve arg types
   data.argResults.clear();
   if (node->hasArgs) {
-    const std::vector<AssignExprNode *> &args = node->argLst()->args();
+    const std::vector<AssignExprNode *> &args = node->argLst()->args;
     data.argResults.reserve(args.size());
     for (AssignExprNode *arg : args) {
       // Visit argument
@@ -1890,7 +1890,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const QualType &functionTyp
     const QualType &expectedType = expectedArgTypes.at(i);
     TypeMapping tm;
     if (!TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
-      SOFT_ERROR_BOOL(node->argLst()->args().at(i), REFERENCED_UNDEFINED_FUNCTION,
+      SOFT_ERROR_BOOL(node->argLst()->args.at(i), REFERENCED_UNDEFINED_FUNCTION,
                       "Expected " + expectedType.getName(false) + " but got " + actualType.getName(false))
   }
   return true;
@@ -1950,8 +1950,8 @@ std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   QualType actualItemType(TY_DYN);
   // Check if all values have the same type
   if (node->itemLst()) {
-    node->actualSize = static_cast<long>(node->itemLst()->args().size());
-    for (AssignExprNode *arg : node->itemLst()->args()) {
+    node->actualSize = static_cast<long>(node->itemLst()->args.size());
+    for (AssignExprNode *arg : node->itemLst()->args) {
       const QualType itemType = std::any_cast<ExprResult>(visit(arg)).type;
       HANDLE_UNRESOLVED_TYPE_ER(itemType)
       if (actualItemType.is(TY_DYN)) // Perform type inference
@@ -2044,16 +2044,16 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // Check if the number of fields matches
   if (node->fieldLst()) { // Check if any fields are passed. Empty braces are also allowed
-    if (spiceStruct->fieldTypes.size() != node->fieldLst()->args().size())
+    if (spiceStruct->fieldTypes.size() != node->fieldLst()->args.size())
       SOFT_ERROR_ER(node->fieldLst(), NUMBER_OF_FIELDS_NOT_MATCHING,
                     "You've passed too less/many field values. Pass either none or all of them")
 
     // Check if the field types are matching
     const size_t fieldCount = spiceStruct->fieldTypes.size();
     const size_t explicitFieldsStartIdx = structScope->getFieldCount() - fieldCount;
-    for (size_t i = 0; i < node->fieldLst()->args().size(); i++) {
+    for (size_t i = 0; i < node->fieldLst()->args.size(); i++) {
       // Get actual type
-      AssignExprNode *assignExpr = node->fieldLst()->args().at(i);
+      AssignExprNode *assignExpr = node->fieldLst()->args.at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
@@ -2085,7 +2085,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
   SymbolTableEntry *anonymousEntry = nullptr;
   if (node->fieldLst() != nullptr)
-    if (std::ranges::any_of(node->fieldLst()->args(), [](AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
+    if (std::ranges::any_of(node->fieldLst()->args, [](AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
       anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables

@@ -445,7 +445,8 @@ std::any ASTBuilder::visitArgLst(SpiceParser::ArgLstContext *ctx) {
   auto argLstNode = createNode<ArgLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::AssignExprContext *assignExpr : ctx->assignExpr())
+    argLstNode->args.push_back(std::any_cast<AssignExprNode *>(visit(assignExpr)));
 
   return concludeNode(argLstNode);
 }
