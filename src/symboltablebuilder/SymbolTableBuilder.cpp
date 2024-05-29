@@ -404,13 +404,13 @@ std::any SymbolTableBuilder::visitUnsafeBlock(UnsafeBlockNode *node) {
 std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
   // Create scope for the loop body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body->codeLoc);
 
   // Visit loop variable declaration
-  visit(node->initDecl());
+  visit(node->initDecl);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave for body scope
   currentScope = node->bodyScope->parent;

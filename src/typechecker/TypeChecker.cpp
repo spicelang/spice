@@ -127,20 +127,20 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY);
 
   // Visit loop variable declaration
-  visit(node->initDecl());
+  visit(node->initDecl);
 
   // Visit condition
-  QualType conditionType = std::any_cast<ExprResult>(visit(node->condAssign())).type;
+  QualType conditionType = std::any_cast<ExprResult>(visit(node->condAssign)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condAssign(), CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condAssign, CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
 
   // Visit incrementer
-  visit(node->incAssign());
+  visit(node->incAssign);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }

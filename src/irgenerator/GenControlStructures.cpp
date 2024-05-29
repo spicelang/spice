@@ -39,28 +39,28 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   continueBlocks.push_back(bTail);
 
   // Init statement
-  visit(node->initDecl());
+  visit(node->initDecl);
   // Create jump from original to head block
   insertJump(bHead);
 
   // Switch to head block
   switchToBlock(bHead);
   // Condition evaluation
-  llvm::Value *condValue = resolveValue(node->condAssign());
+  llvm::Value *condValue = resolveValue(node->condAssign);
   // Create conditional jump from head to body or exit block
   insertCondJump(condValue, bBody, bExit);
 
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump from body to tail block
   insertJump(bTail);
 
   // Switch to tail block
   switchToBlock(bTail);
   // Inc statement
-  visit(node->incAssign());
+  visit(node->incAssign);
   // Create jump from tail to head
   insertJump(bHead);
 

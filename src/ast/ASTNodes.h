@@ -584,18 +584,16 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitForLoop(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitForLoop(this); }
 
-  // Public get methods
-  [[nodiscard]] DeclStmtNode *initDecl() const { return getChild<DeclStmtNode>(); }
-  [[nodiscard]] AssignExprNode *condAssign() const { return getChild<AssignExprNode>(0); }
-  [[nodiscard]] AssignExprNode *incAssign() const { return getChild<AssignExprNode>(1); }
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "for:" + codeLoc.toString(); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
   Scope *bodyScope = nullptr;
+  DeclStmtNode *initDecl = nullptr;
+  AssignExprNode *condAssign = nullptr;
+  AssignExprNode *incAssign = nullptr;
+  StmtLstNode *body = nullptr;
 };
 
 // ======================================================== ForeachLoopNode ======================================================

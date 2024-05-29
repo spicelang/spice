@@ -68,8 +68,7 @@ bool FctDefBaseNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
 }
 
 bool ForLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const AssignExprNode *cond = condAssign();
-  return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
+  return condAssign->hasCompileTimeValue() && condAssign->getCompileTimeValue().boolValue;
 }
 
 bool WhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {

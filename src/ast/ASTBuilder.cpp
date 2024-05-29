@@ -261,15 +261,18 @@ std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
 std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
   auto forLoopNode = createNode<ForLoopNode>(ctx);
 
-  // Visit children
-  visitChildren(ctx);
+  visit(ctx->forHead());
+  forLoopNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(forLoopNode);
 }
 
 std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
-  // Visit children
-  visitChildren(ctx);
+  auto forLoopNode = resumeForExpansion<ForLoopNode>();
+
+  forLoopNode->initDecl = std::any_cast<DeclStmtNode *>(visit(ctx->declStmt()));
+  forLoopNode->condAssign = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr(0)));
+  forLoopNode->incAssign = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr(1)));
 
   return nullptr;
 }
@@ -1352,6 +1355,8 @@ template <typename T> T *ASTBuilder::concludeNode(T *node) {
   parentStack.pop();
   return node;
 }
+
+template <typename T> T *ASTBuilder::resumeForExpansion() { return spice_pointer_cast<T *>(parentStack.top()); }
 
 int32_t ASTBuilder::parseInt(TerminalNode *terminal) {
   NumericParserCallback<int32_t> cb = [](const std::string &substr, short base, bool isSigned) -> int32_t {
