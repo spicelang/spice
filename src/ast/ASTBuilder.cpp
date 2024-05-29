@@ -542,11 +542,12 @@ std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
   auto specifierLstNode = createNode<SpecifierLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
-
-  // Check if we have both, signed and unsigned specifier
   bool seenSignedOrUnsigned = false;
-  for (const SpecifierNode *specifier : specifierLstNode->specifiers()) {
+  for (SpiceParser::SpecifierContext *specifierCtx : ctx->specifier()) {
+    auto specifier = std::any_cast<SpecifierNode *>(visit(specifierCtx));
+    specifierLstNode->specifiers.push_back(specifier);
+
+    // Check if we have both, signed and unsigned specifier
     if (specifier->type != SpecifierNode::TY_SIGNED && specifier->type != SpecifierNode::TY_UNSIGNED)
       continue;
     if (seenSignedOrUnsigned)

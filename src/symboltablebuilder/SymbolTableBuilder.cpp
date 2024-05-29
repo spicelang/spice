@@ -70,7 +70,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
 
   // Build function specifiers
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->specifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
@@ -133,7 +133,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
   // Build procedure specifiers
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->specifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)
@@ -222,7 +222,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 
   // Build struct specifiers
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->structSpecifiers.isPublic = true;
       else
@@ -260,7 +260,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
 
   // Build interface specifiers
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->interfaceSpecifiers.isPublic = true;
       else
@@ -293,7 +293,7 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
 
   // Build enum specifiers
   if (node->specifierLst()) {
-    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
+    for (const SpecifierNode *specifier : node->specifierLst()->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->enumSpecifiers.isPublic = true;
       else
@@ -328,7 +328,7 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
 
   // Build alias specifiers
   if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->aliasSpecifiers.isPublic = true;
       else
@@ -584,7 +584,7 @@ std::any SymbolTableBuilder::visitField(FieldNode *node) {
 std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
   // Build signature specifiers
   if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
-    for (const SpecifierNode *specifier : specifierLst->specifiers()) {
+    for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->signatureSpecifiers.isInline = true;
       else if (specifier->type == SpecifierNode::TY_PUBLIC)

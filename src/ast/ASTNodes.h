@@ -997,8 +997,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSpecifierLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSpecifierLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<SpecifierNode *> specifiers() const { return getChildren<SpecifierNode>(); }
+  // Public members
+  std::vector<SpecifierNode *> specifiers;
 };
 
 // ========================================================= SpecifierNode =======================================================

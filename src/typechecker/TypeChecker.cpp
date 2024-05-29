@@ -2290,7 +2290,7 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
   // Attach the specifiers to the type
   if (node->specifierLst()) {
     const QualType baseType = type.getBase();
-    for (const SpecifierNode *specifier : node->specifierLst()->specifiers()) {
+    for (const SpecifierNode *specifier : node->specifierLst()->specifiers) {
       if (specifier->type == SpecifierNode::TY_CONST) {
         type.getSpecifiers().isConst = true;
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
