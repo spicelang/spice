@@ -253,7 +253,7 @@ std::any ASTBuilder::visitUnsafeBlock(SpiceParser::UnsafeBlockContext *ctx) {
   auto unsafeBlockDefNode = createNode<UnsafeBlockNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  unsafeBlockDefNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(unsafeBlockDefNode);
 }
@@ -270,6 +270,7 @@ std::any ASTBuilder::visitForLoop(SpiceParser::ForLoopContext *ctx) {
 std::any ASTBuilder::visitForHead(SpiceParser::ForHeadContext *ctx) {
   auto forLoopNode = resumeForExpansion<ForLoopNode>();
 
+  // Visit children
   forLoopNode->initDecl = std::any_cast<DeclStmtNode *>(visit(ctx->declStmt()));
   forLoopNode->condAssign = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr(0)));
   forLoopNode->incAssign = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr(1)));

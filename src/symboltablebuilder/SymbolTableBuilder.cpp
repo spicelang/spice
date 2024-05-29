@@ -390,10 +390,10 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
 std::any SymbolTableBuilder::visitUnsafeBlock(UnsafeBlockNode *node) {
   // Create scope for the unsafe block body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::UNSAFE_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::UNSAFE_BODY, &node->body->codeLoc);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave thread body scope
   currentScope = node->bodyScope->parent;

@@ -16,7 +16,7 @@ std::any IRGenerator::visitUnsafeBlockDef(const UnsafeBlockNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY, node);
 
   // Visit instructions in the block
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }

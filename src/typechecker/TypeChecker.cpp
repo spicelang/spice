@@ -117,7 +117,7 @@ std::any TypeChecker::visitUnsafeBlock(UnsafeBlockNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::UNSAFE_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }

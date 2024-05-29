@@ -563,13 +563,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitUnsafeBlock(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitUnsafeBlockDef(this); }
 
-  // Public get methods
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "unsafe:" + codeLoc.toString(); }
 
   // Public members
+  StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
 };
 
@@ -589,11 +587,11 @@ public:
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
-  Scope *bodyScope = nullptr;
   DeclStmtNode *initDecl = nullptr;
   AssignExprNode *condAssign = nullptr;
   AssignExprNode *incAssign = nullptr;
   StmtLstNode *body = nullptr;
+  Scope *bodyScope = nullptr;
 };
 
 // ======================================================== ForeachLoopNode ======================================================
