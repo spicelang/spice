@@ -168,7 +168,7 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   visitChildren(ctx);
 
   // Tell all items about the enum def
-  for (EnumItemNode *enumItem : enumDefNode->itemLst()->items())
+  for (EnumItemNode *enumItem : enumDefNode->itemLst()->items)
     enumItem->enumDef = enumDefNode;
 
   return concludeNode(enumDefNode);
@@ -455,7 +455,8 @@ std::any ASTBuilder::visitEnumItemLst(SpiceParser::EnumItemLstContext *ctx) {
   auto enumItemLstNode = createNode<EnumItemLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::EnumItemContext *enumItem : ctx->enumItem())
+    enumItemLstNode->items.push_back(std::any_cast<EnumItemNode *>(visit(enumItem)));
 
   return concludeNode(enumItemLstNode);
 }

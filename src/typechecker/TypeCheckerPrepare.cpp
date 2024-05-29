@@ -502,7 +502,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Loop through all items with values
   std::vector<std::string> names;
   std::vector<uint32_t> values;
-  for (const EnumItemNode *enumItem : node->itemLst()->items()) {
+  for (const EnumItemNode *enumItem : node->itemLst()->items) {
     // Save name
     names.push_back(enumItem->itemName);
     // Check for duplicate value
@@ -518,7 +518,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Loop through all items without values
   uint32_t nextValue = 0;
   QualType intSymbolType(TY_INT);
-  for (EnumItemNode *enumItem : node->itemLst()->items()) {
+  for (EnumItemNode *enumItem : node->itemLst()->items) {
     // Update type of enum item entry
     SymbolTableEntry *itemEntry = currentScope->lookupStrict(enumItem->itemName);
     assert(itemEntry != nullptr);
