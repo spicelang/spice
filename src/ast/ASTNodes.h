@@ -632,15 +632,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitWhileLoop(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitWhileLoop(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *condition() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "while:" + codeLoc.toString(); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
+  AssignExprNode *condition = nullptr;
+  StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
 };
 

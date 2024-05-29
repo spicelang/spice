@@ -242,14 +242,14 @@ std::any IRGenerator::visitWhileLoop(const WhileLoopNode *node) {
   // Switch to head block
   switchToBlock(bHead);
   // Evaluate condition
-  llvm::Value *condValue = resolveValue(node->condition());
+  llvm::Value *condValue = resolveValue(node->condition);
   // Jump to body or exit block, depending on the condition
   insertCondJump(condValue, bBody, bExit);
 
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
-  visit(node->body());
+  visit(node->body);
   // Create jump to head block
   insertJump(bHead);
 

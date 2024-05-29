@@ -258,14 +258,14 @@ std::any TypeChecker::visitWhileLoop(WhileLoopNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::WHILE_BODY);
 
   // Visit condition
-  QualType conditionType = std::any_cast<ExprResult>(visit(node->condition())).type;
+  QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool")
+    SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "While loop condition must be of type bool")
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }

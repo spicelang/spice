@@ -442,13 +442,13 @@ std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
 std::any SymbolTableBuilder::visitWhileLoop(WhileLoopNode *node) {
   // Create scope for the loop body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body()->codeLoc);
+      currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body->codeLoc);
 
   // Visit condition
-  visit(node->condition());
+  visit(node->condition);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave while body scope
   currentScope = node->bodyScope->parent;
