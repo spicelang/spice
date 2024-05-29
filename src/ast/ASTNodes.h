@@ -348,13 +348,6 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStructDef(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStructDef(this); }
 
-  // Public get methods
-  [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] std::vector<FieldNode *> fields() const { return getChildren<FieldNode>(); }
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
-  [[nodiscard]] TypeLstNode *interfaceTypeLst() const { return getChild<TypeLstNode>(hasTemplateTypes ? 1 : 0); }
-
   // Other methods
   std::vector<Struct *> *getStructManifestations() override { return &structManifestations; }
   std::vector<Function *> *getFctManifestations(const std::string &fctName) override {
@@ -365,6 +358,11 @@ public:
   [[nodiscard]] bool isStructDef() const override { return true; }
 
   // Public members
+  TopLevelDefinitionAttrNode *attrs = nullptr;
+  SpecifierLstNode *specifierLst = nullptr;
+  std::vector<FieldNode *> fields;
+  TypeLstNode *templateTypeLst = nullptr;
+  TypeLstNode *interfaceTypeLst = nullptr;
   bool hasTemplateTypes = false;
   bool hasInterfaces = false;
   bool emitVTable = false;

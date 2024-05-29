@@ -315,9 +315,9 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Retrieve struct template types
   if (node->hasTemplateTypes) {
-    usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes.size());
-    templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes.size());
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
+    usedTemplateTypes.reserve(node->templateTypeLst->dataTypes.size());
+    templateTypesGeneric.reserve(node->templateTypeLst->dataTypes.size());
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
@@ -336,8 +336,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   // Retrieve implemented interfaces
   QualTypeList interfaceTypes;
   if (node->hasInterfaces) {
-    interfaceTypes.reserve(node->interfaceTypeLst()->dataTypes.size());
-    for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes) {
+    interfaceTypes.reserve(node->interfaceTypeLst->dataTypes.size());
+    for (DataTypeNode *interfaceNode : node->interfaceTypeLst->dataTypes) {
       // Visit interface type
       auto interfaceType = std::any_cast<QualType>(visit(interfaceNode));
       if (interfaceType.is(TY_UNRESOLVED))
@@ -372,8 +372,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Retrieve field types
   QualTypeList fieldTypes;
-  fieldTypes.reserve(node->fields().size());
-  for (FieldNode *field : node->fields()) {
+  fieldTypes.reserve(node->fields.size());
+  for (FieldNode *field : node->fields) {
     // Visit field type
     auto fieldType = std::any_cast<QualType>(visit(field));
     if (fieldType.is(TY_UNRESOLVED))
@@ -408,8 +408,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Request RTTI runtime if the struct is polymorphic
   node->emitVTable |= node->hasInterfaces;
-  if (node->attrs() && node->attrs()->attrLst->hasAttr(ATTR_CORE_COMPILER_EMIT_VTABLE))
-    node->emitVTable |= node->attrs()->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_EMIT_VTABLE)->boolValue;
+  if (node->attrs && node->attrs->attrLst->hasAttr(ATTR_CORE_COMPILER_EMIT_VTABLE))
+    node->emitVTable |= node->attrs->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_EMIT_VTABLE)->boolValue;
   if (node->emitVTable && !sourceFile->isRttiRT())
     sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
 

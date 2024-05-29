@@ -192,8 +192,8 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
 
 std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Check if this name already exists
   if (rootScope->lookupStrict(node->structName))
@@ -206,7 +206,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
 
   // Insert implicit field for each interface type
   if (node->hasInterfaces) {
-    for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes) {
+    for (DataTypeNode *interfaceNode : node->interfaceTypeLst->dataTypes) {
       const std::string &interfaceName = interfaceNode->baseDataType()->customDataType()->typeNameFragments.back();
       SymbolTableEntry *interfaceFieldEntry = currentScope->insert("this." + interfaceName, interfaceNode);
       interfaceFieldEntry->used = true;
@@ -221,7 +221,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   currentScope = node->structScope->parent;
 
   // Build struct specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->structSpecifiers.isPublic = true;

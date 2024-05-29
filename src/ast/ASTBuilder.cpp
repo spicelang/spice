@@ -130,20 +130,31 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
   // Enrich
   structDefNode->structName = getIdentifier(ctx->TYPE_IDENTIFIER());
   structDefNode->typeId = resourceManager.getNextCustomTypeId();
-  structDefNode->hasTemplateTypes = ctx->LESS();
-  structDefNode->hasInterfaces = ctx->COLON();
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->topLevelDefAttr()) {
+    structDefNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
 
-  // Tell the attributes that they are struct attributes
-  if (structDefNode->attrs())
-    for (AttrNode *attr : structDefNode->attrs()->attrLst->attributes)
+    // Tell the attributes that they are struct attributes
+    for (AttrNode *attr : structDefNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_STRUCT;
 
-  // Check if a custom type id was set
-  if (structDefNode->attrs() && structDefNode->attrs()->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
-    structDefNode->typeId = structDefNode->attrs()->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+    // Check if a custom type id was set
+    if (structDefNode->attrs && structDefNode->attrs->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
+      structDefNode->typeId = structDefNode->attrs->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+  }
+  if (ctx->specifierLst())
+    structDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  if (ctx->LESS()) {
+    structDefNode->hasTemplateTypes = true;
+    structDefNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst(0)));
+  }
+  if (ctx->COLON()) {
+    structDefNode->hasInterfaces = true;
+    structDefNode->interfaceTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst(structDefNode->hasTemplateTypes ? 1 : 0)));
+  }
+  for (SpiceParser::FieldContext *field : ctx->field())
+    structDefNode->fields.push_back(std::any_cast<FieldNode *>(visit(field)));
 
   return concludeNode(structDefNode);
 }

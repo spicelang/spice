@@ -238,8 +238,8 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
       }
 
       // Check if the struct is declared as packed
-      if (structDeclNode->attrs() && structDeclNode->attrs()->attrLst->hasAttr(ATTR_CORE_COMPILER_PACKED))
-        isPacked = structDeclNode->attrs()->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
+      if (structDeclNode->attrs && structDeclNode->attrs->attrLst->hasAttr(ATTR_CORE_COMPILER_PACKED))
+        isPacked = structDeclNode->attrs->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
     } else { // Interface
       Interface *spiceInterface = structSymbol->getQualType().getInterface(structSymbol->declNode);
       assert(spiceInterface != nullptr);
