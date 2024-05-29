@@ -821,8 +821,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTypeLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitTypeLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<DataTypeNode *> dataTypes() const { return getChildren<DataTypeNode>(); }
+  // Public members
+  std::vector<DataTypeNode *> dataTypes;
 };
 
 // ======================================================= TypeAltsLstNode =======================================================

@@ -520,7 +520,7 @@ void DataTypeNode::setFieldTypeRecursive() { // NOLINT(*-no-recursion)
   BaseDataTypeNode *baseType = baseDataType();
   CustomDataTypeNode *customType = baseType->customDataType();
   if (customType != nullptr && customType->templateTypeLst())
-    for (DataTypeNode *templateNode : customType->templateTypeLst()->dataTypes())
+    for (DataTypeNode *templateNode : customType->templateTypeLst()->dataTypes)
       templateNode->setFieldTypeRecursive();
 }
 

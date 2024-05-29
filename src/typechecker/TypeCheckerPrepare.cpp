@@ -65,7 +65,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
@@ -205,7 +205,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Retrieve procedure template types
   std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
@@ -315,9 +315,9 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Retrieve struct template types
   if (node->hasTemplateTypes) {
-    usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
-    templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+    usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes.size());
+    templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes.size());
+    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
@@ -336,8 +336,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
   // Retrieve implemented interfaces
   QualTypeList interfaceTypes;
   if (node->hasInterfaces) {
-    interfaceTypes.reserve(node->interfaceTypeLst()->dataTypes().size());
-    for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes()) {
+    interfaceTypes.reserve(node->interfaceTypeLst()->dataTypes.size());
+    for (DataTypeNode *interfaceNode : node->interfaceTypeLst()->dataTypes) {
       // Visit interface type
       auto interfaceType = std::any_cast<QualType>(visit(interfaceNode));
       if (interfaceType.is(TY_UNRESOLVED))
@@ -422,9 +422,9 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
   // Retrieve interface template types
   if (node->hasTemplateTypes) {
-    usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes().size());
-    templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes().size());
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
+    usedTemplateTypes.reserve(node->templateTypeLst()->dataTypes.size());
+    templateTypesGeneric.reserve(node->templateTypeLst()->dataTypes.size());
+    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_PTR(templateType)
@@ -618,8 +618,8 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   QualTypeList argTypes;
   ParamList argList;
   if (node->hasArgs) {
-    argList.reserve(node->argTypeLst()->dataTypes().size());
-    for (DataTypeNode *arg : node->argTypeLst()->dataTypes()) {
+    argList.reserve(node->argTypeLst()->dataTypes.size());
+    for (DataTypeNode *arg : node->argTypeLst()->dataTypes) {
       // Visit argument
       auto argType = std::any_cast<QualType>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_PTR(argType)
