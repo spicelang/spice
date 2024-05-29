@@ -357,11 +357,14 @@ std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
 std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
   auto switchStmtNode = createNode<SwitchStmtNode>(ctx);
 
-  // Enrich
-  switchStmtNode->hasDefaultBranch = ctx->defaultBranch();
-
   // Visit children
-  visitChildren(ctx);
+  switchStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  for (SpiceParser::CaseBranchContext *caseBranch : ctx->caseBranch())
+    switchStmtNode->caseBranches.push_back(std::any_cast<CaseBranchNode *>(visit(caseBranch)));
+  if (ctx->defaultBranch()) {
+    switchStmtNode->hasDefaultBranch = true;
+    switchStmtNode->defaultBranch = std::any_cast<DefaultBranchNode *>(visit(ctx->defaultBranch()));
+  }
 
   return concludeNode(switchStmtNode);
 }
@@ -370,7 +373,9 @@ std::any ASTBuilder::visitCaseBranch(SpiceParser::CaseBranchContext *ctx) {
   auto caseBranchNode = createNode<CaseBranchNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::CaseConstantContext *caseConstant : ctx->caseConstant())
+    caseBranchNode->caseConstants.push_back(std::any_cast<CaseConstantNode *>(visit(caseConstant)));
+  caseBranchNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(caseBranchNode);
 }
@@ -379,7 +384,7 @@ std::any ASTBuilder::visitDefaultBranch(SpiceParser::DefaultBranchContext *ctx) 
   auto defaultBranchNode = createNode<DefaultBranchNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  defaultBranchNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(defaultBranchNode);
 }

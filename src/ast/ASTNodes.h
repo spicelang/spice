@@ -718,15 +718,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSwitchStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSwitchStmt(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] std::vector<CaseBranchNode *> caseBranches() const { return getChildren<CaseBranchNode>(); }
-  [[nodiscard]] DefaultBranchNode *defaultBranch() const { return getChild<DefaultBranchNode>(); }
-
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
+  AssignExprNode *assignExpr = nullptr;
+  std::vector<CaseBranchNode *> caseBranches;
+  DefaultBranchNode *defaultBranch = nullptr;
   bool hasDefaultBranch = false;
 };
 
@@ -741,15 +739,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCaseBranch(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCaseBranch(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<CaseConstantNode *> caseConstants() const { return getChildren<CaseConstantNode>(); }
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "case:" + codeLoc.toString(); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
+  std::vector<CaseConstantNode *> caseConstants;
+  StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
 };
 
@@ -764,14 +760,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDefaultBranch(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDefaultBranch(this); }
 
-  // Public get methods
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "default:" + codeLoc.toString(); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
+  StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
 };
 

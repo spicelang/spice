@@ -334,19 +334,18 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
 
 std::any TypeChecker::visitSwitchStmt(SwitchStmtNode *node) {
   // Check expression type
-  AssignExprNode *expr = node->assignExpr();
-  QualType exprType = std::any_cast<ExprResult>(visit(expr)).type;
+  QualType exprType = std::any_cast<ExprResult>(visit(node->assignExpr)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(exprType)
   if (!exprType.isOneOf({TY_INT, TY_SHORT, TY_LONG, TY_BYTE, TY_CHAR, TY_BOOL}))
-    SOFT_ERROR_ER(node->assignExpr(), SWITCH_EXPR_MUST_BE_PRIMITIVE,
+    SOFT_ERROR_ER(node->assignExpr, SWITCH_EXPR_MUST_BE_PRIMITIVE,
                   "Switch expression must be of int, short, long, byte, char or bool type")
 
   // Visit children
   visitChildren(node);
 
   // Check if case constant types match switch expression type
-  for (CaseBranchNode *caseBranchNode : node->caseBranches())
-    for (CaseConstantNode *constantNode : caseBranchNode->caseConstants()) {
+  for (CaseBranchNode *caseBranchNode : node->caseBranches)
+    for (CaseConstantNode *constantNode : caseBranchNode->caseConstants) {
       const QualType constantType = std::any_cast<ExprResult>(visit(constantNode)).type;
       if (!constantType.matches(exprType, false, true, true))
         SOFT_ERROR_ER(constantNode, SWITCH_CASE_TYPE_MISMATCH, "Case value type does not match the switch expression type")
@@ -360,11 +359,11 @@ std::any TypeChecker::visitCaseBranch(CaseBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::CASE_BODY);
 
   // Visit constant list
-  for (CaseConstantNode *constant : node->caseConstants())
+  for (CaseConstantNode *constant : node->caseConstants)
     visit(constant);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -374,7 +373,7 @@ std::any TypeChecker::visitDefaultBranch(DefaultBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::DEFAULT_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }

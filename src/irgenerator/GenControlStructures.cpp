@@ -371,17 +371,15 @@ std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
 
 std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   diGenerator.setSourceLocation(node);
-  const std::vector<CaseBranchNode *> caseBranches = node->caseBranches();
-  const DefaultBranchNode *defaultBranch = node->defaultBranch();
 
   // Create blocks
   std::vector<llvm::BasicBlock *> bCases;
-  bCases.reserve(caseBranches.size());
-  for (auto caseBranch : caseBranches)
+  bCases.reserve(node->caseBranches.size());
+  for (CaseBranchNode *caseBranch : node->caseBranches)
     bCases.push_back(createBlock("switch.case." + caseBranch->codeLoc.toPrettyLine()));
   llvm::BasicBlock *bDefault = nullptr;
   if (node->hasDefaultBranch)
-    bDefault = createBlock("switch.default." + defaultBranch->codeLoc.toPrettyLine());
+    bDefault = createBlock("switch.default." + node->defaultBranch->codeLoc.toPrettyLine());
   const std::string codeLine = node->codeLoc.toPrettyLine();
   llvm::BasicBlock *bExit = createBlock("switch.exit." + codeLine);
 
@@ -389,18 +387,18 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
   breakBlocks.push_back(bExit);
 
   // Visit switch expression
-  llvm::Value *exprValue = resolveValue(node->assignExpr());
+  llvm::Value *exprValue = resolveValue(node->assignExpr);
 
   // Generate switch instruction
-  llvm::SwitchInst *switchInst = builder.CreateSwitch(exprValue, bDefault ? bDefault : bExit, caseBranches.size());
+  llvm::SwitchInst *switchInst = builder.CreateSwitch(exprValue, bDefault ? bDefault : bExit, node->caseBranches.size());
 
   // Generate case branches
-  for (size_t i = 0; i < caseBranches.size(); i++) {
-    const CaseBranchNode *caseBranch = caseBranches.at(i);
+  for (size_t i = 0; i < node->caseBranches.size(); i++) {
+    const CaseBranchNode *caseBranch = node->caseBranches.at(i);
 
     // Push fallthrough block
     llvm::BasicBlock *bFallthrough = bDefault;
-    if (i + 1 < caseBranches.size())
+    if (i + 1 < node->caseBranches.size())
       bFallthrough = bCases.at(i + 1);
     fallthroughBlocks.push(bFallthrough);
 
@@ -408,7 +406,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     switchToBlock(bCases.at(i));
 
     // Visit case body
-    visit(caseBranch->body());
+    visit(caseBranch->body);
 
     // Create jump from case to exit block
     insertJump(bExit);
@@ -417,7 +415,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     fallthroughBlocks.pop();
 
     // Add case to switch instruction
-    for (CaseConstantNode *caseConstantNode : caseBranch->caseConstants()) {
+    for (CaseConstantNode *caseConstantNode : caseBranch->caseConstants) {
       auto caseValue = std::any_cast<llvm::Constant *>(visit(caseConstantNode));
       switchInst->addCase(llvm::cast<llvm::ConstantInt>(caseValue), bCases.at(i));
     }
@@ -429,7 +427,7 @@ std::any IRGenerator::visitSwitchStmt(const SwitchStmtNode *node) {
     switchToBlock(bDefault);
 
     // Visit default body
-    visit(defaultBranch->body());
+    visit(node->defaultBranch->body);
 
     // Create jump from default to exit block
     insertJump(bExit);
@@ -452,7 +450,7 @@ std::any IRGenerator::visitCaseBranch(const CaseBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::CASE_BODY);
 
   // Visit case body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }
@@ -464,7 +462,7 @@ std::any IRGenerator::visitDefaultBranch(const DefaultBranchNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::DEFAULT_BODY);
 
   // Visit case body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }

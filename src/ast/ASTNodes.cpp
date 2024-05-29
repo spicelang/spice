@@ -98,23 +98,18 @@ bool ElseStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) 
 }
 
 bool SwitchStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const std::vector<CaseBranchNode *> caseNodes = caseBranches();
-  const DefaultBranchNode *defaultBranchNode = defaultBranch();
-
-  const bool allCaseBranchesReturn = std::ranges::all_of(
-      caseNodes, [=](CaseBranchNode *node) { return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable); });
-  const bool defaultBranchReturns =
-      defaultBranchNode && defaultBranchNode->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
-
+  const auto pred = [=](CaseBranchNode *node) { return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable); };
+  const bool allCaseBranchesReturn = std::ranges::all_of(caseBranches, pred);
+  const bool defaultBranchReturns = defaultBranch && defaultBranch->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   return allCaseBranchesReturn && defaultBranchReturns;
 }
 
 bool CaseBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool DefaultBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
