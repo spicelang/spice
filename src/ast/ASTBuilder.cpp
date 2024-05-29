@@ -686,10 +686,9 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
   }
 
   // Visit children
-  visitChildren(ctx);
-
-  // Come up with type
   if (ctx->constant()) {
+    attrNode->value = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+
     if (ctx->constant()->STRING_LIT())
       attrNode->type = AttrNode::TYPE_STRING;
     else if (ctx->constant()->INT_LIT())
@@ -697,7 +696,7 @@ std::any ASTBuilder::visitAttr(SpiceParser::AttrContext *ctx) {
     else if (ctx->constant()->TRUE() || ctx->constant()->FALSE())
       attrNode->type = AttrNode::TYPE_BOOL;
     else
-      throw ParserError(attrNode->value()->codeLoc, INVALID_ATTR_VALUE_TYPE, "Invalid attribute value type");
+      throw ParserError(attrNode->value->codeLoc, INVALID_ATTR_VALUE_TYPE, "Invalid attribute value type");
   } else {
     // If no value is given, use the bool type
     attrNode->type = AttrNode::TYPE_BOOL;
@@ -1206,11 +1205,15 @@ std::any ASTBuilder::visitStructInstantiation(SpiceParser::StructInstantiationCo
 std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
   auto lambdaFuncNode = createNode<LambdaFuncNode>(ctx);
 
-  // Enrich
-  lambdaFuncNode->hasParams = ctx->paramLst();
-
   // Visit children
-  visitChildren(ctx);
+  lambdaFuncNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  if (ctx->paramLst()) {
+    lambdaFuncNode->hasParams = true;
+    lambdaFuncNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
+  }
+  if (ctx->lambdaAttr())
+    lambdaFuncNode->lambdaAttr = std::any_cast<LambdaAttrNode *>(visit(ctx->lambdaAttr()));
+  lambdaFuncNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(lambdaFuncNode);
 }
@@ -1218,11 +1221,14 @@ std::any ASTBuilder::visitLambdaFunc(SpiceParser::LambdaFuncContext *ctx) {
 std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
   auto lambdaProcNode = createNode<LambdaProcNode>(ctx);
 
-  // Enrich
-  lambdaProcNode->hasParams = ctx->paramLst();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->paramLst()) {
+    lambdaProcNode->hasParams = true;
+    lambdaProcNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
+  }
+  if (ctx->lambdaAttr())
+    lambdaProcNode->lambdaAttr = std::any_cast<LambdaAttrNode *>(visit(ctx->lambdaAttr()));
+  lambdaProcNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
 
   return concludeNode(lambdaProcNode);
 }
@@ -1230,17 +1236,23 @@ std::any ASTBuilder::visitLambdaProc(SpiceParser::LambdaProcContext *ctx) {
 std::any ASTBuilder::visitLambdaExpr(SpiceParser::LambdaExprContext *ctx) {
   auto lambdaExprNode = createNode<LambdaExprNode>(ctx);
 
-  // Enrich
-  lambdaExprNode->hasParams = ctx->paramLst();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->paramLst()) {
+    lambdaExprNode->hasParams = true;
+    lambdaExprNode->paramLst = std::any_cast<ParamLstNode *>(visit(ctx->paramLst()));
+  }
+  lambdaExprNode->lambdaExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(lambdaExprNode);
 }
 
 std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
   auto dataTypeNode = createNode<DataTypeNode>(ctx);
+
+  // Visit children
+  if (ctx->specifierLst())
+    dataTypeNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  dataTypeNode->baseDataType = std::any_cast<BaseDataTypeNode *>(visit(ctx->baseDataType()));
 
   // Enrich
   for (size_t i = 0; i < ctx->children.size(); i++) {
@@ -1271,9 +1283,6 @@ std::any ASTBuilder::visitDataType(SpiceParser::DataTypeContext *ctx) {
     }
   }
 
-  // Visit children
-  visitChildren(ctx);
-
   return concludeNode(dataTypeNode);
 }
 
@@ -1281,33 +1290,33 @@ std::any ASTBuilder::visitBaseDataType(SpiceParser::BaseDataTypeContext *ctx) {
   auto baseDataTypeNode = createNode<BaseDataTypeNode>(ctx);
 
   // Enrich
-  if (ctx->TYPE_DOUBLE())
+  if (ctx->TYPE_DOUBLE()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_DOUBLE;
-  else if (ctx->TYPE_INT())
+  } else if (ctx->TYPE_INT()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_INT;
-  else if (ctx->TYPE_SHORT())
+  } else if (ctx->TYPE_SHORT()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_SHORT;
-  else if (ctx->TYPE_LONG())
+  } else if (ctx->TYPE_LONG()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_LONG;
-  else if (ctx->TYPE_BYTE())
+  } else if (ctx->TYPE_BYTE()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_BYTE;
-  else if (ctx->TYPE_CHAR())
+  } else if (ctx->TYPE_CHAR()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_CHAR;
-  else if (ctx->TYPE_STRING())
+  } else if (ctx->TYPE_STRING()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_STRING;
-  else if (ctx->TYPE_BOOL())
+  } else if (ctx->TYPE_BOOL()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_BOOL;
-  else if (ctx->TYPE_DYN())
+  } else if (ctx->TYPE_DYN()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_DYN;
-  else if (ctx->customDataType())
+  } else if (ctx->customDataType()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_CUSTOM;
-  else if (ctx->functionDataType())
+    baseDataTypeNode->customDataType = std::any_cast<CustomDataTypeNode *>(visit(ctx->customDataType()));
+  } else if (ctx->functionDataType()) {
     baseDataTypeNode->type = BaseDataTypeNode::TYPE_FUNCTION;
-  else
+    baseDataTypeNode->functionDataType = std::any_cast<FunctionDataTypeNode *>(visit(ctx->functionDataType()));
+  } else {
     assert_fail("Unknown base data type");
-
-  // Visit children
-  visitChildren(ctx);
+  }
 
   return concludeNode(baseDataTypeNode);
 }
@@ -1330,7 +1339,8 @@ std::any ASTBuilder::visitCustomDataType(SpiceParser::CustomDataTypeContext *ctx
   }
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->typeLst())
+    customDataTypeNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
 
   return concludeNode(customDataTypeNode);
 }
@@ -1339,10 +1349,12 @@ std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext 
   auto functionDataTypeNode = createNode<FunctionDataTypeNode>(ctx);
 
   // Enrich
-  functionDataTypeNode->isFunction = ctx->dataType();
-
-  // Visit children
-  visitChildren(ctx);
+  if (ctx->dataType()) {
+    functionDataTypeNode->isFunction = ctx->dataType();
+    functionDataTypeNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  }
+  if (ctx->typeLst())
+    functionDataTypeNode->paramTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
 
   return concludeNode(functionDataTypeNode);
 }

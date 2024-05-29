@@ -353,7 +353,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
       // Add to interface types
       interfaceTypes.push_back(interfaceType);
       // Update the type of the entry for that interface field
-      const std::string &interfaceName = interfaceNode->baseDataType()->customDataType()->typeNameFragments.back();
+      const std::string &interfaceName = interfaceNode->baseDataType->customDataType->typeNameFragments.back();
       SymbolTableEntry *interfaceEntry = node->structScope->lookupStrict("this." + interfaceName);
       assert(interfaceEntry != nullptr);
       interfaceEntry->updateType(interfaceType, false);

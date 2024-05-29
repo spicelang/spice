@@ -207,7 +207,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   // Insert implicit field for each interface type
   if (node->hasInterfaces) {
     for (DataTypeNode *interfaceNode : node->interfaceTypeLst->dataTypes) {
-      const std::string &interfaceName = interfaceNode->baseDataType()->customDataType()->typeNameFragments.back();
+      const std::string &interfaceName = interfaceNode->baseDataType->customDataType->typeNameFragments.back();
       SymbolTableEntry *interfaceFieldEntry = currentScope->insert("this." + interfaceName, interfaceNode);
       interfaceFieldEntry->used = true;
       interfaceFieldEntry->isImplicitField = true;
@@ -661,7 +661,7 @@ std::any SymbolTableBuilder::visitAttr(AttrNode *node) {
     throw SemanticError(node, INVALID_ATTR_TARGET, "Attribute '" + node->key + "' cannot be used on this target");
 
   // Check if a value is present
-  if (!node->value() && config.type != AttrNode::TYPE_BOOL)
+  if (!node->value && config.type != AttrNode::TYPE_BOOL)
     throw SemanticError(node, MISSING_ATTR_VALUE, "Attribute '" + node->key + "' requires a value");
 
   return nullptr;
@@ -669,23 +669,23 @@ std::any SymbolTableBuilder::visitAttr(AttrNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
   // Create scope for the lambda body
-  const CodeLoc &codeLoc = node->body()->codeLoc;
+  const CodeLoc &codeLoc = node->body->codeLoc;
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
   // Set to async scope if this is an async lambda
-  if (node->lambdaAttr() && node->lambdaAttr()->attrLst->hasAttr(ATTR_ASYNC))
-    node->bodyScope->isAsyncScope = node->lambdaAttr()->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue;
+  if (node->lambdaAttr && node->lambdaAttr->attrLst->hasAttr(ATTR_ASYNC))
+    node->bodyScope->isAsyncScope = node->lambdaAttr->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue;
 
   // Create symbol for 'result' variable
   currentScope->insert(RETURN_VARIABLE_NAME, node);
 
   // Create symbols for the parameters
   if (node->hasParams)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;
@@ -695,20 +695,20 @@ std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
   // Create scope for the lambda body
-  const CodeLoc &codeLoc = node->body()->codeLoc;
+  const CodeLoc &codeLoc = node->body->codeLoc;
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
   // Set to async scope if this is an async lambda
-  if (node->lambdaAttr() && node->lambdaAttr()->attrLst->hasAttr(ATTR_ASYNC))
-    node->bodyScope->isAsyncScope = node->lambdaAttr()->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue;
+  if (node->lambdaAttr && node->lambdaAttr->attrLst->hasAttr(ATTR_ASYNC))
+    node->bodyScope->isAsyncScope = node->lambdaAttr->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue;
 
   // Create symbols for the parameters
   if (node->hasParams)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;
@@ -718,17 +718,17 @@ std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
 
 std::any SymbolTableBuilder::visitLambdaExpr(LambdaExprNode *node) {
   // Create scope for the anonymous block body
-  const CodeLoc &codeLoc = node->lambdaExpr()->codeLoc;
+  const CodeLoc &codeLoc = node->lambdaExpr->codeLoc;
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LAMBDA_BODY, &codeLoc);
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
 
   // Create symbols for the parameters
   if (node->hasParams)
-    visit(node->paramLst());
+    visit(node->paramLst);
 
   // Visit lambda expression
-  visit(node->lambdaExpr());
+  visit(node->lambdaExpr);
 
   // Leave anonymous block body scope
   currentScope = node->bodyScope->parent;

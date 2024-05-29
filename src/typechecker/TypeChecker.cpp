@@ -2104,7 +2104,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);
 
   // Visit return type
-  auto returnType = std::any_cast<QualType>(visit(node->returnType()));
+  auto returnType = std::any_cast<QualType>(visit(node->returnType));
   HANDLE_UNRESOLVED_TYPE_QT(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -2120,7 +2120,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const NamedParam &param : namedParamList) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
@@ -2131,7 +2131,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   }
 
   // Visit lambda body
-  visit(node->body());
+  visit(node->body);
 
   // Leave function body scope
   scopeHandle.leaveScopeEarly();
@@ -2148,7 +2148,7 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   // Check special requirements if this is an async lambda
-  checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
+  checkAsyncLambdaCaptureRules(node, node->lambdaAttr);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2163,7 +2163,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const NamedParam &param : namedParamList) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
@@ -2174,7 +2174,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   }
 
   // Visit lambda body
-  visit(node->body());
+  visit(node->body);
 
   // Leave function body scope
   scopeHandle.leaveScopeEarly();
@@ -2191,7 +2191,7 @@ std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
   node->manifestations.at(manIdx).mangleSuffix = "." + std::to_string(manIdx);
 
   // Check special requirements if this is an async lambda
-  checkAsyncLambdaCaptureRules(node, node->lambdaAttr());
+  checkAsyncLambdaCaptureRules(node, node->lambdaAttr);
 
   return ExprResult{node->setEvaluatedSymbolType(functionType, manIdx)};
 }
@@ -2206,7 +2206,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   ParamList paramList;
   if (node->hasParams) {
     // Visit param list to retrieve the param names
-    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst()));
+    auto namedParamList = std::any_cast<NamedParamList>(visit(node->paramLst));
     for (const NamedParam &param : namedParamList) {
       if (param.isOptional)
         softError(node, LAMBDA_WITH_OPTIONAL_PARAMS, "Lambdas cannot have optional parameters");
@@ -2217,7 +2217,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
   }
 
   // Visit lambda expression
-  QualType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr())).type;
+  QualType returnType = std::any_cast<ExprResult>(visit(node->lambdaExpr)).type;
   HANDLE_UNRESOLVED_TYPE_ER(returnType)
   if (returnType.is(TY_DYN))
     SOFT_ERROR_ER(node, UNEXPECTED_DYN_TYPE, "Dyn return types are not allowed")
@@ -2242,7 +2242,7 @@ std::any TypeChecker::visitLambdaExpr(LambdaExprNode *node) {
 
 std::any TypeChecker::visitDataType(DataTypeNode *node) {
   // Visit base data type
-  auto type = std::any_cast<QualType>(visit(node->baseDataType()));
+  auto type = std::any_cast<QualType>(visit(node->baseDataType));
   HANDLE_UNRESOLVED_TYPE_QT(type)
 
   std::queue<DataTypeNode::TypeModifier> tmQueue = node->tmQueue;
@@ -2288,9 +2288,9 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
   }
 
   // Attach the specifiers to the type
-  if (node->specifierLst()) {
+  if (node->specifierLst) {
     const QualType baseType = type.getBase();
-    for (const SpecifierNode *specifier : node->specifierLst()->specifiers) {
+    for (const SpecifierNode *specifier : node->specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_CONST) {
         type.getSpecifiers().isConst = true;
       } else if (specifier->type == SpecifierNode::TY_SIGNED) {
@@ -2355,12 +2355,12 @@ std::any TypeChecker::visitBaseDataType(BaseDataTypeNode *node) {
   case BaseDataTypeNode::TYPE_BOOL:
     return node->setEvaluatedSymbolType(QualType(TY_BOOL), manIdx);
   case BaseDataTypeNode::TYPE_CUSTOM: {
-    auto customType = std::any_cast<QualType>(visit(node->customDataType()));
+    auto customType = std::any_cast<QualType>(visit(node->customDataType));
     HANDLE_UNRESOLVED_TYPE_QT(customType)
     return node->setEvaluatedSymbolType(customType, manIdx);
   }
   case BaseDataTypeNode::TYPE_FUNCTION: {
-    auto functionType = std::any_cast<QualType>(visit(node->functionDataType()));
+    auto functionType = std::any_cast<QualType>(visit(node->functionDataType));
     HANDLE_UNRESOLVED_TYPE_QT(functionType)
     return node->setEvaluatedSymbolType(functionType, manIdx);
   }
@@ -2420,9 +2420,9 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     // Collect the concrete template types
     bool allTemplateTypesConcrete = true;
     QualTypeList templateTypes;
-    if (node->templateTypeLst()) {
-      templateTypes.reserve(node->templateTypeLst()->dataTypes.size());
-      for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
+    if (node->templateTypeLst) {
+      templateTypes.reserve(node->templateTypeLst->dataTypes.size());
+      for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
         auto templateType = std::any_cast<QualType>(visit(dataType));
         HANDLE_UNRESOLVED_TYPE_QT(templateType)
         if (entryType.is(TY_GENERIC))
@@ -2477,15 +2477,15 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
   // Visit return type
   QualType returnType(TY_DYN);
   if (node->isFunction) {
-    returnType = std::any_cast<QualType>(visit(node->returnType()));
+    returnType = std::any_cast<QualType>(visit(node->returnType));
     HANDLE_UNRESOLVED_TYPE_QT(returnType)
     if (returnType.is(TY_DYN))
-      SOFT_ERROR_ER(node->returnType(), UNEXPECTED_DYN_TYPE, "Function types cannot have return type dyn")
+      SOFT_ERROR_ER(node->returnType, UNEXPECTED_DYN_TYPE, "Function types cannot have return type dyn")
   }
 
   // Visit param types
   QualTypeList paramTypes;
-  if (const TypeLstNode *paramTypeListNode = node->paramTypeLst(); paramTypeListNode != nullptr) {
+  if (const TypeLstNode *paramTypeListNode = node->paramTypeLst; paramTypeListNode != nullptr) {
     for (DataTypeNode *paramTypeNode : paramTypeListNode->dataTypes) {
       auto paramType = std::any_cast<QualType>(visit(paramTypeNode));
       HANDLE_UNRESOLVED_TYPE_QT(returnType)

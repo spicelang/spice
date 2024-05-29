@@ -1104,13 +1104,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAttr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAttr(this); }
 
-  // Public get methods
-  [[nodiscard]] ConstantNode *value() const { return getChild<ConstantNode>(); }
-
   // Other methods
   [[nodiscard]] const CompileTimeValue *getValue() const;
 
   // Public members
+  ConstantNode *value = nullptr;
   AttrType type = ATTR_TYPE_INVALID;
   AttrTarget target = TARGET_INVALID;
   std::string key;
@@ -1947,15 +1945,13 @@ public:
   // Constructors
   using ExprNode::ExprNode;
 
-  // Public get methods
-  [[nodiscard]] ParamLstNode *paramLst() const { return getChild<ParamLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "lambda:" + codeLoc.toString(); }
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
   void customItemsInitialization(size_t manifestationCount) override { manifestations.resize(manifestationCount); }
 
   // Public members
+  ParamLstNode *paramLst = nullptr;
   bool hasParams = false;
   Scope *bodyScope = nullptr;
   std::vector<Function> manifestations;
@@ -1972,13 +1968,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaFunc(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaFunc(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-  [[nodiscard]] LambdaAttrNode *lambdaAttr() const { return getChild<LambdaAttrNode>(); }
-
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+
+  // Public members
+  DataTypeNode *returnType = nullptr;
+  StmtLstNode *body = nullptr;
+  LambdaAttrNode *lambdaAttr = nullptr;
 };
 
 // ====================================================== LambdaProcNode =========================================================
@@ -1992,12 +1988,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaProc(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaProc(this); }
 
-  // Public get methods
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-  [[nodiscard]] LambdaAttrNode *lambdaAttr() const { return getChild<LambdaAttrNode>(); }
-
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+
+  // Public members
+  StmtLstNode *body = nullptr;
+  LambdaAttrNode *lambdaAttr = nullptr;
 };
 
 // ====================================================== LambdaExprNode =========================================================
@@ -2011,8 +2007,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *lambdaExpr() const { return getChild<AssignExprNode>(); }
+  // Public members
+  AssignExprNode *lambdaExpr = nullptr;
 };
 
 // ======================================================= DataTypeNode ==========================================================
@@ -2041,14 +2037,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitDataType(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitDataType(this); }
 
-  // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] BaseDataTypeNode *baseDataType() const { return getChild<BaseDataTypeNode>(); }
-
   // Other methods
   void setFieldTypeRecursive();
 
   // Public members
+  SpecifierLstNode *specifierLst = nullptr;
+  BaseDataTypeNode *baseDataType = nullptr;
   bool isParamType = false;
   bool isGlobalType = false;
   bool isFieldType = false;
@@ -2083,11 +2077,9 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBaseDataType(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBaseDataType(this); }
 
-  // Public get methods
-  [[nodiscard]] CustomDataTypeNode *customDataType() const { return getChild<CustomDataTypeNode>(); }
-  [[nodiscard]] FunctionDataTypeNode *functionDataType() const { return getChild<FunctionDataTypeNode>(); }
-
   // Public members
+  CustomDataTypeNode *customDataType = nullptr;
+  FunctionDataTypeNode *functionDataType = nullptr;
   Type type = TYPE_NONE;
 };
 
@@ -2102,13 +2094,11 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCustomDataType(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCustomDataType(this); }
 
-  // Public get methods
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount); }
 
   // Public members
+  TypeLstNode *templateTypeLst = nullptr;
   std::string fqTypeName;
   std::vector<std::string> typeNameFragments;
   std::vector<SymbolTableEntry *> customTypes;
@@ -2125,14 +2115,12 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFunctionDataType(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFunctionDataType(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(); }
-
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { customTypes.resize(manifestationCount); }
 
   // Public members
+  DataTypeNode *returnType = nullptr;
+  TypeLstNode *paramTypeLst = nullptr;
   bool isFunction = false; // Function or procedure
   std::vector<SymbolTableEntry *> customTypes;
 };

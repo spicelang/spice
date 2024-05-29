@@ -163,7 +163,7 @@ bool AttrLstNode::hasAttr(const std::string &key) const {
   return std::ranges::any_of(attributes, [&](AttrNode *attr) { return attr->key == key; });
 }
 
-const CompileTimeValue *AttrNode::getValue() const { return value() ? &value()->compileTimeValue : nullptr; }
+const CompileTimeValue *AttrNode::getValue() const { return value ? &value->compileTimeValue : nullptr; }
 
 bool FallthroughStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { return true; }
 
@@ -503,21 +503,19 @@ bool FctCallNode::hasReturnValueReceiver() const {
 }
 
 bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body()->returnsOnAllControlPaths(overrideUnreachable);
+  return body->returnsOnAllControlPaths(overrideUnreachable);
 }
 
 bool LambdaProcNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {
-  return body()->returnsOnAllControlPaths(overrideUnreachable);
+  return body->returnsOnAllControlPaths(overrideUnreachable);
 }
 
 void DataTypeNode::setFieldTypeRecursive() { // NOLINT(*-no-recursion)
   // Set the current node to field type
   isFieldType = true;
   // Do the same for all template nodes
-  BaseDataTypeNode *baseType = baseDataType();
-  CustomDataTypeNode *customType = baseType->customDataType();
-  if (customType != nullptr && customType->templateTypeLst())
-    for (DataTypeNode *templateNode : customType->templateTypeLst()->dataTypes)
+  if (baseDataType->customDataType != nullptr && baseDataType->customDataType->templateTypeLst)
+    for (DataTypeNode *templateNode : baseDataType->customDataType->templateTypeLst->dataTypes)
       templateNode->setFieldTypeRecursive();
 }
 
