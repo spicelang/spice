@@ -481,10 +481,10 @@ std::any ASTBuilder::visitField(SpiceParser::FieldContext *ctx) {
   fieldNode->fieldName = getIdentifier(ctx->IDENTIFIER());
 
   // Visit children
-  visitChildren(ctx);
-
-  // Tell the data type that it is a field type
-  fieldNode->dataType()->setFieldTypeRecursive();
+  fieldNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  fieldNode->dataType->setFieldTypeRecursive();
+  if (ctx->ternaryExpr())
+    fieldNode->defaultValue = std::any_cast<TernaryExprNode *>(visit(ctx->ternaryExpr()));
 
   return concludeNode(fieldNode);
 }

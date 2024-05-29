@@ -254,8 +254,8 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
 
       // Retrieve default field value
       llvm::Constant *defaultFieldValue;
-      if (const auto fieldNode = dynamic_cast<FieldNode *>(fieldEntry->declNode); fieldNode && fieldNode->defaultValue())
-        defaultFieldValue = getConst(fieldNode->defaultValue()->getCompileTimeValue(), fieldEntry->getQualType(), fieldNode);
+      if (const auto fieldNode = dynamic_cast<FieldNode *>(fieldEntry->declNode); fieldNode && fieldNode->defaultValue)
+        defaultFieldValue = getConst(fieldNode->defaultValue->getCompileTimeValue(), fieldEntry->getQualType(), fieldNode);
       else
         defaultFieldValue = getDefaultValueForSymbolType(fieldEntry->getQualType());
 

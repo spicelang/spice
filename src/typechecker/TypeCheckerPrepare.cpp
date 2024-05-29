@@ -394,7 +394,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
     // Check if the template type list contains this type
     if (!fieldType.isCoveredByGenericTypeList(templateTypesGeneric))
-      throw SemanticError(field->dataType(), GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
+      throw SemanticError(field->dataType, GENERIC_TYPE_NOT_IN_TEMPLATE, "Generic field type not included in struct template");
   }
 
   // Change to the root scope

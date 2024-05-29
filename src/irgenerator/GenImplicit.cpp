@@ -355,7 +355,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
     }
 
     // Store default field values
-    if (fieldNode->defaultValue() != nullptr || cliOptions.buildMode == BuildMode::DEBUG) {
+    if (fieldNode->defaultValue != nullptr || cliOptions.buildMode == BuildMode::DEBUG) {
       // Retrieve field address
       if (!thisAddressLoaded)
         thisAddressLoaded = insertLoad(builder.getPtrTy(), thisAddress);
@@ -363,11 +363,11 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       llvm::Value *fieldAddress = insertInBoundsGEP(structType, thisAddressLoaded, indices);
       // Retrieve default value
       llvm::Value *value;
-      if (fieldNode->defaultValue() != nullptr) {
+      if (fieldNode->defaultValue != nullptr) {
         // To resolve the default value, we need to temporarily change to the manifestation of the current struct instantiation
         const size_t oldManIdx = manIdx; // Save manifestation index
         manIdx = spiceStruct->manifestationIndex;
-        value = resolveValue(fieldNode->defaultValue());
+        value = resolveValue(fieldNode->defaultValue);
         manIdx = oldManIdx; // Restore manifestation index
       } else {
         assert(cliOptions.buildMode == BuildMode::DEBUG);

@@ -915,11 +915,9 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitField(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitField(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] TernaryExprNode *defaultValue() const { return getChild<TernaryExprNode>(); }
-
   // Public members
+  DataTypeNode *dataType = nullptr;
+  TernaryExprNode *defaultValue = nullptr;
   std::string fieldName;
   SymbolTableEntry *entry = nullptr;
 };
