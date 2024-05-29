@@ -674,16 +674,14 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitIfStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitIfStmt(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *condition() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] StmtLstNode *thenBody() const { return getChild<StmtLstNode>(); }
-  [[nodiscard]] ElseStmtNode *elseStmt() const { return getChild<ElseStmtNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
+  AssignExprNode *condition = nullptr;
+  StmtLstNode *thenBody = nullptr;
+  ElseStmtNode *elseStmt = nullptr;
   Scope *thenBodyScope = nullptr;
 };
 
@@ -698,16 +696,14 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitElseStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitElseStmt(this); }
 
-  // Public get methods
-  [[nodiscard]] IfStmtNode *ifStmt() const { return getChild<IfStmtNode>(); }
-  [[nodiscard]] StmtLstNode *body() const { return getChild<StmtLstNode>(); }
-
   // Other methods
   [[nodiscard]] std::string getScopeId() const { return "if:" + codeLoc.toString(); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
   bool isElseIf = false;
+  IfStmtNode *ifStmt = nullptr;
+  StmtLstNode *body = nullptr;
   Scope *elseBodyScope = nullptr;
 };
 

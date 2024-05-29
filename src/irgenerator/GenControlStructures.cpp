@@ -316,32 +316,32 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
   // Create blocks
   const std::string codeLine = node->codeLoc.toPrettyLine();
   llvm::BasicBlock *bThen = createBlock("if.then." + codeLine);
-  llvm::BasicBlock *bElse = node->elseStmt() ? createBlock("if.else." + codeLine) : nullptr;
+  llvm::BasicBlock *bElse = node->elseStmt ? createBlock("if.else." + codeLine) : nullptr;
   llvm::BasicBlock *bExit = createBlock("if.exit." + codeLine);
 
   // Change scope
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY, node);
 
   // Retrieve condition value
-  llvm::Value *condValue = resolveValue(node->condition());
+  llvm::Value *condValue = resolveValue(node->condition);
   // Check if condition is fulfilled
-  insertCondJump(condValue, bThen, node->elseStmt() ? bElse : bExit);
+  insertCondJump(condValue, bThen, node->elseStmt ? bElse : bExit);
 
   // Switch to then block
   switchToBlock(bThen);
   // Visit then body
-  visit(node->thenBody());
+  visit(node->thenBody);
   // Create jump from then to end block
   insertJump(bExit);
 
   // Change scope back
   scopeHandle.leaveScopeEarly();
 
-  if (node->elseStmt()) {
+  if (node->elseStmt) {
     // Switch to else block
     switchToBlock(bElse);
     // Visit else block
-    visit(node->elseStmt());
+    visit(node->elseStmt);
     // Create jump from else to end block
     insertJump(bExit);
   }
@@ -356,14 +356,14 @@ std::any IRGenerator::visitIfStmt(const IfStmtNode *node) {
 std::any IRGenerator::visitElseStmt(const ElseStmtNode *node) {
   diGenerator.setSourceLocation(node);
 
-  if (node->ifStmt()) { // It is an else if branch
-    visit(node->ifStmt());
+  if (node->ifStmt) { // It is an else if branch
+    visit(node->ifStmt);
   } else { // It is an else branch
     // Change scope
     ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY, node);
 
     // Generate IR for nested statements
-    visit(node->body());
+    visit(node->body);
   }
 
   return nullptr;

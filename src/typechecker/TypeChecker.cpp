@@ -292,27 +292,26 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY);
 
   // Visit condition
-  AssignExprNode *condition = node->condition();
-  QualType conditionType = std::any_cast<ExprResult>(visit(condition)).type;
+  QualType conditionType = std::any_cast<ExprResult>(visit(node->condition)).type;
   HANDLE_UNRESOLVED_TYPE_PTR(conditionType)
   // Check if condition evaluates to bool
   if (!conditionType.is(TY_BOOL))
-    SOFT_ERROR_ER(node->condition(), CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
+    SOFT_ERROR_ER(node->condition, CONDITION_MUST_BE_BOOL, "If condition must be of type bool")
 
   // Warning for bool assignment
-  if (condition->op == AssignExprNode::OP_ASSIGN)
-    sourceFile->compilerOutput.warnings.emplace_back(condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
+  if (node->condition->op == AssignExprNode::OP_ASSIGN)
+    sourceFile->compilerOutput.warnings.emplace_back(node->condition->codeLoc, BOOL_ASSIGN_AS_CONDITION,
                                                      "If you want to compare the values, use '=='");
 
   // Visit body
-  visit(node->thenBody());
+  visit(node->thenBody);
 
   // Leave then body scope
   scopeHandle.leaveScopeEarly();
 
   // Visit else statement if existing
-  if (node->elseStmt())
-    visit(node->elseStmt());
+  if (node->elseStmt)
+    visit(node->elseStmt);
 
   return nullptr;
 }
@@ -320,7 +319,7 @@ std::any TypeChecker::visitIfStmt(IfStmtNode *node) {
 std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   // Visit if statement in the case of an else if branch
   if (node->isElseIf) {
-    visit(node->ifStmt());
+    visit(node->ifStmt);
     return nullptr;
   }
 
@@ -328,7 +327,7 @@ std::any TypeChecker::visitElseStmt(ElseStmtNode *node) {
   ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::IF_ELSE_BODY);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
 
   return nullptr;
 }

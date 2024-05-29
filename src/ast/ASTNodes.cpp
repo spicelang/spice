@@ -81,21 +81,20 @@ bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachabl
 
 bool IfStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
   // An if statement returns on all control paths, if then and else block return on all control paths
-  const AssignExprNode *cond = condition();
-  if (!cond->hasCompileTimeValue())
-    return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable) && elseStmt() != nullptr &&
-           elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  if (!condition->hasCompileTimeValue())
+    return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable) && elseStmt != nullptr &&
+           elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 
   // If the condition always evaluates to 'true' only the then block must return and vice versa
-  const CompileTimeValue &compileTimeValue = cond->getCompileTimeValue();
+  const CompileTimeValue &compileTimeValue = condition->getCompileTimeValue();
   if (compileTimeValue.boolValue)
-    return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
-  return elseStmt() != nullptr && elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+    return thenBody->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return elseStmt != nullptr && elseStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool ElseStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
-  return isElseIf ? ifStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable)
-                  : body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  return isElseIf ? ifStmt->returnsOnAllControlPaths(doSetPredecessorsUnreachable)
+                  : body->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool SwitchStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {

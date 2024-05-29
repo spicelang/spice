@@ -332,7 +332,10 @@ std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
   auto ifStmtNode = createNode<IfStmtNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  ifStmtNode->condition = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  ifStmtNode->thenBody = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
+  if (ctx->elseStmt())
+    ifStmtNode->elseStmt = std::any_cast<ElseStmtNode *>(visit(ctx->elseStmt()));
 
   return concludeNode(ifStmtNode);
 }
@@ -340,11 +343,13 @@ std::any ASTBuilder::visitIfStmt(SpiceParser::IfStmtContext *ctx) {
 std::any ASTBuilder::visitElseStmt(SpiceParser::ElseStmtContext *ctx) {
   auto elseStmtNode = createNode<ElseStmtNode>(ctx);
 
-  // Enrich
-  elseStmtNode->isElseIf = ctx->ifStmt();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->ifStmt()) {
+    elseStmtNode->isElseIf = true;
+    elseStmtNode->ifStmt = std::any_cast<IfStmtNode *>(visit(ctx->ifStmt()));
+  } else {
+    elseStmtNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
+  }
 
   return concludeNode(elseStmtNode);
 }
