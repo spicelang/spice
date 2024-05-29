@@ -459,13 +459,13 @@ std::any SymbolTableBuilder::visitWhileLoop(WhileLoopNode *node) {
 std::any SymbolTableBuilder::visitDoWhileLoop(DoWhileLoopNode *node) {
   // Create scope for the loop body
   node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body()->codeLoc);
-
-  // Visit condition
-  visit(node->condition());
+      currentScope->createChildScope(node->getScopeId(), ScopeType::WHILE_BODY, &node->body->codeLoc);
 
   // Visit body
-  visit(node->body());
+  visit(node->body);
+
+  // Visit condition
+  visit(node->condition);
 
   // Leave do-while body scope
   currentScope = node->bodyScope->parent;

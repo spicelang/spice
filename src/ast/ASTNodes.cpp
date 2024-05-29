@@ -76,8 +76,7 @@ bool WhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable)
 }
 
 bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const AssignExprNode *cond = condition();
-  return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
+  return condition->hasCompileTimeValue() && condition->getCompileTimeValue().boolValue;
 }
 
 bool IfStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)

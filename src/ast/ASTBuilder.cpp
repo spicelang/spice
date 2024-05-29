@@ -322,7 +322,8 @@ std::any ASTBuilder::visitDoWhileLoop(SpiceParser::DoWhileLoopContext *ctx) {
   auto doWhileLoopNode = createNode<DoWhileLoopNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  doWhileLoopNode->body = std::any_cast<StmtLstNode *>(visit(ctx->stmtLst()));
+  doWhileLoopNode->condition = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(doWhileLoopNode);
 }
