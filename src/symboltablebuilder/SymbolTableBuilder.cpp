@@ -583,7 +583,7 @@ std::any SymbolTableBuilder::visitField(FieldNode *node) {
 
 std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
   // Build signature specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->signatureSpecifiers.isInline = true;

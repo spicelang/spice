@@ -459,7 +459,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Retrieve function template types
   std::vector<GenericType> usedGenericTypes;
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
       // Visit template type
       auto templateType = std::any_cast<QualType>(visit(dataType));
       if (templateType.is(TY_UNRESOLVED))
@@ -479,12 +479,12 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   // Visit return type
   QualType returnType(TY_DYN);
   if (isFunction) {
-    returnType = std::any_cast<QualType>(visit(node->returnType()));
+    returnType = std::any_cast<QualType>(visit(node->returnType));
     if (returnType.is(TY_UNRESOLVED))
       return static_cast<std::vector<Function *> *>(nullptr);
 
     if (!returnType.isCoveredByGenericTypeList(usedGenericTypes))
-      softError(node->returnType(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+      softError(node->returnType, GENERIC_TYPE_NOT_IN_TEMPLATE,
                 "Generic return type not included in the template type list of the function");
   }
 
@@ -492,15 +492,15 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   QualTypeList paramTypes;
   ParamList paramList;
   if (node->hasParams) {
-    paramList.reserve(node->paramTypeLst()->dataTypes.size());
-    for (DataTypeNode *param : node->paramTypeLst()->dataTypes) {
+    paramList.reserve(node->paramTypeLst->dataTypes.size());
+    for (DataTypeNode *param : node->paramTypeLst->dataTypes) {
       auto paramType = std::any_cast<QualType>(visit(param));
       if (paramType.is(TY_UNRESOLVED))
         return static_cast<std::vector<Function *> *>(nullptr);
 
       // Check if the type is present in the template for generic types
       if (!paramType.isCoveredByGenericTypeList(usedGenericTypes)) {
-        softError(node->paramTypeLst(), GENERIC_TYPE_NOT_IN_TEMPLATE,
+        softError(node->paramTypeLst, GENERIC_TYPE_NOT_IN_TEMPLATE,
                   "Generic param type not included in the template type list of the function");
         continue;
       }

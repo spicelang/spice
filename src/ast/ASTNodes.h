@@ -940,18 +940,17 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSignature(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitSignature(this); }
 
-  // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(0); }
-  [[nodiscard]] TypeLstNode *paramTypeLst() const { return getChild<TypeLstNode>(hasTemplateTypes ? 1 : 0); }
-
   // Other methods
   std::vector<Function *> *getFctManifestations(const std::string &) override { return &signatureManifestations; }
 
   // Public members
-  bool hasParams = false;
+  SpecifierLstNode *specifierLst = nullptr;
+  DataTypeNode *returnType = nullptr;
+  TypeLstNode *templateTypeLst = nullptr;
+  TypeLstNode *paramTypeLst = nullptr;
+  bool hasReturnType = false;
   bool hasTemplateTypes = false;
+  bool hasParams = false;
   SignatureType signatureType = SignatureNode::TYPE_NONE;
   TypeSpecifiers signatureSpecifiers;
   std::string methodName;

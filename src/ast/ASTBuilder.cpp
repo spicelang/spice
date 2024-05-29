@@ -494,15 +494,28 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
 
   // Extract method name
   signatureNode->methodName = getIdentifier(ctx->IDENTIFIER());
-  // Extract signature type
-  signatureNode->signatureType = ctx->F() ? SignatureNode::TYPE_FUNCTION : SignatureNode::TYPE_PROCEDURE;
-  signatureNode->signatureSpecifiers = ctx->F() ? TypeSpecifiers::of(TY_FUNCTION) : TypeSpecifiers::of(TY_PROCEDURE);
-  // Extract other metadata
-  signatureNode->hasTemplateTypes = ctx->F() ? ctx->LESS().size() == 2 : ctx->LESS().size() == 1;
-  signatureNode->hasParams = ctx->typeLst().size() == 2 || (ctx->typeLst().size() == 1 && !signatureNode->hasTemplateTypes);
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->specifierLst()) {
+    signatureNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  }
+  if (ctx->F()) {
+    signatureNode->hasReturnType = true;
+    signatureNode->signatureType = SignatureNode::TYPE_FUNCTION;
+    signatureNode->signatureSpecifiers = TypeSpecifiers::of(TY_FUNCTION);
+    signatureNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  } else {
+    signatureNode->signatureType = SignatureNode::TYPE_PROCEDURE;
+    signatureNode->signatureSpecifiers = TypeSpecifiers::of(TY_PROCEDURE);
+  }
+  if (ctx->F() ? ctx->LESS().size() == 2 : ctx->LESS().size() == 1) {
+    signatureNode->hasTemplateTypes = true;
+    signatureNode->templateTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst(0)));
+  }
+  if (ctx->typeLst().size() == 2 || (ctx->typeLst().size() == 1 && !signatureNode->hasTemplateTypes)) {
+    signatureNode->hasParams = true;
+    signatureNode->paramTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst(signatureNode->hasTemplateTypes ? 1 : 0)));
+  }
 
   return concludeNode(signatureNode);
 }
