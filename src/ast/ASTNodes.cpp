@@ -134,10 +134,8 @@ bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
 
 std::vector<const CompileTimeValue *> AttrLstNode::getAttrValuesByName(const std::string &key) const {
   assert(ATTR_CONFIGS.contains(key));
-  const std::vector<AttrNode *> attrNodes = attributes();
-
   std::vector<const CompileTimeValue *> attributeValues;
-  for (AttrNode *attrNode : attrNodes) {
+  for (AttrNode *attrNode : attributes) {
     // Skip attributes with different keys
     if (attrNode->key != key)
       continue;
@@ -162,8 +160,7 @@ const CompileTimeValue *AttrLstNode::getAttrValueByName(const std::string &key) 
 }
 
 bool AttrLstNode::hasAttr(const std::string &key) const {
-  const std::vector<AttrNode *> attrs = attributes();
-  return std::ranges::any_of(attrs, [&](AttrNode *attr) { return attr->key == key; });
+  return std::ranges::any_of(attributes, [&](AttrNode *attr) { return attr->key == key; });
 }
 
 const CompileTimeValue *AttrNode::getValue() const { return value() ? &value()->compileTimeValue : nullptr; }

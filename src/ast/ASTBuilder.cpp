@@ -58,7 +58,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
 
   // Tell the attributes that they are function attributes
   if (fctDefNode->attrs())
-    for (AttrNode *attr : fctDefNode->attrs()->attrLst()->attributes())
+    for (AttrNode *attr : fctDefNode->attrs()->attrLst->attributes)
       attr->target = AttrNode::TARGET_FCT_PROC;
 
   return concludeNode(fctDefNode);
@@ -80,7 +80,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
 
   // Tell the attributes that they are procedure attributes
   if (procDefNode->attrs())
-    for (AttrNode *attr : procDefNode->attrs()->attrLst()->attributes())
+    for (AttrNode *attr : procDefNode->attrs()->attrLst->attributes)
       attr->target = AttrNode::TARGET_FCT_PROC;
 
   return concludeNode(procDefNode);
@@ -123,12 +123,12 @@ std::any ASTBuilder::visitStructDef(SpiceParser::StructDefContext *ctx) {
 
   // Tell the attributes that they are struct attributes
   if (structDefNode->attrs())
-    for (AttrNode *attr : structDefNode->attrs()->attrLst()->attributes())
+    for (AttrNode *attr : structDefNode->attrs()->attrLst->attributes)
       attr->target = AttrNode::TARGET_STRUCT;
 
   // Check if a custom type id was set
-  if (structDefNode->attrs() && structDefNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
-    structDefNode->typeId = structDefNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+  if (structDefNode->attrs() && structDefNode->attrs()->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
+    structDefNode->typeId = structDefNode->attrs()->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
 
   return concludeNode(structDefNode);
 }
@@ -146,13 +146,13 @@ std::any ASTBuilder::visitInterfaceDef(SpiceParser::InterfaceDefContext *ctx) {
 
   // Tell the attributes that they are interface attributes
   if (interfaceDefNode->attrs())
-    for (AttrNode *attr : interfaceDefNode->attrs()->attrLst()->attributes())
+    for (AttrNode *attr : interfaceDefNode->attrs()->attrLst->attributes)
       attr->target = AttrNode::TARGET_INTERFACE;
 
   // Check if a custom type id was set
-  if (interfaceDefNode->attrs() && interfaceDefNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
+  if (interfaceDefNode->attrs() && interfaceDefNode->attrs()->attrLst->hasAttr(ATTR_CORE_COMPILER_FIXED_TYPE_ID))
     interfaceDefNode->typeId =
-        interfaceDefNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
+        interfaceDefNode->attrs()->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_FIXED_TYPE_ID)->intValue;
 
   return concludeNode(interfaceDefNode);
 }
@@ -230,7 +230,7 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   // Tell the attributes that they are ext decl attributes
   if (extDeclNode->attrs())
-    for (AttrNode *attr : extDeclNode->attrs()->attrLst()->attributes())
+    for (AttrNode *attr : extDeclNode->attrs()->attrLst->attributes)
       attr->target = AttrNode::TARGET_EXT_DECL;
 
   return concludeNode(extDeclNode);
@@ -562,8 +562,8 @@ std::any ASTBuilder::visitSpecifier(SpiceParser::SpecifierContext *ctx) {
   auto specifierNode = createNode<SpecifierNode>(ctx);
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    auto token = spice_pointer_cast<TerminalNode *>(subTree);
-    size_t symbolType = token->getSymbol()->getType();
+    const auto token = spice_pointer_cast<TerminalNode *>(subTree);
+    const size_t symbolType = token->getSymbol()->getType();
     if (symbolType == SpiceParser::CONST)
       specifierNode->type = SpecifierNode::TY_CONST;
     else if (symbolType == SpiceParser::SIGNED)
@@ -589,10 +589,10 @@ std::any ASTBuilder::visitModAttr(SpiceParser::ModAttrContext *ctx) {
   auto modAttrNode = createNode<ModAttrNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  modAttrNode->attrLst = std::any_cast<AttrLstNode *>(visit(ctx->attrLst()));
 
   // Tell the attributes that they are module attributes
-  for (AttrNode *attr : modAttrNode->attrLst()->attributes())
+  for (AttrNode *attr : modAttrNode->attrLst->attributes)
     attr->target = AttrNode::TARGET_MODULE;
 
   return concludeNode(modAttrNode);
@@ -602,7 +602,7 @@ std::any ASTBuilder::visitTopLevelDefAttr(SpiceParser::TopLevelDefAttrContext *c
   auto fctAttrNode = createNode<TopLevelDefinitionAttrNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  fctAttrNode->attrLst = std::any_cast<AttrLstNode *>(visit(ctx->attrLst()));
 
   return concludeNode(fctAttrNode);
 }
@@ -611,10 +611,10 @@ std::any ASTBuilder::visitLambdaAttr(SpiceParser::LambdaAttrContext *ctx) {
   auto lambdaAttrNode = createNode<LambdaAttrNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  lambdaAttrNode->attrLst = std::any_cast<AttrLstNode *>(visit(ctx->attrLst()));
 
   // Tell the attributes that they are module attributes
-  for (AttrNode *attr : lambdaAttrNode->attrLst()->attributes())
+  for (AttrNode *attr : lambdaAttrNode->attrLst->attributes)
     attr->target = AttrNode::TARGET_LAMBDA;
 
   return concludeNode(lambdaAttrNode);
@@ -624,7 +624,8 @@ std::any ASTBuilder::visitAttrLst(SpiceParser::AttrLstContext *ctx) {
   auto attrLstNode = createNode<AttrLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::AttrContext *attr : ctx->attr())
+    attrLstNode->attributes.push_back(std::any_cast<AttrNode *>(visit(attr)));
 
   return concludeNode(attrLstNode);
 }

@@ -2512,7 +2512,7 @@ std::any TypeChecker::visitFunctionDataType(FunctionDataTypeNode *node) {
  */
 bool TypeChecker::checkAsyncLambdaCaptureRules(LambdaBaseNode *node, const LambdaAttrNode *attrs) const {
   // If the async attribute is not set, we can return early
-  if (!attrs || !attrs->attrLst()->hasAttr(ATTR_ASYNC) || !attrs->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue)
+  if (!attrs || !attrs->attrLst->hasAttr(ATTR_ASYNC) || !attrs->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue)
     return true; // Not violated
 
   // If we don't have any captures, we can return early

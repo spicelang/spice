@@ -1039,8 +1039,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitModAttr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitModAttr(this); }
 
-  // Public get methods
-  [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
+  // Public members
+  AttrLstNode *attrLst = nullptr;
 };
 
 // =================================================== TopLevelDefinitionAttrNode ================================================
@@ -1054,8 +1054,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitTopLevelDefinitionAttr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitTopLevelDefinitionAttr(this); }
 
-  // Public get methods
-  [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
+  // Public members
+  AttrLstNode *attrLst = nullptr;
 };
 
 // ========================================================= LambdaAttrNode ======================================================
@@ -1069,8 +1069,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLambdaAttr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitLambdaAttr(this); }
 
-  // Public get methods
-  [[nodiscard]] AttrLstNode *attrLst() const { return getChild<AttrLstNode>(); }
+  // Public members
+  AttrLstNode *attrLst = nullptr;
 };
 
 // ========================================================== AttrLstNode ========================================================
@@ -1084,13 +1084,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAttrLst(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAttrLst(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<AttrNode *> attributes() const { return getChildren<AttrNode>(); }
-
   // Other methods
   [[nodiscard]] std::vector<const CompileTimeValue *> getAttrValuesByName(const std::string &key) const;
   [[nodiscard]] const CompileTimeValue *getAttrValueByName(const std::string &key) const;
   [[nodiscard]] bool hasAttr(const std::string &key) const;
+
+  // Public members
+  std::vector<AttrNode *> attributes;
 };
 
 // ============================================================ AttrNode =========================================================

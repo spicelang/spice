@@ -622,29 +622,26 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   // Visit attributes
   visitChildren(node);
 
-  // Retrieve attributes
-  const AttrLstNode *attrs = node->attrLst();
-
   // Collect linker flags
   std::vector<const CompileTimeValue *> linkerFlagValues;
   // core.linker.flag
-  std::vector<const CompileTimeValue *> values = attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG);
+  std::vector<const CompileTimeValue *> values = node->attrLst->getAttrValuesByName(ATTR_CORE_LINKER_FLAG);
   linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   // core.linux.linker.flag
   if (sourceFile->targetMachine->getTargetTriple().isOSLinux()) {
-    values = attrs->getAttrValuesByName(ATTR_CORE_LINUX_LINKER_FLAG);
+    values = node->attrLst->getAttrValuesByName(ATTR_CORE_LINUX_LINKER_FLAG);
     linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   }
   // core.windows.linker.flag
   if (sourceFile->targetMachine->getTargetTriple().isOSWindows()) {
-    values = attrs->getAttrValuesByName(ATTR_CORE_WINDOWS_LINKER_FLAG);
+    values = node->attrLst->getAttrValuesByName(ATTR_CORE_WINDOWS_LINKER_FLAG);
     linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
   }
   for (const CompileTimeValue *value : linkerFlagValues)
     resourceManager.linker.addLinkerFlag(resourceManager.compileTimeStringValues.at(value->stringValueOffset));
 
   // core.linker.additional_source
-  for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_ADDITIONAL_SOURCE)) {
+  for (const CompileTimeValue *value : node->attrLst->getAttrValuesByName(ATTR_CORE_LINKER_ADDITIONAL_SOURCE)) {
     const std::string &stringValue = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
     const std::filesystem::path path = sourceFile->filePath.parent_path() / stringValue;
     resourceManager.linker.addAdditionalSourcePath(std::filesystem::canonical(path));
@@ -677,8 +674,8 @@ std::any SymbolTableBuilder::visitLambdaFunc(LambdaFuncNode *node) {
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
   // Set to async scope if this is an async lambda
-  if (node->lambdaAttr() && node->lambdaAttr()->attrLst()->hasAttr(ATTR_ASYNC))
-    node->bodyScope->isAsyncScope = node->lambdaAttr()->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue;
+  if (node->lambdaAttr() && node->lambdaAttr()->attrLst->hasAttr(ATTR_ASYNC))
+    node->bodyScope->isAsyncScope = node->lambdaAttr()->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue;
 
   // Create symbol for 'result' variable
   currentScope->insert(RETURN_VARIABLE_NAME, node);
@@ -703,8 +700,8 @@ std::any SymbolTableBuilder::visitLambdaProc(LambdaProcNode *node) {
   // Requires capturing because the LLVM IR will end up in a separate function
   currentScope->symbolTable.setCapturingRequired();
   // Set to async scope if this is an async lambda
-  if (node->lambdaAttr() && node->lambdaAttr()->attrLst()->hasAttr(ATTR_ASYNC))
-    node->bodyScope->isAsyncScope = node->lambdaAttr()->attrLst()->getAttrValueByName(ATTR_ASYNC)->boolValue;
+  if (node->lambdaAttr() && node->lambdaAttr()->attrLst->hasAttr(ATTR_ASYNC))
+    node->bodyScope->isAsyncScope = node->lambdaAttr()->attrLst->getAttrValueByName(ATTR_ASYNC)->boolValue;
 
   // Create symbols for the parameters
   if (node->hasParams)

@@ -155,7 +155,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
   // Check function attributes
   if (node->attrs()) {
-    const AttrLstNode *attrLst = node->attrs()->attrLst();
+    const AttrLstNode *attrLst = node->attrs()->attrLst;
     Function *firstManifestation = node->manifestations.front();
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
       firstManifestation->mangleFunctionName = value->boolValue;
@@ -286,7 +286,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
 
   // Check procedure attributes
   if (node->attrs()) {
-    const AttrLstNode *attrLst = node->attrs()->attrLst();
+    const AttrLstNode *attrLst = node->attrs()->attrLst;
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
       node->manifestations.front()->mangleFunctionName = value->boolValue;
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME)) {
@@ -408,8 +408,8 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Request RTTI runtime if the struct is polymorphic
   node->emitVTable |= node->hasInterfaces;
-  if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_EMIT_VTABLE))
-    node->emitVTable |= node->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_EMIT_VTABLE)->boolValue;
+  if (node->attrs() && node->attrs()->attrLst->hasAttr(ATTR_CORE_COMPILER_EMIT_VTABLE))
+    node->emitVTable |= node->attrs()->attrLst->getAttrValueByName(ATTR_CORE_COMPILER_EMIT_VTABLE)->boolValue;
   if (node->emitVTable && !sourceFile->isRttiRT())
     sourceFile->requestRuntimeModule(RuntimeModule::RTTI_RT);
 
@@ -652,7 +652,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
 
   // Check procedure attributes
   if (node->attrs()) {
-    const AttrLstNode *attrLst = node->attrs()->attrLst();
+    const AttrLstNode *attrLst = node->attrs()->attrLst;
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
       node->extFunction->mangleFunctionName = value->boolValue;
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME)) {
