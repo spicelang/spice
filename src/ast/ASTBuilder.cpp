@@ -198,10 +198,12 @@ std::any ASTBuilder::visitEnumDef(SpiceParser::EnumDefContext *ctx) {
   enumDefNode->typeId = resourceManager.getNextCustomTypeId();
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->specifierLst())
+    enumDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  enumDefNode->itemLst = std::any_cast<EnumItemLstNode *>(visit(ctx->enumItemLst()));
 
   // Tell all items about the enum def
-  for (EnumItemNode *enumItem : enumDefNode->itemLst()->items)
+  for (EnumItemNode *enumItem : enumDefNode->itemLst->items)
     enumItem->enumDef = enumDefNode;
 
   return concludeNode(enumDefNode);
@@ -214,7 +216,7 @@ std::any ASTBuilder::visitGenericTypeDef(SpiceParser::GenericTypeDefContext *ctx
   genericTypeDefNode->typeName = getIdentifier(ctx->TYPE_IDENTIFIER());
 
   // Visit children
-  visitChildren(ctx);
+  genericTypeDefNode->typeAltsLst = std::any_cast<TypeAltsLstNode *>(visit(ctx->typeAltsLst()));
 
   return concludeNode(genericTypeDefNode);
 }
@@ -228,7 +230,9 @@ std::any ASTBuilder::visitAliasDef(SpiceParser::AliasDefContext *ctx) {
   aliasDefNode->typeId = resourceManager.getNextCustomTypeId();
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->specifierLst())
+    aliasDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
+  aliasDefNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
 
   return concludeNode(aliasDefNode);
 }
@@ -238,13 +242,14 @@ std::any ASTBuilder::visitGlobalVarDef(SpiceParser::GlobalVarDefContext *ctx) {
 
   // Enrich
   globalVarDefNode->varName = getIdentifier(ctx->TYPE_IDENTIFIER());
-  globalVarDefNode->hasValue = ctx->ASSIGN();
 
   // Visit children
-  visitChildren(ctx);
-
-  // Tell the data type that it is a global one
-  globalVarDefNode->dataType()->isGlobalType = true;
+  globalVarDefNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  globalVarDefNode->dataType->isGlobalType = true;
+  if (ctx->constant()) {
+    globalVarDefNode->hasValue = true;
+    globalVarDefNode->constant = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+  }
 
   return concludeNode(globalVarDefNode);
 }
@@ -254,17 +259,24 @@ std::any ASTBuilder::visitExtDecl(SpiceParser::ExtDeclContext *ctx) {
 
   // Enrich
   extDeclNode->extFunctionName = getIdentifier(ctx->IDENTIFIER() ? ctx->IDENTIFIER() : ctx->TYPE_IDENTIFIER());
-  extDeclNode->hasArgs = ctx->typeLst();
-  extDeclNode->isVarArg = ctx->ELLIPSIS();
-  extDeclNode->hasReturnType = ctx->F();
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->topLevelDefAttr()) {
+    extDeclNode->attrs = std::any_cast<TopLevelDefinitionAttrNode *>(visit(ctx->topLevelDefAttr()));
 
-  // Tell the attributes that they are ext decl attributes
-  if (extDeclNode->attrs())
-    for (AttrNode *attr : extDeclNode->attrs()->attrLst->attributes)
+    // Tell the attributes that they are ext decl attributes
+    for (AttrNode *attr : extDeclNode->attrs->attrLst->attributes)
       attr->target = AttrNode::TARGET_EXT_DECL;
+  }
+  if (ctx->F()) {
+    extDeclNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+    extDeclNode->returnType->isReturnType = true;
+  }
+  if (ctx->typeLst()) {
+    extDeclNode->hasArgs = true;
+    extDeclNode->argTypeLst = std::any_cast<TypeLstNode *>(visit(ctx->typeLst()));
+  }
+  extDeclNode->isVarArg = ctx->ELLIPSIS();
 
   return concludeNode(extDeclNode);
 }

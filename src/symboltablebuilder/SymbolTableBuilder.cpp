@@ -286,14 +286,14 @@ std::any SymbolTableBuilder::visitEnumDef(EnumDefNode *node) {
       rootScope->createChildScope(ENUM_SCOPE_PREFIX + node->enumName, ScopeType::ENUM, &node->codeLoc);
 
   // Visit items
-  visit(node->itemLst());
+  visit(node->itemLst);
 
   // Leave the enum scope
   currentScope = node->enumScope->parent;
 
   // Build enum specifiers
-  if (node->specifierLst()) {
-    for (const SpecifierNode *specifier : node->specifierLst()->specifiers) {
+  if (node->specifierLst) {
+    for (const SpecifierNode *specifier : node->specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->enumSpecifiers.isPublic = true;
       else
@@ -327,7 +327,7 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->aliasName + "'");
 
   // Build alias specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (SpecifierLstNode *specifierLst = node->specifierLst; specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->aliasSpecifiers.isPublic = true;
@@ -368,8 +368,8 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
 
 std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   // Visit attributes
-  if (node->attrs())
-    visit(node->attrs());
+  if (node->attrs)
+    visit(node->attrs);
 
   // Check if this name already exists
   if (rootScope->lookupStrict(node->extFunctionName))
@@ -381,7 +381,7 @@ std::any SymbolTableBuilder::visitExtDecl(ExtDeclNode *node) {
   // Add the external declaration to the symbol table
   node->entry = rootScope->insert(node->extFunctionName, node);
   // Register the name in the exported name registry
-  const uint64_t typeId = node->returnType() ? TY_FUNCTION : TY_PROCEDURE;
+  const uint64_t typeId = node->returnType ? TY_FUNCTION : TY_PROCEDURE;
   sourceFile->addNameRegistryEntry(node->extFunctionName, typeId, node->entry, rootScope, /*keepNewOnCollision=*/true);
 
   return nullptr;

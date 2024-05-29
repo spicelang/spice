@@ -187,7 +187,7 @@ bool TernaryExprNode::hasCompileTimeValue() const {
   return std::ranges::all_of(operands(), [](const LogicalOrExprNode *node) { return node->hasCompileTimeValue(); });
 }
 
-CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant()->getCompileTimeValue(); }
+CompileTimeValue GlobalVarDefNode::getCompileTimeValue() const { return constant->getCompileTimeValue(); }
 
 CompileTimeValue TernaryExprNode::getCompileTimeValue() const {
   if (children.size() == 1)

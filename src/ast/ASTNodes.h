@@ -414,11 +414,9 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEnumDef(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEnumDef(this); }
 
-  // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] EnumItemLstNode *itemLst() const { return getChild<EnumItemLstNode>(); }
-
   // Public members
+  SpecifierLstNode *specifierLst = nullptr;
+  EnumItemLstNode *itemLst = nullptr;
   TypeSpecifiers enumSpecifiers = TypeSpecifiers::of(TY_ENUM);
   std::string enumName;
   uint64_t typeId;
@@ -437,10 +435,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitGenericTypeDef(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitGenericTypeDef(this); }
 
-  // Public get methods
-  [[nodiscard]] TypeAltsLstNode *typeAltsLst() const { return getChild<TypeAltsLstNode>(); }
-
   // Public members
+  TypeAltsLstNode *typeAltsLst = nullptr;
   std::string typeName;
   SymbolTableEntry *entry = nullptr;
 };
@@ -456,11 +452,9 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAliasDef(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAliasDef(this); }
 
-  // Public get methods
-  [[nodiscard]] SpecifierLstNode *specifierLst() const { return getChild<SpecifierLstNode>(); }
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-
   // Public members
+  SpecifierLstNode *specifierLst = nullptr;
+  DataTypeNode *dataType = nullptr;
   TypeSpecifiers aliasSpecifiers = TypeSpecifiers::of(TY_ALIAS);
   std::string aliasName;
   std::string dataTypeString;
@@ -480,15 +474,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitGlobalVarDef(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitGlobalVarDef(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return true; }
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
+  DataTypeNode *dataType = nullptr;
+  ConstantNode *constant = nullptr;
   bool hasValue = false;
   std::string varName;
   SymbolTableEntry *entry = nullptr;
@@ -505,11 +497,6 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitExtDecl(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitExtDecl(this); }
 
-  // Public get methods
-  [[nodiscard]] TopLevelDefinitionAttrNode *attrs() const { return getChild<TopLevelDefinitionAttrNode>(); }
-  [[nodiscard]] DataTypeNode *returnType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] TypeLstNode *argTypeLst() const { return getChild<TypeLstNode>(); }
-
   // Other methods
   std::vector<Function *> *getFctManifestations(const std::string &) override { return &extFunctionManifestations; }
   [[nodiscard]] std::string getScopeId() const {
@@ -518,6 +505,9 @@ public:
   }
 
   // Public members
+  TopLevelDefinitionAttrNode *attrs = nullptr;
+  DataTypeNode *returnType = nullptr;
+  TypeLstNode *argTypeLst = nullptr;
   bool hasArgs = false;
   bool isVarArg = false;
   bool hasReturnType = false;

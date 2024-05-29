@@ -502,7 +502,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Loop through all items with values
   std::vector<std::string> names;
   std::vector<uint32_t> values;
-  for (const EnumItemNode *enumItem : node->itemLst()->items) {
+  for (const EnumItemNode *enumItem : node->itemLst->items) {
     // Save name
     names.push_back(enumItem->itemName);
     // Check for duplicate value
@@ -518,7 +518,7 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
   // Loop through all items without values
   uint32_t nextValue = 0;
   QualType intSymbolType(TY_INT);
-  for (EnumItemNode *enumItem : node->itemLst()->items) {
+  for (EnumItemNode *enumItem : node->itemLst->items) {
     // Update type of enum item entry
     SymbolTableEntry *itemEntry = currentScope->lookupStrict(enumItem->itemName);
     assert(itemEntry != nullptr);
@@ -542,8 +542,8 @@ std::any TypeChecker::visitEnumDefPrepare(EnumDefNode *node) {
 std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
   // Retrieve type conditions
   QualTypeList typeConditions;
-  typeConditions.reserve(node->typeAltsLst()->dataTypes.size());
-  for (const auto &typeAlt : node->typeAltsLst()->dataTypes) {
+  typeConditions.reserve(node->typeAltsLst->dataTypes.size());
+  for (const auto &typeAlt : node->typeAltsLst->dataTypes) {
     auto typeCondition = std::any_cast<QualType>(visit(typeAlt));
     HANDLE_UNRESOLVED_TYPE_PTR(typeCondition)
     if (!typeCondition.is(TY_DYN))
@@ -556,7 +556,7 @@ std::any TypeChecker::visitGenericTypeDefPrepare(GenericTypeDefNode *node) {
 
   // Check if only one type condition is set
   if (typeConditions.size() == 1 && !typeConditions.front().is(TY_DYN))
-    sourceFile->compilerOutput.warnings.emplace_back(node->typeAltsLst()->codeLoc, SINGLE_GENERIC_TYPE_CONDITION,
+    sourceFile->compilerOutput.warnings.emplace_back(node->typeAltsLst->codeLoc, SINGLE_GENERIC_TYPE_CONDITION,
                                                      "Generic type is locked to one type");
 
   return nullptr;
@@ -570,7 +570,7 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
   node->entry->updateType(QualType(type, node->aliasSpecifiers), false);
 
   // Update type of the aliased type container entry
-  auto aliasedType = std::any_cast<QualType>(visit(node->dataType()));
+  auto aliasedType = std::any_cast<QualType>(visit(node->dataType));
   HANDLE_UNRESOLVED_TYPE_PTR(aliasedType)
   node->aliasedTypeContainerEntry->updateType(aliasedType, false);
   node->aliasedTypeContainerEntry->used = true; // The container type is always used per default
@@ -580,34 +580,34 @@ std::any TypeChecker::visitAliasDefPrepare(AliasDefNode *node) {
 
 std::any TypeChecker::visitGlobalVarDefPrepare(GlobalVarDefNode *node) {
   // Insert variable name to symbol table
-  auto globalVarType = std::any_cast<QualType>(visit(node->dataType()));
+  auto globalVarType = std::any_cast<QualType>(visit(node->dataType));
   HANDLE_UNRESOLVED_TYPE_PTR(globalVarType)
 
-  if (node->constant()) { // Variable is initialized here
-    QualType rhsType = std::any_cast<ExprResult>(visit(node->constant())).type;
+  if (node->constant) { // Variable is initialized here
+    QualType rhsType = std::any_cast<ExprResult>(visit(node->constant)).type;
     HANDLE_UNRESOLVED_TYPE_PTR(rhsType)
     if (globalVarType.is(TY_DYN)) { // Perform type inference
       globalVarType = rhsType;
     } else if (!globalVarType.matches(rhsType, false, true, true)) { // Check if types are matching
-      SOFT_ERROR_BOOL(node->constant(), OPERATOR_WRONG_DATA_TYPE,
+      SOFT_ERROR_BOOL(node->constant, OPERATOR_WRONG_DATA_TYPE,
                       "Expected " + globalVarType.getName(false) + ", but got " + rhsType.getName(false))
     }
   }
 
   // Check if the type is still missing
   if (globalVarType.is(TY_DYN))
-    SOFT_ERROR_BOOL(node->dataType(), GLOBAL_OF_TYPE_DYN, "Global variables must have an explicit data type")
+    SOFT_ERROR_BOOL(node->dataType, GLOBAL_OF_TYPE_DYN, "Global variables must have an explicit data type")
 
   // Check if we would need to insert instructions in the global scope to initialize the variable
   if (!globalVarType.isPrimitive())
-    SOFT_ERROR_BOOL(node->dataType(), GLOBAL_OF_INVALID_TYPE, "Spice does only support global variables of primitive type")
+    SOFT_ERROR_BOOL(node->dataType, GLOBAL_OF_INVALID_TYPE, "Spice does only support global variables of primitive type")
 
   // Update type of global var entry
   assert(node->entry != nullptr);
   node->entry->updateType(globalVarType, false);
 
   // Check if a value is attached
-  if (!node->constant() && globalVarType.isConst())
+  if (!node->constant && globalVarType.isConst())
     SOFT_ERROR_BOOL(node, GLOBAL_CONST_WITHOUT_VALUE, "You must specify a value for constant global variables")
 
   return nullptr;
@@ -618,8 +618,8 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   QualTypeList argTypes;
   ParamList argList;
   if (node->hasArgs) {
-    argList.reserve(node->argTypeLst()->dataTypes.size());
-    for (DataTypeNode *arg : node->argTypeLst()->dataTypes) {
+    argList.reserve(node->argTypeLst->dataTypes.size());
+    for (DataTypeNode *arg : node->argTypeLst->dataTypes) {
       // Visit argument
       auto argType = std::any_cast<QualType>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_PTR(argType)
@@ -636,13 +636,13 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
 
   // Retrieve return type
   QualType returnType(TY_DYN);
-  const bool isFunction = node->returnType();
+  const bool isFunction = node->returnType;
   if (isFunction) { // External function
-    returnType = std::any_cast<QualType>(visit(node->returnType()));
+    returnType = std::any_cast<QualType>(visit(node->returnType));
     HANDLE_UNRESOLVED_TYPE_PTR(returnType)
     // Check if return type is dyn
     if (returnType.is(TY_DYN))
-      SOFT_ERROR_BOOL(node->returnType(), UNEXPECTED_DYN_TYPE, "dyn is not allowed as return type for external functions")
+      SOFT_ERROR_BOOL(node->returnType, UNEXPECTED_DYN_TYPE, "dyn is not allowed as return type for external functions")
   }
 
   // Add function to current scope
@@ -651,8 +651,8 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
   node->extFunction->mangleFunctionName = false;
 
   // Check procedure attributes
-  if (node->attrs()) {
-    const AttrLstNode *attrLst = node->attrs()->attrLst;
+  if (node->attrs) {
+    const AttrLstNode *attrLst = node->attrs->attrLst;
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLE))
       node->extFunction->mangleFunctionName = value->boolValue;
     if (const CompileTimeValue *value = attrLst->getAttrValueByName(ATTR_CORE_COMPILER_MANGLED_NAME)) {
