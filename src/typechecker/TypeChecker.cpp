@@ -617,8 +617,8 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
 
 std::any TypeChecker::visitCaseConstant(CaseConstantNode *node) {
   // If we have a normal constant, we can take the symbol type from there
-  if (node->constant())
-    return visit(node->constant());
+  if (node->constant)
+    return visit(node->constant);
 
   // Check if a local or global variable can be found by searching for the name
   if (node->identifierFragments.size() == 1)

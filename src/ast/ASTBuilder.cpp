@@ -709,23 +709,28 @@ std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
   auto caseConstantNode = createNode<CaseConstantNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
-
-  for (ParserRuleContext::ParseTree *subTree : ctx->children) {
-    if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
-      const std::string fragment = getIdentifier(t1);
-      caseConstantNode->identifierFragments.push_back(fragment);
-      if (!caseConstantNode->fqIdentifier.empty())
-        caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-      caseConstantNode->fqIdentifier += fragment;
-    } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
-               t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
-      const std::string fragment = getIdentifier(t2);
-      caseConstantNode->identifierFragments.push_back(fragment);
-      if (!caseConstantNode->fqIdentifier.empty())
-        caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
-      caseConstantNode->fqIdentifier += fragment;
+  if (ctx->constant()) {
+    caseConstantNode->constant = std::any_cast<ConstantNode *>(visit(ctx->constant()));
+  } else if (!ctx->TYPE_IDENTIFIER().empty()) {
+    for (ParserRuleContext::ParseTree *subTree : ctx->children) {
+      if (auto t1 = dynamic_cast<TerminalNode *>(subTree);
+          t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::IDENTIFIER) {
+        const std::string fragment = getIdentifier(t1);
+        caseConstantNode->identifierFragments.push_back(fragment);
+        if (!caseConstantNode->fqIdentifier.empty())
+          caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+        caseConstantNode->fqIdentifier += fragment;
+      } else if (auto t2 = dynamic_cast<TerminalNode *>(subTree);
+                 t2 != nullptr && t2->getSymbol()->getType() == SpiceParser::TYPE_IDENTIFIER) {
+        const std::string fragment = getIdentifier(t2);
+        caseConstantNode->identifierFragments.push_back(fragment);
+        if (!caseConstantNode->fqIdentifier.empty())
+          caseConstantNode->fqIdentifier += SCOPE_ACCESS_TOKEN;
+        caseConstantNode->fqIdentifier += fragment;
+      }
     }
+  } else {
+    assert_fail("Unknown case constant type"); // GCOV_EXCL_LINE
   }
 
   return concludeNode(caseConstantNode);

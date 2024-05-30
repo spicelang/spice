@@ -109,8 +109,8 @@ std::any IRGenerator::visitTopLevelDefinitionAttr(const TopLevelDefinitionAttrNo
 }
 
 std::any IRGenerator::visitCaseConstant(const spice::compiler::CaseConstantNode *node) {
-  if (node->constant())
-    return visit(node->constant());
+  if (node->constant)
+    return visit(node->constant);
 
   // Get constant for enum item
   assert(node->enumItemEntry->scope->type == ScopeType::ENUM);

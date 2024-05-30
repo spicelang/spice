@@ -1125,10 +1125,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCaseConstant(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCaseConstant(this); }
 
-  // Public get methods
-  [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
-
   // Public members
+  ConstantNode *constant = nullptr;
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
   const SymbolTableEntry *enumItemEntry = nullptr;
