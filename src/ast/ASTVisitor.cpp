@@ -102,6 +102,8 @@ std::any ASTVisitor::visitFallthroughStmt(FallthroughStmtNode *node) { return vi
 
 std::any ASTVisitor::visitAssertStmt(AssertStmtNode *node) { return visitChildren(node); }
 
+std::any ASTVisitor::visitBuiltinCall(spice::compiler::BuiltinCallNode *node) { return visitChildren(node); }
+
 std::any ASTVisitor::visitPrintfCall(PrintfCallNode *node) { return visitChildren(node); }
 
 std::any ASTVisitor::visitSizeofCall(SizeofCallNode *node) { return visitChildren(node); }

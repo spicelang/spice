@@ -13,32 +13,32 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
   diGenerator.setSourceLocation(node);
 
   // Function call
-  if (node->fctCall())
-    return visit(node->fctCall());
+  if (node->fctCall)
+    return visit(node->fctCall);
 
   // Array initialization
-  if (node->arrayInitialization())
-    return visit(node->arrayInitialization());
+  if (node->arrayInitialization)
+    return visit(node->arrayInitialization);
 
   // Struct instantiation
-  if (node->structInstantiation())
-    return visit(node->structInstantiation());
+  if (node->structInstantiation)
+    return visit(node->structInstantiation);
 
   // Lambda function
-  if (node->lambdaFunc())
-    return visit(node->lambdaFunc());
+  if (node->lambdaFunc)
+    return visit(node->lambdaFunc);
 
   // Lambda procedure
-  if (node->lambdaProc())
-    return visit(node->lambdaProc());
+  if (node->lambdaProc)
+    return visit(node->lambdaProc);
 
   // Lambda expression
-  if (node->lambdaExpr())
-    return visit(node->lambdaExpr());
+  if (node->lambdaExpr)
+    return visit(node->lambdaExpr);
 
   if (node->isNil) {
     // Retrieve type of the nil constant
-    auto nilType = any_cast<llvm::Type *>(visit(node->nilType()));
+    auto nilType = any_cast<llvm::Type *>(visit(node->nilType));
     // Create constant nil value
     llvm::Constant *nilValue = llvm::Constant::getNullValue(nilType);
     // Return it
@@ -135,8 +135,8 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
 
   // Get arg values
   if (node->hasArgs) {
-    argValues.reserve(node->argLst()->args.size());
-    const std::vector<AssignExprNode *> &args = node->argLst()->args;
+    argValues.reserve(node->argLst->args.size());
+    const std::vector<AssignExprNode *> &args = node->argLst->args;
     const QualTypeList paramSTypes =
         data.isFctPtrCall() ? firstFragEntry->getQualType().getBase().getFunctionParamTypes() : spiceFunc->getParamTypes();
     assert(paramSTypes.size() == args.size());
@@ -281,7 +281,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
   bool canBeConstant = true;
   std::vector<LLVMExprResult> itemResults;
   itemResults.reserve(node->actualSize);
-  for (AssignExprNode *itemNode : node->itemLst()->args) {
+  for (AssignExprNode *itemNode : node->itemLst->args) {
     auto item = std::any_cast<LLVMExprResult>(visit(itemNode));
     canBeConstant &= item.constant != nullptr;
     item.node = itemNode;
@@ -290,7 +290,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
 
   // Get LLVM type of item and array
   assert(!itemResults.empty());
-  const QualType &firstItemSTy = node->itemLst()->args.front()->getEvaluatedSymbolType(manIdx);
+  const QualType &firstItemSTy = node->itemLst->args.front()->getEvaluatedSymbolType(manIdx);
   llvm::Type *itemType = firstItemSTy.toLLVMType(sourceFile);
   llvm::ArrayType *arrayType = llvm::ArrayType::get(itemType, node->actualSize);
 
@@ -346,7 +346,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   auto structType = reinterpret_cast<llvm::StructType *>(spiceStruct->entry->getQualType().toLLVMType(sourceFile));
   assert(structType != nullptr);
 
-  if (!node->fieldLst()) {
+  if (!node->fieldLst) {
     llvm::Constant *constantStruct = getDefaultValueForSymbolType(spiceStruct->entry->getQualType());
     return LLVMExprResult{.constant = constantStruct};
   }
@@ -354,7 +354,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   // Visit struct field values
   std::vector<LLVMExprResult> fieldValueResults;
   fieldValueResults.reserve(spiceStruct->fieldTypes.size());
-  for (AssignExprNode *fieldValueNode : node->fieldLst()->args) {
+  for (AssignExprNode *fieldValueNode : node->fieldLst->args) {
     auto fieldValue = std::any_cast<LLVMExprResult>(visit(fieldValueNode));
     fieldValue.node = fieldValueNode;
     fieldValueResults.push_back(fieldValue);

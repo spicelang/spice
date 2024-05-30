@@ -1219,12 +1219,31 @@ public:
   std::string expressionString;
 };
 
-// ======================================================== PrintfCallNode =======================================================
+// ======================================================== BuiltinCallNode ======================================================
 
-class PrintfCallNode : public ExprNode {
+class BuiltinCallNode : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitBuiltinCall(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitBuiltinCall(this); }
+
+  // Public members
+  PrintfCallNode *printfCall = nullptr;
+  SizeofCallNode *sizeofCall = nullptr;
+  AlignofCallNode *alignofCall = nullptr;
+  LenCallNode *lenCall = nullptr;
+  PanicCallNode *panicCall = nullptr;
+};
+
+// ======================================================== PrintfCallNode =======================================================
+
+class PrintfCallNode : public BuiltinCallNode {
+public:
+  // Constructors
+  using BuiltinCallNode::BuiltinCallNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPrintfCall(this); }
@@ -1242,10 +1261,10 @@ public:
 
 // ======================================================== SizeofCallNode =======================================================
 
-class SizeofCallNode : public ExprNode {
+class SizeofCallNode : public BuiltinCallNode {
 public:
   // Constructors
-  using ExprNode::ExprNode;
+  using BuiltinCallNode::BuiltinCallNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitSizeofCall(this); }
@@ -1264,10 +1283,10 @@ public:
 
 // ======================================================== AlignofCallNode ======================================================
 
-class AlignofCallNode : public ExprNode {
+class AlignofCallNode : public BuiltinCallNode {
 public:
   // Constructors
-  using ExprNode::ExprNode;
+  using BuiltinCallNode::BuiltinCallNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAlignofCall(this); }
@@ -1286,10 +1305,10 @@ public:
 
 // ========================================================= LenCallNode =========================================================
 
-class LenCallNode : public ExprNode {
+class LenCallNode : public BuiltinCallNode {
 public:
   // Constructors
-  using ExprNode::ExprNode;
+  using BuiltinCallNode::BuiltinCallNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitLenCall(this); }
@@ -1304,10 +1323,10 @@ public:
 
 // ======================================================== PanicCallNode ========================================================
 
-class PanicCallNode : public ExprNode {
+class PanicCallNode : public BuiltinCallNode {
 public:
   // Constructors
-  using ExprNode::ExprNode;
+  using BuiltinCallNode::BuiltinCallNode;
 
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPanicCall(this); }
@@ -1763,20 +1782,14 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAtomicExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAtomicExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] ConstantNode *constant() const { return getChild<ConstantNode>(); }
-  [[nodiscard]] ValueNode *value() const { return getChild<ValueNode>(); }
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-  [[nodiscard]] PrintfCallNode *printfCall() const { return getChild<PrintfCallNode>(); }
-  [[nodiscard]] SizeofCallNode *sizeofCall() const { return getChild<SizeofCallNode>(); }
-  [[nodiscard]] AlignofCallNode *alignofCall() const { return getChild<AlignofCallNode>(); }
-  [[nodiscard]] LenCallNode *lenCall() const { return getChild<LenCallNode>(); }
-  [[nodiscard]] PanicCallNode *panicCall() const { return getChild<PanicCallNode>(); }
-
   // Other methods
   void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
 
   // Public members
+  ConstantNode *constant = nullptr;
+  ValueNode *value = nullptr;
+  AssignExprNode *assignExpr = nullptr;
+  BuiltinCallNode *builtinCall = nullptr;
   std::vector<std::string> identifierFragments;
   std::string fqIdentifier;
   std::vector<VarAccessData> data; // Only set if identifier is set as well
@@ -1793,19 +1806,17 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitValue(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitValue(this); }
 
-  // Public get methods
-  [[nodiscard]] FctCallNode *fctCall() const { return getChild<FctCallNode>(); }
-  [[nodiscard]] ArrayInitializationNode *arrayInitialization() const { return getChild<ArrayInitializationNode>(); }
-  [[nodiscard]] StructInstantiationNode *structInstantiation() const { return getChild<StructInstantiationNode>(); }
-  [[nodiscard]] LambdaFuncNode *lambdaFunc() const { return getChild<LambdaFuncNode>(); }
-  [[nodiscard]] LambdaProcNode *lambdaProc() const { return getChild<LambdaProcNode>(); }
-  [[nodiscard]] LambdaExprNode *lambdaExpr() const { return getChild<LambdaExprNode>(); }
-  [[nodiscard]] DataTypeNode *nilType() const { return getChild<DataTypeNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return isNil; }
 
   // Public members
+  FctCallNode *fctCall = nullptr;
+  ArrayInitializationNode *arrayInitialization = nullptr;
+  StructInstantiationNode *structInstantiation = nullptr;
+  LambdaFuncNode *lambdaFunc = nullptr;
+  LambdaProcNode *lambdaProc = nullptr;
+  LambdaExprNode *lambdaExpr = nullptr;
+  DataTypeNode *nilType = nullptr;
   bool isNil = false;
 };
 
@@ -1879,16 +1890,14 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctCall(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctCall(this); }
 
-  // Public get methods
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-  [[nodiscard]] ArgLstNode *argLst() const { return getChild<ArgLstNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override { return false; }
   void customItemsInitialization(size_t manifestationCount) override { data.resize(manifestationCount); }
   [[nodiscard]] bool hasReturnValueReceiver() const;
 
   // Public members
+  TypeLstNode *templateTypeLst = nullptr;
+  ArgLstNode *argLst = nullptr;
   bool hasArgs = false;
   bool hasTemplateTypes = false;
   std::string fqFunctionName;
@@ -1907,10 +1916,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitArrayInitialization(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitArrayInitialization(this); }
 
-  // Public get methods
-  [[nodiscard]] ArgLstNode *itemLst() const { return getChild<ArgLstNode>(); }
-
   // Public members
+  ArgLstNode *itemLst = nullptr;
   long actualSize = 0;
 };
 
@@ -1925,14 +1932,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitStructInstantiation(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitStructInstantiation(this); }
 
-  // Public get methods
-  [[nodiscard]] TypeLstNode *templateTypeLst() const { return getChild<TypeLstNode>(); }
-  [[nodiscard]] ArgLstNode *fieldLst() const { return getChild<ArgLstNode>(); }
-
   // Util methods
   void customItemsInitialization(size_t manifestationCount) override { instantiatedStructs.resize(manifestationCount); }
 
   // Public members
+  TypeLstNode *templateTypeLst = nullptr;
+  ArgLstNode *fieldLst = nullptr;
+  bool hasTemplateTypes = false;
   std::string fqStructName;
   std::vector<std::string> structNameFragments;
   std::vector<Struct *> instantiatedStructs;

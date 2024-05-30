@@ -787,30 +787,22 @@ std::any IRGenerator::visitAtomicExpr(const AtomicExprNode *node) {
   diGenerator.setSourceLocation(node);
 
   // If constant
-  if (node->constant()) {
-    auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant()));
+  if (node->constant) {
+    auto constantValue = std::any_cast<llvm::Constant *>(visit(node->constant));
     return LLVMExprResult{.constant = constantValue};
   }
 
   // If value
-  if (node->value())
-    return visit(node->value());
+  if (node->value)
+    return visit(node->value);
 
   // Is assign expression
-  if (node->assignExpr())
-    return visit(node->assignExpr());
+  if (node->assignExpr)
+    return visit(node->assignExpr);
 
   // Check for builtin calls
-  if (node->printfCall())
-    return visit(node->printfCall());
-  if (node->sizeofCall())
-    return visit(node->sizeofCall());
-  if (node->alignofCall())
-    return visit(node->alignofCall());
-  if (node->lenCall())
-    return visit(node->lenCall());
-  if (node->panicCall())
-    return visit(node->panicCall());
+  if (node->builtinCall)
+    return visit(node->builtinCall);
 
   // Identifier (local or global variable access)
   assert(!node->identifierFragments.empty());

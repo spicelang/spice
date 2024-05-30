@@ -1,4 +1,36 @@
-import "std/os/env";
+type Test struct {
+    int f1
+    long f2
+}
+
+#[core.compiler.packed=true]
+type TestPacked struct {
+    int f1
+    long f2
+}
+
+f<int> main() {
+    Test t;
+    t.f1 = -2147483647;
+    t.f2 = 9223372036854775807l;
+    assert sizeof(type Test) == 16 * 8;
+    assert sizeof(t) == 16 * 8;
+    assert t.f1 == -2147483647;
+    assert t.f2 == 9223372036854775807l;
+
+    TestPacked tp;
+    tp.f1 = -2147483647;
+    tp.f2 = 9223372036854775807l;
+
+    assert sizeof(type TestPacked) == 12 * 8;
+    assert sizeof(tp) == 12 * 8;
+    assert tp.f1 == -2147483647;
+    assert tp.f2 == 9223372036854775807l;
+
+    printf("All assertions passed!");
+}
+
+/*import "std/os/env";
 import "std/io/filepath";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/lexer/lexer";
@@ -12,4 +44,4 @@ f<int> main() {
     ASTEntryNode* ast = parser.parse();
     assert ast != nil<ASTEntryNode*>;
     printf("All assertions passed!\n");
-}
+}*/

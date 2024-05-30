@@ -173,10 +173,12 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       unsignedLongType.makeUnsigned(true);
       const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
       const QualType thisType(TY_DYN);
-      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, node->iteratorAssign);
+      node->getIteratorFct =
+          FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, node->iteratorAssign);
     } else { // Struct, implementing Iterator interface
       Scope *matchScope = iterableType.getBodyScope();
-      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, node->iteratorAssign);
+      node->getIteratorFct =
+          FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, node->iteratorAssign);
     }
     assert(node->getIteratorFct != nullptr);
     iteratorType = QualType(node->getIteratorFct->returnType);
@@ -726,6 +728,22 @@ std::any TypeChecker::visitAssertStmt(AssertStmtNode *node) {
   if (!conditionType.is(TY_BOOL))
     SOFT_ERROR_ER(node->assignExpr(), ASSERTION_CONDITION_BOOL, "The asserted condition must be of type bool")
 
+  return nullptr;
+}
+
+std::any TypeChecker::visitBuiltinCall(BuiltinCallNode *node) {
+  if (node->printfCall)
+    return visitPrintfCall(node->printfCall);
+  else if (node->sizeofCall)
+    return visitSizeofCall(node->sizeofCall);
+  else if (node->alignofCall)
+    return visitAlignofCall(node->alignofCall);
+  else if (node->lenCall)
+    return visitLenCall(node->lenCall);
+  else if (node->panicCall)
+    return visitPanicCall(node->panicCall);
+  else
+    assert_fail("Unknown builtin call");
   return nullptr;
 }
 
@@ -1430,28 +1448,20 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
 std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // Check if constant
-  if (node->constant())
-    return visit(node->constant());
+  if (node->constant)
+    return visit(node->constant);
 
   // Check if value
-  if (node->value())
-    return visit(node->value());
+  if (node->value)
+    return visit(node->value);
 
   // Check for builtin calls
-  if (node->printfCall())
-    return visit(node->printfCall());
-  if (node->sizeofCall())
-    return visit(node->sizeofCall());
-  if (node->alignofCall())
-    return visit(node->alignofCall());
-  if (node->lenCall())
-    return visit(node->lenCall());
-  if (node->panicCall())
-    return visit(node->panicCall());
+  if (node->builtinCall)
+    return visit(node->builtinCall);
 
   // Check for assign expression within parentheses
-  if (node->assignExpr())
-    return visit(node->assignExpr());
+  if (node->assignExpr)
+    return visit(node->assignExpr);
 
   // Identifier (local or global variable access)
   assert(!node->fqIdentifier.empty());
@@ -1535,35 +1545,35 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
 
 std::any TypeChecker::visitValue(ValueNode *node) {
   // Function call
-  if (node->fctCall())
-    return visit(node->fctCall());
+  if (node->fctCall)
+    return visit(node->fctCall);
 
   // Array initialization
-  if (node->arrayInitialization())
-    return visit(node->arrayInitialization());
+  if (node->arrayInitialization)
+    return visit(node->arrayInitialization);
 
   // Struct instantiation
-  if (node->structInstantiation())
-    return visit(node->structInstantiation());
+  if (node->structInstantiation)
+    return visit(node->structInstantiation);
 
   // Lambda function
-  if (node->lambdaFunc())
-    return visit(node->lambdaFunc());
+  if (node->lambdaFunc)
+    return visit(node->lambdaFunc);
 
   // Lambda procedure
-  if (node->lambdaProc())
-    return visit(node->lambdaProc());
+  if (node->lambdaProc)
+    return visit(node->lambdaProc);
 
   // Lambda expression
-  if (node->lambdaExpr())
-    return visit(node->lambdaExpr());
+  if (node->lambdaExpr)
+    return visit(node->lambdaExpr);
 
   // Typed nil
   if (node->isNil) {
-    auto nilType = std::any_cast<QualType>(visit(node->nilType()));
+    auto nilType = std::any_cast<QualType>(visit(node->nilType));
     HANDLE_UNRESOLVED_TYPE_ER(nilType)
     if (nilType.is(TY_DYN))
-      SOFT_ERROR_ER(node->nilType(), UNEXPECTED_DYN_TYPE, "Nil must have an explicit type")
+      SOFT_ERROR_ER(node->nilType, UNEXPECTED_DYN_TYPE, "Nil must have an explicit type")
     return ExprResult{node->setEvaluatedSymbolType(nilType, manIdx)};
   }
 
@@ -1614,9 +1624,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
   // Retrieve arg types
   data.argResults.clear();
   if (node->hasArgs) {
-    const std::vector<AssignExprNode *> &args = node->argLst()->args;
-    data.argResults.reserve(args.size());
-    for (AssignExprNode *arg : args) {
+    data.argResults.reserve(node->argLst->args.size());
+    for (AssignExprNode *arg : node->argLst->args) {
       // Visit argument
       const auto argResult = std::any_cast<ExprResult>(visit(arg));
       HANDLE_UNRESOLVED_TYPE_ER(argResult.type)
@@ -1666,12 +1675,12 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
-      SOFT_ERROR_BOOL(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
+      SOFT_ERROR_BOOL(node->templateTypeLst, ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
   // Get concrete template types
   if (node->hasTemplateTypes) {
-    for (DataTypeNode *templateTypeNode : node->templateTypeLst()->dataTypes) {
+    for (DataTypeNode *templateTypeNode : node->templateTypeLst->dataTypes) {
       auto templateType = std::any_cast<QualType>(visit(templateTypeNode));
       assert(!templateType.isOneOf({TY_DYN, TY_INVALID}));
 
@@ -1890,7 +1899,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const QualType &functionTyp
     const QualType &expectedType = expectedArgTypes.at(i);
     TypeMapping tm;
     if (!TypeMatcher::matchRequestedToCandidateType(expectedType, actualType, tm, resolverFct, false))
-      SOFT_ERROR_BOOL(node->argLst()->args.at(i), REFERENCED_UNDEFINED_FUNCTION,
+      SOFT_ERROR_BOOL(node->argLst->args.at(i), REFERENCED_UNDEFINED_FUNCTION,
                       "Expected " + expectedType.getName(false) + " but got " + actualType.getName(false))
   }
   return true;
@@ -1949,9 +1958,9 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
 std::any TypeChecker::visitArrayInitialization(ArrayInitializationNode *node) {
   QualType actualItemType(TY_DYN);
   // Check if all values have the same type
-  if (node->itemLst()) {
-    node->actualSize = static_cast<long>(node->itemLst()->args.size());
-    for (AssignExprNode *arg : node->itemLst()->args) {
+  if (node->itemLst) {
+    node->actualSize = static_cast<long>(node->itemLst->args.size());
+    for (AssignExprNode *arg : node->itemLst->args) {
       const QualType itemType = std::any_cast<ExprResult>(visit(arg)).type;
       HANDLE_UNRESOLVED_TYPE_ER(itemType)
       if (actualItemType.is(TY_DYN)) // Perform type inference
@@ -2002,13 +2011,13 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
     // Retrieve concrete template types from type alias
     concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
-    if (!concreteTemplateTypes.empty() && node->templateTypeLst())
-      SOFT_ERROR_ER(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
+    if (!concreteTemplateTypes.empty() && node->templateTypeLst)
+      SOFT_ERROR_ER(node->templateTypeLst, ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
-  if (node->templateTypeLst()) {
-    concreteTemplateTypes.reserve(node->templateTypeLst()->dataTypes.size());
-    for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes) {
+  if (node->templateTypeLst) {
+    concreteTemplateTypes.reserve(node->templateTypeLst->dataTypes.size());
+    for (DataTypeNode *dataType : node->templateTypeLst->dataTypes) {
       auto concreteType = std::any_cast<QualType>(visit(dataType));
       HANDLE_UNRESOLVED_TYPE_ER(concreteType)
       // Check if generic type
@@ -2043,17 +2052,17 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
   structType = structType.getWithTemplateTypes(templateTypes);
 
   // Check if the number of fields matches
-  if (node->fieldLst()) { // Check if any fields are passed. Empty braces are also allowed
-    if (spiceStruct->fieldTypes.size() != node->fieldLst()->args.size())
-      SOFT_ERROR_ER(node->fieldLst(), NUMBER_OF_FIELDS_NOT_MATCHING,
+  if (node->fieldLst) { // Check if any fields are passed. Empty braces are also allowed
+    if (spiceStruct->fieldTypes.size() != node->fieldLst->args.size())
+      SOFT_ERROR_ER(node->fieldLst, NUMBER_OF_FIELDS_NOT_MATCHING,
                     "You've passed too less/many field values. Pass either none or all of them")
 
     // Check if the field types are matching
     const size_t fieldCount = spiceStruct->fieldTypes.size();
     const size_t explicitFieldsStartIdx = structScope->getFieldCount() - fieldCount;
-    for (size_t i = 0; i < node->fieldLst()->args.size(); i++) {
+    for (size_t i = 0; i < node->fieldLst->args.size(); i++) {
       // Get actual type
-      AssignExprNode *assignExpr = node->fieldLst()->args.at(i);
+      AssignExprNode *assignExpr = node->fieldLst->args.at(i);
       auto fieldResult = std::any_cast<ExprResult>(visit(assignExpr));
       HANDLE_UNRESOLVED_TYPE_ER(fieldResult.type)
       // Get expected type
@@ -2084,8 +2093,8 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // If not all values are constant, insert anonymous symbol to keep track of dtor calls for de-allocation
   SymbolTableEntry *anonymousEntry = nullptr;
-  if (node->fieldLst() != nullptr)
-    if (std::ranges::any_of(node->fieldLst()->args, [](AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
+  if (node->fieldLst != nullptr)
+    if (std::ranges::any_of(node->fieldLst->args, [](AssignExprNode *field) { return !field->hasCompileTimeValue(); }))
       anonymousEntry = currentScope->symbolTable.insertAnonymous(structType, node);
 
   // Remove public specifier to not have public local variables

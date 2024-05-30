@@ -55,6 +55,7 @@ class BreakStmtNode;
 class ContinueStmtNode;
 class FallthroughStmtNode;
 class AssertStmtNode;
+class BuiltinCallNode;
 class PrintfCallNode;
 class SizeofCallNode;
 class AlignofCallNode;
@@ -143,6 +144,7 @@ public:
   virtual std::any visitContinueStmt(ContinueStmtNode *node) = 0;
   virtual std::any visitFallthroughStmt(FallthroughStmtNode *node) = 0;
   virtual std::any visitAssertStmt(AssertStmtNode *node) = 0;
+  virtual std::any visitBuiltinCall(BuiltinCallNode *node) = 0;
   virtual std::any visitPrintfCall(PrintfCallNode *node) = 0;
   virtual std::any visitSizeofCall(SizeofCallNode *node) = 0;
   virtual std::any visitAlignofCall(AlignofCallNode *node) = 0;

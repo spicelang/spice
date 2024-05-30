@@ -113,6 +113,8 @@ std::any ParallelizableASTVisitor::visitFallthroughStmt(const FallthroughStmtNod
 
 std::any ParallelizableASTVisitor::visitAssertStmt(const AssertStmtNode *node) { return visitChildren(node); }
 
+std::any ParallelizableASTVisitor::visitBuiltinCall(const BuiltinCallNode *node) { return visitChildren(node); }
+
 std::any ParallelizableASTVisitor::visitPrintfCall(const PrintfCallNode *node) { return visitChildren(node); }
 
 std::any ParallelizableASTVisitor::visitSizeofCall(const SizeofCallNode *node) { return visitChildren(node); }

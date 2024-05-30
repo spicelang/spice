@@ -134,8 +134,10 @@ digraph {
  L6C9_PrefixUnaryExprNode -> L6C9_PostfixUnaryExprNode;
  L6C9_AtomicExprNode [color="lightgreen",label="AtomicExprNode"];
  L6C9_PostfixUnaryExprNode -> L6C9_AtomicExprNode;
+ L6C9_BuiltinCallNode [color="lightgreen",label="BuiltinCallNode"];
+ L6C9_AtomicExprNode -> L6C9_BuiltinCallNode;
  L6C9_PrintfCallNode [color="lightgreen",label="PrintfCallNode"];
- L6C9_AtomicExprNode -> L6C9_PrintfCallNode;
+ L6C9_BuiltinCallNode -> L6C9_PrintfCallNode;
  L6C22_AssignExprNode [color="lightgreen",label="AssignExprNode"];
  L6C9_PrintfCallNode -> L6C22_AssignExprNode;
  L6C22_TernaryExprNode [color="lightgreen",label="TernaryExprNode"];
