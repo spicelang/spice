@@ -197,7 +197,7 @@ std::any IRGenerator::visitAssertStmt(const AssertStmtNode *node) {
   llvm::BasicBlock *bExit = createBlock("assert.exit." + codeLine);
 
   // Visit the assignExpr
-  llvm::Value *condValue = resolveValue(node->assignExpr());
+  llvm::Value *condValue = resolveValue(node->assignExpr);
 
   // Create condition check
   insertCondJump(condValue, bExit, bThen, LIKELY);

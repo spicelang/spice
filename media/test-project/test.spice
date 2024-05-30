@@ -1,15 +1,5 @@
-f<bool> f1() {
-    printf("F1 called.\n");
-    return false;
-}
-
-f<bool> f2() {
-    printf("F2 called.\n");
-    return true;
-}
-
 f<int> main() {
-    printf("Result: %d", f1() ?: f2());
+    printf("Output: %s", test);
 }
 
 /*import "std/os/env";

@@ -18,6 +18,9 @@
 
 namespace spice::compiler {
 
+// Forward declarations
+class TopLevelDefNode;
+
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
  */
@@ -47,33 +50,9 @@ public:
   virtual std::any accept(AbstractASTVisitor *visitor) = 0;
   virtual std::any accept(ParallelizableASTVisitor *visitor) const = 0;
 
-  // Public methods
   void addChild(ASTNode *node) {
     children.push_back(node);
     node->parent = this;
-  }
-
-  template <typename T> [[nodiscard]] T *getChild(size_t i = 0) const {
-    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
-    size_t j = 0;
-    for (ASTNode *child : children) {
-      if (auto *typedChild = dynamic_cast<T *>(child)) [[unlikely]] {
-        if (j++ == i)
-          return typedChild;
-      }
-    }
-    return nullptr;
-  }
-
-  template <typename T> [[nodiscard]] std::vector<T *> getChildren() const {
-    static_assert(std::is_base_of_v<ASTNode, T>, "T must be derived from ASTNode");
-    std::vector<T *> nodes;
-    for (ASTNode *child : children) {
-      if (auto *typedChild = dynamic_cast<T *>(child)) [[unlikely]] {
-        nodes.push_back(typedChild);
-      }
-    }
-    return nodes;
   }
 
   void resizeToNumberOfManifestations(size_t manifestationCount) { // NOLINT(misc-no-recursion)
@@ -153,6 +132,7 @@ public:
   [[nodiscard]] virtual bool isExprNode() const { return false; }
   [[nodiscard]] virtual bool isParamNode() const { return false; }
   [[nodiscard]] virtual bool isStmtLstNode() const { return false; }
+  [[nodiscard]] virtual bool isExprStmtNode() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
 
   // Public members
@@ -177,9 +157,10 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitEntry(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitEntry(this); }
 
-  // Public get methods
-  [[nodiscard]] std::vector<ModAttrNode *> modAttrs() const { return getChildren<ModAttrNode>(); }
-  [[nodiscard]] std::vector<ImportDefNode *> importDefs() const { return getChildren<ImportDefNode>(); }
+  // Public members
+  std::vector<TopLevelDefNode *> topLevelDefs;
+  std::vector<ModAttrNode *> modAttrs;
+  std::vector<ImportDefNode *> importDefs;
 };
 
 // ======================================================= TopLevelDefNode =======================================================
@@ -787,6 +768,7 @@ public:
   [[nodiscard]] bool isStmtLstNode() const override { return true; }
 
   // Public members
+  std::vector<StmtNode *> statements;
   size_t complexity = 0;
   // Outer vector: manifestation index; inner vector: list of dtor functions
   std::vector<std::vector<std::pair<SymbolTableEntry *, Function *>>> dtorFunctions;
@@ -966,6 +948,24 @@ public:
   std::vector<SymbolTableEntry *> entries;
   Function *calledInitCtor = nullptr;
   Function *calledCopyCtor = nullptr;
+};
+
+// ========================================================= ExprStmtNode ========================================================
+
+class ExprStmtNode : public StmtNode {
+public:
+  // Constructors
+  using StmtNode::StmtNode;
+
+  // Visitor methods
+  std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitExprStmt(this); }
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitExprStmt(this); }
+
+  // Other methods
+  bool isExprStmtNode() const override { return true; }
+
+  // Public members
+  AssignExprNode *expr = nullptr;
 };
 
 // ======================================================= SpecifierLstNode ======================================================
@@ -1208,10 +1208,8 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitAssertStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitAssertStmt(this); }
 
-  // Public get methods
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-
   // Public members
+  AssignExprNode *assignExpr = nullptr;
   std::string expressionString;
 };
 

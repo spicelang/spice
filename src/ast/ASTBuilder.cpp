@@ -22,8 +22,34 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
   auto entryNode = createNode<EntryNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
-
+  for (ParserRuleContext::ParseTree *child : ctx->children) {
+    if (auto *mainFctDefCtx = dynamic_cast<SpiceParser::MainFunctionDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<MainFctDefNode *>(visit(mainFctDefCtx)));
+    else if (auto *fctDefCtx = dynamic_cast<SpiceParser::FunctionDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<FctDefNode *>(visit(fctDefCtx)));
+    else if (auto *procDefCtx = dynamic_cast<SpiceParser::ProcedureDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<ProcDefNode *>(visit(procDefCtx)));
+    else if (auto *structDefCtx = dynamic_cast<SpiceParser::StructDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<StructDefNode *>(visit(structDefCtx)));
+    else if (auto *interfaceDefCtx = dynamic_cast<SpiceParser::InterfaceDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<InterfaceDefNode *>(visit(interfaceDefCtx)));
+    else if (auto *enumDefCtx = dynamic_cast<SpiceParser::EnumDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<EnumDefNode *>(visit(enumDefCtx)));
+    else if (auto *genericTypeDefCtx = dynamic_cast<SpiceParser::GenericTypeDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<GenericTypeDefNode *>(visit(genericTypeDefCtx)));
+    else if (auto *aliasDefCtx = dynamic_cast<SpiceParser::AliasDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<AliasDefNode *>(visit(aliasDefCtx)));
+    else if (auto *globalVarDefCtx = dynamic_cast<SpiceParser::GlobalVarDefContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<GlobalVarDefNode *>(visit(globalVarDefCtx)));
+    else if (auto *importDefCtx = dynamic_cast<SpiceParser::ImportDefContext *>(child))
+      entryNode->importDefs.push_back(std::any_cast<ImportDefNode *>(visit(importDefCtx)));
+    else if (auto *extDeclCtx = dynamic_cast<SpiceParser::ExtDeclContext *>(child))
+      entryNode->topLevelDefs.push_back(std::any_cast<ExtDeclNode *>(visit(extDeclCtx)));
+    else if (auto *modAttrCtx = dynamic_cast<SpiceParser::ModAttrContext *>(child))
+      entryNode->modAttrs.push_back(std::any_cast<ModAttrNode *>(visit(modAttrCtx)));
+    else
+      assert_fail("Unknown top level definition type"); // GCOV_EXCL_LINE
+  }
   return concludeNode(entryNode);
 }
 
@@ -57,7 +83,6 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   fctDefNode->returnType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
   fctDefNode->returnType->isReturnType = true;
   fctDefNode->name = std::any_cast<FctNameNode *>(visit(ctx->fctName()));
-  fctDefNode->name = fctDefNode->getChild<FctNameNode>();
   fctDefNode->isMethod = fctDefNode->name->nameFragments.size() > 1;
   if (ctx->typeLst()) {
     fctDefNode->hasTemplateTypes = true;
@@ -85,7 +110,6 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   if (ctx->specifierLst())
     procDefNode->specifierLst = std::any_cast<SpecifierLstNode *>(visit(ctx->specifierLst()));
   procDefNode->name = std::any_cast<FctNameNode *>(visit(ctx->fctName()));
-  procDefNode->name = procDefNode->getChild<FctNameNode>();
   procDefNode->isMethod = procDefNode->name->nameFragments.size() > 1;
   if (ctx->typeLst()) {
     procDefNode->hasTemplateTypes = true;
@@ -447,7 +471,30 @@ std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
   auto stmtLstNode = createNode<StmtLstNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (ParserRuleContext::ParseTree *stmt : ctx->children) {
+    if (auto *stmtCtx = dynamic_cast<SpiceParser::StmtContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<StmtNode *>(visit(stmtCtx)));
+    else if (auto *forLoopCtx = dynamic_cast<SpiceParser::ForLoopContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<ForLoopNode *>(visit(forLoopCtx)));
+    else if (auto *foreachLoopCtx = dynamic_cast<SpiceParser::ForeachLoopContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<ForeachLoopNode *>(visit(foreachLoopCtx)));
+    else if (auto *whileLoopCtx = dynamic_cast<SpiceParser::WhileLoopContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<WhileLoopNode *>(visit(whileLoopCtx)));
+    else if (auto *doWhileLoopCtx = dynamic_cast<SpiceParser::DoWhileLoopContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<DoWhileLoopNode *>(visit(doWhileLoopCtx)));
+    else if (auto *ifStmtCtx = dynamic_cast<SpiceParser::IfStmtContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<IfStmtNode *>(visit(ifStmtCtx)));
+    else if (auto *switchStmtCtx = dynamic_cast<SpiceParser::SwitchStmtContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<SwitchStmtNode *>(visit(switchStmtCtx)));
+    else if (auto *assetStmtCtx = dynamic_cast<SpiceParser::AssertStmtContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<AssertStmtNode *>(visit(assetStmtCtx)));
+    else if (auto *unsafeBlockCtx = dynamic_cast<SpiceParser::UnsafeBlockContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<UnsafeBlockNode *>(visit(unsafeBlockCtx)));
+    else if (auto *anonymousScopeCtx = dynamic_cast<SpiceParser::AnonymousBlockStmtContext *>(stmt))
+      stmtLstNode->statements.push_back(std::any_cast<AnonymousBlockStmtNode *>(visit(anonymousScopeCtx)));
+    else
+      assert(dynamic_cast<TerminalNode *>(stmt) != nullptr); // GCOV_EXCL_LINE
+  }
 
   return concludeNode(stmtLstNode);
 }
@@ -565,7 +612,22 @@ std::any ASTBuilder::visitSignature(SpiceParser::SignatureContext *ctx) {
   return concludeNode(signatureNode);
 }
 
-std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) { return visitChildren(ctx); }
+std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
+  if (ctx->declStmt())
+    return static_cast<StmtNode *>(std::any_cast<DeclStmtNode *>(visit(ctx->declStmt())));
+  else if (ctx->exprStmt())
+    return static_cast<StmtNode *>(std::any_cast<ExprStmtNode *>(visit(ctx->exprStmt())));
+  else if (ctx->returnStmt())
+    return static_cast<StmtNode *>(std::any_cast<ReturnStmtNode *>(visit(ctx->returnStmt())));
+  else if (ctx->breakStmt())
+    return static_cast<StmtNode *>(std::any_cast<BreakStmtNode *>(visit(ctx->breakStmt())));
+  else if (ctx->continueStmt())
+    return static_cast<StmtNode *>(std::any_cast<ContinueStmtNode *>(visit(ctx->continueStmt())));
+  else if (ctx->fallthroughStmt())
+    return static_cast<StmtNode *>(std::any_cast<FallthroughStmtNode *>(visit(ctx->fallthroughStmt())));
+  else
+    assert_fail("Unknown statement type"); // GCOV_EXCL_LINE
+}
 
 std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   auto declStmtNode = createNode<DeclStmtNode>(ctx);
@@ -581,6 +643,15 @@ std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
   }
 
   return concludeNode(declStmtNode);
+}
+
+std::any ASTBuilder::visitExprStmt(SpiceParser::ExprStmtContext *context) {
+  auto exprStmtNode = createNode<ExprStmtNode>(context);
+
+  // Visit children
+  exprStmtNode->expr = std::any_cast<AssignExprNode *>(visit(context->assignExpr()));
+
+  return concludeNode(exprStmtNode);
 }
 
 std::any ASTBuilder::visitSpecifierLst(SpiceParser::SpecifierLstContext *ctx) {
@@ -791,7 +862,7 @@ std::any ASTBuilder::visitAssertStmt(SpiceParser::AssertStmtContext *ctx) {
   assertStmtNode->expressionString = inputStream->getText(interval);
 
   // Visit children
-  visitChildren(ctx);
+  assertStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(assertStmtNode);
 }

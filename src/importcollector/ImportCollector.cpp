@@ -13,11 +13,11 @@ namespace spice::compiler {
 
 std::any ImportCollector::visitEntry(EntryNode *node) {
   // Visit all module attributes
-  for (ModAttrNode *attr : node->modAttrs())
+  for (ModAttrNode *attr : node->modAttrs)
     visit(attr);
 
   // Visit all import defs
-  for (ImportDefNode *importDef : node->importDefs())
+  for (ImportDefNode *importDef : node->importDefs)
     visit(importDef);
 
   return nullptr;

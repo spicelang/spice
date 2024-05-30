@@ -489,7 +489,7 @@ bool FctCallNode::hasReturnValueReceiver() const {
     node = node->parent;
   }
   // Also check the condition of the assign expression
-  return node->children.size() > 1 || !node->parent->isStmtLstNode();
+  return node->children.size() > 1 || !node->parent->isExprStmtNode();
 }
 
 bool LambdaFuncNode::returnsOnAllControlPaths(bool *overrideUnreachable) const {

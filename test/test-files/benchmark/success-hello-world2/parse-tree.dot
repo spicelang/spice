@@ -144,8 +144,10 @@ digraph {
  L5C17_stmtLst -> L5C17
  L6C8_stmt [color="lightgreen",label="stmt"];
  L5C17_stmtLst -> L6C8_stmt;
+ L6C8_exprStmt [color="lightgreen",label="exprStmt"];
+ L6C8_stmt -> L6C8_exprStmt;
  L6C8_assignExpr [color="lightgreen",label="assignExpr"];
- L6C8_stmt -> L6C8_assignExpr;
+ L6C8_exprStmt -> L6C8_assignExpr;
  L6C8_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L6C8_assignExpr -> L6C8_ternaryExpr;
  L6C8_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];
