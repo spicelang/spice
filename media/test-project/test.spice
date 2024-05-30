@@ -1,33 +1,15 @@
-type Test struct {
-    int f1
-    long f2
+f<bool> f1() {
+    printf("F1 called.\n");
+    return false;
 }
 
-#[core.compiler.packed=true]
-type TestPacked struct {
-    int f1
-    long f2
+f<bool> f2() {
+    printf("F2 called.\n");
+    return true;
 }
 
 f<int> main() {
-    Test t;
-    t.f1 = -2147483647;
-    t.f2 = 9223372036854775807l;
-    assert sizeof(type Test) == 16 * 8;
-    assert sizeof(t) == 16 * 8;
-    assert t.f1 == -2147483647;
-    assert t.f2 == 9223372036854775807l;
-
-    TestPacked tp;
-    tp.f1 = -2147483647;
-    tp.f2 = 9223372036854775807l;
-
-    assert sizeof(type TestPacked) == 12 * 8;
-    assert sizeof(tp) == 12 * 8;
-    assert tp.f1 == -2147483647;
-    assert tp.f2 == 9223372036854775807l;
-
-    printf("All assertions passed!");
+    printf("Result: %d", f1() ?: f2());
 }
 
 /*import "std/os/env";

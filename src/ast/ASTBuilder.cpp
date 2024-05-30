@@ -734,11 +734,11 @@ std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
 std::any ASTBuilder::visitReturnStmt(SpiceParser::ReturnStmtContext *ctx) {
   auto returnStmtNode = createNode<ReturnStmtNode>(ctx);
 
-  // Enrich
-  returnStmtNode->hasReturnValue = ctx->assignExpr();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->assignExpr()) {
+    returnStmtNode->hasReturnValue = true;
+    returnStmtNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  }
 
   return concludeNode(returnStmtNode);
 }
@@ -821,7 +821,8 @@ std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
   printfCallNode->templatedString = templatedString;
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::AssignExprContext *assignExprContext : ctx->assignExpr())
+    printfCallNode->args.push_back(std::any_cast<AssignExprNode *>(visit(assignExprContext)));
 
   return concludeNode(printfCallNode);
 }
@@ -829,11 +830,13 @@ std::any ASTBuilder::visitPrintfCall(SpiceParser::PrintfCallContext *ctx) {
 std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
   auto sizeofCallNode = createNode<SizeofCallNode>(ctx);
 
-  // Check if type or value
-  sizeofCallNode->isType = ctx->TYPE();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->assignExpr()) {
+    sizeofCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  } else {
+    sizeofCallNode->isType = true;
+    sizeofCallNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  }
 
   return concludeNode(sizeofCallNode);
 }
@@ -841,11 +844,13 @@ std::any ASTBuilder::visitSizeOfCall(SpiceParser::SizeOfCallContext *ctx) {
 std::any ASTBuilder::visitAlignOfCall(SpiceParser::AlignOfCallContext *ctx) {
   auto alignofCallNode = createNode<AlignofCallNode>(ctx);
 
-  // Check if type or value
-  alignofCallNode->isType = ctx->TYPE();
-
   // Visit children
-  visitChildren(ctx);
+  if (ctx->assignExpr()) {
+    alignofCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  } else {
+    alignofCallNode->isType = true;
+    alignofCallNode->dataType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
+  }
 
   return concludeNode(alignofCallNode);
 }
@@ -854,7 +859,7 @@ std::any ASTBuilder::visitLenCall(SpiceParser::LenCallContext *ctx) {
   auto lenCallNode = createNode<LenCallNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  lenCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(lenCallNode);
 }
@@ -863,7 +868,7 @@ std::any ASTBuilder::visitPanicCall(SpiceParser::PanicCallContext *ctx) {
   auto panicCallNode = createNode<PanicCallNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  panicCallNode->assignExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
 
   return concludeNode(panicCallNode);
 }
@@ -872,7 +877,15 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
   auto assignExprNode = createNode<AssignExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  if (ctx->ternaryExpr()) {
+    assignExprNode->ternaryExpr = std::any_cast<TernaryExprNode *>(visit(ctx->ternaryExpr()));
+  } else if (ctx->prefixUnaryExpr()) {
+    assignExprNode->lhs = std::any_cast<PrefixUnaryExprNode *>(visit(ctx->prefixUnaryExpr()));
+    visit(ctx->assignOp());
+    assignExprNode->rhs = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+  } else {
+    assert_fail("Invalid assign expression"); // GCOV_EXCL_LINE
+  }
 
   return concludeNode(assignExprNode);
 }
@@ -880,11 +893,14 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
 std::any ASTBuilder::visitTernaryExpr(SpiceParser::TernaryExprContext *ctx) {
   auto ternaryExprNode = createNode<TernaryExprNode>(ctx);
 
-  // Check if is shortened
-  ternaryExprNode->isShortened = ctx->logicalOrExpr().size() == 2;
-
-  // Visit children
-  visitChildren(ctx);
+  ternaryExprNode->condition = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(0)));
+  if (ctx->logicalOrExpr().size() == 3) {
+    ternaryExprNode->trueExpr = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(1)));
+    ternaryExprNode->falseExpr = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(2)));
+  } else if (ctx->logicalOrExpr().size() == 2) {
+    ternaryExprNode->isShortened = true;
+    ternaryExprNode->falseExpr = std::any_cast<LogicalOrExprNode *>(visit(ctx->logicalOrExpr(1)));
+  }
 
   return concludeNode(ternaryExprNode);
 }
@@ -893,7 +909,8 @@ std::any ASTBuilder::visitLogicalOrExpr(SpiceParser::LogicalOrExprContext *ctx) 
   auto logicalOrExprNode = createNode<LogicalOrExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::LogicalAndExprContext *logicalAndExpr : ctx->logicalAndExpr())
+    logicalOrExprNode->operands.push_back(std::any_cast<LogicalAndExprNode *>(visit(logicalAndExpr)));
 
   return concludeNode(logicalOrExprNode);
 }
@@ -902,7 +919,8 @@ std::any ASTBuilder::visitLogicalAndExpr(SpiceParser::LogicalAndExprContext *ctx
   auto logicalAndExprNode = createNode<LogicalAndExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::BitwiseOrExprContext *bitwiseOrExpr : ctx->bitwiseOrExpr())
+    logicalAndExprNode->operands.push_back(std::any_cast<BitwiseOrExprNode *>(visit(bitwiseOrExpr)));
 
   return concludeNode(logicalAndExprNode);
 }
@@ -911,7 +929,8 @@ std::any ASTBuilder::visitBitwiseOrExpr(SpiceParser::BitwiseOrExprContext *ctx) 
   auto bitwiseOrExprNode = createNode<BitwiseOrExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::BitwiseXorExprContext *bitwiseXorExpr : ctx->bitwiseXorExpr())
+    bitwiseOrExprNode->operands.push_back(std::any_cast<BitwiseXorExprNode *>(visit(bitwiseXorExpr)));
 
   return concludeNode(bitwiseOrExprNode);
 }
@@ -920,7 +939,8 @@ std::any ASTBuilder::visitBitwiseXorExpr(SpiceParser::BitwiseXorExprContext *ctx
   auto bitwiseXorExprNode = createNode<BitwiseXorExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::BitwiseAndExprContext *bitwiseAndExpr : ctx->bitwiseAndExpr())
+    bitwiseXorExprNode->operands.push_back(std::any_cast<BitwiseAndExprNode *>(visit(bitwiseAndExpr)));
 
   return concludeNode(bitwiseXorExprNode);
 }
@@ -929,7 +949,8 @@ std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx
   auto bitwiseAndExprNode = createNode<BitwiseAndExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::EqualityExprContext *equalityExpr : ctx->equalityExpr())
+    bitwiseAndExprNode->operands.push_back(std::any_cast<EqualityExprNode *>(visit(equalityExpr)));
 
   return concludeNode(bitwiseAndExprNode);
 }
@@ -937,20 +958,25 @@ std::any ASTBuilder::visitBitwiseAndExpr(SpiceParser::BitwiseAndExprContext *ctx
 std::any ASTBuilder::visitEqualityExpr(SpiceParser::EqualityExprContext *ctx) {
   auto equalityExprNode = createNode<EqualityExprNode>(ctx);
 
+  // Visit children
+  for (SpiceParser::RelationalExprContext *relationalExpr : ctx->relationalExpr())
+    equalityExprNode->operands.push_back(std::any_cast<RelationalExprNode *>(visit(relationalExpr)));
+
   // Extract operator
   if (ctx->EQUAL())
     equalityExprNode->op = EqualityExprNode::OP_EQUAL;
   else if (ctx->NOT_EQUAL())
     equalityExprNode->op = EqualityExprNode::OP_NOT_EQUAL;
 
-  // Visit children
-  visitChildren(ctx);
-
   return concludeNode(equalityExprNode);
 }
 
 std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx) {
   auto relationalExprNode = createNode<RelationalExprNode>(ctx);
+
+  // Visit children
+  for (SpiceParser::ShiftExprContext *shiftExpr : ctx->shiftExpr())
+    relationalExprNode->operands.push_back(std::any_cast<ShiftExprNode *>(visit(shiftExpr)));
 
   // Extract operator
   if (ctx->LESS())
@@ -962,23 +988,21 @@ std::any ASTBuilder::visitRelationalExpr(SpiceParser::RelationalExprContext *ctx
   else if (ctx->GREATER_EQUAL())
     relationalExprNode->op = RelationalExprNode::OP_GREATER_EQUAL;
 
-  // Visit children
-  visitChildren(ctx);
-
   return concludeNode(relationalExprNode);
 }
 
 std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
   auto shiftExprNode = createNode<ShiftExprNode>(ctx);
 
+  // Visit children
+  for (SpiceParser::AdditiveExprContext *additiveExpr : ctx->additiveExpr())
+    shiftExprNode->operands.push_back(std::any_cast<AdditiveExprNode *>(visit(additiveExpr)));
+
   // Extract operator
   if (!ctx->LESS().empty())
     shiftExprNode->op = ShiftExprNode::OP_SHIFT_LEFT;
   else if (!ctx->GREATER().empty())
     shiftExprNode->op = ShiftExprNode::OP_SHIFT_RIGHT;
-
-  // Visit children
-  visitChildren(ctx);
 
   return concludeNode(shiftExprNode);
 }
@@ -987,7 +1011,8 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
   auto additiveExprNode = createNode<AdditiveExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::MultiplicativeExprContext *multiplicativeExpr : ctx->multiplicativeExpr())
+    additiveExprNode->operands.push_back(std::any_cast<MultiplicativeExprNode *>(visit(multiplicativeExpr)));
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::PLUS)
@@ -1003,7 +1028,8 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
   auto multiplicativeExprNode = createNode<MultiplicativeExprNode>(ctx);
 
   // Visit children
-  visitChildren(ctx);
+  for (SpiceParser::CastExprContext *castExpr : ctx->castExpr())
+    multiplicativeExprNode->operands.push_back(std::any_cast<CastExprNode *>(visit(castExpr)));
 
   for (ParserRuleContext::ParseTree *subTree : ctx->children) {
     if (auto t1 = dynamic_cast<TerminalNode *>(subTree); t1 != nullptr && t1->getSymbol()->getType() == SpiceParser::MUL)
@@ -1419,7 +1445,7 @@ std::any ASTBuilder::visitFunctionDataType(SpiceParser::FunctionDataTypeContext 
 }
 
 std::any ASTBuilder::visitAssignOp(SpiceParser::AssignOpContext *ctx) {
-  auto assignExprNode = spice_pointer_cast<AssignExprNode *>(parentStack.top());
+  auto assignExprNode = resumeForExpansion<AssignExprNode>();
 
   // Extract assign operator
   if (ctx->ASSIGN())
