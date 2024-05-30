@@ -648,10 +648,10 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PostfixUnaryExprNode::OP_NONE)
-    return visit(node->atomicExpr());
+    return visit(node->atomicExpr);
 
   // Evaluate lhs
-  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
+  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
   QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
@@ -663,7 +663,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     llvm::Type *lhsTy = lhsSTy.toLLVMType(sourceFile);
 
     // Get the index value
-    AssignExprNode *indexExpr = node->assignExpr();
+    AssignExprNode *indexExpr = node->subscriptIndexExpr;
     llvm::Value *indexValue = resolveValue(indexExpr);
     // Come up with the address
     if (lhsSTy.isArray() && lhsSTy.getArraySize() != ARRAY_SIZE_UNKNOWN) { // Array

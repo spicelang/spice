@@ -171,8 +171,8 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
   if (op == OP_NONE) {
     return children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   } else {
-    bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr() &&
-                   lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
+    bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr &&
+                   lhs()->postfixUnaryExpr()->atomicExpr->fqIdentifier == RETURN_VARIABLE_NAME;
 
     // If we assign the result variable, we technically return from the function, but at the end of the function.
     // Therefore, the following code is not unreachable, but will be executed in any case.
@@ -465,18 +465,18 @@ CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-
 }
 
 bool PostfixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursion)
-  if (atomicExpr())
-    return atomicExpr()->hasCompileTimeValue();
+  if (atomicExpr)
+    return atomicExpr->hasCompileTimeValue();
 
   bool isOperatorSupported = op == OP_NONE || op == OP_PLUS_PLUS || op == OP_MINUS_MINUS;
-  return isOperatorSupported && postfixUnaryExpr()->hasCompileTimeValue();
+  return isOperatorSupported && postfixUnaryExpr->hasCompileTimeValue();
 }
 
 CompileTimeValue PostfixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-no-recursion)
-  if (atomicExpr())
-    return atomicExpr()->getCompileTimeValue();
+  if (atomicExpr)
+    return atomicExpr->getCompileTimeValue();
 
-  CompileTimeValue opValue = postfixUnaryExpr()->getCompileTimeValue();
+  CompileTimeValue opValue = postfixUnaryExpr->getCompileTimeValue();
   if (op == OP_PLUS_PLUS)
     return CompileTimeValue{.longValue = opValue.longValue++};
   if (op == OP_MINUS_MINUS)

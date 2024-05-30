@@ -1311,10 +1311,10 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PostfixUnaryExprNode::OP_NONE)
-    return visit(node->atomicExpr());
+    return visit(node->atomicExpr);
 
   // Visit left side
-  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr();
+  PostfixUnaryExprNode *lhsNode = node->postfixUnaryExpr;
   auto lhs = std::any_cast<ExprResult>(visit(lhsNode));
   auto [lhsType, lhsEntry] = lhs;
   HANDLE_UNRESOLVED_TYPE_ER(lhsType)
@@ -1329,8 +1329,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
                     "Can only apply subscript operator on array type, got " + lhsType.getName(true))
 
     // Visit index assignment
-    AssignExprNode *indexAssignExpr = node->assignExpr();
-    QualType indexType = std::any_cast<ExprResult>(visit(indexAssignExpr)).type;
+    QualType indexType = std::any_cast<ExprResult>(visit(node->subscriptIndexExpr)).type;
     HANDLE_UNRESOLVED_TYPE_ER(indexType)
     // Check if the index is of the right type
     if (!indexType.isOneOf({TY_INT, TY_LONG}))
@@ -1343,8 +1342,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
           "The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.")
 
     // Check if we have a hardcoded array index
-    if (lhsType.isArray() && lhsType.getArraySize() != ARRAY_SIZE_UNKNOWN && indexAssignExpr->hasCompileTimeValue()) {
-      const int32_t constIndex = indexAssignExpr->getCompileTimeValue().intValue;
+    if (lhsType.isArray() && lhsType.getArraySize() != ARRAY_SIZE_UNKNOWN && node->subscriptIndexExpr->hasCompileTimeValue()) {
+      const int32_t constIndex = node->subscriptIndexExpr->getCompileTimeValue().intValue;
       const unsigned int constSize = lhsType.getArraySize();
       // Check if we are accessing out-of-bounds memory
       if (constIndex >= static_cast<int32_t>(constSize)) {

@@ -1746,11 +1746,6 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPostfixUnaryExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitPostfixUnaryExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] AtomicExprNode *atomicExpr() const { return getChild<AtomicExprNode>(); }
-  [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
-  [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
@@ -1759,6 +1754,9 @@ public:
   void customItemsInitialization(size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
+  AtomicExprNode *atomicExpr = nullptr;
+  PostfixUnaryExprNode *postfixUnaryExpr = nullptr;
+  AssignExprNode *subscriptIndexExpr = nullptr;
   PostfixUnaryOp op = OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
   std::string identifier;                           // Only set when operator is member access

@@ -1057,20 +1057,24 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
 std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext *ctx) {
   auto postfixUnaryExprNode = createNode<PostfixUnaryExprNode>(ctx);
 
-  // Extract operator
-  if (ctx->LBRACKET()) {
-    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_SUBSCRIPT;
-  } else if (ctx->DOT()) {
-    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MEMBER_ACCESS;
-    postfixUnaryExprNode->identifier = getIdentifier(ctx->IDENTIFIER());
-  } else if (ctx->PLUS_PLUS()) {
-    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_PLUS_PLUS;
-  } else if (ctx->MINUS_MINUS()) {
-    postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MINUS_MINUS;
-  }
+  if (ctx->atomicExpr()) {
+    postfixUnaryExprNode->atomicExpr = std::any_cast<AtomicExprNode *>(visit(ctx->atomicExpr()));
+  } else if (ctx->postfixUnaryExpr()) {
+    postfixUnaryExprNode->postfixUnaryExpr = std::any_cast<PostfixUnaryExprNode *>(visit(ctx->postfixUnaryExpr()));
 
-  // Visit children
-  visitChildren(ctx);
+    // Extract operator
+    if (ctx->assignExpr()) {
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_SUBSCRIPT;
+      postfixUnaryExprNode->subscriptIndexExpr = std::any_cast<AssignExprNode *>(visit(ctx->assignExpr()));
+    } else if (ctx->IDENTIFIER()) {
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MEMBER_ACCESS;
+      postfixUnaryExprNode->identifier = getIdentifier(ctx->IDENTIFIER());
+    } else if (ctx->PLUS_PLUS()) {
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_PLUS_PLUS;
+    } else if (ctx->MINUS_MINUS()) {
+      postfixUnaryExprNode->op = PostfixUnaryExprNode::OP_MINUS_MINUS;
+    }
+  }
 
   return concludeNode(postfixUnaryExprNode);
 }
