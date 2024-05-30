@@ -627,6 +627,7 @@ std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
     return static_cast<StmtNode *>(std::any_cast<FallthroughStmtNode *>(visit(ctx->fallthroughStmt())));
   else
     assert_fail("Unknown statement type"); // GCOV_EXCL_LINE
+  return nullptr;
 }
 
 std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
