@@ -171,8 +171,8 @@ bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
   if (op == OP_NONE) {
     return children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   } else {
-    bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr &&
-                   lhs()->postfixUnaryExpr()->atomicExpr->fqIdentifier == RETURN_VARIABLE_NAME;
+    bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr && lhs()->postfixUnaryExpr->atomicExpr &&
+                   lhs()->postfixUnaryExpr->atomicExpr->fqIdentifier == RETURN_VARIABLE_NAME;
 
     // If we assign the result variable, we technically return from the function, but at the end of the function.
     // Therefore, the following code is not unreachable, but will be executed in any case.
@@ -427,29 +427,29 @@ CompileTimeValue MultiplicativeExprNode::getCompileTimeValue() const {
   return result;
 }
 
-bool CastExprNode::hasCompileTimeValue() const { return prefixUnaryExpr()->hasCompileTimeValue(); }
+bool CastExprNode::hasCompileTimeValue() const { return prefixUnaryExpr->hasCompileTimeValue(); }
 
 CompileTimeValue CastExprNode::getCompileTimeValue() const {
   if (children.size() == 1)
     return children.front()->getCompileTimeValue();
 
-  return prefixUnaryExpr()->getCompileTimeValue();
+  return prefixUnaryExpr->getCompileTimeValue();
 }
 
 bool PrefixUnaryExprNode::hasCompileTimeValue() const { // NOLINT(*-no-recursion)
-  if (postfixUnaryExpr())
-    return postfixUnaryExpr()->hasCompileTimeValue();
+  if (postfixUnaryExpr)
+    return postfixUnaryExpr->hasCompileTimeValue();
 
   bool isOperatorSupported =
       op == OP_NONE || op == OP_MINUS || op == OP_PLUS_PLUS || op == OP_MINUS_MINUS || op == OP_NOT || op == OP_BITWISE_NOT;
-  return isOperatorSupported && prefixUnary()->hasCompileTimeValue();
+  return isOperatorSupported && prefixUnaryExpr->hasCompileTimeValue();
 }
 
 CompileTimeValue PrefixUnaryExprNode::getCompileTimeValue() const { // NOLINT(*-no-recursion)
-  if (postfixUnaryExpr())
-    return postfixUnaryExpr()->getCompileTimeValue();
+  if (postfixUnaryExpr)
+    return postfixUnaryExpr->getCompileTimeValue();
 
-  CompileTimeValue opValue = prefixUnary()->getCompileTimeValue();
+  CompileTimeValue opValue = prefixUnaryExpr->getCompileTimeValue();
   if (op == OP_MINUS)
     return CompileTimeValue{.longValue = -opValue.longValue};
   if (op == OP_PLUS_PLUS)

@@ -1679,15 +1679,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitCastExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitCastExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] DataTypeNode *dataType() const { return getChild<DataTypeNode>(); }
-  [[nodiscard]] PrefixUnaryExprNode *prefixUnaryExpr() const { return getChild<PrefixUnaryExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
+  DataTypeNode *dataType = nullptr;
+  PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
   bool isCast = false;
 };
 
@@ -1714,15 +1712,13 @@ public:
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitPrefixUnaryExpr(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitPrefixUnaryExpr(this); }
 
-  // Public get methods
-  [[nodiscard]] PrefixUnaryExprNode *prefixUnary() const { return getChild<PrefixUnaryExprNode>(); }
-  [[nodiscard]] PostfixUnaryExprNode *postfixUnaryExpr() const { return getChild<PostfixUnaryExprNode>(); }
-
   // Other methods
   [[nodiscard]] bool hasCompileTimeValue() const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue() const override;
 
   // Public members
+  PrefixUnaryExprNode *prefixUnaryExpr = nullptr;
+  PostfixUnaryExprNode *postfixUnaryExpr = nullptr;
   PrefixUnaryOp op = OP_NONE;
 };
 

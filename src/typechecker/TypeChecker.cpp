@@ -1223,13 +1223,13 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
 std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   // Check if cast is applied
   if (!node->isCast)
-    return visit(node->prefixUnaryExpr());
+    return visit(node->prefixUnaryExpr);
 
   // Visit source type
-  auto src = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr()));
+  auto src = std::any_cast<ExprResult>(visit(node->prefixUnaryExpr));
   HANDLE_UNRESOLVED_TYPE_ER(src.type)
   // Visit destination type
-  auto dstType = std::any_cast<QualType>(visit(node->dataType()));
+  auto dstType = std::any_cast<QualType>(visit(node->dataType));
   HANDLE_UNRESOLVED_TYPE_ER(dstType)
 
   // Check for identity cast
@@ -1251,10 +1251,10 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
 
   // If no operator is applied, simply visit the postfix unary expression
   if (node->op == PrefixUnaryExprNode::OP_NONE)
-    return visit(node->postfixUnaryExpr());
+    return visit(node->postfixUnaryExpr);
 
   // Visit the right side
-  PrefixUnaryExprNode *rhsNode = node->prefixUnary();
+  PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr;
   auto operand = std::any_cast<ExprResult>(visit(rhsNode));
   auto [operandType, operandEntry] = operand;
   HANDLE_UNRESOLVED_TYPE_ER(operandType)

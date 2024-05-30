@@ -20,14 +20,14 @@ importDef: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON;
 // Control structures
 unsafeBlock: UNSAFE stmtLst;
 forLoop: FOR (forHead | LPAREN forHead RPAREN) stmtLst;
-forHead: declStmt SEMICOLON subscriptIndexExpr SEMICOLON subscriptIndexExpr;
+forHead: declStmt SEMICOLON assignExpr SEMICOLON assignExpr;
 foreachLoop: FOREACH (foreachHead | LPAREN foreachHead RPAREN) stmtLst;
-foreachHead: (declStmt COMMA)? declStmt COLON subscriptIndexExpr;
-whileLoop: WHILE subscriptIndexExpr stmtLst;
-doWhileLoop: DO stmtLst WHILE subscriptIndexExpr SEMICOLON;
-ifStmt: IF subscriptIndexExpr stmtLst elseStmt?;
+foreachHead: (declStmt COMMA)? declStmt COLON assignExpr;
+whileLoop: WHILE assignExpr stmtLst;
+doWhileLoop: DO stmtLst WHILE assignExpr SEMICOLON;
+ifStmt: IF assignExpr stmtLst elseStmt?;
 elseStmt: ELSE ifStmt | ELSE stmtLst;
-switchStmt: SWITCH subscriptIndexExpr LBRACE caseBranch* defaultBranch? RBRACE;
+switchStmt: SWITCH assignExpr LBRACE caseBranch* defaultBranch? RBRACE;
 caseBranch: CASE caseConstant (COMMA caseConstant)* COLON stmtLst;
 defaultBranch: DEFAULT COLON stmtLst;
 anonymousBlockStmt: stmtLst;
@@ -37,13 +37,13 @@ stmtLst: LBRACE (stmt | forLoop | foreachLoop | whileLoop | doWhileLoop | ifStmt
 typeLst: dataType (COMMA dataType)*;
 typeAltsLst: dataType (BITWISE_OR dataType)*;
 paramLst: declStmt (COMMA declStmt)*;
-argLst: subscriptIndexExpr (COMMA subscriptIndexExpr)*;
+argLst: assignExpr (COMMA assignExpr)*;
 enumItemLst: enumItem (COMMA enumItem)*;
 enumItem: TYPE_IDENTIFIER (ASSIGN INT_LIT)?;
 field: dataType IDENTIFIER (ASSIGN ternaryExpr)?;
 signature: specifierLst? (F LESS dataType GREATER | P) IDENTIFIER (LESS typeLst GREATER)? LPAREN typeLst? RPAREN SEMICOLON;
-stmt: (declStmt | subscriptIndexExpr | returnStmt | breakStmt | continueStmt | fallthroughStmt) SEMICOLON;
-declStmt: dataType IDENTIFIER (ASSIGN subscriptIndexExpr)?;
+stmt: (declStmt | assignExpr | returnStmt | breakStmt | continueStmt | fallthroughStmt) SEMICOLON;
+declStmt: dataType IDENTIFIER (ASSIGN assignExpr)?;
 specifierLst: specifier+;
 specifier: CONST | SIGNED | UNSIGNED | INLINE | PUBLIC | HEAP | COMPOSE;
 modAttr: MOD_ATTR_PREAMBLE LBRACKET attrLst RBRACKET;
@@ -52,22 +52,22 @@ lambdaAttr: LBRACKET LBRACKET attrLst RBRACKET RBRACKET;
 attrLst: attr (COMMA attr)*;
 attr: IDENTIFIER (DOT IDENTIFIER)* (ASSIGN constant)?;
 caseConstant: constant | (IDENTIFIER SCOPE_ACCESS)? TYPE_IDENTIFIER (SCOPE_ACCESS TYPE_IDENTIFIER)*;
-returnStmt: RETURN subscriptIndexExpr?;
+returnStmt: RETURN assignExpr?;
 breakStmt: BREAK INT_LIT?;
 continueStmt: CONTINUE INT_LIT?;
 fallthroughStmt: FALLTHROUGH;
-assertStmt: ASSERT subscriptIndexExpr SEMICOLON;
+assertStmt: ASSERT assignExpr SEMICOLON;
 
 // Builtin functions
 builtinCall: printfCall | sizeOfCall | alignOfCall | lenCall | panicCall;
-printfCall: PRINTF LPAREN STRING_LIT (COMMA subscriptIndexExpr)* RPAREN;
-sizeOfCall: SIZEOF LPAREN (subscriptIndexExpr | TYPE dataType) RPAREN;
-alignOfCall: ALIGNOF LPAREN (subscriptIndexExpr | TYPE dataType) RPAREN;
-lenCall: LEN LPAREN subscriptIndexExpr RPAREN;
-panicCall: PANIC LPAREN subscriptIndexExpr RPAREN;
+printfCall: PRINTF LPAREN STRING_LIT (COMMA assignExpr)* RPAREN;
+sizeOfCall: SIZEOF LPAREN (assignExpr | TYPE dataType) RPAREN;
+alignOfCall: ALIGNOF LPAREN (assignExpr | TYPE dataType) RPAREN;
+lenCall: LEN LPAREN assignExpr RPAREN;
+panicCall: PANIC LPAREN assignExpr RPAREN;
 
 // Expression loop
-subscriptIndexExpr: ternaryExpr | prefixUnaryExpr assignOp subscriptIndexExpr;
+assignExpr: ternaryExpr | prefixUnaryExpr assignOp assignExpr;
 ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr? COLON logicalOrExpr)?;
 logicalOrExpr: logicalAndExpr (LOGICAL_OR logicalAndExpr)*;
 logicalAndExpr: bitwiseOrExpr (LOGICAL_AND bitwiseOrExpr)*;
@@ -81,8 +81,8 @@ additiveExpr: multiplicativeExpr ((PLUS | MINUS) multiplicativeExpr)*;
 multiplicativeExpr: castExpr ((MUL | DIV | REM) castExpr)*;
 castExpr: (LPAREN dataType RPAREN)? prefixUnaryExpr;
 prefixUnaryExpr: postfixUnaryExpr | (MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND) prefixUnaryExpr;
-postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET subscriptIndexExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS);
-atomicExpr: constant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | builtinCall | LPAREN subscriptIndexExpr RPAREN;
+postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS);
+atomicExpr: constant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | builtinCall | LPAREN assignExpr RPAREN;
 
 // Values
 value: fctCall | arrayInitialization | structInstantiation | lambdaFunc | lambdaProc | lambdaExpr | NIL LESS dataType GREATER;
@@ -92,7 +92,7 @@ arrayInitialization: LBRACKET argLst? RBRACKET;
 structInstantiation: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)? LBRACE argLst? RBRACE;
 lambdaFunc: F LESS dataType GREATER LPAREN paramLst? RPAREN lambdaAttr? stmtLst;
 lambdaProc: P LPAREN paramLst? RPAREN lambdaAttr? stmtLst;
-lambdaExpr: LPAREN paramLst? RPAREN ARROW subscriptIndexExpr;
+lambdaExpr: LPAREN paramLst? RPAREN ARROW assignExpr;
 
 // Types
 dataType: specifierLst? baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | TYPE_IDENTIFIER)? RBRACKET)*;

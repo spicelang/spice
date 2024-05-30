@@ -499,14 +499,14 @@ std::any IRGenerator::visitCastExpr(const CastExprNode *node) {
 
   // Check if only one operand is present -> loop through
   if (!node->isCast)
-    return visit(node->prefixUnaryExpr());
+    return visit(node->prefixUnaryExpr);
 
   // It is a cast expression
   // Retrieve target symbol type
   const QualType targetSTy = node->getEvaluatedSymbolType(manIdx);
 
   // Evaluate rhs
-  PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr();
+  PrefixUnaryExprNode *rhsNode = node->prefixUnaryExpr;
   const QualType rhsSTy = rhsNode->getEvaluatedSymbolType(manIdx);
   auto rhs = std::any_cast<LLVMExprResult>(visit(rhsNode));
 
@@ -522,10 +522,10 @@ std::any IRGenerator::visitPrefixUnaryExpr(const PrefixUnaryExprNode *node) {
 
   // If no operator is applied, simply visit the atomic expression
   if (node->op == PrefixUnaryExprNode::OP_NONE)
-    return visit(node->postfixUnaryExpr());
+    return visit(node->postfixUnaryExpr);
 
   // Evaluate lhs
-  PrefixUnaryExprNode *lhsNode = node->prefixUnary();
+  PrefixUnaryExprNode *lhsNode = node->prefixUnaryExpr;
   QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);
   auto lhs = std::any_cast<LLVMExprResult>(visit(lhsNode));
 
