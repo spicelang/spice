@@ -10,7 +10,6 @@ on:
   pull_request:
     branches:
       - main
-      - dev
       - feature/**
     paths:
       - 'docs/**'
@@ -46,6 +45,7 @@ jobs:
 #        run: sudo apt-get install valgrind
 
       - name: Setup Gcovr
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: sudo pipx install gcovr
 
       - name: Cache LLVM
@@ -118,6 +118,7 @@ jobs:
 #          valgrind -q --leak-check=full ./spicetest --skip-github-tests --leak-detection
 
       - name: Generate coverage report
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           cd ./bin
           sudo chmod +x coverage.sh
@@ -125,6 +126,7 @@ jobs:
 
       - name: Upload coverage report - coverage.spicelang.com
         uses: sebastianpopp/ftp-action@releases/v2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           host: ${{ secrets.FTP_SERVER }}
           user: ${{ secrets.FTP_USERNAME }}
