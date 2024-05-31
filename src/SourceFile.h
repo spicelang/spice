@@ -15,9 +15,6 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Target/TargetMachine.h>
 
-#include "../lib/thread-pool/thread-pool-utils.hpp"
-#include "../lib/thread-pool/thread-pool.hpp"
-
 // Ignore some warnings in ANTLR generated code
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
@@ -191,7 +188,6 @@ private:
   // Private fields
   GlobalResourceManager &resourceManager;
   const CliOptions &cliOptions;
-  BS::synced_stream &tout;
   std::unordered_map<const Type *, llvm::Type *> typeToLLVMTypeMapping;
   uint8_t importedRuntimeModules = 0;
   uint8_t totalTypeCheckerRuns = 0;
@@ -203,7 +199,7 @@ private:
   void visualizerPreamble(std::stringstream &output) const;
   void visualizerOutput(std::string outputName, const std::string &output) const;
   void printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out, uint64_t stageRuntime,
-                          bool fromThread = false, unsigned short stageRuns = 0) const;
+                          unsigned short stageRuns = 0) const;
 };
 
 } // namespace spice::compiler
