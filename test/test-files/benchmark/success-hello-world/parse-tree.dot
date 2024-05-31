@@ -24,8 +24,10 @@ digraph {
  L1C14_stmtLst -> L1C14
  L2C4_stmt [color="lightgreen",label="stmt"];
  L1C14_stmtLst -> L2C4_stmt;
+ L2C4_exprStmt [color="lightgreen",label="exprStmt"];
+ L2C4_stmt -> L2C4_exprStmt;
  L2C4_assignExpr [color="lightgreen",label="assignExpr"];
- L2C4_stmt -> L2C4_assignExpr;
+ L2C4_exprStmt -> L2C4_assignExpr;
  L2C4_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L2C4_assignExpr -> L2C4_ternaryExpr;
  L2C4_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];

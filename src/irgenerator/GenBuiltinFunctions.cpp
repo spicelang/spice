@@ -6,6 +6,22 @@
 
 namespace spice::compiler {
 
+std::any IRGenerator::visitBuiltinCall(const BuiltinCallNode *node) {
+  if (node->printfCall)
+    return visitPrintfCall(node->printfCall);
+  else if (node->sizeofCall)
+    return visitSizeofCall(node->sizeofCall);
+  else if (node->alignofCall)
+    return visitAlignofCall(node->alignofCall);
+  else if (node->lenCall)
+    return visitLenCall(node->lenCall);
+  else if (node->panicCall)
+    return visitPanicCall(node->panicCall);
+  else
+    assert_fail("Unknown builtin call type"); // LCOV_EXCL_LINE
+  return nullptr;
+}
+
 std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   // Retrieve printf function
   llvm::Function *printfFct = stdFunctionManager.getPrintfFct();
@@ -16,7 +32,7 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   printfArgs.push_back(templateString);
 
   // Collect replacement arguments
-  for (AssignExprNode *arg : node->args()) {
+  for (AssignExprNode *arg : node->args) {
     // Retrieve type of argument
     const QualType argSymbolType = arg->getEvaluatedSymbolType(manIdx);
 
@@ -59,9 +75,9 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
 std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
   llvm::Type *type;
   if (node->isType) { // Size of type
-    type = any_cast<llvm::Type *>(visit(node->dataType()));
+    type = any_cast<llvm::Type *>(visit(node->dataType));
   } else { // Size of value
-    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
+    type = node->assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
   }
   // Calculate size at compile-time
   const llvm::TypeSize sizeInBits = module->getDataLayout().getTypeSizeInBits(type);
@@ -74,9 +90,9 @@ std::any IRGenerator::visitSizeofCall(const SizeofCallNode *node) {
 std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
   llvm::Type *type;
   if (node->isType) { // Align of type
-    type = any_cast<llvm::Type *>(visit(node->dataType()));
+    type = any_cast<llvm::Type *>(visit(node->dataType));
   } else { // Align of value
-    type = node->assignExpr()->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
+    type = node->assignExpr->getEvaluatedSymbolType(manIdx).toLLVMType(sourceFile);
   }
   // Calculate size at compile-time
   const llvm::Align align = module->getDataLayout().getABITypeAlign(type);
@@ -88,13 +104,13 @@ std::any IRGenerator::visitAlignofCall(const AlignofCallNode *node) {
 
 std::any IRGenerator::visitLenCall(const LenCallNode *node) {
   // Check if the length is fixed and known via the symbol type
-  QualType symbolType = node->assignExpr()->getEvaluatedSymbolType(manIdx);
+  QualType symbolType = node->assignExpr->getEvaluatedSymbolType(manIdx);
   symbolType = symbolType.removeReferenceWrapper();
 
   llvm::Value *lengthValue;
   if (symbolType.is(TY_STRING)) {
     llvm::Function *getRawLengthFct = stdFunctionManager.getStringGetRawLengthStringFct();
-    lengthValue = builder.CreateCall(getRawLengthFct, resolveValue(node->assignExpr()));
+    lengthValue = builder.CreateCall(getRawLengthFct, resolveValue(node->assignExpr));
   } else {
     assert(symbolType.isArray() && symbolType.getArraySize() != ARRAY_SIZE_UNKNOWN);
     // Return length value

@@ -78,6 +78,7 @@ public:
   std::any visitContinueStmt(const ContinueStmtNode *node) override;
   std::any visitFallthroughStmt(const FallthroughStmtNode *node) override;
   // Builtin functions
+  std::any visitBuiltinCall(const BuiltinCallNode *node) override;
   std::any visitPrintfCall(const PrintfCallNode *node) override;
   std::any visitSizeofCall(const SizeofCallNode *node) override;
   std::any visitAlignofCall(const AlignofCallNode *node) override;

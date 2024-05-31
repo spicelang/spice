@@ -17,8 +17,8 @@ public type CompileTimeValue struct {
     long longValue
     byte byteValue
     char charValue
-    unsigned long stringValueOffset = 0l // Offset into vector of strings in GlobalResourceManager
     bool boolValue
+    unsigned long stringValueOffset = 0l // Offset into vector of strings in GlobalResourceManager
 }
 
 /*public type IVisitable interface {
@@ -32,7 +32,7 @@ public type ASTNode struct/*: IVisitable*/ {
     Vector<ASTNode*> children
     CodeLoc codeLoc
     string errorMessage
-    //Vector<Type> symbolTypes
+    //Vector<Type> types
     bool unreachable = false
     //Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
@@ -53,12 +53,25 @@ public p ASTNode.addChild(ASTNode *child) {
 /*public f<T*> ASTNode.getChild<T>(int index) {
     unsigned long j = 0l;
     foreach ASTNode *child : children {
-      if (T* typedChild = dynamic_cast<T *>(child)) {
-        if (j++ == i)
-          return typedChild;
-      }
+        T* typedChild = dynamic_cast<T *>(child);
+        if (typedChild != nil<T*>) {
+            if (j++ == i) {
+                return typedChild;
+            }
+        }
     }
     return nil<T*>;
+}
+
+public f<Vector<T*>> ASTNode.getChildren() {
+    Vector<T*> result;
+    foreach ASTNode *child : children {
+        T* typedChild = dynamic_cast<T *>(child);
+        if typedChild != nil<T*> {
+            result.pushBack(typedChild);
+        }
+    }
+    return result;
 }*/
 
 public p ASTNode.reserveChildren(unsigned long numberOfChildren) {

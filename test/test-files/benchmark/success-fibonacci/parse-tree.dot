@@ -346,8 +346,10 @@ digraph {
  L6C14_stmtLst -> L6C14
  L7C4_stmt [color="lightgreen",label="stmt"];
  L6C14_stmtLst -> L7C4_stmt;
+ L7C4_exprStmt [color="lightgreen",label="exprStmt"];
+ L7C4_stmt -> L7C4_exprStmt;
  L7C4_assignExpr [color="lightgreen",label="assignExpr"];
- L7C4_stmt -> L7C4_assignExpr;
+ L7C4_exprStmt -> L7C4_assignExpr;
  L7C4_ternaryExpr [color="lightgreen",label="ternaryExpr"];
  L7C4_assignExpr -> L7C4_ternaryExpr;
  L7C4_logicalOrExpr [color="lightgreen",label="logicalOrExpr"];

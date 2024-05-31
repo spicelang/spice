@@ -1,4 +1,8 @@
-import "std/os/env";
+f<int> main() {
+    printf("Output: %s", test);
+}
+
+/*import "std/os/env";
 import "std/io/filepath";
 import "bootstrap/lexer/lexer";
 
