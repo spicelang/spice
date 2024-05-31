@@ -26,6 +26,7 @@ class DummyNode : public ASTNode {
   std::any accept(ParallelizableASTVisitor *visitor) const override { return {}; }
 };
 static constexpr size_t DUMMY_NODE_SIZE = sizeof(DummyNode);
+static_assert(DUMMY_NODE_SIZE == 104, "DummyNode size has changed. Update test accordingly.");
 
 class MockMemoryManager : public MemoryManager {
 public:
@@ -34,8 +35,8 @@ public:
 };
 
 TEST(BlockAllocatorTest, TestBlockAllocatorLarge) {
-  destructedDummyNodes = 0;             // Reset destruction counter
-  constexpr size_t NODE_COUNT = 100000; // 100.000 * 104 bytes = 10.4 MB
+  destructedDummyNodes = 0;                     // Reset destruction counter
+  static constexpr size_t NODE_COUNT = 100'000; // 100.000 * 104 bytes = 10.4 MB
 
   {
     // Create allocator, that can hold 5 nodes per block
@@ -52,6 +53,10 @@ TEST(BlockAllocatorTest, TestBlockAllocatorLarge) {
       ASSERT_EQ(1, nodes.at(i)->codeLoc.col);
     }
 
+    // Check if stats are correct
+    ASSERT_EQ(NODE_COUNT, alloc.getAllocationCount());
+    ASSERT_EQ(13'000'000, alloc.getTotalAllocatedSize());
+
     // Block Allocator gets destructed here and with that, all allocated nodes should be destructed
   }
 
@@ -59,8 +64,8 @@ TEST(BlockAllocatorTest, TestBlockAllocatorLarge) {
 }
 
 TEST(BlockAllocatorTest, TestBlockAllocatorUnevenBlockSize) {
-  destructedDummyNodes = 0;           // Reset destruction counter
-  constexpr size_t NODE_COUNT = 1000; // 1.000 * 104 bytes = 104 KB
+  destructedDummyNodes = 0;                   // Reset destruction counter
+  static constexpr size_t NODE_COUNT = 1'000; // 1.000 * 104 bytes = 104 KB
 
   {
     // Create allocator, that can hold 4.5 nodes per block
@@ -77,6 +82,10 @@ TEST(BlockAllocatorTest, TestBlockAllocatorUnevenBlockSize) {
       ASSERT_EQ(1, nodes.at(i)->codeLoc.col);
     }
 
+    // Check if stats are correct
+    ASSERT_EQ(NODE_COUNT, alloc.getAllocationCount());
+    ASSERT_EQ(117'000, alloc.getTotalAllocatedSize());
+
     // Block Allocator gets destructed here and with that, all allocated nodes should be destructed
   }
 
@@ -84,8 +93,8 @@ TEST(BlockAllocatorTest, TestBlockAllocatorUnevenBlockSize) {
 }
 
 TEST(BlockAllocatorTest, TestBlockAllocatorOOM) {
-  destructedDummyNodes = 0;         // Reset destruction counter
-  constexpr size_t NODE_COUNT = 10; // 10 * 104 bytes = 1.04 KB
+  destructedDummyNodes = 0;                // Reset destruction counter
+  static constexpr size_t NODE_COUNT = 10; // 10 * 104 bytes = 1.04 KB
 
   // Prepare mock methods
   MockMemoryManager mockMemoryManager;
