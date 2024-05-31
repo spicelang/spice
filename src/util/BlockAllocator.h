@@ -51,6 +51,9 @@ public:
     return ptr;
   }
 
+  [[nodiscard]] size_t getTotalAllocatedSize() const { return memoryBlocks.size() * blockSize; }
+  [[nodiscard]] size_t getAllocationCount() const { return allocatedObjects.size(); }
+
 private:
   // Private members
   const MemoryManager &memoryManager;

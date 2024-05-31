@@ -581,10 +581,18 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
     resourceManager.totalTimer.stop();
     if (cliOptions.printDebugOutput) {
       CHECK_ABORT_FLAG_V()
-      std::cout << "\nSuccessfully compiled " << std::to_string(resourceManager.sourceFiles.size()) << " source file(s)";
-      std::cout << " or " << std::to_string(resourceManager.getTotalLineCount()) << " lines in total.\n";
-      std::cout << "Total number of types: " << std::to_string(TypeRegistry::getTypeCount()) << "\n";
-      std::cout << "Total compile time: " << std::to_string(resourceManager.totalTimer.getDurationMilliseconds()) << " ms\n";
+      const size_t sourceFileCount = resourceManager.sourceFiles.size();
+      const size_t totalLineCount = resourceManager.getTotalLineCount();
+      const size_t totalTypeCount = TypeRegistry::getTypeCount();
+      const size_t allocatedBytes = resourceManager.astNodeAlloc.getTotalAllocatedSize();
+      const size_t allocationCount = resourceManager.astNodeAlloc.getAllocationCount();
+      const size_t totalDuration = resourceManager.totalTimer.getDurationMilliseconds();
+      std::cout << "\nSuccessfully compiled " << std::to_string(sourceFileCount) << " source file(s)";
+      std::cout << " or " << std::to_string(totalLineCount) << " lines in total.\n";
+      std::cout << "Total number of blocks allocated via BlockAllocator: " << CommonUtil::formatBytes(allocatedBytes);
+      std::cout << " in " << std::to_string(allocationCount) << " allocations.\n";
+      std::cout << "Total number of types: " << std::to_string(totalTypeCount) << "\n";
+      std::cout << "Total compile time: " << std::to_string(totalDuration) << " ms\n";
     }
   }
 }

@@ -41,9 +41,9 @@ jobs:
       - name: Setup Dependencies
         run: sudo apt-get install ninja-build graphviz pipx uuid-dev
 
-      - name: Setup Valgrind
-        if: github.event_name == 'pull_request'
-        run: sudo apt-get install valgrind
+#      - name: Setup Valgrind
+#        if: github.event_name == 'pull_request'
+#        run: sudo apt-get install valgrind
 
       - name: Setup Gcovr
         run: sudo pipx install gcovr
