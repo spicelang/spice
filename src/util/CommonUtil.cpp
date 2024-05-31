@@ -92,6 +92,27 @@ size_t CommonUtil::getSystemPageSize() {
 }
 
 /**
+ * Return the given number of bytes in a human-readable format
+ *
+ * @return Human-readable size string
+ */
+std::string CommonUtil::formatBytes(size_t bytes) {
+  const char* units[] = {"B", "KB", "MB", "GB", "TB"};
+  const size_t unitCount = sizeof(units) / sizeof(units[0]);
+
+  auto size = static_cast<double>(bytes);
+  unsigned int unitIndex = 0;
+  while (size >= 1024 && unitIndex < unitCount - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+
+  char buffer[20];
+  snprintf(buffer, sizeof(buffer), "%.2f %s", size, units[unitIndex]);
+  return {buffer};
+}
+
+/**
  * Check if the given string is a valid mangled name
  *
  * @return

@@ -60,4 +60,15 @@ TEST(CommonUtilTest, TestSplit) {
   ASSERT_EQ(std::vector<std::string>({}), CommonUtil::split(""));
 }
 
+TEST(CommonUtilTest, TestFormatBytes) {
+  ASSERT_EQ("0.00 B", CommonUtil::formatBytes(0ull));
+  ASSERT_EQ("1.00 B", CommonUtil::formatBytes(1ull));
+  ASSERT_EQ("1.00 KB", CommonUtil::formatBytes(1024ull));
+  ASSERT_EQ("1.00 MB", CommonUtil::formatBytes(1024ull * 1024ull));
+  ASSERT_EQ("3.45 MB", CommonUtil::formatBytes(1024ull * 1024ull * 3.45));
+  ASSERT_EQ("1.00 GB", CommonUtil::formatBytes(1024ull * 1024ull * 1024ull));
+  ASSERT_EQ("9.92 GB", CommonUtil::formatBytes(1024ull * 1024ull * 1024ull * 9.92));
+  ASSERT_EQ("1.00 TB", CommonUtil::formatBytes(1024ull * 1024ull * 1024ull * 1024ull));
+}
+
 } // namespace spice::testing
