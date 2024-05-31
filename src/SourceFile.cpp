@@ -30,7 +30,7 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
                        const std::filesystem::path &filePath, bool stdFile)
     : name(std::move(name)), filePath(filePath), isStdFile(stdFile), parent(parent),
       builder(resourceManager.cliOptions.useLTO ? resourceManager.ltoContext : context), resourceManager(resourceManager),
-      cliOptions(resourceManager.cliOptions), tout(resourceManager.tout) {
+      cliOptions(resourceManager.cliOptions) {
   // Deduce fileName and fileDir
   fileName = std::filesystem::path(filePath).filename().string();
   fileDir = std::filesystem::path(filePath).parent_path().string();
@@ -296,7 +296,7 @@ void SourceFile::runTypeCheckerPost() { // NOLINT(misc-no-recursion)
 
   previousStage = TYPE_CHECKER_POST;
   timer.stop();
-  printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost, false, typeCheckerRuns);
+  printStatusMessage("Type Checker Post", IO_AST, IO_AST, compilerOutput.times.typeCheckerPost, typeCheckerRuns);
 
   // Save the JSON version in the compiler output
   if (cliOptions.dumpSettings.dumpSymbolTable || cliOptions.testMode)
@@ -333,7 +333,7 @@ void SourceFile::runIRGenerator() {
 
   previousStage = IR_GENERATOR;
   timer.stop();
-  printStatusMessage("IR Generator", IO_AST, IO_IR, compilerOutput.times.irGenerator, true);
+  printStatusMessage("IR Generator", IO_AST, IO_IR, compilerOutput.times.irGenerator);
 }
 
 void SourceFile::runDefaultIROptimizer() {
@@ -366,7 +366,7 @@ void SourceFile::runDefaultIROptimizer() {
 
   previousStage = IR_OPTIMIZER;
   timer.stop();
-  printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irOptimizer, true);
+  printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irOptimizer);
 }
 
 void SourceFile::runPreLinkIROptimizer() {
@@ -455,7 +455,7 @@ void SourceFile::runPostLinkIROptimizer() {
 
   previousStage = IR_OPTIMIZER;
   timer.stop();
-  printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irOptimizer, true);
+  printStatusMessage("IR Optimizer", IO_IR, IO_IR, compilerOutput.times.irOptimizer);
 }
 
 void SourceFile::runObjectEmitter() {
@@ -491,7 +491,7 @@ void SourceFile::runObjectEmitter() {
 
   previousStage = OBJECT_EMITTER;
   timer.stop();
-  printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, compilerOutput.times.objectEmitter, true);
+  printStatusMessage("Object Emitter", IO_IR, IO_OBJECT_FILE, compilerOutput.times.objectEmitter);
 }
 
 void SourceFile::concludeCompilation() {
@@ -516,11 +516,11 @@ void SourceFile::concludeCompilation() {
     const std::string warningMessage =
         CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.")
             .warningMessage;
-    tout.println("\n" + warningMessage);
+    std::cout << "\n" + warningMessage;
   }
 
   if (cliOptions.printDebugOutput)
-    tout.println("Finished compiling " + fileName);
+    std::cout << "Finished compiling " + fileName;
 
   previousStage = FINISHED;
 }
@@ -554,28 +554,22 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
   for (const auto &[importName, sourceFile] : dependencies)
     sourceFile->runBackEnd();
 
-  // Submit source file compilation to the task queue
-  resourceManager.threadPool.detach_task([&]() {
-    runIRGenerator();
+  runIRGenerator();
+  CHECK_ABORT_FLAG_V()
+  if (cliOptions.useLTO) {
+    runPreLinkIROptimizer();
     CHECK_ABORT_FLAG_V()
-    if (cliOptions.useLTO) {
-      runPreLinkIROptimizer();
-      CHECK_ABORT_FLAG_V()
-      runBitcodeLinker();
-      CHECK_ABORT_FLAG_V()
-      runPostLinkIROptimizer();
-      CHECK_ABORT_FLAG_V()
-    } else {
-      runDefaultIROptimizer();
-      CHECK_ABORT_FLAG_V()
-    }
-    runObjectEmitter();
+    runBitcodeLinker();
     CHECK_ABORT_FLAG_V()
-    concludeCompilation();
-  });
-
-  // Wait until all compile tasks for all depending source files are done
-  resourceManager.threadPool.wait();
+    runPostLinkIROptimizer();
+    CHECK_ABORT_FLAG_V()
+  } else {
+    runDefaultIROptimizer();
+    CHECK_ABORT_FLAG_V()
+  }
+  runObjectEmitter();
+  CHECK_ABORT_FLAG_V()
+  concludeCompilation();
 
   if (isMainFile) {
     resourceManager.totalTimer.stop();
@@ -762,7 +756,7 @@ void SourceFile::dumpOutput(const std::string &content, const std::string &capti
     FileUtil::writeToFile(dumpFilePath, content);
   } else {
     // Dump to console
-    tout.println("\n" + caption + ":\n" + content);
+    std::cout << "\n" + caption + ":\n" + content;
   }
 
   // If the abort after dump is requested, set the abort compilation flag
@@ -818,7 +812,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
 }
 
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,
-                                    uint64_t stageRuntime, bool fromThread /*=false*/, unsigned short stageRuns /*=0*/) const {
+                                    uint64_t stageRuntime, unsigned short stageRuns) const {
   if (cliOptions.printDebugOutput) {
     const char *const compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
     // Build output string
@@ -830,11 +824,7 @@ void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType 
       outputStr << "; " << std::to_string(stageRuns) << " run(s)";
     outputStr << ")\n";
     // Print
-    if (fromThread) {
-      tout.print(outputStr.str());
-    } else {
-      std::cout << outputStr.str();
-    }
+    std::cout << outputStr.str();
   }
 }
 

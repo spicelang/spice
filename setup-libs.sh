@@ -15,11 +15,6 @@ git clone --quiet --depth 1 --branch v1.14.0 https://github.com/google/googletes
 mkdir json
 curl -SsL "https://github.com/nlohmann/json/releases/download/v3.11.2/json.hpp" --output json/json.hpp
 
-# Download Thread Pool
-mkdir thread-pool
-curl -SsL "https://raw.githubusercontent.com/bshoshany/thread-pool/v4.1.0/include/BS_thread_pool.hpp" --output thread-pool/thread-pool.hpp
-curl -SsL "https://raw.githubusercontent.com/bshoshany/thread-pool/v4.1.0/include/BS_thread_pool_utils.hpp" --output thread-pool/thread-pool-utils.hpp
-
 # Download CLI11
 mkdir cli11
 curl -SsL "https://github.com/spicelang/CLI11/releases/download/v2.4.2-spice/CLI11.hpp" --output cli11/CLI11.hpp

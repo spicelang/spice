@@ -12,9 +12,6 @@
 
 #include <llvm/IR/LLVMContext.h>
 
-#include "../../lib/thread-pool/thread-pool-utils.hpp"
-#include "../../lib/thread-pool/thread-pool.hpp"
-
 namespace spice::compiler {
 
 // Forward declarations
@@ -57,8 +54,6 @@ public:
   CacheManager cacheManager;
   RuntimeModuleManager runtimeModuleManager;
   Timer totalTimer;
-  BS::thread_pool threadPool = BS::thread_pool(cliOptions.compileJobCount);
-  BS::synced_stream tout;
   ErrorManager errorManager;
   bool abortCompilation = false;
 
