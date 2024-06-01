@@ -2099,7 +2099,8 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
 std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
   // Check if all control paths in the lambda body return
-  if (!node->returnsOnAllControlPaths(nullptr))
+  bool returnsOnAllControlPaths = true;
+  if (!node->returnsOnAllControlPaths(&returnsOnAllControlPaths))
     SOFT_ERROR_ER(node, MISSING_RETURN_STMT, "Not all control paths of this lambda function have a return statement")
 
   // Change to function scope
@@ -2157,6 +2158,10 @@ std::any TypeChecker::visitLambdaFunc(LambdaFuncNode *node) {
 }
 
 std::any TypeChecker::visitLambdaProc(LambdaProcNode *node) {
+  // Mark unreachable statements
+  bool doSetPredecessorsUnreachable = true;
+  node->returnsOnAllControlPaths(&doSetPredecessorsUnreachable);
+
   // Change to function scope
   Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
   ScopeHandle scopeHandle(this, bodyScope, ScopeType::LAMBDA_BODY);

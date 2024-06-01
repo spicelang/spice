@@ -58,7 +58,7 @@ public type RedBlackTree<K, V> struct {
  */
 public p RedBlackTree.insert(const K& key, const V& value) {
     // Create the new node
-    heap Node<K, V>* newNode = sNew<Node<K, V>>(Node<K, V>{
+    heap Node<K, V>* newNode = sNew(Node<K, V>{
         key,
         value,
         NodeColor::RED,

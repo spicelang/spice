@@ -121,13 +121,25 @@ public p sDelete<T>(heap T*& ptr) {
 }
 
 /**
- * Creates a non-owned pointer to the given heap-allocated instance.
+ * Creates a owned pointer to the given non-owned, heap-allocated instance.
  *
- * @param ptr The pointer to the heap-allocated instance
+ * @param ptr The pointer to the non-owned, heap-allocated instance
+ * @return An owned pointer to the heap-allocated instance
+ */
+public f<heap T*> sOwned<T>(T* ptr) {
+    unsafe {
+        return (heap T*) ptr;
+    }
+}
+
+/**
+ * Creates a non-owned pointer to the given owned, heap-allocated instance.
+ *
+ * @param ptr The pointer to the owned, heap-allocated instance
  * @return A non-owned pointer to the heap-allocated instance
  */
 public f<T*> sNonOwned<T>(heap T* ptr) {
     unsafe {
-        return ptr;
+        return (T*) ptr;
     }
 }

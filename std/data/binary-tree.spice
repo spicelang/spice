@@ -31,7 +31,7 @@ public type BinaryTree<T> struct {
  */
 public p BinaryTree.insert<T>(const T& value) {
     // Create the new node
-    heap Node<T>* newNode = sNew<Node<T>>(Node<T>{value, nil<heap Node<T>*>, nil<heap Node<T>*>});
+    heap Node<T>* newNode = sNew(Node<T>{value, nil<heap Node<T>*>, nil<heap Node<T>*>});
 
     // Insert the new node
     if this.rootNode == nil<heap Node<T>*> {

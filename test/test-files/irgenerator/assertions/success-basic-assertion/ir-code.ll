@@ -4,7 +4,6 @@ source_filename = "source.spice"
 @anon.string.0 = private unnamed_addr constant [55 x i8] c"Assertion failed: Condition 'true' evaluated to false.\00", align 1
 @printf.str.0 = private unnamed_addr constant [26 x i8] c"First assertion was true\0A\00", align 1
 @anon.string.1 = private unnamed_addr constant [57 x i8] c"Assertion failed: Condition '1 != 1' evaluated to false.\00", align 1
-@printf.str.1 = private unnamed_addr constant [12 x i8] c"Unreachable\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
@@ -27,9 +26,8 @@ assert.then.L5:                                   ; preds = %assert.exit.L2
   unreachable
 
 assert.exit.L5:                                   ; preds = %assert.exit.L2
-  %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
-  %5 = load i32, ptr %result, align 4
-  ret i32 %5
+  %4 = load i32, ptr %result, align 4
+  ret i32 %4
 }
 
 ; Function Attrs: nofree nounwind

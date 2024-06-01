@@ -4,7 +4,6 @@ source_filename = "source.spice"
 @anon.string.0 = private unnamed_addr constant [6 x i8] c"Apple\00", align 1
 @anon.string.1 = private unnamed_addr constant [7 x i8] c"Banana\00", align 1
 @anon.string.2 = private unnamed_addr constant [7 x i8] c"Orange\00", align 1
-@anon.string.3 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
 @printf.str.0 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @printf.str.1 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 @printf.str.2 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
@@ -30,7 +29,8 @@ switch.case.L11:                                  ; preds = %1
   ret ptr @anon.string.2
 
 switch.exit.L8:                                   ; preds = %1
-  ret ptr @anon.string.3
+  %3 = load ptr, ptr %result, align 8
+  ret ptr %3
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
