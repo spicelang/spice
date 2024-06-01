@@ -8,6 +8,7 @@
 #include <irgenerator/NameMangling.h>
 #include <model/Function.h>
 #include <model/Struct.h>
+#include <util/CustomHashFunctions.h>
 #include <util/FileUtil.h>
 
 #include <llvm/BinaryFormat/Dwarf.h>
@@ -277,20 +278,20 @@ void DebugInfoGenerator::finalize() {
     diBuilder->finalize();
 }
 
-llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, const QualType &ty) const { // NOLINT(*-no-recursion)
-  // Pointer ty
+llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, const QualType &ty) { // NOLINT(*-no-recursion)
+  // Pointer type
   if (ty.isPtr()) {
     llvm::DIType *pointeeTy = getDITypeForQualType(node, ty.getContained());
     return diBuilder->createPointerType(pointeeTy, pointerWidth);
   }
 
-  // Reference ty
+  // Reference type
   if (ty.isRef()) {
     llvm::DIType *referencedType = getDITypeForQualType(node, ty.getContained());
     return diBuilder->createReferenceType(llvm::dwarf::DW_TAG_reference_type, referencedType, pointerWidth);
   }
 
-  // Array ty
+  // Array type
   if (ty.isArray()) {
     llvm::DIType *itemTy = getDITypeForQualType(node, ty.getContained());
     const size_t size = ty.getArraySize();
@@ -326,6 +327,12 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     baseDiType = boolTy;
     break;
   case TY_STRUCT: {
+    // Do cache lookup
+    const size_t hashKey = std::hash<QualType>{}(ty);
+    if (structTypeCache.contains(hashKey))
+      return structTypeCache.at(hashKey);
+
+    // Cache miss, generate struct type
     Struct *spiceStruct = ty.getStruct(node);
     assert(spiceStruct != nullptr);
 
@@ -343,6 +350,9 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
         diFile, spiceStruct->name, diFile, lineNo, structLayout->getSizeInBits(), alignInBits,
         llvm::DINode::FlagTypePassByReference | llvm::DINode::FlagNonTrivial, nullptr, {}, 0, nullptr, mangledName);
     baseDiType = structDiType;
+
+    // Insert into cache
+    structTypeCache.insert({hashKey, structDiType});
 
     // Collect DI types for fields
     std::vector<llvm::Metadata *> fieldTypes;
@@ -369,6 +379,12 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     break;
   }
   case TY_INTERFACE: {
+    // Do cache lookup
+    const size_t hashKey = std::hash<QualType>{}(ty);
+    if (structTypeCache.contains(hashKey))
+      return structTypeCache.at(hashKey);
+
+    // Cache miss, generate interface type
     Interface *spiceInterface = ty.getInterface(node);
     assert(spiceInterface != nullptr);
 
@@ -388,8 +404,11 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
 
     // Set vtable holder to itself for interfaces
     interfaceDiType->replaceVTableHolder(interfaceDiType);
-
     baseDiType = interfaceDiType;
+
+    // Insert into cache
+    structTypeCache.insert({hashKey, interfaceDiType});
+
     break;
   }
   case TY_FUNCTION: // fall-through

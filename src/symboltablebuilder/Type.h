@@ -10,7 +10,10 @@
 #include <symboltablebuilder/TypeChain.h>
 #include <util/GlobalDefinitions.h>
 
-#include <llvm/IR/Type.h>
+// LLVM forward declarations
+namespace llvm {
+class Type;
+} // namespace llvm
 
 namespace spice::compiler {
 

@@ -1,2 +1,16 @@
 // Common type aliases
-type Size alias long;
+public type Size alias unsigned long;
+public type PtrDiff alias unsigned long;
+
+// Integer type aliases
+public type I8 alias unsigned signed byte;
+public type U8 alias unsigned unsigned byte;
+public type I16 alias unsigned signed short;
+public type U16 alias unsigned unsigned short;
+public type I32 alias unsigned signed int;
+public type U32 alias unsigned unsigned int;
+public type I64 alias unsigned signed long;
+public type U64 alias unsigned unsigned long;
+
+// Floating point type aliases
+public type F64 alias double;

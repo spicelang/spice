@@ -45,6 +45,7 @@ private:
   llvm::DICompileUnit *compileUnit = nullptr;
   llvm::DIFile *diFile = nullptr;
   std::stack<llvm::DIScope *> lexicalBlocks;
+  std::unordered_map<size_t, llvm::DICompositeType *> structTypeCache;
   unsigned int pointerWidth = 0;
   // Debug types
   llvm::DIType *doubleTy = nullptr;
@@ -62,7 +63,7 @@ private:
   llvm::DICompositeType *fatPtrTy = nullptr;
 
   // Private methods
-  [[nodiscard]] llvm::DIType *getDITypeForQualType(const ASTNode *node, const QualType &ty) const;
+  [[nodiscard]] llvm::DIType *getDITypeForQualType(const ASTNode *node, const QualType &ty);
 };
 
 } // namespace spice::compiler

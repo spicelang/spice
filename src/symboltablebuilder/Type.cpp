@@ -2,19 +2,19 @@
 
 #include "Type.h"
 
+#include <utility>
+
 #include <SourceFile.h>
 #include <ast/Attributes.h>
 #include <exception/CompilerError.h>
 #include <exception/SemanticError.h>
 #include <global/TypeRegistry.h>
 #include <irgenerator/NameMangling.h>
-#include <irgenerator/StdFunctionManager.h>
-#include <model/GenericType.h>
 #include <model/Struct.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 
-#include <utility>
+#include <llvm/IR/Type.h>
 
 namespace spice::compiler {
 
