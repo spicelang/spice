@@ -1,0 +1,7 @@
+[Error|Semantic] ./source.spice:8:5:
+Function ambiguity: The function/procedure 'foo' is ambiguous. All of the following match the requested criteria:
+  foo(byte*&)
+  foo<byte>(byte*&)
+
+8  foo(ptr);
+   ^^^^^^^^

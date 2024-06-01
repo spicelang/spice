@@ -302,8 +302,13 @@ Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &r
     return nullptr;
 
   // Check if more than one function matches the requirements
-  if (matches.size() > 1)
-    throw SemanticError(callNode, FUNCTION_AMBIGUITY, "Multiple functions match the requested signature");
+  if (matches.size() > 1) {
+    std::stringstream errorMessage;
+    errorMessage << "The function/procedure '" << reqName << "' is ambiguous. All of the following match the requested criteria:";
+    for (const Function *match : matches)
+      errorMessage << "\n  " << match->getSignature();
+    throw SemanticError(callNode, FUNCTION_AMBIGUITY, errorMessage.str());
+  }
 
   // Insert into cache
   lookupCache[cacheKey] = matches.front();
