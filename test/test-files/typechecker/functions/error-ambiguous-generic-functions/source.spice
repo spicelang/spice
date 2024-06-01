@@ -1,0 +1,9 @@
+type T dyn;
+
+p foo(byte*& ptr) {}
+p foo<T>(T*& ptr) {}
+
+f<int> main() {
+    byte* ptr = nil<byte*>;
+    foo(ptr);
+}

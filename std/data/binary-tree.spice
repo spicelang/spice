@@ -1,7 +1,3 @@
-// Link external functions
-ext f<heap byte*> malloc(long);
-ext p free(heap byte*);
-
 // Add generic type definitions
 type T dyn;
 
@@ -9,9 +5,9 @@ type T dyn;
  * Node of a BinaryTree
  */
 public type Node<T> struct {
+    T value
     heap Node<T>* childLeft = nil<heap Node<T>*>
     heap Node<T>* childRight = nil<heap Node<T>*>
-    T value
 }
 
 /**
@@ -28,7 +24,148 @@ public type BinaryTree<T> struct {
     bool isBalanced = false
 }
 
-public p BinaryTree.insert<T>(T newValue, heap Node<T>* baseNode = nil<heap Node<T>*>) {
-    // Search position where to insert
-    // ToDo
+/**
+ * Insert a new value into the binary tree
+ *
+ * @param value The value to insert
+ */
+public p BinaryTree.insert<T>(const T& value) {
+    // Create the new node
+    heap Node<T>* newNode = sNew<Node<T>>(Node<T>{value, nil<heap Node<T>*>, nil<heap Node<T>*>});
+
+    // Insert the new node
+    if this.rootNode == nil<heap Node<T>*> {
+        this.rootNode = newNode;
+    } else {
+        this.insertNode(this.rootNode, newNode);
+    }
+}
+
+/**
+ * Search for a value in the binary tree
+ *
+ * @param value The value to search for
+ * @return True if the value was found, false otherwise
+ */
+public f<bool> BinaryTree.contains<T>(const T& value) {
+    return this.containsNode(this.rootNode, value);
+}
+
+/**
+ * Delete a value from the binary tree
+ *
+ * @param value The value to delete
+ */
+public p BinaryTree.delete<T>(const T& value) {
+    this.rootNode = this.deleteNode(this.rootNode, value);
+}
+
+/**
+ * Recursion helper to insert a new node into the binary tree
+ *
+ * @param currentNode The current node to check
+ * @param newNode The new node to insert
+ */
+p BinaryTree.insertNode<T>(heap Node<T>* currentNode, heap Node<T>* newNode) {
+    if newNode.value < currentNode.value {
+        if currentNode.childLeft == nil<heap Node<T>*> {
+            currentNode.childLeft = newNode;
+        } else {
+            this.insertNode(currentNode.childLeft, newNode);
+        }
+    } else {
+        if currentNode.childRight == nil<heap Node<T>*> {
+            currentNode.childRight = newNode;
+        } else {
+            this.insertNode(currentNode.childRight, newNode);
+        }
+    }
+}
+
+/**
+ * Recursion helper to find the smallest node in the binary tree
+ *
+ * @param currentNode The current node to check
+ * @return The smallest node
+ */
+f<bool> BinaryTree.containsNode<T>(heap Node<T>* currentNode, const T& value) {
+    // We reached the end of the tree
+    if currentNode == nil<heap Node<T>*> {
+        return false;
+    }
+
+    // We found the value
+    if currentNode.value == value {
+        return true;
+    }
+
+    // Search in the left or right child
+    if value < currentNode.value {
+        return this.containsNode(currentNode.childLeft, value);
+    } else {
+        return this.containsNode(currentNode.childRight, value);
+    }
+}
+
+/**
+ * Recursion helper to find the smallest node in the binary tree
+ *
+ * @param currentNode The current node to check
+ * @return The smallest node
+ */
+f<heap Node<T>*> BinaryTree.deleteNode<T>(heap Node<T>* currentNode, const T& value) {
+    // We reached the end of the tree
+    if currentNode == nil<heap Node<T>*> {
+        return currentNode;
+    }
+
+    // Check the value
+    if value < currentNode.value {
+        currentNode.childLeft = this.deleteNode(currentNode.childLeft, value);
+    } else if value > currentNode.value {
+        currentNode.childRight = this.deleteNode(currentNode.childRight, value);
+    } else {
+        // Node with only one child or no child
+        if currentNode.childLeft == nil<heap Node<T>*> {
+            heap Node<T>* tempNode = currentNode.childRight;
+            // Use dealloc, because we don't want to call the destructor.
+            // The destructor would delete children and parent.
+            unsafe {
+                sDealloc((byte*) currentNode);
+            }
+            return tempNode;
+        } else if currentNode.childRight == nil<heap Node<T>*> {
+            heap Node<T>* tempNode = currentNode.childLeft;
+            // Use dealloc, because we don't want to call the destructor.
+            // The destructor would delete children and parent.
+            unsafe {
+                sDealloc((byte*) currentNode);
+            }
+            return tempNode;
+        }
+
+        // Node with two children: Get the smallest node in the right subtree
+        heap Node<T>* tempNode = this.findSmallestNode(currentNode.childRight);
+
+        // Copy the smallest node's value to this node
+        currentNode.value = tempNode.value;
+
+        // Delete the smallest node
+        currentNode.childRight = this.deleteNode(currentNode.childRight, tempNode.value);
+    }
+    return currentNode;
+}
+
+/**
+ * Recursion helper to find the smallest node in the binary tree
+ *
+ * @param currentNode The current node to check
+ * @return The smallest node
+ */
+f<heap Node<T>*> BinaryTree.findSmallestNode<T>(heap Node<T>* currentNode) {
+    heap Node<T>* smallestNode = currentNode;
+    while smallestNode.childLeft != nil<heap Node<T>*> {
+        smallestNode = smallestNode.childLeft;
+    }
+    return smallestNode;
 }

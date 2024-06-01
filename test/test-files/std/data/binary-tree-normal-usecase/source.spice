@@ -53,19 +53,3 @@ f<int> main() {
 
     printf("All assertions passed!\n");
 }
-
-/*import "std/os/env";
-import "std/io/filepath";
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/lexer/lexer";
-import "bootstrap/parser/parser";
-
-f<int> main() {
-    String filePathString = getEnv("SPICE_STD_DIR") + "/../test/test-files/bootstrap-compiler/standalone-parser-test/test-file.spice";
-    FilePath filePath = FilePath(filePathString);
-    Lexer lexer = Lexer(filePath);
-    Parser parser = Parser(lexer);
-    ASTEntryNode* ast = parser.parse();
-    assert ast != nil<ASTEntryNode*>;
-    printf("All assertions passed!\n");
-}*/
