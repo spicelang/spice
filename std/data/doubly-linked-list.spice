@@ -10,10 +10,6 @@ type Node<T> struct {
     heap Node<T>* next = nil<heap Node<T>*>
 }
 
-p Node.ctor(const T& value) {
-    this.value = value;
-}
-
 /**
  * A doubly linked list is a common, dynamically resizable data structure to store uniform data in order.
  * It is characterized by the pointer for every item, pointing to the next one and the pointer, pointing

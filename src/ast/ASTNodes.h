@@ -1246,9 +1246,6 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFallthroughStmt(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFallthroughStmt(this); }
-
-  // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 };
 
 // ======================================================== AssertStmtNode =======================================================
@@ -1264,6 +1261,9 @@ public:
 
   // Public get methods
   [[nodiscard]] AssignExprNode *assignExpr() const { return getChild<AssignExprNode>(); }
+
+  // Other methods
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 
   // Public members
   std::string expressionString;
@@ -2045,7 +2045,7 @@ public:
   [[nodiscard]] LambdaAttrNode *lambdaAttr() const { return getChild<LambdaAttrNode>(); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
 };
 
 // ====================================================== LambdaExprNode =========================================================

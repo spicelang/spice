@@ -12,7 +12,8 @@ namespace spice::compiler {
 
 std::any TypeChecker::visitMainFctDefPrepare(MainFctDefNode *node) {
   // Mark unreachable statements
-  node->returnsOnAllControlPaths(nullptr);
+  bool returnsOnAllControlPaths = true;
+  node->returnsOnAllControlPaths(&returnsOnAllControlPaths);
 
   // Retrieve return type
   QualType returnType(TY_INT);
@@ -55,7 +56,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     SOFT_ERROR_BOOL(node, DTOR_MUST_BE_PROCEDURE, "Destructors are not allowed to be of type function")
 
   // Check if all control paths in the function return
-  if (!node->returnsOnAllControlPaths(nullptr))
+  bool doSetPredecessorsUnreachable = true;
+  if (!node->returnsOnAllControlPaths(&doSetPredecessorsUnreachable))
     SOFT_ERROR_BOOL(node, MISSING_RETURN_STMT, "Not all control paths of this function have a return statement")
 
   // Change to function scope
@@ -192,7 +194,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
 
 std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Mark unreachable statements
-  node->returnsOnAllControlPaths(nullptr);
+  bool doSetPredecessorsUnreachable = true;
+  node->returnsOnAllControlPaths(&doSetPredecessorsUnreachable);
 
   // Check if dtor and has params
   if (node->hasParams && node->name->name == DTOR_FUNCTION_NAME)

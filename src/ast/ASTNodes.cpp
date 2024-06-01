@@ -68,48 +68,50 @@ bool FctDefBaseNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
 }
 
 bool ForLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const AssignExprNode *cond = condAssign();
-  return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
+  // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
+  // we can assume that the loop itself will always return
+  const bool loopConditionAlwaysTrue = condAssign()->hasCompileTimeValue() && condAssign()->getCompileTimeValue().boolValue;
+  return loopConditionAlwaysTrue && body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool WhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const AssignExprNode *cond = condition();
-  return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
+  // If we have the guarantee that the loop condition is always true and the loop body returns on all control paths,
+  // we can assume that the loop itself will always return
+  const bool loopConditionAlwaysTrue = condition()->hasCompileTimeValue() && condition()->getCompileTimeValue().boolValue;
+  return loopConditionAlwaysTrue && body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool DoWhileLoopNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const AssignExprNode *cond = condition();
-  return cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue;
+  // Do-while loops will always be executed at least once. So if the body returns on all control paths, the loop will as well
+  return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool IfStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
-  // An if statement returns on all control paths, if then and else block return on all control paths
+  // If the condition always evaluates to 'true' the then block must return
   const AssignExprNode *cond = condition();
-  if (!cond->hasCompileTimeValue())
-    return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable) && elseStmt() != nullptr &&
-           elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
-
-  // If the condition always evaluates to 'true' only the then block must return and vice versa
-  const CompileTimeValue &compileTimeValue = cond->getCompileTimeValue();
-  if (compileTimeValue.boolValue)
+  if (cond->hasCompileTimeValue() && cond->getCompileTimeValue().boolValue)
     return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
-  return elseStmt() != nullptr && elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+
+  // If the condition always evaluates to 'false' the else block must return
+  if (cond->hasCompileTimeValue() && !cond->getCompileTimeValue().boolValue)
+    return elseStmt() != nullptr && elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+
+  // If the condition does not always evaluate to 'true' or 'false' we need to check both branches
+  return thenBody()->returnsOnAllControlPaths(doSetPredecessorsUnreachable) && elseStmt() != nullptr &&
+         elseStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool ElseStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { // NOLINT(misc-no-recursion)
-  return isElseIf ? ifStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable)
-                  : body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  if (isElseIf)
+    return ifStmt()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
+  else
+    return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
 bool SwitchStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  const std::vector<CaseBranchNode *> caseNodes = caseBranches();
-  const DefaultBranchNode *defaultBranchNode = defaultBranch();
-
-  const bool allCaseBranchesReturn = std::ranges::all_of(
-      caseNodes, [=](CaseBranchNode *node) { return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable); });
-  const bool defaultBranchReturns =
-      defaultBranchNode && defaultBranchNode->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
-
+  const auto pred = [=](CaseBranchNode *node) { return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable); };
+  const bool allCaseBranchesReturn = std::ranges::all_of(caseBranches(), pred);
+  const bool defaultBranchReturns = !defaultBranch() || defaultBranch()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
   return allCaseBranchesReturn && defaultBranchReturns;
 }
 
@@ -121,24 +123,23 @@ bool DefaultBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreacha
   return body()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
 }
 
-bool StmtLstNode::returnsOnAllControlPaths(bool *) const {
+bool StmtLstNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
   // An empty statement list does not return at all
   if (children.empty())
     return false;
   // A statement list returns on all control paths, if the one direct child statement returns on all control paths
-  bool returns = false;
-  bool doSetPredecessorsUnreachable = true;
+  bool returnsOnAllControlPaths = false;
   for (ASTNode *child : children) {
-    if (!child)
-      continue;
-    if (returns) {
-      // Prevent marking as unreachable if doSetPredecessorsUnreachable is set to false
-      child->unreachable = doSetPredecessorsUnreachable;
-    } else if (child->returnsOnAllControlPaths(&doSetPredecessorsUnreachable)) {
-      returns = true;
-    }
+    assert(child != nullptr);
+
+    // Prevent marking instructions as unreachable if doSetPredecessorsUnreachable is set to false
+    if (returnsOnAllControlPaths && *doSetPredecessorsUnreachable)
+      child->unreachable = true;
+
+    if (child->returnsOnAllControlPaths(doSetPredecessorsUnreachable))
+      returnsOnAllControlPaths = true;
   }
-  return returns;
+  return returnsOnAllControlPaths;
 }
 
 std::vector<const CompileTimeValue *> AttrLstNode::getAttrValuesByName(const std::string &key) const {
@@ -177,22 +178,26 @@ bool AttrLstNode::hasAttr(const std::string &key) const {
 
 const CompileTimeValue *AttrNode::getValue() const { return value() ? &value()->compileTimeValue : nullptr; }
 
-bool FallthroughStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const { return true; }
+bool AssertStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
+  // If the expression, passed to the assert statement is always evaluated to false, the assert statement will never succeed
+  return assignExpr()->hasCompileTimeValue() && !assignExpr()->getCompileTimeValue().boolValue;
+}
 
 bool AssignExprNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const {
-  if (op == OP_NONE) {
+  // If it's a ternary, do the default thing
+  if (op == OP_NONE)
     return children.front()->returnsOnAllControlPaths(doSetPredecessorsUnreachable);
-  } else {
-    bool returns = op == OP_ASSIGN && lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr() &&
-                   lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME;
 
+  // If it's a modification on the result variable, we technically return from the function, but at the end of the function.
+  bool hasAtomicExpr = lhs()->postfixUnaryExpr() && lhs()->postfixUnaryExpr()->atomicExpr();
+  if (hasAtomicExpr && lhs()->postfixUnaryExpr()->atomicExpr()->fqIdentifier == RETURN_VARIABLE_NAME) {
     // If we assign the result variable, we technically return from the function, but at the end of the function.
     // Therefore, the following code is not unreachable, but will be executed in any case.
-    if (returns)
-      *doSetPredecessorsUnreachable = false;
-
-    return returns;
+    *doSetPredecessorsUnreachable = false;
+    return true;
   }
+
+  return false;
 }
 
 bool TernaryExprNode::hasCompileTimeValue() const {

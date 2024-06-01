@@ -27,4 +27,4 @@ pair = {first = 2, second = }
 $1 = {contents = , capacity = 5, size = 5}
 $2 = 5
 All assertions passed!
-[Inferior 1 (process 75215) exited normally]
+[Inferior 1 (process 26043) exited normally]
