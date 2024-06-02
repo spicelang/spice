@@ -1,1 +1,1 @@
-[Warning] ./source.spice:1:1: Unused function: The function 'string unusedFunction()' is unused
+[Warning] ./source.spice:1:1: Unused function: 'f<string> unusedFunction()' is unused

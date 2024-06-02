@@ -2,13 +2,13 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:9:1:
-Interface method not implemented: The struct 'AstNode' does not implement method 'bool Visitable.accept(Visitor*)'
+Interface method not implemented: The struct 'AstNode' does not implement method 'f<bool> Visitable.accept(Visitor*)'
 
 9  type AstNode struct : Visitable {}
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:11:1:
-Interface method not implemented: The struct 'AstEntryNode' does not implement method 'bool Visitable.accept(Visitor*)'
+Interface method not implemented: The struct 'AstEntryNode' does not implement method 'f<bool> Visitable.accept(Visitor*)'
 
 11  type AstEntryNode struct : Visitable {
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

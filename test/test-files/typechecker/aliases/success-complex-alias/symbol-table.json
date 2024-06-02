@@ -7,23 +7,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "printLength<long>()",
-          "symbols": [
-            {
-              "codeLoc": "L12C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "TestStruct<long>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "ctor<long>(const unsigned long)",
+          "name": "TestStruct<long>.ctor<long>(const unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",
@@ -48,7 +32,23 @@
         {
           "captures": [],
           "children": [],
-          "name": "printLength<T>()",
+          "name": "TestStruct<long>.printLength<long>()",
+          "symbols": [
+            {
+              "codeLoc": "L12C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "TestStruct<long>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "TestStruct<T>.printLength<T>()",
           "symbols": [
             {
               "codeLoc": "L12C1",
@@ -64,7 +64,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "ctor<T>(const unsigned long)",
+          "name": "TestStruct<T>.ctor<T>(const unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",
@@ -90,6 +90,24 @@
       "name": "struct:TestStruct<long>",
       "symbols": [
         {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "printLength:L12C1",
+          "orderIndex": 3,
+          "state": "declared",
+          "type": "p()"
+        },
+        {
+          "codeLoc": "L12C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "printLength:L12C1",
+          "orderIndex": 3,
+          "state": "declared",
+          "type": "p()"
+        },
+        {
           "codeLoc": "L8C1",
           "isGlobal": false,
           "isVolatile": false,
@@ -97,24 +115,6 @@
           "orderIndex": 2,
           "state": "declared",
           "type": "p(const unsigned long)"
-        },
-        {
-          "codeLoc": "L12C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "printLength:L12C1",
-          "orderIndex": 3,
-          "state": "declared",
-          "type": "p()"
-        },
-        {
-          "codeLoc": "L12C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "printLength:L12C1",
-          "orderIndex": 3,
-          "state": "declared",
-          "type": "p()"
         },
         {
           "codeLoc": "L8C1",
@@ -185,7 +185,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "printLength<T>()",
+          "name": "TestStruct<T>.printLength<T>()",
           "symbols": [
             {
               "codeLoc": "L12C1",
@@ -201,7 +201,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "ctor<T>(const unsigned long)",
+          "name": "TestStruct<T>.ctor<T>(const unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",

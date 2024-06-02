@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:4:15:
-Insufficient symbol visibility: Function/procedure 'int testFunc()' has insufficient visibility
+Insufficient symbol visibility: Function 'f<int> testFunc()' has insufficient visibility
 
 4  int res = src1::testFunc();
              ^^^^^^^^^^^^^^^^

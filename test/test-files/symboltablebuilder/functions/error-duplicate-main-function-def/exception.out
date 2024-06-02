@@ -1,5 +1,5 @@
 [Error|Semantic] ./source.spice:5:1:
-Multiple declarations of a function/procedure: Main function is declared twice
+Multiple declarations of a function: Main function is declared twice
 
 5  f<int> main() {
    ^^^^^^^^^^^^^^^
