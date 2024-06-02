@@ -1730,7 +1730,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
       errArgTypes.reserve(data.argResults.size());
       for (const ExprResult &argResult : data.argResults)
         errArgTypes.push_back({argResult.type, false});
-      const std::string signature = Function::getSignature(functionName, data.thisType, QualType(TY_DYN), errArgTypes, {});
+      const std::string signature = Function::getSignature(functionName, data.thisType, QualType(TY_DYN), errArgTypes, {}, false);
       // Throw error
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_FUNCTION, "Function/procedure '" + signature + "' could not be found")
     }
@@ -1743,9 +1743,14 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
     // Check if the called function has sufficient visibility
     data.isImported = data.calleeParentScope->isImportedBy(rootScope);
-    if (data.isImported && !functionEntry->getQualType().isPublic())
-      SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY,
-                    "Function/procedure '" + data.callee->getSignature() + "' has insufficient visibility")
+    if (data.isImported && !functionEntry->getQualType().isPublic()) {
+      const QualType functionEntryType = functionEntry->getQualType();
+      const std::string signature = data.callee->getSignature();
+      if (functionEntryType.is(TY_FUNCTION))
+        SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Function '" + signature + "' has insufficient visibility")
+      else
+        SOFT_ERROR_ER(node, INSUFFICIENT_VISIBILITY, "Procedure '" + signature + "' has insufficient visibility")
+    }
   }
 
   // Retrieve return type
@@ -2440,30 +2445,33 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       entryType = entryType.getWithTemplateTypes(templateTypes);
     }
 
-    if (entryType.is(TY_STRUCT)) {
-      // Check if struct is defined before the current code location, if defined in the same source file
-      const CodeLoc &declCodeLoc = entry->declNode->codeLoc;
-      const CodeLoc &codeLoc = node->codeLoc;
-      if (declCodeLoc.sourceFile->filePath == codeLoc.sourceFile->filePath && declCodeLoc > codeLoc)
+    // Check if struct is defined before the current code location, if defined in the same source file
+    const CodeLoc &declCodeLoc = entry->declNode->codeLoc;
+    const CodeLoc &codeLoc = node->codeLoc;
+    if (declCodeLoc.sourceFile->filePath == codeLoc.sourceFile->filePath && declCodeLoc > codeLoc) {
+      if (entryType.is(TY_STRUCT)) {
         SOFT_ERROR_QT(node, REFERENCED_UNDEFINED_STRUCT, "Structs must be defined before usage")
+      } else {
+        assert(entryType.is(TY_INTERFACE));
+        SOFT_ERROR_QT(node, REFERENCED_UNDEFINED_INTERFACE, "Interfaces must be defined before usage")
+      }
+    }
 
-      if (allTemplateTypesConcrete) { // Only do the next step, if we have concrete template types
-        // Set the struct instance to used, if found
-        // Here, it is allowed to accept, that the struct cannot be found, because there are self-referencing structs
+    if (allTemplateTypesConcrete) { // Only do the next step, if we have concrete template types
+      // Set the struct/interface instance to used, if found
+      // Here, it is allowed to accept, that the struct/interface cannot be found, because there are self-referencing ones
+      if (entryType.is(TY_STRUCT)) {
         const std::string structName = node->typeNameFragments.back();
         Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
         if (spiceStruct)
           entryType = entryType.getWithBodyScope(spiceStruct->scope);
+      } else {
+        assert(entryType.is(TY_INTERFACE));
+        const std::string interfaceName = node->typeNameFragments.back();
+        const Interface *spiceInterface = InterfaceManager::matchInterface(localAccessScope, interfaceName, templateTypes, node);
+        if (spiceInterface)
+          entryType = entryType.getWithBodyScope(spiceInterface->scope);
       }
-    }
-
-    if (entryType.is(TY_INTERFACE)) {
-      // Set the interface instance to used, if found
-      const std::string interfaceName = node->typeNameFragments.back();
-      Interface *spiceInterface = InterfaceManager::matchInterface(localAccessScope, interfaceName, templateTypes, node);
-      if (!spiceInterface)
-        SOFT_ERROR_QT(node, UNKNOWN_DATATYPE, "Unknown interface " + Interface::getSignature(interfaceName, templateTypes))
-      entryType = entryType.getWithBodyScope(spiceInterface->scope);
     }
 
     return node->setEvaluatedSymbolType(entryType, manIdx);

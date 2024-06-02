@@ -61,10 +61,6 @@ public p ASTNode.addChild(ASTNode *child) {
     return nil<T*>;
 }*/
 
-public p ASTNode.reserveChildren(unsigned long numberOfChildren) {
-    this.children.reserve(numberOfChildren);
-}
-
 // ========================================================== EntryNode ==========================================================
 
 public type ASTEntryNode struct/*: IVisitable*/ {
