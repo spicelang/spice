@@ -1,5 +1,5 @@
 [Error|Semantic] ./source.spice:5:1:
-Multiple declarations of a function/procedure: The function/procedure 'string exampleFunc()' is declared twice
+Multiple declarations of a function: 'f<string> exampleFunc()' is declared twice
 
 5  f<string> exampleFunc() {
    ^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -53,19 +53,25 @@ std::string Function::getSignature(bool withThisType /*=true*/, bool ignorePubli
  * @param returnType Return symbol type
  * @param paramList Param symbol types
  * @param concreteTemplateTypes Concrete template symbol types
+ * @param withReturnType Include return type in signature
  * @param withThisType Include 'this' type in signature
  * @param ignorePublic Not include public modifiers in signature
  * @return Function signature
  */
 std::string Function::getSignature(const std::string &name, const QualType &thisType, const QualType &returnType,
                                    const ParamList &paramList, const QualTypeList &concreteTemplateTypes,
-                                   bool withThisType /*=true*/, bool ignorePublic /*=false*/) {
+                                   bool withReturnType /*=true*/, bool withThisType /*=true*/, bool ignorePublic /*=false*/) {
   std::stringstream signature;
 
   // Build return type string
-  if (!returnType.is(TY_DYN)) {
-    returnType.getName(signature, false, ignorePublic);
-    signature << " ";
+  if (withReturnType) {
+    if (returnType.is(TY_DYN)) {
+      signature << "p ";
+    } else {
+      signature << "f<";
+      returnType.getName(signature, false, ignorePublic);
+      signature << "> ";
+    }
   }
 
   // Build this type string

@@ -148,9 +148,6 @@ public:
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
-  [[nodiscard]] virtual bool isTopLevelDefNode() const { return false; }
-  [[nodiscard]] virtual bool isStmtNode() const { return false; }
-  [[nodiscard]] virtual bool isExprNode() const { return false; }
   [[nodiscard]] virtual bool isParamNode() const { return false; }
   [[nodiscard]] virtual bool isStmtLstNode() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
@@ -192,9 +189,6 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override = 0;
   std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
-
-  // Other methods
-  [[nodiscard]] bool isTopLevelDefNode() const override { return true; }
 };
 
 // =========================================================== StmtNode ==========================================================
@@ -207,9 +201,6 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override = 0;
   std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
-
-  // Other methods
-  [[nodiscard]] bool isStmtNode() const override { return true; }
 };
 
 // ========================================================== ExprNode ===========================================================
@@ -222,9 +213,6 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override = 0;
   std::any accept(ParallelizableASTVisitor *visitor) const override = 0;
-
-  // Other methods
-  [[nodiscard]] bool isExprNode() const override { return true; }
 };
 
 // ======================================================== MainFctDefNode =======================================================

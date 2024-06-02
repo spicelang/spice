@@ -34,7 +34,7 @@ f<T*> Parser.createNode<T>() {
     }
 
     // Create the new node
-    //T* node = this.resourceManager.astNodeAlloc.allocate<T>(this.lexer.getCodeLoc());
+    //T* node = this.resourceManager.astNodeAlloc.allocate(T(this.lexer.getCodeLoc()));
     T* node = this.astNodeAlloc.allocate(T(this.lexer.getCodeLoc()));
     //this.resourceManager.astNodes.pushBack(node);
 

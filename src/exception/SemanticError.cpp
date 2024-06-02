@@ -38,6 +38,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Referenced undefined variable";
   case REFERENCED_UNDEFINED_STRUCT:
     return "Referenced undefined struct";
+  case REFERENCED_UNDEFINED_INTERFACE:
+    return "Referenced undefined interface";
   case REFERENCED_UNDEFINED_FIELD:
     return "Referenced undefined struct field";
   case USED_BEFORE_DECLARED:
@@ -55,7 +57,9 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
   case GLOBAL_DECLARED_TWICE:
     return "Multiple declarations of the same global variable";
   case FUNCTION_DECLARED_TWICE:
-    return "Multiple declarations of a function/procedure";
+    return "Multiple declarations of a function";
+  case PROCEDURE_DECLARED_TWICE:
+    return "Multiple declarations of a procedure";
   case GENERIC_TYPE_DECLARED_TWICE:
     return "Multiple declarations of a generic type with the same name";
   case STRUCT_WITH_ILLEGAL_NAME:

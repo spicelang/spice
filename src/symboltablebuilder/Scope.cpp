@@ -152,20 +152,37 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
     if (entry.used || name.starts_with(UNUSED_VARIABLE_NAME))
       continue;
 
-    switch (entry.getQualType().getSuperType()) {
-    case TY_FUNCTION: {
-      // Skip generic function entries
-      if (!entry.getQualType().getTemplateTypes().empty())
+    const QualType entryType = entry.getQualType();
+
+    // Determine warning type and message by the scope type and the symbol type
+    switch (type) {
+    case ScopeType::GLOBAL: {
+      // Skip generic function/procedure/struct/interface entries
+      if (entryType.isOneOf({TY_FUNCTION, TY_PROCEDURE, TY_STRUCT, TY_INTERFACE}) && !entryType.getTemplateTypes().empty())
         continue;
 
-      if (type == ScopeType::GLOBAL) {
+      if (entryType.is(TY_FUNCTION)) {
         const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
         warningType = UNUSED_FUNCTION;
-        warningMessage = "The function '" + fctManifestations->front()->getSignature() + "' is unused";
-      } else if (type == ScopeType::STRUCT) {
+        warningMessage = "'" + fctManifestations->front()->getSignature() + "' is unused";
+      } else if (entryType.is(TY_PROCEDURE)) {
         const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
-        warningType = UNUSED_METHOD;
-        warningMessage = "The method '" + fctManifestations->front()->getSignature() + "' is unused";
+        warningType = UNUSED_PROCEDURE;
+        warningMessage = "'" + fctManifestations->front()->getSignature() + "' is unused";
+      } else if (entryType.is(TY_STRUCT)) {
+        warningType = UNUSED_STRUCT;
+        warningMessage = "The struct '" + entry.name + "' is unused";
+      } else if (entryType.is(TY_INTERFACE)) {
+        warningType = UNUSED_INTERFACE;
+        warningMessage = "The interface '" + entry.name + "' is unused";
+      } else if (entryType.is(TY_ENUM)) {
+        continue; // Do not report unused enums. Only unused enum items are reported
+      } else if (entryType.is(TY_IMPORT)) {
+        warningType = UNUSED_IMPORT;
+        warningMessage = "The import '" + entry.name + "' is unused";
+      } else if (entryType.is(TY_ALIAS)) {
+        warningType = UNUSED_ALIAS;
+        warningMessage = "The type alias '" + entry.name + "' is unused";
       } else {
         warningType = UNUSED_VARIABLE;
         warningMessage = "The variable '" + entry.name + "' is unused";
@@ -173,17 +190,10 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
 
       break;
     }
-    case TY_PROCEDURE: {
-      // Skip generic procedure entries
-      if (!entry.getQualType().getTemplateTypes().empty())
-        continue;
-
-      if (type == ScopeType::GLOBAL) {
-        const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
-        warningType = UNUSED_PROCEDURE;
-        warningMessage = "The procedure '" + fctManifestations->front()->getSignature() + "' is unused";
-      } else if (type == ScopeType::STRUCT) {
-        // Check if this is a default instance method
+    case ScopeType::STRUCT: // fall-through
+    case ScopeType::INTERFACE: {
+      if (entryType.isOneOf({TY_FUNCTION, TY_PROCEDURE})) {
+        // Skip implicit method entries and generic templates
         const std::vector<Function *> *fctManifestations = entry.declNode->getFctManifestations(name);
         if (fctManifestations->empty() || fctManifestations->front()->implicitDefault)
           continue;
@@ -191,76 +201,26 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
         warningType = UNUSED_METHOD;
         warningMessage = "The method '" + fctManifestations->front()->getSignature() + "' is unused";
       } else {
-        warningType = UNUSED_VARIABLE;
-        warningMessage = "The variable '" + entry.name + "' is unused";
-      }
-
-      break;
-    }
-    case TY_STRUCT: {
-      if (entry.scope->type == ScopeType::GLOBAL) {
-        // Skip generic struct entries
-        if (!entry.getQualType().getTemplateTypes().empty())
-          continue;
-
-        warningType = UNUSED_STRUCT;
-        warningMessage = "The struct '" + entry.name + "' is unused";
-      } else {
-        warningType = UNUSED_VARIABLE;
-        warningMessage = "The variable '" + entry.name + "' is unused";
-      }
-      break;
-    }
-    case TY_INTERFACE: {
-      if (entry.scope->type == ScopeType::GLOBAL) {
-        // Skip generic struct entries
-        if (!entry.getQualType().getTemplateTypes().empty())
-          continue;
-
-        warningType = UNUSED_INTERFACE;
-        warningMessage = "The interface '" + entry.name + "' is unused";
-      } else {
-        warningType = UNUSED_VARIABLE;
-        warningMessage = "The variable '" + entry.name + "' is unused";
-      }
-      break;
-    }
-    case TY_IMPORT: {
-      warningType = UNUSED_IMPORT;
-      warningMessage = "The import '" + entry.name + "' is unused";
-      break;
-    }
-    case TY_ENUM: {
-      continue; // Do not report unused enums. Only unused enum items are reported
-    }
-    case TY_ALIAS: {
-      warningType = UNUSED_ALIAS;
-      warningMessage = "The type alias '" + entry.name + "' is unused";
-      break;
-    }
-    default: {
-      // Check parent scope type
-      switch (type) {
-      case ScopeType::STRUCT: {
         warningType = UNUSED_FIELD;
         warningMessage = "The field '" + entry.name + "' is unused";
-        break;
       }
-      case ScopeType::ENUM: {
-        warningType = UNUSED_ENUM_ITEM;
-        warningMessage = "The enum item '" + entry.name + "' is unused";
-        break;
-      }
-      case ScopeType::FOREACH_BODY: {
-        // Skip idx variables, otherwise fall-through
-        if (entry.name == FOREACH_DEFAULT_IDX_VARIABLE_NAME)
-          continue;
-      }
-      default: {
-        warningType = UNUSED_VARIABLE;
-        warningMessage = "The variable '" + entry.name + "' is unused";
-      }
-      }
+      break;
+    }
+    case ScopeType::ENUM: {
+      warningType = UNUSED_ENUM_ITEM;
+      warningMessage = "The enum item '" + entry.name + "' is unused";
+      break;
+    }
+    case ScopeType::FOREACH_BODY: {
+      // Skip idx variables
+      if (entry.name == FOREACH_DEFAULT_IDX_VARIABLE_NAME)
+        continue;
+      [[fallthrough]];
+    }
+    default: {
+      warningType = UNUSED_VARIABLE;
+      warningMessage = "The variable '" + entry.name + "' is unused";
+      break;
     }
     }
 

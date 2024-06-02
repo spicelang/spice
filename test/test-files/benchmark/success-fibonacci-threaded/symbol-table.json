@@ -11,7 +11,7 @@
           "symbols": []
         }
       ],
-      "name": "int fib(int)",
+      "name": "fib(int)",
       "symbols": [
         {
           "codeLoc": "L3C12",

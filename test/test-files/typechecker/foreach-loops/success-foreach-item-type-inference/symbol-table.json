@@ -7,80 +7,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "next<short>()",
-          "symbols": [
-            {
-              "codeLoc": "L27C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<short>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "short& get<short>()",
-          "symbols": [
-            {
-              "codeLoc": "L15C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "result",
-              "orderIndex": 1,
-              "state": "declared",
-              "type": "short&"
-            },
-            {
-              "codeLoc": "L15C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<short>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "ctor<short>()",
-          "symbols": [
-            {
-              "codeLoc": "L11C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<short>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "next<T>()",
-          "symbols": [
-            {
-              "codeLoc": "L27C1",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "this",
-              "orderIndex": 0,
-              "state": "declared",
-              "type": "MockIterator<T>*"
-            }
-          ]
-        },
-        {
-          "captures": [],
-          "children": [],
-          "name": "Pair<unsigned long,short> getIdx<short>()",
+          "name": "MockIterator<short>.getIdx<short>()",
           "symbols": [
             {
               "codeLoc": "L19C1",
@@ -105,7 +32,23 @@
         {
           "captures": [],
           "children": [],
-          "name": "bool isValid<short>()",
+          "name": "MockIterator<short>.next<short>()",
+          "symbols": [
+            {
+              "codeLoc": "L27C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<short>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "MockIterator<short>.isValid<short>()",
           "symbols": [
             {
               "codeLoc": "L23C1",
@@ -130,7 +73,64 @@
         {
           "captures": [],
           "children": [],
-          "name": "bool isValid<T>()",
+          "name": "MockIterator<short>.get<short>()",
+          "symbols": [
+            {
+              "codeLoc": "L15C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "result",
+              "orderIndex": 1,
+              "state": "declared",
+              "type": "short&"
+            },
+            {
+              "codeLoc": "L15C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<short>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "MockIterator<short>.ctor<short>()",
+          "symbols": [
+            {
+              "codeLoc": "L11C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<short>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "MockIterator<T>.next<T>()",
+          "symbols": [
+            {
+              "codeLoc": "L27C1",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "this",
+              "orderIndex": 0,
+              "state": "declared",
+              "type": "MockIterator<T>*"
+            }
+          ]
+        },
+        {
+          "captures": [],
+          "children": [],
+          "name": "MockIterator<T>.isValid<T>()",
           "symbols": [
             {
               "codeLoc": "L23C1",
@@ -155,7 +155,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "Pair<unsigned long,T> getIdx<T>()",
+          "name": "MockIterator<T>.getIdx<T>()",
           "symbols": [
             {
               "codeLoc": "L19C1",
@@ -180,7 +180,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "T& get<T>()",
+          "name": "MockIterator<T>.get<T>()",
           "symbols": [
             {
               "codeLoc": "L15C1",
@@ -205,7 +205,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "ctor<T>()",
+          "name": "MockIterator<T>.ctor<T>()",
           "symbols": [
             {
               "codeLoc": "L11C1",
@@ -231,15 +231,6 @@
           "type": "f<public Pair<unsigned long,T>>()"
         },
         {
-          "codeLoc": "L23C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "isValid:L23C1",
-          "orderIndex": 6,
-          "state": "declared",
-          "type": "f<bool>()"
-        },
-        {
           "codeLoc": "L27C1",
           "isGlobal": false,
           "isVolatile": false,
@@ -247,6 +238,15 @@
           "orderIndex": 7,
           "state": "declared",
           "type": "p()"
+        },
+        {
+          "codeLoc": "L23C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "isValid:L23C1",
+          "orderIndex": 6,
+          "state": "declared",
+          "type": "f<bool>()"
         },
         {
           "codeLoc": "L15C1",
@@ -258,20 +258,20 @@
           "type": "f<T&>()"
         },
         {
-          "codeLoc": "L11C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "ctor:L11C1",
-          "orderIndex": 3,
-          "state": "declared",
-          "type": "p()"
-        },
-        {
           "codeLoc": "L27C1",
           "isGlobal": false,
           "isVolatile": false,
           "name": "next:L27C1",
           "orderIndex": 7,
+          "state": "declared",
+          "type": "p()"
+        },
+        {
+          "codeLoc": "L11C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L11C1",
+          "orderIndex": 3,
           "state": "declared",
           "type": "p()"
         },
@@ -388,7 +388,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "next<T>()",
+          "name": "MockIterator<T>.next<T>()",
           "symbols": [
             {
               "codeLoc": "L27C1",
@@ -404,7 +404,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "bool isValid<T>()",
+          "name": "MockIterator<T>.isValid<T>()",
           "symbols": [
             {
               "codeLoc": "L23C1",
@@ -429,7 +429,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "Pair<unsigned long,T> getIdx<T>()",
+          "name": "MockIterator<T>.getIdx<T>()",
           "symbols": [
             {
               "codeLoc": "L19C1",
@@ -454,7 +454,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "T& get<T>()",
+          "name": "MockIterator<T>.get<T>()",
           "symbols": [
             {
               "codeLoc": "L15C1",
@@ -479,7 +479,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "ctor<T>()",
+          "name": "MockIterator<T>.ctor<T>()",
           "symbols": [
             {
               "codeLoc": "L11C1",
