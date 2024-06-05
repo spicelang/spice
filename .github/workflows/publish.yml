@@ -276,7 +276,7 @@ jobs:
           chmod -R +x ./
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           version: v1.26.1
           args: release --clean
