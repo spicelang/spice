@@ -170,7 +170,7 @@ include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
 include_directories(${ANTLR_Spice_OUTPUT_DIR})
 
 target_link_libraries(spice antlr4_static ${LLVM_LIBS})
-add_library(spicelib STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
+add_library(spice_core STATIC ${SOURCES} ${ANTLR_Spice_CXX_OUTPUTS})
 
 # Add leak check target
 add_custom_target(spiceleakcheck COMMAND valgrind --leak-check=full --error-exitcode=1 ./spice DEPENDS spice)

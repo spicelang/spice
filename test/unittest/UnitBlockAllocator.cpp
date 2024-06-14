@@ -22,8 +22,8 @@ class DummyNode : public ASTNode {
   ~DummyNode() override { destructedDummyNodes++; }
 
   // Visitor methods
-  std::any accept(AbstractASTVisitor *visitor) override { return {}; }
-  std::any accept(ParallelizableASTVisitor *visitor) const override { return {}; }
+  std::any accept(AbstractASTVisitor *visitor) override { return {}; }             // LCOV_EXCL_LINE
+  std::any accept(ParallelizableASTVisitor *visitor) const override { return {}; } // LCOV_EXCL_LINE
 };
 static constexpr size_t DUMMY_NODE_SIZE = sizeof(DummyNode);
 static_assert(DUMMY_NODE_SIZE == 104, "DummyNode size has changed. Update test accordingly.");
@@ -120,7 +120,7 @@ TEST(BlockAllocatorTest, TestBlockAllocatorOOM) {
         ASSERT_EQ(i, nodes.at(i)->codeLoc.line);
         ASSERT_EQ(1, nodes.at(i)->codeLoc.col);
       }
-      FAIL(); // Should not reach this point
+      FAIL(); // LCOV_EXCL_LINE - Should not reach this point
     } catch (CompilerError &ce) {
       std::stringstream ss;
       ss << "[Error|Compiler]:\n";
