@@ -591,3 +591,47 @@ public f<const NameRegistryEntry*> SourceFile.getNameRegistryEntry(const String&
 
     return entry;
 }
+
+public p SourceFile.checkForSoftErrors() {
+    // Check if there are any soft errors and if so, print them
+    if !this.resourceManager.errorManager.softErrors.isEmpty() {
+        String errorMessage = String("There are unresolved errors. Please fix them and recompile.");
+        foreach dyn error : this.resourceManager.errorManager.softErrors {
+            errorMessage += "\n\n";
+            errorMessage += error.toString();
+        }
+        panic(Error("Compilation aborted due to unresolved errors."));
+    }
+}
+
+public p SourceFile.collectAndPrintWarnings() {
+    // Print warnings for all dependencies
+    foreach dyn dependency : this.dependencies {
+        SourceFile* sourceFile = dependency.getSecond();
+        if !sourceFile.isStdFile {
+            sourceFile.collectAndPrintWarnings();
+        }
+    }
+    // Collect warnings for this file
+    if !ignoreWarnings {
+        this.globalScope.collectWarnings(this.compilerOutput.warnings);
+    }
+    // Print warnings for this file
+    foreach dyn warning : this.compilerOutput.warnings {
+        warning.print();
+    }
+}
+
+public f<const SourceFile*> SourceFile.getRootSourceFile() {
+    return this.isMainFile ? this : this.parent.getRootSourceFile();
+}
+
+/*public f<bool> SourceFile.isRT(RuntimeModule runtimeModule) {
+    assert IDENTIFIER_RUNTIME_MODULES.contains(runtimeModule);
+    const string topLevelName = IDENTIFIER_RUNTIME_MODULES.at(runtimeModule);
+    if !this.exportedNameRegistry.contains(topLevelName) {
+        return false;
+    }
+    dyn entry = this.exportedNameRegistry.get(topLevelName);
+    return entry.targetEntry.scope == this.globalScope;
+}*/

@@ -120,9 +120,27 @@ public p Driver.enrich() {
 
     // Dump AST, IR and symbol table if all debug output is enabled
     if this.cliOptions.printDebugOutput {
-        this.cliOptions.dumpAST = true;
-        this.cliOptions.dumpIR = true;
-        this.cliOptions.dumpSymbolTable = true;
+        this.cliOptions.dumpSettings.dumpAST = true;
+        this.cliOptions.dumpSettings.dumpIR = true;
+        this.cliOptions.dumpSettings.dumpSymbolTable = true;
+    }
+}
+
+/**
+ * Executes the built executable
+ */
+public p Driver.runBinary() {
+    // Print status message
+    if this.cliOptions.printDebugOutput {
+        print("Running executable ...\n\n");
+    }
+
+    // Run executable
+    FilePath executablePath = this.cliOptions.outputPath;
+    executablePath.makeNative();
+    const int exitCode = execCmd(executablePath.toString());
+    if exitCode != 0 {
+        panic(Error("Your Spice executable exited with non-zero exit code"));
     }
 }
 
@@ -131,10 +149,10 @@ public p Driver.enrich() {
  */
 p Driver.addBuildSubcommand() {
     // Create sub-command itself
-    CliSubcommand& subCmd = this.cliParser.createSubcommand("build", "Builds your Spice program and emits an executable");
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("build", "Builds your Spice program and emits an executable");
     subCmd.addAlias("b");
 
-    addCompileSubcommandOptions(subCmd);
+    this.addCompileSubcommandOptions(subCmd);
 
     // --target-triple
     CliOption<string>& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple, "Target triple for the emitted executable (for cross-compiling)");
@@ -162,10 +180,10 @@ p Driver.addBuildSubcommand() {
  */
 p Driver.addRunSubcommand() {
     // Create sub-command itself
-    CliSubcommand& subCmd = this.cliParser.createSubcommand("run", "Builds your Spice program and runs it immediately");
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("run", "Builds your Spice program and runs it immediately");
     subCmd.addAlias("r");
 
-    addCompileSubcommandOptions(subCmd);
+    this.addCompileSubcommandOptions(subCmd);
 
     // --output
     CliOption<string>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
@@ -182,10 +200,10 @@ p Driver.addRunSubcommand() {
  */
 p Driver.addInstallSubcommand() {
     // Create sub-command itself
-    CliSubcommand& subCmd = this.cliParser.createSubcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("install", "Builds your Spice program and installs it to a directory in the PATH variable");
     subCmd.addAlias("i");
 
-    addCompileSubcommandOptions(subCmd);
+    this.addCompileSubcommandOptions(subCmd);
 }
 
 /**
@@ -193,10 +211,10 @@ p Driver.addInstallSubcommand() {
  */
 p Driver.addUninstallSubcommand() {
     // Create sub-command itself
-    CliSubcommand& subCmd = this.cliParser.createSubcommand("uninstall", "Builds your Spice program and runs it immediately");
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("uninstall", "Builds your Spice program and runs it immediately");
     subCmd.addAlias("u");
 
-    addCompileSubcommandOptions(subCmd);
+    this.addCompileSubcommandOptions(subCmd);
 }
 
 p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
@@ -204,19 +222,19 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     CliOption<bool>& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
     debugOutputFlag.addAlias("-d");
     // --dump-cst
-    CliOption<bool>& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dumpCST, "Dump CSTs as serialized string and SVG image");
+    CliOption<bool>& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dumpSettings.dumpCST, "Dump CSTs as serialized string and SVG image");
     dumpCstFlag.addAlias("-cst");
     // --dump-ast
-    CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dumpAST, "Dump ASTs as serialized string and SVG image");
+    CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dumpSettings.dumpAST, "Dump ASTs as serialized string and SVG image");
     dumpAstFlag.addAlias("-ast");
     // --dump-symtab
-    CliOption<bool>& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dumpSymbolTable, "Dump serialized symbol tables");
+    CliOption<bool>& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dumpSettings.dumpSymbolTable, "Dump serialized symbol tables");
     dumpSymtabFlag.addAlias("-symtab");
     // --dump-ir
-    CliOption<bool>& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dumpIR, "Dump LLVM-IR");
+    CliOption<bool>& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
     dumpIrFlag.addAlias("-ir");
     // --dump-assembly
-    CliOption<bool>& dumpAsmFlag = subCmd.addFlag("--dump-assembly", this.cliOptions.dumpAssembly, "Dump assembly code");
+    CliOption<bool>& dumpAsmFlag = subCmd.addFlag("--dump-assembly", this.cliOptions.dumpSettings.dumpAssembly, "Dump assembly code");
     dumpAsmFlag.addAlias("-asm");
     dumpAsmFlag.addAlias("-s");
 
