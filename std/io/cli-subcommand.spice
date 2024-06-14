@@ -14,6 +14,7 @@ public type CliSubcommand struct {
     string versionString
     string footer = ""
     p() callback
+    Vector<string> aliases
     Vector<CliSubcommand> subcommands
     Vector<CliOption<bool>> boolOptions
     Vector<CliOption<string>> stringOptions
@@ -26,10 +27,18 @@ public p CliSubcommand.ctor(CliSubcommand* parent, string versionString, string 
     this.description = description;
     this.versionString = versionString;
     this.parent = parent;
-    this.subcommands = Vector<CliSubcommand>();
-    this.boolOptions = Vector<CliOption<bool>>();
-    this.stringOptions = Vector<CliOption<string>>();
-    this.intOptions = Vector<CliOption<int>>();
+}
+
+f<bool> CliSubcommand.nameOrAliasMatches(string name, const Vector<string>& aliases, string input) {
+    if name == input {
+        return true;
+    }
+    foreach const string a : aliases {
+        if a == input {
+            return true;
+        }
+    }
+    return false;
 }
 
 public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 1) {
@@ -49,7 +58,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
 
         // Check for subcommands
         foreach const CliSubcommand& subcommand : this.subcommands {
-            if arg == subcommand.getName() {
+            if this.nameOrAliasMatches(subcommand.getName(), subcommand.aliases, arg) {
                 return subcommand.parse(argc, argv, layer + 1);
             }
         }
@@ -66,7 +75,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
 
         // Check for options
         foreach const CliOption<bool>& boolOption : this.boolOptions {
-            if arg == boolOption.getName() {
+            if this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), arg) {
                 bool value = true;
                 boolOption.setTargetValue(value);
                 boolOption.callCallback(value);
@@ -74,7 +83,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<string>& stringOption : this.stringOptions {
-            if arg == stringOption.getName() {
+            if this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
                 // get the argument value
                 arg = argv[++argNo];
 
@@ -84,7 +93,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
         foreach const CliOption<int>& intOption : this.intOptions {
-            if arg == intOption.getName() {
+            if this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), arg) {
                 // get the argument value
                 arg = argv[++argNo];
                 int parsedArg = toInt(arg);
@@ -130,6 +139,10 @@ public p CliSubcommand.allowUnknownOptions() {
     foreach CliSubcommand& subcommand : this.subcommands {
         subcommand.allowUnknownOptions();
     }
+}
+
+public p CliSubcommand.addAlias(string subCommand) {
+    this.aliases.pushBack(subCommand);
 }
 
 public f<CliSubcommand&> CliSubcommand.addSubcommand(string name, string description) {
