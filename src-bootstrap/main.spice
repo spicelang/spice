@@ -2,9 +2,9 @@
 import "std/os/os";
 
 // Own imports
-import "./source-file";
-import "./driver";
-import "./global/global-resource-manager";
+//import "bootstrap/source-file";
+import "bootstrap/driver";
+//import "bootstrap/global/global-resource-manager";
 
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
@@ -14,10 +14,10 @@ import "./global/global-resource-manager";
  */
 f<bool> compileProject(const CliOptions& cliOptions) {
     // Instantiate GlobalResourceManager
-    dyn resourceManager = GlobalResourceManager(options);
+    /*dyn resourceManager = GlobalResourceManager(cliOptions);
 
     // Create source file instance for main source file
-    SourceFile* mainSourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
+    heap SourceFile* mainSourceFile = resourceManager.createSourceFile(nil<SourceFile*>, String(MAIN_FILE_NAME), cliOptions.mainSourceFile, false);
 
     // Run compile pipeline for main source file. All dependent source files are triggered by their parents
     mainSourceFile.runFrontEnd();
@@ -29,10 +29,7 @@ f<bool> compileProject(const CliOptions& cliOptions) {
     resourceManager.linker.link();
 
     // Print compiler warnings
-    mainSourceFile.collectAndPrintWarnings();
-
-    // Print compiler warnings
-    mainSourceFile.collectAndPrintWarnings();
+    mainSourceFile.collectAndPrintWarnings();*/
 
     return true;
 }
@@ -47,22 +44,22 @@ f<bool> compileProject(const CliOptions& cliOptions) {
 f<int> main(int argc, string[] argv) {
     // Initialize command line parser
     Driver driver;
-    driver.create();
+    driver.init();
     const int exitCode = driver.parse(argc, argv);
-    if exitCode != EXIT_SUCCESS {
+    if exitCode != EXIT_CODE_SUCCESS {
         return exitCode;
     }
 
     // Cancel here if we do not have to compile
     if !driver.shouldCompile {
-        return EXIT_SUCCESS;
+        return EXIT_CODE_SUCCESS;
     }
 
     driver.enrich(); // Prepare the cli options
 
     // Kick off the compiling process
     if !compileProject(driver.cliOptions) {
-        return EXIT_FAILURE;
+        return EXIT_CODE_ERROR;
     }
 
     // Execute
@@ -70,5 +67,5 @@ f<int> main(int argc, string[] argv) {
         driver.runBinary();
     }
 
-    return EXIT_SUCCESS;
+    return EXIT_CODE_SUCCESS;
 }

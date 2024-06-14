@@ -1776,7 +1776,10 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     Scope *matchScope = returnBaseType.getBodyScope()->parent;
     assert(matchScope != nullptr);
     Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
-    assert(spiceStruct != nullptr);
+    if (!spiceStruct) {
+      const std::string signature = Struct::getSignature(structName, returnBaseType.getTemplateTypes());
+      SOFT_ERROR_ER(node, UNKNOWN_DATATYPE, "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
+    }
     returnType = returnType.getWithBodyScope(spiceStruct->scope).replaceBaseType(returnBaseType);
 
     returnType = mapImportedScopeTypeToLocalType(returnType.getBase().getBodyScope(), returnType);

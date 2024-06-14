@@ -19,3 +19,12 @@ public f<int> getPID() {
 public f<int> execCmd(string cmd) {
     return system(cmd);
 }
+
+/**
+ * Executes a shell command by creating a new process.
+ *
+ * @return Return code of the shell comand
+ */
+public f<int> execCmd(const String& cmd) {
+    return system(cmd.getRaw());
+}
