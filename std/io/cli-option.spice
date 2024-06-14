@@ -2,7 +2,7 @@ import "std/os/os";
 import "std/data/vector";
 
 // Generic types
-type T bool|String|int|long|short;
+type T bool|string|int|long|short;
 
 // Enums
 type CliOptionMode enum { SET_VALUE, CALL_CALLBACK }
