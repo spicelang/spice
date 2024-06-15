@@ -163,7 +163,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     if (iteratorOrIterableType.isArray()) { // Array
       const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(ARRAY_ITERATOR_NAME);
       if (!nameRegistryEntry) {
-        softError(node, UNKNOWN_DATATYPE, "Forgot to import of \"std/iterator/array-iterator\"?");
+        softError(node, UNKNOWN_DATATYPE, "Forgot to import \"std/iterator/array-iterator\"?");
         return nullptr;
       }
       nameRegistryEntry->targetEntry->used = nameRegistryEntry->importEntry->used = true;
@@ -179,8 +179,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       Scope *matchScope = iterableType.getBodyScope();
       node->getIteratorFct = FunctionManager::match(this, matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
     }
-    if (node->getIteratorFct == nullptr)
-      throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIterator() function found for the given iterable type");
+    assert(node->getIteratorFct != nullptr);
 
     iteratorType = QualType(node->getIteratorFct->returnType);
     // Create anonymous entry for the iterator
@@ -216,21 +215,17 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   QualType iteratorItemType;
   if (hasIdx) {
     node->getIdxFct = FunctionManager::match(this, matchScope, "getIdx", iteratorType, {}, {}, false, node);
-    if (node->getIdxFct == nullptr)
-      throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIdx() function found for the given iterable type");
+    assert(node->getIdxFct != nullptr);
     iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
   } else {
     node->getFct = FunctionManager::match(this, matchScope, "get", iteratorType, {}, {}, false, node);
-    if (node->getFct == nullptr)
-      throw SemanticError(iteratorNode, INVALID_ITERATOR, "No get() function found for the given iterable type");
+    assert(node->getFct != nullptr);
     iteratorItemType = node->getFct->returnType;
   }
   node->isValidFct = FunctionManager::match(this, matchScope, "isValid", iteratorType, {}, {}, false, node);
-  if (node->isValidFct == nullptr)
-    throw SemanticError(iteratorNode, INVALID_ITERATOR, "No isValid() function found for the given iterable type");
+  assert(node->isValidFct != nullptr);
   node->nextFct = FunctionManager::match(this, matchScope, "next", iteratorType, {}, {}, false, node);
-  if (node->nextFct == nullptr)
-    throw SemanticError(iteratorNode, INVALID_ITERATOR, "No next() function found for the given iterable type");
+  assert(node->nextFct != nullptr);
 
   // Retrieve item variable entry
   SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl()->varName);
