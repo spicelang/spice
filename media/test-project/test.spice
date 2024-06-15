@@ -1,25 +1,25 @@
-import "std/data/unordered-map";
+import "std/data/hash-table";
 import "std/data/pair";
 
 f<int> main() {
-    UnorderedMap<int, int> map;
-    {
-        foreach Pair<int&, int&> item : map {
-            int& first = item.getFirst();
-            int& second = item.getSecond();
-            printf("%d: %d\n", first, second);
-        }
-    }
+    HashTable<int, int> table;
 
-    map.upsert(1, 2);
-    map.upsert(2, 3);
-    map.upsert(3, 4);
-    map.upsert(4, 5);
-    map.upsert(5, 6);
-    foreach Pair<int&, int&> item : map {
-        int& first = item.getFirst();
-        int& second = item.getSecond();
-        printf("%d: %d\n", first, second);
+    // Iterate over empty container
+    /*{
+        foreach Pair<int&, int&> item : table {
+            printf("%d: %d\n", item.getFirst(), item.getSecond());
+        }
+    }*/
+
+    table.upsert(1, 2);
+    table.upsert(2, 3);
+    table.upsert(3, 4);
+    table.upsert(4, 5);
+    table.upsert(5, 6);
+
+    // Iterate over filled container
+    foreach Pair<int&, int&> item : table {
+        printf("%d: %d\n", item.getFirst(), item.getSecond());
     }
 }
 

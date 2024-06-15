@@ -1,6 +1,9 @@
 import "std/data/vector";
 import "std/data/linked-list";
 import "std/math/hash";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
 // Generic types for key and value
 type K dyn;
@@ -11,7 +14,7 @@ type HashEntry<K, V> struct {
     V value
 }
 
-public type HashTable<K, V> struct {
+public type HashTable<K, V> struct : IIterable<Pair<K, V>> {
     Vector<LinkedList<HashEntry<K, V>>> buckets
 }
 
@@ -138,6 +141,92 @@ inline f<LinkedList<HashEntry<K, V>>&> HashTable.getBucket(const K& key) {
 }
 
 inline f<unsigned long> HashTable.hash(const K& key) {
-    const K keyCopy = key;
+    const K keyCopy = key; // ToDo: Avoid copy of key
     return hash(keyCopy) % this.buckets.getSize();
+}
+
+/**
+ * Iterator to iterate over a hash table data structure
+ */
+public type HashTableIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
+    HashTable<K, V>& hashTable
+    Pair<const K&, V&> currentPair
+    unsigned long currentBucketIdx = 0l
+    unsigned long currentBucketItemIdx = 0l
+    unsigned long cursor = 0l
+}
+
+public p HashTableIterator.ctor<K, V>(HashTable<K, V>& hashTable) {
+    this.hashTable = hashTable;
+    if !this.hashTable.buckets.isEmpty() {
+        // Find first bucket that contains any items
+        this.moveToNextItem();
+    }
+}
+
+/**
+ * Returns the current key-value pair of the hash table
+ *
+ * @return Current key/value pair
+ */
+public inline f<Pair<const K&, V&>&> HashTableIterator.get() {
+    // Retrieve current bucket
+    LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
+    // Retrieve correct entry in the current bucket
+    HashEntry<K, V>& hashEntry = currentBucket.get(this.currentBucketItemIdx);
+    // Construct pair from key and value
+    this.currentPair = Pair<const K&, V&>(hashEntry.key, hashEntry.value);
+    return this.currentPair;
+}
+
+/**
+ * Returns the current index and the current item of the hash table
+ *
+ * @return Pair of current index and current key/value pair
+ */
+public inline f<Pair<unsigned long, Pair<const K&, V&>&>> HashTableIterator.getIdx() {
+    return Pair<unsigned long, Pair<const K&, V&>&>(this.cursor, this.get());
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> HashTableIterator.isValid() {
+    return !this.hashTable.isEmpty() && this.currentBucketIdx < this.hashTable.buckets.getSize();
+}
+
+p HashTableIterator.moveToNextItem() {
+    // Retrieve current bucket
+    dyn currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
+    this.currentBucketItemIdx++;
+    if this.currentBucketItemIdx >= currentBucket.getSize() {
+        // If the current bucket does not contain more items, move to the next bucket that contains items
+        this.currentBucketIdx++;
+        while this.currentBucketIdx < this.hashTable.buckets.getSize() && currentBucket.isEmpty() {
+            currentBucket = this.hashTable.buckets.get(this.currentBucketIdx++);
+        }
+        this.currentBucketItemIdx = 0l;
+    }
+}
+
+/**
+ * Moves the cursor to the next key/value pair
+ */
+public inline p HashTableIterator.next() {
+    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
+
+    // Move to next item
+    this.moveToNextItem();
+
+    // Increment cursor to reflect the current item position
+    this.cursor++;
+}
+
+/**
+ * Retrieve a forward iterator for the hash table
+ */
+public f<HashTableIterator<K, V>> HashTable.getIterator() {
+    return HashTableIterator<K, V>(*this);
 }

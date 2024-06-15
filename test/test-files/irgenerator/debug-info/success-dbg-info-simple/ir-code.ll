@@ -31,8 +31,8 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !47 {
   %2 = alloca %struct.String, align 8
   %ts = alloca %struct.TestStruct, align 8
   call void @llvm.dbg.declare(metadata ptr %result, metadata !51, metadata !DIExpression()), !dbg !52
-  call void @llvm.dbg.declare(metadata ptr %ref, metadata !53, metadata !DIExpression()), !dbg !54
-  store ptr %0, ptr %ref, align 8, !dbg !54
+  store ptr %0, ptr %ref, align 8, !dbg !53
+  call void @llvm.dbg.declare(metadata ptr %ref, metadata !54, metadata !DIExpression()), !dbg !53
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.0), !dbg !55
   store i64 6, ptr %ts, align 8, !dbg !56
   %3 = load %struct.String, ptr %2, align 8, !dbg !56
@@ -142,8 +142,8 @@ attributes #3 = { nofree nounwind }
 !50 = !DIDerivedType(tag: DW_TAG_reference_type, baseType: !42, size: 64)
 !51 = !DILocalVariable(name: "result", scope: !47, file: !7, line: 7, type: !28)
 !52 = !DILocation(line: 7, column: 1, scope: !47)
-!53 = !DILocalVariable(name: "ref", arg: 1, scope: !47, file: !7, line: 7, type: !50)
-!54 = !DILocation(line: 7, column: 19, scope: !47)
+!53 = !DILocation(line: 7, column: 19, scope: !47)
+!54 = !DILocalVariable(name: "ref", arg: 1, scope: !47, file: !7, line: 7, type: !50)
 !55 = !DILocation(line: 8, column: 44, scope: !47)
 !56 = !DILocation(line: 8, column: 60, scope: !47)
 !57 = !DILocalVariable(name: "ts", scope: !47, file: !7, line: 8, type: !28)
