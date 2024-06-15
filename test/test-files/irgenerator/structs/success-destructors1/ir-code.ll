@@ -16,7 +16,7 @@ define private void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceab
   store ptr %0, ptr %this, align 8
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   %4 = load ptr, ptr %this, align 8
-  %field1_addr = getelementptr inbounds %struct.Vector, ptr %4, i32 0, i32 0
+  %field1_addr = getelementptr inbounds %struct.Vector, ptr %4, i64 0, i32 0
   store i1 true, ptr %2, align 1
   %5 = call i32 @memcmp(ptr %field1_addr, ptr %2, i64 0)
   %6 = icmp eq i32 %5, 0
@@ -29,7 +29,7 @@ assert.then.L8:                                   ; preds = %1
 
 assert.exit.L8:                                   ; preds = %1
   %8 = load ptr, ptr %this, align 8
-  %field2_addr = getelementptr inbounds %struct.Vector, ptr %8, i32 0, i32 1
+  %field2_addr = getelementptr inbounds %struct.Vector, ptr %8, i64 0, i32 1
   %9 = load ptr, ptr %field2_addr, align 8
   %10 = call i1 @_Z10isRawEqualPKcPKc(ptr %9, ptr @anon.string.1)
   br i1 %10, label %assert.exit.L9, label %assert.then.L9, !prof !0
@@ -60,10 +60,10 @@ define dso_local i32 @main() #3 {
   %vec = alloca %struct.Vector, align 8
   store i32 0, ptr %result, align 4
   store %struct.Vector { i1 true, ptr @anon.string.3 }, ptr %vec, align 8
-  %field1_addr = getelementptr inbounds %struct.Vector, ptr %vec, i32 0, i32 0
+  %field1_addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
   %1 = load i1, ptr %field1_addr, align 1
   %2 = zext i1 %1 to i32
-  %field2_addr = getelementptr inbounds %struct.Vector, ptr %vec, i32 0, i32 1
+  %field2_addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 1
   %3 = load ptr, ptr %field2_addr, align 8
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %2, ptr %3)
   call void @_ZN6Vector4dtorEv(ptr %vec)

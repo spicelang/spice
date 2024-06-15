@@ -29,7 +29,7 @@ define private void @_ZN4Test4ctorEv(ptr noundef nonnull align 8 dereferenceable
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  store ptr getelementptr inbounds ({ [3 x ptr] }, ptr @_ZTV4Test, i32 0, i32 0, i32 2), ptr %2, align 8
+  store ptr getelementptr inbounds ({ [3 x ptr] }, ptr @_ZTV4Test, i64 0, i32 0, i32 2), ptr %2, align 8
   ret void
 }
 

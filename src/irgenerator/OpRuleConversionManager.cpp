@@ -1144,8 +1144,10 @@ LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExp
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
     return {.value = builder.CreateAdd(lhsLong, rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
-  case COMB(TY_INT, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
+  case COMB(TY_INT, TY_PTR): {
+    llvm::Value *lhsExt = builder.CreateIntCast(lhsV(), builder.getInt64Ty(), lhsSTy.isSigned());
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsExt)};
+  }
   case COMB(TY_SHORT, TY_DOUBLE): {
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFAdd(lhsFP, rhsV())};
@@ -1160,8 +1162,10 @@ LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExp
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
     return {.value = builder.CreateAdd(lhsLong, rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
-  case COMB(TY_SHORT, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
+  case COMB(TY_SHORT, TY_PTR): {
+    llvm::Value *lhsExt = builder.CreateIntCast(lhsV(), builder.getInt64Ty(), lhsSTy.isSigned());
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsExt)};
+  }
   case COMB(TY_LONG, TY_DOUBLE): {
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFAdd(lhsFP, rhsV())};
@@ -1173,15 +1177,19 @@ LLVMExprResult OpRuleConversionManager::getPlusInst(const ASTNode *node, LLVMExp
   }
   case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateAdd(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
-  case COMB(TY_LONG, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
+  case COMB(TY_LONG, TY_PTR): {
+    llvm::Value *lhsExt = builder.CreateIntCast(lhsV(), builder.getInt64Ty(), lhsSTy.isSigned());
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsExt)};
+  }
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder.CreateAdd(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
-  case COMB(TY_PTR, TY_LONG):
-    return {.value = builder.CreateGEP(lhsSTy.getContained().toLLVMType(irGenerator->sourceFile), lhsV(), rhsV())};
+  case COMB(TY_PTR, TY_LONG): {
+    llvm::Value *rhsExt = builder.CreateIntCast(rhsV(), builder.getInt64Ty(), rhsSTy.isSigned());
+    return {.value = builder.CreateGEP(lhsSTy.getContained().toLLVMType(irGenerator->sourceFile), lhsV(), rhsExt)};
+  }
   default:                                                            // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: +"); // GCOV_EXCL_LINE
   }
@@ -1225,8 +1233,10 @@ LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMEx
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
     return {.value = builder.CreateSub(lhsLong, rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
-  case COMB(TY_INT, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
+  case COMB(TY_INT, TY_PTR): {
+    llvm::Value *lhsExt = builder.CreateIntCast(lhsV(), builder.getInt64Ty(), lhsSTy.isSigned());
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsExt)};
+  }
   case COMB(TY_SHORT, TY_DOUBLE): {
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFSub(lhsFP, rhsV())};
@@ -1241,8 +1251,10 @@ LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMEx
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, rhsSTy.isSigned());
     return {.value = builder.CreateSub(lhsLong, rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   }
-  case COMB(TY_SHORT, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
+  case COMB(TY_SHORT, TY_PTR): {
+    llvm::Value *lhsExt = builder.CreateIntCast(lhsV(), builder.getInt64Ty(), lhsSTy.isSigned());
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsExt)};
+  }
   case COMB(TY_LONG, TY_DOUBLE): {
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
     return {.value = builder.CreateFSub(lhsFP, rhsV())};
@@ -1254,15 +1266,19 @@ LLVMExprResult OpRuleConversionManager::getMinusInst(const ASTNode *node, LLVMEx
   }
   case COMB(TY_LONG, TY_LONG):
     return {.value = builder.CreateSub(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
-  case COMB(TY_LONG, TY_PTR):
-    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsV())};
+  case COMB(TY_LONG, TY_PTR): {
+    llvm::Value *lhsExt = builder.CreateIntCast(lhsV(), builder.getInt64Ty(), lhsSTy.isSigned());
+    return {.value = builder.CreateGEP(rhsSTy.getContained().toLLVMType(irGenerator->sourceFile), rhsV(), lhsExt)};
+  }
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
     return {.value = builder.CreateSub(lhsV(), rhsV(), "", false, lhsSTy.isSigned() && rhsSTy.isSigned())};
   case COMB(TY_PTR, TY_INT):   // fallthrough
   case COMB(TY_PTR, TY_SHORT): // fallthrough
-  case COMB(TY_PTR, TY_LONG):
-    return {.value = builder.CreateGEP(lhsSTy.getContained().toLLVMType(irGenerator->sourceFile), lhsV(), rhsV())};
+  case COMB(TY_PTR, TY_LONG): {
+    llvm::Value *rhsExt = builder.CreateIntCast(rhsV(), builder.getInt64Ty(), rhsSTy.isSigned());
+    return {.value = builder.CreateGEP(lhsSTy.getContained().toLLVMType(irGenerator->sourceFile), lhsV(), rhsExt)};
+  }
   default:                                                            // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: -"); // GCOV_EXCL_LINE
   }

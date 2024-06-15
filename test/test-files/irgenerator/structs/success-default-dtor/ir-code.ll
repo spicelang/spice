@@ -13,7 +13,7 @@ define void @_ZN20StructWithHeapFields4dtorEv(ptr noundef nonnull align 8 derefe
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.StructWithHeapFields, ptr %2, i32 0, i32 0
+  %3 = getelementptr inbounds %struct.StructWithHeapFields, ptr %2, i64 0, i32 0
   call void @_Z8sDeallocRPh(ptr %3)
   ret void
 }
@@ -25,12 +25,12 @@ define private void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 
   %res = alloca %struct.Result, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.StructWithHeapFields, ptr %2, i32 0, i32 0
+  %3 = getelementptr inbounds %struct.StructWithHeapFields, ptr %2, i64 0, i32 0
   store ptr null, ptr %3, align 8
   %4 = call %struct.Result @_Z6sAllocm(i64 10)
   store %struct.Result %4, ptr %res, align 8
   %5 = load ptr, ptr %this, align 8
-  %data_addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i32 0, i32 0
+  %data_addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
   %6 = call ptr @_ZN6ResultIPhE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
   store ptr %6, ptr %data_addr, align 8
   ret void
@@ -49,14 +49,14 @@ define dso_local i32 @main() #1 {
   store ptr null, ptr %sPtr, align 8
   call void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %s)
   store ptr %s, ptr %sPtr, align 8
-  %data_addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %s, i32 0, i32 0
+  %data_addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %s, i64 0, i32 0
   %1 = load ptr, ptr %data_addr, align 8
   %2 = icmp eq ptr %1, null
   %3 = zext i1 %2 to i32
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
   call void @_ZN20StructWithHeapFields4dtorEv(ptr %s)
   %5 = load ptr, ptr %sPtr, align 8
-  %data_addr1 = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i32 0, i32 0
+  %data_addr1 = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
   %6 = load ptr, ptr %data_addr1, align 8
   %7 = icmp eq ptr %6, null
   %8 = zext i1 %7 to i32

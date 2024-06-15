@@ -470,7 +470,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     llvm::Value *rhsAddress = resolveAddress(rhs);
     assert(rhsAddress != nullptr);
     llvm::Type *elementTy = rhsSType.toLLVMType(sourceFile);
-    llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(0)};
+    llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(0)};
     llvm::Value *firstItemAddress = insertInBoundsGEP(elementTy, rhsAddress, indices);
     insertStore(firstItemAddress, lhsAddress);
     return LLVMExprResult{.value = rhsAddress, .ptr = lhsAddress, .entry = lhsEntry};

@@ -30,9 +30,9 @@ for.head.L4:                                      ; preds = %for.tail.L4, %for.b
 
 for.body.L4:                                      ; preds = %for.head.L4
   %5 = load i32, ptr %i, align 4
-  %6 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i32 0, i32 %5
+  %6 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i32 %5
   %7 = load i32, ptr %j, align 4
-  %8 = getelementptr inbounds [10 x i32], ptr %6, i32 0, i32 %7
+  %8 = getelementptr inbounds [10 x i32], ptr %6, i64 0, i32 %7
   %9 = load i32, ptr %j, align 4
   %10 = load i32, ptr %i, align 4
   %11 = mul nsw i32 %10, %9
@@ -55,8 +55,8 @@ for.tail.L3:                                      ; preds = %for.exit.L4
   br label %for.head.L3
 
 for.exit.L3:                                      ; preds = %for.head.L3
-  %16 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i32 0, i32 1
-  %17 = getelementptr inbounds [10 x i32], ptr %16, i32 0, i32 3
+  %16 = getelementptr inbounds [10 x [10 x i32]], ptr %a, i64 0, i32 1
+  %17 = getelementptr inbounds [10 x i32], ptr %16, i64 0, i32 3
   %18 = load i32, ptr %17, align 4
   %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %18)
   %20 = load i32, ptr %result, align 4

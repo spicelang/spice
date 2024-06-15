@@ -16,11 +16,11 @@ define dso_local i32 @main() #0 {
   store i1 true, ptr %ts, align 1
   %1 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1
   store ptr %t, ptr %1, align 8
-  %f2_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1
+  %f2_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 1
   %2 = load ptr, ptr %f2_addr, align 8
   %3 = load i32, ptr %2, align 4
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %3)
-  %f2_addr1 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 1
+  %f2_addr1 = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 1
   %5 = load ptr, ptr %f2_addr1, align 8
   %6 = load i32, ptr %5, align 4
   %7 = add nsw i32 %6, 1

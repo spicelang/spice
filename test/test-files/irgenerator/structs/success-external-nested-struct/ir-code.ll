@@ -15,13 +15,13 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   %1 = call %struct.Socket @_Z16openServerSockett(i16 8080)
   store %struct.Socket %1, ptr %s, align 8
-  %nested_addr = getelementptr inbounds %struct.Socket, ptr %s, i32 0, i32 2
+  %nested_addr = getelementptr inbounds %struct.Socket, ptr %s, i64 0, i32 2
   %2 = load %struct.NestedSocket, ptr %nested_addr, align 8
   store %struct.NestedSocket %2, ptr %n, align 8
-  %testString_addr = getelementptr inbounds %struct.NestedSocket, ptr %n, i32 0, i32 0
+  %testString_addr = getelementptr inbounds %struct.NestedSocket, ptr %n, i64 0, i32 0
   %3 = load ptr, ptr %testString_addr, align 8
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %3)
-  %sock_addr = getelementptr inbounds %struct.Socket, ptr %s, i32 0, i32 0
+  %sock_addr = getelementptr inbounds %struct.Socket, ptr %s, i64 0, i32 0
   %5 = load i32, ptr %sock_addr, align 4
   %6 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %5)
   %7 = load i32, ptr %result, align 4

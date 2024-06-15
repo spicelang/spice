@@ -33,14 +33,14 @@ define private i32 @_ZN10TestStructIhE7getTestEv(ptr noundef nonnull align 4 der
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %test_addr = getelementptr inbounds %struct.TestStruct, ptr %2, i32 0, i32 1
+  %test_addr = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 1
   %3 = load i32, ptr %test_addr, align 4
   %4 = icmp eq i32 %3, 1
   br i1 %4, label %if.then.L18, label %if.exit.L18
 
 if.then.L18:                                      ; preds = %1
   %5 = load ptr, ptr %this, align 8
-  %test_addr1 = getelementptr inbounds %struct.TestStruct, ptr %5, i32 0, i32 1
+  %test_addr1 = getelementptr inbounds %struct.TestStruct, ptr %5, i64 0, i32 1
   %6 = load i32, ptr %test_addr1, align 4
   %7 = add nsw i32 %6, 1
   store i32 %7, ptr %test_addr1, align 4
@@ -50,7 +50,7 @@ if.then.L18:                                      ; preds = %1
 
 if.exit.L18:                                      ; preds = %if.then.L18, %1
   %9 = load ptr, ptr %this, align 8
-  %test_addr2 = getelementptr inbounds %struct.TestStruct, ptr %9, i32 0, i32 1
+  %test_addr2 = getelementptr inbounds %struct.TestStruct, ptr %9, i64 0, i32 1
   %10 = load i32, ptr %test_addr2, align 4
   ret i32 %10
 }

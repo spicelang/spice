@@ -10,7 +10,7 @@ define private void @_ZN6Nested4ctorEv(ptr noundef nonnull align 4 dereferenceab
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Nested, ptr %2, i32 0, i32 0
+  %3 = getelementptr inbounds %struct.Nested, ptr %2, i64 0, i32 0
   store i32 1, ptr %3, align 4
   ret void
 }
@@ -20,7 +20,7 @@ define private void @_ZN4TestI6NestedE8testFuncEv(ptr noundef nonnull align 1 %0
   %t = alloca %struct.Nested, align 8
   store ptr %0, ptr %this, align 8
   call void @_ZN6Nested4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
-  %i_addr = getelementptr inbounds %struct.Nested, ptr %t, i32 0, i32 0
+  %i_addr = getelementptr inbounds %struct.Nested, ptr %t, i64 0, i32 0
   %2 = load i32, ptr %i_addr, align 4
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
   ret void
