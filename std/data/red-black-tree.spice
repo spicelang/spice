@@ -422,9 +422,10 @@ p RedBlackTree.clearRecursive(heap Node<K, V>* node) {
 /**
  * Iterator to iterate over a red black tree data structurs
  */
-public type RedBlackTreeIterator<K, V> struct : IIterator<Pair<K, V>> {
+public type RedBlackTreeIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
     RedBlackTree<K, V>& tree
     heap Node<K, V>* currentNode = nil<heap Node<K, V>*>
+    Pair<const K&, V&> currentPair
     unsigned long cursor = 0l
 }
 
@@ -441,8 +442,9 @@ public p RedBlackTreeIterator.ctor<K, V>(RedBlackTree<K, V>& tree) {
  *
  * @return Current key/value pair
  */
-public inline f<Pair<const K&, V&>> RedBlackTreeIterator.get() {
-    return Pair<const K&, V&>(this.currentNode.key, this.currentNode.value);
+public inline f<Pair<const K&, V&>&> RedBlackTreeIterator.get() {
+    this.currentPair = Pair<const K&, V&>(this.currentNode.key, this.currentNode.value);
+    return this.currentPair;
 }
 
 /**
@@ -450,8 +452,8 @@ public inline f<Pair<const K&, V&>> RedBlackTreeIterator.get() {
  *
  * @return Pair of current index and current key/value pair
  */
-public inline f<Pair<unsigned long, Pair<const K&, V&>>> RedBlackTreeIterator.getIdx() {
-    return Pair<unsigned long, Pair<const K&, V&>>(this.cursor, this.get());
+public inline f<Pair<unsigned long, Pair<const K&, V&>&>> RedBlackTreeIterator.getIdx() {
+    return Pair<unsigned long, Pair<const K&, V&>&>(this.cursor, this.get());
 }
 
 /**
@@ -467,7 +469,9 @@ public inline f<bool> RedBlackTreeIterator.isValid() {
  * Moves the cursor to the next item
  */
 public inline p RedBlackTreeIterator.next() {
-    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
+    if !this.isValid() {
+        panic(Error("Calling next() on invalid iterator"));
+    }
 
     if this.currentNode.childRight != nil<Node<K, V>*> {
         // Case 1: If node has a right child, so we want to continue at the minimum of the right child's sub-tree

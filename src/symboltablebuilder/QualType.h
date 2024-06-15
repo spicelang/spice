@@ -84,10 +84,11 @@ public:
   [[nodiscard]] bool doesImplement(const QualType &symbolType, const ASTNode *node) const;
   [[nodiscard]] bool canBind(const QualType &otherType, bool isTemporary) const;
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;
-  [[nodiscard]] bool matchesInterfaceImplementedByStruct(const QualType &otherType) const;
+  [[nodiscard]] bool matchesInterfaceImplementedByStruct(const QualType &structType) const;
   [[nodiscard]] bool isSameContainerTypeAs(const QualType &other) const;
   [[nodiscard]] bool isSelfReferencingStructType(const QualType *typeToCompareWith = nullptr) const;
   [[nodiscard]] bool isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeList) const;
+  [[nodiscard]] bool needsDeAllocation() const;
 
   // Serialization
   void getName(std::stringstream &name, bool withSize = false, bool ignorePublic = false) const;

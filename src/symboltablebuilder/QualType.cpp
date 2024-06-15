@@ -313,15 +313,15 @@ bool QualType::matches(const QualType &otherType, bool ignoreArraySize, bool ign
  * Check for the matching compatibility of two types in terms of interface implementation.
  * Useful for function matching as well as assignment type validation and function arg matching.
  *
- * @param otherType Type to compare against
+ * @param structType Type to compare against
  * @return Matching or not
  */
-bool QualType::matchesInterfaceImplementedByStruct(const QualType &otherType) const {
-  if (!is(TY_INTERFACE) || !otherType.is(TY_STRUCT))
+bool QualType::matchesInterfaceImplementedByStruct(const QualType &structType) const {
+  if (!is(TY_INTERFACE) || !structType.is(TY_STRUCT))
     return false;
 
   // Check if the rhs is a struct type that implements the lhs interface type
-  const Struct *spiceStruct = otherType.getStruct(nullptr);
+  const Struct *spiceStruct = structType.getStruct(nullptr);
   assert(spiceStruct != nullptr);
   const auto pred = [&](const QualType &interfaceType) { return matches(interfaceType, false, false, true); };
   return std::ranges::any_of(spiceStruct->interfaceTypes, pred);
@@ -402,6 +402,19 @@ bool QualType::isCoveredByGenericTypeList(std::vector<GenericType> &genericTypeL
   }
 
   return covered;
+}
+
+/**
+ * Check if the current type needs de-allocation
+ *
+ * @return Needs de-allocation or not
+ */
+bool QualType::needsDeAllocation() const {
+  if (!isHeap())
+    return false;
+  // We only need de-allocation, if we directly point to a heap-allocated type
+  // e.g. for heap TestStruct** we don't need to de-allocate, since it is a non-owning pointer to an owning pointer
+  return isPtr() && !isPtrTo(TY_PTR);
 }
 
 /**

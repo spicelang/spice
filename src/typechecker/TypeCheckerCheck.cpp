@@ -172,12 +172,12 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       assert(interface != nullptr);
 
       // Check for all methods, that it is implemented by the struct
-      for (const Function *expectedMethod : interface->methods) {
-        const std::string methodName = expectedMethod->name;
-        QualTypeList params = expectedMethod->getParamTypes();
-        QualType returnType = expectedMethod->returnType;
+      for (const Function *expMethod : interface->methods) {
+        const std::string methodName = expMethod->name;
+        QualTypeList params = expMethod->getParamTypes();
+        QualType returnType = expMethod->returnType;
 
-        // Substantiate
+        // Substantiate param and return types
         TypeMatcher::substantiateTypesWithTypeMapping(params, interface->typeMapping);
         if (returnType.hasAnyGenericParts())
           TypeMatcher::substantiateTypeWithTypeMapping(returnType, interface->typeMapping);
@@ -188,13 +188,23 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         for (const QualType &param : params)
           args.emplace_back(param, nullptr);
 
+        // Search for method that has the required signature
         Function *spiceFunction = FunctionManager::match(this, currentScope, methodName, structType, args, {}, true, node);
-        if (!spiceFunction) {
+        if (spiceFunction == nullptr) {
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
-                    "The struct '" + node->structName + "' does not implement method '" + expectedMethod->getSignature() + "'");
+                    "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() +
+                        "'. The signature does not match.");
           continue;
         }
 
+        // Check return type
+        if (spiceFunction->returnType != returnType &&
+            !returnType.matchesInterfaceImplementedByStruct(spiceFunction->returnType)) {
+          softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
+                    "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() +
+                        "'. The return type does not match.");
+          continue;
+        }
         // Set to virtual, since it overrides the interface method
         spiceFunction->isVirtual = true;
         spiceFunction->vtableIndex = vtableIndex++;

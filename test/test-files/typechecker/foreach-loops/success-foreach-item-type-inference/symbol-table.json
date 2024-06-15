@@ -16,7 +16,7 @@
               "name": "result",
               "orderIndex": 1,
               "state": "declared",
-              "type": "public Pair<unsigned long,short>"
+              "type": "public Pair<unsigned long,short&>"
             },
             {
               "codeLoc": "L19C1",
@@ -228,7 +228,7 @@
           "name": "getIdx:L19C1",
           "orderIndex": 5,
           "state": "declared",
-          "type": "f<public Pair<unsigned long,T>>()"
+          "type": "f<public Pair<unsigned long,T&>>()"
         },
         {
           "codeLoc": "L27C1",
@@ -291,7 +291,7 @@
           "name": "getIdx:L19C1",
           "orderIndex": 5,
           "state": "declared",
-          "type": "f<public Pair<unsigned long,T>>()"
+          "type": "f<public Pair<unsigned long,T&>>()"
         },
         {
           "codeLoc": "L8C5",
@@ -349,15 +349,6 @@
           "name": "foreach:L30C5",
           "symbols": [
             {
-              "codeLoc": "L30C24",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "anon.L30C24",
-              "orderIndex": 18446744073709551615,
-              "state": "initialized",
-              "type": "MockIterator<short>"
-            },
-            {
               "codeLoc": "L30C13",
               "isGlobal": false,
               "isVolatile": false,
@@ -371,6 +362,15 @@
       ],
       "name": "fct:main",
       "symbols": [
+        {
+          "codeLoc": "L30C24",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "anon.L30C24",
+          "orderIndex": 18446744073709551615,
+          "state": "initialized",
+          "type": "MockIterator<short>"
+        },
         {
           "codeLoc": "L29C1",
           "isGlobal": false,
@@ -520,7 +520,7 @@
           "name": "getIdx:L19C1",
           "orderIndex": 5,
           "state": "declared",
-          "type": "f<public Pair<unsigned long,T>>()"
+          "type": "f<public Pair<unsigned long,T&>>()"
         },
         {
           "codeLoc": "L8C5",

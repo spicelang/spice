@@ -9,7 +9,9 @@ f<int> main() {
     tree.insert(4, 5);
     tree.insert(5, 6);
     foreach Pair<int&, int&> item : tree {
-        printf("%d: %d\n", item.getFirst(), item.getSecond());
+        int& first = item.getFirst();
+        int& second = item.getSecond();
+        printf("%d: %d\n", first, second);
     }
 }
 

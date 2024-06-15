@@ -197,11 +197,11 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
 
   // Check we have field types, that require use to do anything in the destructor
   const size_t fieldCount = structScope->getFieldCount();
-  bool hasHeapFields = false;
+  bool hasFieldsToDeAllocate = false;
   bool hasFieldsToDestruct = false;
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldSymbol = structScope->symbolTable.lookupStrictByIndex(i);
-    hasHeapFields |= fieldSymbol->getQualType().isHeap();
+    hasFieldsToDeAllocate |= fieldSymbol->getQualType().needsDeAllocation();
     if (fieldSymbol->getQualType().is(TY_STRUCT)) {
       Scope *fieldScope = fieldSymbol->getQualType().getBodyScope();
       // Lookup dtor function
@@ -213,7 +213,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
   }
 
   // If we don't have any fields, that require us to do anything in the dtor, we can skip it
-  if (!hasHeapFields && !hasFieldsToDestruct)
+  if (!hasFieldsToDeAllocate && !hasFieldsToDestruct)
     return;
 
   // Create the default dtor function
@@ -221,7 +221,7 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
 
   // Request memory runtime if we have fields, that are allocated on the heap
   // The string runtime does not use it, but allocates manually to avoid circular dependencies
-  if (hasHeapFields && !sourceFile->isStringRT()) {
+  if (hasFieldsToDeAllocate && !sourceFile->isStringRT()) {
     SourceFile *memoryRT = sourceFile->requestRuntimeModule(MEMORY_RT);
     assert(memoryRT != nullptr);
     Scope *matchScope = memoryRT->globalScope.get();

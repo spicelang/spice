@@ -146,9 +146,6 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
 }
 
 std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
-  // Change to foreach body scope
-  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
-
   // Visit iterator assignment
   AssignExprNode *iteratorNode = node->iteratorAssign();
   QualType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
@@ -186,6 +183,9 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     // Create anonymous entry for the iterator
     currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
   }
+
+  // Change to foreach body scope
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
 
   // Check iterator type
   if (!iteratorType.isIterator(node)) {
