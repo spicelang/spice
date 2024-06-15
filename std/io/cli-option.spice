@@ -1,4 +1,5 @@
 import "std/os/os";
+import "std/data/vector";
 
 // Generic types
 type T bool|string|int|long|short;
@@ -9,6 +10,7 @@ type CliOptionMode enum { SET_VALUE, CALL_CALLBACK }
 public type CliOption<T> struct {
     string name
     string description
+    Vector<string> aliases
     CliOptionMode mode
     T& targetVariable
     p(T&) callback
@@ -34,6 +36,14 @@ public f<string> CliOption.getName() {
 
 public f<string> CliOption.getDescription() {
     return this.description;
+}
+
+public p CliOption.addAlias(string optionName) {
+    this.aliases.pushBack(optionName);
+}
+
+public f<const Vector<string>&> CliOption.getAliases() {
+    return this.aliases;
 }
 
 public p CliOption.setTargetValue(T value) {

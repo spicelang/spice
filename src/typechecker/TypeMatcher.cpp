@@ -143,14 +143,15 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     // Only do this, if the struct or interface is not self-referencing, because in that case we'd end up in an infinite recursion
     if (!baseType.isSelfReferencingStructType()) {
       Scope *matchScope = baseType.getBodyScope()->parent;
-      StructBase *spiceStructBase;
-      if (baseType.is(TY_STRUCT)) // Struct
-        spiceStructBase = StructManager::match(matchScope, baseType.getSubType(), templateTypes, nullptr);
-      else // Interface
-        spiceStructBase = InterfaceManager::match(matchScope, baseType.getSubType(), templateTypes, nullptr);
-      assert(spiceStructBase != nullptr);
-      // Attach the body scope to the symbol type
-      type = type.getWithBodyScope(spiceStructBase->scope);
+      if (baseType.is(TY_STRUCT)) { // Struct
+        Struct *spiceStruct = StructManager::matchStruct(matchScope, baseType.getSubType(), templateTypes, nullptr);
+        assert(spiceStruct != nullptr);
+        type = type.getWithBodyScope(spiceStruct->scope);
+      } else { // Interface
+        Interface *spiceInterface = InterfaceManager::matchInterface(matchScope, baseType.getSubType(), templateTypes, nullptr);
+        assert(spiceInterface != nullptr);
+        type = type.getWithBodyScope(spiceInterface->scope);
+      }
     }
   }
 }
