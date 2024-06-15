@@ -146,9 +146,6 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
 }
 
 std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
-  // Change to foreach body scope
-  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
-
   // Visit iterator assignment
   AssignExprNode *iteratorNode = node->iteratorAssign();
   QualType iteratorOrIterableType = std::any_cast<ExprResult>(visit(iteratorNode)).type;
@@ -163,7 +160,7 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
     if (iteratorOrIterableType.isArray()) { // Array
       const NameRegistryEntry *nameRegistryEntry = sourceFile->getNameRegistryEntry(ARRAY_ITERATOR_NAME);
       if (!nameRegistryEntry) {
-        softError(node, UNKNOWN_DATATYPE, "Forgot to import of \"std/iterator/array-iterator\"?");
+        softError(node, UNKNOWN_DATATYPE, "Forgot to import \"std/iterator/array-iterator\"?");
         return nullptr;
       }
       nameRegistryEntry->targetEntry->used = nameRegistryEntry->importEntry->used = true;
@@ -174,16 +171,21 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       unsignedLongType.makeUnsigned(true);
       const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
       const QualType thisType(TY_DYN);
-      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
+      node->getIteratorFct = FunctionManager::match(this, matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
     } else { // Struct, implementing Iterator interface
       Scope *matchScope = iterableType.getBodyScope();
-      node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
+      node->getIteratorFct = FunctionManager::match(this, matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
     }
-    assert(node->getIteratorFct != nullptr);
+    if (node->getIteratorFct == nullptr)
+      throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIterator() function found for the given iterable type");
+
     iteratorType = QualType(node->getIteratorFct->returnType);
     // Create anonymous entry for the iterator
     currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
   }
+
+  // Change to foreach body scope
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
 
   // Check iterator type
   if (!iteratorType.isIterator(node)) {
@@ -213,17 +215,17 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   Scope *matchScope = iteratorType.getBodyScope();
   QualType iteratorItemType;
   if (hasIdx) {
-    node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType, {}, {}, false, node);
+    node->getIdxFct = FunctionManager::match(this, matchScope, "getIdx", iteratorType, {}, {}, false, node);
     assert(node->getIdxFct != nullptr);
     iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
   } else {
-    node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, {}, false, node);
+    node->getFct = FunctionManager::match(this, matchScope, "get", iteratorType, {}, {}, false, node);
     assert(node->getFct != nullptr);
     iteratorItemType = node->getFct->returnType;
   }
-  node->isValidFct = FunctionManager::matchFunction(matchScope, "isValid", iteratorType, {}, {}, false, node);
+  node->isValidFct = FunctionManager::match(this, matchScope, "isValid", iteratorType, {}, {}, false, node);
   assert(node->isValidFct != nullptr);
-  node->nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, {}, false, node);
+  node->nextFct = FunctionManager::match(this, matchScope, "next", iteratorType, {}, {}, false, node);
   assert(node->nextFct != nullptr);
 
   // Retrieve item variable entry
@@ -517,7 +519,7 @@ std::any TypeChecker::visitSignature(SignatureNode *node) {
   Function signature(node->methodName, nullptr, QualType(TY_DYN), returnType, paramList, usedGenericTypes, node);
 
   // Add signature to current scope
-  Function *manifestation = FunctionManager::insertFunction(currentScope, signature, &node->signatureManifestations);
+  Function *manifestation = FunctionManager::insert(currentScope, signature, &node->signatureManifestations);
   manifestation->entry = node->entry;
   manifestation->used = true;
 
@@ -570,7 +572,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
         // Check if we have a no-args ctor to call
         const QualType &thisType = localVarType;
         const ArgList args = {{thisType.toConstRef(node), false}};
-        node->calledCopyCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+        node->calledCopyCtor = FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
       }
 
       // If this is a struct type, check if the type is known. If not, error out
@@ -600,7 +602,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       // Check if we have a no-args ctor to call
       const std::string &structName = localVarType.getSubType();
       const QualType &thisType = localVarType;
-      node->calledInitCtor = FunctionManager::matchFunction(matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
+      node->calledInitCtor = FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
       if (!node->calledInitCtor && node->isCtorCallRequired)
         SOFT_ERROR_QT(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
     }
@@ -877,7 +879,8 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
 
     // Take a look at the operator
     if (node->op == AssignExprNode::OP_ASSIGN) {
-      rhsType = OpRuleManager::getAssignResultType(node, lhs, rhs);
+      const bool isDecl = lhs.entry->isField() && !lhs.entry->isInitialized();
+      rhsType = OpRuleManager::getAssignResultType(node, lhs, rhs, isDecl);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it
       if (rhsEntry != nullptr && rhsEntry->anonymous) {
@@ -1364,7 +1367,7 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
     // If we only have the generic struct scope, lookup the concrete manifestation scope
     if (structScope->isGenericScope) {
       Scope *matchScope = structScope->parent;
-      Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
+      Struct *spiceStruct = StructManager::match(matchScope, structName, lhsBaseTy.getTemplateTypes(), node);
       assert(spiceStruct != nullptr);
       structScope = spiceStruct->scope;
     }
@@ -1775,10 +1778,11 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     const std::string &structName = returnBaseType.getSubType();
     Scope *matchScope = returnBaseType.getBodyScope()->parent;
     assert(matchScope != nullptr);
-    Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
+    Struct *spiceStruct = StructManager::match(matchScope, structName, returnBaseType.getTemplateTypes(), node);
     if (!spiceStruct) {
       const std::string signature = Struct::getSignature(structName, returnBaseType.getTemplateTypes());
-      SOFT_ERROR_ER(node, UNKNOWN_DATATYPE, "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
+      SOFT_ERROR_ER(node, UNKNOWN_DATATYPE,
+                    "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
     }
     returnType = returnType.getWithBodyScope(spiceStruct->scope).replaceBaseType(returnBaseType);
 
@@ -1841,7 +1845,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
     const std::string structName = structRegistryEntry->targetEntry->name;
 
     // Substantiate potentially generic this struct
-    Struct *thisStruct = StructManager::matchStruct(structEntry->scope, structName, templateTypes, node);
+    Struct *thisStruct = StructManager::match(structEntry->scope, structName, templateTypes, node);
     if (!thisStruct) {
       const std::string signature = Struct::getSignature(structName, templateTypes);
       SOFT_ERROR_BOOL(node, UNKNOWN_DATATYPE,
@@ -1880,7 +1884,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
     templateType = mapLocalTypeToImportedScopeType(data.calleeParentScope, templateType);
 
   // Retrieve function object
-  data.callee = FunctionManager::matchFunction(matchScope, functionName, data.thisType, localArgs, templateTypes, false, node);
+  data.callee = FunctionManager::match(this, matchScope, functionName, data.thisType, localArgs, templateTypes, false, node);
 
   return true;
 }
@@ -1907,7 +1911,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const QualType &functionTyp
   return true;
 }
 
-bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes) const {
+bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
@@ -1952,7 +1956,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
 
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
-  data.callee = FunctionManager::matchFunction(matchScope, functionName, localThisType, localArgs, templateTypes, false, node);
+  data.callee = FunctionManager::match(this, matchScope, functionName, localThisType, localArgs, templateTypes, false, node);
 
   return true;
 }
@@ -2031,7 +2035,7 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // Get the struct instance
   structName = structEntry->name;
-  Struct *spiceStruct = StructManager::matchStruct(structScope->parent, structName, concreteTemplateTypes, node);
+  Struct *spiceStruct = StructManager::match(structScope->parent, structName, concreteTemplateTypes, node);
   if (!spiceStruct) {
     const std::string structSignature = Struct::getSignature(structName, concreteTemplateTypes);
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + structSignature + "' could not be found")
@@ -2465,13 +2469,13 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
       // Here, it is allowed to accept, that the struct/interface cannot be found, because there are self-referencing ones
       if (entryType.is(TY_STRUCT)) {
         const std::string structName = node->typeNameFragments.back();
-        Struct *spiceStruct = StructManager::matchStruct(localAccessScope, structName, templateTypes, node);
+        Struct *spiceStruct = StructManager::match(localAccessScope, structName, templateTypes, node);
         if (spiceStruct)
           entryType = entryType.getWithBodyScope(spiceStruct->scope);
       } else {
         assert(entryType.is(TY_INTERFACE));
         const std::string interfaceName = node->typeNameFragments.back();
-        const Interface *spiceInterface = InterfaceManager::matchInterface(localAccessScope, interfaceName, templateTypes, node);
+        const Interface *spiceInterface = InterfaceManager::match(localAccessScope, interfaceName, templateTypes, node);
         if (spiceInterface)
           entryType = entryType.getWithBodyScope(spiceInterface->scope);
       }

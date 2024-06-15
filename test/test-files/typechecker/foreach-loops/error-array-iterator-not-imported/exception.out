@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:3:5:
+Unknown datatype: Forgot to import "std/iterator/array-iterator"?
+
+3  foreach int i : a {
+   ^^^^^^^^^^^^^^^^^^^

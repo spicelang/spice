@@ -1,0 +1,24 @@
+import "std/data/map";
+import "std/data/pair";
+
+f<int> main() {
+    Map<int, int> map;
+    {
+        foreach Pair<int&, int&> item : map {
+            int& first = item.getFirst();
+            int& second = item.getSecond();
+            printf("%d: %d\n", first, second);
+        }
+    }
+
+    map.insert(1, 2);
+    map.insert(2, 3);
+    map.insert(3, 4);
+    map.insert(4, 5);
+    map.insert(5, 6);
+    foreach Pair<int&, int&> item : map {
+        int& first = item.getFirst();
+        int& second = item.getSecond();
+        printf("%d: %d\n", first, second);
+    }
+}

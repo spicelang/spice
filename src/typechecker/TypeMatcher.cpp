@@ -144,11 +144,11 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     if (!baseType.isSelfReferencingStructType()) {
       Scope *matchScope = baseType.getBodyScope()->parent;
       if (baseType.is(TY_STRUCT)) { // Struct
-        Struct *spiceStruct = StructManager::matchStruct(matchScope, baseType.getSubType(), templateTypes, nullptr);
+        Struct *spiceStruct = StructManager::match(matchScope, baseType.getSubType(), templateTypes, nullptr);
         assert(spiceStruct != nullptr);
         type = type.getWithBodyScope(spiceStruct->scope);
       } else { // Interface
-        Interface *spiceInterface = InterfaceManager::matchInterface(matchScope, baseType.getSubType(), templateTypes, nullptr);
+        Interface *spiceInterface = InterfaceManager::match(matchScope, baseType.getSubType(), templateTypes, nullptr);
         assert(spiceInterface != nullptr);
         type = type.getWithBodyScope(spiceInterface->scope);
       }

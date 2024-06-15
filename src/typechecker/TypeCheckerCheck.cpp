@@ -168,16 +168,16 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       // Retrieve interface instance
       const std::string interfaceName = interfaceType.getSubType();
       Scope *matchScope = interfaceType.getBodyScope()->parent;
-      Interface *interface = InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
+      Interface *interface = InterfaceManager::match(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
       assert(interface != nullptr);
 
       // Check for all methods, that it is implemented by the struct
-      for (const Function *expectedMethod : interface->methods) {
-        const std::string methodName = expectedMethod->name;
-        QualTypeList params = expectedMethod->getParamTypes();
-        QualType returnType = expectedMethod->returnType;
+      for (const Function *expMethod : interface->methods) {
+        const std::string methodName = expMethod->name;
+        QualTypeList params = expMethod->getParamTypes();
+        QualType returnType = expMethod->returnType;
 
-        // Substantiate
+        // Substantiate param and return types
         TypeMatcher::substantiateTypesWithTypeMapping(params, interface->typeMapping);
         if (returnType.hasAnyGenericParts())
           TypeMatcher::substantiateTypeWithTypeMapping(returnType, interface->typeMapping);
@@ -188,13 +188,23 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         for (const QualType &param : params)
           args.emplace_back(param, nullptr);
 
-        Function *spiceFunction = FunctionManager::matchFunction(currentScope, methodName, structType, args, {}, true, node);
-        if (!spiceFunction) {
+        // Search for method that has the required signature
+        Function *spiceFunction = FunctionManager::match(this, currentScope, methodName, structType, args, {}, true, node);
+        if (spiceFunction == nullptr) {
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
-                    "The struct '" + node->structName + "' does not implement method '" + expectedMethod->getSignature() + "'");
+                    "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() +
+                        "'. The signature does not match.");
           continue;
         }
 
+        // Check return type
+        if (spiceFunction->returnType != returnType &&
+            !returnType.matchesInterfaceImplementedByStruct(spiceFunction->returnType)) {
+          softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
+                    "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() +
+                        "'. The return type does not match.");
+          continue;
+        }
         // Set to virtual, since it overrides the interface method
         spiceFunction->isVirtual = true;
         spiceFunction->vtableIndex = vtableIndex++;
@@ -202,18 +212,18 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     }
 
     // Generate default ctor body if required
-    const Function *ctorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, structType, {}, true);
+    const Function *ctorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, {}, true);
     if (ctorFunc != nullptr && ctorFunc->implicitDefault)
       createDefaultCtorBody(ctorFunc);
 
     // Generate default copy ctor body if required
     const ArgList args = {{structType.toConstRef(node), false /* always non-temporary */}};
-    const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, structType, args, true);
+    const Function *copyCtorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, args, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
       createDefaultCopyCtorBody(copyCtorFunc);
 
     // Generate default dtor body if required
-    const Function *dtorFunc = FunctionManager::lookupFunction(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
+    const Function *dtorFunc = FunctionManager::lookup(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
       createDefaultDtorBody(dtorFunc);
 

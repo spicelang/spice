@@ -30,8 +30,7 @@ public p HashTable.ctor(unsigned long bucketCount = 100l) {
  * @param value The value to insert
  */
 public p HashTable.upsert(const K& key, const V& value) {
-    const unsigned long index = this.hash(key);
-    const LinkedList<HashEntry<K, V>>& bucket = this.buckets.get(index);
+    const LinkedList<HashEntry<K, V>>& bucket = this.getBucket(key);
     foreach const HashEntry<K, V>& entry : bucket {
         if (entry.key == key) {
             entry.value = value;
@@ -49,9 +48,7 @@ public p HashTable.upsert(const K& key, const V& value) {
  * @return The value associated with the key
  */
 public f<V&> HashTable.get(const K& key) {
-    const unsigned long index = this.hash(key);
-    const LinkedList<HashEntry<K, V>>& bucket = this.buckets.get(index);
-    foreach const HashEntry<K, V>& entry : bucket {
+    foreach const HashEntry<K, V>& entry : this.getBucket(key) {
         if (entry.key == key) {
             return entry.value;
         }
@@ -67,9 +64,7 @@ public f<V&> HashTable.get(const K& key) {
  * @return Optional<T>, containing the value associated with the key or empty if the key is not found
  */
 public f<Result<V>> HashTable.getSafe(const K& key) {
-    const unsigned long index = this.hash(key);
-    const LinkedList<HashEntry<K, V>>& bucket = this.buckets.get(index);
-    foreach const HashEntry<K, V>& entry : bucket {
+    foreach const HashEntry<K, V>& entry : this.getBucket(key) {
         if (entry.key == key) {
             return ok(entry.value);
         }
@@ -84,8 +79,7 @@ public f<Result<V>> HashTable.getSafe(const K& key) {
  * @param key The key to remove
  */
 public p HashTable.remove(const K& key) {
-    const unsigned long index = this.hash(key);
-    LinkedList<HashEntry<K, V>>& bucket = this.buckets.get(index);
+    LinkedList<HashEntry<K, V>>& bucket = this.getBucket(key);
     for unsigned long i = 0l; i < bucket.getSize(); i++ {
         if (bucket.get(i).key == key) {
             bucket.removeAt(i);
@@ -101,9 +95,7 @@ public p HashTable.remove(const K& key) {
  * @return True if the key is found, false otherwise
  */
 public f<bool> HashTable.contains(const K& key) {
-    const unsigned long index = this.hash(key);
-    const LinkedList<HashEntry<K, V>>& bucket = this.buckets.get(index);
-    foreach const HashEntry<K, V>& entry : bucket {
+    foreach const HashEntry<K, V>& entry : this.getBucket(key) {
         if (entry.key == key) {
             return true;
         }
@@ -139,6 +131,10 @@ public inline p HashTable.clear() {
     foreach LinkedList<HashEntry<K, V>>& bucket : this.buckets {
         bucket.clear();
     }
+}
+
+inline f<LinkedList<HashEntry<K, V>>&> HashTable.getBucket(const K& key) {
+    return this.buckets.get(this.hash(key));
 }
 
 inline f<unsigned long> HashTable.hash(const K& key) {

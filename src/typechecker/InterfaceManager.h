@@ -23,9 +23,9 @@ using InterfaceRegistry = std::map<CodeLoc, InterfaceManifestationList>;
 class InterfaceManager {
 public:
   // Public methods
-  static Interface *insertInterface(Scope *insertScope, Interface &spiceInterface, std::vector<Interface *> *nodeInterfaceList);
-  [[nodiscard]] static Interface *matchInterface(Scope *matchScope, const std::string &reqName,
-                                                 const QualTypeList &reqTemplateTypes, const ASTNode *node);
+  static Interface *insert(Scope *insertScope, Interface &spiceInterface, std::vector<Interface *> *nodeInterfaceList);
+  [[nodiscard]] static Interface *match(Scope *matchScope, const std::string &reqName, const QualTypeList &reqTemplateTypes,
+                                        const ASTNode *node);
   static void clear();
 
 private:

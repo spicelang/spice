@@ -1,0 +1,6 @@
+f<int> main() {
+    int[5] a = [1, 2, 3, 4, 5];
+    foreach int i : a {
+        printf("%d\n", i);
+    }
+}

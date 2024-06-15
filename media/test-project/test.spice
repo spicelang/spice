@@ -1,4 +1,93 @@
+import "std/data/unordered-map";
+import "std/data/pair";
 
+f<int> main() {
+    UnorderedMap<int, int> map;
+    {
+        foreach Pair<int&, int&> item : map {
+            int& first = item.getFirst();
+            int& second = item.getSecond();
+            printf("%d: %d\n", first, second);
+        }
+    }
+
+    map.upsert(1, 2);
+    map.upsert(2, 3);
+    map.upsert(3, 4);
+    map.upsert(4, 5);
+    map.upsert(5, 6);
+    foreach Pair<int&, int&> item : map {
+        int& first = item.getFirst();
+        int& second = item.getSecond();
+        printf("%d: %d\n", first, second);
+    }
+}
+
+/*import "std/data/map";
+
+f<int> main() {
+    Map<int, string> map;
+    assert map.getSize() == 0l;
+    assert map.isEmpty();
+    map.insert(1, "Hello");
+    assert map.getSize() == 1l;
+    assert !map.isEmpty();
+    map.insert(2, "World");
+    assert map.getSize() == 2l;
+    map.insert(3, "Foo");
+    assert map.getSize() == 3l;
+    map.insert(4, "Bar");
+    assert map.getSize() == 4l;
+    assert map.contains(1);
+    assert map.contains(2);
+    assert map.contains(3);
+    assert map.contains(4);
+    assert map.get(1) == "Hello";
+    assert map.get(2) == "World";
+    assert map.get(3) == "Foo";
+    assert map.get(4) == "Bar";
+    map.remove(2);
+    assert map.getSize() == 3l;
+    assert !map.contains(2);
+    assert !map.isEmpty();
+    map.remove(1);
+    assert map.getSize() == 2l;
+    assert !map.contains(1);
+    assert !map.isEmpty();
+    string& foo = map.get(3);
+    assert foo == "Foo";
+    foo = "Baz";
+    assert map.get(3) == "Baz";
+    Result<string> bar = map.getSafe(4);
+    assert bar.isOk();
+    assert bar.unwrap() == "Bar";
+    Result<string> baz = map.getSafe(5);
+    assert baz.isErr();
+    map.remove(3);
+    assert map.getSize() == 1l;
+    assert !map.contains(3);
+    assert !map.isEmpty();
+    map.remove(4);
+    assert map.getSize() == 0l;
+    assert !map.contains(4);
+    assert map.isEmpty();
+    printf("All assertions passed!\n");
+}*/
+
+/*import "std/data/unordered-map";
+
+f<int> main() {
+    UnorderedMap<int, string> map = UnorderedMap<int, string>(3l);
+    map.upsert(1, "one");
+    map.upsert(2, "two");
+    map.upsert(3, "three");
+    map.upsert(4, "four");
+    foreach Pair<int, string> item : map {
+        printf("%d: %s\n", item.key, item.value);
+    }
+
+    printf("All assertions passed\n");
+}*/
 
 /*import "std/os/env";
 import "std/io/filepath";

@@ -35,11 +35,9 @@ foreach.body.L5:                                  ; preds = %foreach.head.L5
   store i64 %5, ptr %index, align 8
   %item_addr = getelementptr inbounds %struct.Pair, ptr %pair_addr, i32 0, i32 1
   %6 = load ptr, ptr %item_addr, align 8
-  %7 = load i32, ptr %6, align 4
-  store i32 %7, ptr %item, align 4
-  %8 = load i64, ptr %index, align 8
-  %9 = load i32, ptr %item, align 4
-  %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %8, i32 %9)
+  %7 = load i64, ptr %index, align 8
+  %8 = load i32, ptr %6, align 4
+  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 %7, i32 %8)
   br label %foreach.tail.L5
 
 foreach.tail.L5:                                  ; preds = %foreach.body.L5
@@ -47,8 +45,8 @@ foreach.tail.L5:                                  ; preds = %foreach.body.L5
   br label %foreach.head.L5
 
 foreach.exit.L5:                                  ; preds = %foreach.head.L5
-  %11 = load i32, ptr %result, align 4
-  ret i32 %11
+  %10 = load i32, ptr %result, align 4
+  ret i32 %10
 }
 
 declare %struct.ArrayIterator @_Z7iterateIiE13ArrayIteratorIiEPim(ptr, i64)

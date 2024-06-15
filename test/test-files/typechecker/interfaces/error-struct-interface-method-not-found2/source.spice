@@ -1,0 +1,22 @@
+type Visitor struct {}
+
+type SymbolTable struct {}
+
+type Visitable interface {
+    f<bool> accept(Visitor*);
+}
+
+type AstNode struct : Visitable {}
+
+f<string> AstNode.accept(Visitor* v) { return ""; }
+
+type AstEntryNode struct : Visitable {
+    AstNode astNode
+    SymbolTable* extFunctionScope
+    bool takesArgs
+}
+
+f<int> main() {
+    AstEntryNode entryNode;
+    printf("%d", entryNode.takesArgs);
+}

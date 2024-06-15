@@ -1,4 +1,7 @@
 import "std/data/red-black-tree";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
 // Add generic type definitions
 type K dyn;
@@ -12,7 +15,7 @@ type V dyn;
  * Delete: O(log n)
  * Lookup: O(log n)
  */
-public type Map<K, V> struct {
+public type Map<K, V> struct : IIterable<Pair<K, V>> {
     RedBlackTree<K, V> tree
 }
 
@@ -89,4 +92,56 @@ public f<bool> Map.isEmpty() {
  */
 public p Map.clear() {
     this.tree.clear();
+}
+
+/**
+ * Iterator to iterate over a map data structure
+ */
+public type MapIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
+    RedBlackTreeIterator<K, V> rbtIterator
+}
+
+public p MapIterator.ctor<K, V>(Map<K, V>& map) {
+    this.rbtIterator = map.tree.getIterator();
+}
+
+/**
+ * Returns the current key-value pair of the map
+ *
+ * @return Current key/value pair
+ */
+public inline f<Pair<const K&, V&>&> MapIterator.get() {
+    return this.rbtIterator.get();
+}
+
+/**
+ * Returns the current index and the current item of the map
+ *
+ * @return Pair of current index and current key/value pair
+ */
+public inline f<Pair<unsigned long, Pair<const K&, V&>&>> MapIterator.getIdx() {
+    return this.rbtIterator.getIdx();
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> MapIterator.isValid() {
+    return this.rbtIterator.isValid();
+}
+
+/**
+ * Moves the cursor to the next key/value pair
+ */
+public inline p MapIterator.next() {
+    this.rbtIterator.next();
+}
+
+/**
+ * Retrieve a forward iterator for the map
+ */
+public f<MapIterator<K, V>> Map.getIterator() {
+    return MapIterator<K, V>(*this);
 }

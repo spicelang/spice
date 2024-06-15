@@ -153,7 +153,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Build function object
   Function spiceFunc(node->name->name, functionEntry, thisType, returnType, paramList, usedGenericTypes, node);
   spiceFunc.bodyScope = node->scope;
-  FunctionManager::insertFunction(currentScope, spiceFunc, &node->manifestations);
+  FunctionManager::insert(currentScope, spiceFunc, &node->manifestations);
 
   // Check function attributes
   if (node->attrs()) {
@@ -285,7 +285,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Build procedure object
   Function spiceProc(node->name->name, procedureEntry, thisType, QualType(TY_DYN), paramList, usedGenericTypes, node);
   spiceProc.bodyScope = node->scope;
-  FunctionManager::insertFunction(currentScope, spiceProc, &node->manifestations);
+  FunctionManager::insert(currentScope, spiceProc, &node->manifestations);
 
   // Check procedure attributes
   if (node->attrs()) {
@@ -406,7 +406,7 @@ std::any TypeChecker::visitStructDefPrepare(StructDefNode *node) {
 
   // Build struct object
   Struct spiceStruct(node->structName, node->entry, node->structScope, fieldTypes, templateTypesGeneric, interfaceTypes, node);
-  StructManager::insertStruct(currentScope, spiceStruct, &node->structManifestations);
+  StructManager::insert(currentScope, spiceStruct, &node->structManifestations);
   spiceStruct.scope = node->structScope;
 
   // Request RTTI runtime if the struct is polymorphic
@@ -481,7 +481,7 @@ std::any TypeChecker::visitInterfaceDefPrepare(InterfaceDefNode *node) {
 
   // Build interface object
   Interface spiceInterface(node->interfaceName, node->entry, node->interfaceScope, methods, templateTypesGeneric, node);
-  InterfaceManager::insertInterface(currentScope, spiceInterface, &node->interfaceManifestations);
+  InterfaceManager::insert(currentScope, spiceInterface, &node->interfaceManifestations);
   spiceInterface.scope = node->interfaceScope;
 
   // Request RTTI runtime, that is always required when dealing with interfaces due to polymorphism
@@ -650,7 +650,7 @@ std::any TypeChecker::visitExtDeclPrepare(ExtDeclNode *node) {
 
   // Add function to current scope
   Function spiceFunc = Function(node->extFunctionName, node->entry, QualType(TY_DYN), returnType, argList, {}, node);
-  node->extFunction = FunctionManager::insertFunction(currentScope, spiceFunc, &node->extFunctionManifestations);
+  node->extFunction = FunctionManager::insert(currentScope, spiceFunc, &node->extFunctionManifestations);
   node->extFunction->mangleFunctionName = false;
 
   // Check procedure attributes

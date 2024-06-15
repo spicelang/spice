@@ -6,18 +6,17 @@ type I dyn;
 type Numeric int|long|short;
 
 /**
- * A ArrayIterator in Spice can be used to iterate over an arbitrary array
+ * An ArrayIterator in Spice can be used to iterate over an arbitrary array
  */
 public type ArrayIterator<I> struct : IIterator<I> {
     I* array
     unsigned long size
-    unsigned long cursor
+    unsigned long cursor = 0l
 }
 
 public p ArrayIterator.ctor(I[] array, unsigned long size) {
     this.array = array;
     this.size = size;
-    this.cursor = 0l;
 }
 
 /**
@@ -60,7 +59,7 @@ public inline p ArrayIterator.next() {
  * @param it ArrayIterator
  */
 public inline p operator++<I>(ArrayIterator<I>& it) {
-    if it.cursor >= it.size - 1 { panic(Error("Iterator out of bounds")); }
+    if it.cursor >= it.size - 1l { panic(Error("Iterator out of bounds")); }
     it.cursor++;
 }
 
@@ -70,7 +69,7 @@ public inline p operator++<I>(ArrayIterator<I>& it) {
  * @param it ArrayIterator
  */
 public inline p operator--<I>(ArrayIterator<I>& it) {
-    if it.cursor <= 0 { panic(Error("Iterator out of bounds")); }
+    if it.cursor <= 0l { panic(Error("Iterator out of bounds")); }
     it.cursor--;
 }
 
@@ -81,7 +80,7 @@ public inline p operator--<I>(ArrayIterator<I>& it) {
  * @param offset Offset
  */
 public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
-    if it.cursor + offset >= it.size || it.cursor + offset < 0 { panic(Error("Iterator out of bounds")); }
+    if it.cursor + offset >= it.size || it.cursor + offset < 0l { panic(Error("Iterator out of bounds")); }
     it.cursor += offset;
 }
 
@@ -92,7 +91,7 @@ public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
  * @param offset Offset
  */
 public inline p operator-=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
-    if it.cursor - offset >= it.size || it.cursor - offset < 0 { panic(Error("Iterator out of bounds")); }
+    if it.cursor - offset >= it.size || it.cursor - offset < 0l { panic(Error("Iterator out of bounds")); }
     it.cursor -= offset;
 }
 

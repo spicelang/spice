@@ -294,20 +294,19 @@ f<heap Node<T>*> LinkedList.createNode(const T& value) {
 }
 
 /**
- * Iterator to iterate over a vector data structure
+ * Iterator to iterate over a linked list data structure
  */
 public type LinkedListIterator<T> struct : IIterator<T> {
     LinkedList<T>& list
-    unsigned long cursor
+    unsigned long cursor = 0l
 }
 
 public p LinkedListIterator.ctor<T>(LinkedList<T>& list) {
     this.list = list;
-    this.cursor = 0l;
 }
 
 /**
- * Returns the current item of the vector
+ * Returns the current item of the linked list
  *
  * @return Reference to the current item
  */
@@ -316,7 +315,7 @@ public inline f<T&> LinkedListIterator.get() {
 }
 
 /**
- * Returns the current index and the current item of the vector
+ * Returns the current index and the current item of the linked list
  *
  * @return Pair of current index and reference to current item
  */
@@ -334,7 +333,7 @@ public inline f<bool> LinkedListIterator.isValid() {
 }
 
 /**
- * Returns the current item of the vector iterator and moves the cursor to the next item
+ * Returns the current item of the linked list iterator and moves the cursor to the next item
  */
 public inline p LinkedListIterator.next() {
     if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
@@ -368,7 +367,7 @@ public inline p operator--<T>(LinkedListIterator<T>& it) {
  * @param offset Offset
  */
 public inline p operator+=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset) {
-    if it.cursor + offset >= it.list.getSize() || it.cursor + offset < 0 { panic(Error("Iterator out of bounds")); }
+    if it.cursor + offset >= it.list.getSize() || it.cursor + offset < 0l { panic(Error("Iterator out of bounds")); }
     it.cursor += offset;
 }
 
@@ -379,12 +378,12 @@ public inline p operator+=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset
  * @param offset Offset
  */
 public inline p operator-=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset) {
-    if it.cursor - offset >= it.list.getSize() || it.cursor - offset < 0 { panic(Error("Iterator out of bounds")); }
+    if it.cursor - offset >= it.list.getSize() || it.cursor - offset < 0l { panic(Error("Iterator out of bounds")); }
     it.cursor -= offset;
 }
 
 /**
- * Retrieve an forward iterator for the linked list
+ * Retrieve a forward iterator for the linked list
  */
 public f<LinkedListIterator<T>> LinkedList.getIterator() {
     return LinkedListIterator<T>(*this);
