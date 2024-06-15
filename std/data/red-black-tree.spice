@@ -420,7 +420,7 @@ p RedBlackTree.clearRecursive(heap Node<K, V>* node) {
 }
 
 /**
- * Iterator to iterate over a red black tree data structurs
+ * Iterator to iterate over a red black tree data structure
  */
 public type RedBlackTreeIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
     RedBlackTree<K, V>& tree

@@ -95,7 +95,7 @@ public p Map.clear() {
 }
 
 /**
- * Iterator to iterate over a map data structurs
+ * Iterator to iterate over a map data structure
  */
 public type MapIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
     RedBlackTreeIterator<K, V> rbtIterator
