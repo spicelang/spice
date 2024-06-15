@@ -516,11 +516,11 @@ void SourceFile::concludeCompilation() {
     const std::string warningMessage =
         CompilerWarning(VERIFIER_DISABLED, "The LLVM verifier passes are disabled. Please use this cli option carefully.")
             .warningMessage;
-    std::cout << "\n" + warningMessage;
+    std::cout << "\n" << warningMessage;
   }
 
   if (cliOptions.printDebugOutput)
-    std::cout << "Finished compiling " + fileName;
+    std::cout << "Finished compiling " << fileName << std::endl;
 
   previousStage = FINISHED;
 }
@@ -756,7 +756,7 @@ void SourceFile::dumpOutput(const std::string &content, const std::string &capti
     FileUtil::writeToFile(dumpFilePath, content);
   } else {
     // Dump to console
-    std::cout << "\n" + caption + ":\n" + content;
+    std::cout << "\n" << caption << ":\n" << content;
   }
 
   // If the abort after dump is requested, set the abort compilation flag
@@ -776,7 +776,7 @@ void SourceFile::visualizerPreamble(std::stringstream &output) const {
     output << "digraph {\n rankdir=\"TB\";\n";
   else
     output << "subgraph {\n";
-  output << " label=\"" + filePath.generic_string() + "\";\n ";
+  output << " label=\"" << filePath.generic_string() << "\";\n ";
 }
 
 void SourceFile::visualizerOutput(std::string outputName, const std::string &output) const {

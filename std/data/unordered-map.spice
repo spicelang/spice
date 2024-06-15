@@ -1,4 +1,7 @@
 import "std/data/hash-table";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
 // Add generic type definitions
 type K dyn;
@@ -12,7 +15,7 @@ type V dyn;
  * Delete: O(1) (average case), O(n) (worst case)
  * Lookup: O(1) (average case), O(n) (worst case)
  */
-public type UnorderedMap<K, V> struct {
+public type UnorderedMap<K, V> struct : IIterable<Pair<K, V>> {
     HashTable<K, V> hashTable
 }
 
@@ -96,4 +99,64 @@ public f<bool> UnorderedMap.isEmpty() {
  */
 public p UnorderedMap.clear() {
     this.hashTable.clear();
+}
+
+/**
+ * Iterator to iterate over an unordered map data structure
+ */
+public type UnorderedMapIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
+    HashTableIterator<K, V> htIterator
+}
+
+public p UnorderedMapIterator.ctor<K, V>(UnorderedMap<K, V>& unorderedMap) {
+    this.htIterator = unorderedMap.hashTable.getIterator();
+}
+/**
+ * Returns the current key-value pair of the unordered map
+ *
+ * @return Current key/value pair
+ */
+public inline f<Pair<const K&, V&>&> UnorderedMapIterator.get() {
+    return this.htIterator.get();
+}
+
+/**
+ * Returns the current index and the current item of the unordered map
+ *
+ * @return Pair of current index and current key/value pair
+ */
+public inline f<Pair<unsigned long, Pair<const K&, V&>&>> UnorderedMapIterator.getIdx() {
+    return this.htIterator.getIdx();
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> UnorderedMapIterator.isValid() {
+    return this.htIterator.isValid();
+}
+
+/**
+ * Moves the cursor to the next key/value pair
+ */
+public inline p UnorderedMapIterator.next() {
+    this.htIterator.next();
+}
+
+/**
+ * Advances the cursor by one
+ *
+ * @param it UnorderedMapIterator
+ */
+public inline p operator++<K, V>(UnorderedMapIterator<K, V>& it) {
+    this.htIterator.next();
+}
+
+/**
+ * Retrieve a forward iterator for the unordered map
+ */
+public f<UnorderedMapIterator<K, V>> UnorderedMap.getIterator() {
+    return UnorderedMapIterator<K, V>(*this);
 }

@@ -4,6 +4,16 @@ import "std/data/pair";
 f<int> main() {
     // Create test vector to iterate over
     LinkedList<long> lll = LinkedList<long>();
+
+    // Iterate over empty container
+    {
+        unsigned int i = 0;
+        foreach long item : lll {
+            item++;
+        }
+        assert i == 0;
+    }
+
     lll.pushBack(123l);
     lll.pushBack(4321l);
     lll.pushBack(9876l);

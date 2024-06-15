@@ -4,6 +4,16 @@ import "std/data/pair";
 f<int> main() {
     // Create test vector to iterate over
     Vector<int> vi = Vector<int>();
+
+    // Iterate over empty container
+    {
+        unsigned int i = 0;
+        foreach int item : vi {
+            item++;
+        }
+        assert i == 0;
+    }
+
     vi.pushBack(123);
     vi.pushBack(4321);
     vi.pushBack(9876);
