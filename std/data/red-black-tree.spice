@@ -448,7 +448,7 @@ public inline f<Pair<const K&, V&>&> RedBlackTreeIterator.get() {
 }
 
 /**
- * Returns the current index and the current item of the unordered map
+ * Returns the current index and the current item of the red black tree
  *
  * @return Pair of current index and current key/value pair
  */
@@ -466,7 +466,7 @@ public inline f<bool> RedBlackTreeIterator.isValid() {
 }
 
 /**
- * Moves the cursor to the next item
+ * Moves the cursor to the next key/value pair
  */
 public inline p RedBlackTreeIterator.next() {
     if !this.isValid() {

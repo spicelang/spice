@@ -1,22 +1,22 @@
-import "std/data/red-black-tree";
+import "std/data/unordered-map";
 import "std/data/pair";
 
 f<int> main() {
-    RedBlackTree<int, int> tree;
+    UnorderedMap<int, int> map;
     {
-        foreach Pair<int&, int&> item : tree {
+        foreach Pair<int&, int&> item : map {
             int& first = item.getFirst();
             int& second = item.getSecond();
             printf("%d: %d\n", first, second);
         }
     }
 
-    tree.insert(1, 2);
-    tree.insert(2, 3);
-    tree.insert(3, 4);
-    tree.insert(4, 5);
-    tree.insert(5, 6);
-    foreach Pair<int&, int&> item : tree {
+    map.upsert(1, 2);
+    map.upsert(2, 3);
+    map.upsert(3, 4);
+    map.upsert(4, 5);
+    map.upsert(5, 6);
+    foreach Pair<int&, int&> item : map {
         int& first = item.getFirst();
         int& second = item.getSecond();
         printf("%d: %d\n", first, second);
