@@ -2,24 +2,29 @@ import "std/data/unordered-map";
 import "std/data/pair";
 
 f<int> main() {
-    UnorderedMap<int, int> map;
+    UnorderedMap<int, String> unorderedMap;
+
+    // Iterate over empty container
     {
-        foreach Pair<int&, int&> item : map {
-            int& first = item.getFirst();
-            int& second = item.getSecond();
-            printf("%d: %d\n", first, second);
+        foreach Pair<int&, String&> item : unorderedMap {
+            printf("%d: %s\n", item.getFirst(), item.getSecond());
         }
     }
 
-    map.upsert(1, 2);
-    map.upsert(2, 3);
-    map.upsert(3, 4);
-    map.upsert(4, 5);
-    map.upsert(5, 6);
-    foreach Pair<int&, int&> item : map {
-        int& first = item.getFirst();
-        int& second = item.getSecond();
-        printf("%d: %d\n", first, second);
+    unorderedMap.upsert(1, String("1"));
+    unorderedMap.upsert(2, String("2"));
+    unorderedMap.upsert(3, String("3"));
+    unorderedMap.upsert(4, String("4"));
+    unorderedMap.upsert(5, String("5"));
+    unorderedMap.upsert(99, String("99"));
+    unorderedMap.upsert(100, String("100"));
+    unorderedMap.upsert(1265, String("1265"));
+    unorderedMap.upsert(101, String("101"));
+    unorderedMap.upsert(102, String("102"));
+
+    // Iterate over filled container
+    foreach Pair<int&, String&> item : unorderedMap {
+        printf("%d: %s\n", item.getFirst(), item.getSecond());
     }
 }
 

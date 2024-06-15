@@ -234,7 +234,9 @@ public inline f<bool> LinkedList.isEmpty() {
  */
 public f<T&> LinkedList.get(unsigned long idx) {
     // Abort if the index is out of bounds
-    if idx < 0 || idx >= this.size { panic(Error("Access index out of bound")); }
+    if idx < 0 || idx >= this.size {
+        panic(Error("Access index out of bound"));
+    }
 
     heap Node<T>* curr = this.tail;
     for unsigned long i = 0l; i < idx; i++ {

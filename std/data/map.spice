@@ -140,6 +140,15 @@ public inline p MapIterator.next() {
 }
 
 /**
+ * Advances the cursor by one
+ *
+ * @param it MapIterator
+ */
+public inline p operator++<K, V>(MapIterator<K, V>& it) {
+    this.htIterator.next();
+}
+
+/**
  * Retrieve a forward iterator for the map
  */
 public f<MapIterator<K, V>> Map.getIterator() {

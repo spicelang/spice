@@ -95,9 +95,12 @@ public p Vector.pushBack<T>(const T& item) {
  * @return item at index
  */
 public f<T&> Vector.get(unsigned long index) {
-    if index >= this.size { panic(Error("Access index out of bounds")); }
+    if index >= this.size {
+        panic(Error("Access index out of bounds"));
+    }
     unsafe {
-        return this.contents[index];
+        T& t = this.contents[index];
+        return t;
     }
 }
 
@@ -116,7 +119,9 @@ public f<T&> Vector.get(unsigned int index) {
  * @param index Index of the item to remove
  */
 public p Vector.removeAt(unsigned long index) {
-    if index >= this.size { panic(Error("Access index out of bounds")); }
+    if index >= this.size {
+        panic(Error("Access index out of bounds"));
+    }
     // Move all elements after the index one to the front
     for unsigned long i = index; i < this.size - 1; i++ {
         unsafe {
@@ -291,7 +296,9 @@ public inline f<bool> VectorIterator.isValid() {
  * Returns the current item of the vector iterator and moves the cursor to the next item
  */
 public inline p VectorIterator.next() {
-    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
+    if !this.isValid() {
+        panic(Error("Calling next() on invalid iterator"));
+    }
     this.cursor++;
 }
 
@@ -301,7 +308,9 @@ public inline p VectorIterator.next() {
  * @param it VectorIterator
  */
 public inline p operator++<T>(VectorIterator<T>& it) {
-    if it.cursor >= it.vector.getSize() { panic(Error("Iterator out of bounds")); }
+    if it.cursor >= it.vector.getSize() {
+        panic(Error("Iterator out of bounds"));
+    }
     it.cursor++;
 }
 
@@ -311,7 +320,9 @@ public inline p operator++<T>(VectorIterator<T>& it) {
  * @param it VectorIterator
  */
 public inline p operator--<T>(VectorIterator<T>& it) {
-    if it.cursor <= 0l { panic(Error("Iterator out of bounds")); }
+    if it.cursor <= 0l {
+        panic(Error("Iterator out of bounds"));
+    }
     it.cursor--;
 }
 
@@ -322,7 +333,9 @@ public inline p operator--<T>(VectorIterator<T>& it) {
  * @param offset Offset
  */
 public inline p operator+=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
-    if it.cursor + offset >= it.vector.getSize() || it.cursor + offset < 0l { panic(Error("Iterator out of bounds")); }
+    if it.cursor + offset >= it.vector.getSize() || it.cursor + offset < 0l {
+        panic(Error("Iterator out of bounds"));
+    }
     it.cursor += offset;
 }
 
@@ -333,7 +346,9 @@ public inline p operator+=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
  * @param offset Offset
  */
 public inline p operator-=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
-    if it.cursor - offset >= it.vector.getSize() || it.cursor - offset < 0l { panic(Error("Iterator out of bounds")); }
+    if it.cursor - offset >= it.vector.getSize() || it.cursor - offset < 0l {
+        panic(Error("Iterator out of bounds"));
+    }
     it.cursor -= offset;
 }
 

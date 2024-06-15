@@ -22,7 +22,7 @@ include_directories(${ANTLR_Spice_OUTPUT_DIR})
 include_directories(../lib/antlr4/runtime/Cpp/runtime/src)
 
 add_test(NAME spicetest COMMAND spicetest)
-target_link_libraries(spicetest PUBLIC spice_core gtest gmock antlr4_static ${LLVM_LIBS})
+target_link_libraries(spicetest PUBLIC spicecore gtest gmock antlr4_static ${LLVM_LIBS})
 
 # Test files symlink
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/test-files ${CMAKE_CURRENT_BINARY_DIR}/test-files SYMBOLIC)
