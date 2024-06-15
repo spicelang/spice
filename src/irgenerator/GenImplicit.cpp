@@ -347,7 +347,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
     if (fieldType.is(TY_STRUCT)) {
       // Lookup ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
-      const Function *ctorFunction = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false);
+      const Function *ctorFunction = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false);
       if (ctorFunction)
         generateCtorOrDtorCall(fieldSymbol, ctorFunction, {});
 
@@ -411,7 +411,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
       // Lookup copy ctor function and call if available
       Scope *matchScope = fieldType.getBodyScope();
       const ArgList args = {{fieldType.toConstRef(nullptr), false /* we have the field as storage */}};
-      const Function *ctorFct = FunctionManager::lookupFunction(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false);
+      const Function *ctorFct = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, args, false);
       if (ctorFct) {
         // Retrieve field address
         if (!thisAddressLoaded)
@@ -454,8 +454,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
     const QualType &fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
       // Lookup dtor function and generate call if found
-      const Function *dtorFct =
-          FunctionManager::lookupFunction(fieldType.getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
+      const Function *dtorFct = FunctionManager::lookup(fieldType.getBodyScope(), DTOR_FUNCTION_NAME, fieldType, {}, false);
       if (dtorFct)
         generateCtorOrDtorCall(fieldSymbol, dtorFct, {});
       continue;

@@ -100,7 +100,7 @@ Struct *QualType::getStruct(const ASTNode *node) const {
   Scope *structDefScope = getBodyScope()->parent;
   const std::string structName = getSubType();
   const QualTypeList &templateTypes = getTemplateTypes();
-  return StructManager::matchStruct(structDefScope, structName, templateTypes, node);
+  return StructManager::match(structDefScope, structName, templateTypes, node);
 }
 
 /**
@@ -114,7 +114,7 @@ Interface *QualType::getInterface(const ASTNode *node) const {
   Scope *interfaceDefScope = getBodyScope()->parent;
   const std::string structName = getSubType();
   const QualTypeList &templateTypes = getTemplateTypes();
-  return InterfaceManager::matchInterface(interfaceDefScope, structName, templateTypes, node);
+  return InterfaceManager::match(interfaceDefScope, structName, templateTypes, node);
 }
 
 /**

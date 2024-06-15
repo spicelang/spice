@@ -26,9 +26,9 @@ using StructRegistry = std::map</*structId=*/std::string, /*manifestationList=*/
 class StructManager {
 public:
   // Public methods
-  static Struct *insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList);
-  [[nodiscard]] static Struct *matchStruct(Scope *matchScope, const std::string &qt, const QualTypeList &reqTemplateTypes,
-                                           const ASTNode *node);
+  static Struct *insert(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList);
+  [[nodiscard]] static Struct *match(Scope *matchScope, const std::string &qt, const QualTypeList &reqTemplateTypes,
+                                     const ASTNode *node);
   static void clear();
 
 private:

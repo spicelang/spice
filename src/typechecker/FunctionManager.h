@@ -39,15 +39,13 @@ public:
   friend class InterfaceManager;
 
   // Public methods
-  static Function *insertFunction(Scope *insertScope, const Function &baseFunction,
-                                  std::vector<Function *> *nodeFunctionList = nullptr);
+  static Function *insert(Scope *insertScope, const Function &baseFunction, std::vector<Function *> *nodeFunctionList = nullptr);
   static void substantiateOptionalParams(const Function &baseFunction, std::vector<Function> &manifestations);
   [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const QualTypeList &paramTypes, ASTNode *declNode);
-  [[nodiscard]] static const Function *lookupFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
-                                                      const ArgList &reqArgs, bool strictSpecifierMatching);
-  static Function *matchFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
-                                 const ArgList &reqArgs, const QualTypeList &templateTypeHints, bool strictSpecifierMatching,
-                                 const ASTNode *callNode);
+  [[nodiscard]] static const Function *lookup(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
+                                              const ArgList &reqArgs, bool strictSpecifierMatching);
+  static Function *match(Scope *matchScope, const std::string &reqName, const QualType &reqThisType, const ArgList &reqArgs,
+                         const QualTypeList &templateTypeHints, bool strictSpecifierMatching, const ASTNode *callNode);
   static void clear();
 
 private:
@@ -69,8 +67,8 @@ private:
   static void substantiateReturnType(Function &candidate, TypeMapping &typeMapping);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Function &candidate,
                                                                           const std::string &templateTypeName);
-  [[nodiscard]] static uint64_t getCacheKey(Scope *scope, const std::string &name, const QualType &thisType,
-                                            const ArgList &args, const QualTypeList &templateTypes);
+  [[nodiscard]] static uint64_t getCacheKey(Scope *scope, const std::string &name, const QualType &thisType, const ArgList &args,
+                                            const QualTypeList &templateTypes);
 };
 
 } // namespace spice::compiler

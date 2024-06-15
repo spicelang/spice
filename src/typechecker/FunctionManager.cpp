@@ -17,7 +17,7 @@ namespace spice::compiler {
 // Static member initialization
 std::unordered_map<uint64_t, Function *> FunctionManager::lookupCache = {};
 
-Function *FunctionManager::insertFunction(Scope *insertScope, const Function &baseFunction,
+Function *FunctionManager::insert(Scope *insertScope, const Function &baseFunction,
                                           std::vector<Function *> *nodeFunctionList) {
   // Open a new manifestation list for the function definition
   const std::string fctId = baseFunction.name + ":" + baseFunction.declNode->codeLoc.toPrettyLineAndColumn();
@@ -141,7 +141,7 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  * @param strictSpecifierMatching Match argument and this type specifiers strictly
  * @return Found function or nullptr
  */
-const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
+const Function *FunctionManager::lookup(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                                 const ArgList &reqArgs, bool strictSpecifierMatching) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT}));
 
@@ -202,7 +202,7 @@ const Function *FunctionManager::lookupFunction(Scope *matchScope, const std::st
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
-Function *FunctionManager::matchFunction(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
+Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                          const ArgList &reqArgs, const QualTypeList &templateTypeHints,
                                          bool strictSpecifierMatching, const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
@@ -351,7 +351,7 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
     if (matchScope->isGenericScope) {
       const std::string &structName = thisType.getSubType();
       Scope *scope = thisType.getBodyScope()->parent;
-      Struct *spiceStruct = StructManager::matchStruct(scope, structName, thisType.getTemplateTypes(), candidate.declNode);
+      Struct *spiceStruct = StructManager::match(scope, structName, thisType.getTemplateTypes(), candidate.declNode);
       assert(spiceStruct != nullptr);
       matchScope = spiceStruct->scope;
     }

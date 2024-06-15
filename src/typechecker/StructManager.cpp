@@ -15,7 +15,7 @@ namespace spice::compiler {
 // Static member initialization
 std::unordered_map<uint64_t, Struct *> StructManager::lookupCache = {};
 
-Struct *StructManager::insertStruct(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList) {
+Struct *StructManager::insert(Scope *insertScope, Struct &spiceStruct, std::vector<Struct *> *nodeStructList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
   const std::string structId = spiceStruct.name + ":" + spiceStruct.declNode->codeLoc.toPrettyLineAndColumn();
   insertScope->structs.insert({structId, StructManifestationList()});
@@ -52,15 +52,15 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  * If more than one struct matches the requirement, an error gets thrown
  *
  * @param matchScope Scope to match against
- * @param reqName Struct name requirement
+ * @param qt Struct name requirement
  * @param reqTemplateTypes Template types to substantiate generic types
  * @param node Instantiation AST node for printing error messages
  * @return Matched struct or nullptr
  */
-Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName, const QualTypeList &reqTemplateTypes,
+Struct *StructManager::match(Scope *matchScope, const std::string &qt, const QualTypeList &reqTemplateTypes,
                                    const ASTNode *node) {
   // Do cache lookup
-  const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqTemplateTypes);
+  const uint64_t cacheKey = getCacheKey(matchScope, qt, reqTemplateTypes);
   if (lookupCache.contains(cacheKey))
     return lookupCache.at(cacheKey);
 
@@ -80,7 +80,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
       Struct candidate = presetStruct;
 
       // Check name requirement
-      if (!matchName(candidate, reqName))
+      if (!matchName(candidate, qt))
         break; // Leave the whole manifestation list, because all manifestations in this list have the same name
 
       // Prepare mapping table from generic type name to concrete type
@@ -171,8 +171,7 @@ Struct *StructManager::matchStruct(Scope *matchScope, const std::string &reqName
 
         // Instantiate interface
         Scope *interfaceMatchScope = interfaceType.getBodyScope()->parent;
-        Interface *spiceInterface =
-            InterfaceManager::matchInterface(interfaceMatchScope, interfaceType.getSubType(), templateTypes, node);
+        Interface *spiceInterface = InterfaceManager::match(interfaceMatchScope, interfaceType.getSubType(), templateTypes, node);
         assert(spiceInterface != nullptr);
 
         interfaceType = spiceInterface->entry->getQualType();

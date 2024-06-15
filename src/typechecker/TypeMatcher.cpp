@@ -145,9 +145,9 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
       Scope *matchScope = baseType.getBodyScope()->parent;
       StructBase *spiceStructBase;
       if (baseType.is(TY_STRUCT)) // Struct
-        spiceStructBase = StructManager::matchStruct(matchScope, baseType.getSubType(), templateTypes, nullptr);
+        spiceStructBase = StructManager::match(matchScope, baseType.getSubType(), templateTypes, nullptr);
       else // Interface
-        spiceStructBase = InterfaceManager::matchInterface(matchScope, baseType.getSubType(), templateTypes, nullptr);
+        spiceStructBase = InterfaceManager::match(matchScope, baseType.getSubType(), templateTypes, nullptr);
       assert(spiceStructBase != nullptr);
       // Attach the body scope to the symbol type
       type = type.getWithBodyScope(spiceStructBase->scope);

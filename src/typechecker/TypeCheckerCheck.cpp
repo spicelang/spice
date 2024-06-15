@@ -168,7 +168,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
       // Retrieve interface instance
       const std::string interfaceName = interfaceType.getSubType();
       Scope *matchScope = interfaceType.getBodyScope()->parent;
-      Interface *interface = InterfaceManager::matchInterface(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
+      Interface *interface = InterfaceManager::match(matchScope, interfaceName, interfaceType.getTemplateTypes(), node);
       assert(interface != nullptr);
 
       // Check for all methods, that it is implemented by the struct
@@ -188,7 +188,7 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         for (const QualType &param : params)
           args.emplace_back(param, nullptr);
 
-        Function *spiceFunction = FunctionManager::matchFunction(currentScope, methodName, structType, args, {}, true, node);
+        Function *spiceFunction = FunctionManager::match(currentScope, methodName, structType, args, {}, true, node);
         if (!spiceFunction) {
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                     "The struct '" + node->structName + "' does not implement method '" + expectedMethod->getSignature() + "'");
@@ -202,18 +202,18 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
     }
 
     // Generate default ctor body if required
-    const Function *ctorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, structType, {}, true);
+    const Function *ctorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, {}, true);
     if (ctorFunc != nullptr && ctorFunc->implicitDefault)
       createDefaultCtorBody(ctorFunc);
 
     // Generate default copy ctor body if required
     const ArgList args = {{structType.toConstRef(node), false /* always non-temporary */}};
-    const Function *copyCtorFunc = FunctionManager::lookupFunction(currentScope, CTOR_FUNCTION_NAME, structType, args, true);
+    const Function *copyCtorFunc = FunctionManager::lookup(currentScope, CTOR_FUNCTION_NAME, structType, args, true);
     if (copyCtorFunc != nullptr && copyCtorFunc->implicitDefault)
       createDefaultCopyCtorBody(copyCtorFunc);
 
     // Generate default dtor body if required
-    const Function *dtorFunc = FunctionManager::lookupFunction(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
+    const Function *dtorFunc = FunctionManager::lookup(currentScope, DTOR_FUNCTION_NAME, structType, {}, true);
     if (dtorFunc != nullptr && dtorFunc->implicitDefault)
       createDefaultDtorBody(dtorFunc);
 
