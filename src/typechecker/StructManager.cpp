@@ -58,7 +58,7 @@ Struct *StructManager::insertSubstantiation(Scope *insertScope, Struct &newManif
  * @return Matched struct or nullptr
  */
 Struct *StructManager::match(Scope *matchScope, const std::string &qt, const QualTypeList &reqTemplateTypes,
-                                   const ASTNode *node) {
+                             const ASTNode *node) {
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, qt, reqTemplateTypes);
   if (lookupCache.contains(cacheKey))

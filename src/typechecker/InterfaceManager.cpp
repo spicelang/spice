@@ -14,8 +14,7 @@ namespace spice::compiler {
 // Static member initialization
 std::unordered_map<uint64_t, Interface *> InterfaceManager::lookupCache = {};
 
-Interface *InterfaceManager::insert(Scope *insertScope, Interface &spiceInterface,
-                                             std::vector<Interface *> *nodeInterfaceList) {
+Interface *InterfaceManager::insert(Scope *insertScope, Interface &spiceInterface, std::vector<Interface *> *nodeInterfaceList) {
   // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
   insertScope->interfaces.insert({spiceInterface.declNode->codeLoc, InterfaceManifestationList()});
 
@@ -54,7 +53,7 @@ Interface *InterfaceManager::insertSubstantiation(Scope *insertScope, Interface 
  * @return Matched interface or nullptr
  */
 Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName, const QualTypeList &reqTemplateTypes,
-                                            const ASTNode *node) {
+                                   const ASTNode *node) {
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqTemplateTypes);
   if (lookupCache.contains(cacheKey))

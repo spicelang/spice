@@ -174,10 +174,10 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       unsignedLongType.makeUnsigned(true);
       const ArgList argTypes = {Arg(iterableType, false), Arg(unsignedLongType, false)};
       const QualType thisType(TY_DYN);
-      node->getIteratorFct = FunctionManager::match(matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
+      node->getIteratorFct = FunctionManager::match(this, matchScope, "iterate", thisType, argTypes, {}, true, iteratorNode);
     } else { // Struct, implementing Iterator interface
       Scope *matchScope = iterableType.getBodyScope();
-      node->getIteratorFct = FunctionManager::match(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
+      node->getIteratorFct = FunctionManager::match(this, matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
     }
     if (node->getIteratorFct == nullptr)
       throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIterator() function found for the given iterable type");
@@ -215,20 +215,20 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   Scope *matchScope = iteratorType.getBodyScope();
   QualType iteratorItemType;
   if (hasIdx) {
-    node->getIdxFct = FunctionManager::match(matchScope, "getIdx", iteratorType, {}, {}, false, node);
+    node->getIdxFct = FunctionManager::match(this, matchScope, "getIdx", iteratorType, {}, {}, false, node);
     if (node->getIdxFct == nullptr)
       throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIdx() function found for the given iterable type");
     iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
   } else {
-    node->getFct = FunctionManager::match(matchScope, "get", iteratorType, {}, {}, false, node);
+    node->getFct = FunctionManager::match(this, matchScope, "get", iteratorType, {}, {}, false, node);
     if (node->getFct == nullptr)
       throw SemanticError(iteratorNode, INVALID_ITERATOR, "No get() function found for the given iterable type");
     iteratorItemType = node->getFct->returnType;
   }
-  node->isValidFct = FunctionManager::match(matchScope, "isValid", iteratorType, {}, {}, false, node);
+  node->isValidFct = FunctionManager::match(this, matchScope, "isValid", iteratorType, {}, {}, false, node);
   if (node->isValidFct == nullptr)
     throw SemanticError(iteratorNode, INVALID_ITERATOR, "No isValid() function found for the given iterable type");
-  node->nextFct = FunctionManager::match(matchScope, "next", iteratorType, {}, {}, false, node);
+  node->nextFct = FunctionManager::match(this, matchScope, "next", iteratorType, {}, {}, false, node);
   if (node->nextFct == nullptr)
     throw SemanticError(iteratorNode, INVALID_ITERATOR, "No next() function found for the given iterable type");
 
@@ -576,7 +576,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
         // Check if we have a no-args ctor to call
         const QualType &thisType = localVarType;
         const ArgList args = {{thisType.toConstRef(node), false}};
-        node->calledCopyCtor = FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
+        node->calledCopyCtor = FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, thisType, args, {}, true, node);
       }
 
       // If this is a struct type, check if the type is known. If not, error out
@@ -606,7 +606,7 @@ std::any TypeChecker::visitDeclStmt(DeclStmtNode *node) {
       // Check if we have a no-args ctor to call
       const std::string &structName = localVarType.getSubType();
       const QualType &thisType = localVarType;
-      node->calledInitCtor = FunctionManager::match(matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
+      node->calledInitCtor = FunctionManager::match(this, matchScope, CTOR_FUNCTION_NAME, thisType, {}, {}, false, node);
       if (!node->calledInitCtor && node->isCtorCallRequired)
         SOFT_ERROR_QT(node, MISSING_NO_ARGS_CTOR, "Struct '" + structName + "' misses a no-args constructor")
     }
@@ -1887,7 +1887,7 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, QualTypeList &template
     templateType = mapLocalTypeToImportedScopeType(data.calleeParentScope, templateType);
 
   // Retrieve function object
-  data.callee = FunctionManager::match(matchScope, functionName, data.thisType, localArgs, templateTypes, false, node);
+  data.callee = FunctionManager::match(this, matchScope, functionName, data.thisType, localArgs, templateTypes, false, node);
 
   return true;
 }
@@ -1914,7 +1914,7 @@ bool TypeChecker::visitFctPtrCall(FctCallNode *node, const QualType &functionTyp
   return true;
 }
 
-bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes) const {
+bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTypeList &templateTypes) {
   FctCallNode::FctCallData &data = node->data.at(manIdx);
 
   // Traverse through structs - the first fragment is already looked up and the last one is the method name
@@ -1959,7 +1959,7 @@ bool TypeChecker::visitMethodCall(FctCallNode *node, Scope *structScope, QualTyp
 
   // Retrieve function object
   const std::string &functionName = node->functionNameFragments.back();
-  data.callee = FunctionManager::match(matchScope, functionName, localThisType, localArgs, templateTypes, false, node);
+  data.callee = FunctionManager::match(this, matchScope, functionName, localThisType, localArgs, templateTypes, false, node);
 
   return true;
 }

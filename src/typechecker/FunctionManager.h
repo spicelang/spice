@@ -20,6 +20,7 @@ class SymbolTableEntry;
 class Type;
 class ASTNode;
 class GenericType;
+class TypeChecker;
 
 // Typedefs
 using FunctionManifestationList = std::unordered_map</*mangledName=*/std::string, Function>;
@@ -44,8 +45,9 @@ public:
   [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const QualTypeList &paramTypes, ASTNode *declNode);
   [[nodiscard]] static const Function *lookup(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                               const ArgList &reqArgs, bool strictSpecifierMatching);
-  static Function *match(Scope *matchScope, const std::string &reqName, const QualType &reqThisType, const ArgList &reqArgs,
-                         const QualTypeList &templateTypeHints, bool strictSpecifierMatching, const ASTNode *callNode);
+  static Function *match(TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
+                         const ArgList &reqArgs, const QualTypeList &templateTypeHints, bool strictSpecifierMatching,
+                         const ASTNode *callNode);
   static void clear();
 
 private:

@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
 #include "FunctionManager.h"
+#include "TypeChecker.h"
 
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
@@ -17,8 +18,7 @@ namespace spice::compiler {
 // Static member initialization
 std::unordered_map<uint64_t, Function *> FunctionManager::lookupCache = {};
 
-Function *FunctionManager::insert(Scope *insertScope, const Function &baseFunction,
-                                          std::vector<Function *> *nodeFunctionList) {
+Function *FunctionManager::insert(Scope *insertScope, const Function &baseFunction, std::vector<Function *> *nodeFunctionList) {
   // Open a new manifestation list for the function definition
   const std::string fctId = baseFunction.name + ":" + baseFunction.declNode->codeLoc.toPrettyLineAndColumn();
   insertScope->functions.insert({fctId, FunctionManifestationList()});
@@ -142,7 +142,7 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
  * @return Found function or nullptr
  */
 const Function *FunctionManager::lookup(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
-                                                const ArgList &reqArgs, bool strictSpecifierMatching) {
+                                        const ArgList &reqArgs, bool strictSpecifierMatching) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT}));
 
   // Do cache lookup
@@ -202,10 +202,11 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
-Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
-                                         const ArgList &reqArgs, const QualTypeList &templateTypeHints,
-                                         bool strictSpecifierMatching, const ASTNode *callNode) {
+Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
+                                 const ArgList &reqArgs, const QualTypeList &templateTypeHints, bool strictSpecifierMatching,
+                                 const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
+  assert(typeChecker != nullptr && "The match() function must be called from the TypeChecker");
 
   // Do cache lookup
   const uint64_t cacheKey = getCacheKey(matchScope, reqName, reqThisType, reqArgs, templateTypeHints);
@@ -317,6 +318,9 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
 
   // Insert into cache
   lookupCache[cacheKey] = matches.front();
+
+  // Trigger revisit in type checker if required
+  typeChecker->requestRevisitIfRequired(matches.front());
 
   // Return the very match
   return matches.front();
