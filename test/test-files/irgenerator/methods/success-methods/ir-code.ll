@@ -12,7 +12,7 @@ define private ptr @_ZN6Letter10getContentEv(ptr noundef nonnull align 8 derefer
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %content_addr = getelementptr inbounds %struct.Letter, ptr %2, i32 0, i32 0
+  %content_addr = getelementptr inbounds %struct.Letter, ptr %2, i64 0, i32 0
   %3 = load ptr, ptr %content_addr, align 8
   ret ptr %3
 }
@@ -23,7 +23,7 @@ define private void @_ZN6Letter10setContentEPKc(ptr noundef nonnull align 8 dere
   store ptr %0, ptr %this, align 8
   store ptr %1, ptr %text, align 8
   %3 = load ptr, ptr %this, align 8
-  %content_addr = getelementptr inbounds %struct.Letter, ptr %3, i32 0, i32 0
+  %content_addr = getelementptr inbounds %struct.Letter, ptr %3, i64 0, i32 0
   %4 = load ptr, ptr %text, align 8
   store ptr %4, ptr %content_addr, align 8
   ret void

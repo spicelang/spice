@@ -12,10 +12,10 @@ define private void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceab
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %value_addr = getelementptr inbounds %struct.Stamp, ptr %2, i32 0, i32 0
+  %value_addr = getelementptr inbounds %struct.Stamp, ptr %2, i64 0, i32 0
   %3 = load double, ptr %value_addr, align 8
   %4 = load ptr, ptr %this, align 8
-  %glued_addr = getelementptr inbounds %struct.Stamp, ptr %4, i32 0, i32 1
+  %glued_addr = getelementptr inbounds %struct.Stamp, ptr %4, i64 0, i32 1
   %5 = load i1, ptr %glued_addr, align 1
   %6 = zext i1 %5 to i32
   %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, double %3, i32 %6)
@@ -30,7 +30,7 @@ define private %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %stamp_addr = getelementptr inbounds %struct.Letter, ptr %2, i32 0, i32 1
+  %stamp_addr = getelementptr inbounds %struct.Letter, ptr %2, i64 0, i32 1
   %3 = load %struct.Stamp, ptr %stamp_addr, align 8
   ret %struct.Stamp %3
 }
@@ -42,8 +42,8 @@ define dso_local i32 @main() #1 {
   %stamp = alloca %struct.Stamp, align 8
   store i32 0, ptr %result, align 4
   store %struct.Letter { ptr @anon.string.0, %struct.Stamp { double 3.400000e+00, i1 true } }, ptr %letter, align 8
-  %stamp_addr = getelementptr inbounds %struct.Letter, ptr %letter, i32 0, i32 1
-  %glued_addr = getelementptr inbounds %struct.Stamp, ptr %stamp_addr, i32 0, i32 1
+  %stamp_addr = getelementptr inbounds %struct.Letter, ptr %letter, i64 0, i32 1
+  %glued_addr = getelementptr inbounds %struct.Stamp, ptr %stamp_addr, i64 0, i32 1
   %1 = load i1, ptr %glued_addr, align 1
   %2 = zext i1 %1 to i32
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %2)

@@ -101,7 +101,7 @@ for.head.L12:                                     ; preds = %for.tail.L12, %2
 
 for.body.L12:                                     ; preds = %for.head.L12
   %6 = load i64, ptr %i, align 8
-  %7 = getelementptr inbounds [2 x i32], ptr %list, i32 0, i64 %6
+  %7 = getelementptr inbounds [2 x i32], ptr %list, i64 0, i64 %6
   %8 = load i32, ptr %7, align 4
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %8)
   br label %for.tail.L12
@@ -130,18 +130,18 @@ define dso_local i32 @main() #1 {
   %resultList = alloca [2 x i32], align 4
   store i32 0, ptr %result, align 4
   store [7 x i16] [i16 1, i16 2, i16 3, i16 4, i16 5, i16 6, i16 7], ptr %numberList1, align 2
-  %2 = getelementptr inbounds [7 x i16], ptr %numberList1, i32 0, i32 0
+  %2 = getelementptr inbounds [7 x i16], ptr %numberList1, i64 0, i32 0
   %3 = call i32 @_Z10sumNumbersIsEiPsl(ptr %2, i64 7)
   store i32 %3, ptr %result1, align 4
   store [4 x i64] [i64 10, i64 12, i64 14, i64 16], ptr %numberList2, align 8
-  %4 = getelementptr inbounds [4 x i64], ptr %numberList2, i32 0, i32 0
+  %4 = getelementptr inbounds [4 x i64], ptr %numberList2, i64 0, i32 0
   %5 = call i32 @_Z10sumNumbersIlEiPll(ptr %4, i64 4)
   store i32 %5, ptr %result2, align 4
-  %6 = getelementptr inbounds [2 x i32], ptr %1, i32 0
+  %6 = getelementptr inbounds [2 x i32], ptr %1, i64 0
   %7 = load i32, ptr %result1, align 4
   store i32 %7, ptr %6, align 4
   %8 = load i32, ptr %result2, align 4
-  %9 = getelementptr inbounds i32, ptr %6, i32 1
+  %9 = getelementptr inbounds i32, ptr %6, i64 1
   store i32 %8, ptr %9, align 4
   %10 = load [2 x i32], ptr %1, align 4
   store [2 x i32] %10, ptr %resultList, align 4

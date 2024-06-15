@@ -96,7 +96,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       structScope = fieldEntryType.getBase().getBodyScope();
       assert(structScope != nullptr);
       // Get address of field
-      llvm::Value *indices[2] = {builder.getInt32(0), builder.getInt32(fieldEntry->orderIndex)};
+      llvm::Value *indices[2] = {builder.getInt64(0), builder.getInt32(fieldEntry->orderIndex)};
       thisPtr = insertInBoundsGEP(structTy, thisPtr, indices);
       // Auto de-reference pointer and get new struct type
       autoDeReferencePtr(thisPtr, fieldEntryType);
@@ -313,7 +313,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
     llvm::Value *arrayAddr = insertAlloca(arrayType);
 
     // Retrieve address of first item
-    llvm::Value *firstItemAddress = insertInBoundsGEP(arrayType, arrayAddr, builder.getInt32(0));
+    llvm::Value *firstItemAddress = insertInBoundsGEP(arrayType, arrayAddr, builder.getInt64(0));
 
     // Store all array items at their corresponding offsets
     llvm::Value *currentItemAddress = firstItemAddress;
@@ -322,7 +322,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
       llvm::Value *itemValue = resolveValue(exprResult.node, exprResult);
       // Retrieve current item address
       if (i >= 1)
-        currentItemAddress = insertInBoundsGEP(itemType, currentItemAddress, builder.getInt32(1));
+        currentItemAddress = insertInBoundsGEP(itemType, currentItemAddress, builder.getInt64(1));
       // Store the item value
       const bool storeVolatile = exprResult.entry != nullptr && exprResult.entry->isVolatile;
       insertStore(itemValue, currentItemAddress, storeVolatile);

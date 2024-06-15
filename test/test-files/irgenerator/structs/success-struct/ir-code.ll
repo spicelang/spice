@@ -29,18 +29,18 @@ define dso_local i32 @main() #0 {
   store ptr %nestedInstance, ptr %3, align 8
   %4 = load %struct.TestStruct, ptr %instance, align 8
   store %struct.TestStruct %4, ptr %instance1, align 8
-  %nested_addr = getelementptr inbounds %struct.TestStruct, ptr %instance, i32 0, i32 2
+  %nested_addr = getelementptr inbounds %struct.TestStruct, ptr %instance, i64 0, i32 2
   %5 = load ptr, ptr %nested_addr, align 8
-  %nested2_addr = getelementptr inbounds %struct.Nested, ptr %5, i32 0, i32 1
+  %nested2_addr = getelementptr inbounds %struct.Nested, ptr %5, i64 0, i32 1
   %6 = load ptr, ptr %nested2_addr, align 8
   %7 = load i1, ptr %6, align 1
   %8 = zext i1 %7 to i32
-  %field2_addr = getelementptr inbounds %struct.TestStruct, ptr %instance1, i32 0, i32 1
+  %field2_addr = getelementptr inbounds %struct.TestStruct, ptr %instance1, i64 0, i32 1
   %9 = load double, ptr %field2_addr, align 8
   %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %8, double %9)
-  %nested_addr1 = getelementptr inbounds %struct.TestStruct, ptr %instance1, i32 0, i32 2
+  %nested_addr1 = getelementptr inbounds %struct.TestStruct, ptr %instance1, i64 0, i32 2
   %11 = load ptr, ptr %nested_addr1, align 8
-  %nested1_addr = getelementptr inbounds %struct.Nested, ptr %11, i32 0, i32 0
+  %nested1_addr = getelementptr inbounds %struct.Nested, ptr %11, i64 0, i32 0
   %12 = load ptr, ptr %nested1_addr, align 8
   %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %12)
   %14 = load i32, ptr %result, align 4

@@ -669,7 +669,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
       // Calculate address of array item
       llvm::Type *lhsTy = lhsSTy.toLLVMType(sourceFile);
-      llvm::Value *indices[2] = {builder.getInt32(0), indexValue};
+      llvm::Value *indices[2] = {builder.getInt64(0), indexValue};
       lhs.ptr = insertInBoundsGEP(lhsTy, lhs.ptr, indices);
     } else { // Pointer
       // Make sure the value is present
@@ -709,7 +709,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     QualType fieldSymbolType = lhs.entry->getQualType();
 
     // Get address of the field in the struct instance
-    std::vector<llvm::Value *> indices = {builder.getInt32(0)};
+    std::vector<llvm::Value *> indices = {builder.getInt64(0)};
     for (size_t index : indexPath)
       indices.push_back(builder.getInt32(index));
     const std::string name = fieldName + "_addr";

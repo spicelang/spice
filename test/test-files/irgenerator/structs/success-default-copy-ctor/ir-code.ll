@@ -11,9 +11,9 @@ define void @_ZN12StructToCopy4ctorEv(ptr noundef nonnull align 4 dereferenceabl
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.StructToCopy, ptr %2, i32 0, i32 0
+  %3 = getelementptr inbounds %struct.StructToCopy, ptr %2, i64 0, i32 0
   store i32 21, ptr %3, align 4
-  %4 = getelementptr inbounds %struct.StructToCopy, ptr %2, i32 0, i32 1
+  %4 = getelementptr inbounds %struct.StructToCopy, ptr %2, i64 0, i32 1
   store i1 false, ptr %4, align 1
   ret void
 }
@@ -25,17 +25,17 @@ define dso_local i32 @main() #1 {
   %stc2 = alloca %struct.StructToCopy, align 8
   store i32 0, ptr %result, align 4
   call void @_ZN12StructToCopy4ctorEv(ptr %stc)
-  %a_addr = getelementptr inbounds %struct.StructToCopy, ptr %stc, i32 0, i32 0
+  %a_addr = getelementptr inbounds %struct.StructToCopy, ptr %stc, i64 0, i32 0
   %1 = load i32, ptr %a_addr, align 4
-  %b_addr = getelementptr inbounds %struct.StructToCopy, ptr %stc, i32 0, i32 1
+  %b_addr = getelementptr inbounds %struct.StructToCopy, ptr %stc, i64 0, i32 1
   %2 = load i1, ptr %b_addr, align 1
   %3 = zext i1 %2 to i32
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1, i32 %3)
   %5 = load %struct.StructToCopy, ptr %stc, align 4
   store %struct.StructToCopy %5, ptr %stc2, align 4
-  %a_addr1 = getelementptr inbounds %struct.StructToCopy, ptr %stc2, i32 0, i32 0
+  %a_addr1 = getelementptr inbounds %struct.StructToCopy, ptr %stc2, i64 0, i32 0
   %6 = load i32, ptr %a_addr1, align 4
-  %b_addr2 = getelementptr inbounds %struct.StructToCopy, ptr %stc2, i32 0, i32 1
+  %b_addr2 = getelementptr inbounds %struct.StructToCopy, ptr %stc2, i64 0, i32 1
   %7 = load i1, ptr %b_addr2, align 1
   %8 = zext i1 %7 to i32
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %6, i32 %8)

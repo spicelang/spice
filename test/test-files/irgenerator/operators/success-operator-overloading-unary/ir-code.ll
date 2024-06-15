@@ -12,7 +12,7 @@ define private ptr @_Z16op.plusplus.postR10TestStruct(ptr %0) {
   %ts = alloca ptr, align 8
   store ptr %0, ptr %ts, align 8
   %2 = load ptr, ptr %ts, align 8
-  %test_addr = getelementptr inbounds %struct.TestStruct, ptr %2, i32 0, i32 0
+  %test_addr = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 0
   %3 = load i64, ptr %test_addr, align 8
   %4 = add nsw i64 %3, 1
   store i64 %4, ptr %test_addr, align 8
@@ -30,12 +30,12 @@ define dso_local i32 @main() #0 {
   %1 = load %struct.TestStruct, ptr %ts, align 8
   %2 = call ptr @_Z16op.plusplus.postR10TestStruct(ptr %ts)
   store ptr %2, ptr %output, align 8
-  %test_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 0
+  %test_addr = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 0
   %3 = load i64, ptr %test_addr, align 8
   %4 = add nsw i64 %3, 1
   store i64 %4, ptr %test_addr, align 8
   %5 = load ptr, ptr %output, align 8
-  %test_addr1 = getelementptr inbounds %struct.TestStruct, ptr %5, i32 0, i32 0
+  %test_addr1 = getelementptr inbounds %struct.TestStruct, ptr %5, i64 0, i32 0
   %6 = load i64, ptr %test_addr1, align 8
   %7 = icmp eq i64 %6, 125
   br i1 %7, label %assert.exit.L14, label %assert.then.L14, !prof !0
@@ -46,7 +46,7 @@ assert.then.L14:                                  ; preds = %0
   unreachable
 
 assert.exit.L14:                                  ; preds = %0
-  %test_addr2 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 0
+  %test_addr2 = getelementptr inbounds %struct.TestStruct, ptr %ts, i64 0, i32 0
   %9 = load i64, ptr %test_addr2, align 8
   %10 = icmp eq i64 %9, 125
   br i1 %10, label %assert.exit.L15, label %assert.then.L15, !prof !0

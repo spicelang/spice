@@ -21,11 +21,11 @@ define private void @_ZN3Car4ctorEv(ptr noundef nonnull align 8 dereferenceable(
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  store ptr getelementptr inbounds ({ [4 x ptr] }, ptr @_ZTV3Car, i32 0, i32 0, i32 2), ptr %2, align 8
-  %3 = getelementptr inbounds %struct.Car, ptr %2, i32 0, i32 1
+  store ptr getelementptr inbounds ({ [4 x ptr] }, ptr @_ZTV3Car, i64 0, i32 0, i32 2), ptr %2, align 8
+  %3 = getelementptr inbounds %struct.Car, ptr %2, i64 0, i32 1
   store i1 false, ptr %3, align 1
   %4 = load ptr, ptr %this, align 8
-  %driving_addr = getelementptr inbounds %struct.Car, ptr %4, i32 0, i32 1
+  %driving_addr = getelementptr inbounds %struct.Car, ptr %4, i64 0, i32 1
   store i1 false, ptr %driving_addr, align 1
   ret void
 }
@@ -36,7 +36,7 @@ define private void @_ZN3Car5driveEi(ptr noundef nonnull align 8 dereferenceable
   store ptr %0, ptr %this, align 8
   store i32 %1, ptr %param, align 4
   %3 = load ptr, ptr %this, align 8
-  %driving_addr = getelementptr inbounds %struct.Car, ptr %3, i32 0, i32 1
+  %driving_addr = getelementptr inbounds %struct.Car, ptr %3, i64 0, i32 1
   store i1 true, ptr %driving_addr, align 1
   ret void
 }
@@ -46,7 +46,7 @@ define private i1 @_ZN3Car9isDrivingEv(ptr noundef nonnull align 8 dereferenceab
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %driving_addr = getelementptr inbounds %struct.Car, ptr %2, i32 0, i32 1
+  %driving_addr = getelementptr inbounds %struct.Car, ptr %2, i64 0, i32 1
   %3 = load i1, ptr %driving_addr, align 1
   ret i1 %3
 }

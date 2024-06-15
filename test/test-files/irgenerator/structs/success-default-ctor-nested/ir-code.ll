@@ -13,7 +13,7 @@ define void @_ZN5Inner4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0)
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Inner, ptr %2, i32 0, i32 0
+  %3 = getelementptr inbounds %struct.Inner, ptr %2, i64 0, i32 0
   store ptr @anon.string.0, ptr %3, align 8
   ret void
 }
@@ -23,7 +23,7 @@ define void @_ZN6Middle4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Middle, ptr %2, i32 0, i32 0
+  %3 = getelementptr inbounds %struct.Middle, ptr %2, i64 0, i32 0
   call void @_ZN5Inner4ctorEv(ptr %3)
   ret void
 }
@@ -33,7 +33,7 @@ define void @_ZN5Outer4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0)
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %3 = getelementptr inbounds %struct.Outer, ptr %2, i32 0, i32 0
+  %3 = getelementptr inbounds %struct.Outer, ptr %2, i64 0, i32 0
   call void @_ZN6Middle4ctorEv(ptr %3)
   ret void
 }
@@ -44,9 +44,9 @@ define dso_local i32 @main() #1 {
   %outer = alloca %struct.Outer, align 8
   store i32 0, ptr %result, align 4
   call void @_ZN5Outer4ctorEv(ptr %outer)
-  %middle_addr = getelementptr inbounds %struct.Outer, ptr %outer, i32 0, i32 0
-  %inner_addr = getelementptr inbounds %struct.Middle, ptr %middle_addr, i32 0, i32 0
-  %message_addr = getelementptr inbounds %struct.Inner, ptr %inner_addr, i32 0, i32 0
+  %middle_addr = getelementptr inbounds %struct.Outer, ptr %outer, i64 0, i32 0
+  %inner_addr = getelementptr inbounds %struct.Middle, ptr %middle_addr, i64 0, i32 0
+  %message_addr = getelementptr inbounds %struct.Inner, ptr %inner_addr, i64 0, i32 0
   %1 = load ptr, ptr %message_addr, align 8
   %2 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %1)
   %3 = load i32, ptr %result, align 4

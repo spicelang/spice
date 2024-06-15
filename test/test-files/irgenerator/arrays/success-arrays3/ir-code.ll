@@ -11,7 +11,7 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   store [2 x i32] zeroinitializer, ptr %intArray, align 4
   store [2 x i32] [i32 1, i32 2], ptr %intArray, align 4
-  %1 = getelementptr inbounds [2 x i32], ptr %intArray, i32 0, i32 1
+  %1 = getelementptr inbounds [2 x i32], ptr %intArray, i64 0, i32 1
   %2 = load i32, ptr %1, align 4
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %2)
   %4 = load i32, ptr %result, align 4

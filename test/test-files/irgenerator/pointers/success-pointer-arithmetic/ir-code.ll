@@ -16,7 +16,7 @@ define dso_local i32 @main() #0 {
   %aPtr = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   store [3 x i32] [i32 1, i32 2, i32 3], ptr %a, align 4
-  %1 = getelementptr inbounds [3 x i32], ptr %a, i32 0, i32 0
+  %1 = getelementptr inbounds [3 x i32], ptr %a, i64 0, i32 0
   store ptr %1, ptr %aPtr, align 8
   %2 = load ptr, ptr %aPtr, align 8
   %3 = load i32, ptr %2, align 4

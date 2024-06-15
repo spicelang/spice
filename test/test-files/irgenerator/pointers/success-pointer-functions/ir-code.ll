@@ -13,7 +13,7 @@ define private void @_Z8birthdayP6Person(ptr %0) {
   %person = alloca ptr, align 8
   store ptr %0, ptr %person, align 8
   %2 = load ptr, ptr %person, align 8
-  %age_addr = getelementptr inbounds %struct.Person, ptr %2, i32 0, i32 2
+  %age_addr = getelementptr inbounds %struct.Person, ptr %2, i64 0, i32 2
   %3 = load i32, ptr %age_addr, align 4
   %4 = add i32 %3, 1
   store i32 %4, ptr %age_addr, align 4
@@ -30,16 +30,16 @@ define dso_local i32 @main() #0 {
   store ptr @anon.string.1, ptr %1, align 8
   %2 = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 2
   store i32 32, ptr %2, align 4
-  %lastName_addr = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 1
+  %lastName_addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 1
   %3 = load ptr, ptr %lastName_addr, align 8
-  %firstName_addr = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 0
+  %firstName_addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 0
   %4 = load ptr, ptr %firstName_addr, align 8
   %5 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %3, ptr %4)
-  %age_addr = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 2
+  %age_addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 2
   %6 = load i32, ptr %age_addr, align 4
   %7 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %6)
   call void @_Z8birthdayP6Person(ptr %mike)
-  %age_addr1 = getelementptr inbounds %struct.Person, ptr %mike, i32 0, i32 2
+  %age_addr1 = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 2
   %8 = load i32, ptr %age_addr1, align 4
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %8)
   %10 = load i32, ptr %result, align 4

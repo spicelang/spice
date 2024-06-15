@@ -20,18 +20,18 @@ define private void @_Z8testProcPPPPi(ptr %0) {
   %5 = load ptr, ptr %nums1, align 8
   %6 = load [4 x i32], ptr %5, align 4
   store [4 x i32] %6, ptr %nums2, align 4
-  %7 = getelementptr inbounds [4 x i32], ptr %nums2, i32 0, i32 2
+  %7 = getelementptr inbounds [4 x i32], ptr %nums2, i64 0, i32 2
   store i32 10, ptr %7, align 4
-  %8 = getelementptr inbounds [4 x i32], ptr %nums2, i32 0, i32 0
+  %8 = getelementptr inbounds [4 x i32], ptr %nums2, i64 0, i32 0
   %9 = load i32, ptr %8, align 4
   %10 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %9)
-  %11 = getelementptr inbounds [4 x i32], ptr %nums2, i32 0, i32 1
+  %11 = getelementptr inbounds [4 x i32], ptr %nums2, i64 0, i32 1
   %12 = load i32, ptr %11, align 4
   %13 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %12)
-  %14 = getelementptr inbounds [4 x i32], ptr %nums2, i32 0, i32 2
+  %14 = getelementptr inbounds [4 x i32], ptr %nums2, i64 0, i32 2
   %15 = load i32, ptr %14, align 4
   %16 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 %15)
-  %17 = getelementptr inbounds [4 x i32], ptr %nums2, i32 0, i32 3
+  %17 = getelementptr inbounds [4 x i32], ptr %nums2, i64 0, i32 3
   %18 = load i32, ptr %17, align 4
   %19 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 %18)
   ret void
@@ -48,7 +48,7 @@ define dso_local i32 @main() #1 {
   %intArray2 = alloca ptr, align 8
   store i32 0, ptr %result, align 4
   store [4 x i32] [i32 1, i32 2, i32 3, i32 4], ptr %intArray, align 4
-  %1 = getelementptr inbounds [4 x i32], ptr %intArray, i32 0, i32 1
+  %1 = getelementptr inbounds [4 x i32], ptr %intArray, i64 0, i32 1
   %2 = load i32, ptr %1, align 4
   %3 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 %2)
   store ptr %intArray, ptr %intArray1, align 8

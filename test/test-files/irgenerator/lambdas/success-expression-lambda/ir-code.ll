@@ -57,12 +57,12 @@ for.head.L9:                                      ; preds = %for.tail.L9, %for.b
 for.body.L9:                                      ; preds = %for.head.L9
   %13 = load i32, ptr %j, align 4
   %14 = load ptr, ptr %array, align 8
-  %15 = getelementptr inbounds [10 x i32], ptr %14, i32 0, i32 %13
+  %15 = getelementptr inbounds [10 x i32], ptr %14, i64 0, i32 %13
   %16 = load i32, ptr %15, align 4
   %17 = load i32, ptr %j, align 4
   %18 = add nsw i32 %17, 1
   %19 = load ptr, ptr %array, align 8
-  %20 = getelementptr inbounds [10 x i32], ptr %19, i32 0, i32 %18
+  %20 = getelementptr inbounds [10 x i32], ptr %19, i64 0, i32 %18
   %21 = load i32, ptr %20, align 4
   %fct = load ptr, ptr %sortFct, align 8
   %22 = call i1 %fct(i32 %16, i32 %21)
@@ -71,11 +71,11 @@ for.body.L9:                                      ; preds = %for.head.L9
 if.then.L10:                                      ; preds = %for.body.L9
   %23 = load i32, ptr %j, align 4
   %24 = load ptr, ptr %array, align 8
-  %25 = getelementptr inbounds [10 x i32], ptr %24, i32 0, i32 %23
+  %25 = getelementptr inbounds [10 x i32], ptr %24, i64 0, i32 %23
   %26 = load i32, ptr %j, align 4
   %27 = add nsw i32 %26, 1
   %28 = load ptr, ptr %array, align 8
-  %29 = getelementptr inbounds [10 x i32], ptr %28, i32 0, i32 %27
+  %29 = getelementptr inbounds [10 x i32], ptr %28, i64 0, i32 %27
   call void @_Z4swapRiRi(ptr %25, ptr %29)
   br label %if.exit.L10
 
@@ -145,7 +145,7 @@ for.head.L24:                                     ; preds = %for.tail.L24, %1
 for.body.L24:                                     ; preds = %for.head.L24
   %5 = load i32, ptr %i, align 4
   %6 = load ptr, ptr %array, align 8
-  %7 = getelementptr inbounds [10 x i32], ptr %6, i32 0, i32 %5
+  %7 = getelementptr inbounds [10 x i32], ptr %6, i64 0, i32 %5
   %8 = load i32, ptr %7, align 4
   %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %8)
   br label %for.tail.L24

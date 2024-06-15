@@ -29,11 +29,11 @@ define private %struct.ShoppingCart @_Z15newShoppingCartv() {
   %items = alloca [3 x %struct.ShoppingItem], align 8
   %1 = alloca %struct.ShoppingCart, align 8
   store [3 x %struct.ShoppingItem] [%struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }, %struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }, %struct.ShoppingItem { ptr @0, double 0.000000e+00, ptr @1 }], ptr %items, align 8
-  %2 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items, i32 0, i32 0
+  %2 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items, i64 0, i32 0
   store %struct.ShoppingItem { ptr @anon.string.0, double 1.000000e+02, ptr @anon.string.1 }, ptr %2, align 8
-  %3 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items, i32 0, i32 1
+  %3 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items, i64 0, i32 1
   store %struct.ShoppingItem { ptr @anon.string.2, double 1.255000e+02, ptr @anon.string.3 }, ptr %3, align 8
-  %4 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items, i32 0, i32 2
+  %4 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items, i64 0, i32 2
   store %struct.ShoppingItem { ptr @anon.string.4, double 6.000000e+00, ptr @anon.string.5 }, ptr %4, align 8
   store ptr @anon.string.6, ptr %1, align 8
   %5 = load [3 x %struct.ShoppingItem], ptr %items, align 8
@@ -63,16 +63,16 @@ define dso_local i32 @main() #0 {
   store i32 0, ptr %result, align 4
   %1 = call %struct.ShoppingCart @_Z15newShoppingCartv()
   store %struct.ShoppingCart %1, ptr %shoppingCart, align 8
-  %items_addr = getelementptr inbounds %struct.ShoppingCart, ptr %shoppingCart, i32 0, i32 1
-  %2 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items_addr, i32 0, i32 1
-  %name_addr = getelementptr inbounds %struct.ShoppingItem, ptr %2, i32 0, i32 0
+  %items_addr = getelementptr inbounds %struct.ShoppingCart, ptr %shoppingCart, i64 0, i32 1
+  %2 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items_addr, i64 0, i32 1
+  %name_addr = getelementptr inbounds %struct.ShoppingItem, ptr %2, i64 0, i32 0
   %3 = load ptr, ptr %name_addr, align 8
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr %3)
   %5 = call %struct.ShoppingCart @_Z19anotherShoppingCartv()
   store %struct.ShoppingCart %5, ptr %shoppingCart, align 8
-  %items_addr1 = getelementptr inbounds %struct.ShoppingCart, ptr %shoppingCart, i32 0, i32 1
-  %6 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items_addr1, i32 0, i32 2
-  %unit_addr = getelementptr inbounds %struct.ShoppingItem, ptr %6, i32 0, i32 2
+  %items_addr1 = getelementptr inbounds %struct.ShoppingCart, ptr %shoppingCart, i64 0, i32 1
+  %6 = getelementptr inbounds [3 x %struct.ShoppingItem], ptr %items_addr1, i64 0, i32 2
+  %unit_addr = getelementptr inbounds %struct.ShoppingItem, ptr %6, i64 0, i32 2
   %7 = load ptr, ptr %unit_addr, align 8
   %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr %7)
   %9 = load i32, ptr %result, align 4
