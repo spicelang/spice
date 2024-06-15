@@ -179,7 +179,9 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       Scope *matchScope = iterableType.getBodyScope();
       node->getIteratorFct = FunctionManager::matchFunction(matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
     }
-    assert(node->getIteratorFct != nullptr);
+    if (node->getIteratorFct == nullptr)
+      throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIterator() function found for the given iterable type");
+
     iteratorType = QualType(node->getIteratorFct->returnType);
     // Create anonymous entry for the iterator
     currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
@@ -214,17 +216,21 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   QualType iteratorItemType;
   if (hasIdx) {
     node->getIdxFct = FunctionManager::matchFunction(matchScope, "getIdx", iteratorType, {}, {}, false, node);
-    assert(node->getIdxFct != nullptr);
+    if (node->getIdxFct == nullptr)
+      throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIdx() function found for the given iterable type");
     iteratorItemType = node->getIdxFct->returnType.getTemplateTypes().back();
   } else {
     node->getFct = FunctionManager::matchFunction(matchScope, "get", iteratorType, {}, {}, false, node);
-    assert(node->getFct != nullptr);
+    if (node->getFct == nullptr)
+      throw SemanticError(iteratorNode, INVALID_ITERATOR, "No get() function found for the given iterable type");
     iteratorItemType = node->getFct->returnType;
   }
   node->isValidFct = FunctionManager::matchFunction(matchScope, "isValid", iteratorType, {}, {}, false, node);
-  assert(node->isValidFct != nullptr);
+  if (node->isValidFct == nullptr)
+    throw SemanticError(iteratorNode, INVALID_ITERATOR, "No isValid() function found for the given iterable type");
   node->nextFct = FunctionManager::matchFunction(matchScope, "next", iteratorType, {}, {}, false, node);
-  assert(node->nextFct != nullptr);
+  if (node->nextFct == nullptr)
+    throw SemanticError(iteratorNode, INVALID_ITERATOR, "No next() function found for the given iterable type");
 
   // Retrieve item variable entry
   SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl()->varName);
@@ -1778,7 +1784,8 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     Struct *spiceStruct = StructManager::matchStruct(matchScope, structName, returnBaseType.getTemplateTypes(), node);
     if (!spiceStruct) {
       const std::string signature = Struct::getSignature(structName, returnBaseType.getTemplateTypes());
-      SOFT_ERROR_ER(node, UNKNOWN_DATATYPE, "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
+      SOFT_ERROR_ER(node, UNKNOWN_DATATYPE,
+                    "Could not find struct candidate for struct '" + signature + "'. Do the template types match?")
     }
     returnType = returnType.getWithBodyScope(spiceStruct->scope).replaceBaseType(returnBaseType);
 

@@ -252,12 +252,11 @@ p Vector.resize(unsigned long itemCount) {
  */
 public type VectorIterator<T> struct : IIterator<T> {
     Vector<T>& vector
-    unsigned long cursor
+    unsigned long cursor = 0l
 }
 
 public p VectorIterator.ctor<T>(Vector<T>& vector) {
     this.vector = vector;
-    this.cursor = 0l;
 }
 
 /**
@@ -312,7 +311,7 @@ public inline p operator++<T>(VectorIterator<T>& it) {
  * @param it VectorIterator
  */
 public inline p operator--<T>(VectorIterator<T>& it) {
-    if it.cursor <= 0 { panic(Error("Iterator out of bounds")); }
+    if it.cursor <= 0l { panic(Error("Iterator out of bounds")); }
     it.cursor--;
 }
 
@@ -323,7 +322,7 @@ public inline p operator--<T>(VectorIterator<T>& it) {
  * @param offset Offset
  */
 public inline p operator+=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
-    if it.cursor + offset >= it.vector.getSize() || it.cursor + offset < 0 { panic(Error("Iterator out of bounds")); }
+    if it.cursor + offset >= it.vector.getSize() || it.cursor + offset < 0l { panic(Error("Iterator out of bounds")); }
     it.cursor += offset;
 }
 
@@ -334,12 +333,12 @@ public inline p operator+=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
  * @param offset Offset
  */
 public inline p operator-=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
-    if it.cursor - offset >= it.vector.getSize() || it.cursor - offset < 0 { panic(Error("Iterator out of bounds")); }
+    if it.cursor - offset >= it.vector.getSize() || it.cursor - offset < 0l { panic(Error("Iterator out of bounds")); }
     it.cursor -= offset;
 }
 
 /**
- * Retrieve an forward iterator for the vector
+ * Retrieve a forward iterator for the vector
  */
 public f<VectorIterator<T>> Vector.getIterator() {
     return VectorIterator<T>(*this);

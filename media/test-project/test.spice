@@ -1,4 +1,34 @@
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
 
+type T dyn;
+
+type Container<T> struct : IIterable<T> {}
+
+type ContainerIterator<T> struct : IIterator<T> {
+    Container<T>& container
+}
+
+p ContainerIterator.ctor(Container<T>& container) {
+    this.container = container;
+}
+
+f<ContainerIterator<T>> Container.getIterator() {
+    return ContainerIterator<T>(*this);
+}
+
+f<int&> ContainerIterator.get() { return this.idx; }
+f<Pair<unsigned long, T&>> ContainerIterator.getIdx() { return Pair<unsigned long, T&>(0l, this.idx); }
+f<bool> ContainerIterator.isValid() { return false; }
+p ContainerIterator.next() {}
+
+f<int> main() {
+    Container<int> c;
+    foreach dyn item : c {
+        printf("%d\n", item);
+    }
+}
 
 /*import "std/os/env";
 import "std/io/filepath";
