@@ -99,7 +99,8 @@ public f<T&> Vector.get(unsigned long index) {
         panic(Error("Access index out of bounds"));
     }
     unsafe {
-        return this.contents[index];
+        T& t = this.contents[index];
+        return t;
     }
 }
 

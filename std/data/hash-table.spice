@@ -160,7 +160,10 @@ public p HashTableIterator.ctor<K, V>(HashTable<K, V>& hashTable) {
     this.hashTable = hashTable;
     if !this.hashTable.buckets.isEmpty() {
         // Find first bucket that contains any items
-        this.moveToNextItem();
+        const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
+        while this.currentBucketIdx + 1 < this.hashTable.buckets.getSize() && currentBucket.isEmpty() {
+            currentBucket = this.hashTable.buckets.get(++this.currentBucketIdx);
+        }
     }
 }
 
@@ -194,18 +197,43 @@ public inline f<Pair<unsigned long, Pair<const K&, V&>&>> HashTableIterator.getI
  * @return true or false
  */
 public inline f<bool> HashTableIterator.isValid() {
-    return !this.hashTable.isEmpty() && this.currentBucketIdx < this.hashTable.buckets.getSize();
+    // Check if the hash table has no buckets
+    if this.hashTable.isEmpty() { return false; }
+    // Check if we reached the end of the bucket list
+    if this.currentBucketIdx >= this.hashTable.buckets.getSize() { return false; }
+    // Check if any more items are to come
+    return this.moreItemsAvailable();
+}
+
+f<bool> HashTableIterator.moreItemsAvailable() {
+    // Are we at the end of the current bucket?
+    const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
+    if this.currentBucketItemIdx + 1 < currentBucket.getSize() {
+        return true;
+    }
+    // Are there more non-empty buckets?
+    for unsigned long i = this.currentBucketIdx; i < this.hashTable.buckets.getSize(); i++ {
+        const LinkedList<HashEntry<K, V>>& bucket = this.hashTable.buckets.get(i);
+        if !bucket.isEmpty() {
+            return true;
+        }
+    }
+    return false;
 }
 
 p HashTableIterator.moveToNextItem() {
     // Retrieve current bucket
-    dyn currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
+    const LinkedList<HashEntry<K, V>>& currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
     this.currentBucketItemIdx++;
+
+    // If the current bucket does not contain more items, move to the next bucket that contains items
     if this.currentBucketItemIdx >= currentBucket.getSize() {
-        // If the current bucket does not contain more items, move to the next bucket that contains items
         this.currentBucketIdx++;
-        while this.currentBucketIdx < this.hashTable.buckets.getSize() && currentBucket.isEmpty() {
-            currentBucket = this.hashTable.buckets.get(this.currentBucketIdx++);
+        if this.currentBucketIdx < this.hashTable.buckets.getSize() {
+            currentBucket = this.hashTable.buckets.get(this.currentBucketIdx);
+            while this.currentBucketIdx + 1 < this.hashTable.buckets.getSize() && currentBucket.isEmpty() {
+                currentBucket = this.hashTable.buckets.get(++this.currentBucketIdx);
+            }
         }
         this.currentBucketItemIdx = 0l;
     }
