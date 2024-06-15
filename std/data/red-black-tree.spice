@@ -1,3 +1,7 @@
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
+
 // Add generic type definitions
 type K dyn;
 type V dyn;
@@ -45,7 +49,7 @@ inline f<bool> Node.isBlack() {
  * Delete: O(log n)
  * Lookup: O(log n)
  */
-public type RedBlackTree<K, V> struct {
+public type RedBlackTree<K, V> struct : IIterable<Pair<K, V>> {
     heap Node<K, V>* rootNode = nil<heap Node<K, V>*>
     unsigned long size = 0l
 }
@@ -413,4 +417,76 @@ p RedBlackTree.clearRecursive(heap Node<K, V>* node) {
     this.clearRecursive(node.childLeft);
     this.clearRecursive(node.childRight);
     sDelete(node);
+}
+
+/**
+ * Iterator to iterate over a red black tree data structurs
+ */
+public type RedBlackTreeIterator<K, V> struct : IIterator<Pair<K, V>> {
+    RedBlackTree<K, V>& tree
+    heap Node<K, V>* currentNode = nil<heap Node<K, V>*>
+    unsigned long cursor = 0l
+}
+
+public p RedBlackTreeIterator.ctor<K, V>(RedBlackTree<K, V>& tree) {
+    this.tree = tree;
+    if tree.rootNode != nil<heap Node<K, V>*> {
+        // Start at the leftmost leaf node, which is the minimum
+        this.currentNode = tree.minimum(tree.rootNode);
+    }
+}
+
+/**
+ * Returns the current key-value pair of the red black tree
+ *
+ * @return Current key/value pair
+ */
+public inline f<Pair<const K&, V&>> RedBlackTreeIterator.get() {
+    return Pair<const K&, V&>(this.currentNode.key, this.currentNode.value);
+}
+
+/**
+ * Returns the current index and the current item of the unordered map
+ *
+ * @return Pair of current index and current key/value pair
+ */
+public inline f<Pair<unsigned long, Pair<const K&, V&>>> RedBlackTreeIterator.getIdx() {
+    return Pair<unsigned long, Pair<const K&, V&>>(this.cursor, this.get());
+}
+
+/**
+ * Check if the iterator is valid
+ *
+ * @return true or false
+ */
+public inline f<bool> RedBlackTreeIterator.isValid() {
+    return this.currentNode != nil<heap Node<K, V>*>;
+}
+
+/**
+ * Moves the cursor to the next item
+ */
+public inline p RedBlackTreeIterator.next() {
+    if !this.isValid() { panic(Error("Calling next() on invalid iterator")); }
+
+    if this.currentNode.childRight != nil<Node<K, V>*> {
+        // Case 1: If node has a right child, so we want to continue at the minimum of the right child's sub-tree
+        this.currentNode = this.tree.minimum(this.currentNode.childRight);
+    } else {
+        // Case 2: Node has no right child, so we need to continue with the parent
+        while this.currentNode.parent != nil<Node<K, V>*> && this.currentNode == this.currentNode.parent.childRight {
+            this.currentNode = this.currentNode.parent;
+        }
+        this.currentNode = this.currentNode.parent;
+    }
+
+    // Increment cursor to reflect the current item position
+    this.cursor++;
+}
+
+/**
+ * Retrieve a forward iterator for the red black tree
+ */
+public f<RedBlackTreeIterator<K, V>> RedBlackTree.getIterator() {
+    return RedBlackTreeIterator<K, V>(*this);
 }

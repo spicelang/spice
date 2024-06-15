@@ -24,8 +24,7 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
     return rhsType;
 
   // Check if we try to assign a constant value
-  if (!isDecl)
-    ensureNoConstAssign(node, lhsType);
+  ensureNoConstAssign(node, lhsType, isDecl);
 
   // Allow pointers and arrays of the same type straight away
   if (lhsType.isOneOf({TY_PTR, TY_REF}) && lhsType.matches(rhsType, false, false, true))
@@ -59,8 +58,7 @@ QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Expr
   assert(!lhsType.is(TY_DYN));
 
   // Check if we try to assign a constant value
-  if (!isDecl)
-    ensureNoConstAssign(node, lhsType);
+  ensureNoConstAssign(node, lhsType, isDecl);
 
   // Allow pointers and arrays of the same type straight away
   if (lhsType.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhsType == rhsType)
@@ -757,9 +755,9 @@ void OpRuleManager::ensureUnsafeAllowed(const ASTNode *node, const char *name, c
   SOFT_ERROR_VOID(node, UNSAFE_OPERATION_IN_SAFE_CONTEXT, errorMsg)
 }
 
-void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const QualType &lhs) {
+void OpRuleManager::ensureNoConstAssign(const ASTNode *node, const QualType &lhs, bool isDecl) {
   // Check if we try to assign a constant value
-  if (lhs.removeReferenceWrapper().isConst()) {
+  if (lhs.removeReferenceWrapper().isConst() && !isDecl) {
     const std::string errorMessage = "Trying to assign value to an immutable variable of type " + lhs.getName(true);
     throw SemanticError(node, REASSIGN_CONST_VARIABLE, errorMessage);
   }

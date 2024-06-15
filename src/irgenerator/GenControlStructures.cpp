@@ -127,16 +127,16 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     iteratorPtr = resolveAddress(iteratorAssignNode);
   }
 
-  const QualType &itemSTy = iteratorType.getTemplateTypes().front();
-  const QualType itemRefSTy = itemSTy.toRef(node);
-  assert(!node->getFct || itemRefSTy == node->getFct->returnType);
-  assert(!node->getIdxFct || itemRefSTy == node->getIdxFct->returnType.getTemplateTypes().back());
-
-  // Visit idx variable declaration if required
+  // Check we have an idx
   const DeclStmtNode *idxDeclNode = node->idxVarDecl();
   const bool hasIdx = idxDeclNode != nullptr;
-  SymbolTableEntry *idxEntry = nullptr;
-  llvm::Value *idxAddress = nullptr;
+  // Retrieve item ref type
+  assert(hasIdx ? node->getIdxFct != nullptr : node->getFct != nullptr);
+  const QualType itemRefSTy = hasIdx ? node->getIdxFct->returnType : node->getFct->returnType;
+
+  // Visit idx variable declaration if required
+  SymbolTableEntry *idxEntry;
+  llvm::Value *idxAddress;
   if (hasIdx) {
     visit(idxDeclNode);
     // Get address of idx variable

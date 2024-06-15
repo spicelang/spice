@@ -679,7 +679,7 @@ private:
                                           const char *messagePrefix);
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const QualType &lhs) const;
   void ensureUnsafeAllowed(const ASTNode *node, const char *name, const QualType &lhs, const QualType &rhs) const;
-  static void ensureNoConstAssign(const ASTNode *node, const QualType &lhs);
+  static void ensureNoConstAssign(const ASTNode *node, const QualType &lhs, bool isDecl = false);
 };
 
 } // namespace spice::compiler
