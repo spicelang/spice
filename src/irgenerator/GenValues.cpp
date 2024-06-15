@@ -496,7 +496,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   llvm::Value *resultAddr = insertAlloca(returnType, RETURN_VARIABLE_NAME);
   resultEntry->updateAddress(resultAddr);
   // Generate debug info
-  diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr, SIZE_MAX);
+  diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr);
 
   // Store function argument values
   llvm::Value *captureStructPtrPtr = nullptr;

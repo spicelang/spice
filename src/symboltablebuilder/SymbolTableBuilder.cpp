@@ -41,7 +41,7 @@ std::any SymbolTableBuilder::visitMainFctDef(MainFctDefNode *node) {
   mainFctEntry->used = true;
 
   // Create scope for main function body
-  const std::string scopeId = MainFctDefNode::getScopeId();
+  const std::string &scopeId = MainFctDefNode::getScopeId();
   node->bodyScope = currentScope = rootScope->createChildScope(scopeId, ScopeType::FUNC_PROC_BODY, &node->codeLoc);
   currentScope->isGenericScope = false;
 

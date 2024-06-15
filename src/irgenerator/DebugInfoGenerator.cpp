@@ -63,7 +63,7 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   voidTy = diBuilder->createBasicType("void", 0, llvm::dwarf::DW_ATE_unsigned);
 
   // Initialize fat ptr type
-  llvm::Type *ptrTy = llvm::PointerType::get(context, 0);
+  llvm::PointerType *ptrTy = irGenerator->builder.getPtrTy();
   if (!irGenerator->llvmTypes.fatPtrType)
     irGenerator->llvmTypes.fatPtrType = llvm::StructType::get(context, {ptrTy, ptrTy});
 

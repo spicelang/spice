@@ -84,7 +84,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
   assert(resultEntry != nullptr);
   resultEntry->updateAddress(resultAddress);
   // Generate debug info
-  diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddress, SIZE_MAX);
+  diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddress);
   // Store the default result value
   insertStore(builder.getInt32(0), resultAddress);
 
@@ -240,7 +240,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     assert(resultEntry != nullptr);
     resultEntry->updateAddress(resultAddr);
     // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr, SIZE_MAX);
+    diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr);
 
     // Store function argument values
     for (auto &arg : func->args()) {

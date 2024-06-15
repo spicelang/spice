@@ -92,8 +92,7 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
   generateTypeInfo(spiceStruct);
 
   // Generate VTable type
-  llvm::PointerType *ptrTy = llvm::PointerType::get(context, 0);
-  llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(ptrTy, arrayElementCount);
+  llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(builder.getPtrTy(), arrayElementCount);
   spiceStruct->vTableData.vtableType = llvm::StructType::get(context, vtableArrayTy, false);
 
   const std::string mangledName = NameMangling::mangleVTable(spiceStruct);
@@ -119,7 +118,7 @@ void IRGenerator::generateVTableInitializer(StructBase *spiceStruct) {
   const size_t arrayElementCount = virtualMethodCount + 2; // +2 for nullptr and TypeInfo
 
   // Generate VTable type
-  llvm::PointerType *ptrTy = llvm::PointerType::get(context, 0);
+  llvm::PointerType *ptrTy = builder.getPtrTy();
   llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(ptrTy, arrayElementCount);
   assert(spiceStruct->vTableData.vtableType);
 
