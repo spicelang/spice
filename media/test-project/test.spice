@@ -3,6 +3,14 @@ import "std/data/pair";
 
 f<int> main() {
     RedBlackTree<int, int> tree;
+    {
+        foreach Pair<int&, int&> item : tree {
+            int& first = item.getFirst();
+            int& second = item.getSecond();
+            printf("%d: %d\n", first, second);
+        }
+    }
+
     tree.insert(1, 2);
     tree.insert(2, 3);
     tree.insert(3, 4);

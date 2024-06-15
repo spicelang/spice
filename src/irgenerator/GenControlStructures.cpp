@@ -135,8 +135,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   const QualType itemRefSTy = hasIdx ? node->getIdxFct->returnType : node->getFct->returnType;
 
   // Visit idx variable declaration if required
-  SymbolTableEntry *idxEntry;
-  llvm::Value *idxAddress;
+  SymbolTableEntry *idxEntry = nullptr;
+  llvm::Value *idxAddress = nullptr;
   if (hasIdx) {
     visit(idxDeclNode);
     // Get address of idx variable
