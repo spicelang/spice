@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:11:24:
+Invalid iterator: No getIterator() function found for the given iterable type
+
+11  foreach dyn item : c {
+                       ^

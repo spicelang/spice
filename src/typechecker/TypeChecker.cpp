@@ -179,7 +179,8 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       Scope *matchScope = iterableType.getBodyScope();
       node->getIteratorFct = FunctionManager::match(this, matchScope, "getIterator", iterableType, {}, {}, true, iteratorNode);
     }
-    assert(node->getIteratorFct != nullptr);
+    if (node->getIteratorFct == nullptr)
+      throw SemanticError(iteratorNode, INVALID_ITERATOR, "No getIterator() function found for the given iterable type");
 
     iteratorType = QualType(node->getIteratorFct->returnType);
     // Create anonymous entry for the iterator

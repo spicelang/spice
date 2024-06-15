@@ -1,0 +1,14 @@
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+import "std/data/pair";
+
+type T dyn;
+
+type Container<T> struct : IIterable<T> {}
+
+f<int> main() {
+    Container<int> c;
+    foreach dyn item : c {
+        printf("%d\n", item);
+    }
+}
