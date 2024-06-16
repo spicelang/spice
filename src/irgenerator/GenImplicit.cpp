@@ -58,6 +58,18 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
   // Call all dtor functions
   for (auto [entry, dtor] : node->dtorFunctions.at(manIdx))
     generateCtorOrDtorCall(entry, dtor, {});
+
+  // Generate lifetime end markers
+  if (cliOptions.useLifetimeMarkers) {
+    std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
+    for (SymbolTableEntry *var : vars) {
+      llvm::Value *address = var->getAddress();
+      if (address == nullptr)
+        continue;
+      const uint64_t sizeInBytes = module->getDataLayout().getTypeAllocSize(var->getQualType().toLLVMType(sourceFile));
+      builder.CreateLifetimeEnd(address, builder.getInt64(sizeInBytes));
+    }
+  }
 }
 
 void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor,
