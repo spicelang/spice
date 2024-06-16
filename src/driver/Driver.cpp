@@ -334,6 +334,9 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
   subCmd->add_option<unsigned short>("--jobs,-j", cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
   // --ignore-cache
   subCmd->add_flag<bool>("--ignore-cache", cliOptions.ignoreCache, "Force re-compilation of all source files");
+  // --use-lifetime-markers
+  subCmd->add_flag<bool>("--use-lifetime-markers", cliOptions.useLifetimeMarkers,
+                         "Generate lifetime markers to enhance optimizations");
 
   // Opt levels
   subCmd->add_flag_callback(

@@ -64,6 +64,7 @@ void execTestCase(const TestCase &testCase) {
           /* abortAfterDump */ false,
       },
       /* namesForIRValues= */ true,
+      /* useLifetimeMarkers= */ false,
       /* optLevel= */ OptLevel::O0,
       /* useLTO= */ std::filesystem::exists(testCase.testPath / CTL_LTO),
       /* noEntryFct= */ std::filesystem::exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),

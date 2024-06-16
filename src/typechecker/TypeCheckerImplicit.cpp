@@ -1,12 +1,12 @@
 // Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
 #include "TypeChecker.h"
-#include "TypeMatcher.h"
 
 #include <SourceFile.h>
 #include <ast/ASTBuilder.h>
 #include <ast/ASTNodes.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
+#include <typechecker/TypeMatcher.h>
 
 namespace spice::compiler {
 

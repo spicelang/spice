@@ -63,6 +63,7 @@ struct CliOptions {
     bool abortAfterDump = false;
   } dumpSettings;
   bool namesForIRValues = false;
+  bool useLifetimeMarkers = false;
   OptLevel optLevel = OptLevel::O0; // Default optimization level for debug build mode is O0
   bool useLTO = false;
   bool noEntryFct = false;
