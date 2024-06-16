@@ -89,11 +89,11 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
       typeMapping.reserve(candidate.templateTypes.size());
 
       // Check template types requirement
-      if (!matchTemplateTypes(candidate, reqTemplateTypes, typeMapping))
+      if (!matchTemplateTypes(candidate, reqTemplateTypes, typeMapping, node))
         continue; // Leave this manifestation and continue with the next one
 
       // Map field types from generic to concrete
-      substantiateFieldTypes(candidate, typeMapping);
+      substantiateFieldTypes(candidate, typeMapping, node);
 
       // We found a match! -> Set the actual candidate and its entry to used
       candidate.used = true;
@@ -167,7 +167,7 @@ Struct *StructManager::match(Scope *matchScope, const std::string &qt, const Qua
 
         // Build template types
         QualTypeList templateTypes = interfaceType.getTemplateTypes();
-        TypeMatcher::substantiateTypesWithTypeMapping(templateTypes, typeMapping);
+        TypeMatcher::substantiateTypesWithTypeMapping(templateTypes, typeMapping, node);
 
         // Instantiate interface
         Scope *interfaceMatchScope = interfaceType.getBodyScope()->parent;
@@ -210,9 +210,11 @@ bool StructManager::matchName(const Struct &candidate, const std::string &reqNam
  *
  * @param candidate Matching candidate struct
  * @param reqTemplateTypes Requested struct template types
+ * @param node Instantiation AST node for printing error messages
  * @return Fulfilled or not
  */
-bool StructManager::matchTemplateTypes(Struct &candidate, const QualTypeList &reqTemplateTypes, TypeMapping &typeMapping) {
+bool StructManager::matchTemplateTypes(Struct &candidate, const QualTypeList &reqTemplateTypes, TypeMapping &typeMapping,
+                                       const ASTNode *node) {
   // Check if the number of types match
   const size_t typeCount = reqTemplateTypes.size();
   if (typeCount != candidate.templateTypes.size())
@@ -234,7 +236,7 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const QualTypeList &re
 
     // Substantiate the candidate param type, based on the type mapping
     if (candidateType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping);
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping, node);
   }
 
   return true;
@@ -245,15 +247,16 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const QualTypeList &re
  *
  * @param candidate Candidate struct
  * @param typeMapping Generic type mapping
+ * @param node Instantiation AST node for printing error messages
  */
-void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping) {
+void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping, const ASTNode *node) {
   // Loop over all implicit fields and substantiate the generic ones
   const size_t fieldCount = candidate.scope->getFieldCount() - candidate.fieldTypes.size();
   for (size_t i = 0; i < fieldCount; i++) {
     SymbolTableEntry *fieldEntry = candidate.scope->symbolTable.lookupStrictByIndex(i);
     QualType fieldType = fieldEntry->getQualType();
     if (fieldType.hasAnyGenericParts()) {
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, node);
       fieldEntry->updateType(fieldType, true);
     }
   }
@@ -261,7 +264,7 @@ void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeM
   // Loop over all explicit field types and substantiate the generic ones
   for (QualType &fieldType : candidate.fieldTypes)
     if (fieldType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping);
+      TypeMatcher::substantiateTypeWithTypeMapping(fieldType, typeMapping, node);
 }
 
 /**

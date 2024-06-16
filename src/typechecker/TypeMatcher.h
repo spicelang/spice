@@ -21,8 +21,8 @@ public:
                                              TypeMapping &typeMapping, ResolverFct &resolverFct, bool strictSpecifiers);
   static bool matchRequestedToCandidateType(QualType candidateType, QualType requestedType, TypeMapping &typeMapping,
                                             ResolverFct &resolverFct, bool strictSpecifierMatching);
-  static void substantiateTypesWithTypeMapping(QualTypeList &qualTypes, const TypeMapping &typeMapping);
-  static void substantiateTypeWithTypeMapping(QualType &type, const TypeMapping &typeMapping);
+  static void substantiateTypesWithTypeMapping(QualTypeList &qualTypes, const TypeMapping &typeMapping, const ASTNode *node);
+  static void substantiateTypeWithTypeMapping(QualType &type, const TypeMapping &typeMapping, const ASTNode *node);
 };
 
 } // namespace spice::compiler

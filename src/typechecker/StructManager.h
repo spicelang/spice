@@ -38,8 +38,9 @@ private:
   // Private methods
   [[nodiscard]] static Struct *insertSubstantiation(Scope *insertScope, Struct &newManifestation, const ASTNode *declNode);
   [[nodiscard]] static bool matchName(const Struct &candidate, const std::string &reqName);
-  [[nodiscard]] static bool matchTemplateTypes(Struct &candidate, const QualTypeList &reqTemplateTypes, TypeMapping &typeMapping);
-  static void substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping);
+  [[nodiscard]] static bool matchTemplateTypes(Struct &candidate, const QualTypeList &reqTemplateTypes, TypeMapping &typeMapping,
+                                               const ASTNode *node);
+  static void substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping, const ASTNode *node);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Struct &candidate,
                                                                           const std::string &templateTypeName);
   [[nodiscard]] static uint64_t getCacheKey(Scope *scope, const std::string &name, const QualTypeList &templateTypes);

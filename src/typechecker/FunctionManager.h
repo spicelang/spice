@@ -63,10 +63,10 @@ private:
                                                       bool &forceSubstantiation, const ASTNode *callNode);
   [[nodiscard]] static bool matchName(const Function &candidate, const std::string &reqName);
   [[nodiscard]] static bool matchThisType(Function &candidate, const QualType &reqThisType, TypeMapping &typeMapping,
-                                          bool strictSpecifierMatching);
+                                          bool strictSpecifierMatching, const ASTNode *callNode);
   [[nodiscard]] static bool matchArgTypes(Function &candidate, const ArgList &reqArgs, TypeMapping &typeMapping,
                                           bool strictSpecifierMatching, bool &needsSubstantiation, const ASTNode *callNode);
-  static void substantiateReturnType(Function &candidate, TypeMapping &typeMapping);
+  static void substantiateReturnType(Function &candidate, TypeMapping &typeMapping, const ASTNode *node);
   [[nodiscard]] static const GenericType *getGenericTypeOfCandidateByName(const Function &candidate,
                                                                           const std::string &templateTypeName);
   [[nodiscard]] static uint64_t getCacheKey(Scope *scope, const std::string &name, const QualType &thisType, const ArgList &args,

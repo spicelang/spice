@@ -178,9 +178,9 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
         QualType returnType = expMethod->returnType;
 
         // Substantiate param and return types
-        TypeMatcher::substantiateTypesWithTypeMapping(params, interface->typeMapping);
+        TypeMatcher::substantiateTypesWithTypeMapping(params, interface->typeMapping, node);
         if (returnType.hasAnyGenericParts())
-          TypeMatcher::substantiateTypeWithTypeMapping(returnType, interface->typeMapping);
+          TypeMatcher::substantiateTypeWithTypeMapping(returnType, interface->typeMapping, node);
 
         // Build args list
         ArgList args;

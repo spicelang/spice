@@ -2,6 +2,7 @@
 
 #include "TypeMatcher.h"
 
+#include <exception/SemanticError.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
@@ -106,13 +107,14 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
   }
 }
 
-void TypeMatcher::substantiateTypesWithTypeMapping(QualTypeList &qualTypes, const TypeMapping &typeMapping) {
+void TypeMatcher::substantiateTypesWithTypeMapping(QualTypeList &qualTypes, const TypeMapping &typeMapping, const ASTNode *node) {
   for (QualType &qualType : qualTypes)
     if (qualType.hasAnyGenericParts())
-      substantiateTypeWithTypeMapping(qualType, typeMapping);
+      substantiateTypeWithTypeMapping(qualType, typeMapping, node);
 }
 
-void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapping &typeMapping) { // NOLINT(*-no-recursion)
+void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapping &typeMapping, // NOLINT(*-no-recursion)
+                                                  const ASTNode *node) {
   assert(type.hasAnyGenericParts());
 
   // Check if the type itself is generic
@@ -126,7 +128,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     QualTypeList paramAndReturnTypes = type.getFunctionParamAndReturnTypes();
     for (QualType &paramOrReturnType : paramAndReturnTypes)
       if (paramOrReturnType.hasAnyGenericParts())
-        substantiateTypeWithTypeMapping(paramOrReturnType, typeMapping);
+        substantiateTypeWithTypeMapping(paramOrReturnType, typeMapping, node);
     // Attach the list of concrete param types to the symbol type
     type = type.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
   } else { // The base type is a struct or interface
@@ -136,7 +138,7 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     QualTypeList templateTypes = baseType.getTemplateTypes();
     for (QualType &templateType : templateTypes)
       if (templateType.hasAnyGenericParts())
-        substantiateTypeWithTypeMapping(templateType, typeMapping);
+        substantiateTypeWithTypeMapping(templateType, typeMapping, node);
     // Attach the list of concrete template types to the symbol type
     type = type.getWithBaseTemplateTypes(templateTypes);
     // Lookup the scope of the concrete struct or interface type
@@ -144,12 +146,18 @@ void TypeMatcher::substantiateTypeWithTypeMapping(QualType &type, const TypeMapp
     if (!baseType.isSelfReferencingStructType()) {
       Scope *matchScope = baseType.getBodyScope()->parent;
       if (baseType.is(TY_STRUCT)) { // Struct
-        Struct *spiceStruct = StructManager::match(matchScope, baseType.getSubType(), templateTypes, nullptr);
-        assert(spiceStruct != nullptr);
+        Struct *spiceStruct = StructManager::match(matchScope, baseType.getSubType(), templateTypes, node);
+        if (!spiceStruct) {
+          const std::string signature = Struct::getSignature(baseType.getSubType(), templateTypes);
+          throw SemanticError(node, UNKNOWN_DATATYPE, "Could not find struct '" + signature + "'");
+        }
         type = type.getWithBodyScope(spiceStruct->scope);
       } else { // Interface
-        Interface *spiceInterface = InterfaceManager::match(matchScope, baseType.getSubType(), templateTypes, nullptr);
-        assert(spiceInterface != nullptr);
+        Interface *spiceInterface = InterfaceManager::match(matchScope, baseType.getSubType(), templateTypes, node);
+        if (!spiceInterface) {
+          const std::string signature = Interface::getSignature(baseType.getSubType(), templateTypes);
+          throw SemanticError(node, UNKNOWN_DATATYPE, "Could not find interface '" + signature + "'");
+        }
         type = type.getWithBodyScope(spiceInterface->scope);
       }
     }

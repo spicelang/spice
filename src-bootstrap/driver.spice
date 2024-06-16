@@ -33,9 +33,13 @@ const string BUILD_MODE_TEST = "test";
 public type DumpSettings struct {
     public bool dumpCST = false
     public bool dumpAST = false
+    public bool dumpSymbolTable = false
+    public bool dumpTypes = false
     public bool dumpIR = false
     public bool dumpAssembly = false
-    public bool dumpSymbolTable = false
+    public bool dumpObjectFile = false
+    public bool dumpToFiles = false
+    public bool abortAfterDump = false
 }
 
 /**
@@ -51,15 +55,16 @@ public type CliOptions struct {
     public bool useCPUFeatures = true
     public bool execute = false
     public FilePath cacheDir                      // Where the cache files go. Should always be a temp directory
-    public FilePath outputDir                     // Where the object files go. Should always be a temp directory
+    public FilePath outputDir = FilePath("./")    // Where the object files go. Should always be a temp directory
     public FilePath outputPath                    // Where the output binary goes.
     public BuildMode buildMode = BuildMode::DEBUG // Default build mode is debug
-    public unsigned short compileJobCount = 0s    // O for auto
+    public unsigned int compileJobCount = 0       // O for auto
     public bool ignoreCache = false
     public String llvmArgs
     public bool printDebugOutput = false
     public DumpSettings dumpSettings
     public bool namesForIRValues = false
+    public bool useLifetimeMarkers = false
     public OptLevel optLevel = OptLevel::O0 // Default optimization level for debug build mode is O0
     public bool useLTO = false
     public bool noEntryFct = false
@@ -74,12 +79,13 @@ public type CliOptions struct {
  * Helper class to setup the cli interface and command line parser
  */
 public type Driver struct {
-    CliParser cliParser
     public CliOptions cliOptions
     public bool shouldCompile = false
     public bool shouldInstall = false
     public bool shouldUninstall = false
     public bool shouldExecute = false
+    public bool dryRun = false // For unit testing purposes
+    CliParser cliParser
 }
 
 public p Driver.init() {
@@ -155,24 +161,24 @@ p Driver.addBuildSubcommand() {
     this.addCompileSubcommandOptions(subCmd);
 
     // --target-triple
-    CliOption<string>& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple, "Target triple for the emitted executable (for cross-compiling)");
+    CliOption<String>& targetOption = subCmd.addOption("--target", this.cliOptions.targetTriple, "Target triple for the emitted executable (for cross-compiling)");
     targetOption.addAlias("--target-triple");
     targetOption.addAlias("-t");
     // --target-arch
-    CliOption<string>& targetArchOption = subCmd.addOption("--target-arch", this.cliOptions.targetArch, "Target arch for emitted executable (for cross-compiling)");
+    CliOption<String>& targetArchOption = subCmd.addOption("--target-arch", this.cliOptions.targetArch, "Target arch for emitted executable (for cross-compiling)");
     // --target-vendor
-    CliOption<string>& targetVendorOption = subCmd.addOption("--target-vendor", this.cliOptions.targetVendor, "Target vendor for emitted executable (for cross-compiling)");
+    CliOption<String>& targetVendorOption = subCmd.addOption("--target-vendor", this.cliOptions.targetVendor, "Target vendor for emitted executable (for cross-compiling)");
     // --target-os
-    CliOption<string>& targetOsOption = subCmd.addOption("--target-os", this.cliOptions.targetOs, "Target OS for emitted executable (for cross-compiling)");
+    CliOption<String>& targetOsOption = subCmd.addOption("--target-os", this.cliOptions.targetOs, "Target OS for emitted executable (for cross-compiling)");
 
     // --output
-    CliOption<string>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
+    CliOption<FilePath>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
     outputOption.addAlias("-o");
     // --debug-info
-    CliOption<bool>& debugInfoOption = subCmd.addOption("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
+    CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
     debugInfoOption.addAlias("-g");
     // --disable-verifier
-    CliOption<bool>& disableVerifierOption = subCmd.addOption("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
+    subCmd.addFlag("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
 
 /**
@@ -186,13 +192,13 @@ p Driver.addRunSubcommand() {
     this.addCompileSubcommandOptions(subCmd);
 
     // --output
-    CliOption<string>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
+    CliOption<FilePath>& outputOption = subCmd.addOption("--output", this.cliOptions.outputPath, "Set the output file path");
     outputOption.addAlias("-o");
     // --debug-info
-    CliOption<bool>& debugInfoOption = subCmd.addOption("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
+    CliOption<bool>& debugInfoOption = subCmd.addFlag("--debug-info", this.cliOptions.generateDebugInfo, "Generate debug info");
     debugInfoOption.addAlias("-g");
     // --disable-verifier
-    CliOption<bool>& disableVerifierOption = subCmd.addOption("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
+    subCmd.addFlag("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
 }
 
 /**
@@ -218,6 +224,41 @@ p Driver.addUninstallSubcommand() {
 }
 
 p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
+    const p(string&) buildModeCallback = p(string& buildMode) {
+        if buildMode == BUILD_MODE_DEBUG {
+            this.cliOptions.buildMode = BuildMode::DEBUG;
+        } else if buildMode == BUILD_MODE_RELEASE {
+            this.cliOptions.buildMode = BuildMode::RELEASE;
+        } else if buildMode == BUILD_MODE_TEST {
+            this.cliOptions.buildMode = BuildMode::TEST;
+        } else {
+            panic(Error("Invalid build mode"));
+        }
+    };
+
+    // --build-mode
+    CliOption<string>& buildModeOption = subCmd.addOption("--build-mode", buildModeCallback, "Build mode (debug, release, test)");
+    buildModeOption.addAlias("-m");
+    // --llvm-args
+    CliOption<String>& llvmArgsOption = subCmd.addOption("--llvm-args", this.cliOptions.llvmArgs, "Additional arguments for LLVM");
+    llvmArgsOption.addAlias("-llvm");
+    // --jobs
+    CliOption<int>& jobsOption = subCmd.addOption("--jobs", this.cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
+    jobsOption.addAlias("-j");
+    // --ignore-cache
+    subCmd.addFlag("--ignore-cache", this.cliOptions.ignoreCache, "Force re-compilation of all source files");
+    // --use-lifetime-markers
+    subCmd.addFlag("--use-lifetime-markers", this.cliOptions.useLifetimeMarkers, "Generate lifetime markers to enhance optimizations");
+
+    // Opt levels
+    subCmd.addOption("-O0", p(string& v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
+    subCmd.addOption("-O1", p(string& v) { this.cliOptions.optLevel = OptLevel::O1; }, "Optimization level 1. Only basic optimization is executed.");
+    subCmd.addOption("-O2", p(string& v) { this.cliOptions.optLevel = OptLevel::O2; }, "Optimization level 2. More advanced optimization is applied.");
+    subCmd.addOption("-O3", p(string& v) { this.cliOptions.optLevel = OptLevel::O3; }, "Optimization level 3. Aggressive optimization for best performance.");
+    subCmd.addOption("-Os", p(string& v) { this.cliOptions.optLevel = OptLevel::Os; }, "Optimization level s. Size optimization for output executable.");
+    subCmd.addOption("-Oz", p(string& v) { this.cliOptions.optLevel = OptLevel::Oz; }, "Optimization level z. Aggressive optimization for best size.");
+    subCmd.addFlag("-lto", this.cliOptions.useLTO, "Enable link time optimization (LTO)");
+
     // --debug-output
     CliOption<bool>& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
     debugOutputFlag.addAlias("-d");
@@ -230,29 +271,21 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --dump-symtab
     CliOption<bool>& dumpSymtabFlag = subCmd.addFlag("--dump-symtab", this.cliOptions.dumpSettings.dumpSymbolTable, "Dump serialized symbol tables");
     dumpSymtabFlag.addAlias("-symtab");
+    // --dump-types
+    CliOption<bool>& dumpTypesFlag = subCmd.addFlag("--dump-types", this.cliOptions.dumpSettings.dumpTypes, "Dump all used types");
+    dumpTypesFlag.addAlias("-types");
     // --dump-ir
     CliOption<bool>& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dumpSettings.dumpIR, "Dump LLVM-IR");
     dumpIrFlag.addAlias("-ir");
     // --dump-assembly
-    CliOption<bool>& dumpAsmFlag = subCmd.addFlag("--dump-assembly", this.cliOptions.dumpSettings.dumpAssembly, "Dump assembly code");
+    CliOption<bool>& dumpAsmFlag = subCmd.addFlag("--dump-assembly", this.cliOptions.dumpSettings.dumpAssembly, "Dump Assembly code");
     dumpAsmFlag.addAlias("-asm");
     dumpAsmFlag.addAlias("-s");
+    // --dump-object-file
+    CliOption<bool>& dumpObjFlag = subCmd.addFlag("--dump-object-file", this.cliOptions.dumpSettings.dumpObjectFile, "Dump object file");
+    dumpObjFlag.addAlias("-obj");
 
-    // --jobs
-    CliOption<bool>& jobsFlag = subCmd.addFlag("--jobs", this.cliOptions.compileJobCount, "Compile jobs (threads), used for compilation");
-    jobsFlag.addAlias("-j");
-    // --ignore-cache
-    subCmd.addFlag("--ignore-cache", this.cliOptions.ignoreCache, "Force re-compilation of all source files");
-
-    // Opt levels
-    //subCmd.addFlag("-O0", [&]() { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
-    //subCmd.addFlag("-O1", [&]() { this.cliOptions.optLevel = OptLevel::O1; }, "Optimization level 1. Only basic optimization is executed.");
-    //subCmd.addFlag("-O2", [&]() { this.cliOptions.optLevel = OptLevel::O2; }, "Optimization level 2. More advanced optimization is applied.");
-    //subCmd.addFlag("-O3", [&]() { this.cliOptions.optLevel = OptLevel::O3; }, "Optimization level 3. Aggressive optimization for best performance.");
-    //subCmd.addFlag("-Os", [&]() { this.cliOptions.optLevel = OptLevel::Os; }, "Optimization level s. Size optimization for output executable.");
-    //subCmd.addFlag("-Oz", [&]() { this.cliOptions.optLevel = OptLevel::Oz; }, "Optimization level z. Aggressive optimization for best size.");
-
-    CliOption<string>& fileOption = subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "MainSourceFile");
-    fileOption.setRequired();
-    fileOption.check(CliOption::EXISTING_FILE);
+    CliOption<FilePath>& fileOption = subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "Main source file");
+    //fileOption.setRequired();
+    //fileOption.check(CliOption::EXISTING_FILE);
 }
