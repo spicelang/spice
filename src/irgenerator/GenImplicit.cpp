@@ -72,7 +72,7 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
   }
 }
 
-llvm::Value *IRGenerator::generateFctCall(const Function *fct, std::vector<llvm::Value *> &args) const {
+llvm::Value *IRGenerator::generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const {
   // Retrieve metadata for the function
   const std::string mangledName = fct->getMangledName();
 
