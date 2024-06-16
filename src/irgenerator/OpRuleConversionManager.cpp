@@ -64,7 +64,7 @@ LLVMExprResult OpRuleConversionManager::getPlusEqualInst(const ASTNode *node, LL
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {
     llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
-    llvm::Value *rhsVExt = builder.CreateSExt(rhsV(), builder.getInt64Ty());
+    llvm::Value *rhsVExt = builder.CreateIntCast(rhsV(), builder.getInt64Ty(), rhsSTy.isSigned());
     return {.value = builder.CreateGEP(elementTy, lhsV(), rhsVExt)};
   }
   default:                                                             // GCOV_EXCL_LINE
@@ -120,7 +120,7 @@ LLVMExprResult OpRuleConversionManager::getMinusEqualInst(const ASTNode *node, L
   case COMB(TY_PTR, TY_SHORT): // fallthrough
   case COMB(TY_PTR, TY_LONG): {
     llvm::Type *elementTy = lhsSTy.getContained().toLLVMType(irGenerator->sourceFile);
-    llvm::Value *rhsVExt = builder.CreateSExt(rhsV(), builder.getInt64Ty());
+    llvm::Value *rhsVExt = builder.CreateIntCast(rhsV(), builder.getInt64Ty(), rhsSTy.isSigned());
     llvm::Value *rhsVNeg = builder.CreateNeg(rhsVExt);
     return {.value = builder.CreateGEP(elementTy, lhsV(), rhsVNeg)};
   }

@@ -136,8 +136,10 @@ public f<bool> operator==<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
     // Compare the contents
-    for unsigned long i = 0l; index < lhs.size; i++ {
-        if lhs.contents[i] != rhs.contents[i] { return false; }
+    unsafe {
+        for unsigned long i = 0l; index < lhs.size; i++ {
+            if lhs.contents[i] != rhs.contents[i] { return false; }
+        }
     }
     return true;
 }
