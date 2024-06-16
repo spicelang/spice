@@ -72,6 +72,49 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
   }
 }
 
+llvm::Value *IRGenerator::generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const {
+  // Retrieve metadata for the function
+  const std::string mangledName = fct->getMangledName();
+
+  // Function is not defined in the current module -> declare it
+  if (!module->getFunction(mangledName)) {
+    std::vector<llvm::Type *> paramTypes;
+    for (const llvm::Value *argValue : args)
+      paramTypes.push_back(argValue->getType());
+    llvm::Type *returnType = fct->returnType.toLLVMType(sourceFile);
+    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
+    module->getOrInsertFunction(mangledName, fctType);
+  }
+
+  // Get callee function
+  llvm::Function *callee = module->getFunction(mangledName);
+  assert(callee != nullptr);
+
+  // Generate function call
+  return builder.CreateCall(callee, args);
+}
+
+void IRGenerator::generateProcCall(const Function *proc, std::vector<llvm::Value *> &args) const {
+  // Retrieve metadata for the function
+  const std::string mangledName = proc->getMangledName();
+
+  // Function is not defined in the current module -> declare it
+  if (!module->getFunction(mangledName)) {
+    std::vector<llvm::Type *> paramTypes;
+    for (const llvm::Value *argValue : args)
+      paramTypes.push_back(argValue->getType());
+    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
+    module->getOrInsertFunction(mangledName, fctType);
+  }
+
+  // Get callee function
+  llvm::Function *callee = module->getFunction(mangledName);
+  assert(callee != nullptr);
+
+  // Generate function call
+  builder.CreateCall(callee, args);
+}
+
 void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function *ctorOrDtor,
                                          const std::vector<llvm::Value *> &args) const {
   // Retrieve address of the struct variable. For fields this is the 'this' variable, otherwise use the normal address
@@ -95,30 +138,12 @@ void IRGenerator::generateCtorOrDtorCall(SymbolTableEntry *entry, const Function
 
 void IRGenerator::generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor,
                                          const std::vector<llvm::Value *> &args) const {
-  assert(ctorOrDtor != nullptr);
-
-  // Retrieve metadata for the function
-  const std::string mangledName = ctorOrDtor->getMangledName();
-
-  // Function is not defined in the current module -> declare it
-  if (!module->getFunction(mangledName)) {
-    std::vector<llvm::Type *> paramTypes = {builder.getPtrTy()};
-    for (llvm::Value *argValue : args)
-      paramTypes.push_back(argValue->getType());
-    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
-    module->getOrInsertFunction(mangledName, fctType);
-  }
-
-  // Get callee function
-  llvm::Function *callee = module->getFunction(mangledName);
-  assert(callee != nullptr);
-
   // Build parameter list
   std::vector<llvm::Value *> argValues = {structAddr};
   argValues.insert(argValues.end(), args.begin(), args.end());
 
   // Generate function call
-  builder.CreateCall(callee, argValues);
+  generateProcCall(ctorOrDtor, argValues);
 }
 
 void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {

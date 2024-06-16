@@ -101,10 +101,8 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
         usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
     }
-  }
 
-  // Set type of 'this' variable
-  if (node->isMethod) {
+    // Set type of 'this' variable
     SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisEntry != nullptr);
     thisEntry->updateType(thisPtrType, false);
@@ -242,10 +240,8 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
         usedGenericTypes.emplace_back(templateType);
       usedGenericTypes.back().used = true;
     }
-  }
 
-  // Set type of 'this' variable
-  if (node->isMethod) {
+    // Set type of 'this' variable
     SymbolTableEntry *thisEntry = currentScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisEntry != nullptr);
     thisEntry->updateType(thisPtrType, false);

@@ -37,12 +37,8 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
     }
 
     // Extend all integer types lower than 32 bit to 32 bit
-    if (argSymbolType.removeReferenceWrapper().isOneOf({TY_SHORT, TY_BYTE, TY_CHAR, TY_BOOL})) {
-      if (argSymbolType.removeReferenceWrapper().isSigned())
-        argVal = builder.CreateSExt(argVal, llvm::Type::getInt32Ty(context));
-      else
-        argVal = builder.CreateZExt(argVal, llvm::Type::getInt32Ty(context));
-    }
+    if (argSymbolType.removeReferenceWrapper().isOneOf({TY_SHORT, TY_BYTE, TY_CHAR, TY_BOOL}))
+      argVal = builder.CreateIntCast(argVal, builder.getInt32Ty(), argSymbolType.removeReferenceWrapper().isSigned());
 
     printfArgs.push_back(argVal);
   }

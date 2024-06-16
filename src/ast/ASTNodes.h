@@ -18,6 +18,23 @@
 
 namespace spice::compiler {
 
+// Operator overload function names
+constexpr const char *const OP_FCT_PREFIX = "op.";
+constexpr const char *const OP_FCT_PLUS = "op.plus";
+constexpr const char *const OP_FCT_MINUS = "op.minus";
+constexpr const char *const OP_FCT_MUL = "op.mul";
+constexpr const char *const OP_FCT_DIV = "op.div";
+constexpr const char *const OP_FCT_EQUAL = "op.equal";
+constexpr const char *const OP_FCT_NOT_EQUAL = "op.notequal";
+constexpr const char *const OP_FCT_SHL = "op.shl";
+constexpr const char *const OP_FCT_SHR = "op.shr";
+constexpr const char *const OP_FCT_PLUS_EQUAL = "op.plusequal";
+constexpr const char *const OP_FCT_MINUS_EQUAL = "op.minusequal";
+constexpr const char *const OP_FCT_MUL_EQUAL = "op.mulequal";
+constexpr const char *const OP_FCT_DIV_EQUAL = "op.divequal";
+constexpr const char *const OP_FCT_POSTFIX_PLUS_PLUS = "op.plusplus.post";
+constexpr const char *const OP_FCT_POSTFIX_MINUS_MINUS = "op.minusminus.post";
+
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
  */
@@ -253,6 +270,10 @@ public:
   // Visitor methods
   std::any accept(AbstractASTVisitor *visitor) override { return visitor->visitFctName(this); }
   std::any accept(ParallelizableASTVisitor *visitor) const override { return visitor->visitFctName(this); }
+
+  // Other methods
+  [[nodiscard]] constexpr bool isOperatorOverload() const { return name.starts_with(OP_FCT_PREFIX); }
+  [[nodiscard]] bool supportsInverseOperator() const { return name == OP_FCT_EQUAL || name == OP_FCT_NOT_EQUAL; }
 
   // Public members
   std::string name;

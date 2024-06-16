@@ -225,8 +225,10 @@ public f<bool> operator==<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
     // Compare the contents
-    for unsigned long index = 0l; index < lhs.size; index++ {
-        if lhs.contents[index] != rhs.contents[index] { return false; }
+    unsafe {
+        for unsigned long index = 0l; index < lhs.size; index++ {
+            if lhs.contents[index] != rhs.contents[index] { return false; }
+        }
     }
     return true;
 }
