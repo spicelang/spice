@@ -38,18 +38,18 @@ constexpr const char *const OP_FCT_POSTFIX_MINUS_MINUS = "op.minusminus.post";
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
  */
-union CompileTimeValue {
-  double_t doubleValue;
-  int32_t intValue;
-  int16_t shortValue;
-  int64_t longValue;
-  int8_t charValue;
-  bool boolValue;
+struct CompileTimeValue {
+  double_t doubleValue = 0.0;
+  int32_t intValue = 0;
+  int16_t shortValue = 0;
+  int64_t longValue = 0;
+  int8_t charValue = 0;
+  bool boolValue = false;
   size_t stringValueOffset = 0; // Offset into vector of strings in GlobalResourceManager
 };
 
 // Make sure we have no unexpected increases in memory consumption
-static_assert(sizeof(CompileTimeValue) == 8);
+static_assert(sizeof(CompileTimeValue) == 40);
 
 // =========================================================== AstNode ===========================================================
 

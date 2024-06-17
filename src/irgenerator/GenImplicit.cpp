@@ -210,7 +210,8 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
 
   // Add debug info
   diGenerator.generateFunctionDebugInfo(fct, spiceFunc);
-  diGenerator.setSourceLocation(node);
+  if (node != nullptr)
+    diGenerator.setSourceLocation(node);
 
   // Change to body scope
   changeToScope(spiceFunc->getSignature(false), ScopeType::FUNC_PROC_BODY);
@@ -243,7 +244,9 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
   diGenerator.concludeFunctionDebugInfo();
 
   // Verify function
-  verifyFunction(fct, node->codeLoc);
+  // Use the code location of the declaration node if available. Otherwise, (e.g. in case of test main) use an artificial code loc
+  const CodeLoc codeLoc = node != nullptr ? node->codeLoc : CodeLoc(1, 1, sourceFile);
+  verifyFunction(fct, codeLoc);
 
   // Change to parent scope
   changeToParentScope(ScopeType::FUNC_PROC_BODY);
@@ -254,6 +257,7 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
 llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(void)> &generateBody, const Function *spiceProc) {
   // Only focus on method procedures
   const ASTNode *node = spiceProc->entry->declNode;
+  assert(node != nullptr);
   assert(spiceProc->isProcedure());
 
   // Only generate if used
