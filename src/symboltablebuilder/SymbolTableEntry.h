@@ -21,7 +21,7 @@ namespace spice::compiler {
 class Scope;
 class ASTNode;
 struct CodeLoc;
-union CompileTimeValue;
+struct CompileTimeValue;
 
 /**
  * Entry of a symbol table, representing an individual symbol with all its properties
