@@ -202,9 +202,9 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
  * @param callNode Call AST node for printing error messages
  * @return Matched function or nullptr
  */
-Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
-                                 const ArgList &reqArgs, const QualTypeList &templateTypeHints, bool strictSpecifierMatching,
-                                 const ASTNode *callNode) {
+Function *FunctionManager::match(TypeChecker *typeChecker, Scope *matchScope, const std::string &reqName,
+                                 const QualType &reqThisType, const ArgList &reqArgs, const QualTypeList &templateTypeHints,
+                                 bool strictSpecifierMatching, const ASTNode *callNode) {
   assert(reqThisType.isOneOf({TY_DYN, TY_STRUCT, TY_INTERFACE}));
   assert(typeChecker != nullptr && "The match() function must be called from the TypeChecker");
 
@@ -335,7 +335,7 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
     return MatchResult::SKIP_FUNCTION; // Leave the whole manifestation list, because all have the same name
 
   // Check 'this' type requirement
-  if (!matchThisType(candidate, reqThisType, typeMapping, strictSpecifierMatching))
+  if (!matchThisType(candidate, reqThisType, typeMapping, strictSpecifierMatching, callNode))
     return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
 
   // Check arg types requirement
@@ -347,7 +347,7 @@ MatchResult FunctionManager::matchManifestation(Function &candidate, Scope *&mat
     return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
 
   // Substantiate return type
-  substantiateReturnType(candidate, typeMapping);
+  substantiateReturnType(candidate, typeMapping, callNode);
 
   const QualType &thisType = candidate.thisType;
   if (!thisType.is(TY_DYN)) {
@@ -381,10 +381,11 @@ bool FunctionManager::matchName(const Function &candidate, const std::string &re
  * @param reqThisType Requested 'this' type
  * @param typeMapping Concrete template type mapping
  * @param strictSpecifierMatching Match specifiers strictly
+ * @param callNode Call AST node for printing error messages
  * @return Fulfilled or not
  */
 bool FunctionManager::matchThisType(Function &candidate, const QualType &reqThisType, TypeMapping &typeMapping,
-                                    bool strictSpecifierMatching) {
+                                    bool strictSpecifierMatching, const ASTNode *callNode) {
   QualType &candidateThisType = candidate.thisType;
 
   // Shortcut for procedures
@@ -403,7 +404,7 @@ bool FunctionManager::matchThisType(Function &candidate, const QualType &reqThis
 
   // Substantiate the candidate param type, based on the type mapping
   if (candidateThisType.hasAnyGenericParts())
-    TypeMatcher::substantiateTypeWithTypeMapping(candidateThisType, typeMapping);
+    TypeMatcher::substantiateTypeWithTypeMapping(candidateThisType, typeMapping, callNode);
 
   return true;
 }
@@ -447,7 +448,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
 
     // Substantiate the candidate param type, based on the type mapping
     if (candidateParamType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType, typeMapping);
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateParamType, typeMapping, callNode);
 
     // Check if we try to bind a non-ref temporary to a non-const ref parameter
     if (!candidateParamType.canBind(requestedType, isArgTemporary)) {
@@ -471,10 +472,11 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
  *
  * @param candidate Matching candidate function
  * @param typeMapping Concrete template type mapping
+ * @param callNode AST node for error messages
  */
-void FunctionManager::substantiateReturnType(Function &candidate, TypeMapping &typeMapping) {
+void FunctionManager::substantiateReturnType(Function &candidate, TypeMapping &typeMapping, const ASTNode *callNode) {
   if (candidate.returnType.hasAnyGenericParts())
-    TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType, typeMapping);
+    TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType, typeMapping, callNode);
 }
 
 /**

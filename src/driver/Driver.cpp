@@ -347,7 +347,7 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
       "-O3", [&]() { cliOptions.optLevel = OptLevel::O3; }, "Aggressive optimization for best performance.");
   subCmd->add_flag_callback("-Os", [&]() { cliOptions.optLevel = OptLevel::Os; }, "Size optimization for output executable.");
   subCmd->add_flag_callback("-Oz", [&]() { cliOptions.optLevel = OptLevel::Oz; }, "Aggressive optimization for best size.");
-  subCmd->add_flag_callback("-lto", [&]() { cliOptions.useLTO = true; }, "Enable link time optimization (LTO)");
+  subCmd->add_flag<bool>("-lto", cliOptions.useLTO, "Enable link time optimization (LTO)");
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");

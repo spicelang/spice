@@ -84,11 +84,11 @@ Interface *InterfaceManager::match(Scope *matchScope, const std::string &reqName
       typeMapping.reserve(candidate.templateTypes.size());
 
       // Check template types requirement
-      if (!matchTemplateTypes(candidate, reqTemplateTypes, typeMapping))
+      if (!matchTemplateTypes(candidate, reqTemplateTypes, typeMapping, node))
         continue; // Leave this manifestation and continue with the next one
 
       // Map signatures from generic to concrete
-      substantiateSignatures(candidate, typeMapping);
+      substantiateSignatures(candidate, typeMapping, node);
 
       // We found a match! -> Set the actual candidate and its entry to used
       candidate.used = true;
@@ -165,9 +165,10 @@ bool InterfaceManager::matchName(const Interface &candidate, const std::string &
  *
  * @param candidate Matching candidate interface
  * @param reqTemplateTypes Requested interface template types
+ * @param node Instantiation AST node for printing error messages
  * @return Fulfilled or not
  */
-bool InterfaceManager::matchTemplateTypes(Interface &candidate, const QualTypeList &reqTemplateTypes, TypeMapping &typeMapping) {
+bool InterfaceManager::matchTemplateTypes(Interface &candidate, const QualTypeList &reqTemplateTypes, TypeMapping &typeMapping, const ASTNode *node) {
   // Check if the number of types match
   const size_t typeCount = reqTemplateTypes.size();
   if (typeCount != candidate.templateTypes.size())
@@ -189,7 +190,7 @@ bool InterfaceManager::matchTemplateTypes(Interface &candidate, const QualTypeLi
 
     // Substantiate the candidate param type, based on the type mapping
     if (candidateType.hasAnyGenericParts())
-      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping);
+      TypeMatcher::substantiateTypeWithTypeMapping(candidateType, typeMapping, node);
   }
 
   return true;
@@ -200,8 +201,9 @@ bool InterfaceManager::matchTemplateTypes(Interface &candidate, const QualTypeLi
  *
  * @param candidate Candidate interface
  * @param typeMapping Generic type mapping
+ * @param node Instantiation AST node for printing error messages
  */
-void InterfaceManager::substantiateSignatures(Interface &candidate, TypeMapping &typeMapping) {
+void InterfaceManager::substantiateSignatures(Interface &candidate, TypeMapping &typeMapping, const ASTNode *node) {
   // Loop over all signatures and substantiate the generic ones
   for (Function *method : candidate.methods) {
     // Skip methods, that are already fully substantiated
@@ -210,12 +212,12 @@ void InterfaceManager::substantiateSignatures(Interface &candidate, TypeMapping 
 
     // Substantiate return type
     if (method->isNormalFunction())
-      FunctionManager::substantiateReturnType(*method, typeMapping);
+      FunctionManager::substantiateReturnType(*method, typeMapping, node);
 
     // Substantiate param types
     for (Param &paramType : method->paramList)
       if (paramType.qualType.isBase(TY_GENERIC))
-        TypeMatcher::substantiateTypeWithTypeMapping(paramType.qualType, typeMapping);
+        TypeMatcher::substantiateTypeWithTypeMapping(paramType.qualType, typeMapping, node);
   }
 }
 

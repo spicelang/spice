@@ -1,44 +1,5 @@
-// Algorithm taken from: https://stackoverflow.com/a/54967370/14945975
-// Please note: With iterations > 20 the numbers get huge and do not fit in a long
-
 f<int> main() {
-    long q = 1l;
-    long q_new;
-    long r = 0l;
-    long r_new;
-    long t = 1l;
-    long t_new;
-    long k = 1l;
-    long k_new;
-    long m = 3l;
-    long x = 3l;
 
-    int iterations = 20; // Change here
-    int printedDigits = 0;
-
-    for int i = 0; i < iterations; i++ {
-        if 4l * q + r - t < m * t {
-            printf("%d", m);
-            if printedDigits == 0 { printf("."); }
-            printedDigits++;
-            q_new = 10l * q;
-            r_new = 10l * (r - m * t);
-            m = (10l * (3l * q + r)) / t - 10l * m;
-            q = q_new;
-            r = r_new;
-        } else {
-            q_new = q * k;
-            r_new = (2l * q + r) * x;
-            t_new = t * x;
-            k_new = k + 1l;
-            m = (q * (7l * k + 2l) + r * x) / (t * x);
-            x += 2l;
-            q = q_new;
-            r = r_new;
-            t = t_new;
-            k = k_new;
-        }
-    }
 }
 
 /*import "std/os/env";
