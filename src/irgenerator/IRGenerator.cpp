@@ -243,11 +243,10 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
 
   // Struct
   if (symbolType.is(TY_STRUCT)) {
-    // Retrieve struct type
+    // Retrieve field count
     Scope *structScope = symbolType.getBodyScope();
     assert(structScope != nullptr);
     const size_t fieldCount = structScope->getFieldCount();
-    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
 
     // Get default values for all fields of the struct
     std::vector<llvm::Constant *> fieldConstants;
@@ -268,14 +267,14 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
 
       fieldConstants.push_back(defaultFieldValue);
     }
+
+    auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
     return llvm::ConstantStruct::get(structType, fieldConstants);
   }
 
   // Interface
   if (symbolType.is(TY_INTERFACE)) {
-    // Retrieve struct type
     auto structType = reinterpret_cast<llvm::StructType *>(symbolType.toLLVMType(sourceFile));
-
     return llvm::ConstantStruct::get(structType, llvm::Constant::getNullValue(builder.getPtrTy()));
   }
 
@@ -395,7 +394,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
                                          const QualType &rhsSType, bool isDecl) {
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getQualType().isRef();
-  const bool needsCopy = !isDecl && !isRefAssign && rhsSType.removeReferenceWrapper().is(TY_STRUCT) && !rhs.isTemporary();
+  const bool needsCopy = !isRefAssign && rhsSType.removeReferenceWrapper().is(TY_STRUCT) && !rhs.isTemporary();
 
   if (isRefAssign) {
     assert(lhsEntry != nullptr);
