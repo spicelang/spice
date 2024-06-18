@@ -31,21 +31,24 @@ define dso_local i32 @main() #1 {
   %2 = load i1, ptr %b_addr, align 1
   %3 = zext i1 %2 to i32
   %4 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 %1, i32 %3)
-  %5 = load %struct.StructToCopy, ptr %stc, align 4
-  store %struct.StructToCopy %5, ptr %stc2, align 4
+  call void @llvm.memcpy.p0.p0.i64(ptr %stc2, ptr %stc, i64 8, i1 false)
   %a_addr1 = getelementptr inbounds %struct.StructToCopy, ptr %stc2, i64 0, i32 0
-  %6 = load i32, ptr %a_addr1, align 4
+  %5 = load i32, ptr %a_addr1, align 4
   %b_addr2 = getelementptr inbounds %struct.StructToCopy, ptr %stc2, i64 0, i32 1
-  %7 = load i1, ptr %b_addr2, align 1
-  %8 = zext i1 %7 to i32
-  %9 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %6, i32 %8)
-  %10 = load i32, ptr %result, align 4
-  ret i32 %10
+  %6 = load i1, ptr %b_addr2, align 1
+  %7 = zext i1 %6 to i32
+  %8 = call i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 %5, i32 %7)
+  %9 = load i32, ptr %result, align 4
+  ret i32 %9
 }
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #3
+
 attributes #0 = { norecurse }
 attributes #1 = { noinline nounwind optnone uwtable }
 attributes #2 = { nofree nounwind }
+attributes #3 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

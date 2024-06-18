@@ -1,5 +1,13 @@
-f<int> main() {
+int Test = 123;
 
+type TestStruct struct {
+    int a
+    TestStruct* b
+}
+
+f<int> main() {
+    TestStruct testStruct = TestStruct{1, nil<TestStruct*>};
+    TestStruct testCopy = testStruct;
 }
 
 /*import "std/os/env";

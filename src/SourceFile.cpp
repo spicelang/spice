@@ -814,7 +814,7 @@ void SourceFile::visualizerOutput(std::string outputName, const std::string &out
 void SourceFile::printStatusMessage(const char *stage, const CompileStageIOType &in, const CompileStageIOType &out,
                                     uint64_t stageRuntime, unsigned short stageRuns) const {
   if (cliOptions.printDebugOutput) {
-    const char *const compilerStageIoTypeName[] = {"Code", "Tokens", "CST", "AST", "IR", "OBJECT_FILE"};
+    const char *const compilerStageIoTypeName[6] = {"Code", "Tokens", "CST", "AST", "IR", "Obj"};
     // Build output string
     std::stringstream outputStr;
     outputStr << "[" << stage << "] for " << fileName << ": ";
