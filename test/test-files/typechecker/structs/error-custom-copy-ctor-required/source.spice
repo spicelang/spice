@@ -1,0 +1,7 @@
+type StructToCopy struct {
+    heap int* intHeapPtr
+}
+
+f<int> main() {
+    StructToCopy stc;
+}

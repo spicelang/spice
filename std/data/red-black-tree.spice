@@ -21,6 +21,10 @@ type Node<K, V> struct {
     heap Node<K, V>* childRight
 }
 
+p Node.ctor(Node<K, V>& other) {
+    panic(Error("This copy ctor should never be called!"));
+}
+
 inline f<bool> Node.isRoot() {
     return this.parent == nil<heap Node<K, V>*>;
 }
