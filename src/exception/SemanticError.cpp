@@ -70,6 +70,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType type) {
     return "Multiple declarations of a struct with the same name";
   case MISSING_NO_ARGS_CTOR:
     return "No matching ctor found";
+  case COPY_CTOR_REQUIRED:
+    return "Missing mandatory copy ctor";
   case INTERFACE_DECLARED_TWICE:
     return "Multiple declarations of an interface with the same name";
   case INTERFACE_METHOD_NOT_IMPLEMENTED:

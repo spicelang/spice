@@ -5,6 +5,7 @@
 #include <SourceFile.h>
 #include <ast/ASTBuilder.h>
 #include <ast/ASTNodes.h>
+#include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/TypeMatcher.h>
 
@@ -147,6 +148,12 @@ void TypeChecker::createDefaultCopyCtorIfRequired(const Struct &spiceStruct, Sco
     // Abort if we have a field, that is a reference
     if (thisType.isRef())
       return;
+
+    // Produce error if we got a heap field. We can't copy construct heap fields, thus a custom copy ctor is required
+    if (thisType.isHeap()) {
+      const auto msg = "The struct '" + node->structName + "' requires a custom copy ctor, because it has heap-allocated fields.";
+      SOFT_ERROR_VOID(node, COPY_CTOR_REQUIRED, msg);
+    }
 
     const QualType fieldType = fieldSymbol->getQualType();
     if (fieldType.is(TY_STRUCT)) {
