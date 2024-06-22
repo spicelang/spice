@@ -7,8 +7,9 @@
 - [x] Add tests for this feature
 - [x] Generate default dtor for structs with heap fields where free is called on those fields
 - [x] Make copy ctor mandatory for structs with heap fields
-- [ ] Allow assignment from heap to non-heap pointers to create non-owning pointers
-- [ ] Perform a swap when assigning from heap to heap pointers
+- [x] Allow assignment from heap to non-heap pointers to create non-owning pointers
+- [ ] Perform an ownership transfer when assigning from heap to heap pointers
+- [ ] Deallocate local heap variables with sDealloc when they go out of scope
 
 ## Syntax
 
@@ -20,7 +21,7 @@ type TestStruct struct {
 
 // As local variable
 f<int> foo() {
-    heap int* ptr = sAlloc(sizeof(type int));
+    heap int* ptr = sNew<int>();
     *ptr = 5;
     return ptr;
 }
@@ -53,9 +54,11 @@ When assigning a `heap` pointer to a non-heap pointer, the non-heap pointer beco
 that the non-heap pointer does not have to free its memory, as it does not own it. The memory is still owned by the
 `heap` pointer, and the memory will be freed when the `heap` pointer goes out of scope.
 
+When assigning a `heap` pointer to a reference to a `heap` pointer, it results in a non-owning reference.
+
 When assigning a `heap` pointer to another `heap` pointer, the memory is not copied, but the ownership gets
-transferred to the left hand side variable. This means that the original `heap` pointer will get the value `nil` and is
-no longer responsible for freeing the memory. This is done to prevent double freeing of the memory.
+transferred to the left hand side variable. This means that the original `heap` variable is no longer responsible for
+freeing the memory, instead the new `heap` variable is. This is done to prevent double freeing of the underlying memory.
 
 Assigning a non-heap pointer to a `heap` pointer is not allowed, as the non-heap pointer does not own the memory which
 it points to.

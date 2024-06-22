@@ -30,8 +30,7 @@ void SymbolTableEntry::updateType(const QualType &newType, [[maybe_unused]] bool
 /**
  * Update the state of the current symbol
  *
- * @throws SemanticError When trying to re-assign a constant variable
- * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
+ * @throws CompilerError When the state of the symbol is set to initialized before a concrete type was set
  *
  * @param newState New state of the current symbol
  * @param node AST node where the update takes place
@@ -43,9 +42,11 @@ void SymbolTableEntry::updateState(const LifecycleState &newState, const ASTNode
   if (newState != DEAD && oldState != DECLARED && qualType.isConst() && !force)                   // GCOV_EXCL_LINE
     throw CompilerError(INTERNAL_ERROR, "Not re-assignable variable '" + name + "'");             // GCOV_EXCL_LINE
   if (newState == DEAD && oldState == DECLARED)                                                   // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, "Cannot destruct uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Cannot destroy uninitialized variable '" + name + "'"); // GCOV_EXCL_LINE
   if (newState == DEAD && oldState == DEAD)                                                       // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, "Cannot destruct already freed variable '" + name + "'"); // GCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Cannot destroy already destroyed variable '" + name + "'"); // GCOV_EXCL_LINE
+  if (newState == MOVED && oldState != INITIALIZED)                                               // GCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Cannot move uninitialized variable '" + name + "'");    // GCOV_EXCL_LINE
   lifecycle.addEvent({newState, node});
 }
 

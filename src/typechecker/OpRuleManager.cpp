@@ -117,6 +117,13 @@ QualType OpRuleManager::getAssignResultTypeCommon(const ASTNode *node, const Exp
     if (lhsTypeCopy.matchesInterfaceImplementedByStruct(rhsTypeCopy))
       return lhsType;
   }
+  // Allow type* = heap type* straight away. This is used for initializing non-owning pointers to heap allocations
+  if (lhsType.isPtr() && rhsType.isHeap() && lhsType.matches(rhsType, false, true, true)) {
+    TypeSpecifiers rhsSpecifiers = rhsType.getSpecifiers();
+    rhsSpecifiers.isHeap = false;
+    if (lhsType.getSpecifiers() == rhsSpecifiers)
+      return lhsType;
+  }
 
   // Nothing matched
   return QualType(TY_INVALID);

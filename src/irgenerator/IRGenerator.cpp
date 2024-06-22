@@ -446,7 +446,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
       // Create shallow copy
       llvm::Type *rhsType = rhsSTypeNonRef.toLLVMType(sourceFile);
       const std::string copyName = lhsEntry ? lhsEntry->name : "";
-      llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
+      llvm::Value *newAddress = generateShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
       // Set address of lhs to the copy
       if (lhsEntry && lhsEntry->scope->type != ScopeType::STRUCT && lhsEntry->scope->type != ScopeType::INTERFACE)
         lhsEntry->updateAddress(newAddress);
@@ -490,8 +490,8 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   return LLVMExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
 }
 
-llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
-                                            const std::string &name /*=""*/, bool isVolatile /*=false*/) {
+llvm::Value *IRGenerator::generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
+                                              const std::string &name /*=""*/, bool isVolatile /*=false*/) {
   // Retrieve size to copy
   const llvm::TypeSize typeSize = module->getDataLayout().getTypeAllocSize(varType);
 

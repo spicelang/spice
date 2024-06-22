@@ -29,6 +29,8 @@ const char *Lifecycle::getCurrentStateName() const {
     return "declared";
   case INITIALIZED:
     return "initialized";
+  case MOVED:
+    return "moved";
   default:
     return "dead";
   }
@@ -54,5 +56,19 @@ bool Lifecycle::isDeclared() const { return getCurrentState() == DECLARED; }
  * @return Initialized or not
  */
 bool Lifecycle::isInitialized() const { return getCurrentState() == INITIALIZED; }
+
+/**
+ * Check if the symbol was moved
+ *
+ * @return Moved or not
+ */
+bool Lifecycle::wasMoved() const { return getCurrentState() == MOVED; }
+
+/**
+ * Check if the symbol is in an owning state
+ *
+ * @return Owning state or not
+ */
+bool Lifecycle::isInOwningState() const { return isDeclared() || isInitialized(); }
 
 } // namespace spice::compiler
