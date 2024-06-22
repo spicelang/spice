@@ -245,7 +245,7 @@ p Vector.resize(unsigned long itemCount) {
     const long itemSize = sizeof(type T) / 8l;
     assert itemSize != 0l;
     unsafe {
-        heap byte* oldAddress = (heap byte*) this.contents;
+        heap byte*& oldAddress = (heap byte*) this.contents;
         unsigned long newSize = (unsigned long) (itemSize * itemCount);
         Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
         this.contents = (heap T*) allocResult.unwrap();

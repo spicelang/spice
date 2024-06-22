@@ -514,7 +514,7 @@ public f<bool> String.replace(
 
     unsafe {
         // Move the suffix to the left or right
-        const heap char* stringAddr = this.contents;
+        const heap char*& stringAddr = this.contents;
         const heap char* startAddr = stringAddr + startIdx;
         if needleLength != replacementLength {
             const heap char* oldSuffixAddr = startAddr + needleLength;
@@ -623,7 +623,7 @@ public p String.reserve<IntLongShort>(unsigned IntLongShort charCount) {
 p String.resize(unsigned long newLength) {
     // Allocate the new memory
     unsafe {
-        heap char* oldAddress = this.contents;
+        heap char*& oldAddress = this.contents;
         unsigned long requiredBytes = newLength + 1l; // +1 because of null terminator
         this.contents = realloc(oldAddress, requiredBytes);
         this.checkForOOM();

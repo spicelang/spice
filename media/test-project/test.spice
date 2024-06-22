@@ -49,6 +49,14 @@ f<int> main() {
     printf("All assertions passed!\n");
 }
 
+/*f<int> main() {
+    heap int* a = sNew<int>();
+    *a = 5;
+    int* b = a;
+    *b = 6;
+    printf("All assertions passed!\n");
+}*/
+
 /*import "std/os/env";
 import "std/io/filepath";
 import "bootstrap/ast/ast-nodes";

@@ -395,6 +395,8 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   // Deduce some information about the assignment
   const bool isRefAssign = lhsEntry != nullptr && lhsEntry->getQualType().isRef();
   const bool needsCopy = !isRefAssign && rhsSType.removeReferenceWrapper().is(TY_STRUCT) && !rhs.isTemporary();
+  const bool needsMove = !isRefAssign && !needsCopy && lhsEntry != nullptr && lhsEntry->getQualType().isHeap() &&
+                         rhsSType.isHeap() && !rhs.isTemporary();
 
   if (isRefAssign) {
     assert(lhsEntry != nullptr);
@@ -446,7 +448,7 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
       // Create shallow copy
       llvm::Type *rhsType = rhsSTypeNonRef.toLLVMType(sourceFile);
       const std::string copyName = lhsEntry ? lhsEntry->name : "";
-      llvm::Value *newAddress = createShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
+      llvm::Value *newAddress = generateShallowCopy(rhsAddress, rhsType, lhsAddress, copyName, lhsEntry && lhsEntry->isVolatile);
       // Set address of lhs to the copy
       if (lhsEntry && lhsEntry->scope->type != ScopeType::STRUCT && lhsEntry->scope->type != ScopeType::INTERFACE)
         lhsEntry->updateAddress(newAddress);
@@ -470,6 +472,18 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
     lhsEntry->updateAddress(lhsAddress);
   }
 
+  // Check if we need to move the rhs to the lhs. This happens for heap allocated objects
+  if (needsMove) {
+    // Get address of right side
+    llvm::Value *rhsAddress = resolveAddress(rhs);
+    assert(rhsAddress != nullptr);
+
+    // Move the rhs to the lhs
+    generateMove(rhsAddress, lhsAddress, rhsSType);
+
+    return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
+  }
+
   // Check if we try to assign an array by value to a pointer. Here we have to store the address of the first element to the lhs
   if (lhsEntry && lhsEntry->getQualType().isPtr() && rhsSType.isArray() && rhsSType.getArraySize() != ARRAY_SIZE_UNKNOWN) {
     // Get address of right side
@@ -490,8 +504,8 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, SymbolTableEnt
   return LLVMExprResult{.value = rhsValue, .ptr = lhsAddress, .entry = lhsEntry};
 }
 
-llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
-                                            const std::string &name /*=""*/, bool isVolatile /*=false*/) {
+llvm::Value *IRGenerator::generateShallowCopy(llvm::Value *oldAddress, llvm::Type *varType, llvm::Value *targetAddress,
+                                              const std::string &name /*=""*/, bool isVolatile /*=false*/) {
   // Retrieve size to copy
   const llvm::TypeSize typeSize = module->getDataLayout().getTypeAllocSize(varType);
 
@@ -508,6 +522,13 @@ llvm::Value *IRGenerator::createShallowCopy(llvm::Value *oldAddress, llvm::Type 
   builder.CreateCall(memcpyFct, {targetAddress, oldAddress, structSize, copyVolatile});
 
   return targetAddress;
+}
+
+void IRGenerator::generateMove(llvm::Value *srcAddr, llvm::Value *dstAddr, const QualType &rhsSType) {
+  assert(rhsSType.removeReferenceWrapper().isPtr() && rhsSType.isHeap());
+  llvm::Value *heapPtr = insertLoad(builder.getPtrTy(), srcAddr, false, "move.tmp");
+  insertStore(heapPtr, dstAddr, false);
+  insertStore(llvm::Constant::getNullValue(builder.getPtrTy()), srcAddr, false);
 }
 
 void IRGenerator::autoDeReferencePtr(llvm::Value *&ptr, QualType &symbolType) const {

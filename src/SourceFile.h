@@ -156,6 +156,7 @@ public:
   const SourceFile *getRootSourceFile() const;
   bool isRT(RuntimeModule runtimeModule) const;
   ALWAYS_INLINE bool isStringRT() const { return isRT(STRING_RT); }
+  ALWAYS_INLINE bool isMemoryRT() const { return isRT(MEMORY_RT); }
   ALWAYS_INLINE bool isRttiRT() const { return isRT(RTTI_RT); }
 
   // Public fields

@@ -161,6 +161,7 @@ private:
                                        const ASTNode *node);
   void implicitlyCallStructCopyCtor(SymbolTableEntry *entry, const ASTNode *node);
   void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node);
+  void implicitlyCallDeallocate(ASTNode *node);
   void doScopeCleanup(StmtLstNode *node);
 };
 

@@ -228,19 +228,8 @@ void TypeChecker::createDefaultDtorIfRequired(const Struct &spiceStruct, Scope *
 
   // Request memory runtime if we have fields, that are allocated on the heap
   // The string runtime does not use it, but allocates manually to avoid circular dependencies
-  if (hasFieldsToDeAllocate && !sourceFile->isStringRT()) {
-    SourceFile *memoryRT = sourceFile->requestRuntimeModule(MEMORY_RT);
-    assert(memoryRT != nullptr);
-    Scope *matchScope = memoryRT->globalScope.get();
-    // Set dealloc function to used
-    const QualType thisType(TY_DYN);
-    QualType bytePtrRefType = QualType(TY_BYTE).toPtr(node).toRef(node);
-    bytePtrRefType.makeHeap();
-    const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
-    Function *deallocFct = FunctionManager::match(this, matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
-    assert(deallocFct != nullptr);
-    deallocFct->used = true;
-  }
+  if (hasFieldsToDeAllocate && !sourceFile->isMemoryRT() && !sourceFile->isStringRT())
+    implicitlyCallDeallocate(node);
 }
 
 void TypeChecker::createDefaultDtorBody(const Function *dtorFunction) { createDtorBodyPreamble(dtorFunction->bodyScope); }
@@ -377,7 +366,26 @@ void TypeChecker::implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode 
   // Add the dtor to the stmt list node to call it later in codegen
   Function *spiceFunc = implicitlyCallStructMethod(entry, DTOR_FUNCTION_NAME, {}, node);
   if (spiceFunc != nullptr)
-    node->dtorFunctions.at(manIdx).emplace_back(entry, spiceFunc);
+    node->resourcesToCleanup.at(manIdx).dtorFunctionsToCall.emplace_back(entry, spiceFunc);
+}
+
+/**
+ * Prepare the generation of a call to the deallocate function for a heap-allocated variable
+ *
+ * @param node Current AST node for error messages
+ */
+void TypeChecker::implicitlyCallDeallocate(ASTNode *node) {
+  SourceFile *memoryRT = sourceFile->requestRuntimeModule(MEMORY_RT);
+  assert(memoryRT != nullptr);
+  Scope *matchScope = memoryRT->globalScope.get();
+  // Set dealloc function to used
+  const QualType thisType(TY_DYN);
+  QualType bytePtrRefType = QualType(TY_BYTE).toPtr(node).toRef(node);
+  bytePtrRefType.makeHeap();
+  const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
+  Function *deallocFct = FunctionManager::match(this, matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
+  assert(deallocFct != nullptr);
+  deallocFct->used = true;
 }
 
 /**
@@ -393,6 +401,16 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) {
   std::ranges::sort(vars, lambda);
   // Call dtor for each variable. We call the dtor in reverse declaration order
   for (SymbolTableEntry *var : vars) {
+    // Check if we have a heap-allocated pointer
+    if (var->getQualType().isHeap() && var->getQualType().isOneOf({TY_PTR, TY_STRING, TY_FUNCTION, TY_PROCEDURE})) {
+      // Request memory runtime if we have variables, that are allocated on the heap
+      // The string runtime does not use it, but allocates manually to avoid circular dependencies
+      if (!sourceFile->isMemoryRT() && !sourceFile->isStringRT()) {
+        implicitlyCallDeallocate(node);
+        node->resourcesToCleanup.at(manIdx).heapVarsToFree.push_back(var);
+      }
+      continue;
+    }
     // Only generate dtor call for structs and if not omitted
     if (!var->getQualType().is(TY_STRUCT) || var->omitDtorCall)
       continue;

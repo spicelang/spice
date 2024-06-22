@@ -186,7 +186,7 @@ p Queue.resize(unsigned long itemCount) {
     // Allocate the new memory
     const long itemSize = sizeof(type T) / 8l;
     unsafe {
-        heap byte* oldAddress = (heap byte*) this.contents;
+        heap byte*& oldAddress = (heap byte*) this.contents;
         unsigned long newSize = (unsigned long) (itemSize * itemCount);
         Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
         this.contents = (heap T*) allocResult.unwrap();
