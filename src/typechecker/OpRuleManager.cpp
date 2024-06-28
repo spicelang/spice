@@ -27,8 +27,12 @@ QualType OpRuleManager::getAssignResultType(const ASTNode *node, const ExprResul
   ensureNoConstAssign(node, lhsType, isDecl);
 
   // Allow pointers and arrays of the same type straight away
-  if (lhsType.isOneOf({TY_PTR, TY_REF}) && lhsType.matches(rhsType, false, false, true))
+  if (lhsType.isOneOf({TY_PTR, TY_REF}) && lhsType.matches(rhsType, false, false, true)) {
+    // If we perform a heap x* = heap x* assignment, we need set the right hand side to MOVED
+    if (rhs.entry && lhsType.isPtr() && lhsType.isHeap() && rhsType.removeReferenceWrapper().isPtr() && rhsType.isHeap())
+      rhs.entry->updateState(MOVED, node);
     return rhsType;
+  }
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef()) {
     // If this is const ref, remove both: the reference and the constness
@@ -60,9 +64,13 @@ QualType OpRuleManager::getFieldAssignResultType(const ASTNode *node, const Expr
   // Check if we try to assign a constant value
   ensureNoConstAssign(node, lhsType, isDecl);
 
-  // Allow pointers and arrays of the same type straight away
-  if (lhsType.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhsType == rhsType)
+  // Allow pointers, arrays and structs of the same type straight away
+  if (lhsType.isOneOf({TY_PTR, TY_ARRAY, TY_STRUCT}) && lhsType == rhsType) {
+    // If we perform a heap x* = heap x* assignment, we need set the right hand side to MOVED
+    if (rhs.entry && lhsType.isPtr() && lhsType.isHeap() && rhsType.removeReferenceWrapper().isPtr() && rhsType.isHeap())
+      rhs.entry->updateState(MOVED, node);
     return rhsType;
+  }
   // Allow struct of the same type straight away
   if (lhsType.is(TY_STRUCT) && lhsType.matches(rhsType, false, true, true))
     return rhsType;

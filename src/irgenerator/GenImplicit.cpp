@@ -61,8 +61,8 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
     generateCtorOrDtorCall(entry, dtor, {});
 
   // Deallocate all heap variables that go out of scope and are currently owned
-  //for (SymbolTableEntry *entry : resourcesToCleanup.heapVarsToFree)
-  //  generateDeallocCall(entry->getAddress());
+  for (SymbolTableEntry *entry : resourcesToCleanup.heapVarsToFree)
+    generateDeallocCall(entry->getAddress());
 
   // Generate lifetime end markers
   if (cliOptions.useLifetimeMarkers) {
