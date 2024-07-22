@@ -56,8 +56,13 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
     return;
 
   // Call all dtor functions
-  for (auto [entry, dtor] : node->dtorFunctions.at(manIdx))
+  const StmtLstNode::ResourcesForManifestationToCleanup& resourcesToCleanup = node->resourcesToCleanup.at(manIdx);
+  for (auto [entry, dtor] : resourcesToCleanup.dtorFunctionsToCall)
     generateCtorOrDtorCall(entry, dtor, {});
+
+  // Deallocate all heap variables that go out of scope and are currently owned
+  for (SymbolTableEntry *entry : resourcesToCleanup.heapVarsToFree)
+    generateDeallocCall(entry->getAddress());
 
   // Generate lifetime end markers
   if (cliOptions.useLifetimeMarkers) {
@@ -147,6 +152,10 @@ void IRGenerator::generateCtorOrDtorCall(llvm::Value *structAddr, const Function
 }
 
 void IRGenerator::generateDeallocCall(llvm::Value *variableAddress) const {
+  // Abort if the address is not set. This can happen when leaving the scope of a dtor, which already freed the heap memory
+  if (!variableAddress)
+    return;
+
   // In case of string runtime, call free manually. Otherwise, use the memory_rt implementation of sDealloc()
   if (sourceFile->isStringRT()) {
     llvm::Function *freeFct = stdFunctionManager.getFreeFct();

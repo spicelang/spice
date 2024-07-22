@@ -16,7 +16,7 @@ type Node<K, V> struct {
     K key
     V value
     NodeColor color
-    heap Node<K, V>* parent
+    Node<K, V>* parent
     heap Node<K, V>* childLeft
     heap Node<K, V>* childRight
 }
@@ -26,7 +26,7 @@ p Node.ctor(Node<K, V>& other) {
 }
 
 inline f<bool> Node.isRoot() {
-    return this.parent == nil<heap Node<K, V>*>;
+    return this.parent == nil<Node<K, V>*>;
 }
 
 inline f<bool> Node.hasLeftChild() {
@@ -70,15 +70,15 @@ public p RedBlackTree.insert(const K& key, const V& value) {
         key,
         value,
         NodeColor::RED,
-        nil<heap Node<K, V>*>,
+        nil<Node<K, V>*>,
         nil<heap Node<K, V>*>,
         nil<heap Node<K, V>*>
     });
 
     // Search for the correct position
-    heap Node<K, V>* y = nil<heap Node<K, V>*>;
-    heap Node<K, V>* x = this.rootNode;
-    while x != nil<heap Node<K, V>*> {
+    Node<K, V>* y = nil<Node<K, V>*>;
+    Node<K, V>* x = this.rootNode;
+    while x != nil<Node<K, V>*> {
         y = x;
         if newNode.key < x.key {
             x = x.childLeft;
@@ -89,7 +89,7 @@ public p RedBlackTree.insert(const K& key, const V& value) {
 
     // Insert the new node at the correct position
     newNode.parent = y;
-    if y == nil<heap Node<K, V>*> {
+    if y == nil<Node<K, V>*> {
         this.rootNode = newNode;
     } else if newNode.key < y.key {
         y.childLeft = newNode;
@@ -110,13 +110,13 @@ public p RedBlackTree.insert(const K& key, const V& value) {
  */
 public p RedBlackTree.remove(const K& key) {
     // Search for the node to remove
-    heap Node<K, V>* z = this.search(key);
-    if z == nil<heap Node<K, V>*> {
+    Node<K, V>* z = this.search(key);
+    if z == nil<Node<K, V>*> {
         return;
     }
 
-    heap Node<K, V>* y = z;
-    heap Node<K, V>* x;
+    Node<K, V>* y = z;
+    Node<K, V>* x;
     bool wasYBlack = y.isBlack();
     if !z.hasLeftChild() {
         x = z.childRight;
@@ -148,7 +148,7 @@ public p RedBlackTree.remove(const K& key) {
     }
 
     // Do a fixup if required
-    if wasYBlack && x != nil<heap Node<K, V>*> {
+    if wasYBlack && x != nil<Node<K, V>*> {
         this.deleteFixup(x);
     }
 
@@ -163,8 +163,8 @@ public p RedBlackTree.remove(const K& key) {
  * @return The value for the given key
  */
 public f<V&> RedBlackTree.find(const K& key) {
-    heap Node<K, V>* node = this.search(key);
-    if node == nil<heap Node<K, V>*> {
+    Node<K, V>* node = this.search(key);
+    if node == nil<Node<K, V>*> {
         panic(Error("The provided key was not found"));
     }
     return node.value;
@@ -177,8 +177,8 @@ public f<V&> RedBlackTree.find(const K& key) {
  * @return The value for the given key, or an error if the key was not found
  */
 public f<Result<V>> RedBlackTree.findSafe(const K& key) {
-    heap Node<K, V>* node = this.search(key);
-    if node == nil<heap Node<K, V>*> {
+    Node<K, V>* node = this.search(key);
+    if node == nil<Node<K, V>*> {
         return err<V>(Error("The provided key was not found"));
     }
     return ok<V>(node.value);
@@ -191,7 +191,7 @@ public f<Result<V>> RedBlackTree.findSafe(const K& key) {
  * @return True if the key was found, false otherwise
  */
 public f<bool> RedBlackTree.contains(const K& key) {
-    return this.search(key) != nil<heap Node<K, V>*>;
+    return this.search(key) != nil<Node<K, V>*>;
 }
 
 /**
@@ -277,11 +277,11 @@ p RedBlackTree.transplant(heap Node<K, V>* u, heap Node<K, V>* v) {
     }
 }
 
-p RedBlackTree.insertFixup(heap Node<K, V>* z) {
+p RedBlackTree.insertFixup(Node<K, V>* z) {
     while !z.isRoot() && z.parent.isRed() {
         if z.parent == z.parent.parent.childLeft {
-            heap Node<K, V>* y = z.parent.parent.childRight;
-            if y != nil<heap Node<K, V>*> && y.isRed() {
+            Node<K, V>* y = z.parent.parent.childRight;
+            if y != nil<Node<K, V>*> && y.isRed() {
                 z.parent.color = NodeColor::BLACK;
                 y.color = NodeColor::BLACK;
                 z.parent.parent.color = NodeColor::RED;
@@ -296,8 +296,8 @@ p RedBlackTree.insertFixup(heap Node<K, V>* z) {
                 this.rotateRight(z.parent.parent);
             }
         } else {
-            heap Node<K, V>* y = z.parent.parent.childLeft;
-            if y != nil<heap Node<K, V>*> && y.isRed() {
+            Node<K, V>* y = z.parent.parent.childLeft;
+            if y != nil<Node<K, V>*> && y.isRed() {
                 z.parent.color = NodeColor::BLACK;
                 y.color = NodeColor::BLACK;
                 z.parent.parent.color = NodeColor::RED;
@@ -316,10 +316,10 @@ p RedBlackTree.insertFixup(heap Node<K, V>* z) {
     this.rootNode.color = NodeColor::BLACK;
 }
 
-p RedBlackTree.deleteFixup(heap Node<K, V>* x) {
+p RedBlackTree.deleteFixup(Node<K, V>* x) {
     while x != this.rootNode && (x == nil<Node<K, V>*> || x.isBlack()) {
         if x == x.parent.childLeft {
-            heap Node<K, V>* w = x.parent.childRight;
+            Node<K, V>* w = x.parent.childRight;
             if w != nil<Node<K, V>*> && w.isRed() {
                 w.color = NodeColor::BLACK;
                 x.parent.color = NodeColor::RED;
@@ -347,7 +347,7 @@ p RedBlackTree.deleteFixup(heap Node<K, V>* x) {
                 x = this.rootNode;
             }
         } else {
-            heap Node<K, V>* w = x.parent.childLeft;
+            Node<K, V>* w = x.parent.childLeft;
             if w != nil<Node<K, V>*> && w.isRed() {
                 w.color = NodeColor::BLACK;
                 x.parent.color = NodeColor::RED;
@@ -387,9 +387,9 @@ p RedBlackTree.deleteFixup(heap Node<K, V>* x) {
  * @param key The key to search for
  * @return The node with the given key, or nil if the key was not found
  */
-f<heap Node<K, V>*> RedBlackTree.search(const K& key) {
-    heap Node<K, V>* currentNode = this.rootNode;
-    while currentNode != nil<heap Node<K, V>*> {
+f<Node<K, V>*> RedBlackTree.search(const K& key) {
+    Node<K, V>* currentNode = this.rootNode;
+    while currentNode != nil<Node<K, V>*> {
         if key == currentNode.key {
             return currentNode;
         } else if key < currentNode.key {
@@ -398,13 +398,13 @@ f<heap Node<K, V>*> RedBlackTree.search(const K& key) {
             currentNode = currentNode.childRight;
         }
     }
-    return nil<heap Node<K, V>*>;
+    return nil<Node<K, V>*>;
 }
 
 /**
  * Find the node with the minimum key in the subtree rooted at x.
  */
-f<heap Node<K, V>*> RedBlackTree.minimum(heap Node<K, V>* x) {
+f<Node<K, V>*> RedBlackTree.minimum(Node<K, V>* x) {
     while x.hasLeftChild() {
         x = x.childLeft;
     }
@@ -414,9 +414,9 @@ f<heap Node<K, V>*> RedBlackTree.minimum(heap Node<K, V>* x) {
 /**
  * Clear the subtree rooted at the input node recursively.
  */
-p RedBlackTree.clearRecursive(heap Node<K, V>* node) {
+p RedBlackTree.clearRecursive(Node<K, V>* node) {
     // Skip if node is nil
-    if node == nil<heap Node<K, V>*> { return; }
+    if node == nil<Node<K, V>*> { return; }
     // Otherwise, clear children and delete node
     this.clearRecursive(node.childLeft);
     this.clearRecursive(node.childRight);
@@ -428,7 +428,7 @@ p RedBlackTree.clearRecursive(heap Node<K, V>* node) {
  */
 public type RedBlackTreeIterator<K, V> struct : IIterator<Pair<const K&, V&>> {
     RedBlackTree<K, V>& tree
-    heap Node<K, V>* currentNode = nil<heap Node<K, V>*>
+    Node<K, V>* currentNode = nil<Node<K, V>*>
     Pair<const K&, V&> currentPair
     unsigned long cursor = 0l
 }
@@ -466,7 +466,7 @@ public inline f<Pair<unsigned long, Pair<const K&, V&>&>> RedBlackTreeIterator.g
  * @return true or false
  */
 public inline f<bool> RedBlackTreeIterator.isValid() {
-    return this.currentNode != nil<heap Node<K, V>*>;
+    return this.currentNode != nil<Node<K, V>*>;
 }
 
 /**

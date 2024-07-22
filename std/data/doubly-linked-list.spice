@@ -6,7 +6,7 @@ type T dyn;
  */
 type Node<T> struct {
     T value
-    heap Node<T>* prev = nil<heap Node<T>*>
+    Node<T>* prev = nil<Node<T>*>
     heap Node<T>* next = nil<heap Node<T>*>
 }
 
@@ -16,7 +16,7 @@ type Node<T> struct {
  * to the previous one.
  */
 public type DoublyLinkedList<T> struct {
-    heap Node<T>* head = nil<heap Node<T>*>
+    Node<T>* head = nil<Node<T>*>
     heap Node<T>* tail = nil<heap Node<T>*>
     unsigned long size = 0l
 }
@@ -24,11 +24,12 @@ public type DoublyLinkedList<T> struct {
 public p DoublyLinkedList.pushBack(const T& value) {
     heap Node<T>* newNode = this.createNode(value);
     if this.isEmpty() {
-        this.head = this.tail = newNode;
-    } else {
-        this.head.next = newNode;
-        newNode.prev = this.head;
         this.head = newNode;
+        this.tail = newNode;
+    } else {
+        newNode.prev = this.head;
+        this.head.next = newNode;
+        this.head = this.head.next;
     }
     this.size++;
 }
@@ -36,10 +37,11 @@ public p DoublyLinkedList.pushBack(const T& value) {
 public p DoublyLinkedList.pushFront(const T& value) {
     heap Node<T>* newNode = this.createNode(value);
     if this.isEmpty() {
-        this.head = this.tail = newNode;
+        this.head = newNode;
+        this.tail = newNode;
     } else {
-        newNode.next = this.tail;
         this.tail.prev = newNode;
+        newNode.next = this.tail;
         this.tail = newNode;
     }
     this.size++;
@@ -68,18 +70,18 @@ public p DoublyLinkedList.insertAt(unsigned long idx, const T& value) {
 }
 
 public p DoublyLinkedList.remove(const T& valueToRemove) {
-    heap Node<T>* curr = this.tail;
-    while curr != nil<heap Node<T>*> {
+    Node<T>* curr = this.tail;
+    while curr != nil<Node<T>*> {
         if curr.value == valueToRemove {
             if curr == this.tail {
                 this.tail = curr.next;
-                this.tail.prev = nil<heap Node<T>*>;
+                this.tail.prev = nil<Node<T>*>;
             } else if curr == this.head {
                 this.head = curr.prev;
                 this.head.next = nil<heap Node<T>*>;
             } else {
-                curr.prev.next = curr.next;
                 curr.next.prev = curr.prev;
+                curr.prev.next = curr.next;
             }
             this.size--;
             break;
@@ -92,19 +94,19 @@ public p DoublyLinkedList.removeAt(unsigned long idx) {
     // Abort if the index is out of bounds
     if idx < 0 || idx >= this.size { panic(Error("Access index out of bound")); }
 
-    heap Node<T>* curr = this.tail;
+    Node<T>* curr = this.tail;
     for unsigned long i = 0l; i < idx; i++ {
         curr = curr.next;
     }
     if curr == this.tail {
         this.tail = curr.next;
-        this.tail.prev = nil<heap Node<T>*>;
+        this.tail.prev = nil<Node<T>*>;
     } else if curr == this.head {
         this.head = curr.prev;
         this.head.next = nil<heap Node<T>*>;
     } else {
-        curr.prev.next = curr.next;
         curr.next.prev = curr.prev;
+        curr.prev.next = curr.next;
     }
     this.size--;
 }
@@ -133,7 +135,7 @@ public f<T&> DoublyLinkedList.get(unsigned long idx) {
     // Abort if the index is out of bounds
     if idx < 0 || idx >= this.size { panic(Error("Access index out of bound")); }
 
-    heap Node<T>* curr = this.tail;
+    Node<T>* curr = this.tail;
     for unsigned long i = 0l; i < idx; i++ {
         curr = curr.next;
     }
@@ -161,7 +163,7 @@ f<heap Node<T>*> DoublyLinkedList.createNode(const T& value) {
         newNode = (heap Node<T>*) allocResult.unwrap();
     }
     newNode.value = value;
-    newNode.prev = nil<heap Node<T>*>;
+    newNode.prev = nil<Node<T>*>;
     newNode.next = nil<heap Node<T>*>;
     return newNode;
 }

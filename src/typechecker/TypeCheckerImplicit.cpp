@@ -377,7 +377,26 @@ void TypeChecker::implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode 
   // Add the dtor to the stmt list node to call it later in codegen
   Function *spiceFunc = implicitlyCallStructMethod(entry, DTOR_FUNCTION_NAME, {}, node);
   if (spiceFunc != nullptr)
-    node->dtorFunctions.at(manIdx).emplace_back(entry, spiceFunc);
+    node->resourcesToCleanup.at(manIdx).dtorFunctionsToCall.emplace_back(entry, spiceFunc);
+}
+
+/**
+ * Prepare the generation of a call to the deallocate function for a heap-allocated variable
+ *
+ * @param node Current AST node for error messages
+ */
+void TypeChecker::implicitlyCallDeallocate(ASTNode *node) {
+  SourceFile *memoryRT = sourceFile->requestRuntimeModule(MEMORY_RT);
+  assert(memoryRT != nullptr);
+  Scope *matchScope = memoryRT->globalScope.get();
+  // Set dealloc function to used
+  const QualType thisType(TY_DYN);
+  QualType bytePtrRefType = QualType(TY_BYTE).toPtr(node).toRef(node);
+  bytePtrRefType.makeHeap();
+  const ArgList args = {{bytePtrRefType, false /* we always have the field as storage */}};
+  Function *deallocFct = FunctionManager::match(this, matchScope, FCT_NAME_DEALLOC, thisType, args, {}, true, node);
+  assert(deallocFct != nullptr);
+  deallocFct->used = true;
 }
 
 /**
@@ -393,11 +412,24 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) {
   std::ranges::sort(vars, lambda);
   // Call dtor for each variable. We call the dtor in reverse declaration order
   for (SymbolTableEntry *var : vars) {
+    // Check if we have a heap-allocated pointer
+    if (var->getQualType().isHeap() && var->getQualType().isOneOf({TY_PTR, TY_STRING, TY_FUNCTION, TY_PROCEDURE})) {
+      // The memory runtime is ignored, because it manually allocates to avoid circular dependencies.
+      // Same goes for the string runtime.
+      if (sourceFile->isMemoryRT() || sourceFile->isStringRT())
+        continue;
+      // If the local variable currently does not have the ownership, we must not deallocate its memory
+      if (!var->getLifecycle().isInOwningState())
+        continue;
+
+      implicitlyCallDeallocate(node); // Required to request the memory runtime
+      node->resourcesToCleanup.at(manIdx).heapVarsToFree.push_back(var);
+    }
     // Only generate dtor call for structs and if not omitted
     if (!var->getQualType().is(TY_STRUCT) || var->omitDtorCall)
       continue;
     // Variable must be either initialized or a struct field
-    if (!var->isInitialized() && var->scope->type != ScopeType::STRUCT)
+    if (!var->getLifecycle().isInitialized() && var->scope->type != ScopeType::STRUCT)
       continue;
     // Call dtor
     implicitlyCallStructDtor(var, node);

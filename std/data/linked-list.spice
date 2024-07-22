@@ -31,7 +31,7 @@ type Node<T> struct {
  */
 public type LinkedList<T> struct : IIterable<T> {
     heap Node<T>* tail = nil<heap Node<T>*>
-    heap Node<T>* head = nil<heap Node<T>*>
+    Node<T>* head = nil<Node<T>*>
     unsigned long size = 0l
 }
 
@@ -48,10 +48,11 @@ public p LinkedList.pushBack(const T& value) {
 
     // Insert at head
     if this.isEmpty() {
-        this.head = this.tail = newNode;
+        this.head = newNode;
+        this.tail = newNode;
     } else {
         this.head.next = newNode; // Link the new node to the previous one
-        this.head = newNode; // Set the head to the new node
+        this.head = this.head.next; // Set the head to the new node
     }
     this.size++;
 }
@@ -67,7 +68,8 @@ public p LinkedList.pushFront(const T& value) {
 
     // Insert at tail
     if this.isEmpty() {
-        this.head = this.tail = newNode;
+        this.head = newNode;
+        this.tail = newNode;
     } else {
         newNode.next = this.tail; // Link the next node to the new one
         this.tail = newNode; // Set the tail to the new node
@@ -94,7 +96,7 @@ public p LinkedList.insertAt(unsigned long idx, const T& value) {
         newNode.next = this.tail; // Link the next node to the new one
         this.tail = newNode; // Set the tail to the new node
     } else {
-        heap Node<T>* curr = this.tail;
+        Node<T>* curr = this.tail;
         for unsigned long i = 0l; i < idx - 1l; i++ {
             curr = curr.next;
         }
@@ -124,7 +126,7 @@ public p LinkedList.remove(const T& valueToRemove) {
     if this.isEmpty() { return; }
 
     if this.tail.value == valueToRemove {
-        heap Node<T>* temp = this.tail;
+        Node<T>* temp = this.tail;
         this.tail = this.tail.next;
         unsafe {
             sDealloc((heap byte*) temp);
@@ -133,13 +135,13 @@ public p LinkedList.remove(const T& valueToRemove) {
         return;
     }
 
-    heap Node<T>* curr = this.tail;
+    Node<T>* curr = this.tail;
     while curr.next != nil<heap Node<T>*> && curr.next.value != valueToRemove {
         curr = curr.next;
     }
     if curr.next == nil<heap Node<T>*> { return; }
 
-    heap Node<T>* temp = curr.next;
+    Node<T>* temp = curr.next;
     curr.next = curr.next.next;
     unsafe {
         sDealloc((heap byte*) temp);
@@ -158,7 +160,7 @@ public p LinkedList.removeAt(unsigned long idx) {
     if idx < 0l || idx >= this.size { return; }
 
     if idx == 0l {
-        heap Node<T>* temp = this.tail;
+        Node<T>* temp = this.tail;
         this.tail = this.tail.next;
         unsafe {
             sDealloc((heap byte*) temp);
@@ -167,12 +169,12 @@ public p LinkedList.removeAt(unsigned long idx) {
         return;
     }
 
-    heap Node<T>* curr = this.tail;
+    Node<T>* curr = this.tail;
     for unsigned long i = 0l; i < idx - 1l; i++ {
         curr = curr.next;
     }
 
-    heap Node<T>* temp = curr.next;
+    Node<T>* temp = curr.next;
     curr.next = curr.next.next;
     unsafe {
         sDealloc((heap byte*) temp);
@@ -238,7 +240,7 @@ public f<T&> LinkedList.get(unsigned long idx) {
         panic(Error("Access index out of bound"));
     }
 
-    heap Node<T>* curr = this.tail;
+    Node<T>* curr = this.tail;
     for unsigned long i = 0l; i < idx; i++ {
         curr = curr.next;
     }

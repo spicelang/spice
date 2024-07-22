@@ -826,6 +826,12 @@ public:
 
 class StmtLstNode : public ASTNode {
 public:
+  // Structs
+  struct ResourcesForManifestationToCleanup {
+    std::vector<std::pair<SymbolTableEntry *, Function *>> dtorFunctionsToCall;
+    std::vector<SymbolTableEntry *> heapVarsToFree;
+  };
+
   // Constructors
   using ASTNode::ASTNode;
 
@@ -835,13 +841,12 @@ public:
 
   // Other methods
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
-  void customItemsInitialization(size_t manifestationCount) override { dtorFunctions.resize(manifestationCount); }
+  void customItemsInitialization(size_t manifestationCount) override { resourcesToCleanup.resize(manifestationCount); }
   [[nodiscard]] bool isStmtLstNode() const override { return true; }
 
   // Public members
   size_t complexity = 0;
-  // Outer vector: manifestation index; inner vector: list of dtor functions
-  std::vector<std::vector<std::pair<SymbolTableEntry *, Function *>>> dtorFunctions;
+  std::vector<ResourcesForManifestationToCleanup> resourcesToCleanup;
 };
 
 // ========================================================= TypeLstNode =========================================================

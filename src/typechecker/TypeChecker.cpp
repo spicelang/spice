@@ -658,7 +658,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
     return nullptr;
   }
 
-  if (!node->hasReturnValue && !returnVar->isInitialized())
+  if (!node->hasReturnValue && !returnVar->getLifecycle().isInitialized())
     SOFT_ERROR_QT(node, RETURN_WITHOUT_VALUE_RESULT, "Return without value, but result variable is not initialized yet")
 
   if (!node->hasReturnValue)
@@ -879,7 +879,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
 
     // Take a look at the operator
     if (node->op == AssignExprNode::OP_ASSIGN) {
-      const bool isDecl = lhs.entry->isField() && !lhs.entry->isInitialized();
+      const bool isDecl = lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
       rhsType = OpRuleManager::getAssignResultType(node, lhs, rhs, isDecl);
 
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it

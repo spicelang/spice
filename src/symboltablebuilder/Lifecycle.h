@@ -12,9 +12,10 @@ namespace spice::compiler {
 class ASTNode;
 
 enum LifecycleState : uint8_t {
-  DEAD,
-  DECLARED,
-  INITIALIZED,
+  DEAD,        // The symbol is not alive yet (e.g. not declared yet)
+  DECLARED,    // The symbol is declared but hasn't got a value yet (in debug mode declaration comes with default initialization)
+  INITIALIZED, // The symbol is initialized with a value
+  MOVED,       // The symbol was moved away (can still be accessed, but does not own its memory anymore)
 };
 
 /**
@@ -30,10 +31,7 @@ struct LifecycleEvent {
  * A lifecycle represents a collection of timely events that occur for a symbol.
  *
  * Usually a lifecycle looks e.g. like this:
- * - dead
- * - declared
- * - initialized
- * - dead
+ * f<int
  */
 class Lifecycle {
 public:
@@ -44,6 +42,8 @@ public:
   [[nodiscard]] [[maybe_unused]] bool isDead() const;
   [[nodiscard]] [[maybe_unused]] bool isDeclared() const;
   [[nodiscard]] bool isInitialized() const;
+  [[nodiscard]] bool wasMoved() const;
+  [[nodiscard]] bool isInOwningState() const;
 
 private:
   // Private members
