@@ -215,21 +215,21 @@ public p RedBlackTree.clear() {
  * @param x The node to rotate around
  */
 p RedBlackTree.rotateLeft(heap Node<K, V>* x) {
-    Node<K, V>* y = x.childRight;
+    heap Node<K, V>* y = x.childRight;
     x.childRight = y.childLeft;
     if y.hasLeftChild() {
         y.childLeft.parent = x;
     }
     y.parent = x.parent;
     if x.isRoot() {
-        this.rootNode = /*y=*/ x.childRight;
+        this.rootNode = y;
     } else if x == x.parent.childLeft {
-        x.parent.childLeft = /*y=*/ x.childRight;
+        x.parent.childLeft = y;
     } else {
-        x.parent.childRight = /*y=*/ x.childRight;
+        x.parent.childRight = y;
     }
     y.childLeft = x;
-    x.parent = /*y=*/ y.childLeft.childRight;
+    x.parent = y;
 }
 
 /**
@@ -238,21 +238,21 @@ p RedBlackTree.rotateLeft(heap Node<K, V>* x) {
  * @param y The node to rotate around
  */
 p RedBlackTree.rotateRight(heap Node<K, V>* y) {
-    Node<K, V>* x = y.childLeft;
+    heap Node<K, V>* x = y.childLeft;
     y.childLeft = x.childRight;
     if x.hasRightChild() {
         x.childRight.parent = y;
     }
     x.parent = y.parent;
     if y.isRoot() {
-        this.rootNode = /*x=*/ y.childLeft;
+        this.rootNode = x;
     } else if y == y.parent.childRight {
-        y.parent.childRight = /*x=*/ y.childLeft;
+        y.parent.childRight = x;
     } else {
-        y.parent.childLeft = /*x=*/ y.childLeft;
+        y.parent.childLeft = x;
     }
     x.childRight = y;
-    y.parent = /*x=*/ x.childRight.childLeft;
+    y.parent = x;
 }
 
 /**

@@ -127,7 +127,7 @@ f<heap Node<T>*> BinaryTree.deleteNode<T>(heap Node<T>* currentNode, const T& va
     } else {
         // Node with only one child or no child
         if currentNode.childLeft == nil<heap Node<T>*> {
-            heap Node<T>*& tempNode = currentNode.childRight;
+            heap Node<T>* tempNode = currentNode.childRight;
             // Use dealloc, because we don't want to call the destructor.
             // The destructor would delete children and parent.
             unsafe {
@@ -135,7 +135,7 @@ f<heap Node<T>*> BinaryTree.deleteNode<T>(heap Node<T>* currentNode, const T& va
             }
             return tempNode;
         } else if currentNode.childRight == nil<heap Node<T>*> {
-            heap Node<T>*& tempNode = currentNode.childLeft;
+            heap Node<T>* tempNode = currentNode.childLeft;
             // Use dealloc, because we don't want to call the destructor.
             // The destructor would delete children and parent.
             unsafe {
