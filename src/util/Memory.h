@@ -27,7 +27,7 @@ public:
 } // namespace spice::compiler
 
 // Overload new and delete operators for debugging purposes
-#ifdef false
-void *operator new(std::size_t n) noexcept(false) { return malloc(n); }
+#ifdef SPICE_NEW_DELETE_OVERLOADED
+void *operator new(size_t n) noexcept(false) { return malloc(n); }
 void operator delete(void *ptr) noexcept { free(ptr); }
 #endif
