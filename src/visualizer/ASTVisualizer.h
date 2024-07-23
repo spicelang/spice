@@ -8,6 +8,7 @@
 #include <CompilerPass.h>
 #include <ast/ASTNodes.h>
 #include <ast/AbstractASTVisitor.h>
+#include <util/CommonUtil.h>
 
 namespace spice::compiler {
 
@@ -117,7 +118,7 @@ private:
     std::stringstream result;
 
     // Prepare strings
-    std::string typeName(demangleTypeName(typeid(T).name()));
+    std::string typeName(CommonUtil::demangleTypeName(typeid(T).name()));
     std::string codeLoc = node->codeLoc.toString();
     std::string nodeName = typeName.substr(typeName.rfind("::") + 2);
     std::string nodeId = codeLoc + "_" + nodeName;
@@ -141,8 +142,6 @@ private:
 
     return result.str();
   }
-
-  static std::string demangleTypeName(const char *mangledName);
 };
 
 } // namespace spice::compiler

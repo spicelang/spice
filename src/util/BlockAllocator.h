@@ -46,6 +46,10 @@ public:
     T *ptr = new (destAddr) T(std::forward<Args>(args)...);
     allocatedObjects.push_back(ptr);
 
+#ifndef NDEBUG
+    allocatedClassStatistic[typeid(T).name()]++;
+#endif
+
     // Update offset to be ready to store the next object
     offsetInBlock += objSize;
     return ptr;
@@ -53,12 +57,23 @@ public:
 
   [[nodiscard]] size_t getTotalAllocatedSize() const { return memoryBlocks.size() * blockSize; }
   [[nodiscard]] size_t getAllocationCount() const { return allocatedObjects.size(); }
+#ifndef NDEBUG
+  void printAllocatedClassStatistic() const {
+    std::vector<std::pair<const char *, size_t>> elements(allocatedClassStatistic.begin(), allocatedClassStatistic.end());
+    std::sort(elements.begin(), elements.end(), [](const auto &left, const auto &right) { return left.second > right.second; });
+    for (const auto &[mangledName, count] : elements)
+      std::cout << CommonUtil::demangleTypeName(mangledName) << ": " << count << std::endl;
+  }
+#endif
 
 private:
   // Private members
   const MemoryManager &memoryManager;
   std::vector<byte *> memoryBlocks;
   std::vector<Base *> allocatedObjects;
+#ifndef NDEBUG
+  std::unordered_map<const char *, size_t> allocatedClassStatistic;
+#endif
   size_t blockSize;
   size_t offsetInBlock = 0;
 

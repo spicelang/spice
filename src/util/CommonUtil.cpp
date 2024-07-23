@@ -113,6 +113,23 @@ std::string CommonUtil::formatBytes(size_t bytes) {
 }
 
 /**
+ * Demangle CXX type name
+ *
+ * @param mangledName Mangled CXX type name
+ * @return Demangled name
+ */
+std::string CommonUtil::demangleTypeName(const char *mangledName) {
+  int status;
+  char *demangled = abi::__cxa_demangle(mangledName, nullptr, nullptr, &status);
+  if (status == 0) {
+    std::string result(demangled);
+    free(demangled);
+    return result;
+  }
+  return mangledName;
+}
+
+/**
  * Check if the given string is a valid mangled name
  *
  * @return

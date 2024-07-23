@@ -585,6 +585,9 @@ void SourceFile::runBackEnd() { // NOLINT(misc-no-recursion)
       std::cout << " or " << std::to_string(totalLineCount) << " lines in total.\n";
       std::cout << "Total number of blocks allocated via BlockAllocator: " << CommonUtil::formatBytes(allocatedBytes);
       std::cout << " in " << std::to_string(allocationCount) << " allocations.\n";
+#ifndef NDEBUG
+      resourceManager.astNodeAlloc.printAllocatedClassStatistic();
+#endif
       std::cout << "Total number of types: " << std::to_string(totalTypeCount) << "\n";
       std::cout << "Total compile time: " << std::to_string(totalDuration) << " ms\n";
     }
