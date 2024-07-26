@@ -2,6 +2,8 @@
 
 #include "BitcodeLinker.h"
 
+#include <llvm/IR/Module.h>
+
 namespace spice::compiler {
 
 void BitcodeLinker::link() {

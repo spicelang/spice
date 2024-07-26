@@ -1,10 +1,12 @@
 // Copyright (c) 2021-2024 ChilliBits. All rights reserved.
 
 #include "IRGenerator.h"
-#include "ast/Attributes.h"
+
+#include <llvm/IR/Module.h>
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <ast/Attributes.h>
 #include <driver/Driver.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
@@ -99,10 +101,10 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
     paramSymbol->updateAddress(paramAddress);
-    // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
     // Store the value at the new address
     insertStore(&arg, paramAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
   }
 
   // Visit function body

@@ -13,6 +13,11 @@ if.exit.L2.preheader:                             ; preds = %1
   %min.iters.check = icmp ult i32 %0, 9
   br i1 %min.iters.check, label %if.exit.L2.preheader7, label %vector.ph
 
+if.exit.L2.preheader7:                            ; preds = %middle.block, %if.exit.L2.preheader
+  %.tr4.ph = phi i32 [ %0, %if.exit.L2.preheader ], [ %ind.end, %middle.block ]
+  %accumulator.tr3.ph = phi i32 [ 1, %if.exit.L2.preheader ], [ %7, %middle.block ]
+  br label %if.exit.L2
+
 vector.ph:                                        ; preds = %if.exit.L2.preheader
   %n.vec = and i32 %3, -8
   %ind.end = sub i32 %0, %n.vec
@@ -39,11 +44,6 @@ middle.block:                                     ; preds = %vector.body
   %7 = tail call i32 @llvm.vector.reduce.mul.v4i32(<4 x i32> %bin.rdx)
   %cmp.n = icmp eq i32 %3, %n.vec
   br i1 %cmp.n, label %common.ret, label %if.exit.L2.preheader7
-
-if.exit.L2.preheader7:                            ; preds = %if.exit.L2.preheader, %middle.block
-  %.tr4.ph = phi i32 [ %0, %if.exit.L2.preheader ], [ %ind.end, %middle.block ]
-  %accumulator.tr3.ph = phi i32 [ 1, %if.exit.L2.preheader ], [ %7, %middle.block ]
-  br label %if.exit.L2
 
 common.ret:                                       ; preds = %if.exit.L2, %middle.block, %1
   %accumulator.tr.lcssa = phi i32 [ 1, %1 ], [ %7, %middle.block ], [ %9, %if.exit.L2 ]

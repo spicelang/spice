@@ -2,6 +2,8 @@
 
 #include "StdFunctionManager.h"
 
+#include <llvm/IR/Module.h>
+
 #include <SourceFile.h>
 #include <global/GlobalResourceManager.h>
 #include <irgenerator/NameMangling.h>

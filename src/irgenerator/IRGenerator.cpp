@@ -2,13 +2,14 @@
 
 #include "IRGenerator.h"
 
+#include <llvm/BinaryFormat/Dwarf.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Verifier.h>
+
 #include <SourceFile.h>
 #include <global/GlobalResourceManager.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
-
-#include <llvm/BinaryFormat/Dwarf.h>
-#include <llvm/IR/Verifier.h>
 
 namespace spice::compiler {
 

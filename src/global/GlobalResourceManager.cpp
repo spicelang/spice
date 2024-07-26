@@ -9,6 +9,8 @@
 #include <typechecker/StructManager.h>
 #include <util/FileUtil.h>
 
+#include <llvm/IR/Module.h>
+#include <llvm/Support/ManagedStatic.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/TargetParser/Host.h>
 
@@ -32,9 +34,7 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
   if (cliOptions.isNativeTarget && cliOptions.useCPUFeatures) {
     // Retrieve native CPU name and the supported CPU features
     cpuName = llvm::sys::getHostCPUName();
-    llvm::StringMap<bool> hostFeatures;
-    llvm::sys::getHostCPUFeatures(hostFeatures);
-    for (const llvm::StringMapEntry<bool> &feature : hostFeatures) {
+    for (const llvm::StringMapEntry<bool> &feature : llvm::sys::getHostCPUFeatures()) {
       if (featureString.rdbuf()->in_avail() > 0)
         featureString << ',';
       featureString << (feature.second ? '+' : '-') << feature.first().str();

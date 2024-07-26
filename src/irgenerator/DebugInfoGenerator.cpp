@@ -2,6 +2,9 @@
 
 #include "DebugInfoGenerator.h"
 
+#include <llvm/BinaryFormat/Dwarf.h>
+#include <llvm/IR/Module.h>
+
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
 #include <irgenerator/IRGenerator.h>
@@ -10,8 +13,6 @@
 #include <model/Struct.h>
 #include <util/CustomHashFunctions.h>
 #include <util/FileUtil.h>
-
-#include <llvm/BinaryFormat/Dwarf.h>
 
 namespace spice::compiler {
 
@@ -237,8 +238,7 @@ void DebugInfoGenerator::generateGlobalStringDebugInfo(llvm::GlobalVariable *glo
   global->addDebugInfo(diBuilder->createGlobalVariableExpression(compileUnit, name, name, diFile, lineNo, stringType, true));
 }
 
-void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, const size_t argNumber,
-                                                   bool moveToPrev) {
+void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, const size_t argNumber) {
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
 
@@ -258,9 +258,8 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
   llvm::DIExpression *expr = diBuilder->createExpression();
   llvm::DILocation *debugLocation = irGenerator->builder.getCurrentDebugLocation();
   assert(debugLocation != nullptr);
-  llvm::Instruction *inst = diBuilder->insertDeclare(address, varInfo, expr, debugLocation, irGenerator->allocaInsertBlock);
-  if (moveToPrev)
-    inst->moveBefore(irGenerator->builder.GetInsertPoint()->getPrevNonDebugInstruction());
+  llvm::Instruction *prevInst = irGenerator->builder.GetInsertPoint()->getPrevNonDebugInstruction();
+  diBuilder->insertDeclare(address, varInfo, expr, debugLocation, prevInst);
 }
 
 void DebugInfoGenerator::setSourceLocation(const ASTNode *node) {

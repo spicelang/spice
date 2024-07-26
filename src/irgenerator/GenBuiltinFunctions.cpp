@@ -2,6 +2,8 @@
 
 #include "IRGenerator.h"
 
+#include <llvm/IR/Module.h>
+
 #include <ast/ASTNodes.h>
 
 namespace spice::compiler {

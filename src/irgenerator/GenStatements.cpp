@@ -88,10 +88,8 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
   varAddress->setName(varEntry->name);
 
   // Generate debug info for variable declaration
-  if (cliOptions.generateDebugInfo) {
-    diGenerator.setSourceLocation(node);
-    diGenerator.generateLocalVarDebugInfo(node->varName, varAddress, SIZE_MAX, true);
-  }
+  diGenerator.setSourceLocation(node);
+  diGenerator.generateLocalVarDebugInfo(node->varName, varAddress);
 
   return nullptr;
 }
