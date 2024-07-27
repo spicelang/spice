@@ -12,7 +12,7 @@ source_filename = "source.spice"
 ; Function Attrs: norecurse
 define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %0) #0 !dbg !24 {
   %this = alloca ptr, align 8
-  call void @llvm.dbg.declare(metadata ptr %this, metadata !44, metadata !DIExpression()), !dbg !46
+    #dbg_declare(ptr %this, !44, !DIExpression(), !46)
   store ptr %0, ptr %this, align 8, !dbg !46
   %2 = load ptr, ptr %this, align 8, !dbg !46
   %3 = getelementptr inbounds %struct.TestStruct, ptr %2, i64 0, i32 1, !dbg !46
@@ -20,19 +20,16 @@ define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(
   ret void, !dbg !46
 }
 
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
-
 declare void @_ZN6String4dtorEv(ptr)
 
 define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !47 {
+    #dbg_declare(ptr %result, !51, !DIExpression(), !52)
   %result = alloca %struct.TestStruct, align 8
   %ref = alloca ptr, align 8
   %2 = alloca %struct.String, align 8
   %ts = alloca %struct.TestStruct, align 8
-  call void @llvm.dbg.declare(metadata ptr %result, metadata !51, metadata !DIExpression()), !dbg !52
-  store ptr %0, ptr %ref, align 8, !dbg !53
-  call void @llvm.dbg.declare(metadata ptr %ref, metadata !54, metadata !DIExpression()), !dbg !53
+    #dbg_declare(ptr %ref, !53, !DIExpression(), !54)
+  store ptr %0, ptr %ref, align 8, !dbg !54
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr @anon.string.0), !dbg !55
   store i64 6, ptr %ts, align 8, !dbg !56
   %3 = load %struct.String, ptr %2, align 8, !dbg !56
@@ -41,7 +38,7 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !47 {
   %5 = load ptr, ptr %ref, align 8, !dbg !56
   %6 = load i32, ptr %5, align 4, !dbg !56
   %7 = getelementptr inbounds %struct.TestStruct, ptr %ts, i32 0, i32 2, !dbg !56
-  call void @llvm.dbg.declare(metadata ptr %ts, metadata !57, metadata !DIExpression()), !dbg !58
+    #dbg_declare(ptr %ts, !57, !DIExpression(), !58)
   store i32 %6, ptr %7, align 4, !dbg !56
   %8 = load %struct.TestStruct, ptr %ts, align 8, !dbg !59
   ret %struct.TestStruct %8, !dbg !59
@@ -50,16 +47,16 @@ define private %struct.TestStruct @_Z3fctRi(ptr %0) !dbg !47 {
 declare void @_ZN6String4ctorEPKc(ptr, ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #2 !dbg !60 {
+define dso_local i32 @main() #1 !dbg !60 {
+    #dbg_declare(ptr %result, !63, !DIExpression(), !64)
   %result = alloca i32, align 4
   %test = alloca i32, align 4
   %res = alloca %struct.TestStruct, align 8
-  call void @llvm.dbg.declare(metadata ptr %result, metadata !63, metadata !DIExpression()), !dbg !64
   store i32 0, ptr %result, align 4, !dbg !64
-  call void @llvm.dbg.declare(metadata ptr %test, metadata !65, metadata !DIExpression()), !dbg !66
+    #dbg_declare(ptr %test, !65, !DIExpression(), !66)
   store i32 987654, ptr %test, align 4, !dbg !67
   %1 = call %struct.TestStruct @_Z3fctRi(ptr %test), !dbg !68
-  call void @llvm.dbg.declare(metadata ptr %res, metadata !69, metadata !DIExpression()), !dbg !70
+    #dbg_declare(ptr %res, !69, !DIExpression(), !70)
   store %struct.TestStruct %1, ptr %res, align 8, !dbg !68
   %lng_addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 0, !dbg !71
   %2 = load i64, ptr %lng_addr, align 8, !dbg !71
@@ -76,14 +73,13 @@ define dso_local i32 @main() #2 !dbg !60 {
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #3
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
 
 declare ptr @_ZN6String6getRawEv(ptr)
 
 attributes #0 = { norecurse }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { noinline nounwind optnone uwtable }
-attributes #3 = { nofree nounwind }
+attributes #1 = { noinline nounwind optnone uwtable }
+attributes #2 = { nofree nounwind }
 
 !llvm.dbg.cu = !{!2}
 !llvm.module.flags = !{!16, !17, !18, !19, !20, !21, !22}
@@ -142,8 +138,8 @@ attributes #3 = { nofree nounwind }
 !50 = !DIDerivedType(tag: DW_TAG_reference_type, baseType: !42, size: 64)
 !51 = !DILocalVariable(name: "result", scope: !47, file: !7, line: 7, type: !28)
 !52 = !DILocation(line: 7, column: 1, scope: !47)
-!53 = !DILocation(line: 7, column: 19, scope: !47)
-!54 = !DILocalVariable(name: "ref", arg: 1, scope: !47, file: !7, line: 7, type: !50)
+!53 = !DILocalVariable(name: "ref", arg: 1, scope: !47, file: !7, line: 7, type: !50)
+!54 = !DILocation(line: 7, column: 19, scope: !47)
 !55 = !DILocation(line: 8, column: 44, scope: !47)
 !56 = !DILocation(line: 8, column: 60, scope: !47)
 !57 = !DILocalVariable(name: "ts", scope: !47, file: !7, line: 8, type: !28)

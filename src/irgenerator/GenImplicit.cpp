@@ -2,6 +2,8 @@
 
 #include "IRGenerator.h"
 
+#include <llvm/IR/Module.h>
+
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
@@ -56,7 +58,7 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) const {
     return;
 
   // Call all dtor functions
-  const StmtLstNode::ResourcesForManifestationToCleanup& resourcesToCleanup = node->resourcesToCleanup.at(manIdx);
+  const StmtLstNode::ResourcesForManifestationToCleanup &resourcesToCleanup = node->resourcesToCleanup.at(manIdx);
   for (auto [entry, dtor] : resourcesToCleanup.dtorFunctionsToCall)
     generateCtorOrDtorCall(entry, dtor, {});
 
@@ -240,10 +242,10 @@ llvm::Function *IRGenerator::generateImplicitFunction(const std::function<void(v
     llvm::Value *thisAddress = insertAlloca(paramTypes.front(), THIS_VARIABLE_NAME);
     // Update the symbol table entry
     thisEntry->updateAddress(thisAddress);
-    // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(THIS_VARIABLE_NAME, thisAddress, 1);
     // Store the value at the new address
     insertStore(fct->arg_begin(), thisAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(THIS_VARIABLE_NAME, thisAddress, 1);
   }
 
   // Generate body
@@ -334,10 +336,10 @@ llvm::Function *IRGenerator::generateImplicitProcedure(const std::function<void(
     llvm::Value *thisAddress = insertAlloca(paramTypes.front(), THIS_VARIABLE_NAME);
     // Update the symbol table entry
     thisEntry->updateAddress(thisAddress);
-    // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(THIS_VARIABLE_NAME, thisAddress, 1);
     // Store the value at the new address
     insertStore(fct->arg_begin(), thisAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(THIS_VARIABLE_NAME, thisAddress, 1);
   }
 
   // Generate body

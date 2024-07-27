@@ -32,8 +32,8 @@
 	cmpl	$2, %edi
 	jl	.LBB0_6
 # %bb.1:                                # %if.exit.L2.preheader
-	cmpl	$9, %edi
-	jb	.LBB0_5
+	cmpl	$8, %edi
+	jbe	.LBB0_5
 # %bb.2:                                # %vector.ph
 	leal	-1(%rdi), %ecx
 	movl	%ecx, %edx

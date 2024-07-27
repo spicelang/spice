@@ -4,6 +4,8 @@
 
 #include <stdexcept>
 
+#include <llvm/IR/Module.h>
+
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <driver/Driver.h>
@@ -1478,7 +1480,7 @@ LLVMExprResult OpRuleConversionManager::getPrefixMinusInst(const ASTNode *node, 
   case TY_INT:   // fallthrough
   case TY_SHORT: // fallthrough
   case TY_LONG:
-    return {.value = builder.CreateNeg(lhsV(), "", false, lhsSTy.isSigned())};
+    return {.value = builder.CreateNeg(lhsV(), "")};
   default:
     break;
   }

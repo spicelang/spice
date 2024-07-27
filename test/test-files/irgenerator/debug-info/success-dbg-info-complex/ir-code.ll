@@ -36,6 +36,7 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !15 {
+    #dbg_declare(ptr %result, !23, !DIExpression(), !24)
   %result = alloca i32, align 4
   %_argc = alloca i32, align 4
   %_argv = alloca ptr, align 8
@@ -59,13 +60,12 @@ define dso_local i32 @main(i32 %0, ptr %1) #0 !dbg !15 {
   %item2 = alloca ptr, align 8
   %pair_addr = alloca %struct.Pair, align 8
   %14 = alloca ptr, align 8
-  call void @llvm.dbg.declare(metadata ptr %result, metadata !23, metadata !DIExpression()), !dbg !24
   store i32 0, ptr %result, align 4, !dbg !24
-  call void @llvm.dbg.declare(metadata ptr %_argc, metadata !25, metadata !DIExpression()), !dbg !24
+    #dbg_declare(ptr %_argc, !25, !DIExpression(), !24)
   store i32 %0, ptr %_argc, align 4, !dbg !24
-  call void @llvm.dbg.declare(metadata ptr %_argv, metadata !26, metadata !DIExpression()), !dbg !24
+    #dbg_declare(ptr %_argv, !26, !DIExpression(), !24)
   store ptr %1, ptr %_argv, align 8, !dbg !24
-  call void @llvm.dbg.declare(metadata ptr %vi, metadata !27, metadata !DIExpression()), !dbg !35
+    #dbg_declare(ptr %vi, !27, !DIExpression(), !35)
   call void @_ZN6VectorIiE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !36
   store i32 123, ptr %3, align 4, !dbg !37
   call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr %3), !dbg !37
@@ -84,7 +84,7 @@ assert.then.L10:                                  ; preds = %2
 
 assert.exit.L10:                                  ; preds = %2
   %18 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !43
-  call void @llvm.dbg.declare(metadata ptr %it, metadata !44, metadata !DIExpression()), !dbg !50
+    #dbg_declare(ptr %it, !44, !DIExpression(), !50)
   store %struct.VectorIterator %18, ptr %it, align 8, !dbg !43
   %19 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !51
   br i1 %19, label %assert.exit.L14, label %assert.then.L14, !dbg !51, !prof !42
@@ -140,7 +140,7 @@ assert.then.L19:                                  ; preds = %assert.exit.L18
 assert.exit.L19:                                  ; preds = %assert.exit.L18
   call void @_ZN14VectorIteratorIiE4nextEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !60
   %35 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !61
-  call void @llvm.dbg.declare(metadata ptr %pair, metadata !62, metadata !DIExpression()), !dbg !68
+    #dbg_declare(ptr %pair, !62, !DIExpression(), !68)
   store %struct.Pair %35, ptr %pair, align 8, !dbg !61
   %36 = call ptr @_ZN4PairImRiE8getFirstEv(ptr noundef nonnull align 8 dereferenceable(16) %pair), !dbg !69
   %37 = load i64, ptr %36, align 8, !dbg !70
@@ -261,7 +261,7 @@ assert.then.L43:                                  ; preds = %assert.exit.L41
 
 assert.exit.L43:                                  ; preds = %assert.exit.L41
   %72 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !93
-  call void @llvm.dbg.declare(metadata ptr %item, metadata !95, metadata !DIExpression()), !dbg !96
+    #dbg_declare(ptr %item, !95, !DIExpression(), !96)
   store %struct.VectorIterator %72, ptr %10, align 8, !dbg !93
   br label %foreach.head.L46, !dbg !96
 
@@ -317,7 +317,7 @@ assert.then.L51:                                  ; preds = %assert.exit.L50
 
 assert.exit.L51:                                  ; preds = %assert.exit.L50
   %90 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !104
-  call void @llvm.dbg.declare(metadata ptr %item1, metadata !106, metadata !DIExpression()), !dbg !107
+    #dbg_declare(ptr %item1, !106, !DIExpression(), !107)
   store %struct.VectorIterator %90, ptr %11, align 8, !dbg !104
   br label %foreach.head.L54, !dbg !107
 
@@ -374,8 +374,8 @@ assert.then.L59:                                  ; preds = %assert.exit.L58
 assert.exit.L59:                                  ; preds = %assert.exit.L58
   %108 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !115
   store %struct.VectorIterator %108, ptr %13, align 8, !dbg !115
-  call void @llvm.dbg.declare(metadata ptr %idx, metadata !117, metadata !DIExpression()), !dbg !119
-  call void @llvm.dbg.declare(metadata ptr %item2, metadata !120, metadata !DIExpression()), !dbg !121
+    #dbg_declare(ptr %idx, !117, !DIExpression(), !119)
+    #dbg_declare(ptr %item2, !120, !DIExpression(), !121)
   store i64 0, ptr %idx, align 8, !dbg !119
   br label %foreach.head.L61, !dbg !121
 
@@ -443,9 +443,6 @@ assert.exit.L66:                                  ; preds = %assert.exit.L65
   ret i32 %130, !dbg !129
 }
 
-; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
-
 declare void @_ZN6VectorIiE4ctorEv(ptr)
 
 declare void @_ZN6VectorIiE8pushBackERKi(ptr, ptr)
@@ -453,10 +450,10 @@ declare void @_ZN6VectorIiE8pushBackERKi(ptr, ptr)
 declare i64 @_ZN6VectorIiE7getSizeEv(ptr)
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #2
+declare noundef i32 @printf(ptr nocapture noundef readonly, ...) #1
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #3
+declare void @exit(i32) #2
 
 declare %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr)
 
@@ -485,9 +482,8 @@ declare ptr @_ZN6VectorIiE3getEj(ptr, i32)
 declare void @_ZN6VectorIiE4dtorEv(ptr)
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { nofree nounwind }
-attributes #3 = { cold noreturn nounwind }
+attributes #1 = { nofree nounwind }
+attributes #2 = { cold noreturn nounwind }
 
 !llvm.dbg.cu = !{!2}
 !llvm.module.flags = !{!7, !8, !9, !10, !11, !12, !13}

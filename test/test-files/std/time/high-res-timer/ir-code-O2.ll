@@ -58,18 +58,18 @@ assert.exit.L16:                                  ; preds = %assert.exit.L12
   store i64 0, ptr %duration, align 8
   call void @_ZN5Timer4ctorEiPm(ptr noundef nonnull align 8 dereferenceable(32) %1, i32 0, ptr nonnull %duration) #3
   %.fca.0.load = load i64, ptr %1, align 8
-  %.fca.1.gep = getelementptr inbounds %struct.Timer, ptr %1, i64 0, i32 1
+  %.fca.1.gep = getelementptr inbounds i8, ptr %1, i64 8
   %.fca.1.load = load i64, ptr %.fca.1.gep, align 8
-  %.fca.2.gep = getelementptr inbounds %struct.Timer, ptr %1, i64 0, i32 2
+  %.fca.2.gep = getelementptr inbounds i8, ptr %1, i64 16
   %.fca.2.load = load i32, ptr %.fca.2.gep, align 8
-  %.fca.3.gep = getelementptr inbounds %struct.Timer, ptr %1, i64 0, i32 3
+  %.fca.3.gep = getelementptr inbounds i8, ptr %1, i64 24
   %.fca.3.load = load ptr, ptr %.fca.3.gep, align 8
   store i64 %.fca.0.load, ptr %t, align 8
-  %.fca.3.insert.fca.1.gep = getelementptr inbounds %struct.Timer, ptr %t, i64 0, i32 1
+  %.fca.3.insert.fca.1.gep = getelementptr inbounds i8, ptr %t, i64 8
   store i64 %.fca.1.load, ptr %.fca.3.insert.fca.1.gep, align 8
-  %.fca.3.insert.fca.2.gep = getelementptr inbounds %struct.Timer, ptr %t, i64 0, i32 2
+  %.fca.3.insert.fca.2.gep = getelementptr inbounds i8, ptr %t, i64 16
   store i32 %.fca.2.load, ptr %.fca.3.insert.fca.2.gep, align 8
-  %.fca.3.insert.fca.3.gep = getelementptr inbounds %struct.Timer, ptr %t, i64 0, i32 3
+  %.fca.3.insert.fca.3.gep = getelementptr inbounds i8, ptr %t, i64 24
   store ptr %.fca.3.load, ptr %.fca.3.insert.fca.3.gep, align 8
   %8 = call i64 @_ZN5Timer11getDurationEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #3
   %9 = icmp eq i64 %8, 0

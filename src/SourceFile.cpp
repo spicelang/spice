@@ -2,6 +2,9 @@
 
 #include "SourceFile.h"
 
+#include <llvm/IR/Module.h>
+#include <llvm/MC/TargetRegistry.h>
+
 #include <ast/ASTBuilder.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/CompilerError.h>
@@ -21,8 +24,6 @@
 #include <util/Timer.h>
 #include <visualizer/ASTVisualizer.h>
 #include <visualizer/CSTVisualizer.h>
-
-#include <llvm/MC/TargetRegistry.h>
 
 namespace spice::compiler {
 

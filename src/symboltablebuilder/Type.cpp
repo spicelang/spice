@@ -14,6 +14,7 @@
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableEntry.h>
 
+#include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
 
 namespace spice::compiler {

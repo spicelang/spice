@@ -2,6 +2,8 @@
 
 #include "IRGenerator.h"
 
+#include <llvm/IR/Module.h>
+
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
 #include <symboltablebuilder/ScopeHandle.h>
@@ -508,15 +510,14 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    if (hasCaptures && argNumber == 0) {
+    if (hasCaptures && argNumber == 0)
       captureStructPtrPtr = paramAddress;
-    } else {
+    else
       paramSymbol->updateAddress(paramAddress);
-      // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
-    }
     // Store the value at the new address
     insertStore(&arg, paramAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
   }
 
   // Store the default values for optional function args
@@ -652,15 +653,14 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     llvm::Type *paramType = funcType->getParamType(argNumber);
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    if (hasCaptures && argNumber == 0) {
+    if (hasCaptures && argNumber == 0)
       captureStructPtrPtr = paramAddress;
-    } else {
+    else
       paramSymbol->updateAddress(paramAddress);
-      // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
-    }
     // Store the value at the new address
     insertStore(&arg, paramAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
   }
 
   // Store the default values for optional function args
@@ -802,10 +802,10 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
       captureStructPtrPtr = paramAddress;
     else
       paramSymbol->updateAddress(paramAddress);
-    // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
     // Store the value at the new address
     insertStore(&arg, paramAddress);
+    // Generate debug info
+    diGenerator.generateLocalVarDebugInfo(paramName, paramAddress, argNumber + 1);
   }
 
   // Store the default values for optional function args
