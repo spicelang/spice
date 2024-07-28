@@ -7,7 +7,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "TestStruct<long>.ctor<long>(const unsigned long)",
+          "name": "TestStruct<long>.ctor<long>(unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",
@@ -16,7 +16,7 @@
               "name": "initialLength",
               "orderIndex": 1,
               "state": "initialized",
-              "type": "const unsigned long"
+              "type": "unsigned long"
             },
             {
               "codeLoc": "L8C1",
@@ -64,7 +64,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "TestStruct<T>.ctor<T>(const unsigned long)",
+          "name": "TestStruct<T>.ctor<T>(unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",
@@ -73,7 +73,7 @@
               "name": "initialLength",
               "orderIndex": 1,
               "state": "initialized",
-              "type": "const unsigned long"
+              "type": "unsigned long"
             },
             {
               "codeLoc": "L8C1",
@@ -90,6 +90,15 @@
       "name": "struct:TestStruct<long>",
       "symbols": [
         {
+          "codeLoc": "L8C1",
+          "isGlobal": false,
+          "isVolatile": false,
+          "name": "ctor:L8C1",
+          "orderIndex": 2,
+          "state": "declared",
+          "type": "p(unsigned long)"
+        },
+        {
           "codeLoc": "L12C1",
           "isGlobal": false,
           "isVolatile": false,
@@ -114,16 +123,7 @@
           "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "declared",
-          "type": "p(const unsigned long)"
-        },
-        {
-          "codeLoc": "L8C1",
-          "isGlobal": false,
-          "isVolatile": false,
-          "name": "ctor:L8C1",
-          "orderIndex": 2,
-          "state": "declared",
-          "type": "p(const unsigned long)"
+          "type": "p(unsigned long)"
         },
         {
           "codeLoc": "L5C5",
@@ -201,7 +201,7 @@
         {
           "captures": [],
           "children": [],
-          "name": "TestStruct<T>.ctor<T>(const unsigned long)",
+          "name": "TestStruct<T>.ctor<T>(unsigned long)",
           "symbols": [
             {
               "codeLoc": "L8C19",
@@ -210,7 +210,7 @@
               "name": "initialLength",
               "orderIndex": 1,
               "state": "initialized",
-              "type": "const unsigned long"
+              "type": "unsigned long"
             },
             {
               "codeLoc": "L8C1",
@@ -242,7 +242,7 @@
           "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "declared",
-          "type": "p(const unsigned long)"
+          "type": "p(unsigned long)"
         },
         {
           "codeLoc": "L5C5",

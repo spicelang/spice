@@ -1,5 +1,5 @@
 [Error|Semantic] ./source.spice:3:5:
-Wrong data type for operator: Cannot apply '=' operator on types int& and const int
+Wrong data type for operator: Cannot apply '=' operator on types int& and int
 
 3  int& ref = test;
    ^^^^^^^^^^^^^^^

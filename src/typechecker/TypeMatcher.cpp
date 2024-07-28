@@ -49,7 +49,8 @@ bool TypeMatcher::matchRequestedToCandidateType(QualType candidateType, QualType
       QualType knownConcreteType = typeMapping.at(genericTypeName);
 
       // Merge specifiers of candidate type and known concrete type together
-      knownConcreteType.setSpecifiers(knownConcreteType.getSpecifiers().merge(candidateType.getSpecifiers()));
+      const TypeSpecifiers mergedSpecifiers = knownConcreteType.getSpecifiers().merge(candidateType.getSpecifiers());
+      knownConcreteType.setSpecifiers(mergedSpecifiers);
 
       // Remove reference wrapper of candidate type if required
       if (!requestedType.isRef())
