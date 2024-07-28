@@ -433,7 +433,7 @@ void QualType::getName(std::stringstream &name, bool withSize, bool ignorePublic
     name << "inline ";
   if (specifiers.isComposition && !defaultForSuperType.isComposition)
     name << "compose ";
-  if (specifiers.isConst && !defaultForSuperType.isConst)
+  if (specifiers.isConst && !defaultForSuperType.isConst && type->typeChain.size() > 1)
     name << "const ";
   if (specifiers.isHeap && !defaultForSuperType.isHeap)
     name << "heap ";

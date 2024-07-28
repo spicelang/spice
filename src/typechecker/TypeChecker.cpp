@@ -1672,7 +1672,7 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
     concreteTemplateTypes = aliasedTypeContainerEntry->getQualType().getTemplateTypes();
     // Check if the aliased type specified template types and the struct instantiation does
     if (!concreteTemplateTypes.empty() && node->hasTemplateTypes)
-      SOFT_ERROR_BOOL(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
+      SOFT_ERROR_ER(node->templateTypeLst(), ALIAS_WITH_TEMPLATE_LIST, "The aliased type already has a template list")
   }
 
   // Get concrete template types
@@ -1683,11 +1683,11 @@ std::any TypeChecker::visitFctCall(FctCallNode *node) {
 
       // Abort if the type is unresolved
       if (templateType.is(TY_UNRESOLVED))
-        return false;
+        HANDLE_UNRESOLVED_TYPE_ER(templateType)
 
       // Check if the given type is generic
       if (templateType.is(TY_GENERIC))
-        SOFT_ERROR_BOOL(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here")
+        SOFT_ERROR_ER(templateTypeNode, EXPECTED_NON_GENERIC_TYPE, "You must specify a concrete type here")
 
       concreteTemplateTypes.push_back(templateType);
     }
@@ -2402,7 +2402,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
         sourceFile->requestRuntimeModule(runtimeModule);
 
   // Check if it is a generic type
-  const bool isImported = node->typeNameFragments.size() > 1;
+  bool isImported = node->typeNameFragments.size() > 1;
   const QualType *genericType = rootScope->lookupGenericType(firstFragment);
   if (!isImported && genericType) {
     // Take the concrete replacement type for the name of this generic type if available
@@ -2441,12 +2441,20 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
     bool allTemplateTypesConcrete = true;
     QualTypeList templateTypes;
     if (node->templateTypeLst()) {
+      assert(localAccessScope != nullptr);
+      isImported = localAccessScope->isImportedBy(rootScope);
+
       templateTypes.reserve(node->templateTypeLst()->dataTypes().size());
       for (DataTypeNode *dataType : node->templateTypeLst()->dataTypes()) {
         auto templateType = std::any_cast<QualType>(visit(dataType));
         HANDLE_UNRESOLVED_TYPE_QT(templateType)
-        if (entryType.is(TY_GENERIC))
+        if (entryType.is(TY_GENERIC)) {
           allTemplateTypesConcrete = false;
+        } else if (isImported) {
+          // Introduce the local type to the imported source file
+          QualType importedType = mapLocalTypeToImportedScopeType(localAccessScope, templateType);
+          assert(importedType.is(templateType.getSuperType()));
+        }
         templateTypes.push_back(templateType);
       }
       entryType = entryType.getWithTemplateTypes(templateTypes);

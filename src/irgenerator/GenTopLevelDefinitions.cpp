@@ -206,6 +206,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     llvm::Function *func = module->getFunction(mangledName);
     node->entry->updateAddress(func);
     manifestation->llvmFunction = func;
+    assert(func->empty());
 
     // Set attributes to function
     func->setDSOLocal(true);
@@ -373,6 +374,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     llvm::Function *proc = module->getFunction(mangledName);
     node->entry->updateAddress(proc);
     manifestation->llvmFunction = proc;
+    assert(proc->empty());
 
     // Set attributes to procedure
     proc->setDSOLocal(true);

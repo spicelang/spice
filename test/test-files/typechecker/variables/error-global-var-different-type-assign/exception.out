@@ -8,7 +8,7 @@ Wrong data type for operator: Expected unsigned short, but got int
                        ^^^
 
 [Error|Semantic] ./source.spice:2:25:
-Wrong data type for operator: Expected const int, but got short
+Wrong data type for operator: Expected int, but got short
 
 2  t signed int TEST = 6s;
                        ^^
