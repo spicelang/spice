@@ -81,6 +81,7 @@ public:
   [[nodiscard]] bool hasAnyGenericParts() const;
 
   // Complex queries on the type
+  [[nodiscard]] bool isTriviallyCopyable(const ASTNode *node) const;
   [[nodiscard]] bool doesImplement(const QualType &symbolType, const ASTNode *node) const;
   [[nodiscard]] bool canBind(const QualType &otherType, bool isTemporary) const;
   [[nodiscard]] bool matches(const QualType &otherType, bool ignoreArraySize, bool ignoreSpecifiers, bool allowConstify) const;

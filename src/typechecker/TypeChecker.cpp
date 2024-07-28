@@ -2452,7 +2452,7 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
           allTemplateTypesConcrete = false;
         } else if (isImported) {
           // Introduce the local type to the imported source file
-          QualType importedType = mapLocalTypeToImportedScopeType(localAccessScope, templateType);
+          [[maybe_unused]] QualType importedType = mapLocalTypeToImportedScopeType(localAccessScope, templateType);
           assert(importedType.is(templateType.getSuperType()));
         }
         templateTypes.push_back(templateType);

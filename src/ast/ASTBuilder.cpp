@@ -45,6 +45,7 @@ std::any ASTBuilder::visitFunctionDef(SpiceParser::FunctionDefContext *ctx) {
   // Enrich
   fctDefNode->hasParams = ctx->paramLst();
   fctDefNode->hasTemplateTypes = ctx->typeLst();
+  fctDefNode->closingBraceCodeLoc = CodeLoc(ctx->getStop(), sourceFile);
 
   // Visit children
   visitChildren(ctx);
@@ -70,6 +71,7 @@ std::any ASTBuilder::visitProcedureDef(SpiceParser::ProcedureDefContext *ctx) {
   // Enrich
   procDefNode->hasParams = ctx->paramLst();
   procDefNode->hasTemplateTypes = ctx->typeLst();
+  procDefNode->closingBraceCodeLoc = CodeLoc(ctx->getStop(), sourceFile);
 
   // Visit children
   visitChildren(ctx);

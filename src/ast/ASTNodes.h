@@ -312,6 +312,7 @@ public:
   Scope *structScope = nullptr;
   Scope *scope = nullptr;
   std::vector<Function *> manifestations;
+  CodeLoc closingBraceCodeLoc = CodeLoc(1, 0);
 };
 
 // ========================================================== FctDefNode =========================================================

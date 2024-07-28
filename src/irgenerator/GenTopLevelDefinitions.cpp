@@ -276,6 +276,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated) {
+      diGenerator.setSourceLocation(node->closingBraceCodeLoc);
       llvm::Value *result = insertLoad(returnType, resultEntry->getAddress());
       builder.CreateRet(result);
     }
@@ -439,8 +440,10 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     visit(node->body());
 
     // Create return statement if the block is not terminated yet
-    if (!blockAlreadyTerminated)
+    if (!blockAlreadyTerminated) {
+      diGenerator.setSourceLocation(node->closingBraceCodeLoc);
       builder.CreateRetVoid();
+    }
 
     // Conclude debug info for procedure
     diGenerator.concludeFunctionDebugInfo();

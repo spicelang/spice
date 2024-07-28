@@ -21,7 +21,7 @@ std::any IRGenerator::visitAssignExpr(const AssignExprNode *node) {
     const AssignExprNode *rhsNode = node->rhs();
 
     if (node->op == AssignExprNode::OP_ASSIGN) { // Normal assignment
-      return doAssignment(lhsNode, rhsNode);
+      return doAssignment(lhsNode, rhsNode, node);
     } else { // Compound assignment
       // Get symbol types of left and right side
       const QualType lhsSTy = lhsNode->getEvaluatedSymbolType(manIdx);

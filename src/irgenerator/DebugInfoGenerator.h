@@ -34,6 +34,7 @@ public:
   void generateGlobalStringDebugInfo(llvm::GlobalVariable *global, const std::string &name, size_t length,
                                      const CodeLoc &codeLoc);
   void generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, const size_t argNumber = SIZE_MAX);
+  void setSourceLocation(const CodeLoc &codeLoc);
   void setSourceLocation(const ASTNode *node);
   void finalize();
 
