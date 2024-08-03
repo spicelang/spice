@@ -58,12 +58,8 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
       generateCtorOrDtorCall(varEntry, node->calledCopyCtor, {rhsAddress});
     } else {
       // Assign rhs to lhs
-#ifndef NDEBUG
-      LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
+      [[maybe_unused]] const LLVMExprResult assignResult = doAssignment(varAddress, varEntry, node->assignExpr(), true);
       assert(assignResult.entry == varEntry);
-#else
-      doAssignment(varAddress, varEntry, node->assignExpr(), true);
-#endif
       varAddress = varEntry->getAddress();
       varEntry->updateAddress(varAddress);
     }
@@ -75,7 +71,7 @@ std::any IRGenerator::visitDeclStmt(const DeclStmtNode *node) {
     if (node->calledInitCtor) {
       // Call no-args constructor
       generateCtorOrDtorCall(varEntry, node->calledInitCtor, {});
-    } else if (!node->isForEachItem && cliOptions.buildMode == BuildMode::DEBUG) {
+    } else if (!node->isForEachItem && cliOptions.buildMode == DEBUG) {
       assert(!node->isCtorCallRequired);
       // Retrieve default value for lhs symbol type and store it
       llvm::Constant *defaultValue = getDefaultValueForSymbolType(varSymbolType);
