@@ -8,7 +8,6 @@
 #include <model/GenericType.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
-#include <typechecker/ExprResult.h>
 #include <typechecker/TypeMatcher.h>
 #include <util/CodeLoc.h>
 #include <util/CustomHashFunctions.h>
@@ -112,7 +111,7 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
   const std::string signature = newManifestation.getSignature();
 
   // Check if the function exists already
-  for (const auto &[_, manifestations] : insertScope->functions) {
+  for (const auto &manifestations : insertScope->functions | std::views::values) {
     if (manifestations.contains(signature)) {
       if (newManifestation.isFunction())
         throw SemanticError(declNode, FUNCTION_DECLARED_TWICE, "'" + signature + "' is declared twice");
@@ -474,7 +473,7 @@ bool FunctionManager::matchArgTypes(Function &candidate, const ArgList &reqArgs,
  * @param typeMapping Concrete template type mapping
  * @param callNode AST node for error messages
  */
-void FunctionManager::substantiateReturnType(Function &candidate, TypeMapping &typeMapping, const ASTNode *callNode) {
+void FunctionManager::substantiateReturnType(Function &candidate, const TypeMapping &typeMapping, const ASTNode *callNode) {
   if (candidate.returnType.hasAnyGenericParts())
     TypeMatcher::substantiateTypeWithTypeMapping(candidate.returnType, typeMapping, callNode);
 }

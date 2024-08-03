@@ -17,13 +17,13 @@ const char *const ALIAS_CONTAINER_SUFFIX = ".container";
 const char *const STRUCT_SCOPE_PREFIX = "struct:";
 const char *const INTERFACE_SCOPE_PREFIX = "interface:";
 const char *const ENUM_SCOPE_PREFIX = "enum:";
-const char UNUSED_VARIABLE_NAME = '_';
+static constexpr char UNUSED_VARIABLE_NAME = '_';
 
 /**
  * Jobs:
  * - Build symbol table
  */
-class SymbolTableBuilder : private CompilerPass, public ASTVisitor {
+class SymbolTableBuilder final : CompilerPass, public ASTVisitor {
 public:
   // Constructors
   SymbolTableBuilder(GlobalResourceManager &resourceManager, SourceFile *sourceFile);

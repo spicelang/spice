@@ -27,11 +27,11 @@ const char *ParserError::what() const noexcept { return errorMessage.c_str(); }
 /**
  * Get the prefix of the error message for a particular error
  *
- * @param type Type of the error
+ * @param errorType Type of the error
  * @return Prefix string for the error type
  */
-std::string ParserError::getMessagePrefix(ParserErrorType type) {
-  switch (type) {
+std::string ParserError::getMessagePrefix(ParserErrorType errorType) {
+  switch (errorType) {
   case PARSING_FAILED:
     return "Parsing failed";
   case NUMBER_OUT_OF_RANGE:

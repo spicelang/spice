@@ -210,6 +210,7 @@ bool StructManager::matchName(const Struct &candidate, const std::string &reqNam
  *
  * @param candidate Matching candidate struct
  * @param reqTemplateTypes Requested struct template types
+ * @param typeMapping Generic type mapping
  * @param node Instantiation AST node for printing error messages
  * @return Fulfilled or not
  */
@@ -249,7 +250,7 @@ bool StructManager::matchTemplateTypes(Struct &candidate, const QualTypeList &re
  * @param typeMapping Generic type mapping
  * @param node Instantiation AST node for printing error messages
  */
-void StructManager::substantiateFieldTypes(Struct &candidate, TypeMapping &typeMapping, const ASTNode *node) {
+void StructManager::substantiateFieldTypes(Struct &candidate, const TypeMapping &typeMapping, const ASTNode *node) {
   // Loop over all implicit fields and substantiate the generic ones
   const size_t fieldCount = candidate.scope->getFieldCount() - candidate.fieldTypes.size();
   for (size_t i = 0; i < fieldCount; i++) {

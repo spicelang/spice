@@ -105,14 +105,14 @@ public:
     customItemsInitialization(manifestationCount);
   }
 
-  virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {         // LCOV_EXCL_LINE
-    assert_fail("The given node does not overload the getOpFctPointers function"); // LCOV_EXCL_LINE
-    return nullptr;                                                                // LCOV_EXCL_LINE
-  } // LCOV_EXCL_LINE
+  virtual std::vector<std::vector<const Function *>> *getOpFctPointers() {                           // LCOV_EXCL_LINE
+    assert_fail("The given node does not overload the getOpFctPointers function");                   // LCOV_EXCL_LINE
+    return nullptr;                                                                                  // LCOV_EXCL_LINE
+  }                                                                                                  // LCOV_EXCL_LINE
   [[nodiscard]] virtual const std::vector<std::vector<const Function *>> *getOpFctPointers() const { // LCOV_EXCL_LINE
     assert_fail("The given node does not overload the getOpFctPointers function");                   // LCOV_EXCL_LINE
     return nullptr;                                                                                  // LCOV_EXCL_LINE
-  } // LCOV_EXCL_LINE
+  }                                                                                                  // LCOV_EXCL_LINE
 
   virtual void customItemsInitialization(size_t) {} // Noop
 
@@ -151,17 +151,17 @@ public:
   [[nodiscard]] virtual std::vector<Function *> *getFctManifestations(const std::string &) {                 // LCOV_EXCL_LINE
     assert_fail("Must be called on a FctDefNode, ProcDefNode, ExtDeclNode, StructDefNode or SignatureNode"); // LCOV_EXCL_LINE
     return nullptr;                                                                                          // LCOV_EXCL_LINE
-  } // LCOV_EXCL_LINE
+  }                                                                                                          // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Struct *> *getStructManifestations() { // LCOV_EXCL_LINE
     assert_fail("Must be called on a StructDefNode");                      // LCOV_EXCL_LINE
     return nullptr;                                                        // LCOV_EXCL_LINE
-  } // LCOV_EXCL_LINE
+  }                                                                        // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual std::vector<Interface *> *getInterfaceManifestations() { // LCOV_EXCL_LINE
     assert_fail("Must be called on a InterfaceDefNode");                         // LCOV_EXCL_LINE
     return nullptr;                                                              // LCOV_EXCL_LINE
-  } // LCOV_EXCL_LINE
+  }                                                                              // LCOV_EXCL_LINE
 
   [[nodiscard]] virtual bool isFctOrProcDef() const { return false; }
   [[nodiscard]] virtual bool isStructDef() const { return false; }
@@ -234,7 +234,7 @@ public:
 
 // ======================================================== MainFctDefNode =======================================================
 
-class MainFctDefNode : public TopLevelDefNode {
+class MainFctDefNode final : public TopLevelDefNode {
 public:
   // Constructors
   using TopLevelDefNode::TopLevelDefNode;
@@ -262,7 +262,7 @@ public:
 
 // ========================================================== FctNameNode =======================================================
 
-class FctNameNode : public ASTNode {
+class FctNameNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -316,7 +316,7 @@ public:
 
 // ========================================================== FctDefNode =========================================================
 
-class FctDefNode : public FctDefBaseNode {
+class FctDefNode final : public FctDefBaseNode {
 public:
   // Constructors
   using FctDefBaseNode::FctDefBaseNode;
@@ -334,7 +334,7 @@ public:
 
 // ========================================================== ProcDefNode ========================================================
 
-class ProcDefNode : public FctDefBaseNode {
+class ProcDefNode final : public FctDefBaseNode {
 public:
   // Constructors
   using FctDefBaseNode::FctDefBaseNode;
@@ -352,7 +352,7 @@ public:
 
 // ========================================================= StructDefNode =======================================================
 
-class StructDefNode : public TopLevelDefNode {
+class StructDefNode final : public TopLevelDefNode {
 public:
   // Constructors
   using TopLevelDefNode::TopLevelDefNode;
@@ -392,7 +392,7 @@ public:
 
 // ======================================================= InterfaceDefNode ======================================================
 
-class InterfaceDefNode : public TopLevelDefNode {
+class InterfaceDefNode final : public TopLevelDefNode {
 public:
   // Constructors
   using TopLevelDefNode::TopLevelDefNode;
@@ -422,7 +422,7 @@ public:
 
 // ========================================================== EnumDefNode ========================================================
 
-class EnumDefNode : public TopLevelDefNode {
+class EnumDefNode final : public TopLevelDefNode {
 public:
   // Constructors
   using TopLevelDefNode::TopLevelDefNode;
@@ -445,7 +445,7 @@ public:
 
 // ====================================================== GenericTypeDefNode =====================================================
 
-class GenericTypeDefNode : public TopLevelDefNode {
+class GenericTypeDefNode final : public TopLevelDefNode {
 public:
   // Constructors
   using TopLevelDefNode::TopLevelDefNode;
@@ -464,7 +464,7 @@ public:
 
 // ========================================================= AliasDefNode ========================================================
 
-class AliasDefNode : public TopLevelDefNode {
+class AliasDefNode final : public TopLevelDefNode {
 public:
   // Constructors
   using TopLevelDefNode::TopLevelDefNode;
@@ -488,7 +488,7 @@ public:
 
 // ======================================================= GlobalVarDefNode ======================================================
 
-class GlobalVarDefNode : public TopLevelDefNode {
+class GlobalVarDefNode final : public TopLevelDefNode {
 public:
   // Constructors
   using TopLevelDefNode::TopLevelDefNode;
@@ -513,7 +513,7 @@ public:
 
 // ========================================================== ExtDeclNode ========================================================
 
-class ExtDeclNode : public TopLevelDefNode {
+class ExtDeclNode final : public TopLevelDefNode {
 public:
   // Constructors
   using TopLevelDefNode::TopLevelDefNode;
@@ -546,7 +546,7 @@ public:
 
 // ======================================================== ImportDefNode ========================================================
 
-class ImportDefNode : public TopLevelDefNode {
+class ImportDefNode final : public TopLevelDefNode {
 public:
   // Constructors
   using TopLevelDefNode::TopLevelDefNode;
@@ -563,7 +563,7 @@ public:
 
 // ======================================================== UnsafeBlockNode ======================================================
 
-class UnsafeBlockNode : public StmtNode {
+class UnsafeBlockNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -584,7 +584,7 @@ public:
 
 // ========================================================== ForLoopNode ========================================================
 
-class ForLoopNode : public StmtNode {
+class ForLoopNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -609,7 +609,7 @@ public:
 
 // ======================================================== ForeachLoopNode ======================================================
 
-class ForeachLoopNode : public StmtNode {
+class ForeachLoopNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -641,7 +641,7 @@ public:
 
 // ========================================================= WhileLoopNode =======================================================
 
-class WhileLoopNode : public StmtNode {
+class WhileLoopNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -664,7 +664,7 @@ public:
 
 // ======================================================== DoWhileLoopNode ======================================================
 
-class DoWhileLoopNode : public StmtNode {
+class DoWhileLoopNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -687,7 +687,7 @@ public:
 
 // ========================================================== IfStmtNode =========================================================
 
-class IfStmtNode : public StmtNode {
+class IfStmtNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -711,7 +711,7 @@ public:
 
 // ========================================================= ElseStmtNode ========================================================
 
-class ElseStmtNode : public StmtNode {
+class ElseStmtNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -735,7 +735,7 @@ public:
 
 // ======================================================== SwitchStmtNode =======================================================
 
-class SwitchStmtNode : public StmtNode {
+class SwitchStmtNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -758,7 +758,7 @@ public:
 
 // ======================================================== CaseBranchNode =======================================================
 
-class CaseBranchNode : public ASTNode {
+class CaseBranchNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -781,7 +781,7 @@ public:
 
 // ======================================================= DefaultBranchNode =====================================================
 
-class DefaultBranchNode : public ASTNode {
+class DefaultBranchNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -803,7 +803,7 @@ public:
 
 // ==================================================== AnonymousBlockStmtNode ===================================================
 
-class AnonymousBlockStmtNode : public StmtNode {
+class AnonymousBlockStmtNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -824,7 +824,7 @@ public:
 
 // ========================================================= StmtLstNode =========================================================
 
-class StmtLstNode : public ASTNode {
+class StmtLstNode final : public ASTNode {
 public:
   // Structs
   struct ResourcesForManifestationToCleanup {
@@ -851,7 +851,7 @@ public:
 
 // ========================================================= TypeLstNode =========================================================
 
-class TypeLstNode : public ASTNode {
+class TypeLstNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -866,7 +866,7 @@ public:
 
 // ======================================================= TypeAltsLstNode =======================================================
 
-class TypeAltsLstNode : public ASTNode {
+class TypeAltsLstNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -881,7 +881,7 @@ public:
 
 // ======================================================== ParamLstNode =========================================================
 
-class ParamLstNode : public ASTNode {
+class ParamLstNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -896,7 +896,7 @@ public:
 
 // ========================================================== ArgLstNode =========================================================
 
-class ArgLstNode : public ASTNode {
+class ArgLstNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -911,7 +911,7 @@ public:
 
 // ======================================================== EnumItemLstNode ======================================================
 
-class EnumItemLstNode : public ASTNode {
+class EnumItemLstNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -926,7 +926,7 @@ public:
 
 // ========================================================= EnumItemNode ========================================================
 
-class EnumItemNode : public ASTNode {
+class EnumItemNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -945,7 +945,7 @@ public:
 
 // ========================================================== FieldNode ==========================================================
 
-class FieldNode : public ASTNode {
+class FieldNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -965,7 +965,7 @@ public:
 
 // ======================================================== SignatureNode ========================================================
 
-class SignatureNode : public ASTNode {
+class SignatureNode final : public ASTNode {
 public:
   // Enums
   enum SignatureType : uint8_t {
@@ -993,7 +993,7 @@ public:
   // Public members
   bool hasParams = false;
   bool hasTemplateTypes = false;
-  SignatureType signatureType = SignatureNode::TYPE_NONE;
+  SignatureType signatureType = TYPE_NONE;
   TypeSpecifiers signatureSpecifiers;
   std::string methodName;
   SymbolTableEntry *entry = nullptr;
@@ -1002,7 +1002,7 @@ public:
 
 // ========================================================= DeclStmtNode ========================================================
 
-class DeclStmtNode : public StmtNode {
+class DeclStmtNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -1032,7 +1032,7 @@ public:
 
 // ======================================================= SpecifierLstNode ======================================================
 
-class SpecifierLstNode : public ASTNode {
+class SpecifierLstNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -1047,7 +1047,7 @@ public:
 
 // ========================================================= SpecifierNode =======================================================
 
-class SpecifierNode : public ASTNode {
+class SpecifierNode final : public ASTNode {
 public:
   // Enums
   enum SpecifierType : uint8_t {
@@ -1074,7 +1074,7 @@ public:
 
 // ========================================================== ModAttrNode ========================================================
 
-class ModAttrNode : public ASTNode {
+class ModAttrNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -1089,7 +1089,7 @@ public:
 
 // =================================================== TopLevelDefinitionAttrNode ================================================
 
-class TopLevelDefinitionAttrNode : public ASTNode {
+class TopLevelDefinitionAttrNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -1104,7 +1104,7 @@ public:
 
 // ========================================================= LambdaAttrNode ======================================================
 
-class LambdaAttrNode : public ASTNode {
+class LambdaAttrNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -1139,7 +1139,7 @@ public:
 
 // ============================================================ AttrNode =========================================================
 
-class AttrNode : public ASTNode {
+class AttrNode final : public ASTNode {
 public:
   // Enums
   enum AttrTarget : uint8_t {
@@ -1180,7 +1180,7 @@ public:
 
 // ======================================================== CaseConstantNode =====================================================
 
-class CaseConstantNode : public ASTNode {
+class CaseConstantNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -1200,7 +1200,7 @@ public:
 
 // ======================================================== ReturnStmtNode =======================================================
 
-class ReturnStmtNode : public StmtNode {
+class ReturnStmtNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -1222,7 +1222,7 @@ public:
 
 // ======================================================== BreakStmtNode ========================================================
 
-class BreakStmtNode : public StmtNode {
+class BreakStmtNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -1237,7 +1237,7 @@ public:
 
 // ======================================================= ContinueStmtNode ======================================================
 
-class ContinueStmtNode : public StmtNode {
+class ContinueStmtNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -1252,7 +1252,7 @@ public:
 
 // ====================================================== FallthroughStmtNode ====================================================
 
-class FallthroughStmtNode : public StmtNode {
+class FallthroughStmtNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -1264,7 +1264,7 @@ public:
 
 // ======================================================== AssertStmtNode =======================================================
 
-class AssertStmtNode : public StmtNode {
+class AssertStmtNode final : public StmtNode {
 public:
   // Constructors
   using StmtNode::StmtNode;
@@ -1285,7 +1285,7 @@ public:
 
 // ======================================================== PrintfCallNode =======================================================
 
-class PrintfCallNode : public ExprNode {
+class PrintfCallNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1306,7 +1306,7 @@ public:
 
 // ======================================================== SizeofCallNode =======================================================
 
-class SizeofCallNode : public ExprNode {
+class SizeofCallNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1328,7 +1328,7 @@ public:
 
 // ======================================================== AlignofCallNode ======================================================
 
-class AlignofCallNode : public ExprNode {
+class AlignofCallNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1350,7 +1350,7 @@ public:
 
 // ========================================================= LenCallNode =========================================================
 
-class LenCallNode : public ExprNode {
+class LenCallNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1368,7 +1368,7 @@ public:
 
 // ======================================================== PanicCallNode ========================================================
 
-class PanicCallNode : public ExprNode {
+class PanicCallNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1387,7 +1387,7 @@ public:
 
 // ======================================================= AssignExprNode ========================================================
 
-class AssignExprNode : public ExprNode {
+class AssignExprNode final : public ExprNode {
 public:
   // Enums
   enum AssignOp : uint8_t {
@@ -1431,7 +1431,7 @@ public:
 
 // ======================================================= TernaryExprNode =======================================================
 
-class TernaryExprNode : public ExprNode {
+class TernaryExprNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1452,7 +1452,7 @@ public:
 
 // ===================================================== LogicalOrExprNode =======================================================
 
-class LogicalOrExprNode : public ExprNode {
+class LogicalOrExprNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1471,7 +1471,7 @@ public:
 
 // ===================================================== LogicalAndExprNode ======================================================
 
-class LogicalAndExprNode : public ExprNode {
+class LogicalAndExprNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1490,7 +1490,7 @@ public:
 
 // ===================================================== BitwiseOrExprNode =======================================================
 
-class BitwiseOrExprNode : public ExprNode {
+class BitwiseOrExprNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1509,7 +1509,7 @@ public:
 
 // ==================================================== BitwiseXorExprNode =======================================================
 
-class BitwiseXorExprNode : public ExprNode {
+class BitwiseXorExprNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1528,7 +1528,7 @@ public:
 
 // ==================================================== BitwiseAndExprNode =======================================================
 
-class BitwiseAndExprNode : public ExprNode {
+class BitwiseAndExprNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1547,7 +1547,7 @@ public:
 
 // ===================================================== EqualityExprNode ========================================================
 
-class EqualityExprNode : public ExprNode {
+class EqualityExprNode final : public ExprNode {
 public:
   // Enums
   enum EqualityOp : uint8_t {
@@ -1580,7 +1580,7 @@ public:
 
 // ==================================================== RelationalExprNode =======================================================
 
-class RelationalExprNode : public ExprNode {
+class RelationalExprNode final : public ExprNode {
 public:
   // Enums
   enum RelationalOp : uint8_t {
@@ -1611,7 +1611,7 @@ public:
 
 // ====================================================== ShiftExprNode ==========================================================
 
-class ShiftExprNode : public ExprNode {
+class ShiftExprNode final : public ExprNode {
 public:
   // Enums
   enum ShiftOp : uint8_t {
@@ -1644,7 +1644,7 @@ public:
 
 // ==================================================== AdditiveExprNode =========================================================
 
-class AdditiveExprNode : public ExprNode {
+class AdditiveExprNode final : public ExprNode {
 public:
   // Enums
   enum AdditiveOp : uint8_t {
@@ -1679,7 +1679,7 @@ public:
 
 // ================================================== MultiplicativeExprNode =====================================================
 
-class MultiplicativeExprNode : public ExprNode {
+class MultiplicativeExprNode final : public ExprNode {
 public:
   // Enums
   enum MultiplicativeOp : uint8_t {
@@ -1715,7 +1715,7 @@ public:
 
 // ======================================================= CastExprNode ==========================================================
 
-class CastExprNode : public ExprNode {
+class CastExprNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1738,7 +1738,7 @@ public:
 
 // ==================================================== PrefixUnaryExprNode ======================================================
 
-class PrefixUnaryExprNode : public ExprNode {
+class PrefixUnaryExprNode final : public ExprNode {
 public:
   // Enums
   enum PrefixUnaryOp : uint8_t {
@@ -1773,7 +1773,7 @@ public:
 
 // =================================================== PostfixUnaryExprNode ======================================================
 
-class PostfixUnaryExprNode : public ExprNode {
+class PostfixUnaryExprNode final : public ExprNode {
 public:
   // Enums
   enum PostfixUnaryOp : uint8_t {
@@ -1811,7 +1811,7 @@ public:
 
 // ====================================================== AtomicExprNode =========================================================
 
-class AtomicExprNode : public ExprNode {
+class AtomicExprNode final : public ExprNode {
 public:
   // Structs
   struct VarAccessData {
@@ -1848,7 +1848,7 @@ public:
 
 // ======================================================== ValueNode ============================================================
 
-class ValueNode : public ExprNode {
+class ValueNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1875,7 +1875,7 @@ public:
 
 // ====================================================== ConstantNode ===========================================================
 
-class ConstantNode : public ExprNode {
+class ConstantNode final : public ExprNode {
 public:
   // Enum
   enum PrimitiveValueType : uint8_t {
@@ -1908,7 +1908,7 @@ public:
 
 // ====================================================== FctCallNode ============================================================
 
-class FctCallNode : public ExprNode {
+class FctCallNode final : public ExprNode {
 public:
   // Enums
   enum FctCallType : uint8_t {
@@ -1962,7 +1962,7 @@ public:
 
 // ================================================= ArrayInitializationNode =====================================================
 
-class ArrayInitializationNode : public ExprNode {
+class ArrayInitializationNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -1980,7 +1980,7 @@ public:
 
 // ================================================= StructInstantiationNode =====================================================
 
-class StructInstantiationNode : public ExprNode {
+class StructInstantiationNode final : public ExprNode {
 public:
   // Constructors
   using ExprNode::ExprNode;
@@ -2025,7 +2025,7 @@ public:
 
 // ====================================================== LambdaFuncNode =========================================================
 
-class LambdaFuncNode : public LambdaBaseNode {
+class LambdaFuncNode final : public LambdaBaseNode {
 public:
   // Constructors
   using LambdaBaseNode::LambdaBaseNode;
@@ -2040,12 +2040,12 @@ public:
   [[nodiscard]] LambdaAttrNode *lambdaAttr() const { return getChild<LambdaAttrNode>(); }
 
   // Other methods
-  [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  [[nodiscard]] bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 };
 
 // ====================================================== LambdaProcNode =========================================================
 
-class LambdaProcNode : public LambdaBaseNode {
+class LambdaProcNode final : public LambdaBaseNode {
 public:
   // Constructors
   using LambdaBaseNode::LambdaBaseNode;
@@ -2059,12 +2059,12 @@ public:
   [[nodiscard]] LambdaAttrNode *lambdaAttr() const { return getChild<LambdaAttrNode>(); }
 
   // Other methods
-  bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable) const override;
+  bool returnsOnAllControlPaths(bool *overrideUnreachable) const override;
 };
 
 // ====================================================== LambdaExprNode =========================================================
 
-class LambdaExprNode : public LambdaBaseNode {
+class LambdaExprNode final : public LambdaBaseNode {
 public:
   // Constructors
   using LambdaBaseNode::LambdaBaseNode;
@@ -2079,7 +2079,7 @@ public:
 
 // ======================================================= DataTypeNode ==========================================================
 
-class DataTypeNode : public ASTNode {
+class DataTypeNode final : public ASTNode {
 public:
   // Enums
   enum TypeModifierType : uint8_t {
@@ -2120,7 +2120,7 @@ public:
 
 // ==================================================== BaseDataTypeNode =========================================================
 
-class BaseDataTypeNode : public ASTNode {
+class BaseDataTypeNode final : public ASTNode {
 public:
   // Enums
   enum Type : uint8_t {
@@ -2155,7 +2155,7 @@ public:
 
 // ==================================================== CustomDataTypeNode =======================================================
 
-class CustomDataTypeNode : public ASTNode {
+class CustomDataTypeNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;
@@ -2178,7 +2178,7 @@ public:
 
 // =================================================== FunctionDataTypeNode ======================================================
 
-class FunctionDataTypeNode : public ASTNode {
+class FunctionDataTypeNode final : public ASTNode {
 public:
   // Constructors
   using ASTNode::ASTNode;

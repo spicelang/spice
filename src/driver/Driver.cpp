@@ -29,7 +29,7 @@ void Driver::init() {
   addInstallSubcommand();
   addUninstallSubcommand();
 
-  app.final_callback([&]() {
+  app.final_callback([&] {
     // Print help text for the root command if no sub-command was given
     if (app.get_subcommands().empty()) {
       std::cout << app.help();
@@ -41,7 +41,7 @@ void Driver::init() {
       std::filesystem::path installPath = FileUtil::getSpiceBinDir();
       installPath /= cliOptions.mainSourceFile.stem();
       if (!dryRun)
-        std::filesystem::create_directories(installPath);
+        create_directories(installPath);
 #if OS_WINDOWS
       installPath.replace_extension("exe");
 #endif
@@ -52,7 +52,7 @@ void Driver::init() {
 
       // If the binary should be uninstalled, check if the executable exists and uninstall it
       if (shouldUninstall && !dryRun) {
-        if (std::filesystem::exists(installPath) && std::filesystem::remove(installPath))
+        if (exists(installPath) && std::filesystem::remove(installPath))
           std::cout << "Successfully uninstalled.\n";
         else
           CompilerWarning(UNINSTALL_FAILED, "The executable was not found at the expected location").print();
@@ -66,11 +66,11 @@ void Driver::init() {
     // Set output path and dir
     if (shouldExecute) {
       cliOptions.execute = true;
-      auto millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+      const auto millis = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
       cliOptions.outputDir = std::filesystem::temp_directory_path() / "spice" / "output" / std::to_string(millis);
       cliOptions.outputPath = cliOptions.outputDir / cliOptions.mainSourceFile.filename();
     } else if (!cliOptions.outputPath.empty()) {
-      if (std::filesystem::is_directory(cliOptions.outputPath)) {
+      if (is_directory(cliOptions.outputPath)) {
         cliOptions.outputDir = cliOptions.outputPath;
         cliOptions.outputPath = cliOptions.outputDir / cliOptions.mainSourceFile.filename();
       } else {
@@ -96,8 +96,8 @@ void Driver::init() {
     cliOptions.cacheDir = std::filesystem::temp_directory_path() / "spice" / "cache";
 
     // Create directories in case they not exist yet
-    std::filesystem::create_directories(cliOptions.cacheDir);
-    std::filesystem::create_directories(cliOptions.outputDir);
+    create_directories(cliOptions.cacheDir);
+    create_directories(cliOptions.outputDir);
   });
 }
 
@@ -122,7 +122,7 @@ int Driver::parse(int argc, const char *argv[]) {
  */
 void Driver::enrich() {
   // Make path of given main source file canonical and relative
-  cliOptions.mainSourceFile = std::filesystem::relative(cliOptions.mainSourceFile);
+  cliOptions.mainSourceFile = relative(cliOptions.mainSourceFile);
 
   // Propagate llvm args to llvm
   if (!cliOptions.llvmArgs.empty()) {
@@ -135,7 +135,7 @@ void Driver::enrich() {
   }
 
   // Propagate target information
-  llvm::Triple defaultTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
+  const llvm::Triple defaultTriple(llvm::Triple::normalize(llvm::sys::getDefaultTargetTriple()));
   if (cliOptions.targetTriple.empty()) {
     if (cliOptions.targetArch == TARGET_UNKNOWN) { // We have nothing -> obtain native triplet
       cliOptions.targetTriple = defaultTriple.getTriple();
@@ -144,12 +144,12 @@ void Driver::enrich() {
       cliOptions.targetOs = defaultTriple.getOSName();
       cliOptions.isNativeTarget = true;
     } else { // We have arch, vendor and os -> obtain triplet
-      llvm::Triple triple(cliOptions.targetArch, cliOptions.targetVendor, cliOptions.targetOs);
+      const llvm::Triple triple(cliOptions.targetArch, cliOptions.targetVendor, cliOptions.targetOs);
       cliOptions.targetTriple = triple.getTriple();
       cliOptions.isNativeTarget = triple == defaultTriple;
     }
   } else { // Obtain arch, vendor and os by the triplet
-    llvm::Triple triple(llvm::Triple::normalize(cliOptions.targetTriple));
+    const llvm::Triple triple(llvm::Triple::normalize(cliOptions.targetTriple));
     cliOptions.targetArch = triple.getArchName();
     cliOptions.targetVendor = triple.getVendorName();
     cliOptions.targetOs = triple.getOSName();
@@ -161,11 +161,11 @@ void Driver::enrich() {
     cliOptions.namesForIRValues = true;
 
   // Enable test mode when test mode was selected
-  if (cliOptions.buildMode == BuildMode::TEST) {
+  if (cliOptions.buildMode == TEST) {
     cliOptions.testMode = true;
     cliOptions.noEntryFct = true;
     cliOptions.generateTestMain = true;
-    cliOptions.buildMode = BuildMode::DEBUG;
+    cliOptions.buildMode = DEBUG;
   }
 }
 
@@ -180,7 +180,7 @@ void Driver::runBinary() const {
   // Run executable
   std::filesystem::path executablePath = cliOptions.outputPath;
   executablePath.make_preferred();
-  int exitCode = std::system(executablePath.string().c_str()) / 256;
+  const int exitCode = std::system(executablePath.string().c_str()) / 256;
   if (exitCode != 0)
     throw CliError(NON_ZERO_EXIT_CODE, "Your Spice executable exited with non-zero exit code " + std::to_string(exitCode));
 }
@@ -194,7 +194,7 @@ void Driver::addBuildSubcommand() {
   subCmd->alias("b");
   subCmd->ignore_case();
   subCmd->configurable();
-  subCmd->callback([&]() {
+  subCmd->callback([&] {
     shouldCompile = true; // Requires the source file to be compiled
   });
 
@@ -237,7 +237,7 @@ void Driver::addRunSubcommand() {
   CLI::App *subCmd = app.add_subcommand("run", "Builds your Spice program and runs it immediately");
   subCmd->alias("r");
   subCmd->ignore_case();
-  subCmd->callback([&]() {
+  subCmd->callback([&] {
     shouldCompile = shouldExecute = true; // Requires the source file to be compiled
   });
 
@@ -310,16 +310,16 @@ void Driver::addUninstallSubcommand() {
 }
 
 void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
-  const std::function<bool(const CLI::results_t &)> buildModeCallback = [&](const CLI::results_t &results) {
+  const std::function buildModeCallback = [&](const CLI::results_t &results) {
     std::string inputString = results.front();
-    std::transform(inputString.begin(), inputString.end(), inputString.begin(), ::tolower);
+    std::ranges::transform(inputString, inputString.begin(), tolower);
 
     if (inputString == BUILD_MODE_DEBUG)
-      cliOptions.buildMode = BuildMode::DEBUG;
+      cliOptions.buildMode = DEBUG;
     else if (inputString == BUILD_MODE_RELEASE)
-      cliOptions.buildMode = BuildMode::RELEASE;
+      cliOptions.buildMode = RELEASE;
     else if (inputString == BUILD_MODE_TEST)
-      cliOptions.buildMode = BuildMode::TEST;
+      cliOptions.buildMode = TEST;
     else
       throw CliError(INVALID_BUILD_MODE, "Invalid build mode: " + inputString);
 
@@ -339,14 +339,12 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) {
                          "Generate lifetime markers to enhance optimizations");
 
   // Opt levels
-  subCmd->add_flag_callback(
-      "-O0", [&]() { cliOptions.optLevel = OptLevel::O0; }, "Disable optimization for the output executable.");
-  subCmd->add_flag_callback("-O1", [&]() { cliOptions.optLevel = OptLevel::O1; }, "Only basic optimization is executed.");
-  subCmd->add_flag_callback("-O2", [&]() { cliOptions.optLevel = OptLevel::O2; }, "More advanced optimization is applied.");
-  subCmd->add_flag_callback(
-      "-O3", [&]() { cliOptions.optLevel = OptLevel::O3; }, "Aggressive optimization for best performance.");
-  subCmd->add_flag_callback("-Os", [&]() { cliOptions.optLevel = OptLevel::Os; }, "Size optimization for output executable.");
-  subCmd->add_flag_callback("-Oz", [&]() { cliOptions.optLevel = OptLevel::Oz; }, "Aggressive optimization for best size.");
+  subCmd->add_flag_callback("-O0", [&]() { cliOptions.optLevel = O0; }, "Disable optimization for the output executable.");
+  subCmd->add_flag_callback("-O1", [&]() { cliOptions.optLevel = O1; }, "Only basic optimization is executed.");
+  subCmd->add_flag_callback("-O2", [&]() { cliOptions.optLevel = O2; }, "More advanced optimization is applied.");
+  subCmd->add_flag_callback("-O3", [&]() { cliOptions.optLevel = O3; }, "Aggressive optimization for best performance.");
+  subCmd->add_flag_callback("-Os", [&]() { cliOptions.optLevel = Os; }, "Size optimization for output executable.");
+  subCmd->add_flag_callback("-Oz", [&]() { cliOptions.optLevel = Oz; }, "Aggressive optimization for best size.");
   subCmd->add_flag<bool>("-lto", cliOptions.useLTO, "Enable link time optimization (LTO)");
 
   // --debug-output

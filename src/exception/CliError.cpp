@@ -4,8 +4,6 @@
 
 namespace spice::compiler {
 
-// GCOV_EXCL_START
-
 /**
  * @param type Type of the error
  * @param message Error message suffix
@@ -24,11 +22,11 @@ const char *CliError::what() const noexcept { return errorMessage.c_str(); }
 /**
  * Get the prefix of the error message for a particular error
  *
- * @param type Type of the error
+ * @param errorType Type of the error
  * @return Prefix string for the error type
  */
-std::string CliError::getMessagePrefix(CliErrorType type) {
-  switch (type) {
+std::string CliError::getMessagePrefix(CliErrorType errorType) {
+  switch (errorType) {
   case INCOMPLETE_TARGET_TRIPLE:
     return "Incomplete target triple";
   case INVALID_TARGET_TRIPLE:
@@ -48,7 +46,5 @@ std::string CliError::getMessagePrefix(CliErrorType type) {
   }
   return "Unknown error";
 }
-
-// GCOV_EXCL_STOP
 
 } // namespace spice::compiler

@@ -9,7 +9,7 @@
 
 namespace spice::compiler {
 
-llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) {
+llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) const {
   // Resolve mangled type info name and mangled global name
   const std::string globalName = NameMangling::mangleTypeInfoName(spiceStruct);
 
@@ -27,7 +27,7 @@ llvm::Constant *IRGenerator::generateTypeInfoName(StructBase *spiceStruct) {
   return spiceStruct->vTableData.typeInfoName = global;
 }
 
-llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
+llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) const {
   // Generate type info name
   llvm::Constant *typeInfoName = generateTypeInfoName(spiceStruct);
 
@@ -37,7 +37,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
 
   QualTypeList interfaceTypes;
   if (spiceStruct->entry->getQualType().is(TY_STRUCT)) {
-    auto spiceStructEnsured = reinterpret_cast<Struct *>(spiceStruct);
+    const auto spiceStructEnsured = reinterpret_cast<Struct *>(spiceStruct);
     interfaceTypes = spiceStructEnsured->interfaceTypes;
   }
 
@@ -60,7 +60,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   fieldValues.push_back(typeInfoVTable);
   fieldValues.push_back(typeInfoName);
   for (const QualType &interfaceType : interfaceTypes) {
-    Interface *interface = interfaceType.getInterface(nullptr);
+    const Interface *interface = interfaceType.getInterface(nullptr);
     assert(interface != nullptr && interface->vTableData.typeInfo != nullptr);
     const std::string interfaceMangledName = NameMangling::mangleTypeInfo(interface);
     llvm::Constant *global = module->getOrInsertGlobal(interfaceMangledName, builder.getPtrTy());
@@ -84,7 +84,7 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) {
   return spiceStruct->vTableData.typeInfo = global;
 }
 
-llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
+llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) const {
   // Retrieve virtual method count
   const std::vector<Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();
   const size_t virtualMethodCount = virtualMethods.size();
@@ -112,7 +112,7 @@ llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) {
   return spiceStruct->vTableData.vtable = global;
 }
 
-void IRGenerator::generateVTableInitializer(StructBase *spiceStruct) {
+void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) const {
   // Retrieve virtual method count
   assert(spiceStruct->scope);
   const std::vector<Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();

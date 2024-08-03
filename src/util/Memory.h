@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include <atomic>
-#include <cassert>
 #include <cstdlib>
-#include <new>
 
 namespace spice::compiler {
 
@@ -13,15 +10,18 @@ namespace spice::compiler {
 using byte = uint8_t;
 
 class MemoryManager {
+protected:
+  ~MemoryManager() = default;
+
 public:
   [[nodiscard]] virtual byte *allocate(size_t size) const = 0;
   virtual void deallocate(byte *ptr) const = 0;
 };
 
-class DefaultMemoryManager : public MemoryManager {
+class DefaultMemoryManager final : public MemoryManager {
 public:
-  [[nodiscard]] byte *allocate(size_t size) const override { return static_cast<byte *>(malloc(size)); }
-  void deallocate(byte *ptr) const override { free(static_cast<void *>(ptr)); }
+  [[nodiscard]] byte *allocate(const size_t size) const override { return static_cast<byte *>(malloc(size)); }
+  void deallocate(byte *ptr) const override { free(ptr); }
 };
 
 } // namespace spice::compiler

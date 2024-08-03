@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include <numeric>
 #include <symboltablebuilder/QualType.h>
 
 namespace spice::compiler {
@@ -14,7 +13,7 @@ namespace spice::compiler {
 class Scope;
 
 // Constants
-const long ARRAY_SIZE_UNKNOWN = 0;
+static constexpr long ARRAY_SIZE_UNKNOWN = 0;
 
 enum SuperType : uint8_t {
   TY_INVALID,

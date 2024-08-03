@@ -8,9 +8,7 @@
 
 #include <symboltablebuilder/Lifecycle.h>
 #include <symboltablebuilder/QualType.h>
-#include <symboltablebuilder/Type.h>
 
-#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Value.h>
 
 #include "../../lib/json/json.hpp"
@@ -26,7 +24,7 @@ struct CompileTimeValue;
 /**
  * Entry of a symbol table, representing an individual symbol with all its properties
  */
-class SymbolTableEntry {
+class SymbolTableEntry final {
 public:
   // Constructors
   SymbolTableEntry(std::string name, const QualType &qualType, Scope *scope, ASTNode *declNode, size_t orderIndex, bool global)

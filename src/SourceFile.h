@@ -4,7 +4,6 @@
 
 #include <map>
 #include <string>
-#include <utility>
 
 #include <ast/ASTNodes.h>
 #include <exception/AntlrThrowingErrorListener.h>
@@ -20,7 +19,6 @@
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include <SpiceLexer.h>
 #include <SpiceParser.h>
-#include <Token.h>
 #pragma GCC diagnostic pop
 
 namespace spice::compiler {
@@ -151,7 +149,7 @@ public:
                             bool keepNewOnCollision = true, SymbolTableEntry *importEntry = nullptr);
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(const std::string &symbolName) const;
   [[nodiscard]] llvm::Type *getLLVMType(const Type *type);
-  void checkForSoftErrors();
+  void checkForSoftErrors() const;
   void collectAndPrintWarnings();
   const SourceFile *getRootSourceFile() const;
   bool isRT(RuntimeModule runtimeModule) const;

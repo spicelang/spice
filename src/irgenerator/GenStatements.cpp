@@ -112,7 +112,7 @@ std::any IRGenerator::visitCaseConstant(const spice::compiler::CaseConstantNode 
 
   // Get constant for enum item
   assert(node->enumItemEntry->scope->type == ScopeType::ENUM);
-  auto itemNode = spice_pointer_cast<const EnumItemNode *>(node->enumItemEntry->declNode);
+  const auto itemNode = spice_pointer_cast<const EnumItemNode *>(node->enumItemEntry->declNode);
   llvm::Constant *constant = llvm::ConstantInt::get(builder.getInt32Ty(), itemNode->itemValue);
   return constant;
 }
@@ -127,7 +127,7 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
     else
       returnValue = resolveValue(node->assignExpr());
   } else { // Try to load return variable value
-    SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
+    const SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (resultEntry != nullptr) {
       llvm::Type *resultSTy = resultEntry->getQualType().toLLVMType(sourceFile);
       llvm::Value *returnValueAddr = resultEntry->getAddress();

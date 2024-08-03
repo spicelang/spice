@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <unistd.h>
 #include <vector>
 
 #include <ast/ASTNodes.h>
@@ -33,7 +31,7 @@ public:
 
   // Public methods
   template <typename T, typename... Args> T *allocate(Args &&...args) {
-    static_assert(std::is_base_of<Base, T>::value, "T must be derived from Base");
+    static_assert(std::is_base_of_v<Base, T>, "T must be derived from Base");
     constexpr size_t objSize = sizeof(T);
     assert(objSize <= blockSize && "Object size exceeds block size");
 
@@ -47,7 +45,7 @@ public:
     allocatedObjects.push_back(ptr);
 
 #ifndef NDEBUG
-    allocatedClassStatistic[typeid(T).name()]++;
+    ++allocatedClassStatistic[typeid(T).name()];
 #endif
 
     // Update offset to be ready to store the next object

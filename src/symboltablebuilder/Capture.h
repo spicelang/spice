@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <utility>
-
 #include "SymbolTableEntry.h"
 
 #include "../../lib/json/json.hpp"

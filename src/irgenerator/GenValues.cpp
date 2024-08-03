@@ -6,7 +6,6 @@
 
 #include <ast/ASTNodes.h>
 #include <irgenerator/NameMangling.h>
-#include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
@@ -40,7 +39,7 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
 
   if (node->isNil) {
     // Retrieve type of the nil constant
-    auto nilType = any_cast<llvm::Type *>(visit(node->nilType()));
+    const auto nilType = any_cast<llvm::Type *>(visit(node->nilType()));
     // Create constant nil value
     llvm::Constant *nilValue = llvm::Constant::getNullValue(nilType);
     // Return it
@@ -283,7 +282,7 @@ std::any IRGenerator::visitArrayInitialization(const ArrayInitializationNode *no
   bool canBeConstant = true;
   std::vector<LLVMExprResult> itemResults;
   itemResults.reserve(node->actualSize);
-  for (AssignExprNode *itemNode : node->itemLst()->args()) {
+  for (const AssignExprNode *itemNode : node->itemLst()->args()) {
     auto item = std::any_cast<LLVMExprResult>(visit(itemNode));
     canBeConstant &= item.constant != nullptr;
     item.node = itemNode;
@@ -345,7 +344,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
 
   // Get struct type
   assert(spiceStruct->entry != nullptr);
-  auto structType = reinterpret_cast<llvm::StructType *>(spiceStruct->entry->getQualType().toLLVMType(sourceFile));
+  const auto structType = reinterpret_cast<llvm::StructType *>(spiceStruct->entry->getQualType().toLLVMType(sourceFile));
   assert(structType != nullptr);
 
   if (!node->fieldLst()) {
@@ -356,7 +355,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   // Visit struct field values
   std::vector<LLVMExprResult> fieldValueResults;
   fieldValueResults.reserve(spiceStruct->fieldTypes.size());
-  for (AssignExprNode *fieldValueNode : node->fieldLst()->args()) {
+  for (const AssignExprNode *fieldValueNode : node->fieldLst()->args()) {
     auto fieldValue = std::any_cast<LLVMExprResult>(visit(fieldValueNode));
     fieldValue.node = fieldValueNode;
     fieldValueResults.push_back(fieldValue);
@@ -544,7 +543,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
 
   // Pop capture addresses
   if (hasCaptures)
-    for (const auto &[_, capture] : captures)
+    for (const auto &[name, capture] : captures)
       capture.capturedSymbol->popAddress();
 
   // Conclude debug info for function
@@ -822,7 +821,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   }
 
   // Visit lambda expression
-  llvm::Value *exprResult = resolveValue(node->lambdaExpr(), currentScope);
+  llvm::Value *exprResult = resolveValue(node->lambdaExpr());
   builder.CreateRet(exprResult);
 
   // Pop capture addresses
@@ -856,7 +855,7 @@ std::any IRGenerator::visitDataType(const DataTypeNode *node) {
   if (currentScope != rootScope && !node->isParamType && !node->isReturnType && !node->isFieldType)
     diGenerator.setSourceLocation(node);
   // Retrieve symbol type
-  QualType symbolType = node->getEvaluatedSymbolType(manIdx);
+  const QualType symbolType = node->getEvaluatedSymbolType(manIdx);
   assert(!symbolType.is(TY_DYN)); // Symbol type should not be dyn anymore at this point
   return symbolType.toLLVMType(sourceFile);
 }
@@ -912,7 +911,7 @@ llvm::Value *IRGenerator::buildFatFctPtr(Scope *bodyScope, llvm::Type *capturesS
   return fatFctPtr;
 }
 
-llvm::Type *IRGenerator::buildCapturesContainerType(const CaptureMap &captures) {
+llvm::Type *IRGenerator::buildCapturesContainerType(const CaptureMap &captures) const {
   assert(!captures.empty());
 
   // If we have only one capture that is a ptr, we can just use that ptr type

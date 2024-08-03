@@ -23,7 +23,7 @@ std::string CodeLoc::toString() const { return "L" + std::to_string(line) + "C" 
  */
 std::string CodeLoc::toPrettyString() const {
   const std::filesystem::path &rootSourceFilePath = sourceFile->getRootSourceFile()->filePath;
-  std::filesystem::path sourceFilePath = std::filesystem::relative(sourceFile->filePath, rootSourceFilePath);
+  std::filesystem::path sourceFilePath = relative(sourceFile->filePath, rootSourceFilePath);
   if (sourceFilePath == ".")
     sourceFilePath /= sourceFile->fileName;
   const std::string prefix = sourceFilePath.empty() ? "" : sourceFilePath.generic_string() + ":";

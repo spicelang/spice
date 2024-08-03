@@ -26,8 +26,8 @@ const Type *TypeRegistry::getOrInsert(const Type &&type) {
     return it->second.get();
 
   // Create new type
-  const auto insertedElement = types.emplace(hash, std::make_unique<Type>(type));
-  return insertedElement.first->second.get();
+  const auto [iter, inserted] = types.emplace(hash, std::make_unique<Type>(type));
+  return iter->second.get();
 }
 
 /**
@@ -85,10 +85,10 @@ size_t TypeRegistry::getTypeCount() { return types.size(); }
 std::string TypeRegistry::dump() {
   std::vector<std::string> typeStrings;
   typeStrings.reserve(types.size());
-  for (const auto &type : types)
-    typeStrings.push_back(type.second->getName());
+  for (const auto &[id, type] : types)
+    typeStrings.push_back(type->getName());
   // Sort to ensure deterministic output
-  std::sort(typeStrings.begin(), typeStrings.end());
+  std::ranges::sort(typeStrings);
   // Serialize type registry
   std::stringstream typeRegistryString;
   for (const std::string &typeString : typeStrings)

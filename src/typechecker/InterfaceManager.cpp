@@ -165,6 +165,7 @@ bool InterfaceManager::matchName(const Interface &candidate, const std::string &
  *
  * @param candidate Matching candidate interface
  * @param reqTemplateTypes Requested interface template types
+ * @param typeMapping Generic type mapping
  * @param node Instantiation AST node for printing error messages
  * @return Fulfilled or not
  */
@@ -215,9 +216,9 @@ void InterfaceManager::substantiateSignatures(Interface &candidate, TypeMapping 
       FunctionManager::substantiateReturnType(*method, typeMapping, node);
 
     // Substantiate param types
-    for (Param &paramType : method->paramList)
-      if (paramType.qualType.isBase(TY_GENERIC))
-        TypeMatcher::substantiateTypeWithTypeMapping(paramType.qualType, typeMapping, node);
+    for (auto &[qualType, isOptional] : method->paramList)
+      if (qualType.isBase(TY_GENERIC))
+        TypeMatcher::substantiateTypeWithTypeMapping(qualType, typeMapping, node);
   }
 }
 

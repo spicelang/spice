@@ -17,7 +17,7 @@ struct ExecResult {
  */
 class FileUtil {
 public:
-  static void writeToFile(const std::filesystem::path &fileName, const std::string &fileContent);
+  static void writeToFile(const std::filesystem::path &filePath, const std::string &fileContent);
   static std::string getFileContent(const std::filesystem::path &filePath);
   static size_t getLineCount(const std::filesystem::path &filePath);
   static ExecResult exec(const std::string &command);

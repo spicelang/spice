@@ -2,13 +2,8 @@
 
 #pragma once
 
-#include <cstdint>
 #include <string>
 
-#include <exception/CompilerError.h>
-#include <exception/LexerError.h>
-#include <exception/LinkerError.h>
-#include <exception/ParserError.h>
 #include <exception/SemanticError.h>
 #include <util/CodeLoc.h>
 

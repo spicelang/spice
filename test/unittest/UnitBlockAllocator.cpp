@@ -14,7 +14,7 @@ using namespace spice::compiler;
 
 static size_t destructedDummyNodes = 0;
 
-class DummyNode : public ASTNode {
+class DummyNode final : public ASTNode {
   // Constructors
   using ASTNode::ASTNode;
 
@@ -28,7 +28,7 @@ class DummyNode : public ASTNode {
 static constexpr size_t DUMMY_NODE_SIZE = sizeof(DummyNode);
 static_assert(DUMMY_NODE_SIZE == 104, "DummyNode size has changed. Update test accordingly.");
 
-class MockMemoryManager : public MemoryManager {
+class MockMemoryManager final : public MemoryManager {
 public:
   MOCK_METHOD(byte *, allocate, (size_t size), (const override));
   MOCK_METHOD(void, deallocate, (byte * ptr), (const override));
@@ -40,7 +40,7 @@ TEST(BlockAllocatorTest, TestBlockAllocatorLarge) {
 
   {
     // Create allocator, that can hold 5 nodes per block
-    DefaultMemoryManager memoryManager;
+    constexpr DefaultMemoryManager memoryManager;
     BlockAllocator<ASTNode> alloc(memoryManager, DUMMY_NODE_SIZE * 5);
 
     // Allocate nodes
@@ -69,7 +69,7 @@ TEST(BlockAllocatorTest, TestBlockAllocatorUnevenBlockSize) {
 
   {
     // Create allocator, that can hold 4.5 nodes per block
-    DefaultMemoryManager memoryManager;
+    constexpr DefaultMemoryManager memoryManager;
     BlockAllocator<ASTNode> alloc(memoryManager, DUMMY_NODE_SIZE * 4.5);
 
     // Allocate nodes

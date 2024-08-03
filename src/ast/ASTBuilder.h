@@ -4,7 +4,6 @@
 
 #include <filesystem>
 #include <functional>
-#include <utility>
 
 // Ignore some warnings in ANTLR generated code
 #pragma GCC diagnostic push
@@ -22,11 +21,11 @@ namespace spice::compiler {
 class ASTNode;
 class ConstantNode;
 
-const char *const RESERVED_KEYWORDS[] = {"new", "stash", "pick", "sync", "class"};
+static constexpr const char *const RESERVED_KEYWORDS[] = {"new", "stash", "pick", "sync", "class"};
 const char *const MEMBER_ACCESS_TOKEN = ".";
 const char *const SCOPE_ACCESS_TOKEN = "::";
 
-class ASTBuilder : private CompilerPass, public SpiceVisitor {
+class ASTBuilder final : CompilerPass, public SpiceVisitor {
 private:
   // Private type defs
   using TerminalNode = antlr4::tree::TerminalNode;
@@ -141,11 +140,11 @@ private:
   int32_t parseInt(TerminalNode *terminal);
   int16_t parseShort(TerminalNode *terminal);
   int64_t parseLong(TerminalNode *terminal);
-  int8_t parseChar(TerminalNode *terminal);
+  int8_t parseChar(TerminalNode *terminal) const;
   static std::string parseString(std::string input);
   template <typename T> T parseNumeric(TerminalNode *terminal, const NumericParserCallback<T> &cb);
   static void replaceEscapeChars(std::string &input);
-  std::string getIdentifier(TerminalNode *terminal);
+  std::string getIdentifier(TerminalNode *terminal) const;
 };
 
 } // namespace spice::compiler

@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <symboltablebuilder/Type.h>
-
 namespace spice::compiler {
 
 // Forward declarations

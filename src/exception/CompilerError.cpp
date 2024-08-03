@@ -26,11 +26,11 @@ const char *CompilerError::what() const noexcept { return errorMessage.c_str(); 
 /**
  * Get the prefix of the error message for a particular error
  *
- * @param type Type of the error
+ * @param errorType Type of the error
  * @return Prefix string for the error type
  */
-std::string CompilerError::getMessagePrefix(CompilerErrorType type) {
-  switch (type) {
+std::string CompilerError::getMessagePrefix(CompilerErrorType errorType) {
+  switch (errorType) {
   case UNRESOLVED_SOFT_ERRORS:
     return "Unresolved soft errors";
   case SOURCE_FILE_NOT_FOUND:

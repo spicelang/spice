@@ -69,7 +69,7 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
     visit(node->attrs());
 
   // Build function specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (const SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->specifiers.isInline = true;
@@ -132,7 +132,7 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
     visit(node->attrs());
 
   // Build procedure specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (const SpecifierLstNode *specifierLst = node->specifierLst()) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->specifiers.isInline = true;
@@ -221,7 +221,7 @@ std::any SymbolTableBuilder::visitStructDef(StructDefNode *node) {
   currentScope = node->structScope->parent;
 
   // Build struct specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (const SpecifierLstNode *specifierLst = node->specifierLst()) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->structSpecifiers.isPublic = true;
@@ -259,7 +259,7 @@ std::any SymbolTableBuilder::visitInterfaceDef(InterfaceDefNode *node) {
   currentScope = node->interfaceScope->parent;
 
   // Build interface specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (const SpecifierLstNode *specifierLst = node->specifierLst()) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->interfaceSpecifiers.isPublic = true;
@@ -327,7 +327,7 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->aliasName + "'");
 
   // Build alias specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (const SpecifierLstNode *specifierLst = node->specifierLst()) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_PUBLIC)
         node->aliasSpecifiers.isPublic = true;
@@ -585,7 +585,7 @@ std::any SymbolTableBuilder::visitField(FieldNode *node) {
 
 std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
   // Build signature specifiers
-  if (SpecifierLstNode *specifierLst = node->specifierLst(); specifierLst) {
+  if (const SpecifierLstNode *specifierLst = node->specifierLst()) {
     for (const SpecifierNode *specifier : specifierLst->specifiers()) {
       if (specifier->type == SpecifierNode::TY_INLINE)
         node->signatureSpecifiers.isInline = true;
@@ -661,12 +661,12 @@ std::any SymbolTableBuilder::visitAttr(AttrNode *node) {
     throw SemanticError(node, UNKNOWN_ATTR, "Unknown attribute '" + node->key + "'");
 
   // Check if the target is correct
-  const AttrConfigValue &config = ATTR_CONFIGS.at(node->key);
-  if ((node->target & config.target) == 0)
+  const auto &[target, type] = ATTR_CONFIGS.at(node->key);
+  if ((node->target & target) == 0)
     throw SemanticError(node, INVALID_ATTR_TARGET, "Attribute '" + node->key + "' cannot be used on this target");
 
   // Check if a value is present
-  if (!node->value() && config.type != AttrNode::TYPE_BOOL)
+  if (!node->value() && type != AttrNode::TYPE_BOOL)
     throw SemanticError(node, MISSING_ATTR_VALUE, "Attribute '" + node->key + "' requires a value");
 
   return nullptr;

@@ -3,7 +3,6 @@
 #pragma once
 
 #include <filesystem>
-#include <utility>
 
 #include <BaseErrorListener.h>
 
@@ -17,7 +16,7 @@ enum class ThrowingErrorListenerMode : uint8_t {
   PARSER,
 };
 
-class AntlrThrowingErrorListener : public antlr4::BaseErrorListener {
+class AntlrThrowingErrorListener final : public antlr4::BaseErrorListener {
 public:
   // Constructors
   AntlrThrowingErrorListener(ThrowingErrorListenerMode mode, SourceFile *sourceFile) : mode(mode), sourceFile(sourceFile){};

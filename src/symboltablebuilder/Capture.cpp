@@ -2,6 +2,8 @@
 
 #include "Capture.h"
 
+#include <symboltablebuilder/TypeChain.h>
+
 namespace spice::compiler {
 
 Capture::Capture(SymbolTableEntry *entry) : capturedSymbol(entry) {

@@ -50,10 +50,10 @@ std::string CommonUtil::getLastFragment(const std::string &haystack, const std::
  * @return Trimmed string
  */
 std::string CommonUtil::trim(const std::string &input) {
-  size_t first = input.find_first_not_of(' ');
+  const size_t first = input.find_first_not_of(' ');
   if (std::string::npos == first)
     return input;
-  size_t last = input.find_last_not_of(' ');
+  const size_t last = input.find_last_not_of(' ');
   return input.substr(first, (last - first + 1));
 }
 
@@ -96,13 +96,12 @@ size_t CommonUtil::getSystemPageSize() {
  *
  * @return Human-readable size string
  */
-std::string CommonUtil::formatBytes(size_t bytes) {
-  const char* units[] = {"B", "KB", "MB", "GB", "TB"};
-  const size_t unitCount = sizeof(units) / sizeof(units[0]);
+std::string CommonUtil::formatBytes(const size_t bytes) {
+  const char *units[] = {"B", "KB", "MB", "GB", "TB"};
 
   auto size = static_cast<double>(bytes);
   unsigned int unitIndex = 0;
-  while (size >= 1024 && unitIndex < unitCount - 1) {
+  while (size >= 1024 && unitIndex < std::size(units) - 1) {
     size /= 1024;
     unitIndex++;
   }

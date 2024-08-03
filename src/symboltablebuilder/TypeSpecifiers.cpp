@@ -74,19 +74,19 @@ TypeSpecifiers TypeSpecifiers::merge(const TypeSpecifiers &other) const {
 /**
  * Check if two sets of type specifiers match
  *
- * @param otherSpecifiers The rhs specifiers
+ * @param other The rhs specifiers
  * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
  * @return Matching or not
  */
-bool TypeSpecifiers::match(TypeSpecifiers otherSpecifiers, bool allowConstify) const {
+bool TypeSpecifiers::match(TypeSpecifiers other, bool allowConstify) const {
   const TypeSpecifiers thisSpecifiers = *this;
 
   // If allowConstify is enabled, only allow to match lhs=const and rhs=non-const
-  if (allowConstify && thisSpecifiers.isConst && !otherSpecifiers.isConst)
-    otherSpecifiers.isConst = true;
+  if (allowConstify && thisSpecifiers.isConst && !other.isConst)
+    other.isConst = true;
 
   // Check if specifiers are equal
-  return thisSpecifiers == otherSpecifiers;
+  return thisSpecifiers == other;
 }
 
 /**

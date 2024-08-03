@@ -20,6 +20,9 @@ public:
   explicit CompilerPass(GlobalResourceManager &resourceManager, SourceFile *sourceFile = nullptr);
   CompilerPass(const CompilerPass &) = delete;
 
+  // Destructor
+  virtual ~CompilerPass() = default;
+
   // Public methods
   void changeToScope(Scope *scope, ScopeType scopeType);
   void changeToScope(const std::string &scopeName, ScopeType scopeType);

@@ -116,6 +116,7 @@ std::vector<SymbolTableEntry *> Scope::getVarsGoingOutOfScope() { // NOLINT(misc
 /**
  * Insert a new generic type in this scope
  *
+ * @param typeName Generic type name
  * @param genericType Generic type itself
  */
 void Scope::insertGenericType(const std::string &typeName, const GenericType &genericType) {
@@ -139,7 +140,7 @@ GenericType *Scope::lookupGenericType(const std::string &typeName) { // NOLINT(m
 /**
  * Collect all warnings, produced within this scope
  *
- * @param List of warnings
+ * @param warnings List of warnings
  * @return Collection of warnings
  */
 void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // NOLINT(misc-no-recursion)
@@ -229,9 +230,9 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
   }
 
   // Visit children
-  for (const auto &child : children)
-    if (!child.second->isGenericScope)
-      child.second->collectWarnings(warnings);
+  for (const auto &[name, childScope] : children)
+    if (!childScope->isGenericScope)
+      childScope->collectWarnings(warnings);
 }
 
 /**
@@ -257,13 +258,13 @@ void Scope::ensureSuccessfulTypeInference() const { // NOLINT(misc-no-recursion)
 size_t Scope::getFieldCount() const {
   assert(type == ScopeType::STRUCT);
   size_t fieldCount = 0;
-  for (const auto &symbol : symbolTable.symbols) {
-    if (symbol.second.anonymous)
+  for (const auto &[name, symbol] : symbolTable.symbols) {
+    if (symbol.anonymous)
       continue;
-    const QualType &symbolType = symbol.second.getQualType();
+    const QualType &symbolType = symbol.getQualType();
     if (symbolType.is(TY_IMPORT))
       continue;
-    const ASTNode *declNode = symbol.second.declNode;
+    const ASTNode *declNode = symbol.declNode;
     if (declNode->isFctOrProcDef() || declNode->isStructDef())
       continue;
     fieldCount++;
@@ -281,11 +282,11 @@ std::vector<Function *> Scope::getVirtualMethods() {
 
   // Collect all virtual methods
   std::vector<Function *> methods;
-  for (auto &symbol : functions) {
-    assert(!symbol.second.empty());
-    for (auto &fct : symbol.second)
-      if (fct.second.isVirtualMethod())
-        methods.push_back(&functions.at(symbol.first).at(fct.first));
+  for (auto &[fctId, manifestationList] : functions) {
+    assert(!manifestationList.empty());
+    for (auto &[mangledName, function] : manifestationList)
+      if (function.isVirtualMethod())
+        methods.push_back(&functions.at(fctId).at(mangledName));
   }
 
   // Sort the list
@@ -400,9 +401,9 @@ nlohmann::json Scope::getSymbolTableJSON() const { // NOLINT(misc-no-recursion)
   // Collect all children
   std::vector<nlohmann::json> jsonChildren;
   jsonChildren.reserve(children.size());
-  for (const auto &child : children) {
-    nlohmann::json c = child.second->getSymbolTableJSON();
-    c["name"] = child.first; // Inject symbol table name into JSON object
+  for (const auto &[name, childScope] : children) {
+    nlohmann::json c = childScope->getSymbolTableJSON();
+    c["name"] = name; // Inject symbol table name into JSON object
     jsonChildren.emplace_back(c);
   }
   result["children"] = jsonChildren;

@@ -2,9 +2,9 @@
 
 #include "IRGenerator.h"
 
-#include <llvm/IR/Module.h>
-
 #include <ast/ASTNodes.h>
+
+#include <llvm/IR/Module.h>
 
 namespace spice::compiler {
 
@@ -18,7 +18,7 @@ std::any IRGenerator::visitPrintfCall(const PrintfCallNode *node) {
   printfArgs.push_back(templateString);
 
   // Collect replacement arguments
-  for (AssignExprNode *arg : node->args()) {
+  for (const AssignExprNode *arg : node->args()) {
     // Retrieve type of argument
     const QualType argSymbolType = arg->getEvaluatedSymbolType(manIdx);
 

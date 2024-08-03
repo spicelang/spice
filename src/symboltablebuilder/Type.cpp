@@ -181,7 +181,7 @@ const Type *Type::removeReferenceWrapper() const { return isRef() ? getContained
 /**
  * Return the LLVM type for this symbol type
  *
- * @param context LLVM context
+ * @param sourceFile Referenced source file
  * @return Corresponding LLVM type
  */
 llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-recursion)
@@ -207,9 +207,9 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
     return llvm::Type::getInt1Ty(context);
 
   if (isOneOf({TY_STRUCT, TY_INTERFACE})) {
-    Scope *structBodyScope = getBodyScope();
+    const Scope *structBodyScope = getBodyScope();
     const std::string structSignature = Struct::getSignature(getSubType(), getTemplateTypes());
-    SymbolTableEntry *structSymbol = structBodyScope->parent->lookupStrict(structSignature);
+    const SymbolTableEntry *structSymbol = structBodyScope->parent->lookupStrict(structSignature);
     assert(structSymbol != nullptr);
 
     // Collect concrete field types
@@ -217,7 +217,7 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
     std::vector<llvm::Type *> fieldTypes;
     bool isPacked = false;
     if (is(TY_STRUCT)) { // Struct
-      Struct *spiceStruct = structSymbol->getQualType().getStruct(structSymbol->declNode);
+      const Struct *spiceStruct = structSymbol->getQualType().getStruct(structSymbol->declNode);
       assert(spiceStruct != nullptr);
       const std::string mangledName = NameMangling::mangleStruct(*spiceStruct);
       structType = llvm::StructType::create(context, mangledName);
@@ -242,7 +242,7 @@ llvm::Type *Type::toLLVMType(SourceFile *sourceFile) const { // NOLINT(misc-no-r
       if (structDeclNode->attrs() && structDeclNode->attrs()->attrLst()->hasAttr(ATTR_CORE_COMPILER_PACKED))
         isPacked = structDeclNode->attrs()->attrLst()->getAttrValueByName(ATTR_CORE_COMPILER_PACKED)->boolValue;
     } else { // Interface
-      Interface *spiceInterface = structSymbol->getQualType().getInterface(structSymbol->declNode);
+      const Interface *spiceInterface = structSymbol->getQualType().getInterface(structSymbol->declNode);
       assert(spiceInterface != nullptr);
       const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);
       structType = llvm::StructType::create(context, mangledName);

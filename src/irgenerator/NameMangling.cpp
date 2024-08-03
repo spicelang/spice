@@ -16,7 +16,7 @@ namespace spice::compiler {
  * Mangle a function or procedure.
  * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
  *
- * @param function Input function
+ * @param spiceFunc Input function
  * @return Mangled name
  */
 std::string NameMangling::mangleFunction(const Function &spiceFunc) {
@@ -70,9 +70,9 @@ std::string NameMangling::mangleFunction(const Function &spiceFunc) {
   }
 
   // Parameter types
-  for (const Param &param : spiceFunc.paramList) {
-    assert(!param.isOptional);
-    mangleType(mangledName, param.qualType);
+  for (const auto &[qualType, isOptional] : spiceFunc.paramList) {
+    assert(!isOptional);
+    mangleType(mangledName, qualType);
   }
   if (spiceFunc.paramList.empty())
     mangledName << "v";

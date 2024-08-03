@@ -17,7 +17,7 @@ namespace spice::compiler {
 QualType::QualType(SuperType superType) : type(TypeRegistry::getOrInsert(superType)), specifiers(TypeSpecifiers::of(superType)) {}
 QualType::QualType(SuperType superType, const std::string &subType)
     : type(TypeRegistry::getOrInsert(superType, subType)), specifiers(TypeSpecifiers::of(superType)) {}
-QualType::QualType(const Type *t, TypeSpecifiers specifiers) : type(t), specifiers(specifiers) {}
+QualType::QualType(const Type *type, TypeSpecifiers specifiers) : type(type), specifiers(specifiers) {}
 
 /**
  * Set the underlying type
@@ -212,7 +212,7 @@ bool QualType::isIterator(const ASTNode *node) const {
     return false;
 
   const QualType genericType(TY_GENERIC, "T");
-  const TypeChainElementData data = {.bodyScope = nullptr};
+  static constexpr TypeChainElementData data = {.bodyScope = nullptr};
   const Type *itType = TypeRegistry::getOrInsert(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERATOR_INTERFACE, data, {genericType});
   const QualType iteratorQualType(itType, TypeSpecifiers::of(TY_INTERFACE));
   return doesImplement(iteratorQualType, node);
@@ -235,7 +235,7 @@ bool QualType::isIterable(const ASTNode *node) const {
     return false;
 
   const QualType genericType(TY_GENERIC, "T");
-  const TypeChainElementData data = {.bodyScope = nullptr};
+  static constexpr TypeChainElementData data = {.bodyScope = nullptr};
   const Type *itType = TypeRegistry::getOrInsert(TY_INTERFACE, IITERATOR_NAME, TYPE_ID_ITERABLE_INTERFACE, data, {genericType});
   const QualType iteratorQualType(itType, TypeSpecifiers::of(TY_INTERFACE));
   return doesImplement(iteratorQualType, node);
@@ -616,7 +616,7 @@ QualType QualType::getWithTemplateTypes(const QualTypeList &templateTypes) const
 /**
  * Retrieve the same type, but with new base template types
  *
- * @param paramAndReturnTypes New base template types
+ * @param templateTypes New base template types
  * @return Same type with new base template types
  */
 QualType QualType::getWithBaseTemplateTypes(const QualTypeList &templateTypes) const {

@@ -35,7 +35,7 @@ enum CompilerErrorType : uint8_t {
 /**
  * Custom exception for errors, occurring in the general context of the compiler
  */
-class CompilerError : public std::exception {
+class CompilerError final : public std::exception {
 public:
   // Constructors
   CompilerError(const CompilerErrorType &type, const std::string &message);

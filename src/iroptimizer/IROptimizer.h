@@ -4,7 +4,6 @@
 
 #include <CompilerPass.h>
 #include <SourceFile.h>
-#include <ast/ASTVisitor.h>
 #include <global/GlobalResourceManager.h>
 
 #include <llvm/Analysis/AliasAnalysis.h>
@@ -16,7 +15,7 @@
 
 namespace spice::compiler {
 
-class IROptimizer : private CompilerPass {
+class IROptimizer : CompilerPass {
 public:
   // Constructors
   IROptimizer(GlobalResourceManager &resourceManager, SourceFile *sourceFile)

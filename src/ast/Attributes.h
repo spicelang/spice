@@ -27,7 +27,7 @@ static constexpr const char *const ATTR_TEST_NAME = "test.name";
 static constexpr const char *const ATTR_TEST_SKIP = "test.skip";
 static constexpr const char *const ATTR_ASYNC = "async";
 
-static const CompileTimeValue DEFAULT_BOOL_COMPILE_VALUE{.boolValue = true};
+static constexpr CompileTimeValue DEFAULT_BOOL_COMPILE_VALUE{.boolValue = true};
 
 // Structs
 struct AttrConfigValue {

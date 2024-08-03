@@ -24,7 +24,7 @@ enum CliErrorType : uint8_t {
 /**
  * Custom exception for errors, occurring when parsing the cli arguments
  */
-class CliError : public std::exception {
+class CliError final : public std::exception {
 public:
   // Constructors
   CliError(const CliErrorType &type, const std::string &message);

@@ -14,6 +14,7 @@
 #include <driver/Driver.h>
 #include <exception/CompilerError.h>
 #include <exception/LexerError.h>
+#include <exception/LinkerError.h>
 #include <exception/ParserError.h>
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
@@ -47,7 +48,7 @@ void execTestCase(const TestCase &testCase) {
       /* cacheDir= */ "./cache",
       /* outputDir= */ "./",
       /* outputPath= */ "",
-      /* buildMode= */ BuildMode::DEBUG,
+      /* buildMode= */ DEBUG,
       /* compileJobCount= */ 0,
       /* ignoreCache */ true,
       /* llvmArgs= */ "",
@@ -65,12 +66,12 @@ void execTestCase(const TestCase &testCase) {
       },
       /* namesForIRValues= */ true,
       /* useLifetimeMarkers= */ false,
-      /* optLevel= */ OptLevel::O0,
-      /* useLTO= */ std::filesystem::exists(testCase.testPath / CTL_LTO),
-      /* noEntryFct= */ std::filesystem::exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
-      /* generateTestMain= */ std::filesystem::exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
+      /* optLevel= */ O0,
+      /* useLTO= */ exists(testCase.testPath / CTL_LTO),
+      /* noEntryFct= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
+      /* generateTestMain= */ exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS),
       /* staticLinking= */ false,
-      /* debugInfo= */ std::filesystem::exists(testCase.testPath / CTL_DEBUG_INFO),
+      /* debugInfo= */ exists(testCase.testPath / CTL_DEBUG_INFO),
       /* disableVerifier= */ false,
       /* testMode= */ true,
   };
@@ -89,7 +90,7 @@ void execTestCase(const TestCase &testCase) {
     mainSourceFile->runParser();
 
     // Check CST
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_PARSE_TREE, [&]() {
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_PARSE_TREE, [&] {
       mainSourceFile->runCSTVisualizer();
       return mainSourceFile->compilerOutput.cstString;
     });
@@ -98,7 +99,7 @@ void execTestCase(const TestCase &testCase) {
     mainSourceFile->runASTBuilder();
 
     // Check AST
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYNTAX_TREE, [&]() {
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYNTAX_TREE, [&] {
       mainSourceFile->runASTVisualizer();
       return mainSourceFile->compilerOutput.astString;
     });
@@ -110,22 +111,22 @@ void execTestCase(const TestCase &testCase) {
 
     // Check symbol table output (check happens here to include updates from type checker)
     TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYMBOL_TABLE,
-                            [&]() { return mainSourceFile->globalScope->getSymbolTableJSON().dump(/*indent=*/2); });
+                            [&] { return mainSourceFile->globalScope->getSymbolTableJSON().dump(/*indent=*/2); });
 
     // Fail if an error was expected
-    if (std::filesystem::exists(testCase.testPath / REF_NAME_ERROR_OUTPUT))
+    if (exists(testCase.testPath / REF_NAME_ERROR_OUTPUT))
       FAIL() << "Expected error, but got no error";
 
     // Run backend for all dependencies
-    for (auto &dependency : mainSourceFile->dependencies)
-      dependency.second->runBackEnd();
+    for (const auto &[name, sourceFile] : mainSourceFile->dependencies)
+      sourceFile->runBackEnd();
 
     // Execute IR generator in normal or debug mode
     mainSourceFile->runIRGenerator();
 
     // Check unoptimized IR code
     TestUtil::checkRefMatch(
-        testCase.testPath / REF_NAME_IR, [&]() { return mainSourceFile->compilerOutput.irString; },
+        testCase.testPath / REF_NAME_IR, [&] { return mainSourceFile->compilerOutput.irString; },
         [&](std::string &expectedOutput, std::string &actualOutput) {
           if (cliOptions.generateDebugInfo) {
             // Remove the lines, containing paths on the local file system
@@ -136,7 +137,7 @@ void execTestCase(const TestCase &testCase) {
 
     // Check optimized IR code
     for (uint8_t i = 1; i <= 5; i++) {
-      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_OPT_IR[i - 1], [&]() {
+      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_OPT_IR[i - 1], [&] {
         cliOptions.optLevel = static_cast<OptLevel>(i);
 
         if (cliOptions.useLTO) {
@@ -152,13 +153,13 @@ void execTestCase(const TestCase &testCase) {
     }
 
     // Link the bitcode if not happened yet
-    if (cliOptions.useLTO && cliOptions.optLevel == OptLevel::O0)
+    if (cliOptions.useLTO && cliOptions.optLevel == O0)
       mainSourceFile->runBitcodeLinker();
 
     // Check assembly code
     bool objectFilesEmitted = false;
     if (!skipNonGitHubTests) {
-      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ASM, [&]() {
+      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ASM, [&] {
         mainSourceFile->runObjectEmitter();
         objectFilesEmitted = true;
 
@@ -168,7 +169,7 @@ void execTestCase(const TestCase &testCase) {
 
     // Check warnings
     mainSourceFile->collectAndPrintWarnings();
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&]() {
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&] {
       std::stringstream actualWarningString;
       for (const CompilerWarning &warning : mainSourceFile->compilerOutput.warnings)
         actualWarningString << warning.warningMessage << "\n";
@@ -176,15 +177,15 @@ void execTestCase(const TestCase &testCase) {
     });
 
     // Do linking and conclude compilation
-    const bool needsNormalRun = std::filesystem::exists(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
-    const bool needsDebuggerRun = std::filesystem::exists(testCase.testPath / REF_NAME_GDB_OUTPUT);
+    const bool needsNormalRun = exists(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
+    const bool needsDebuggerRun = exists(testCase.testPath / REF_NAME_GDB_OUTPUT);
     if (needsNormalRun || needsDebuggerRun) {
       // Prepare linker
       resourceManager.linker.outputPath = TestUtil::getDefaultExecutableName();
 
       // Parse linker flags
       const std::filesystem::path linkerFlagsFile = testCase.testPath / INPUT_NAME_LINKER_FLAGS;
-      if (std::filesystem::exists(linkerFlagsFile))
+      if (exists(linkerFlagsFile))
         for (const std::string &linkerFlag : TestUtil::getFileContentLinesVector(linkerFlagsFile))
           resourceManager.linker.addLinkerFlag(linkerFlag);
 
@@ -201,50 +202,50 @@ void execTestCase(const TestCase &testCase) {
     }
 
     // Check type registry output
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_TYPE_REGISTRY, [&]() { return TypeRegistry::dump(); });
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_TYPE_REGISTRY, [&] { return TypeRegistry::dump(); });
 
     // Check if the execution output matches the expected output
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, [&]() {
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, [&] {
       const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
       // Execute binary
       std::stringstream cmd;
       if (enableLeakDetection)
         cmd << "valgrind -q --leak-check=full --num-callers=100 --error-exitcode=1 ";
       cmd << TestUtil::getDefaultExecutableName();
-      if (std::filesystem::exists(cliFlagsFile))
+      if (exists(cliFlagsFile))
         cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
-      const ExecResult result = FileUtil::exec(cmd.str());
+      const auto [output, exitCode] = FileUtil::exec(cmd.str());
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
       // Check if the exit code matches the expected one
       const bool exitRefFileFound =
-          TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE, [&]() { return std::to_string(result.exitCode); });
+          TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE, [&]() { return std::to_string(exitCode); });
       // If no exit code ref file exists, check against 0
       if (!exitRefFileFound) {
-        EXPECT_EQ(0, result.exitCode) << "Program exited with non-zero exit code";
+        EXPECT_EQ(0, exitCode) << "Program exited with non-zero exit code";
       }
 #endif
 
-      return result.output;
+      return output;
     });
 
     // Check if the debugger output matches the expected output
     if (!skipNonGitHubTests) { // GDB tests are currently not support on GH actions
       TestUtil::checkRefMatch(
           testCase.testPath / REF_NAME_GDB_OUTPUT,
-          [&]() {
+          [&] {
             // Execute debugger script
             std::filesystem::path gdbScriptPath = testCase.testPath / CTL_DEBUG_SCRIPT;
             EXPECT_TRUE(std::filesystem::exists(gdbScriptPath)) << "Debug output requested, but debug script not found";
             gdbScriptPath.make_preferred();
             const std::string cmd = "gdb -x " + gdbScriptPath.string() + " " + TestUtil::getDefaultExecutableName();
-            const ExecResult result = FileUtil::exec(cmd);
+            const auto [output, exitCode] = FileUtil::exec(cmd);
 
 #if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
-            EXPECT_EQ(0, result.exitCode) << "GDB exited with non-zero exit code when running debug script";
+            EXPECT_EQ(0, exitCode) << "GDB exited with non-zero exit code when running debug script";
 #endif
 
-            return result.output;
+            return output;
           },
           [&](std::string &expectedOutput, std::string &actualOutput) {
             // Do not compare against the GDB header

@@ -2,11 +2,13 @@
 
 #include "CustomHashFunctions.h"
 
+#include <numeric>
+
 namespace std {
 
-size_t hash<spice::compiler::TypeChainElement>::operator()(const spice::compiler::TypeChainElement &tce) const {
+size_t hash<spice::compiler::TypeChainElement>::operator()(const spice::compiler::TypeChainElement &tce) const noexcept {
   // Hasher for QualTypeList
-  constexpr auto pred = [](size_t acc, const spice::compiler::QualType &val) {
+  constexpr auto pred = [](const size_t acc, const spice::compiler::QualType &val) {
     // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
     return acc * 31 + std::hash<spice::compiler::QualType>{}(val);
   };
@@ -20,14 +22,15 @@ size_t hash<spice::compiler::TypeChainElement>::operator()(const spice::compiler
   return hashSuperType ^ hashSubType ^ hashTypeId ^ hashData ^ hashTemplateTypes ^ hashParamTypes;
 }
 
-size_t hash<spice::compiler::Type>::operator()(const spice::compiler::Type &t) const {
-  return accumulate(t.typeChain.begin(), t.typeChain.end(), 0u, [](size_t acc, const spice::compiler::TypeChainElement &val) {
+size_t hash<spice::compiler::Type>::operator()(const spice::compiler::Type &t) const noexcept {
+  const auto pred = [](const size_t acc, const spice::compiler::TypeChainElement &val) {
     // Combine the previous hash value with the current element's hash, adjusted by a prime number to reduce collisions
     return acc * 31 + std::hash<spice::compiler::TypeChainElement>{}(val);
-  });
+  };
+  return accumulate(t.typeChain.begin(), t.typeChain.end(), 0u, pred);
 }
 
-size_t hash<spice::compiler::TypeSpecifiers>::operator()(const spice::compiler::TypeSpecifiers &specifiers) const {
+size_t hash<spice::compiler::TypeSpecifiers>::operator()(const spice::compiler::TypeSpecifiers &specifiers) const noexcept {
   const size_t hashConst = std::hash<bool>{}(specifiers.isConst);
   const size_t hashSigned = std::hash<bool>{}(specifiers.isSigned) << 1;
   const size_t hashUnsigned = std::hash<bool>{}(specifiers.isUnsigned) << 2;
@@ -38,7 +41,7 @@ size_t hash<spice::compiler::TypeSpecifiers>::operator()(const spice::compiler::
   return hashConst ^ hashSigned ^ hashUnsigned ^ hashHeap ^ hashPublic ^ hashInline ^ hashComposition;
 }
 
-size_t hash<spice::compiler::QualType>::operator()(const spice::compiler::QualType &qualType) const {
+size_t hash<spice::compiler::QualType>::operator()(const spice::compiler::QualType &qualType) const noexcept {
   const size_t hashType = std::hash<const spice::compiler::Type *>{}(qualType.getType());
   spice::compiler::TypeSpecifiers specifiers = qualType.getSpecifiers();
   specifiers.isPublic = false; // Ignore the public specifier for hashing

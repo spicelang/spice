@@ -12,7 +12,7 @@ namespace spice::compiler {
  * Jobs:
  * - Visit the import statements of a source file and register the imported files as dependencies to the current one
  */
-class ImportCollector : private CompilerPass, public ASTVisitor {
+class ImportCollector final : CompilerPass, public ASTVisitor {
 public:
   // Constructors
   ImportCollector(GlobalResourceManager &resourceManager, SourceFile *sourcefile) : CompilerPass(resourceManager, sourcefile) {}

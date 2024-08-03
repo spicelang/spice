@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <exception>
 #include <string>
-#include <utility>
 
 namespace spice::compiler {
 
@@ -24,7 +23,7 @@ enum ParserErrorType : uint8_t {
 /**
  * Custom exception for errors, occurring while parsing
  */
-class ParserError : public std::exception {
+class ParserError final : public std::exception {
 public:
   // Constructors
   ParserError(const CodeLoc &codeLoc, const ParserErrorType &type, const std::string &message);

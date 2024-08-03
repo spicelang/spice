@@ -16,6 +16,7 @@ namespace spice::compiler {
  *
  * @param name Name of the symbol
  * @param declNode AST node where the symbol is declared
+ * @param isAnonymousSymbol If this symbol should be anonymous
  * @return Inserted entry
  */
 SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode, bool isAnonymousSymbol) {
@@ -44,6 +45,7 @@ SymbolTableEntry *SymbolTable::insert(const std::string &name, ASTNode *declNode
  *
  * @param qualType Type of the symbol
  * @param declNode AST node where the anonymous symbol is declared
+ * @param numericSuffix Custom numeric suffix
  * @return Inserted entry
  */
 SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &qualType, ASTNode *declNode, size_t numericSuffix) {
@@ -211,8 +213,7 @@ SymbolTableEntry *SymbolTable::lookupAnonymous(const CodeLoc &codeLoc, size_t nu
  */
 Capture *SymbolTable::lookupCapture(const std::string &name) { // NOLINT(misc-no-recursion)
   // Check if the capture exists in the current scope. If yes, take it
-  Capture *capture = lookupCaptureStrict(name);
-  if (capture)
+  if (Capture *capture = lookupCaptureStrict(name))
     return capture;
 
   // We reached the root scope, the symbol does not exist at all
@@ -268,14 +269,14 @@ nlohmann::json SymbolTable::toJSON() const {
   // Collect all symbols
   std::vector<nlohmann::json> jsonSymbols;
   jsonSymbols.reserve(symbols.size());
-  for (const auto &symbol : symbols)
-    jsonSymbols.emplace_back(symbol.second.toJSON());
+  for (const auto &[name, symbol] : symbols)
+    jsonSymbols.emplace_back(symbol.toJSON());
 
   // Collect all captures
   std::vector<nlohmann::json> jsonCaptures;
   jsonCaptures.reserve(captures.size());
-  for (const auto &capture : captures)
-    jsonCaptures.emplace_back(capture.second.toJSON());
+  for (const auto &[name, capture] : captures)
+    jsonCaptures.emplace_back(capture.toJSON());
 
   // Generate json
   nlohmann::json result;
