@@ -15,7 +15,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s -O2")
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/cmake)
 add_definitions(-DANTLR4CPP_STATIC)
 include(ExternalAntlr4Cpp)
-set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/antlr-4.13.1-complete.jar)
+set(ANTLR_EXECUTABLE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/antlr-4.13.2-complete.jar)
 find_package(ANTLR REQUIRED)
 message(STATUS "Spice: Found ANTLR ${ANTLR_VERSION}")
 
