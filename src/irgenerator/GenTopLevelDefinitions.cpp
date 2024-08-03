@@ -65,7 +65,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
 
   // Add debug info
   if (cliOptions.generateDebugInfo) {
-    auto nonConstNode = const_cast<MainFctDefNode *>(node);
+    const auto nonConstNode = const_cast<MainFctDefNode *>(node);
     const Function spiceFunc = FunctionManager::createMainFunction(node->entry, paramSymbolTypes, nonConstNode);
     diGenerator.generateFunctionDebugInfo(fct, &spiceFunc);
     diGenerator.setSourceLocation(node);
@@ -197,7 +197,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     bool externalLinkage = isPublic;
     if (node->attrs() && node->attrs()->attrLst()->hasAttr(ATTR_TEST))
       externalLinkage |= node->attrs()->attrLst()->getAttrValueByName(ATTR_TEST)->boolValue;
-    llvm::GlobalValue::LinkageTypes linkage = externalLinkage ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
+    const llvm::GlobalValue::LinkageTypes linkage = externalLinkage ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
     // Create function or implement declared function
     const std::string mangledName = manifestation->getMangledName();
@@ -276,6 +276,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated) {
+      diGenerator.setSourceLocation(node->closingBraceCodeLoc);
       llvm::Value *result = insertLoad(returnType, resultEntry->getAddress());
       builder.CreateRet(result);
     }
@@ -365,7 +366,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     // Check if procedure is explicitly inlined
     const bool explicitlyInlined = manifestation->entry->getQualType().isInline();
     // Get procedure linkage
-    llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
+    const llvm::GlobalValue::LinkageTypes linkage = isPublic ? llvm::Function::ExternalLinkage : llvm::Function::PrivateLinkage;
 
     // Create procedure or implement declared procedure
     const std::string mangledName = manifestation->getMangledName();
@@ -439,8 +440,10 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
     visit(node->body());
 
     // Create return statement if the block is not terminated yet
-    if (!blockAlreadyTerminated)
+    if (!blockAlreadyTerminated) {
+      diGenerator.setSourceLocation(node->closingBraceCodeLoc);
       builder.CreateRetVoid();
+    }
 
     // Conclude debug info for procedure
     diGenerator.concludeFunctionDebugInfo();

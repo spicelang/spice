@@ -25,7 +25,7 @@ public:
 
   // Public members
   SourceFile *sourceFile = nullptr;
-  const antlr4::misc::Interval sourceInterval;
+  antlr4::misc::Interval sourceInterval;
   uint32_t line;
   uint32_t col;
 

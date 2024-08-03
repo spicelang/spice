@@ -262,14 +262,18 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
   diBuilder->insertDeclare(address, varInfo, expr, debugLocation, prevInst);
 }
 
-void DebugInfoGenerator::setSourceLocation(const ASTNode *node) {
+void DebugInfoGenerator::setSourceLocation(const CodeLoc &codeLoc) {
   if (!irGenerator->cliOptions.generateDebugInfo)
     return;
 
   assert(!lexicalBlocks.empty());
   llvm::DIScope *scope = lexicalBlocks.top();
-  const llvm::DILocation *codeLoc = llvm::DILocation::get(scope->getContext(), node->codeLoc.line, node->codeLoc.col, scope);
-  irGenerator->builder.SetCurrentDebugLocation(codeLoc);
+  const llvm::DILocation *diCodeLoc = llvm::DILocation::get(scope->getContext(), codeLoc.line, codeLoc.col, scope);
+  irGenerator->builder.SetCurrentDebugLocation(diCodeLoc);
+}
+
+void DebugInfoGenerator::setSourceLocation(const ASTNode *node) {
+  setSourceLocation(node->codeLoc);
 }
 
 void DebugInfoGenerator::finalize() const {
